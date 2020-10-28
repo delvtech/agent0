@@ -3,9 +3,7 @@
 
 \begin{document}
   \begin{equation*}
-z\left(d,m,l\right)=\prod_{t=1}^{\lfloor{\frac{d+l}{l}}\rfloor}\frac{1}{(Y+1)^{\frac{m-j\left(d,1\right)}{365}}}
+\prod_{t=1}^{\lfloor{\frac{d+l}{l}}\rfloor}\frac{1}{(Y+1)^{\frac{m-\operatorname{mod}\left(d,l\right)}{365}}}
   \end{equation*}
-  \begin{equation*}
-j\left(d,l\right)=\operatorname{mod}\left(d\cdot{\lceil{\left(\frac{\operatorname{mod}\left(d,l\right)}{l+1}\right)^{2}}\rceil},l\right)
-  \end{equation*}
+
 \end{document}
