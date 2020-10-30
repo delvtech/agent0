@@ -4,21 +4,26 @@
 \begin{document}
 
 \begin{flushleft}
-The present value of the zero coupon bond on day $d$ with interest rate $Y_{z}$ rolled over every $l$ days into a new tranche with maturity day $m$ can be calculated with the following product:
+The present value of the fixed yield token on day $d$ with interest rate $Y_{f}$ rolled over every $l$ days into a new tranche with maturity day $m$ can be calculated with the following product:
 \end{flushleft}
+  \bigskip
   \begin{equation}
-\prod_{t=1}^{\lfloor{\frac{d}{l}}\rfloor+1}\frac{1}{(Y_{z}+1)^{\frac{m-d\bmod l}{365}}}
+\prod_{t=1}^{\lfloor{\frac{d}{l}}\rfloor+1}\frac{1}{(Y_{f}+1)^{\frac{m-d\bmod l}{365}}}
   \end{equation}
+  \bigskip
 and rewritten as the following equation:
   \begin{equation}
-  Z\left(d\right)=\frac{1}{\left(Y_{z}+1\right)^{\frac{m- d\bmod l}{365}}}^{\lfloor{\frac{d}{l}}\rfloor+1}
+  Z\left(d\right)=\frac{1}{\left(Y_{f}+1\right)^{\frac{m- d\bmod l}{365}}}^{\lfloor{\frac{d}{l}}\rfloor+1}
   \end{equation}
+  \bigskip
 \begin{flushleft}
 The present value of the interest coupon on day $d$ with interest rate $Y_{c}$ rolled over every $l$ days into a new tranche with maturity day $m$ can be calculated with the following sum:
 \end{flushleft}
+  \bigskip
   \begin{equation}
 \frac{Y_{c}}{\left(Y_{c}+1\right)}\sum_{j=0}^{\lfloor{\frac{d}{l}}\rfloor}Z\left(j\cdot l-1\right)(Y_{c}+1)^{\frac{d-\left(j\cdot l-1\right)}{365}}
   \end{equation}
+  \bigskip
 The total redeemable value on day $d$ is the sum of equations (1) \& (3).
 
 \end{document}
