@@ -1,5 +1,16 @@
 class Element_Pricing_Model:
     @staticmethod
+    def calc_max_trade(in_reserves,out_reserves,t):
+        k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
+        return k**(1/(1-t))-in_reserves
+    
+    @staticmethod
+    def calc_x_reserves(APY,y_reserves,days_until_maturity,time_stretch):
+        t=days_until_maturity/(365*time_stretch)
+        T=days_until_maturity/365
+        return y_reserves/((1-T*(APY/100))**(-1/t)-1)
+
+    @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
       return (1-price)/T * 100
@@ -35,51 +46,6 @@ class Element_Pricing_Model:
             with_fee = without_fee-fee
             without_fee_or_slippage = 1/pow(out_reserves/in_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
-
-class Yield_Pricing_Model:
-    @staticmethod
-    def apy(x_reserves,y_reserves,total_supply):
-        return ((y_reserves+total_supply)/x_reserves - 1) * 100
-    
-    @staticmethod
-    def fyt_price(x_reserves,y_reserves,total_supply,t):
-        return 1/pow((y_reserves+total_supply)/x_reserves,t)
-    
-    # input: number of base tokens to buy/sell
-    # output: number of fy tokens bought/sold with fee, number of fy tokens bought/sold without fee, fy token fee
-    @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t):
-        k=pow(in_reserves,1-t/g) + pow(out_reserves,1-t/g)
-        # calculate the number of fyts the specified amount of base tokens will cost with fees
-        output_with_fee = pow(k-pow(out_reserves-out,1-t/g),1/(1-t/g)) - in_reserves
-        k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
-        # calculate the number of fyts the specified amount of base tokens will cost without fees
-        output_without_fee = pow(k-pow(out_reserves-out,1-t),1/(1-t)) - in_reserves
-        # output_with_fee is greater than output_without_fee bc the fee adds additional cost
-        fee =  abs(output_with_fee - output_without_fee)
-        if token_in == "base":
-            without_fee_or_slippage = pow(in_reserves/out_reserves,t)*out
-        elif token_in == "fyt":
-            without_fee_or_slippage = 1/pow(out_reserves/in_reserves,t)*out
-        return (without_fee_or_slippage,output_with_fee,output_without_fee,fee)
-
-    # input: number of fy tokens to buy/sell
-    # output: number of base tokens bought/sold with fee, number of base tokens bought/sold without fee, base token fee    
-    @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t):
-        k=pow(in_reserves,1-t*g) + pow(out_reserves,1-t*g)
-        # calculate the number of base tokens the specified amount of fy tokens will cost with fees
-        output_with_fee = out_reserves - pow(k-pow(in_reserves+in_,1-t*g),1/(1-t*g))
-        k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
-        # calculate the number of base tokens the specified amount of fy tokens will cost without fees
-        output_without_fee = out_reserves - pow(k-pow(in_reserves+in_,1-t),1/(1-t))
-        # output_with_fee is greater than output_without_fee bc the fee adds additional cost
-        fee =  abs(output_with_fee - output_without_fee)
-        if token_out == "base":
-            without_fee_or_slippage = pow(in_reserves/out_reserves,t)*in_
-        elif token_out == "fyt":
-            without_fee_or_slippage = 1/pow(out_reserves/in_reserves,t)*in_
-        return (without_fee_or_slippage,output_with_fee,output_without_fee,fee)
 
 class Market: 
     def __init__(self,x,y,g,t,total_supply,pricing_model): 
