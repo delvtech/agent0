@@ -26,11 +26,10 @@ class Element_Pricing_Model:
         if token_in == "base":
             fee =  (out-without_fee)*g
             with_fee = without_fee+fee
-            without_fee_or_slippage = pow(in_reserves/out_reserves,t)*out
         elif token_in == "fyt":
             fee =  (without_fee-out)*g
             with_fee = without_fee+fee
-            without_fee_or_slippage = 1/pow(out_reserves/in_reserves,t)*out
+        without_fee_or_slippage = pow(in_reserves/out_reserves,t)*out
         return (without_fee_or_slippage,with_fee,without_fee,fee)
     
     @staticmethod
@@ -40,11 +39,10 @@ class Element_Pricing_Model:
         if token_out == "base":
             fee =  (in_-without_fee)*g
             with_fee = without_fee-fee
-            without_fee_or_slippage = pow(in_reserves/out_reserves,t)*in_
         elif token_out == "fyt":
             fee =  (without_fee-in_)*g
             with_fee = without_fee-fee
-            without_fee_or_slippage = 1/pow(out_reserves/in_reserves,t)*in_
+        without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
 
 class Market: 
