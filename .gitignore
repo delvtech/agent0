@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 .DS_Store
-testTrades.json
-test_vectors_schema.json
+*.json
+*.csv
