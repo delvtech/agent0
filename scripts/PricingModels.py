@@ -8,7 +8,7 @@ class Element_Pricing_Model:
     def calc_x_reserves(APY,y_reserves,days_until_maturity,time_stretch):
         t=days_until_maturity/(365*time_stretch)
         T=days_until_maturity/365
-        return y_reserves/((1-T*(APY/100))**(-1/t)-1)
+        return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
 
     @staticmethod
     def apy(price,days_until_maturity):
@@ -44,6 +44,30 @@ class Element_Pricing_Model:
             with_fee = without_fee-fee
         without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
+    
+    def calc_lp_out_given_tokens_in(x_in, y_in, x_reserves, y_reserves, total_supply):
+        # Check if the pool is initialized
+        if total_supply == 0:
+            # When uninitialized we mint exactly the underlying input in LP tokens
+            lp_out = x_in
+            x_needed = x_in
+            y_needed = 0
+        else:
+            # calc the number of x needed for the y_in provided
+            x_needed = (x_reserves / y_reserves) * y_in
+            # if there isn't enough x_in provided
+            if x_needed > x_in:
+                lp_out = (x_in * total_supply)/x_reserves
+
+                # use all the x_in
+                x_needed = x_in
+                # solve for: x_reserves/y_reserves = x_needed/y_needed
+                y_needed = x_needed/(x_reserves/y_reserves)
+            else:
+                # We calculate the percent increase in the reserves from contributing all of the bond
+                lp_out = (x_needed * total_supply)/x_reserves
+                y_needed = y_in
+        return (x_needed, y_needed, lp_out)
 
 class Market: 
     def __init__(self,x,y,g,t,total_supply,pricing_model): 
