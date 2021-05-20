@@ -15,7 +15,7 @@ np.random.shuffle(times)
 max_apy = 200
 max_x_reserves=1000000.0
 
-g=.05
+g=.1
 
 
 
