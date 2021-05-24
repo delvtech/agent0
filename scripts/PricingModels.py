@@ -9,6 +9,10 @@ class Element_Pricing_Model:
         t=days_until_maturity/(365*time_stretch)
         T=days_until_maturity/365
         return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
+    
+    @staticmethod
+    def calc_time_stretch(apy):
+        return 3.09396 /( 0.02789 * apy)
 
     @staticmethod
     def apy(price,days_until_maturity):
@@ -44,7 +48,8 @@ class Element_Pricing_Model:
             with_fee = without_fee-fee
         without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
-    
+
+    @staticmethod
     def calc_lp_out_given_tokens_in(x_in, y_in, x_reserves, y_reserves, total_supply):
         # Check if the pool is initialized
         if total_supply == 0:
