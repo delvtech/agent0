@@ -41,7 +41,7 @@ for t in times:
     #    apy = (y_reserves+total_supply)/x_reserves - 1
     #    y_reserves+total_supply = (apy/100 + 1)*x_reserves
     
-    y_reserves_plus_total_supply=(apy/100+1)*x_reserves
+    y_reserves_plus_total_supply=(apy/100+1)*(x_reserves+y_reserves)
     y_weight = np.random.uniform(0,1)
     y_reserves = y_reserves_plus_total_supply * y_weight
     total_supply = y_reserves_plus_total_supply - y_reserves

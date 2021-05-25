@@ -11,6 +11,24 @@ class Element_Pricing_Model:
         return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
     
     @staticmethod
+    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch):
+      y_reserves = target_liquidity/market_price
+      t=days_until_maturity/(365*time_stretch)
+      liquidity = 0
+
+      # dirty hack to ensure that we dont overshoot the target liquidity
+      while True:
+          x_reserves = Element_Pricing_Model.calc_x_reserves(apy,y_reserves,days_until_maturity,time_stretch)
+          total_supply=x_reserves + y_reserves
+          spot_price=Element_Pricing_Model.calc_spot_price(x_reserves,y_reserves,total_supply,t)
+          liquidity=x_reserves*market_price+y_reserves*market_price*spot_price
+          if liquidity > target_liquidity:
+              y_reserves-=100
+          else:
+              break
+      return (x_reserves,y_reserves,liquidity)
+    
+    @staticmethod
     def calc_time_stretch(apy):
         return 3.09396 /( 0.02789 * apy)
 
@@ -20,7 +38,7 @@ class Element_Pricing_Model:
       return (1-price)/T * 100
     
     @staticmethod
-    def fyt_price(x_reserves,y_reserves,total_supply,t):
+    def calc_spot_price(x_reserves,y_reserves,total_supply,t):
         return 1/pow((y_reserves+total_supply)/x_reserves,t)
     
     @staticmethod
@@ -90,14 +108,14 @@ class Market:
         self.cum_x_slippage=0
         self.cum_y_fees=0
         self.cum_x_fees=0
-        self.starting_fyt_price=self.fyt_price()
+        self.starting_fyt_price=self.spot_price()
     
     def apy(self,days_until_maturity):
-        price = self.pricing_model.fyt_price(self.x,self.y,self.total_supply,self.t)
+        price = self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t)
         return self.pricing_model.apy(price,days_until_maturity)
     
-    def fyt_price(self):
-        return self.pricing_model.fyt_price(self.x,self.y,self.total_supply,self.t)
+    def spot_price(self):
+        return self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t)
     
     def tick(self,step_size):
         self.t -= step_size
