@@ -12,7 +12,7 @@ step_size=.00025
 num_steps=int(t_max/step_size)
 times = np.arange(t_min, t_max+step_size, step_size) 
 np.random.shuffle(times)
-max_apy = 200
+max_apy = 50
 max_x_reserves=1000000.0
 
 g=.1
@@ -38,13 +38,12 @@ for t in times:
     # determine base reserves
     x_reserves = np.random.uniform(0,max_x_reserves)
     # use apy and x_reserves to calculate y_reserves and total_supply
-    #    apy = (y_reserves+total_supply)/x_reserves - 1
-    #    y_reserves+total_supply = (apy/100 + 1)*x_reserves
-    
-    y_reserves_plus_total_supply=(apy/100+1)*(x_reserves+y_reserves)
-    y_weight = np.random.uniform(0,1)
-    y_reserves = y_reserves_plus_total_supply * y_weight
-    total_supply = y_reserves_plus_total_supply - y_reserves
+    #    apy/100 = (1-((2yr+xr)/xr)^-t)/T
+    #    yr = (xr(1-APY/100*T)^(-1/t)-xr)/2
+
+    # simply using t-stretch of 1 so T=t
+    y_reserves = (x_reserves*(1-(apy/100)*t)**(-1/t)-x_reserves)/2
+    total_supply = x_reserves + y_reserves
     
     # determine order size (bounded)
     amount = np.random.uniform(0,min(min(x_reserves,y_reserves),total_supply)/50)
