@@ -23,8 +23,7 @@ max_target_liquidity = 10000000
 base_asset_price = 55000
 max_apy = 50
 min_apy = .5
-BASE_DECIMALS = 8
-BOND_DECIMALS = 18
+DECIMALS = 8
 g=.1
 
 
@@ -39,7 +38,7 @@ init = {
     "t_max": float("{:.18f}".format(t_max)),
     "t_min": float("{:.18f}".format(t_min)),
     "num_tests": float("{:.18f}".format(len(times))),
-    "base_decimals": float("{:.18f}".format(BASE_DECIMALS)),
+    "decimals": float("{:.18f}".format(DECIMALS)),
     "max_apy": float("{:.18f}".format(max_apy)),
 }
 for t in times:
@@ -52,7 +51,7 @@ for t in times:
     # calculate days_until_maturity from t
     days_until_maturity = t * 365
     # calculate liquidity
-    (x_reserves, y_reserves, liquidity) = Element_Pricing_Model.calc_liquidity2(target_liquidity,base_asset_price,apy,days_until_maturity,t_stretch)
+    (x_reserves, y_reserves, liquidity) = Element_Pricing_Model.calc_liquidity(target_liquidity,base_asset_price,apy,days_until_maturity,t_stretch)
     total_supply = x_reserves+y_reserves
     spot_price = Element_Pricing_Model.calc_spot_price(x_reserves,y_reserves,total_supply,t/t_stretch)
     resulting_apy = Element_Pricing_Model.apy(spot_price,days_until_maturity)
@@ -66,16 +65,14 @@ for t in times:
         
     
     m = Market(x_reserves,y_reserves,g,t/t_stretch,total_supply,Element_Pricing_Model)
-    print("time = " + str(m.t) + " t_stretch = " + str(t_stretch) +  " apy = " + str(resulting_apy) + " x = " + str(x_reserves) + " y = " + str(y_reserves) + " amount = " + str(amount))
+    print("time = " + str(m.t) + " t_stretch = " + str(t_stretch) +  " apy = " + str(resulting_apy) + " x = " + str(x_reserves) + " y = " + str(y_reserves) + " amount = " + str(amount) + " decimals = " + str(DECIMALS))
         
-    display_x = truncate(m.x,BASE_DECIMALS)
-    display_y =  truncate(m.y,BOND_DECIMALS)
+    display_x = truncate(m.x,DECIMALS)
+    display_y =  truncate(m.y,DECIMALS)
     display_amount = 0
     display_with_fee = 0
-    if token_in == "base":
-        display_amount = truncate(amount,BASE_DECIMALS)
-    else:
-        display_amount = truncate(amount,BOND_DECIMALS)
+
+    display_amount = truncate(amount,DECIMALS)
         
     trade_input = {
         "time": float("{:.18f}".format(m.t)),
@@ -88,16 +85,13 @@ for t in times:
         "direction": direction
     }
     (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
-    display_x = truncate(m.x,BASE_DECIMALS)
-    display_y =  truncate(m.y,BOND_DECIMALS)
-    if token_in == "base":
-        display_with_fee = truncate(with_fee,BOND_DECIMALS)
-    else:
-        display_with_fee = truncate(with_fee,BASE_DECIMALS)
+    display_x = truncate(m.x,DECIMALS)
+    display_y =  truncate(m.y,DECIMALS)
+    display_with_fee = truncate(with_fee,DECIMALS)
     trade_output = {
         "x_reserves": float("{:.18f}".format(m.x)),
         "y_reserves": float("{:.18f}".format(m.y)),
-        "amount_out": float("{:.18f}".format(with_fee)),
+        "amount_out": float("{:.18f}".format(display_with_fee)),
         "fee": float("{:.18f}".format(fee)),
     }
     trades.append({

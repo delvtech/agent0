@@ -10,26 +10,8 @@ class Element_Pricing_Model:
         T=days_until_maturity/365
         return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
     
-    @staticmethod
-    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch):
-      y_reserves = target_liquidity/market_price
-      t=days_until_maturity/(365*time_stretch)
-      liquidity = 0
-
-      # dirty hack to ensure that we dont overshoot the target liquidity
-      while True:
-          x_reserves = Element_Pricing_Model.calc_x_reserves(apy,y_reserves,days_until_maturity,time_stretch)
-          total_supply=x_reserves + y_reserves
-          spot_price=Element_Pricing_Model.calc_spot_price(x_reserves,y_reserves,total_supply,t)
-          liquidity=x_reserves*market_price+y_reserves*market_price*spot_price
-          if liquidity >= target_liquidity:
-              y_reserves-=100
-          else:
-              break
-      return (x_reserves,y_reserves,liquidity)
-    
     @staticmethod    
-    def calc_liquidity2(target_liquidity, market_price, apy, days_until_maturity, time_stretch):
+    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch):
       spot_price=Element_Pricing_Model.calc_spot_price_from_apy(apy,days_until_maturity)
       y_reserves = target_liquidity/market_price/2/spot_price
       x_reserves = y_reserves
