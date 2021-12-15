@@ -44,13 +44,16 @@ class Element_Pricing_Model:
     @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
-      return (1-price)/T * 100
+      return ((1-price)/price)/T * 100
     
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):
       T=days_until_maturity/365
-      return 1- apy*T/100
-    
+      #apy = (1-price)/price/T * 100
+      #apy = (1/price - 1)/T * 100
+      #apy/100 * T = 1/price - 1
+      #apy/100 * T + 1 = 1/price
+      return 1/(apy/100 * T + 1)
     
     @staticmethod
     def calc_spot_price(x_reserves,y_reserves,total_supply,t):
@@ -81,6 +84,19 @@ class Element_Pricing_Model:
             with_fee = without_fee-fee
         without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
+    
+    @staticmethod
+    def calc_tokens_in_given_lp_out(lp_out, x_reserves, y_reserves, total_supply):
+        # Check if the pool is initialized
+        if total_supply == 0:
+            x_needed = lp_out
+            y_needed = 0
+        else:
+            # solve for y_needed: lp_out = ((x_reserves / y_reserves) * y_needed * total_supply)/x_reserves
+            y_needed = (lp_out * x_reserves)/((x_reserves / y_reserves) * total_supply)
+            # solve for x_needed: x_reserves/y_reserves = x_needed/y_needed
+            x_needed = (x_reserves/y_reserves)*y_needed
+        return (x_needed, y_needed)
 
     @staticmethod
     def calc_lp_out_given_tokens_in(x_in, y_in, x_reserves, y_reserves, total_supply):
@@ -96,7 +112,6 @@ class Element_Pricing_Model:
             # if there isn't enough x_in provided
             if x_needed > x_in:
                 lp_out = (x_in * total_supply)/x_reserves
-
                 # use all the x_in
                 x_needed = x_in
                 # solve for: x_reserves/y_reserves = x_needed/y_needed
@@ -106,6 +121,31 @@ class Element_Pricing_Model:
                 lp_out = (x_needed * total_supply)/x_reserves
                 y_needed = y_in
         return (x_needed, y_needed, lp_out)
+   
+    @staticmethod
+    def calc_lp_in_given_tokens_out(min_x_out, min_y_out, x_reserves, y_reserves, total_supply):
+        # calc the number of x needed for the y_out provided
+        x_needed = (x_reserves / y_reserves) * min_y_out
+        # if there isn't enough x_out provided
+        if min_x_out > x_needed:
+            lp_in = (min_x_out * total_supply)/x_reserves
+            # use all the x_out
+            x_needed = min_x_out
+            # solve for: x_reserves/y_reserves = x_needed/y_needed
+            y_needed = x_needed/(x_reserves/y_reserves)
+        else:
+            y_needed = min_y_out
+            lp_in = (y_needed * total_supply)/y_reserves
+        return (x_needed,y_needed,lp_in)
+
+    @staticmethod
+    def calc_tokens_out_for_lp_in(lp_in, x_reserves, y_reserves, total_supply):
+        # solve for y_needed: lp_out = ((x_reserves / y_reserves) * y_needed * total_supply)/x_reserves
+        y_needed = (lp_in * x_reserves)/((x_reserves / y_reserves) * total_supply)
+        # solve for x_needed: x_reserves/y_reserves = x_needed/y_needed
+        x_needed = (x_reserves/y_reserves)*y_needed
+        return (x_needed, y_needed)
+
 
 class Market: 
     def __init__(self,x,y,g,t,total_supply,pricing_model): 
