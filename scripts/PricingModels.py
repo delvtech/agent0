@@ -44,16 +44,12 @@ class Element_Pricing_Model:
     @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
-      return ((1-price)/price)/T * 100
+      return (1-price)/T * 100
     
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):
       T=days_until_maturity/365
-      #apy = (1-price)/price/T * 100
-      #apy = (1/price - 1)/T * 100
-      #apy/100 * T = 1/price - 1
-      #apy/100 * T + 1 = 1/price
-      return 1/(apy/100 * T + 1)
+      return 1- apy*T/100
     
     @staticmethod
     def calc_spot_price(x_reserves,y_reserves,total_supply,t):
