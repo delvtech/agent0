@@ -1,8 +1,8 @@
 class YieldsSpacev2_Pricing_model:
     @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t):
-        k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
-        without_fee = pow(k-pow(out_reserves-out,1-t),1/(1-t)) - in_reserves
+    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
+        k=c/u*pow(u*in_reserves,1-t) + pow(out_reserves,1-t)
+        without_fee = pow(k-c/u*pow(u*out_reserves-u*out,1-t),1/(1-t)) - in_reserves
         if token_in == "base":
             fee =  (out-without_fee)*g
             with_fee = without_fee+fee
@@ -24,7 +24,7 @@ class YieldsSpacev2_Pricing_model:
             with_fee = without_fee-fee
         without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
-        
+
 class Element_Pricing_Model:
     @staticmethod
     def calc_max_trade(in_reserves,out_reserves,t):
