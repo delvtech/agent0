@@ -8,12 +8,10 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3.10.1 64-bit
 #     language: python
 #     name: python3
 # ---
-
-# %%
 
 # %%
 import numpy as np
@@ -23,7 +21,7 @@ from pandas.io.json import json_normalize
 import json
 import sys  
 sys.path.insert(0, './scripts')
-from PricingModels import *
+from PricingModels import Element_Pricing_Model, Market
 
 
 trades = []
@@ -44,9 +42,10 @@ ybas = [
 ]
 
 
-for target_daily_volume in [5000000,10000000]:
+# for target_daily_volume in [5000000,10000000]:
+for target_daily_volume in [5000000]:
     for target_liquidity in [10000000]:
-        for g in [.1]:
+        for g in [.2]:
                 for yba in ybas:
                     np.random.seed(2)
                     APY=yba["apy"]
@@ -127,7 +126,7 @@ for target_daily_volume in [5000000,10000000]:
                             todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
                             todays_fees += fee*market_price
                             todays_num_trades += 1
-                        print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees))
+                        # print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees))
                         total_fees += todays_fees
                         m.tick(step_size)
 
