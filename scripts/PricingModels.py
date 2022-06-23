@@ -1,29 +1,66 @@
 class YieldsSpacev2_Pricing_model:
+    #direct from whitepaper
+    # y = FY Token
+    # z = shares (base)
+
+    @staticmethod
+    # input is dz (base/shares out)
+    # output is dy (fyt in)
+    def fyTokenInForSharesOut(dz,z,y,t,c,u):
+        return pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z-u*dz,1-t),1/(1-t))-y #output is dy
+
+    @staticmethod
+    # input is dz (base/shares in)
+    # output is dy (fyt out)
+    def fyTokenOutForSharesIn(dz,z,y,t,c,u):
+        return y-pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z+u*dz,1-t),1/(1-t)) #output is dy
+
+    @staticmethod
+    # input is dy (fyt out)
+    # output is dz (base/shares in)
+    def sharesInForFYTokenOut(dy,z,y,t,c,u):
+        return 1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y-dy,1-t),1/(1-t))-z
+
+    @staticmethod
+    # input is dy (fyt in)
+    # output is dz (base/shares out)
+    def sharesOutForFYTokenIn(dy,z,y,t,c,u):
+        return z-1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y+dy,1-t),1/(1-t))
+   
+    #our wrapper of the above
     @staticmethod
     def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
-        k=c/u*pow(u*in_reserves,1-t) + pow(out_reserves,1-t)
-        without_fee = pow(k-c/u*pow(u*out_reserves-u*out,1-t),1/(1-t)) - in_reserves
         if token_in == "base":
+            without_fee = sharesInForFYTokenOut(dy=out,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             fee =  (out-without_fee)*g
             with_fee = without_fee+fee
+            without_fee_or_slippage = pow((c/u*in_reserves)/out_reserves,t)*out
         elif token_in == "fyt":
+            without_fee = fyTokenInForSharesOut(dz=out,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
             fee =  (without_fee-out)*g
             with_fee = without_fee+fee
-        without_fee_or_slippage = pow(in_reserves/out_reserves,t)*out
+            without_fee_or_slippage = pow(in_reserves/(c/u*out_reserves),t)*out
         return (without_fee_or_slippage,with_fee,without_fee,fee)
     
     @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t):
-        k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
-        without_fee = out_reserves - pow(k-pow(in_reserves+in_,1-t),1/(1-t))
+    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
         if token_out == "base":
+            without_fee = sharesOutForFYTokenIn(dy=in_,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
             fee =  (in_-without_fee)*g
             with_fee = without_fee-fee
+            without_fee_or_slippage = 1/pow(in_reserves/(c/u*out_reserves),t)*in_
         elif token_out == "fyt":
+            without_fee = fyTokenOutForSharesIn(dz=in_,z=in_reserves,y=in_reserves,t=t,c=c,u=u)
             fee =  (without_fee-in_)*g
             with_fee = without_fee-fee
-        without_fee_or_slippage = 1/pow(in_reserves/out_reserves,t)*in_
+            without_fee_or_slippage = 1/pow((c/u*in_reserves)/out_reserves,t)*in_
         return (without_fee_or_slippage,with_fee,without_fee,fee)
+
+    @staticmethod
+    def calc_x_reserves(APY,y_reserves,days_until_maturity,time_stretch):
+        t=days_until_maturity/(365*time_stretch)
+        T=days_until_maturity/365
+        return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
 
 class Element_Pricing_Model:
     @staticmethod

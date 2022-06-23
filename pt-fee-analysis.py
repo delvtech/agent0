@@ -21,7 +21,7 @@ from pandas.io.json import json_normalize
 import json
 import sys  
 sys.path.insert(0, './scripts')
-from PricingModels import Element_Pricing_Model, Market
+from PricingModels import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_model
 
 
 trades = []
@@ -47,11 +47,14 @@ for target_daily_volume in [5000000]:
     for target_liquidity in [10000000]:
         for g in [.2]:
                 for yba in ybas:
+                    #choose your fighter
+                    PricingModel = Element_Pricing_Model
+
                     np.random.seed(2)
                     APY=yba["apy"]
                     days_until_maturity = yba["days_until_maturity"]
                     market_price = yba["market_price"]
-                    time_stretch = Element_Pricing_Model.calc_time_stretch(APY)
+                    time_stretch = PricingModel.calc_time_stretch(APY)
                     run_matrix.append((yba,g,target_liquidity,target_daily_volume))
 
                     y_start = target_liquidity/market_price
@@ -60,13 +63,13 @@ for target_daily_volume in [5000000]:
                     sigma=max_order_size/10
                     liquidity = 0
                     
-                    (x_start, y_start, liquidity) = Element_Pricing_Model.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch)
+                    (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch)
                     
                     total_supply = x_start+y_start
                     t=days_until_maturity/(365*time_stretch)
                     step_size=t/days_until_maturity
                     epsilon=step_size/2
-                    m = Market(x_start,y_start,g,t,total_supply,Element_Pricing_Model)
+                    m = Market(x_start,y_start,g,t,total_supply,PricingModel)
                     print("Days Until Maturity: " + str(days_until_maturity))
                     print("Time Stretch: " + str(time_stretch))
                     print("Fee %: " + str(g*100))
@@ -122,7 +125,7 @@ for target_daily_volume in [5000000]:
                                 
                                 trade = [APY,g,days_until_maturity,max_order_size,time_stretch,market_price,target_liquidity,target_daily_volume,day,m.t,market_price,m.spot_price(),m.x,m.y,token_in,amount,token_out,direction,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
                                 
-                            trades.append(trade);
+                            trades.append(trade)
                             todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
                             todays_fees += fee*market_price
                             todays_num_trades += 1
