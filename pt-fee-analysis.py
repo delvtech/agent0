@@ -16,6 +16,7 @@
 # %%
 import numpy as np
 import math 
+import time
 import pandas as pd
 from pandas.io.json import json_normalize
 import json
@@ -41,7 +42,8 @@ ybas = [
     },
 ]
 
-
+# time function
+startTime = time.time()
 # for target_daily_volume in [5000000,10000000]:
 for target_daily_volume in [5000000]:
     for target_liquidity in [10000000]:
@@ -63,6 +65,7 @@ for target_daily_volume in [5000000]:
                     sigma=max_order_size/10
                     liquidity = 0
                     
+                    display('target APY: {}'.format(APY))
                     (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch)
                     
                     total_supply = x_start+y_start
@@ -151,7 +154,8 @@ for target_daily_volume in [5000000]:
                     print("Ending PT Price: " + str(m.spot_price()))
                     print("Ending Time: " + str(m.t))
                     print("##################################################################")
-
+endTime = time.time()
+print("Total time: " + str(endTime-startTime))
 
 
 #df = pd.DataFrame.from_dict(json_normalize(trades), orient='columns')
