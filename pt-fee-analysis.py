@@ -51,109 +51,125 @@ for target_daily_volume in [5000000]:
                 for yba in ybas:
                     #choose your fighter
                     PricingModel = Element_Pricing_Model
+                    PricingModel = YieldsSpacev2_Pricing_model
+                    PricingModelList = [Element_Pricing_Model,YieldsSpacev2_Pricing_model]
+                    # PricingModelList = [YieldsSpacev2_Pricing_model,Element_Pricing_Model]
 
-                    np.random.seed(2)
-                    APY=yba["apy"]
-                    days_until_maturity = yba["days_until_maturity"]
-                    market_price = yba["market_price"]
-                    time_stretch = PricingModel.calc_time_stretch(APY)
-                    run_matrix.append((yba,g,target_liquidity,target_daily_volume))
+                    for PricingModel in PricingModelList:
+                        np.random.seed(2) #guarantees randomness behaves deterministically from here on out?
 
-                    y_start = target_liquidity/market_price
-                    max_order_price=12500
-                    max_order_size=max_order_price/market_price 
-                    sigma=max_order_size/10
-                    liquidity = 0
+                        APY=yba["apy"]
+                        days_until_maturity = yba["days_until_maturity"]
+                        market_price = yba["market_price"]
+                        time_stretch = PricingModel.calc_time_stretch(APY)
+                        run_matrix.append((yba,g,target_liquidity,target_daily_volume))
+
+                        y_start = target_liquidity/market_price
+                        max_order_price=12500
+                        max_order_size=max_order_price/market_price
+                        sigma=max_order_size/10
+                        liquidity = 0
+
+                        c=1
+                        u=1
+                        
+                        display('target APY: {}'.format(APY))
+                        (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch, c, u)
+                        
+                        total_supply = x_start+y_start
+                        t = days_until_maturity/(365*time_stretch)
                     
-                    display('target APY: {}'.format(APY))
-                    (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch)
-                    
-                    total_supply = x_start+y_start
-                    t=days_until_maturity/(365*time_stretch)
-                    step_size=t/days_until_maturity
-                    epsilon=step_size/2
-                    m = Market(x_start,y_start,g,t,total_supply,PricingModel)
-                    print("Days Until Maturity: " + str(days_until_maturity))
-                    print("Time Stretch: " + str(time_stretch))
-                    print("Fee %: " + str(g*100))
-                    print("Max order size: " + str(max_order_size))
-                    print("Starting APY: {:.2f}%".format(m.apy(days_until_maturity)))
-                    print("Starting Spot Price: " + str(m.spot_price()))
-                    print("Starting Liquidity: ${:,.2f}".format(liquidity))
-                    print("Starting Base Reserves: " + str(m.x))
-                    print("Starting PT Reserves: " + str(m.y))
-                    x_orders=0
-                    x_volume=0
-                    y_orders=0
-                    y_volume=0
+                        step_size=t/days_until_maturity
+                        epsilon=step_size/2
+                        m = Market(x_start,y_start,g,t,total_supply,PricingModel)
+                        print("Model Name: " + str(PricingModel.model_name))
+                        print("Days Until Maturity: " + str(days_until_maturity))
+                        print("Time Stretch: " + str(time_stretch))
+                        print("Fee %: " + str(g*100))
+                        print("Max order size: " + str(max_order_size))
+                        print("Starting APY: {:.2f}%".format(m.apy(days_until_maturity)))
+                        print("Starting Spot Price: " + str(m.spot_price()))
+                        print("Starting Liquidity: ${:,.2f}".format(liquidity))
+                        print("Starting Base Reserves: " + str(m.x))
+                        print("Starting PT Reserves: " + str(m.y))
+                        x_orders=0
+                        x_volume=0
+                        y_orders=0
+                        y_volume=0
 
-                    total_fees = 0
-                    todays_volume = 0
-                    todays_fees = 0
-                    todays_num_trades = 0
-                    day=0
-                    while m.t > epsilon:
-                        day += 1
+                        total_fees = 0
                         todays_volume = 0
                         todays_fees = 0
                         todays_num_trades = 0
-                        maturity_ratio = day/days_until_maturity
-                        ub=target_daily_volume*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
-                        todays_target_volume = np.random.uniform(ub/2,ub)
-                        while todays_target_volume > todays_volume:
-                            fee = -1
-                            trade = []
-                            while fee < 0:
-                                # determine order size
-                                amount = np.random.normal(max_order_size/2,sigma)
-                                lb_amount = max(0.00001,amount)
-                                amount = min(max_order_size,lb_amount)
-                                # buy fyt or base
-                                if np.random.uniform(0,1) < 0.5:
-                                    token_in = "base"
-                                    token_out = "fyt"
-                                else:
-                                    token_in = "fyt"
-                                    token_out = "base"
+                        day=0
+                        while m.t > epsilon:
+                            day += 1
+                            todays_volume = 0
+                            todays_fees = 0
+                            todays_num_trades = 0
+                            maturity_ratio = day/days_until_maturity
+                            ub=target_daily_volume*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
+                            todays_target_volume = np.random.uniform(ub/2,ub)
+                            while todays_target_volume > todays_volume:
+                                fee = -1
+                                trade = []
+                                while fee < 0:
+                                    # determine order size
+                                    amount = np.random.normal(max_order_size/2,sigma)
+                                    lb_amount = max(0.00001,amount)
+                                    amount = min(max_order_size,lb_amount)
+                                    # buy fyt or base
+                                    if np.random.uniform(0,1) < 0.5:
+                                        token_in = "base"
+                                        token_out = "fyt"
+                                    else:
+                                        token_in = "fyt"
+                                        token_out = "base"
 
-                                if np.random.uniform(0,1) < 0.5:
-                                    direction="in"
-                                else:
-                                    direction="out"
+                                    if np.random.uniform(0,1) < 0.5:
+                                        direction="in"
+                                    else:
+                                        direction="out"
+                                        
+
+                                    start_x_volume = m.x_volume
+                                    start_y_volume = m.y_volume
+                                    num_orders = m.x_orders + m.y_orders
+                                    # if num_orders<=10: display('trying to swap {} {} for {} direction {}'.format(amount,token_in,token_out,direction))
+                                    (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
+                                    # if num_orders<=10: display('m.x_orders: {} m.y_orders: {}'.format(m.x_orders,m.y_orders))
                                     
+                                    trade = [APY,g,days_until_maturity,max_order_size,time_stretch,market_price,target_liquidity,target_daily_volume,day,m.t,market_price,m.spot_price(),m.x,m.y,token_in,amount,token_out,direction,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
+                                    
+                                trades.append(trade)
+                                todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
+                                todays_fees += fee*market_price
+                                todays_num_trades += 1
+                            print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) \
+                                + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees)\
+                                + " x_reserves: {:,.2f}".format(m.x) + " y_reserves: {:,.2f}".format(m.y)\
+                                )
+                            total_fees += todays_fees
+                            m.tick(step_size)
 
-                                start_x_volume = m.x_volume
-                                start_y_volume = m.y_volume
-                                (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
-                                
-                                trade = [APY,g,days_until_maturity,max_order_size,time_stretch,market_price,target_liquidity,target_daily_volume,day,m.t,market_price,m.spot_price(),m.x,m.y,token_in,amount,token_out,direction,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
-                                
-                            trades.append(trade)
-                            todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
-                            todays_fees += fee*market_price
-                            todays_num_trades += 1
-                        # print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees))
-                        total_fees += todays_fees
-                        m.tick(step_size)
-
-                    print("Ending Liquidity: ${:,.2f}".format(m.x*market_price+m.y*market_price*m.spot_price()))
-                    print("Total volume: ${:,.2f}".format(m.x_volume*market_price+m.y_volume*market_price))
-                    print("Total fees: ${:,.2f}".format(total_fees))
-                    print("Ending Base Reserves: " + str(m.x))
-                    print("Delta Base Reserves: " + str(abs(x_start-m.x)))
-                    print("Ending Bond Reserves: " + str(m.y))
-                    print("Delta Bond Reserves: " + str(abs(y_start-m.y)))
-                    print("Num base orders: " + str(m.x_orders))
-                    print("Cum base volume: " + str(m.x_volume))
-                    print("Num PT orders: " + str(m.y_orders))
-                    print("Cum PT volume: " + str(m.y_volume))
-                    print("Cum slippage Base: " + str(m.cum_x_slippage))
-                    print("Cum slippage PT: " + str(m.cum_y_slippage))
-                    print("Cum fees Base: " + str(m.cum_x_fees))
-                    print("Cum fees PT: " + str(m.cum_y_fees))
-                    print("Ending PT Price: " + str(m.spot_price()))
-                    print("Ending Time: " + str(m.t))
-                    print("##################################################################")
+                        print("Ending Liquidity: ${:,.2f}".format(m.x*market_price+m.y*market_price*m.spot_price()))
+                        print("Total volume: ${:,.2f}".format(m.x_volume*market_price+m.y_volume*market_price))
+                        print("Total fees: ${:,.2f}".format(total_fees))
+                        print("Ending Base Reserves: " + str(m.x))
+                        print("Delta Base Reserves: " + str(abs(x_start-m.x)))
+                        print("Ending Bond Reserves: " + str(m.y))
+                        print("Delta Bond Reserves: " + str(abs(y_start-m.y)))
+                        print("Num base orders: " + str(m.x_orders))
+                        print("Cum base volume: " + str(m.x_volume))
+                        print("Num PT orders: " + str(m.y_orders))
+                        print("Cum PT volume: " + str(m.y_volume))
+                        print("Cum slippage Base: " + str(m.cum_x_slippage))
+                        print("Cum slippage PT: " + str(m.cum_y_slippage))
+                        print("Cum fees Base: " + str(m.cum_x_fees))
+                        print("Cum fees PT: " + str(m.cum_y_fees))
+                        print("Ending PT Price: " + str(m.spot_price()))
+                        print("Ending Time: " + str(m.t))
+                        print("##################################################################")
 endTime = time.time()
 print("Total time: " + str(endTime-startTime))
 
