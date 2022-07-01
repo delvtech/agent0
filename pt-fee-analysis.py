@@ -19,6 +19,7 @@ import math
 import time
 import pandas as pd
 from pandas.io.json import json_normalize
+import matplotlib.pyplot as plt
 import json
 import sys  
 sys.path.insert(0, './scripts')
@@ -27,11 +28,6 @@ from PricingModels import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_m
 
 trades = []
 run_matrix=[]
-cols = ["init.apy","init.percent_fee","init.days_until_maturity","init.max_order_size","init.time_stretch",\
-        "init.market_price","init.target_liquidity","init.target_daily_volume","input.day","input.time",\
-        "input.base_market_price", "input.unit_fyt_price","input.base_reserves","input.fyt_reserves",\
-        "input.token_in","input.amount_specified","input.token_out","input.direction",\
-        "output.trade_volume","output.fee","output.slippage"]
 
 ybas = [
     {
@@ -44,8 +40,8 @@ ybas = [
 
 # time function
 startTime = time.time()
-# for target_daily_volume in [5000000,10000000]:
-for target_daily_volume in [5000000]:
+for target_daily_volume in [5000000,10000000]:
+# for target_daily_volume in [5000000]:
     for target_liquidity in [10000000]:
         for g in [.2]:
                 for yba in ybas:
@@ -56,13 +52,14 @@ for target_daily_volume in [5000000]:
                     # PricingModelList = [YieldsSpacev2_Pricing_model,Element_Pricing_Model]
 
                     for PricingModel in PricingModelList:
-                        np.random.seed(2) #guarantees randomness behaves deterministically from here on out?
-
+                        np.random.seed(2) #guarantees randomness behaves deterministically from here on out
+                        
+                        model_name = PricingModel.model_name()
                         APY=yba["apy"]
                         days_until_maturity = yba["days_until_maturity"]
                         market_price = yba["market_price"]
                         time_stretch = PricingModel.calc_time_stretch(APY)
-                        run_matrix.append((yba,g,target_liquidity,target_daily_volume))
+                        run_matrix.append((model_name,yba,g,target_liquidity,target_daily_volume))
 
                         y_start = target_liquidity/market_price
                         max_order_price=12500
@@ -70,7 +67,7 @@ for target_daily_volume in [5000000]:
                         sigma=max_order_size/10
                         liquidity = 0
 
-                        c=1
+                        c=1.1
                         u=1
                         
                         display('target APY: {}'.format(APY))
@@ -81,8 +78,8 @@ for target_daily_volume in [5000000]:
                     
                         step_size=t/days_until_maturity
                         epsilon=step_size/2
-                        m = Market(x_start,y_start,g,t,total_supply,PricingModel)
-                        print("Model Name: " + str(PricingModel.model_name))
+                        m = Market(x_start,y_start,g,t,total_supply,PricingModel,c,u)
+                        print("Model Name: " + str(model_name))
                         print("Days Until Maturity: " + str(days_until_maturity))
                         print("Time Stretch: " + str(time_stretch))
                         print("Fee %: " + str(g*100))
@@ -116,6 +113,8 @@ for target_daily_volume in [5000000]:
                                 while fee < 0:
                                     # determine order size
                                     amount = np.random.normal(max_order_size/2,sigma)
+                                    # if model_name=="YieldsSpacev2":
+                                    #     amount = amount + np.random.normal(1,0) # HACK TO ADD NOISE TO YIELDSPACEV2
                                     lb_amount = max(0.00001,amount)
                                     amount = min(max_order_size,lb_amount)
                                     # buy fyt or base
@@ -139,7 +138,16 @@ for target_daily_volume in [5000000]:
                                     (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
                                     # if num_orders<=10: display('m.x_orders: {} m.y_orders: {}'.format(m.x_orders,m.y_orders))
                                     
-                                    trade = [APY,g,days_until_maturity,max_order_size,time_stretch,market_price,target_liquidity,target_daily_volume,day,m.t,market_price,m.spot_price(),m.x,m.y,token_in,amount,token_out,direction,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
+                                    cols = ["model_name","init.apy","init.percent_fee","init.days_until_maturity","init.max_order_size","init.time_stretch"\
+                                        ,"init.market_price","init.target_liquidity","init.target_daily_volume","input.day","input.time"\
+                                        ,"input.base_market_price","input.unit_fyt_price","input.apy","input.base_reserves","input.fyt_reserves","input.trade_number"\
+                                        ,"input.token_in","input.amount_specified","input.token_out","input.direction"\
+                                        ,"output.trade_volume","output.fee","output.slippage"]
+                                    trade = [model_name,APY,g,days_until_maturity,max_order_size,time_stretch\
+                                        ,market_price,target_liquidity,target_daily_volume,day,m.t\
+                                        ,market_price,m.spot_price(),m.apy(days_until_maturity),m.x,m.y,m.x_orders+m.y_orders\
+                                        ,token_in,amount,token_out,direction\
+                                        ,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
                                     
                                 trades.append(trade)
                                 todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
@@ -177,13 +185,14 @@ print("Total time: " + str(endTime-startTime))
 #df = pd.DataFrame.from_dict(json_normalize(trades), orient='columns')
 df = pd.DataFrame(trades,columns=cols)
 
-
-
+# %%
+df.describe(include='all')
+df.model_name.value_counts()
 
 # %%
 import matplotlib.pyplot as plt
 
-hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution",figsize=(10,10));
+hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution",figsize=(10,10),)
 hist=hist.set_xlabel("Typical Order Amount (in USD)")
 
 # %%
@@ -192,34 +201,68 @@ from matplotlib.ticker import ScalarFormatter
 import matplotlib.gridspec as gridspec
 
 dfs=[]
-for (yba,g,target_liquidity,target_daily_volume) in run_matrix:
-  dfs.append(df[ (df['init.market_price']==yba["market_price"]) & (df['init.apy']==yba["apy"]) & (df['init.percent_fee']==g) & (df['init.days_until_maturity']==yba["days_until_maturity"]) & (df['init.target_liquidity']==target_liquidity) & (df['init.target_daily_volume']==target_daily_volume)].reset_index())
+oldIndex = []
+for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
+  newIndex = (df['init.market_price']==yba["market_price"]) & (df['init.apy']==yba["apy"]) & (df['init.percent_fee']==g) & (df['init.days_until_maturity']==yba["days_until_maturity"]) & (df['init.target_liquidity']==target_liquidity) & (df['init.target_daily_volume']==target_daily_volume)
+  if len(oldIndex)==0 or not all(newIndex==oldIndex):
+    dfs.append(df[ newIndex ].reset_index(drop=True))
+    oldIndex = newIndex
 
-for _df in dfs:
-    fig, ax = plt.subplots(ncols=1, nrows=2,gridspec_kw = {'wspace':0, 'hspace':0, 'height_ratios':[2,1]})
-    df_fees_volume = _df.groupby(['input.day']).agg({'output.trade_volume':['sum']\
-                                   ,'output.fee':['mean','std','min','max','sum']\
-                                  })
-    df_fees_volume.columns = ['_'.join(col).strip() for col in df_fees_volume.columns.values]
-    df_fees_volume = df_fees_volume.reset_index()
-    ax[0] = df_fees_volume.plot(x="input.day", y="output.fee_sum",figsize=(24,18),ax=ax[0]);
-    ax[0].set_xlabel("")
-    ax[0].set_ylabel("Fees (US Dollars)",fontsize=18)
-    ax[0].tick_params(axis = "both", labelsize=18)
-    ax[0].grid(b=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
-    ax[0].xaxis.set_ticklabels([])
-    title = "Fees Collected Per Day Until Maturity\nAPY: {:.2f}%, Time Stretch: {:.2f}, Maturity: {:} days".format(_df['init.apy'][0],_df['init.time_stretch'][0],_df['init.days_until_maturity'][0])
-    ax[0].set_title(title,fontsize=20)
-    ax[0].legend().set_visible(False)
+for idx,_df in enumerate(dfs):
+  fig, ax = plt.subplots(ncols=1, nrows=3,gridspec_kw = {'wspace':0, 'hspace':0, 'height_ratios':[1,1,1]})
+  # set fig background color to white
+  fig.patch.set_facecolor('white')
+  df_fees_volume = _df.groupby(['input.day','model_name']).agg({'output.trade_volume':['sum']\
+                                  ,'output.fee':['mean','std','min','max','sum']\
+                                })
+  df_fees_by_trade_type = _df.groupby(['model_name','input.direction','input.token_in']).agg({'output.trade_volume':['sum']\
+                                  ,'output.slippage':['mean','std','min','max','sum']\
+                                  ,'output.fee':['mean','std','min','max','sum']\
+                                })
+  display(df_fees_by_trade_type)
+                            
+  df_fees_volume.columns = ['_'.join(col).strip() for col in df_fees_volume.columns.values]
+  df_fees_volume = df_fees_volume.reset_index()
+  # display(_df)
+  # display(df_fees_volume)
 
-    ax[1] = df_fees_volume.plot(kind='bar',x="input.day", y="output.trade_volume_sum",ax=ax[1]);
-    ax[1].set_xlabel("Day",fontsize=18)
-    ax[1].set_ylabel("Volume (US Dollars)",fontsize=18)
-    ax[1].tick_params(axis = "both", labelsize=12)
-    ax[1].grid(b=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
-    ax[1].legend().set_visible(False)
-    ax[1].ticklabel_format(style='plain',axis='y')
-    fig.subplots_adjust(wspace=None, hspace=None)
+  for model in df_fees_volume.model_name.unique():
+    ax[0] = df_fees_volume.loc[df_fees_volume.model_name==model,:].plot(x="input.day", y="output.fee_sum",figsize=(24,18),ax=ax[0],label=model)
+  ax[0].set_xlabel("")
+  ax[0].set_ylabel("Fees (US Dollars)",fontsize=18)
+  ax[0].tick_params(axis = "both", labelsize=18)
+  ax[0].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
+  ax[0].xaxis.set_ticklabels([])
+  title = "Fees Collected Per Day Until Maturity\nAPY: {:.2f}%, Time Stretch: {:.2f}, Maturity: {:} days\n\
+          Target Liquidity: {:.2f}, Target Daily Volume: {:.2f}, Percent Fees: {:.2f}%"\
+    .format(_df['init.apy'][0],_df['init.time_stretch'][0],_df['init.days_until_maturity'][0]\
+      ,_df["init.target_daily_volume"][0],_df["init.target_liquidity"][0],_df["init.percent_fee"][0])
+  ax[0].set_title(title,fontsize=20)
+  ax[0].legend(fontsize=18)
+
+  for model in df_fees_volume.model_name.unique():
+    ax[0] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[1],label=model)
+    display(_df.loc[_df.model_name==model,:].head(1))
+  ax[1].set_xlabel("")
+  ax[1].set_ylabel("APY",fontsize=18)
+  ax[1].tick_params(axis = "both", labelsize=18)
+  ax[1].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
+  ax[1].xaxis.set_ticklabels([])
+  # title = "APY after each trade"
+  # ax[1].set_title(title,fontsize=20)
+  ax[1].legend(fontsize=18)
+
+  for model in df_fees_volume.model_name.unique():
+    ax[2] = df_fees_volume.loc[df_fees_volume.model_name==model,:].plot(kind='line',x="input.day", y="output.trade_volume_sum",ax=ax[2],label=model)
+  ax[2].set_xlabel("Day",fontsize=18)
+  ax[2].set_ylabel("Volume (US Dollars)",fontsize=18)
+  ax[2].tick_params(axis = "both", labelsize=12)
+  ax[2].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
+  ax[2].legend(fontsize=18)
+  ax[2].ticklabel_format(style='plain',axis='y')
+  fig.subplots_adjust(wspace=None, hspace=None)
+
+  fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
 
 # %%
 df_fees_volume
