@@ -14,7 +14,9 @@ class Element_Pricing_Model:
         t=days_until_maturity/(365*time_stretch)
         T=days_until_maturity/365
         r=APY/100
-        return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
+        # return y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
+        display('using new formula')
+        return 2*y_reserves/((-1/(r*T - 1))**(1/t) - 1)
     
     @staticmethod    
     def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch,c,u):
@@ -172,12 +174,12 @@ class Market:
     def tick(self,step_size):
         self.t -= step_size
         
-    def swap(self, amount, direction, token_in, token_out):
+    def swap(self, amount, direction, token_in, token_out, to_debug=False):
         if direction == "in":
             if token_in == "fyt" and token_out == "base":
                 (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u)
                 num_orders = self.x_orders + self.y_orders
-                if num_orders < 10:
+                if num_orders < 10 & to_debug:
                     display('conditional one')
                     display([amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u])
                     display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
@@ -194,7 +196,7 @@ class Market:
             elif token_in == "base" and token_out == "fyt":
                 (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.x/self.c,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u)
                 num_orders = self.x_orders + self.y_orders
-                if num_orders < 10:
+                if num_orders < 10 & to_debug:
                     display('conditional two')
                     display([amount,self.x/self.c,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u])
                     display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
@@ -209,7 +211,7 @@ class Market:
             if token_in == "fyt" and token_out == "base":
                 (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.y+self.total_supply,self.x/self.c,token_out,self.g,self.t,self.c,self.u)
                 num_orders = self.x_orders + self.y_orders
-                if num_orders < 10:
+                if num_orders < 10 & to_debug:
                     display('conditional three')
                     display([amount,self.y+self.total_supply,self.x/self.c,token_out,self.g,self.t,self.c,self.u])
                     display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
@@ -223,7 +225,7 @@ class Market:
             elif token_in == "base" and token_out == "fyt":
                 (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
                 num_orders = self.x_orders + self.y_orders
-                if num_orders < 10:
+                if num_orders < 10 & to_debug:
                     display('conditional four')
                     display([amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u])
                     display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
@@ -311,9 +313,21 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     def calc_x_reserves(APY,y_reserves,days_until_maturity,time_stretch,c,u):
         t=days_until_maturity/(365*time_stretch)
         T=days_until_maturity/365
-        result = y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
-        result = 2*c*y_reserves/(-c + u*(-1/(APY*T - 1))**(1/t))
-        result = 2*c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
+        # result = y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
+        # result = 2*c*y_reserves/(-c + u*(-1/(APY*T - 1))**(1/t))
+        # result = 2*c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
+        # result = c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
+        # result = c*y_reserves/u/(APY/100*T)
+        # result = 2*c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
+        # result = 2*c*y_reserves/(-c**2 + u*(-1/(APY/100*T - 1))**(1/t))
+        # result = 2*c*y_reserves/(-c + u*(-1/(APY/100*T - 1))**(1/t))
+        # display('c: {}, u: {}'.format(c,u))
+        r = APY/100
+        y = y_reserves
+        # result = ((-APY/100*T + 1)/(c*y_reserves))**(1/t)/u
+        # result = (((-r*T + 1)/(c*y))**(1/t))/u
+        result = 2*c*y/(-c + u*(-1/(r*T - 1))**(1/t))
+        # display('result: {}'.format(result))
         return result
 
     @staticmethod
@@ -323,6 +337,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     @staticmethod    
     def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch,c,u):
       spot_price=YieldsSpacev2_Pricing_model.calc_spot_price_from_apy(apy,days_until_maturity)
+    #   display('spot price: {}'.format(spot_price))
       t=days_until_maturity/(365*time_stretch)
       y_reserves = target_liquidity/market_price/2/(1-apy/100*t)
       x_reserves = YieldsSpacev2_Pricing_model.calc_x_reserves(apy,y_reserves,days_until_maturity,time_stretch,c,u)
@@ -330,7 +345,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
       actual_apy = 0
       step = 0 
       liquidity = x_reserves*market_price+y_reserves*market_price*spot_price
-      actual_apy = YieldsSpacev2_Pricing_model.calc_apy_from_reserves(x_reserves,y_reserves,x_reserves + y_reserves,t,time_stretch,c,u)
+      actual_apy = YieldsSpacev2_Pricing_model.calc_apy_from_reserves(x_reserves,y_reserves,x_reserves+y_reserves,t,time_stretch,c,u)
       display('step {}: x={} y={} total={} apy={}'.format(step,x_reserves,y_reserves,liquidity,actual_apy))
       return (x_reserves,y_reserves,liquidity)
 
@@ -348,8 +363,13 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):
       T=days_until_maturity/365
+    #   display(T)
+    #   display(1-apy*T/100)
       return 1- apy*T/100
     
     @staticmethod
     def calc_spot_price(x_reserves,y_reserves,total_supply,t,c,u):
-        return 1/pow((c*y_reserves+(c*y_reserves+x_reserves))/(u*x_reserves),t)
+        # display('c: {}, u: {}'.format(c,u))
+        # display('denom: {}'.format((u*x_reserves)))
+        # display('x reserves: {}'.format(x_reserves))
+        return 1/pow(c*(y_reserves+total_supply)/(u*x_reserves),t)
