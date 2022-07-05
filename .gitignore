@@ -74,8 +74,8 @@ docs/_build/
 target/
 
 # Jupyter Notebook
-.ipynb_checkpoints
-.ipynb
+*.ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -131,4 +131,3 @@ dmypy.json
 .DS_Store
 *.json
 *.csv
-.ipynb
