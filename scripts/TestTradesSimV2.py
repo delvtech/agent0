@@ -26,6 +26,12 @@ min_apy = .5
 DECIMALS = 8
 min_g = 0
 max_g = 0.5
+min_vault_age = 0
+max_vault_age = 2
+min_vault_apy = 0
+max_vault_apy = 10
+min_pool_age = 0
+max_pool_age = 0.5
 
 pricingModel = YieldsSpacev2_Pricing_model # pick from [Element_Pricing_Model,YieldsSpacev2_Pricing_model]
 
@@ -42,6 +48,12 @@ init = {
     "num_tests": float("{:.18f}".format(len(times))),
     "decimals": float("{:.18f}".format(DECIMALS)),
     "max_apy": float("{:.18f}".format(max_apy)),
+    "min_vault_age": float("{:.18f}".format(min_vault_age)),
+    "max_vault_age": float("{:.18f}".format(max_vault_age)),
+    "min_vault_apy": float("{:.18f}".format(min_vault_apy)),
+    "max_vault_apy": float("{:.18f}".format(max_vault_apy)),
+    "min_pool_age": float("{:.18f}".format(min_pool_age)),
+    "max_pool_age": float("{:.18f}".format(max_pool_age)),
 }
 for t in times:
     # determine APY
@@ -49,12 +61,12 @@ for t in times:
     # determine fee percent
     g = np.random.uniform(min_g,max_g)
     # determine real-world parameters for estimating u and c (vault and pool details)
-    vault_age = np.random.uniform(0,2) # in years
-    vault_apy = np.random.uniform(0,10) # in %
-    pool_age = np.random.uniform(0,0.5) # in years
+    vault_age = np.random.uniform(min_vault_age,max_vault_age) # in years
+    vault_apy = np.random.uniform(min_vault_apy,max_vault_apy) # in %
+    pool_age = np.random.uniform(min(vault_age,min_pool_age),max_pool_age) # in years
     # determine u and c
     c = (1 + vault_apy/100)**vault_age
-    u = (1 + vault_apy/100)**(vault_age-pool_age)
+    u = (1 + vault_apy/100)**pool_age
     # determine target liquidity
     target_liquidity = np.random.uniform(min_target_liquidity,max_target_liquidity)
     # determine t_stretch
@@ -95,7 +107,10 @@ for t in times:
         "token_in": token_in,
         "amount_in": float("{:.18f}".format(display_amount)),
         "token_out": token_out,
-        "direction": direction
+        "direction": direction,
+        "g": g,
+        "c": c,
+        "u": u
     }
     (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
     display_x = truncate(m.x,DECIMALS)
@@ -118,12 +133,12 @@ run={
     "trades":trades
 }
 
-with open('testTrades.json', 'w') as fp:
+with open('testTradesV2.json', 'w') as fp:
     json.dump(run, fp, indent=1)
     
 builder = SchemaBuilder()
 builder.add_object(run)
 run_schema=builder.to_schema()
 
-with open('test_vectors_schema.json', 'w') as fp:
+with open('test_vectors_schemaV2.json', 'w') as fp:
    json.dump(run_schema, fp, indent=1)
