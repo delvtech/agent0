@@ -1,7 +1,7 @@
 import numpy as np
 import json
 import math
-#from genson import SchemaBuilder
+from genson import SchemaBuilder
 from PricingModels import *
 
 
@@ -24,9 +24,10 @@ base_asset_price = 55000
 max_apy = 50
 min_apy = .5
 DECIMALS = 8
-g=.1
+min_g = 0
+max_g = 0.5
 
-
+pricingModel = YieldsSpacev2_Pricing_model # pick from [Element_Pricing_Model,YieldsSpacev2_Pricing_model]
 
 x_orders=0
 x_volume=0
@@ -34,7 +35,8 @@ y_orders=0
 y_volume=0
 trades = []
 init = {
-    "percent_fee": float("{:.18f}".format(g)),
+    "min_fee": float("{:.18f}".format(min_g)),
+    "max_fee": float("{:.18f}".format(max_g)),
     "t_max": float("{:.18f}".format(t_max)),
     "t_min": float("{:.18f}".format(t_min)),
     "num_tests": float("{:.18f}".format(len(times))),
@@ -44,17 +46,26 @@ init = {
 for t in times:
     # determine APY
     apy = np.random.uniform(min_apy,max_apy)
+    # determine fee percent
+    g = np.random.uniform(min_g,max_g)
+    # determine real-world parameters for estimating u and c (vault and pool details)
+    vault_age = np.random.uniform(0,2) # in years
+    vault_apy = np.random.uniform(0,10) # in %
+    pool_age = np.random.uniform(0,0.5) # in years
+    # determine u and c
+    c = (1 + vault_apy/100)**vault_age
+    u = (1 + vault_apy/100)**(vault_age-pool_age)
     # determine target liquidity
     target_liquidity = np.random.uniform(min_target_liquidity,max_target_liquidity)
     # determine t_stretch
-    t_stretch = Element_Pricing_Model.calc_time_stretch(apy)
+    t_stretch = pricingModel.calc_time_stretch(apy)
     # calculate days_until_maturity from t
     days_until_maturity = t * 365
     # calculate liquidity
-    (x_reserves, y_reserves, liquidity) = Element_Pricing_Model.calc_liquidity(target_liquidity,base_asset_price,apy,days_until_maturity,t_stretch)
+    (x_reserves, y_reserves, liquidity) = pricingModel.calc_liquidity(target_liquidity,base_asset_price,apy,days_until_maturity,t_stretch,c,u)
     total_supply = x_reserves+y_reserves
-    spot_price = Element_Pricing_Model.calc_spot_price(x_reserves,y_reserves,total_supply,t/t_stretch)
-    resulting_apy = Element_Pricing_Model.apy(spot_price,days_until_maturity)
+    spot_price = pricingModel.calc_spot_price(x_reserves,y_reserves,total_supply,t/t_stretch,c,u)
+    resulting_apy = pricingModel.apy(spot_price,days_until_maturity)
     # determine order size (bounded)
     amount = np.random.uniform(0,(liquidity/base_asset_price)/5)
 
@@ -64,8 +75,10 @@ for t in times:
     direction="out"
         
     
-    m = Market(x_reserves,y_reserves,g,t/t_stretch,total_supply,Element_Pricing_Model)
-    print("time = " + str(m.t) + " t_stretch = " + str(t_stretch) +  " apy = " + str(resulting_apy) + " x = " + str(x_reserves) + " y = " + str(y_reserves) + " amount = " + str(amount) + " decimals = " + str(DECIMALS))
+    m = Market(x_reserves,y_reserves,g,t/t_stretch,total_supply,pricingModel)
+    print("time = " + str(m.t) + " t_stretch = " + str(t_stretch) +  " apy = " + str(resulting_apy)\
+         + " x = " + str(x_reserves) + " y = " + str(y_reserves) + " amount = " + str(amount)\
+         + " g = " + str(g) + " c = " + str(c) + " u = " + str(u) + " decimals = " + str(DECIMALS))
         
     display_x = truncate(m.x,DECIMALS)
     display_y =  truncate(m.y,DECIMALS)
@@ -108,9 +121,9 @@ run={
 with open('testTrades.json', 'w') as fp:
     json.dump(run, fp, indent=1)
     
-#builder = SchemaBuilder()
-#builder.add_object(run)
-#run_schema=builder.to_schema()
+builder = SchemaBuilder()
+builder.add_object(run)
+run_schema=builder.to_schema()
 
-#with open('test_vectors_schema.json', 'w') as fp:
-#    json.dump(run_schema, fp, indent=1)
+with open('test_vectors_schema.json', 'w') as fp:
+   json.dump(run_schema, fp, indent=1)
