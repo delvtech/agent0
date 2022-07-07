@@ -46,7 +46,7 @@ class Element_Pricing_Model:
       return 1- apy*T/100
     
     @staticmethod
-    def calc_spot_price(x_reserves,y_reserves,total_supply,t):
+    def calc_spot_price(x_reserves,y_reserves,total_supply,t,c=1,u=1):
         return 1/pow((y_reserves+total_supply)/x_reserves,t)
     
     @staticmethod
