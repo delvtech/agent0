@@ -49,11 +49,11 @@ class Element_Pricing_Model:
       return 1- apy*T/100
     
     @staticmethod
-    def calc_spot_price(x_reserves,y_reserves,total_supply):
+    def calc_spot_price(x_reserves,y_reserves,total_supply,t,c,u):
         return 1/pow((y_reserves+total_supply)/x_reserves,t)
     
     @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t):
+    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
         k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
         without_fee = pow(k-pow(out_reserves-out,1-t),1/(1-t)) - in_reserves
         if token_in == "base":
@@ -66,7 +66,7 @@ class Element_Pricing_Model:
         return (without_fee_or_slippage,with_fee,without_fee,fee)
     
     @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t):
+    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
         k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
         without_fee = out_reserves - pow(k-pow(in_reserves+in_,1-t),1/(1-t))
         if token_out == "base":
@@ -170,7 +170,7 @@ class Market:
     def tick(self,step_size):
         self.t -= step_size
         
-    def swap(self, amount, direction, token_in, token_out, to_debug=False):
+    def swap(self, amount, direction, token_in, token_out):
         if direction == "in":
             if token_in == "fyt" and token_out == "base":
                 (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u)
