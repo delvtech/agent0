@@ -259,17 +259,19 @@ for idx,_df in enumerate(dfs):
   ax[0].set_title(title,fontsize=20)
   ax[0].legend(fontsize=18)
 
+  currentPlot = 1
   for model in df_fees_volume.model_name.unique():
-    ax[1] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[1],label=model)
+    ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[currentPlot],label=model)
     display(_df.loc[_df.model_name==model,:].head(1))
-  ax[1].set_xlabel("")
-  ax[1].set_ylabel("APY",fontsize=18)
-  ax[1].tick_params(axis = "both", labelsize=18)
-  ax[1].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
-  ax[1].xaxis.set_ticklabels([])
+  ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.vault_apr",figsize=(24,18),ax=ax[currentPlot],label='vault_apr')
+  ax[currentPlot].set_xlabel("")
+  ax[currentPlot].set_ylabel("APY",fontsize=18)
+  ax[currentPlot].tick_params(axis = "both", labelsize=18)
+  ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
+  ax[currentPlot].xaxis.set_ticklabels([])
   # title = "APY after each trade"
   # ax[1].set_title(title,fontsize=20)
-  ax[1].legend(fontsize=18)
+  ax[currentPlot].legend(fontsize=18)
 
   currentPlot = 2
   ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.c",figsize=(24,18),ax=ax[currentPlot],label='c')
