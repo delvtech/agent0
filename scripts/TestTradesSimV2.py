@@ -1,7 +1,6 @@
 import numpy as np
 import json
 import math
-from genson import SchemaBuilder
 from PricingModels import *
 
 
@@ -66,7 +65,9 @@ for t in times:
     pool_age = np.random.uniform(min(vault_age,min_pool_age),max_pool_age) # in years
     # determine u and c
     c = (1 + vault_apy/100)**vault_age
+    c = truncate(c,DECIMALS)
     u = (1 + vault_apy/100)**pool_age
+    u = truncate(u,DECIMALS)
     # determine target liquidity
     target_liquidity = np.random.uniform(min_target_liquidity,max_target_liquidity)
     # determine t_stretch
@@ -87,10 +88,10 @@ for t in times:
     direction="out"
         
     
-    m = Market(x_reserves,y_reserves,g,t/t_stretch,total_supply,pricingModel)
+    m = Market(x_reserves,y_reserves,g,t/t_stretch,total_supply,pricingModel,c,u)
     print("time = " + str(m.t) + " t_stretch = " + str(t_stretch) +  " apy = " + str(resulting_apy)\
          + " x = " + str(x_reserves) + " y = " + str(y_reserves) + " amount = " + str(amount)\
-         + " g = " + str(g) + " c = " + str(c) + " u = " + str(u) + " decimals = " + str(DECIMALS))
+         + " g = " + str(g) + " c = " + str(c) + " u = " + str(u) + " c/u = " + str(c/u) + " decimals = " + str(DECIMALS))
         
     display_x = truncate(m.x,DECIMALS)
     display_y =  truncate(m.y,DECIMALS)
@@ -115,11 +116,11 @@ for t in times:
     (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
     display_x = truncate(m.x,DECIMALS)
     display_y =  truncate(m.y,DECIMALS)
-    display_with_fee = truncate(with_fee,DECIMALS)
+    display_without_fee = truncate(without_fee,DECIMALS)
     trade_output = {
         "x_reserves": float("{:.18f}".format(m.x)),
         "y_reserves": float("{:.18f}".format(m.y)),
-        "amount_out": float("{:.18f}".format(display_with_fee)),
+        "amount_out": float("{:.18f}".format(display_without_fee)),
         "fee": float("{:.18f}".format(fee)),
     }
     trades.append({
@@ -135,10 +136,3 @@ run={
 
 with open('testTradesV2.json', 'w') as fp:
     json.dump(run, fp, indent=1)
-    
-builder = SchemaBuilder()
-builder.add_object(run)
-run_schema=builder.to_schema()
-
-with open('test_vectors_schemaV2.json', 'w') as fp:
-   json.dump(run_schema, fp, indent=1)

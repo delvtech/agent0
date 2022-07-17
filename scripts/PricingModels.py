@@ -198,7 +198,7 @@ class Market:
                     self.x_orders+=1
                     self.x_volume+=output_with_fee
             elif token_in == "base" and token_out == "fyt":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
+                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.x,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
                 if fee > 0:
                     self.x += amount
                     self.y -= output_with_fee
