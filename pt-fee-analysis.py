@@ -91,6 +91,7 @@ for target_daily_volume in [5000000,10000000]:
                         print("Starting Spot Price: " + str(m.spot_price()))
                         print("Starting Liquidity: ${:,.2f}".format(liquidity))
                         print("Starting Base Reserves: " + str(m.x))
+                        print("Starting Share Reserves (z): " + str(m.x/m.c))
                         print("Starting PT Reserves: " + str(m.y))
                         x_orders=0
                         x_volume=0
@@ -112,11 +113,11 @@ for target_daily_volume in [5000000,10000000]:
                             pool_age = day/365
                             vault_age = yba["vault_age"]+day/365
                             vault_apr = vault_apr + np.random.normal(0,yba['vault_apr_stdev'])
-                            if u==1:
-                                u = (1 + vault_apr/100)**(vault_age-pool_age)
-                                c = u
-                            else:
-                                c = c*(1 + vault_apr/100/365)
+                            # if u==1:
+                            #     u = (1 + vault_apr/100)**(vault_age-pool_age)
+                            #     c = u
+                            # else:
+                            #     c = c*(1 + vault_apr/100/365)
 
                             maturity_ratio = day/days_until_maturity
                             ub=target_daily_volume*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
@@ -208,10 +209,8 @@ df.describe(include='all')
 df.model_name.value_counts()
 
 # %%
-import matplotlib.pyplot as plt
-
-hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution",figsize=(10,10),)
-hist=hist.set_xlabel("Typical Order Amount (in USD)")
+# hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution",figsize=(10,10),)
+# hist=hist.set_xlabel("Typical Order Amount (in USD)")
 
 # %%
 dfs=[]
@@ -292,10 +291,6 @@ for idx,_df in enumerate(dfs):
 
   os.makedirs("figures", exist_ok=True)
   fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
-
-# %%
-display((df_to_display.columns.isin(['input.c','input.u'])))
-display((df_to_display.columns.isin(['input.c','input.u'])))
 
 # %%
 df_fees_volume
