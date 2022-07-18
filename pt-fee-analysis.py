@@ -36,8 +36,8 @@ ybas = [
         "days_until_maturity": 90,
         # "days_until_maturity": 5,
         "vault_age": 1,
-        "vault_apr_mean": 2,
-        "vault_apr_stdev": 0.5,
+        "vault_apr_mean": -2,
+        "vault_apr_stdev": 0.25,
     },
 ]
 
@@ -70,8 +70,10 @@ for target_daily_volume in [5000000,10000000]:
                         sigma=max_order_size/10
                         liquidity = 0
 
-                        c=1.1
-                        u=1
+                        vault_age = yba["vault_age"]
+                        vault_apr = yba["vault_apr_mean"]
+                        u = (1 + vault_apr/100)**(vault_age)
+                        c = u
                         
                         display('target APY: {}'.format(APY))
                         (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch, c, u)
@@ -103,21 +105,15 @@ for target_daily_volume in [5000000,10000000]:
                         todays_fees = 0
                         todays_num_trades = 0
                         day=0
-                        vault_apr = yba["vault_apr_mean"]
                         while m.t > epsilon:
                             day += 1
                             todays_volume = 0
                             todays_fees = 0
                             todays_num_trades = 0
 
-                            pool_age = day/365
                             vault_age = yba["vault_age"]+day/365
                             vault_apr = vault_apr + np.random.normal(0,yba['vault_apr_stdev'])
-                            # if u==1:
-                            #     u = (1 + vault_apr/100)**(vault_age-pool_age)
-                            #     c = u
-                            # else:
-                            #     c = c*(1 + vault_apr/100/365)
+                            m.c = m.c*(1 + vault_apr/100/365)
 
                             maturity_ratio = day/days_until_maturity
                             ub=target_daily_volume*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
@@ -154,38 +150,39 @@ for target_daily_volume in [5000000,10000000]:
                                     # if num_orders<=10: display('m.x_orders: {} m.y_orders: {}'.format(m.x_orders,m.y_orders))
                                     
                                     cols = ["model_name","init.apy","init.percent_fee","init.days_until_maturity","init.max_order_size","init.time_stretch"\
-                                        ,"init.market_price","init.target_liquidity","init.target_daily_volume"\
-                                        ,"input.day","input.time","init.vault_age","init.vault_apr_mean","init.vault_apr_stdev"\
+                                        ,"init.market_price","init.target_liquidity","init.target_daily_volume","input.day","input.time"\
+                                        ,"init.vault_age","init.vault_apr_mean","init.vault_apr_stdev"\
                                         ,"input.base_market_price","input.unit_fyt_price","input.apy","input.base_reserves","input.fyt_reserves","input.trade_number"\
                                         ,"input.token_in","input.amount_specified","input.token_out","input.direction"\
-                                        ,"input.pool_age","input.vault_age","input.vault_apr","input.c","input.u"\
+                                        ,"input.vault_age","input.vault_apr","input.c","input.u"\
                                         ,"output.trade_volume","output.fee","output.slippage"]
                                     trade = [model_name,APY,g,days_until_maturity,max_order_size,time_stretch\
                                         ,market_price,target_liquidity,target_daily_volume,day,m.t\
                                         ,yba["vault_age"],yba["vault_apr_mean"],yba["vault_apr_stdev"]\
                                         ,market_price,m.spot_price(),m.apy(days_until_maturity),m.x,m.y,m.x_orders+m.y_orders\
                                         ,token_in,amount,token_out,direction\
-                                        ,pool_age,vault_age,vault_apr,c,u\
+                                        ,vault_age,vault_apr,m.c,m.u\
                                         ,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
                                     
                                 trades.append(trade)
                                 todays_volume += (m.x_volume - start_x_volume)*market_price + (m.y_volume - start_y_volume)*market_price
                                 todays_fees += fee*market_price
                                 todays_num_trades += 1
-                            print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) \
-                                + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees)\
-                                + " x_reserves: {:,.2f}".format(m.x) + " y_reserves: {:,.2f}".format(m.y)\
-                                )
+                            # print("\tDay: " + str(day) + " PT Price: " + str(m.spot_price()) + " Implied APY: " + str(m.apy(days_until_maturity-day+1)) + " Target Volume Factor: {:,.4f}".format(math.log10(1/maturity_ratio)) \
+                            #     + " Volume: ${:,.2f}".format(todays_volume) + " Num Trades: " + str(todays_num_trades) + " Fees: ${:,.2f}".format(todays_fees)\
+                            #     + " x_reserves: {:,.2f}".format(m.x) + " y_reserves: {:,.2f}".format(m.y)\
+                            #     )
                             total_fees += todays_fees
                             m.tick(step_size)
 
                         print("Ending Liquidity: ${:,.2f}".format(m.x*market_price+m.y*market_price*m.spot_price()))
                         print("Total volume: ${:,.2f}".format(m.x_volume*market_price+m.y_volume*market_price))
                         print("Total fees: ${:,.2f}".format(total_fees))
+                        print("Fees / Volume: {:,.2f}bps".format(total_fees/(m.x_volume*market_price+m.y_volume*market_price)*1e4))
                         print("Ending Base Reserves: " + str(m.x))
-                        print("Delta Base Reserves: " + str(abs(x_start-m.x)))
+                        # print("Delta Base Reserves: " + str(abs(x_start-m.x)))
                         print("Ending Bond Reserves: " + str(m.y))
-                        print("Delta Bond Reserves: " + str(abs(y_start-m.y)))
+                        # print("Delta Bond Reserves: " + str(abs(y_start-m.y)))
                         print("Num base orders: " + str(m.x_orders))
                         print("Cum base volume: " + str(m.x_volume))
                         print("Num PT orders: " + str(m.y_orders))
@@ -215,13 +212,14 @@ df.model_name.value_counts()
 # %%
 dfs=[]
 oldIndex = []
+df['total_liquidity']=df.loc[:,'input.base_reserves']*df.loc[:,'input.base_market_price']+df.loc[:,'input.fyt_reserves']*df.loc[:,'input.base_market_price']*df.loc[:,'input.unit_fyt_price']
 for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
   newIndex = (df['init.market_price']==yba["market_price"]) & (df['init.apy']==yba["apy"]) & (df['init.percent_fee']==g) & (df['init.days_until_maturity']==yba["days_until_maturity"]) & (df['init.target_liquidity']==target_liquidity) & (df['init.target_daily_volume']==target_daily_volume)
   if len(oldIndex)==0 or not all(newIndex==oldIndex):
     dfs.append(df[ newIndex ].reset_index(drop=True))
     oldIndex = newIndex
 
-numPlots = 4
+numPlots = 5
 for idx,_df in enumerate(dfs):
   fig, ax = plt.subplots(ncols=1, nrows=numPlots,gridspec_kw = {'wspace':0, 'hspace':0, 'height_ratios':np.ones(numPlots)})
   fig.patch.set_facecolor('white')   # set fig background color to white
@@ -254,7 +252,8 @@ for idx,_df in enumerate(dfs):
   currentPlot = 1
   df_to_display = pd.DataFrame()
   for model in df_fees_volume.model_name.unique():
-    ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[currentPlot],label=model)
+    ax[currentPlot] = _df.loc[_df.model_name==model,:]\
+      .plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[currentPlot],label=model)
     df_to_display = pd.concat([df_to_display,_df.loc[_df.model_name==model,:].head(1)])
   df_to_display=df_to_display.set_index('model_name',drop=True)
   df_to_display.loc['diff']=[df_to_display.iloc[1,i]-df_to_display.iloc[0,i] if isinstance(df_to_display.iloc[0,i],numbers.Number) else df_to_display.iloc[0,i] for i in range(0,df_to_display.shape[1])]
@@ -280,7 +279,8 @@ for idx,_df in enumerate(dfs):
 
   currentPlot = 3
   for model in df_fees_volume.model_name.unique():
-    ax[currentPlot] = df_fees_volume.loc[df_fees_volume.model_name==model,:].plot(kind='line',x="input.day", y="output.trade_volume_sum",ax=ax[currentPlot],label=model)
+    ax[currentPlot] = df_fees_volume.loc[df_fees_volume.model_name==model,:]\
+      .plot(kind='line',x="input.day", y="output.trade_volume_sum",ax=ax[currentPlot],label=model)
   ax[currentPlot].set_xlabel("Day",fontsize=18)
   ax[currentPlot].set_ylabel("Volume (US Dollars)",fontsize=18)
   ax[currentPlot].tick_params(axis = "both", labelsize=12)
@@ -289,6 +289,23 @@ for idx,_df in enumerate(dfs):
   ax[currentPlot].ticklabel_format(style='plain',axis='y')
   fig.subplots_adjust(wspace=None, hspace=None)
 
+  currentPlot = 4
+  for model in df_fees_volume.model_name.unique():
+    ax[currentPlot] = _df.loc[_df.model_name==model,:]\
+      .plot(kind='line',x="input.day", y="total_liquidity",ax=ax[currentPlot],label=model) # .plot(kind='line',x="input.day", y=["input.base_reserves","input.fyt_reserves"],ax=ax[currentPlot],label=[model+'x',model+'y'])
+  ax[currentPlot-2].plot(ax[currentPlot-2].lines[0].get_xdata()\
+    ,ax[currentPlot].lines[0].get_ydata()/ax[currentPlot].lines[1].get_ydata()*ax[currentPlot-2].lines[0].get_ydata()[0]\
+      ,label='liquidityDiff')
+  ax[currentPlot-2].legend(fontsize=18)
+  ax[currentPlot].set_xlabel("Day",fontsize=18)
+  ax[currentPlot].set_ylabel("Liquidity (US Dollars)",fontsize=18)
+  ax[currentPlot].tick_params(axis = "both", labelsize=12)
+  ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
+  ax[currentPlot].legend(fontsize=18)
+  ax[currentPlot].ticklabel_format(style='plain',axis='y')
+  fig.subplots_adjust(wspace=None, hspace=None)
+
+  plt.show()
   os.makedirs("figures", exist_ok=True)
   fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
 
