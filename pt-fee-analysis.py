@@ -15,8 +15,7 @@
 
 # %%
 import numpy as np
-import math 
-import time
+import math, time, os, numbers
 import pandas as pd
 from pandas.io.json import json_normalize
 import matplotlib.pyplot as plt
@@ -215,10 +214,6 @@ hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution"
 hist=hist.set_xlabel("Typical Order Amount (in USD)")
 
 # %%
-import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-import matplotlib.gridspec as gridspec
-
 dfs=[]
 oldIndex = []
 for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
@@ -230,8 +225,7 @@ for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
 numPlots = 4
 for idx,_df in enumerate(dfs):
   fig, ax = plt.subplots(ncols=1, nrows=numPlots,gridspec_kw = {'wspace':0, 'hspace':0, 'height_ratios':np.ones(numPlots)})
-  # set fig background color to white
-  fig.patch.set_facecolor('white')
+  fig.patch.set_facecolor('white')   # set fig background color to white
   df_fees_volume = _df.groupby(['input.day','model_name']).agg({'output.trade_volume':['sum']\
                                   ,'output.fee':['mean','std','min','max','sum']\
                                 })
@@ -243,8 +237,6 @@ for idx,_df in enumerate(dfs):
                             
   df_fees_volume.columns = ['_'.join(col).strip() for col in df_fees_volume.columns.values]
   df_fees_volume = df_fees_volume.reset_index()
-  # display(_df)
-  # display(df_fees_volume)
 
   for model in df_fees_volume.model_name.unique():
     ax[0] = df_fees_volume.loc[df_fees_volume.model_name==model,:].plot(x="input.day", y="output.fee_sum",figsize=(24,18),ax=ax[0],label=model)
@@ -261,17 +253,22 @@ for idx,_df in enumerate(dfs):
   ax[0].legend(fontsize=18)
 
   currentPlot = 1
+  df_to_display = pd.DataFrame()
   for model in df_fees_volume.model_name.unique():
     ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.apy",figsize=(24,18),ax=ax[currentPlot],label=model)
-    display(_df.loc[_df.model_name==model,:].head(1))
+    df_to_display = pd.concat([df_to_display,_df.loc[_df.model_name==model,:].head(1)])
+  df_to_display=df_to_display.set_index('model_name',drop=True)
+  df_to_display.loc['diff']=[df_to_display.iloc[1,i]-df_to_display.iloc[0,i] if isinstance(df_to_display.iloc[0,i],numbers.Number) else df_to_display.iloc[0,i] for i in range(0,df_to_display.shape[1])]
+  df_to_display.loc['ratio']=[df_to_display.iloc[1,i]/df_to_display.iloc[0,i] if isinstance(df_to_display.iloc[0,i],numbers.Number) else df_to_display.iloc[0,i] for i in range(0,df_to_display.shape[1])]
+  # display((df_to_display.columns.isin(['input.c','input.u'])))
+  display(df_to_display.loc[:,(df_to_display.iloc[0,:].values!=df_to_display.iloc[1,:].values) | (df_to_display.columns.isin(['input.c','input.u']))].T)
+
   ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.vault_apr",figsize=(24,18),ax=ax[currentPlot],label='vault_apr')
   ax[currentPlot].set_xlabel("")
   ax[currentPlot].set_ylabel("APY",fontsize=18)
   ax[currentPlot].tick_params(axis = "both", labelsize=18)
   ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both',axis='y')
   ax[currentPlot].xaxis.set_ticklabels([])
-  # title = "APY after each trade"
-  # ax[1].set_title(title,fontsize=20)
   ax[currentPlot].legend(fontsize=18)
 
   currentPlot = 2
@@ -293,9 +290,12 @@ for idx,_df in enumerate(dfs):
   ax[currentPlot].ticklabel_format(style='plain',axis='y')
   fig.subplots_adjust(wspace=None, hspace=None)
 
-  import os
   os.makedirs("figures", exist_ok=True)
   fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
+
+# %%
+display((df_to_display.columns.isin(['input.c','input.u'])))
+display((df_to_display.columns.isin(['input.c','input.u'])))
 
 # %%
 df_fees_volume
