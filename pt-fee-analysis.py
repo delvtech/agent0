@@ -15,11 +15,9 @@
 
 # %%
 import numpy as np
-import math, time, os, numbers
+import time, os, numbers
 import pandas as pd
-from pandas.io.json import json_normalize
 import matplotlib.pyplot as plt
-import json
 import sys  
 sys.path.insert(0, './scripts')
 from PricingModels import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_model
@@ -27,6 +25,7 @@ from PricingModels import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_m
 
 trades = []
 run_matrix=[]
+run_data=[]
 
 ybas = [
     {
@@ -34,20 +33,20 @@ ybas = [
         "apy" : 10,
         "market_price" : 2500,
         "days_until_maturity": 90,
-        # "days_until_maturity": 5,
         "vault_age": 1,
         "vault_apr_mean": -2,
         "vault_apr_stdev": 0.25,
     },
 ]
 
-# time function
-startTime = time.time()
+run_id=0
+startTime = time.time() # time function
 for target_daily_volume in [5000000,10000000]:
 # for target_daily_volume in [5000000]:
     for target_liquidity in [10000000]:
         for g in [.2]:
                 for yba in ybas:
+                    run_id=run_id+1
                     #choose your fighter
                     PricingModel = Element_Pricing_Model
                     PricingModel = YieldsSpacev2_Pricing_model
@@ -75,7 +74,6 @@ for target_daily_volume in [5000000,10000000]:
                         u = (1 + vault_apr/100)**(vault_age)
                         c = u
                         
-                        display('target APY: {}'.format(APY))
                         (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APY, days_until_maturity, time_stretch, c, u)
                         
                         total_supply = x_start+y_start
@@ -84,27 +82,12 @@ for target_daily_volume in [5000000,10000000]:
                         step_size=t/days_until_maturity
                         epsilon=step_size/2
                         m = Market(x_start,y_start,g,t,total_supply,PricingModel,c,u)
-                        print("Model Name: " + str(model_name))
-                        print("Days Until Maturity: " + str(days_until_maturity))
-                        print("Time Stretch: " + str(time_stretch))
-                        print("Fee %: " + str(g*100))
-                        print("Max order size: " + str(max_order_size))
-                        print("Starting APY: {:.2f}%".format(m.apy(days_until_maturity)))
-                        print("Starting Spot Price: " + str(m.spot_price()))
-                        print("Starting Liquidity: ${:,.2f}".format(liquidity))
-                        print("Starting Base Reserves: " + str(m.x))
-                        print("Starting Share Reserves (z): " + str(m.x/m.c))
-                        print("Starting PT Reserves: " + str(m.y))
-                        x_orders=0
-                        x_volume=0
-                        y_orders=0
-                        y_volume=0
-
-                        total_fees = 0
-                        todays_volume = 0
-                        todays_fees = 0
-                        todays_num_trades = 0
-                        day=0
+                        run_cols = ['Run_ID',"Model Name","Days Until Maturity","Time Stretch","Fee (%)","Max order size"\
+                            ,"Starting APY","Starting Spot Price","Starting Liquidity","Starting Base Reserves"
+                            ,"Starting Share Reserves (z)", "Starting PT Reserves"]
+                        this_run = [run_id,model_name,days_until_maturity,time_stretch,g*100,max_order_size,m.apy(days_until_maturity)\
+                            ,m.spot_price(),liquidity,m.x,m.x/m.c,m.y]
+                        [x_orders,x_volume,x_orders,y_volume,total_fees,todays_volume,todays_fees,todays_num_trades,day]=[0,0,0,0,0,0,0,0,0]
                         while m.t > epsilon:
                             day += 1
                             todays_volume = 0
@@ -116,8 +99,9 @@ for target_daily_volume in [5000000,10000000]:
                             m.c = m.c*(1 + vault_apr/100/365)
 
                             maturity_ratio = day/days_until_maturity
-                            ub=target_daily_volume*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
-                            todays_target_volume = np.random.uniform(ub/2,ub)
+                            ub=target_daily_volume#*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
+                            # todays_target_volume = np.random.uniform(ub/2,ub)
+                            todays_target_volume = np.random.normal(ub/2,ub/10)
                             while todays_target_volume > todays_volume:
                                 fee = -1
                                 trade = []
@@ -128,6 +112,7 @@ for target_daily_volume in [5000000,10000000]:
                                     #     amount = amount + np.random.normal(1,0) # HACK TO ADD NOISE TO YIELDSPACEV2
                                     lb_amount = max(0.00001,amount)
                                     amount = min(max_order_size,lb_amount)
+
                                     # buy fyt or base
                                     if np.random.uniform(0,1) < 0.5:
                                         token_in = "base"
@@ -139,24 +124,19 @@ for target_daily_volume in [5000000,10000000]:
                                     if np.random.uniform(0,1) < 0.5:
                                         direction="in"
                                     else:
-                                        direction="out"
-                                        
+                                        direction="out"    
 
-                                    start_x_volume = m.x_volume
-                                    start_y_volume = m.y_volume
-                                    num_orders = m.x_orders + m.y_orders
-                                    # if num_orders<=10: display('trying to swap {} {} for {} direction {}'.format(amount,token_in,token_out,direction))
+                                    [start_x_volume,start_y_volume,num_orders] = [m.x_volume,m.y_volume,m.x_orders + m.y_orders]
                                     (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount,direction,token_in,token_out)
-                                    # if num_orders<=10: display('m.x_orders: {} m.y_orders: {}'.format(m.x_orders,m.y_orders))
                                     
-                                    cols = ["model_name","init.apy","init.percent_fee","init.days_until_maturity","init.max_order_size","init.time_stretch"\
+                                    cols = ['Run_ID',"model_name","init.apy","init.percent_fee","init.days_until_maturity","init.max_order_size","init.time_stretch"\
                                         ,"init.market_price","init.target_liquidity","init.target_daily_volume","input.day","input.time"\
                                         ,"init.vault_age","init.vault_apr_mean","init.vault_apr_stdev"\
                                         ,"input.base_market_price","input.unit_fyt_price","input.apy","input.base_reserves","input.fyt_reserves","input.trade_number"\
                                         ,"input.token_in","input.amount_specified","input.token_out","input.direction"\
                                         ,"input.vault_age","input.vault_apr","input.c","input.u"\
                                         ,"output.trade_volume","output.fee","output.slippage"]
-                                    trade = [model_name,APY,g,days_until_maturity,max_order_size,time_stretch\
+                                    trade = [run_id,model_name,APY,g,days_until_maturity,max_order_size,time_stretch\
                                         ,market_price,target_liquidity,target_daily_volume,day,m.t\
                                         ,yba["vault_age"],yba["vault_apr_mean"],yba["vault_apr_stdev"]\
                                         ,market_price,m.spot_price(),m.apy(days_until_maturity),m.x,m.y,m.x_orders+m.y_orders\
@@ -175,39 +155,22 @@ for target_daily_volume in [5000000,10000000]:
                             total_fees += todays_fees
                             m.tick(step_size)
 
-                        print("Ending Liquidity: ${:,.2f}".format(m.x*market_price+m.y*market_price*m.spot_price()))
-                        print("Total volume: ${:,.2f}".format(m.x_volume*market_price+m.y_volume*market_price))
-                        print("Total fees: ${:,.2f}".format(total_fees))
-                        print("Fees / Volume: {:,.2f}bps".format(total_fees/(m.x_volume*market_price+m.y_volume*market_price)*1e4))
-                        print("Ending Base Reserves: " + str(m.x))
-                        # print("Delta Base Reserves: " + str(abs(x_start-m.x)))
-                        print("Ending Bond Reserves: " + str(m.y))
-                        # print("Delta Bond Reserves: " + str(abs(y_start-m.y)))
-                        print("Num base orders: " + str(m.x_orders))
-                        print("Cum base volume: " + str(m.x_volume))
-                        print("Num PT orders: " + str(m.y_orders))
-                        print("Cum PT volume: " + str(m.y_volume))
-                        print("Cum slippage Base: " + str(m.cum_x_slippage))
-                        print("Cum slippage PT: " + str(m.cum_y_slippage))
-                        print("Cum fees Base: " + str(m.cum_x_fees))
-                        print("Cum fees PT: " + str(m.cum_y_fees))
-                        print("Ending PT Price: " + str(m.spot_price()))
-                        print("Ending Time: " + str(m.t))
-                        print("##################################################################")
+                        run_cols = run_cols + ['Ending Liquidity','Total volume','Total fees'\
+                            ,'Fees / Volume (bps)','Ending Base Reserves','Delta Base Reserves','Ending Bond Reserves','Delta Bond Reserves'\
+                            ,'Num base orders','Cum base volume','Num PT orders','Cum PT volume','Cum slippage Base'\
+                            ,'Cum slippage PT','Cum fees Base','Cum fees PT','Ending PT Price','Ending Time']
+                        this_run = this_run + [m.x*market_price+m.y*market_price*m.spot_price(),m.x_volume*market_price+m.y_volume*market_price\
+                            ,total_fees,total_fees/(m.x_volume*market_price+m.y_volume*market_price)*1e4,m.x,abs(x_start-m.x),m.y,abs(y_start-m.y)\
+                            ,m.x_orders,m.x_volume,m.y_orders,m.y_volume,m.cum_x_slippage,m.cum_y_slippage\
+                            ,m.cum_x_fees,m.cum_y_fees,m.spot_price(),m.t]
+                        run_data.append(this_run)
 endTime = time.time()
-print("Total time: " + str(endTime-startTime))
-
+print('finished {} runs in {} seconds'.format(len(run_data),endTime-startTime))
 
 #df = pd.DataFrame.from_dict(json_normalize(trades), orient='columns')
 df = pd.DataFrame(trades,columns=cols)
-
-# %%
-df.describe(include='all')
-df.model_name.value_counts()
-
-# %%
-# hist=df['output.trade_volume'].plot.hist(bins=12,title="Order Size Distribution",figsize=(10,10),)
-# hist=hist.set_xlabel("Typical Order Amount (in USD)")
+df_runs = pd.DataFrame(run_data,columns=run_cols).set_index('Run_ID',drop=True)
+display(df_runs.T)
 
 # %%
 dfs=[]
@@ -258,7 +221,6 @@ for idx,_df in enumerate(dfs):
   df_to_display=df_to_display.set_index('model_name',drop=True)
   df_to_display.loc['diff']=[df_to_display.iloc[1,i]-df_to_display.iloc[0,i] if isinstance(df_to_display.iloc[0,i],numbers.Number) else df_to_display.iloc[0,i] for i in range(0,df_to_display.shape[1])]
   df_to_display.loc['ratio']=[df_to_display.iloc[1,i]/df_to_display.iloc[0,i] if isinstance(df_to_display.iloc[0,i],numbers.Number) else df_to_display.iloc[0,i] for i in range(0,df_to_display.shape[1])]
-  # display((df_to_display.columns.isin(['input.c','input.u'])))
   display(df_to_display.loc[:,(df_to_display.iloc[0,:].values!=df_to_display.iloc[1,:].values) | (df_to_display.columns.isin(['input.c','input.u']))].T)
 
   ax[currentPlot] = _df.loc[_df.model_name==model,:].plot(x="input.trade_number",y="input.vault_apr",figsize=(24,18),ax=ax[currentPlot],label='vault_apr')
@@ -292,10 +254,10 @@ for idx,_df in enumerate(dfs):
   currentPlot = 4
   for model in df_fees_volume.model_name.unique():
     ax[currentPlot] = _df.loc[_df.model_name==model,:]\
-      .plot(kind='line',x="input.day", y="total_liquidity",ax=ax[currentPlot],label=model) # .plot(kind='line',x="input.day", y=["input.base_reserves","input.fyt_reserves"],ax=ax[currentPlot],label=[model+'x',model+'y'])
-  ax[currentPlot-2].plot(ax[currentPlot-2].lines[0].get_xdata()\
-    ,ax[currentPlot].lines[0].get_ydata()/ax[currentPlot].lines[1].get_ydata()*ax[currentPlot-2].lines[0].get_ydata()[0]\
-      ,label='liquidityDiff')
+      .plot(kind='line',x="input.day", y=["input.base_reserves","input.fyt_reserves"],ax=ax[currentPlot],label=[model+'x',model+'y']) # .plot(kind='line',x="input.day", y="total_liquidity",ax=ax[currentPlot],label=model)
+  # ax[currentPlot-2].plot(ax[currentPlot-2].lines[0].get_xdata()\
+  #   ,ax[currentPlot].lines[0].get_ydata()/ax[currentPlot].lines[1].get_ydata()*ax[currentPlot-2].lines[0].get_ydata()[0]\
+  #     ,label='liquidityDiff')
   ax[currentPlot-2].legend(fontsize=18)
   ax[currentPlot].set_xlabel("Day",fontsize=18)
   ax[currentPlot].set_ylabel("Liquidity (US Dollars)",fontsize=18)
@@ -310,126 +272,46 @@ for idx,_df in enumerate(dfs):
   fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
 
 # %%
+hist=df['output.trade_volume'].plot.hist(bins=50,title="Order Size Distribution",figsize=(10,10),edgecolor='black').set_xlabel("Typical Order Amount (in USD)")
+
+# %%
 df_fees_volume
 
 # %%
 pd.options.display.float_format = '{:,.8f}'.format
-df_fees_agg = df.groupby(['init.apy','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume']).agg({'output.fee':['count','sum'],'output.trade_volume':['sum'],'output.slippage':['mean'],'input.amount_specified':['mean']})
+df_fees_agg = df.groupby(['Run_ID','model_name','init.apy','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume'])\
+    ['init.apy','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume','input.amount_specified','output.fee','output.slippage','output.trade_volume']\
+        .agg({'output.fee':['count','sum'],'output.trade_volume':['sum'],'output.slippage':['mean'],'input.amount_specified':['mean']})
 df_fees_agg.columns = ['_'.join(col).strip() for col in df_fees_agg.columns.values]
 df_fees_agg = df_fees_agg.reset_index()
 df_fees_agg['init.percent_fee'] = df_fees_agg['init.percent_fee'].round(2)
 df_fees_agg['output.mean_daily_volume'] = df_fees_agg['output.trade_volume_sum']/df_fees_agg['init.days_until_maturity']
 df_fees_agg['output.apr'] = (df_fees_agg['output.fee_sum']/df_fees_agg['init.target_liquidity']) * (365/df_fees_agg['init.days_until_maturity'])*100
-df_fees_agg = df_fees_agg.drop(columns=['input.amount_specified_mean']).reset_index()
-df_fees_agg
+df_fees_agg = df_fees_agg.set_index('Run_ID',drop=True)
+display(df_fees_agg.T)
 
 # %%
 #df_fees_agg.to_csv("fees.csv")
 #print(df_fees_agg[['init.target_liquidity','init.target_daily_volume','output.fee_sum','output.trade_volume_sum','output.mean_daily_volume','output.apr']].to_markdown(index=False))
 
-print(df_fees_agg[['init.target_liquidity','output.trade_volume_sum','output.mean_daily_volume','output.apr']].to_markdown(index=False,floatfmt=(",.0f", ",.0f",",.0f",",.2f")))
+print(df_fees_agg[['model_name','init.target_liquidity','output.trade_volume_sum','output.mean_daily_volume','output.apr']].to_markdown(index=True,floatfmt=(",.0f", ",.0f",",.0f",",.2f")))
 
 # %%
-import seaborn as sns 
-import matplotlib.pyplot as plt
-import pandas as pd
+ax = plt.figure(figsize=(10, 8))
+data_to_plot=pd.DataFrame()
+for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
+  condition =   (df_fees_agg['init.target_liquidity']==target_liquidity) & (df_fees_agg['init.target_daily_volume']==target_daily_volume) & (df_fees_agg['model_name']==model_name)
+  data_to_plot = pd.concat([data_to_plot,df_fees_agg[condition][['model_name','init.apy','output.fee_sum','init.time_stretch']]])
+display(data_to_plot)
+barWidth = 0.4
+for idx,model in enumerate(data_to_plot.model_name.unique()):
+  bars=plt.bar(data_to_plot.index[(data_to_plot.model_name==model)]-barWidth/2+barWidth*idx,data_to_plot.loc[(data_to_plot.model_name==model),'output.fee_sum'],label=model,width=barWidth,edgecolor='black')
+  plt.gca().bar_label(bars,fmt='%s',labels=['{:,.0f}'.format(i) for i in data_to_plot.loc[(data_to_plot.model_name==model),'output.fee_sum']])
+plt.ticklabel_format(style='plain',axis='y')
+plt.ylabel("Fees in US Dollars", size=14)
+plt.legend(fontsize=18)
+plt.xticks(range(0,max(data_to_plot.index)+1),size=14)
+plt.xlabel("Run", size=14)
+plt.title('Total Fees')
+plt.show()
 
-#plt.figure(figsize=(20, 20))
-#for (yba,g,target_liquidity,target_daily_volume) in run_matrix:
-#condition = (df_fees_agg['init.market_price']==yba["market_price"]) & (df_fees_agg['init.days_until_maturity']==yba["days_until_maturity"]) & (df_fees_agg['init.target_liquidity']==target_liquidity) & (df_fees_agg['init.target_daily_volume']==target_daily_volume)
-for (yba,g,target_liquidity,target_daily_volume) in run_matrix:
-  plt.figure(figsize=(10, 8))
-  condition =   (df_fees_agg['init.target_liquidity']==target_liquidity) & (df_fees_agg['init.target_daily_volume']==target_daily_volume)
-  sns.barplot(x="init.apy", 
-              y="output.fee_sum", 
-              hue="init.time_stretch", 
-              data=df_fees_agg[condition],
-              ci=None)
-  plt.ticklabel_format(style='plain',axis='y')
-  plt.ylabel("Fees in US Dollars", size=14)
-  plt.xlabel("Base Asset APY", size=14)
-  #title = "Fees Collected Per Day Until Maturity\nAPY: {:.2f}%, Fee: {:.2f}%, Maturity: {:} days\nTarget Daily Volume: \${:,.2f}, Target Liquidity: \${:,.2f}".format(_df['init.apy'][0],_df['init.percent_fee'][0]*100,_df['init.days_until_maturity'][0],_df['init.target_daily_volume'][0],_df['init.target_liquidity'][0])
-  #plt.title("Cumulative Fees for 30 day FYT\n"+"Target Volume = " + str(df_fees_agg[condition]['init.target_daily_volume'].iloc[0]) + "\nTarget Liquidity = " + str(df_fees_agg[condition]['init.target_liquidity'].iloc[0]), size=14)
-
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
-
-# %%
