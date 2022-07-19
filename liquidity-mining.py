@@ -55,19 +55,18 @@ numPlots = 2
 fig, ax = plt.subplots(ncols=1, nrows=numPlots,gridspec_kw = {'wspace':0, 'hspace':0.1, 'height_ratios':np.ones(numPlots)}, sharex=True)
 fig.patch.set_facecolor('white')   # set fig background color to white
 
-currentPlot = 0
-df.plot(use_index=True, y='token_price', figsize=(10,5*numPlots), ax=ax[currentPlot], title='Token Price')
-ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both', alpha=0.5)
-# ax[currentPlot].xaxis.set_ticklabels([])
-
 currentPlot = 1
-df.plot(use_index=True, y=['funding_acquired','new_tokens'], figsize=(10,5*numPlots), ax=ax[currentPlot]\
-    , title='Have to print more to fund same amount of ${} million'.format(funding_need/1e6))
+df.plot(use_index=True, y='token_price', figsize=(10,5*numPlots), ax=ax[currentPlot], title='... that causes number go down')
 ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both', alpha=0.5)
+
+currentPlot = 0
+df.plot(use_index=True, y=['funding_acquired','new_tokens'], figsize=(10,5*numPlots), ax=ax[currentPlot]\
+    , title='Have to print more to fund same amount of ${:,.0f} million...'.format(funding_need/1e6))
+ax[currentPlot].grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both', alpha=0.5)
+
+#for final plot
 ax[currentPlot].set_xlabel('Time (years)')
 plt.xticks(df.index)
-# ax= df.plot(use_index=True, y='funding_acquired', figsize=(10,5), title='Funding Acquired')
-# ax.grid(visible=True,linestyle='--', linewidth='1', color='grey',which='both')
 plt.show()
 
 # %%
