@@ -303,11 +303,19 @@ for idx,_df in enumerate(dfs):
   fig.subplots_adjust(wspace=None, hspace=None)
 
   plt.show()
-  os.makedirs("figures", exist_ok=True)
-  fig.savefig("figures/chart{}.png".format(idx+1),bbox_inches='tight')
+  os.makedirs(os.getcwd()+"\\figures", exist_ok=True)
+  fileName = "{}\\figures\chart{}.png".format(os.getcwd(),idx+1)
+  fig.savefig(fname=fileName,bbox_inches='tight')
 
 # %%
-hist=df['output.trade_volume'].plot.hist(bins=50,title="Order Size Distribution",figsize=(10,10),edgecolor='black').set_xlabel("Typical Order Amount (in USD)")
+numPlots = 1
+fig, ax = plt.subplots(ncols=1, nrows=numPlots,gridspec_kw = {'wspace':0, 'hspace':0, 'height_ratios':np.ones(numPlots)})
+fig.patch.set_facecolor('white')   # set fig background color to white
+hist=df['output.trade_volume'].plot.hist(bins=50,title="Order Size Distribution",figsize=(10,10),edgecolor='black',ax=ax)
+hist.set_xlabel("Typical Order Amount (in USD)")
+fileName = "{}\\figures\distribution.png".format(os.getcwd())
+plt.show()
+fig.savefig(fname=fileName,bbox_inches='tight')
 
 # %%
 df_fees_volume
