@@ -24,12 +24,12 @@ class Element_Pricing_Model:
       t=days_until_maturity/(365*time_stretch)
       y_reserves = target_liquidity/market_price/2/(1-apy/100*t)
       x_reserves = Element_Pricing_Model.calc_x_reserves(apy,y_reserves,days_until_maturity,time_stretch)
-      liquidity = 0
-      actual_apy = 0
-      step = 0 
+      scaleUpFactor = target_liquidity/(x_reserves*market_price+y_reserves*market_price*spot_price)
+      y_reserves = y_reserves * scaleUpFactor
+      x_reserves = x_reserves * scaleUpFactor
       liquidity = x_reserves*market_price+y_reserves*market_price*spot_price
       actual_apy = Element_Pricing_Model.calc_apy_from_reserves(x_reserves,y_reserves,x_reserves + y_reserves,t,time_stretch)
-    #   print('step {}: x={} y={} total={} apy={}'.format(step,x_reserves,y_reserves,liquidity,actual_apy))
+      print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
       return (x_reserves,y_reserves,liquidity)
     
     @staticmethod
@@ -315,15 +315,6 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     def calc_x_reserves(APY,y_reserves,days_until_maturity,time_stretch,c,u):
         t=days_until_maturity/(365*time_stretch)
         T=days_until_maturity/365
-        # result = y_reserves*(-(2/((1-T*APY/100)**(1/t)-1))-2)
-        # result = 2*c*y_reserves/(-c + u*(-1/(APY*T - 1))**(1/t))
-        # result = 2*c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
-        # result = c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
-        # result = c*y_reserves/u/(APY/100*T)
-        # result = 2*c*y_reserves/(u*(-1/(APY/100*T - 1))**(1/t) - 1)
-        # result = 2*c*y_reserves/(-c**2 + u*(-1/(APY/100*T - 1))**(1/t))
-        # result = 2*c*y_reserves/(-c + u*(-1/(APY/100*T - 1))**(1/t))
-        # display('c: {}, u: {}'.format(c,u))
         r = APY/100
         y = y_reserves
         # result = ((-APY/100*T + 1)/(c*y_reserves))**(1/t)/u
@@ -348,6 +339,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
       x_reserves = x_reserves * scaleUpFactor
       liquidity = x_reserves*market_price+y_reserves*market_price*spot_price
       actual_apy = YieldsSpacev2_Pricing_model.calc_apy_from_reserves(x_reserves,y_reserves,x_reserves+y_reserves,t,time_stretch,c,u)
+      print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
       return (x_reserves,y_reserves,liquidity)
 
     @staticmethod
@@ -359,7 +351,8 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
-      return (1-price)/T * 100
+      return (1-price)/T * 100 # not APY
+    #   return (1-price)/price/T * 100 # APY
     
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):
