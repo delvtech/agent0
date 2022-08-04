@@ -45,7 +45,8 @@ class Element_Pricing_Model:
     @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
-      return (1-price)/T * 100
+      #   return (1-price)/T * 100 # not APY
+      return (1-price)/price/T * 100 # APYW
     
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):
@@ -351,8 +352,8 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     @staticmethod
     def apy(price,days_until_maturity):
       T=days_until_maturity/365
-      return (1-price)/T * 100 # not APY
-    #   return (1-price)/price/T * 100 # APY
+    #   return (1-price)/T * 100 # not APY
+      return (1-price)/price/T * 100 # APY
     
     @staticmethod
     def calc_spot_price_from_apy(apy,days_until_maturity):

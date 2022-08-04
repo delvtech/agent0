@@ -122,16 +122,16 @@ for target_daily_volume in [5*1e5]:
                             maturity_ratio = day/days_until_maturity
                             todays_target_volume=target_daily_volume#*math.log10(1/maturity_ratio) # log(1/maturity ratio) is used to simulate waning demand over the lifetime of the fyt
                             # todays_target_volume = np.random.uniform(ub/2,ub)
-                            todays_target_volume = np.random.normal(todays_target_volume,todays_target_volume/2)# if day<days_until_maturity else max_order_size/2
+                            # todays_target_volume = np.random.normal(todays_target_volume,todays_target_volume/2)# if day<days_until_maturity else max_order_size/2
                             while todays_target_volume > todays_volume:
                                 fee = -1
                                 trade = []
                                 while fee < 0:
                                     # determine order size
-                                    amount = np.random.normal(todays_target_volume/10,todays_target_volume/20)
+                                    amount = np.random.normal(todays_target_volume/10,todays_target_volume/10/10)
                                     # if model_name=="YieldsSpacev2":
                                     #     amount = amount + np.random.normal(1,0) # HACK TO ADD NOISE TO YIELDSPACEV2
-                                    amount = np.clip(amount,1,todays_target_volume)
+                                    # amount = np.clip(amount,1,todays_target_volume)
 
                                     # buy fyt or base
                                     if np.random.uniform(0,1) < 0.5:
@@ -161,7 +161,7 @@ for target_daily_volume in [5*1e5]:
                                         ,yba["vault_age"],yba["vault_apr_mean"],yba["vault_apr_stdev"]\
                                         ,market_price,token_in,amount,token_out,direction\
                                         ,vault_age,vault_apr,m.c,m.u\
-                                        ,m.spot_price(),m.apy(days_until_maturity),m.x,m.y,m.x_orders+m.y_orders\
+                                        ,m.spot_price(),m.apy(days_until_maturity-day+1),m.x,m.y,m.x_orders+m.y_orders\
                                         ,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
                                     
                                 trades.append(trade)
