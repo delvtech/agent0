@@ -20,7 +20,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys, math
 sys.path.insert(0, './scripts')
-from PricingModels2 import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_model
+from PricingModels2 import Element_Pricing_Model, Market, YieldsSpacev2_Pricing_model, YieldsSpacev2_Pricing_model_MinFee
 
 # %%
 trades = []
@@ -30,7 +30,7 @@ run_data=[]
 ybas = [
     {
         "vault" : "ySTETH",
-        "apr" : 10,
+        "apr" : 5,
         "market_price" : 2500,
         "days_until_maturity": 90,
         "vault_age": 1,
@@ -50,10 +50,7 @@ for target_daily_volume in [5*1e5]:
                 for yba in ybas:
                     run_id=run_id+1
                     #choose your fighter
-                    PricingModel = Element_Pricing_Model
-                    PricingModel = YieldsSpacev2_Pricing_model
-                    PricingModelList = [Element_Pricing_Model,YieldsSpacev2_Pricing_model]
-                    # PricingModelList = [YieldsSpacev2_Pricing_model,Element_Pricing_Model]
+                    PricingModelList = [Element_Pricing_Model,YieldsSpacev2_Pricing_model,YieldsSpacev2_Pricing_model_MinFee]
 
                     for PricingModel in PricingModelList:
                         np.random.seed(2) #guarantees randomness behaves deterministically from here on out
@@ -89,7 +86,7 @@ for target_daily_volume in [5*1e5]:
                         u = (1 + vault_apr/100)**(vault_age)
                         c = u
 
-                        np.random.seed(2) # reset seed after generating vault_deltas above
+                        np.random.seed(3) # reset seed after generating vault_deltas above
                         
                         (x_start, y_start, liquidity) = PricingModel.calc_liquidity(target_liquidity, market_price, APR, days_until_maturity, time_stretch, c, u)
                         
@@ -128,26 +125,37 @@ for target_daily_volume in [5*1e5]:
                                 trade = []
                                 while fee < 0:
                                     # determine order size
-                                    amount = np.random.normal(todays_target_volume/10,todays_target_volume/10/10)
+                                    amount = np.random.normal(todays_target_volume/10,todays_target_volume/10/10) #if todays_num_trades % 2 == 0 else amount
                                     # if model_name=="YieldsSpacev2":
                                     #     amount = amount + np.random.normal(1,0) # HACK TO ADD NOISE TO YIELDSPACEV2
                                     # amount = np.clip(amount,1,todays_target_volume)
 
                                     # buy fyt or base
-                                    if np.random.uniform(0,1) < 0.5:
-                                        token_in = "base"
-                                        token_out = "fyt"
+                                    # if todays_num_trades % 2 == 0:
+                                    if todays_num_trades >= 0:
+                                        if np.random.uniform(0,1) < 0.5:
+                                            token_in = "base"
+                                            token_out = "fyt"
+                                        else:
+                                            token_in = "fyt"
+                                            token_out = "base"
                                     else:
-                                        token_in = "fyt"
-                                        token_out = "base"
+                                        if token_in=='fyt':
+                                            token_in = "base"
+                                            token_out = "fyt"
+                                        else:
+                                            token_in = "fyt"
+                                            token_out = "base"
 
-                                    if np.random.uniform(0,1) < 0.5:
-                                        direction="in"
-                                    else:
-                                        direction="out"    
+                                    # if np.random.uniform(0,1) < 0.5:
+                                    #     direction="in"
+                                    # else:
+                                    #     direction="out"    
+                                    direction = 'out' # calc out given in
 
                                     [start_x_volume,start_y_volume,num_orders] = [m.x_volume,m.y_volume,m.x_orders + m.y_orders]
-                                    (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amount/market_price,direction,token_in,token_out)
+                                    amountToSwap = amount/market_price #if token_out=="base" else amount/market_price/m.spot_price()
+                                    (without_fee_or_slippage,with_fee,without_fee,fee) = m.swap(amountToSwap,direction,token_in,token_out)
                                     
                                     cols = ['Run_ID',"model_name","init.apr","init.percent_fee","init.days_until_maturity","init.time_stretch"\
                                         ,"init.market_price","init.target_liquidity","init.target_daily_volume","input.day","input.time"\
@@ -155,14 +163,14 @@ for target_daily_volume in [5*1e5]:
                                         ,"input.base_market_price","input.token_in","input.amount","input.token_out","input.direction"\
                                         ,"input.vault_age","input.vault_apr","input.c","input.u"\
                                         ,"output.unit_fyt_price","output.apr","output.base_reserves","output.fyt_reserves","output.trade_number"\
-                                        ,"output.trade_volume","output.fee","output.slippage"]
+                                        ,"output.trade_volume","output.fee","output.feeBps","output.slippage"]
                                     trade = [run_id,model_name,APR,g,days_until_maturity,time_stretch\
                                         ,market_price,target_liquidity,target_daily_volume,day,m.t\
                                         ,yba["vault_age"],yba["vault_apr_mean"],yba["vault_apr_stdev"]\
                                         ,market_price,token_in,amount,token_out,direction\
                                         ,vault_age,vault_apr,m.c,m.u\
                                         ,m.spot_price(),m.apy(days_until_maturity-day+1),m.x,m.y,m.x_orders+m.y_orders\
-                                        ,with_fee*market_price,fee*market_price,(without_fee_or_slippage-without_fee)*market_price]
+                                        ,with_fee*market_price,fee*market_price,fee/with_fee*100*100,(without_fee_or_slippage-without_fee)*market_price]
                                     
                                 trades.append(trade)
                                 # display(trade)
@@ -191,6 +199,7 @@ print('finished {} runs in {} seconds'.format(len(run_data),endTime-startTime))
 #df = pd.DataFrame.from_dict(json_normalize(trades), orient='columns')
 df = pd.DataFrame(trades,columns=cols)
 df_runs = pd.DataFrame(run_data,columns=run_cols).set_index('Run_ID',drop=True)
+
 
 if debug:
     display(df.tail(2))
@@ -222,9 +231,10 @@ for idx,_df in enumerate(dfs):
                                 })
   df_fees_by_trade_type = _df.groupby(['model_name','input.direction','input.token_in']).agg({'output.trade_volume':['sum']\
                                   ,'output.trade_number':['count']\
-                                  ,'input.amount':['mean','std','min','max','sum']\
-                                  ,'output.slippage':['mean','std','min','max','sum']\
-                                  ,'output.fee':['mean','std','min','max','sum']\
+                                  ,'output.feeBps':['mean','std','min','max','sum']\
+                                  # ,'input.amount':['mean','std','min','max','sum']\
+                                  # ,'output.slippage':['mean','std','min','max','sum']\
+                                  # ,'output.fee':['mean','std','min','max','sum']\
                                 })
   if debug: display(df_fees_by_trade_type)
                             
