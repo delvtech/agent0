@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: Python 3.10.2 64-bit
+#     display_name: Python 3.10.1 64-bit
 #     language: python
 #     name: python3
 # ---
@@ -332,9 +332,9 @@ df_fees_volume
 
 # %%
 pd.options.display.float_format = '{:,.8f}'.format
-df_fees_agg = df.groupby(['Run_ID','model_name','init.apy','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume'])\
-    ['init.apy','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume','input.amount_specified','output.fee','output.slippage','output.trade_volume']\
-        .agg({'output.fee':['count','sum'],'output.trade_volume':['sum'],'output.slippage':['mean'],'input.amount_specified':['mean']})
+df_fees_agg = df.groupby(['Run_ID','model_name','init.apr','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume'])\
+    ['init.apr','init.percent_fee','init.time_stretch','init.market_price','init.target_liquidity','init.days_until_maturity','init.target_daily_volume','input.amount','output.fee','output.slippage','output.trade_volume']\
+        .agg({'output.fee':['count','sum'],'output.trade_volume':['sum'],'output.slippage':['mean'],'input.amount':['mean']})
 df_fees_agg.columns = ['_'.join(col).strip() for col in df_fees_agg.columns.values]
 df_fees_agg = df_fees_agg.reset_index()
 df_fees_agg['init.percent_fee'] = df_fees_agg['init.percent_fee'].round(2)
@@ -354,7 +354,7 @@ ax = plt.figure(figsize=(10, 8))
 data_to_plot=pd.DataFrame()
 for (model_name,yba,g,target_liquidity,target_daily_volume) in run_matrix:
   condition =   (df_fees_agg['init.target_liquidity']==target_liquidity) & (df_fees_agg['init.target_daily_volume']==target_daily_volume) & (df_fees_agg['model_name']==model_name)
-  data_to_plot = pd.concat([data_to_plot,df_fees_agg[condition][['model_name','init.apy','output.fee_sum','init.time_stretch']]])
+  data_to_plot = pd.concat([data_to_plot,df_fees_agg[condition][['model_name','init.apr','output.fee_sum','init.time_stretch']]])
 display(data_to_plot)
 barWidth = 0.4
 for idx,model in enumerate(data_to_plot.model_name.unique()):
@@ -368,3 +368,5 @@ plt.xlabel("Run", size=14)
 plt.title('Total Fees')
 plt.show()
 
+
+# %%
