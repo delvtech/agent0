@@ -367,6 +367,3 @@ plt.xticks(range(0,max(data_to_plot.index)+1),size=14)
 plt.xlabel("Run", size=14)
 plt.title('Total Fees')
 plt.show()
-
-
-# %%
