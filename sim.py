@@ -32,7 +32,7 @@ class yieldSimulator(object):
             raise ValueError(f'pricing_model_name must be "YieldSpace" or "Element", not {self.pricing_model_name}')
 
         self.num_steps = self.t_max // self.step_size
-        self.times = np.arange(t_min, t_max + step_size, step_size)
+        self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
         self.current_time_index = 0
 
@@ -308,7 +308,7 @@ class Market(object):
     def spot_price(self):
         return self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
 
-    def tick(self,step_size):
+    def tick(self, step_size):
         self.t -= step_size
 
     def swap(self, amount, direction, token_in, token_out, to_debug=False):
