@@ -23,21 +23,25 @@ class yieldSimulator(object):
         self.token_in = kwargs.get('token_in')
         self.token_out = kwargs.get('token_out')
         self.trade_direction = kwargs.get('trade_direction')
-
         if self.pricing_model_name.lower() == 'yieldspace':
             self.pricingModel = YieldsSpacev2_Pricing_model # pick from [Element_Pricing_Model, YieldsSpacev2_Pricing_model]
         elif self.pricing_model_name.lower() == 'element':
             self.pricingModel = Element_Pricing_Model
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace" or "Element", not {self.pricing_model_name}')
-
         self.num_steps = self.t_max // self.step_size
         self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
         self.current_time_index = 0
-
         analysis_keys = [
             'time',
+            't_stretch',
+            'target_liquidity',
+            'apy',
+            'fee_percent',
+            'vault_age',
+            'vault_apy',
+            'pool_age',
             'x_reserves',
             'y_reserves',
             'total_supply',
@@ -45,12 +49,9 @@ class yieldSimulator(object):
             'token_out',
             'direction',
             'amount_in',
-            'fee_percent',
             'conversion_rate',
             'normalizing_constant',
-            'x_reserves',
-            'y_reserves',
-            'amount_out',
+            'amount_out_without_fee',
             'fee',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
@@ -62,7 +63,7 @@ class yieldSimulator(object):
         # determine real-world parameters for estimating u and c (vault and pool details)
         self.vault_age = np.random.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
-        self.pool_age = np.random.uniform(min(vault_age, self.min_pool_age), self.max_pool_age) # in years
+        self.pool_age = np.random.uniform(min(self.vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.t_stretch = self.pricingModel.calc_time_stretch(self.apy) # determine time stretch
 
     def set_random_time(self):
@@ -93,7 +94,7 @@ class yieldSimulator(object):
             x_reserves,
             y_reserves,
             total_supply,
-            self.time/self.t_stretch,
+            self.time / self.t_stretch,
             conversion_rate,
             normalizing_constant)
         resulting_apy = self.pricingModel.apy(
@@ -129,9 +130,9 @@ class yieldSimulator(object):
         self.analysis_dict['token_in'].append(self.token_in)
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['direction'].append(self.trade_direction)
-        self.analysis_dict['amount_in'].append(self.trade_amount)
-        self.analysis_dict['conversion_rate'].append(self.conversion_rate)
-        self.analysis_dict['normalizing_constant'].append(self.normalizing_constant)
+        self.analysis_dict['amount_in'].append(trade_amount)
+        self.analysis_dict['conversion_rate'].append(conversion_rate)
+        self.analysis_dict['normalizing_constant'].append(normalizing_constant)
         self.analysis_dict['amount_out_without_fee'].append(without_fee)
         self.analysis_dict['fee'].append(fee)
 
