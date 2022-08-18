@@ -675,7 +675,7 @@ class YieldsSpacev2_Pricing_model_MinFee(Element_Pricing_Model):
       x_reserves = x_reserves * scaleUpFactor
       liquidity = x_reserves*market_price+y_reserves*market_price*spot_price
       actual_apy = YieldsSpacev2_Pricing_model_MinFee.calc_apy_from_reserves(x_reserves,y_reserves,x_reserves+y_reserves,t,time_stretch,c,u)
-      print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
+      #print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
       return (x_reserves,y_reserves,liquidity)
 
     @staticmethod
