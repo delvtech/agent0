@@ -1,3 +1,5 @@
+import numpy as np
+
 class yieldSimulator(object):
     def __init__(self, **kwargs):
         self.step_size = kwargs.get('step_size') # time resolution
