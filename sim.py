@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 class yieldSimulator(object):
     def __init__(self, **kwargs):
@@ -9,6 +10,8 @@ class yieldSimulator(object):
         self.t_max = kwargs.get('t_max') # maximum time (must be <= 1)
         self.min_target_liquidity = kwargs.get('min_target_liquidity')
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
+        self.min_target_volume = kwargs.get('min_target_volume')
+        self.max_target_volume = kwargs.get('max_target_volume')
         self.min_apy = kwargs.get('min_apy')
         self.max_apy = kwargs.get('max_apy')
         self.min_vault_age = kwargs.get('min_vault_age')
@@ -23,21 +26,27 @@ class yieldSimulator(object):
         self.token_in = kwargs.get('token_in')
         self.token_out = kwargs.get('token_out')
         self.trade_direction = kwargs.get('trade_direction')
+        self.days_until_maturity = kwargs.get('days_until_maturity')
         if self.pricing_model_name.lower() == 'yieldspace':
-            self.pricingModel = YieldsSpacev2_Pricing_model # pick from [Element_Pricing_Model, YieldsSpacev2_Pricing_model]
+            self.pricing_model = YieldsSpacev2_Pricing_model
+        elif self.pricing_model_name.lower() == 'yieldspaceminfee':
+            self.pricing_model = YieldsSpacev2_Pricing_model_MinFee
         elif self.pricing_model_name.lower() == 'element':
-            self.pricingModel = Element_Pricing_Model
+            self.pricing_model = Element_Pricing_Model
         else:
-            raise ValueError(f'pricing_model_name must be "YieldSpace" or "Element", not {self.pricing_model_name}')
+            raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.num_steps = self.t_max // self.step_size
         self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
         self.current_time_index = 0
         analysis_keys = [
+            'model_name',
             'time',
             't_stretch',
             'target_liquidity',
-            'apy',
+            'target_daily_volume',
+            'start_apy',
+            'current_apy',
             'fee_percent',
             'vault_age',
             'vault_apy',
@@ -51,20 +60,28 @@ class yieldSimulator(object):
             'amount_in',
             'conversion_rate',
             'normalizing_constant',
-            'amount_out_without_fee',
+            'out_without_fee_slippage',
+            'out_with_fee',
+            'out_without_fee',
             'fee',
+            'days_until_maturity',
+            'spot_price',
+            'num_orders',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
+        self.sim_params_set = False
 
     def set_sim_params(self):
         self.target_liquidity = np.random.uniform(self.min_target_liquidity, self.max_target_liquidity)
-        self.apy = np.random.uniform(self.min_apy, self.max_apy)
+        self.target_daily_volume = np.random.uniform(self.min_target_volume, self.max_target_volume)
+        self.start_apy = np.random.uniform(self.min_apy, self.max_apy)
         self.fee_percent = np.random.uniform(self.min_fee, self.max_fee)
         # determine real-world parameters for estimating u and c (vault and pool details)
         self.vault_age = np.random.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
         self.pool_age = np.random.uniform(min(self.vault_age, self.min_pool_age), self.max_pool_age) # in years
-        self.t_stretch = self.pricingModel.calc_time_stretch(self.apy) # determine time stretch
+        self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
+        self.sim_params_set = True
 
     def set_random_time(self):
         self.current_time_index = np.random.randint(0, self.num_times)
@@ -75,66 +92,185 @@ class yieldSimulator(object):
     def get_current_time(self):
         return self.times[self.current_time_index]
 
-    def run_simulation(self):
-        self.set_sim_params()
+    def run_simulation(self, override_dict=None):
+        assert self.sim_params_set, ('ERROR: You must run simulator.set_sim_params() before running the simulation')
+        if override_dict is not None:
+            for key in override_dict.keys():
+                if hasattr(self, key):
+                    setattr(self, key, override_dict[key])
+        if override_dict is not None and 'conversion_rate' in override_dict.keys():
+            self.conversion_rate = override_dict['conversion_rate']
+        else:
+            self.conversion_rate = np.around((1 + self.vault_apy)**self.vault_age, self.precision) # c variable in the paper
+        if override_dict is not None and 'normalizing_constant' in override_dict.keys():
+            self.normalizing_constant = override_dict['normalizing_constant']
+        else:
+            self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
         self.time = self.get_current_time()
-        conversion_rate = np.around((1 + self.vault_apy)**self.vault_age, self.precision) # c variable in the paper
-        normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
-        days_until_maturity = self.time * 365
-        (x_reserves, y_reserves, liquidity) = self.pricingModel.calc_liquidity(
+
+        (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
-            self.apy,
-            days_until_maturity,
+            self.start_apy,
+            self.days_until_maturity,
             self.t_stretch,
-            conversion_rate,
-            normalizing_constant)
+            self.conversion_rate,
+            self.normalizing_constant)
         total_supply = x_reserves + y_reserves
-        spot_price = self.pricingModel.calc_spot_price(
+        spot_price = self.pricing_model.calc_spot_price(
             x_reserves,
             y_reserves,
             total_supply,
             self.time / self.t_stretch,
-            conversion_rate,
-            normalizing_constant)
-        resulting_apy = self.pricingModel.apy(
-            spot_price,
-            days_until_maturity)
-        trade_amount = np.random.uniform(0, (liquidity / self.base_asset_price) / 5)
-        market = Market(
+            self.conversion_rate,
+            self.normalizing_constant)
+
+        #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
+
+        self.market = Market(
             x_reserves,
             y_reserves,
             self.fee_percent,
-            self.time / self.t_stretch,
+            self.days_until_maturity / (365 * self.t_stretch),
             total_supply,
-            self.pricingModel,
-            conversion_rate,
-            normalizing_constant)
-        (without_fee_or_slippage, with_fee, without_fee, fee) = market.swap(
-            trade_amount,
+            self.pricing_model,
+            self.conversion_rate,
+            self.normalizing_constant)
+
+        self.day = 1
+
+        self.trade_amount = np.random.uniform(0, (liquidity / self.base_asset_price) / 5)
+        (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee) = self.market.swap(
+            self.trade_amount,
             self.trade_direction,
             self.token_in,
             self.token_out)
+        self.update_analysis_dict()
 
-        self.analysis_dict['time'].append(market.t)
+    def update_analysis_dict(self):
+        self.analysis_dict['model_name'].append(self.pricing_model.model_name())
+        self.analysis_dict['time'].append(self.market.t)
         self.analysis_dict['t_stretch'].append(self.t_stretch)
         self.analysis_dict['target_liquidity'].append(self.target_liquidity)
-        self.analysis_dict['apy'].append(self.apy)
+        self.analysis_dict['target_daily_volume'].append(self.target_daily_volume)
+        self.analysis_dict['start_apy'].append(self.start_apy)
+        self.analysis_dict['current_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
         self.analysis_dict['vault_age'].append(self.vault_age)
         self.analysis_dict['vault_apy'].append(self.vault_apy)
         self.analysis_dict['pool_age'].append(self.pool_age)
-        self.analysis_dict['x_reserves'].append(market.x)
-        self.analysis_dict['y_reserves'].append(market.y)
-        self.analysis_dict['total_supply'].append(market.total_supply)
+        self.analysis_dict['x_reserves'].append(self.market.x)
+        self.analysis_dict['y_reserves'].append(self.market.y)
+        self.analysis_dict['total_supply'].append(self.market.total_supply)
         self.analysis_dict['token_in'].append(self.token_in)
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['direction'].append(self.trade_direction)
-        self.analysis_dict['amount_in'].append(trade_amount)
-        self.analysis_dict['conversion_rate'].append(conversion_rate)
-        self.analysis_dict['normalizing_constant'].append(normalizing_constant)
-        self.analysis_dict['amount_out_without_fee'].append(without_fee)
-        self.analysis_dict['fee'].append(fee)
+        self.analysis_dict['amount_in'].append(self.trade_amount)
+        self.analysis_dict['conversion_rate'].append(self.market.c)
+        self.analysis_dict['normalizing_constant'].append(self.market.u)
+        self.analysis_dict['out_without_fee_slippage'].append(self.without_fee_or_slippage)
+        self.analysis_dict['out_with_fee'].append(self.with_fee)
+        self.analysis_dict['out_without_fee'].append(self.without_fee)
+        self.analysis_dict['fee'].append(self.fee)
+        self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
+        self.analysis_dict['spot_price'].append(self.market.spot_price())
+        self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
+
+
+class Market(object):
+    def __init__(self,x,y,g,t,total_supply,pricing_model,c=1,u=1):
+        self.x=x
+        self.y=y
+        self.total_supply = total_supply
+        self.g=g
+        self.t=t
+        self.c=c
+        self.u=u
+        self.pricing_model=pricing_model
+        self.x_orders = 0
+        self.y_orders = 0
+        self.x_volume = 0
+        self.y_volume = 0
+        self.cum_y_slippage=0
+        self.cum_x_slippage=0
+        self.cum_y_fees=0
+        self.cum_x_fees=0
+        self.starting_fyt_price=self.spot_price()
+
+    def apy(self, days_until_maturity):
+        price = self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
+        return self.pricing_model.apy(price,days_until_maturity)
+
+    def spot_price(self):
+        return self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
+
+    def tick(self, step_size):
+        self.t -= step_size
+
+    def swap(self, amount, direction, token_in, token_out, to_debug=False):
+        if direction == "in":
+            if token_in == "fyt" and token_out == "base":
+                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u)
+                num_orders = self.x_orders + self.y_orders
+                if num_orders < 10 & to_debug:
+                    display('conditional one')
+                    display([amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u])
+                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
+                if any([isinstance(output_with_fee, complex),isinstance(output_without_fee, complex),isinstance(fee, complex)]):
+                    display([amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u])
+                    display([(without_fee_or_slippage,output_with_fee,output_without_fee,fee)])
+                if fee > 0:
+                    self.x -= output_with_fee
+                    self.y += amount
+                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
+                    self.cum_y_fees += fee
+                    self.x_orders+=1
+                    self.x_volume+=output_with_fee
+            elif token_in == "base" and token_out == "fyt":
+                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.x,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u)
+                num_orders = self.x_orders + self.y_orders
+                if num_orders < 10 & to_debug:
+                    display('conditional two')
+                    display([amount,self.x/self.c,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u])
+                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
+                if fee > 0:
+                    self.x += amount
+                    self.y -= output_with_fee
+                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
+                    self.cum_x_fees += fee
+                    self.y_orders+=1
+                    self.y_volume+=output_with_fee
+        elif direction == "out":
+            if token_in == "fyt" and token_out == "base":
+                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.y+self.total_supply,self.x,token_out,self.g,self.t,self.c,self.u)
+                num_orders = self.x_orders + self.y_orders
+                if num_orders < 10 & to_debug:
+                    display('conditional three')
+                    display([amount,self.y+self.total_supply,self.x/self.c,token_out,self.g,self.t,self.c,self.u])
+                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
+                if fee > 0:
+                    self.x -= output_with_fee
+                    self.y += amount
+                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
+                    self.cum_x_fees += fee
+                    self.x_orders+=1
+                    self.x_volume+=output_with_fee
+            elif token_in == "base" and token_out == "fyt":
+                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = self.pricing_model.calc_out_given_in(amount,self.x,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
+                num_orders = self.x_orders + self.y_orders
+                if num_orders < 10 & to_debug:
+                    display('conditional four')
+                    display([amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u])
+                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
+                if fee > 0:
+                    self.x += amount
+                    self.y -= output_with_fee
+                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
+                    self.cum_y_fees += fee
+                    self.y_orders+=1
+                    self.y_volume+=output_with_fee
+        return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
+
 
 class Element_Pricing_Model(object):
     @staticmethod
@@ -282,101 +418,6 @@ class Element_Pricing_Model(object):
         return (x_needed, y_needed)
 
 
-class Market(object):
-    def __init__(self,x,y,g,t,total_supply,pricing_model,c=1,u=1):
-        self.x=x
-        self.y=y
-        self.total_supply = total_supply
-        self.g=g
-        self.t=t
-        self.c=c
-        self.u=u
-        self.pricing_model=pricing_model
-        self.x_orders = 0
-        self.y_orders = 0
-        self.x_volume = 0
-        self.y_volume = 0
-        self.cum_y_slippage=0
-        self.cum_x_slippage=0
-        self.cum_y_fees=0
-        self.cum_x_fees=0
-        self.starting_fyt_price=self.spot_price()
-
-    def apy(self,days_until_maturity):
-        price = self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
-        return self.pricing_model.apy(price,days_until_maturity)
-
-    def spot_price(self):
-        return self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
-
-    def tick(self, step_size):
-        self.t -= step_size
-
-    def swap(self, amount, direction, token_in, token_out, to_debug=False):
-        if direction == "in":
-            if token_in == "fyt" and token_out == "base":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional one')
-                    display([amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if any([isinstance(output_with_fee, complex),isinstance(output_without_fee, complex),isinstance(fee, complex)]):
-                    display([amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u])
-                    display([(without_fee_or_slippage,output_with_fee,output_without_fee,fee)])
-                if fee > 0:
-                    self.x -= output_with_fee
-                    self.y += amount
-                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_y_fees += fee
-                    self.x_orders+=1
-                    self.x_volume+=output_with_fee
-            elif token_in == "base" and token_out == "fyt":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.x,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional two')
-                    display([amount,self.x/self.c,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x += amount
-                    self.y -= output_with_fee
-                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_x_fees += fee
-                    self.y_orders+=1
-                    self.y_volume+=output_with_fee
-        elif direction == "out":
-            if token_in == "fyt" and token_out == "base":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.y+self.total_supply,self.x,token_out,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional three')
-                    display([amount,self.y+self.total_supply,self.x/self.c,token_out,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x -= output_with_fee
-                    self.y += amount
-                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_x_fees += fee
-                    self.x_orders+=1
-                    self.x_volume+=output_with_fee
-            elif token_in == "base" and token_out == "fyt":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.x,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional four')
-                    display([amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x += amount
-                    self.y -= output_with_fee
-                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_y_fees += fee
-                    self.y_orders+=1
-                    self.y_volume+=output_with_fee
-        return (without_fee_or_slippage,output_with_fee,output_without_fee,fee)
-
-
 class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
     @staticmethod
     def model_name():
@@ -415,7 +456,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
             with_fee = without_fee+fee
             without_fee_or_slippage = pow(c/u*in_reserves/(out_reserves),t)*out
         return (without_fee_or_slippage,with_fee,without_fee,fee)
-    
+
     @staticmethod
     def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
         if token_out == "base": # calc shares out for fyt in
