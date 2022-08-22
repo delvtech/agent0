@@ -86,6 +86,7 @@ class yieldSimulator(object):
         return self.times[self.current_time_index]
 
     def run_simulation(self, override_dict=None):
+        # Update parameters if the user provided new ones
         assert self.sim_params_set, ('ERROR: You must run simulator.set_sim_params() before running the simulation')
         if override_dict is not None:
             for key in override_dict.keys():
@@ -99,6 +100,7 @@ class yieldSimulator(object):
             self.normalizing_constant = override_dict['normalizing_constant']
         else:
             self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
+        # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspace':
             self.pricing_model = YieldsSpacev2_Pricing_model
         elif self.pricing_model_name.lower() == 'yieldspaceminfee':
@@ -126,7 +128,7 @@ class yieldSimulator(object):
             self.time / self.t_stretch,
             self.conversion_rate,
             self.normalizing_constant)
-
+        # TODO: Do we want to calculate & store this?
         #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
 
         self.market = Market(
@@ -199,7 +201,8 @@ class yieldSimulator(object):
 
 
 class Market(object):
-    def __init__(self,x,y,g,t,total_supply,pricing_model,c=1,u=1):
+    def __init__(self, x, y, g, t, total_supply, pricing_model, c=1, u=1, verbose=False):
+        #TODO: Rename these variables to be more descriptive
         self.x=x
         self.y=y
         self.total_supply = total_supply
@@ -217,79 +220,72 @@ class Market(object):
         self.cum_y_fees=0
         self.cum_x_fees=0
         self.starting_fyt_price=self.spot_price()
+        self.verbose = verbose
 
     def apy(self, days_until_maturity):
-        price = self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
-        return self.pricing_model.apy(price,days_until_maturity)
+        price = self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.c, self.u)
+        return self.pricing_model.apy(price, days_until_maturity)
 
     def spot_price(self):
-        return self.pricing_model.calc_spot_price(self.x,self.y,self.total_supply,self.t,self.c,self.u)
+        return self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.c, self.u)
 
     def tick(self, step_size):
         self.t -= step_size
 
-    def swap(self, amount, direction, token_in, token_out, to_debug=False):
+    def swap(self, amount, direction, token_in, token_out):
         if direction == "in":
             if token_in == "fyt" and token_out == "base":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional one')
-                    display([amount,self.y+self.total_supply,self.x/self.c,token_in,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if any([isinstance(output_with_fee, complex),isinstance(output_without_fee, complex),isinstance(fee, complex)]):
-                    display([amount,self.y+self.total_supply,self.x,token_in,self.g,self.t,self.c,self.u])
-                    display([(without_fee_or_slippage,output_with_fee,output_without_fee,fee)])
-                if fee > 0:
-                    self.x -= output_with_fee
-                    self.y += amount
-                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_y_fees += fee
-                    self.x_orders+=1
-                    self.x_volume+=output_with_fee
+                in_reserves = self.y + self.total_supply
+                out_reserves = self.x
+                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
+                        self.pricing_model.calc_in_given_out(
+                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.c, self.u)
+                dx = -output_with_fee
+                dy = amount
             elif token_in == "base" and token_out == "fyt":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_in_given_out(amount,self.x,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional two')
-                    display([amount,self.x/self.c,self.y+self.total_supply,token_in,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x += amount
-                    self.y -= output_with_fee
-                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_x_fees += fee
-                    self.y_orders+=1
-                    self.y_volume+=output_with_fee
+                in_reserves = self.x
+                out_reserves = self.y + self.total_supply
+                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
+                        self.pricing_model.calc_in_given_out(
+                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.c, self.u)
+                dx = amount
+                dy = -output_with_fee
+            else:
+                raise ValueError(
+                        f'token_in and token_out must be unique and in the set ("base", "fyt"), not in={token_in} and out={token_out}')
         elif direction == "out":
             if token_in == "fyt" and token_out == "base":
-                (without_fee_or_slippage,output_with_fee,output_without_fee,fee) = self.pricing_model.calc_out_given_in(amount,self.y+self.total_supply,self.x,token_out,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional three')
-                    display([amount,self.y+self.total_supply,self.x/self.c,token_out,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x -= output_with_fee
-                    self.y += amount
-                    self.cum_x_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_x_fees += fee
-                    self.x_orders+=1
-                    self.x_volume+=output_with_fee
+                in_reserves = self.y + self.total_supply
+                out_reserves = self.x
+                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
+                        self.pricing_model.calc_out_given_in(
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.c, self.u)
+                dx = -output_with_fee
+                dy = amount
             elif token_in == "base" and token_out == "fyt":
-                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = self.pricing_model.calc_out_given_in(amount,self.x,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u)
-                num_orders = self.x_orders + self.y_orders
-                if num_orders < 10 & to_debug:
-                    display('conditional four')
-                    display([amount,self.x/self.c,self.y+self.total_supply,token_out,self.g,self.t,self.c,self.u])
-                    display([without_fee_or_slippage,output_with_fee,output_without_fee,fee])
-                if fee > 0:
-                    self.x += amount
-                    self.y -= output_with_fee
-                    self.cum_y_slippage += abs(without_fee_or_slippage-output_without_fee)
-                    self.cum_y_fees += fee
-                    self.y_orders+=1
-                    self.y_volume+=output_with_fee
+                in_reserves = self.x
+                out_reserves = self.y + self.total_supply
+                (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
+                        self.pricing_model.calc_out_given_in(
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.c, self.u)
+                dx = amount
+                dy = -output_with_fee
+        else:
+            raise ValueError(f'direction argument must be "in" or "out", not {direction}')
+        if fee > 0:
+            self.x += dx
+            self.y += dy
+            self.cum_x_slippage += abs(without_fee_or_slippage - output_without_fee)
+            self.cum_y_fees += fee
+            self.x_orders += 1
+            self.x_volume += output_with_fee
+        if self.verbose and self.x_orders + self.y_orders < 10:
+            print('conditional one')
+            print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.c, self.u])
+            print([without_fee_or_slippage, output_with_fee, output_without_fee, fee])
+        if self.verbose and any([isinstance(output_with_fee, complex), isinstance(output_without_fee, complex), isinstance(fee, complex)]):
+            print([amount, self.y + self.total_supply, self.x, token_in, self.g, self.t, self.c, self.u])
+            print([(without_fee_or_slippage, output_with_fee, output_without_fee, fee)])
         return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
 
 
@@ -352,7 +348,7 @@ class Element_Pricing_Model(object):
         return 1/pow((y_reserves+total_supply)/x_reserves,t)
 
     @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
         k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
         without_fee = pow(k-pow(out_reserves-out,1-t),1/(1-t)) - in_reserves
         if token_in == "base":
@@ -365,7 +361,7 @@ class Element_Pricing_Model(object):
         return (without_fee_or_slippage,with_fee,without_fee,fee)
 
     @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
         k=pow(in_reserves,1-t) + pow(out_reserves,1-t)
         without_fee = out_reserves - pow(k-pow(in_reserves+in_,1-t),1/(1-t))
         if token_out == "base":
@@ -445,7 +441,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
         return "YieldsSpacev2"
 
     @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
         if token_in == "base": # calc shares in for fyt out
             #without_fee = YieldsSpacev2_Pricing_model.sharesInForFYTokenOut(dy=out,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             scale = c/u
@@ -479,7 +475,7 @@ class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
         return (without_fee_or_slippage,with_fee,without_fee,fee)
 
     @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
         if token_out == "base": # calc shares out for fyt in
             #without_fee = YieldsSpacev2_Pricing_model.fyTokenOutForSharesIn(dz=in_,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             scale = c/u
@@ -576,7 +572,7 @@ class YieldsSpacev2_Pricing_model_MinFee(Element_Pricing_Model):
         return "YieldsSpacev2_MinFee"
 
     @staticmethod
-    def calc_in_given_out(out,in_reserves,out_reserves,token_in,g,t,c,u):
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
         if token_in == "base": # calc shares in for fyt out
             #without_fee = YieldsSpacev2_Pricing_model.sharesInForFYTokenOut(dy=out,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             scale = c/u
@@ -610,7 +606,7 @@ class YieldsSpacev2_Pricing_model_MinFee(Element_Pricing_Model):
         return (without_fee_or_slippage,with_fee,without_fee,fee)
 
     @staticmethod
-    def calc_out_given_in(in_,in_reserves,out_reserves,token_out,g,t,c,u):
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
         if token_out == "base": # calc shares out for fyt in
             #without_fee = YieldsSpacev2_Pricing_model.fyTokenOutForSharesIn(dz=in_,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             scale = c/u
