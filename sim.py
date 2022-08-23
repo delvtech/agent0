@@ -375,7 +375,7 @@ class PricingModel(object):
         x_needed = (x_reserves / y_reserves) * y_needed
         return (x_needed, y_needed)
 
-    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch):
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
         raise NotImplementedError
 
     def apy(self, price, days_until_maturity):
@@ -399,7 +399,7 @@ class PricingModel(object):
         t = days_until_maturity / (365 * time_stretch)
         y_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * t)
         x_reserves = self.calc_x_reserves(
-                apy, y_reserves, days_until_maturity, time_stretch, c, u)
+                apy, y_reserves, days_until_maturity, time_stretch, u, c)
         scaleUpFactor = target_liquidity / (x_reserves * market_price + y_reserves * market_price * spot_price)
         y_reserves = y_reserves * scaleUpFactor
         x_reserves = x_reserves * scaleUpFactor
@@ -440,7 +440,7 @@ class ElementPricingModel(PricingModel):
         without_fee_or_slippage = 1 / pow(in_reserves / out_reserves, t) * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch):
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u=1, c=1):
         t = days_until_maturity / (365 * time_stretch)
         T = days_until_maturity / 365
         r = apy / 100
@@ -505,7 +505,7 @@ class YieldSpacev2PricingModel(PricingModel):
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, c, u):
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
         t = days_until_maturity / (365 * time_stretch)
         T = days_until_maturity / 365
         r = apy / 100
