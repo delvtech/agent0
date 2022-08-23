@@ -203,6 +203,7 @@ class YieldSimulator(object):
 class Market(object):
     def __init__(self, x, y, g, t, total_supply, pricing_model, c=1, u=1, verbose=False):
         #TODO: Rename these variables to be more descriptive
+        #TODO: c & u need to be able to be computed _or_ assigned at any time
         self.x=x
         self.y=y
         self.total_supply = total_supply
@@ -344,10 +345,10 @@ class PricingModel(object):
                 # use all the x_in
                 x_needed = x_in
                 # solve for: x_reserves/y_reserves = x_needed/y_needed
-                y_needed = x_needed/(x_reserves/y_reserves)
+                y_needed = x_needed / (x_reserves / y_reserves)
             else:
                 # We calculate the percent increase in the reserves from contributing all of the bond
-                lp_out = (x_needed * total_supply)/x_reserves
+                lp_out = (x_needed * total_supply) / x_reserves
                 y_needed = y_in
         return (x_needed, y_needed, lp_out)
 
@@ -357,14 +358,14 @@ class PricingModel(object):
         x_needed = (x_reserves / y_reserves) * min_y_out
         # if there isn't enough x_out provided
         if min_x_out > x_needed:
-            lp_in = (min_x_out * total_supply)/x_reserves
+            lp_in = (min_x_out * total_supply) / x_reserves
             # use all the x_out
             x_needed = min_x_out
             # solve for: x_reserves/y_reserves = x_needed/y_needed
-            y_needed = x_needed/(x_reserves/y_reserves)
+            y_needed = x_needed / (x_reserves / y_reserves)
         else:
             y_needed = min_y_out
-            lp_in = (y_needed * total_supply)/y_reserves
+            lp_in = (y_needed * total_supply) / y_reserves
         return (x_needed, y_needed, lp_in)
 
     @staticmethod
@@ -459,41 +460,50 @@ class YieldSpacev2PricingModel(PricingModel):
             dy = out
             z = in_reserves / c # convert from x to z (x=cz)
             y = out_reserves
+            #AMM math
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = (1 / u * ((k - (y - dy)**(1 - t)) / scale)**(1 / (1 - t)) - z) * c
+            # Fee math
             fee = (out - without_fee) * g
             with_fee = without_fee + fee
             without_fee_or_slippage = (in_reserves / (c / u * out_reserves))**t * out
+
         elif token_in == "fyt": # calc fyt in for shares out
             dz = out / c
             z = out_reserves / c # convert from x to z (x=cz)
             y = in_reserves
+            #AMM math
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = (k - scale * (u * z - u * dz)**(1 - t))**(1 / (1 - t)) - y
-            fee =  (without_fee - out) * g
+            #Fee math
+            fee = (without_fee - out) * g
             with_fee = without_fee + fee
-            without_fee_or_slippage = (c / u * in_reserves / out_reserves)**t * out
+            without_fee_or_slippage = ((c / u * in_reserves) / out_reserves)**t * out
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     @staticmethod
     def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
+        scale = c / u
         if token_out == "base": # calc shares out for fyt in
-            scale = c / u
             dy = in_
             z = out_reserves / c # convert from x to z (x=cz)
             y = in_reserves
+            # AMM math
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = (z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))) * c
+            # Fee math
             fee = (in_ - without_fee) * g
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
+
         elif token_out == "fyt": # calc fyt out for shares in
-            scale = c / u
             dz = in_ / c # convert from x to z (x=cz)
             z = in_reserves / c # convert from x to z (x=cz)
             y = out_reserves
+            # AMM math
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
+            # Fee math
             fee = (without_fee - in_) * g
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
@@ -507,7 +517,6 @@ class YieldSpacev2PricingModel(PricingModel):
         if self.verbose:
             print(f'calc_x_reserves result: {result}')
         return result
-
 
 
 class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
