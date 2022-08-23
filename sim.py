@@ -102,11 +102,11 @@ class YieldSimulator(object):
             self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspace':
-            self.pricing_model = YieldSpacev2PricingModel
+            self.pricing_model = YieldSpacev2PricingModel()
         elif self.pricing_model_name.lower() == 'yieldspaceminfee':
-            self.pricing_model = YieldSpacev2MinFeePricingModel
+            self.pricing_model = YieldSpacev2MinFeePricingModel()
         elif self.pricing_model_name.lower() == 'element':
-            self.pricing_model = ElementPricingModel
+            self.pricing_model = ElementPricingModel()
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
