@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-class yieldSimulator(object):
+class YieldSimulator(object):
     def __init__(self, **kwargs):
         self.step_size = kwargs.get('step_size') # time resolution
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
@@ -102,11 +102,11 @@ class yieldSimulator(object):
             self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspace':
-            self.pricing_model = YieldsSpacev2_Pricing_model
+            self.pricing_model = YieldSpacev2PricingModel
         elif self.pricing_model_name.lower() == 'yieldspaceminfee':
-            self.pricing_model = YieldsSpacev2_Pricing_model_MinFee
+            self.pricing_model = YieldSpacev2MinFeePricingModel
         elif self.pricing_model_name.lower() == 'element':
-            self.pricing_model = Element_Pricing_Model
+            self.pricing_model = ElementPricingModel
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
@@ -118,16 +118,16 @@ class yieldSimulator(object):
             self.start_apy,
             self.days_until_maturity,
             self.t_stretch,
-            self.conversion_rate,
-            self.normalizing_constant)
+            self.normalizing_constant,
+            self.conversion_rate)
         total_supply = x_reserves + y_reserves
         spot_price = self.pricing_model.calc_spot_price(
             x_reserves,
             y_reserves,
             total_supply,
             self.time / self.t_stretch,
-            self.conversion_rate,
-            self.normalizing_constant)
+            self.normalizing_constant,
+            self.conversion_rate)
         # TODO: Do we want to calculate & store this?
         #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
 
@@ -208,8 +208,8 @@ class Market(object):
         self.total_supply = total_supply
         self.g=g
         self.t=t
-        self.c=c
-        self.u=u
+        self.c=c # conversion rate
+        self.u=u # normalizing constant
         self.pricing_model=pricing_model
         self.x_orders = 0
         self.y_orders = 0
@@ -223,11 +223,11 @@ class Market(object):
         self.verbose = verbose
 
     def apy(self, days_until_maturity):
-        price = self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.c, self.u)
+        price = self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.u, self.c)
         return self.pricing_model.apy(price, days_until_maturity)
 
     def spot_price(self):
-        return self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.c, self.u)
+        return self.pricing_model.calc_spot_price(self.x, self.y, self.total_supply, self.t, self.u, self.c)
 
     def tick(self, step_size):
         self.t -= step_size
@@ -239,7 +239,7 @@ class Market(object):
                 out_reserves = self.x
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_in_given_out(
-                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.c, self.u)
+                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
             elif token_in == "base" and token_out == "fyt":
@@ -247,7 +247,7 @@ class Market(object):
                 out_reserves = self.y + self.total_supply
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_in_given_out(
-                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.c, self.u)
+                                amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
             else:
@@ -259,7 +259,7 @@ class Market(object):
                 out_reserves = self.x
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.c, self.u)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
             elif token_in == "base" and token_out == "fyt":
@@ -267,7 +267,7 @@ class Market(object):
                 out_reserves = self.y + self.total_supply
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.c, self.u)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
         else:
@@ -281,95 +281,38 @@ class Market(object):
             self.x_volume += output_with_fee
         if self.verbose and self.x_orders + self.y_orders < 10:
             print('conditional one')
-            print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.c, self.u])
+            print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.u, self.c])
             print([without_fee_or_slippage, output_with_fee, output_without_fee, fee])
         if self.verbose and any([isinstance(output_with_fee, complex), isinstance(output_without_fee, complex), isinstance(fee, complex)]):
-            print([amount, self.y + self.total_supply, self.x, token_in, self.g, self.t, self.c, self.u])
+            print([amount, self.y + self.total_supply, self.x, token_in, self.g, self.t, self.u, self.c])
             print([(without_fee_or_slippage, output_with_fee, output_without_fee, fee)])
         return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
 
 
-class Element_Pricing_Model(object):
+class PricingModel(object):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
     @staticmethod
     def model_name():
-        return "Element_Pricing_Model"
+        raise NotImplementedError
+
+    @staticmethod
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
+        raise NotImplementedError
+
+    @staticmethod
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
+        raise NotImplementedError
+
+    @staticmethod
+    def calc_time_stretch(apy):
+        return 3.09396 / (0.02789 * apy)
 
     @staticmethod
     def calc_max_trade(in_reserves, out_reserves, t):
         k = in_reserves**(1 - t) + out_reserves**(1 - t)
         return k**(1 / (1 - t)) - in_reserves
-
-    @staticmethod
-    def calc_x_reserves(apy, y_reserves, days_until_maturity, time_stretch):
-        t = days_until_maturity / (365 * time_stretch)
-        T = days_until_maturity / 365
-        r = apy / 100
-        return 2 * y_reserves / ((-1/(r*T - 1))**(1/t) - 1)
-
-    @staticmethod
-    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch,c,u):
-      spot_price = Element_Pricing_Model.calc_spot_price_from_apy(apy, days_until_maturity)
-      t=days_until_maturity / (365 * time_stretch)
-      y_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * t)
-      x_reserves = Element_Pricing_Model.calc_x_reserves(apy, y_reserves, days_until_maturity, time_stretch)
-      scaleUpFactor = target_liquidity/(x_reserves * market_price + y_reserves * market_price * spot_price)
-      y_reserves = y_reserves * scaleUpFactor
-      x_reserves = x_reserves * scaleUpFactor
-      liquidity = x_reserves * market_price + y_reserves * market_price * spot_price
-      actual_apy = Element_Pricing_Model.calc_apy_from_reserves(
-              x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch)
-      #print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
-      return (x_reserves, y_reserves, liquidity)
-
-    @staticmethod
-    def calc_time_stretch(apy):
-        return 3.09396 / ( 0.02789 * apy)
-
-    @staticmethod
-    def calc_apy_from_reserves(x_reserves, y_reserves, total_supply, t, t_stretch):
-      spot_price = Element_Pricing_Model.calc_spot_price(x_reserves, y_reserves, total_supply, t)
-      days_until_maturity = t * 365 * t_stretch
-      return Element_Pricing_Model.apy(spot_price, days_until_maturity)
-
-    @staticmethod
-    def apy(price, days_until_maturity):
-      T = days_until_maturity / 365
-      return (1 - price) / price / T * 100 # APYW
-
-    @staticmethod
-    def calc_spot_price_from_apy(apy, days_until_maturity):
-      T = days_until_maturity / 365
-      return 1 - apy * T / 100
-
-    @staticmethod
-    def calc_spot_price(x_reserves, y_reserves, total_supply, t):#, u=1, c=1):
-        return 1 / pow((y_reserves + total_supply) / x_reserves, t)
-
-    @staticmethod
-    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
-        k = pow(in_reserves, 1 - t) + pow(out_reserves, 1 - t)
-        without_fee = pow(k - pow(out_reserves - out, 1 - t), 1 / (1 - t)) - in_reserves
-        if token_in == "base":
-            fee = out - without_fee * g
-            with_fee = without_fee + fee
-        elif token_in == "fyt":
-            fee = (without_fee - out) * g
-            with_fee = without_fee + fee
-        without_fee_or_slippage = pow(in_reserves / out_reserves, t) * out
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    @staticmethod
-    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
-        k = pow(in_reserves, 1 - t) + pow(out_reserves, 1 - t)
-        without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
-        if token_out == "base":
-            fee =  (in_ - without_fee) * g
-            with_fee = without_fee - fee
-        elif token_out == "fyt":
-            fee =  (without_fee - in_) * g
-            with_fee = without_fee - fee
-        without_fee_or_slippage = 1 / pow(in_reserves / out_reserves, t) * in_
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     @staticmethod
     def calc_tokens_in_given_lp_out(lp_out, x_reserves, y_reserves, total_supply):
@@ -422,7 +365,7 @@ class Element_Pricing_Model(object):
         else:
             y_needed = min_y_out
             lp_in = (y_needed * total_supply)/y_reserves
-        return (x_needed,y_needed,lp_in)
+        return (x_needed, y_needed, lp_in)
 
     @staticmethod
     def calc_tokens_out_for_lp_in(lp_in, x_reserves, y_reserves, total_supply):
@@ -432,259 +375,176 @@ class Element_Pricing_Model(object):
         x_needed = (x_reserves / y_reserves) * y_needed
         return (x_needed, y_needed)
 
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch):
+        raise NotImplementedError
 
-class YieldsSpacev2_Pricing_model(Element_Pricing_Model):
-    @staticmethod
-    def model_name():
-        return "YieldsSpacev2"
-
-    @staticmethod
-    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
-        if token_in == "base": # calc shares in for fyt out
-            #without_fee = YieldsSpacev2_Pricing_model.sharesInForFYTokenOut(dy=out,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
-            scale = c / u
-            dy = out
-            z = in_reserves / c # convert from x to z (x=cz)
-            y = out_reserves
-            k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = 1 / u * ((k - (y - dy)**(1 - t)) / scale)**(1 / (1 - t)) - z
-            without_fee = without_fee*c # convert from z to x
-            #without_fee_old = 1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y-dy,1-t),1/(1-t))-z
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc shares in for fyt out (case 1): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee = (out - without_fee) * g
-            with_fee = without_fee + fee
-            without_fee_or_slippage = pow((in_reserves) / (c / u * out_reserves), t) * out
-        elif token_in == "fyt": # calc fyt in for shares out
-            #without_fee = YieldsSpacev2_Pricing_model.fyTokenInForSharesOut(dz=out,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
-            scale = c / u
-            dz = out / c
-            z = out_reserves / c # convert from x to z (x=cz)
-            y = in_reserves
-            k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = (k - scale * (u * z - u * dz)**(1 - t))**(1 / (1 - t)) - y
-            #without_fee_old = pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z-u*dz,1-t),1/(1-t))-y
-            # without_fee = without_fee*c # convert from z to x (x=cz)
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc fyt in for shares out (case 2): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee =  (without_fee - out) * g
-            with_fee = without_fee + fee
-            without_fee_or_slippage = pow(c / u * in_reserves / out_reserves, t) * out
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    @staticmethod
-    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
-        if token_out == "base": # calc shares out for fyt in
-            #without_fee = YieldsSpacev2_Pricing_model.fyTokenOutForSharesIn(dz=in_,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
-            scale = c / u
-            dy = in_
-            z = out_reserves / c # convert from x to z (x=cz)
-            y = in_reserves
-            k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
-            without_fee = without_fee * c # convert from z to x (x=cz)
-            #without_fee_old = z-1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y+dy,1-t),1/(1-t))
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc shares out for fyt in (case 3): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee =  (in_ - without_fee) * g
-            with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / pow((c / u * in_reserves) / out_reserves, t) * in_
-        elif token_out == "fyt": # calc fyt out for shares in
-            #without_fee = YieldsSpacev2_Pricing_model.sharesOutForFYTokenIn(dy=in_,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
-            scale = c / u
-            dz = in_ / c # convert from x to z (x=cz)
-            z = in_reserves / c # convert from x to z (x=cz)
-            y = out_reserves
-            k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
-            #without_fee_old = y-pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z+u*dz,1-t),1/(1-t))
-            # without_fee = without_fee*c # convert from z to x (x=cz)
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc fyt out for shares inn (case 4): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee = (without_fee - in_) * g
-            with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / pow(in_reserves / (c / u * out_reserves), t) * in_
-        return (without_fee_or_slippage,with_fee,without_fee,fee)
-
-    @staticmethod
-    def calc_x_reserves(apy, y_reserves, days_until_maturity, time_stretch, c, u):
-        t = days_until_maturity / (365 * time_stretch)
+    def apy(self, price, days_until_maturity):
         T = days_until_maturity / 365
-        r = apy / 100
-        y = y_reserves
-        # result = ((-apy/100*T + 1)/(c*y_reserves))**(1/t)/u
-        # result = (((-r*T + 1)/(c*y))**(1/t))/u
-        result = 2 * c *y / (-c + u * (-1 / (r * T - 1))**(1 / t))
-        # display('result: {}'.format(result))
-        return result
+        return (1 - price) / price / T * 100 # APYW
 
-    @staticmethod
-    def calc_time_stretch(apy):
-        return 3.09396 / (0.02789 * apy)
+    def calc_spot_price(self, x_reserves, y_reserves, total_supply, t, u, c):
+        return 1 / pow(c * (y_reserves + total_supply) / (u * x_reserves), t)
 
-    @staticmethod
-    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch,c,u):
-        spot_price = YieldsSpacev2_Pricing_model.calc_spot_price_from_apy(
-                apy, days_until_maturity)
+    def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch, u, c):
+        spot_price = self.calc_spot_price(x_reserves, y_reserves, total_supply, t, u, c)
+        days_until_maturity = t * 365 * t_stretch
+        return self.apy(spot_price, days_until_maturity)
+
+    def calc_spot_price_from_apy(self, apy, days_until_maturity):
+        T = days_until_maturity / 365
+        return 1 - apy * T / 100
+
+    def calc_liquidity(self, target_liquidity, market_price, apy, days_until_maturity, time_stretch, u, c):
+        spot_price = self.calc_spot_price_from_apy(apy, days_until_maturity)
         t = days_until_maturity / (365 * time_stretch)
         y_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * t)
-        x_reserves = YieldsSpacev2_Pricing_model.calc_x_reserves(
+        x_reserves = self.calc_x_reserves(
                 apy, y_reserves, days_until_maturity, time_stretch, c, u)
         scaleUpFactor = target_liquidity / (x_reserves * market_price + y_reserves * market_price * spot_price)
         y_reserves = y_reserves * scaleUpFactor
         x_reserves = x_reserves * scaleUpFactor
         liquidity = x_reserves * market_price + y_reserves * market_price * spot_price
-        actual_apy = YieldsSpacev2_Pricing_model.calc_apy_from_reserves(
-                x_reserves, y_reserves, x_reserves+y_reserves, t, time_stretch, c, u)
-        #print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
-        return (x_reserves,y_reserves,liquidity)
-
-    @staticmethod
-    def calc_apy_from_reserves(x_reserves, y_reserves, total_supply,t,t_stretch,c,u):
-        spot_price = YieldsSpacev2_Pricing_model.calc_spot_price(x_reserves, y_reserves, total_supply, t, c, u)
-        days_until_maturity = t * 365 * t_stretch
-        return YieldsSpacev2_Pricing_model.apy(spot_price, days_until_maturity)
-
-    @staticmethod
-    def apy(price, days_until_maturity):
-      T = days_until_maturity / 365
-      return (1 - price) / price / T * 100
-
-    @staticmethod
-    def calc_spot_price_from_apy(apy, days_until_maturity):
-      T = days_until_maturity / 365
-      return 1 - apy * T / 100
-
-    @staticmethod
-    def calc_spot_price(x_reserves, y_reserves, total_supply, t, c, u):
-        return 1 / pow(c * (y_reserves + total_supply) / (u * x_reserves), t)
+        actual_apy = self.calc_apy_from_reserves(
+                x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch, u, c)
+        if self.verbose:
+            print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
+        return (x_reserves, y_reserves, liquidity)
 
 
-class YieldsSpacev2_Pricing_model_MinFee(Element_Pricing_Model):
+class ElementPricingModel(PricingModel):
     @staticmethod
     def model_name():
-        return "YieldsSpacev2_MinFee"
+        return "ElementPricingModel"
 
     @staticmethod
-    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, c, u):
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
+        k = in_reserves**(1 - t) + out_reserves**(1 - t)
+        without_fee = pow(k - pow(out_reserves - out, 1 - t), 1 / (1 - t)) - in_reserves
+        if token_in == "base":
+            fee = (out - without_fee) * g
+        elif token_in == "fyt":
+            fee = (without_fee - out) * g
+        with_fee = without_fee + fee
+        without_fee_or_slippage = out * (in_reserves / out_reserves)**t
+        return (without_fee_or_slippage, with_fee, without_fee, fee)
+
+    @staticmethod
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
+        k = in_reserves**(1 - t) + out_reserves**(1 - t)
+        without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
+        if token_out == "base":
+            fee = (in_ - without_fee) * g
+        elif token_out == "fyt":
+            fee = (without_fee - in_) * g
+        with_fee = without_fee - fee
+        without_fee_or_slippage = 1 / pow(in_reserves / out_reserves, t) * in_
+        return (without_fee_or_slippage, with_fee, without_fee, fee)
+
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch):
+        t = days_until_maturity / (365 * time_stretch)
+        T = days_until_maturity / 365
+        r = apy / 100
+        return 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
+
+    def calc_spot_price(self, x_reserves, y_reserves, total_supply, t):
+        super(ElementPricingModel, self).calc_spot_price(x_reserves, y_reserves, total_supply, t, u=1, c=1)
+
+    def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch):
+        super(ElementPricingModel, self).calc_apy_from_reserves(x_reserves, y_reserves, total_supply, t, t_stretch, u=1, c=1)
+
+
+class YieldSpacev2PricingModel(PricingModel):
+    @staticmethod
+    def model_name():
+        return "YieldsSpacev2"
+
+    @staticmethod
+    def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
+        scale = c / u
         if token_in == "base": # calc shares in for fyt out
-            #without_fee = YieldsSpacev2_Pricing_model.sharesInForFYTokenOut(dy=out,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
-            scale = c / u
             dy = out
             z = in_reserves / c # convert from x to z (x=cz)
             y = out_reserves
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = (1 / u * ((k - (y - dy)**(1 - t)) / scale)**(1 / (1 - t)) - z) * c
-            #without_fee_old = 1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y-dy,1-t),1/(1-t))-z
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc shares in for fyt out (case 1): old: {}, new: {}'.format(without_fee_old,without_fee))
             fee = (out - without_fee) * g
             with_fee = without_fee + fee
-            without_fee_or_slippage = pow((in_reserves) / (c / u * out_reserves), t) * out
+            without_fee_or_slippage = (in_reserves / (c / u * out_reserves))**t * out
         elif token_in == "fyt": # calc fyt in for shares out
-            #without_fee = YieldsSpacev2_Pricing_model.fyTokenInForSharesOut(dz=out,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
-            scale = c / u
             dz = out / c
             z = out_reserves / c # convert from x to z (x=cz)
             y = in_reserves
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = (k - scale * (u * z - u * dz)**(1 - t))**(1 / (1 - t)) - y
-            #without_fee_old = pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z-u*dz,1-t),1/(1-t))-y
-            # without_fee = without_fee*c # convert from z to x (x=cz)
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc fyt in for shares out (case 2): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee = (without_fee - out) * g
+            fee =  (without_fee - out) * g
             with_fee = without_fee + fee
-            without_fee_or_slippage = pow(c / u * in_reserves / out_reserves, t) * out
+            without_fee_or_slippage = (c / u * in_reserves / out_reserves)**t * out
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     @staticmethod
-    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, c, u):
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
         if token_out == "base": # calc shares out for fyt in
-            #without_fee = YieldsSpacev2_Pricing_model.fyTokenOutForSharesIn(dz=in_,z=in_reserves,y=out_reserves,t=t,c=c,u=u)
             scale = c / u
             dy = in_
             z = out_reserves / c # convert from x to z (x=cz)
             y = in_reserves
             k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
-            without_fee = without_fee * c # convert from z to x (x=cz)
-            #without_fee_old = z-1/u*pow(pow(u*z,1-t)+u/c*pow(y,1-t)-u/c*pow(y+dy,1-t),1/(1-t))
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc shares out for fyt in (case 3): old: {}, new: {}'.format(without_fee_old,without_fee))
-            fee =  (in_ - without_fee) * g
-            if fee / in_ < 5 / 100 / 100:
-                fee = in_ * 5/ 100 / 100
+            without_fee = (z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))) * c
+            fee = (in_ - without_fee) * g
             with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / pow((c / u * in_reserves) / out_reserves, t) * in_
+            without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
         elif token_out == "fyt": # calc fyt out for shares in
-            #without_fee = YieldsSpacev2_Pricing_model.sharesOutForFYTokenIn(dy=in_,z=out_reserves,y=in_reserves,t=t,c=c,u=u)
             scale = c / u
             dz = in_ / c # convert from x to z (x=cz)
             z = in_reserves / c # convert from x to z (x=cz)
             y = out_reserves
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
-            #without_fee_old = y-pow(c/u*pow(u*z,1-t)+pow(y,1-t)-c/u*pow(u*z+u*dz,1-t),1/(1-t))
-            # without_fee = without_fee*c # convert from z to x (x=cz)
-            # if without_fee_old!=without_fee:
-            #     print('disagremeent calc fyt out for shares inn (case 4): old: {}, new: {}'.format(without_fee_old,without_fee))
+            fee = (without_fee - in_) * g
+            with_fee = without_fee - fee
+            without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
+        return (without_fee_or_slippage, with_fee, without_fee, fee)
+
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, c, u):
+        t = days_until_maturity / (365 * time_stretch)
+        T = days_until_maturity / 365
+        r = apy / 100
+        result = 2 * c * y_reserves / (-c + u * (-1 / (r * T - 1))**(1 / t))
+        if self.verbose:
+            print(f'calc_x_reserves result: {result}')
+        return result
+
+
+
+class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
+    @staticmethod
+    def model_name():
+        return "YieldsSpacev2_MinFee"
+
+    @staticmethod
+    def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
+        scale = c / u
+        if token_out == "base": # calc shares out for fyt in
+            dy = in_
+            z = out_reserves / c # convert from x to z (x=cz)
+            y = in_reserves
+            k = scale * (u * z)**(1 - t) + y**(1 - t)
+            without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
+            without_fee = without_fee * c # convert from z to x (x=cz)
+            fee =  (in_ - without_fee) * g
+            if fee / in_ < 5 / 100 / 100:
+                fee = in_ * 5/ 100 / 100
+            with_fee = without_fee - fee
+            without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
+        elif token_out == "fyt": # calc fyt out for shares in
+            dz = in_ / c # convert from x to z (x=cz)
+            z = in_reserves / c # convert from x to z (x=cz)
+            y = out_reserves
+            k = scale * (u * z)**(1 - t) + y**(1 - t)
+            without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
             fee =  (without_fee - in_) * g
             if fee / in_ < 5 / 100 / 100:
                 fee = in_ * 5 / 100 / 100
             with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / pow(in_reserves / (c / u * out_reserves), t) * in_
+            without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    @staticmethod
-    def calc_x_reserves(apy, y_reserves, days_until_maturity, time_stretch, c, u):
-        t = days_until_maturity / (365 * time_stretch)
-        T = days_until_maturity / 365
-        r = apy / 100
-        y = y_reserves
-        # result = ((-apy/100*T + 1)/(c*y_reserves))**(1/t)/u
-        # result = (((-r*T + 1)/(c*y))**(1/t))/u
-        result = 2 * c * y / (-c + u * (-1 / (r * T - 1))**(1 / t))
-        # display('result: {}'.format(result))
-        return result
-
-    @staticmethod
-    def calc_time_stretch(apy):
-        return 3.09396 / (0.02789 * apy)
-
-    @staticmethod
-    def calc_liquidity(target_liquidity, market_price, apy, days_until_maturity, time_stretch,c,u):
-      spot_price = YieldsSpacev2_Pricing_model_MinFee.calc_spot_price_from_apy(apy, days_until_maturity)
-    #   display('spot price: {}'.format(spot_price))
-      t = days_until_maturity / (365 * time_stretch)
-      y_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * t)
-      x_reserves = YieldsSpacev2_Pricing_model_MinFee.calc_x_reserves(
-              apy, y_reserves, days_until_maturity, time_stretch, c, u)
-      scaleUpFactor = target_liquidity/(x_reserves * market_price + y_reserves * market_price * spot_price)
-      y_reserves = y_reserves * scaleUpFactor
-      x_reserves = x_reserves * scaleUpFactor
-      liquidity = x_reserves * market_price + y_reserves * market_price * spot_price
-      actual_apy = YieldsSpacev2_Pricing_model_MinFee.calc_apy_from_reserves(
-              x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch, c, u)
-      #print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
-      return (x_reserves, y_reserves, liquidity)
-
-    @staticmethod
-    def calc_apy_from_reserves(x_reserves, y_reserves, total_supply, t, t_stretch, c, u):
-      spot_price = YieldsSpacev2_Pricing_model_MinFee.calc_spot_price(x_reserves, y_reserves, total_supply, t, c, u)
-      days_until_maturity = t * 365 * t_stretch
-      return YieldsSpacev2_Pricing_model_MinFee.apy(spot_price, days_until_maturity)
-
-    @staticmethod
-    def apy(price, days_until_maturity):
-      T = days_until_maturity / 365
-      return (1 - price) / price / T * 100 # apy
-
-    @staticmethod
-    def calc_spot_price_from_apy(apy,days_until_maturity):
-      T = days_until_maturity / 365
-      return 1 - apy * T / 100
-
-    @staticmethod
-    def calc_spot_price(x_reserves, y_reserves, total_supply, t, c, u):
-        return 1 / pow(c * (y_reserves + total_supply) / (u * x_reserves), t)
