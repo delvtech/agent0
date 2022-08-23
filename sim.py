@@ -449,6 +449,9 @@ class ElementPricingModel(PricingModel):
     def calc_spot_price(self, x_reserves, y_reserves, total_supply, t):
         super(ElementPricingModel, self).calc_spot_price(x_reserves, y_reserves, total_supply, t, u=1, c=1)
 
+    def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch, u, c):
+        super(ElementPricingModel, self).calc_apy_from_reserves(x_reserves, y_reserves, total_supply, t, t_stretch, u=1, c=1)
+
     def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch):
         super(ElementPricingModel, self).calc_apy_from_reserves(x_reserves, y_reserves, total_supply, t, t_stretch, u=1, c=1)
 
