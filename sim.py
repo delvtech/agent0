@@ -33,6 +33,7 @@ class YieldSimulator(object):
         self.current_time_index = 0
         analysis_keys = [
             'model_name',
+            'simulation_time',
             'time_until_end',
             't_stretch',
             'target_liquidity',
@@ -61,8 +62,10 @@ class YieldSimulator(object):
             'day',
             'spot_price',
             'num_orders',
+            'run_number',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
+        self.analysis_dict['run_number'] = 0
         self.sim_params_set = False
 
     def set_sim_params(self):
@@ -75,6 +78,17 @@ class YieldSimulator(object):
         self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
         self.pool_age = np.random.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.sim_params_set = True
+
+    def print_sim_params(self):
+        print('Simulation parameters:\n'
+            + f'target_liquidity: {self.target_liquidity}\n'
+            + f'target_daily_volume: {self.target_daily_volume}\n'
+            + f'start_apy: {self.start_apy}\n'
+            + f'fee_percent: {self.fee_percent}\n'
+            + f'init_vault_age: {self.init_vault_age}\n'
+            + f'vault_apy: {self.vault_apy}\n'
+            + f'pool_age: {self.pool_age}\n'
+        )
 
     def set_random_time(self):
         self.current_time_index = np.random.randint(0, self.num_times)
@@ -167,9 +181,11 @@ class YieldSimulator(object):
 
                 day_trading_volume += self.trade_amount * self.base_asset_price
             self.market.tick(self.step_size)
+        self.analysis_dict['run_number'] += 1
 
     def update_analysis_dict(self):
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
+        self.analysis_dict['simulation_time'].append(self.time)
         self.analysis_dict['time_until_end'].append(self.market.t)
         self.analysis_dict['t_stretch'].append(self.t_stretch)
         self.analysis_dict['target_liquidity'].append(self.target_liquidity)
