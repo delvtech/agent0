@@ -31,6 +31,7 @@ class YieldSimulator(object):
         self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
         self.current_time_index = 0
+        self.run_number = 0
         analysis_keys = [
             'model_name',
             'simulation_time',
@@ -65,7 +66,6 @@ class YieldSimulator(object):
             'run_number',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
-        self.analysis_dict['run_number'] = 0
         self.sim_params_set = False
 
     def set_sim_params(self):
@@ -181,10 +181,11 @@ class YieldSimulator(object):
 
                 day_trading_volume += self.trade_amount * self.base_asset_price
             self.market.tick(self.step_size)
-        self.analysis_dict['run_number'] += 1
+        self.run_number += 1
 
     def update_analysis_dict(self):
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
+        self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['simulation_time'].append(self.time)
         self.analysis_dict['time_until_end'].append(self.market.t)
         self.analysis_dict['t_stretch'].append(self.t_stretch)
