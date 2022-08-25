@@ -184,6 +184,7 @@ class YieldSimulator(object):
         self.run_number += 1
 
     def update_analysis_dict(self):
+        # stuff that's constant across runs
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
         self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['simulation_time'].append(self.time)
@@ -195,8 +196,14 @@ class YieldSimulator(object):
         self.analysis_dict['current_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
+        self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
+        self.analysis_dict['num_trading_days'].append(self.num_trading_days)
+        # stuff that changes per run
+        self.analysis_dict['day'].append(self.day)
+        self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy)
         self.analysis_dict['pool_age'].append(self.pool_age)
+        # stuff that changes per trade
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
         self.analysis_dict['total_supply'].append(self.market.total_supply)
@@ -210,11 +217,7 @@ class YieldSimulator(object):
         self.analysis_dict['out_with_fee'].append(self.with_fee)
         self.analysis_dict['out_without_fee'].append(self.without_fee)
         self.analysis_dict['fee'].append(self.fee)
-        self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
-        self.analysis_dict['num_trading_days'].append(self.num_trading_days)
-        self.analysis_dict['day'].append(self.day)
         self.analysis_dict['spot_price'].append(self.market.spot_price())
-        self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
 
 
 class Market(object):
