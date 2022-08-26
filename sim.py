@@ -115,9 +115,9 @@ class YieldSimulator(object):
         else:
             self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
-        if self.pricing_model_name.lower() == 'yieldspace':
+        if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
-        elif self.pricing_model_name.lower() == 'yieldspaceminfee':
+        elif self.pricing_model_name.lower() == 'yieldspacev2minfee':
             self.pricing_model = YieldSpacev2MinFeePricingModel()
         elif self.pricing_model_name.lower() == 'element':
             self.pricing_model = ElementPricingModel()
@@ -432,7 +432,7 @@ class PricingModel(object):
 class ElementPricingModel(PricingModel):
     @staticmethod
     def model_name():
-        return "ElementPricingModel"
+        return "Element"
 
     @staticmethod
     def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
@@ -468,7 +468,7 @@ class ElementPricingModel(PricingModel):
 class YieldSpacev2PricingModel(PricingModel):
     @staticmethod
     def model_name():
-        return "YieldsSpacev2"
+        return "YieldSpacev2"
 
     @staticmethod
     def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
@@ -539,7 +539,7 @@ class YieldSpacev2PricingModel(PricingModel):
 class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
     @staticmethod
     def model_name():
-        return "YieldsSpacev2_MinFee"
+        return "YieldSpacev2MinFee"
 
     @staticmethod
     def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
