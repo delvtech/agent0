@@ -135,14 +135,14 @@ class YieldSimulator(object):
             self.normalizing_constant,
             self.conversion_rate)
         total_supply = x_reserves + y_reserves
-        spot_price = self.pricing_model.calc_spot_price(
-            x_reserves,
-            y_reserves,
-            total_supply,
-            self.time / self.t_stretch,
-            self.normalizing_constant,
-            self.conversion_rate)
         # TODO: Do we want to calculate & store this?
+        #spot_price = self.pricing_model.calc_spot_price(
+        #    x_reserves,
+        #    y_reserves,
+        #    total_supply,
+        #    self.time / self.t_stretch,
+        #    self.normalizing_constant,
+        #    self.conversion_rate)
         #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
 
         self.market = Market(
@@ -160,7 +160,6 @@ class YieldSimulator(object):
             self.market.c += self.vault_apy / 100 / 365 * self.market.u
 
             # TODO: adjustable target daily volume that is a function of the day
-            todays_num_trades = 0
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
                 # TODO: simplify market price conversion (not necessary) & allow for different trade amounts
