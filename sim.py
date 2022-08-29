@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 
 class YieldSimulator(object):
+    #TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
+    # Better to do named & typed args w/ defaults
     def __init__(self, **kwargs):
         self.step_size = kwargs.get('step_size') # time resolution
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
@@ -52,8 +54,8 @@ class YieldSimulator(object):
             'token_out',
             'direction',
             'trade_amount',
-            'conversion_rate',
-            'normalizing_constant',
+            'conversion_rate', # TODO: Rename to current price per share
+            'normalizing_constant', # TODO: Rename to initial price per share
             'out_without_fee_slippage',
             'out_with_fee',
             'out_without_fee',
@@ -71,11 +73,13 @@ class YieldSimulator(object):
     def set_sim_params(self):
         self.target_liquidity = np.random.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = np.random.uniform(self.min_target_volume, self.max_target_volume)
-        self.start_apy = np.random.uniform(self.min_apy, self.max_apy)
+        self.start_apy = np.random.uniform(self.min_apy, self.max_apy) # starting fixed apr
         self.fee_percent = np.random.uniform(self.min_fee, self.max_fee)
         # determine real-world parameters for estimating u and c (vault and pool details)
+        # TODO: Should vault_age be used to set u instead of pool_age?
         self.init_vault_age = np.random.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
+        # TODO: pool_age is probably not correctly named, and could just be a function of days_until_maturity
         self.pool_age = np.random.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.sim_params_set = True
 
@@ -106,6 +110,7 @@ class YieldSimulator(object):
             for key in override_dict.keys():
                 if hasattr(self, key):
                     setattr(self, key, override_dict[key])
+        # TODO: conversion_rate can just equal normalizing constant at init values
         if override_dict is not None and 'conversion_rate' in override_dict.keys():
             self.conversion_rate = override_dict['conversion_rate']
         else:
@@ -146,19 +151,24 @@ class YieldSimulator(object):
         #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
 
         self.market = Market(
-            x_reserves, y_reserves, self.fee_percent,
+            x_reserves, y_reserves,
+            self.fee_percent,
             self.days_until_maturity / (365 * self.t_stretch),
             total_supply,
             self.pricing_model,
-            self.conversion_rate,
-            self.normalizing_constant)
+            self.conversion_rate, # c from yieldspace w/ yieldbaringvaults
+            self.normalizing_constant) # u from yieldspace w/ yieldbaringvaults
 
         for day in range(self.num_trading_days):
             self.day = day
             self.current_vault_age = self.init_vault_age + self.day / 365
-            # TODO: this is probably wrong? z is observable and should be calculated within the sim. c should be calculated from z and x.
+            # div 100 to convert percent to decimal; div 365 to convert annual to daily; market.u is the value of 1 share
+
+            # TODO: Make vault_apy able to be overwritten per day if it is a list in the override dict
+            # always a list, but with constant values if you don't want to change it
             self.market.c += self.vault_apy / 100 / 365 * self.market.u
 
+            ## Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
@@ -220,20 +230,20 @@ class Market(object):
     def __init__(self, x, y, g, t, total_supply, pricing_model, c=1, u=1, verbose=False):
         #TODO: Rename these variables to be more descriptive
         #TODO: c & u need to be able to be computed _or_ assigned at any time
-        self.x=x
-        self.y=y
+        self.x = x
+        self.y = y
         self.total_supply = total_supply
-        self.g=g
-        self.t=t
-        self.c=c # conversion rate
-        self.u=u # normalizing constant
+        self.g = g
+        self.t = t
+        self.c = c # conversion rate
+        self.u = u # normalizing constant
         self.pricing_model=pricing_model
         self.x_orders = 0
         self.y_orders = 0
         self.x_volume = 0
         self.y_volume = 0
-        self.cum_y_slippage=0
-        self.cum_x_slippage=0
+        self.cum_y_slippage = 0
+        self.cum_x_slippage = 0
         self.cum_y_fees=0
         self.cum_x_fees=0
         self.starting_fyt_price=self.spot_price()
