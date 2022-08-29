@@ -284,8 +284,6 @@ class Market(object):
             if token_in == "fyt" and token_out == "base":
                 in_reserves = self.y + self.total_supply
                 out_reserves = self.x
-        #in_reserves = simulator.market.y+simulator.market.total_supply; out_reserves=simulator.market.x; g=simulator.market.g; t=simulator.market.t; u=simulator.market.u; c=simulator.market.c; in_=amount=simulator.trade_amount; direction=simulator.trade_direction; token_in=simulator.token_in; token_out=simulator.token_out
-        #(without_fee_or_slippage, output_with_fee, output_without_fee, fee) = simulator.market.pricing_model.calc_out_given_in(amount, in_reserves, out_reserves, token_out, g, t, u, c)
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
@@ -302,7 +300,9 @@ class Market(object):
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         if isinstance(fee, complex):
-            print('Warning: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}')
+            print(f'Warning: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}')
+            max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t):
+            print(f'max trade = {max_trade}')
             fee = fee.real
         if fee > 0:
             self.x += dx
