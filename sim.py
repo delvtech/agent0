@@ -52,7 +52,7 @@ class YieldSimulator(object):
             'total_supply',
             'token_in',
             'token_out',
-            'direction',
+            'trade_direction',
             'trade_amount',
             'conversion_rate', # TODO: Rename to current price per share
             'normalizing_constant', # TODO: Rename to initial price per share
@@ -211,7 +211,7 @@ class YieldSimulator(object):
         self.analysis_dict['total_supply'].append(self.market.total_supply)
         self.analysis_dict['token_in'].append(self.token_in)
         self.analysis_dict['token_out'].append(self.token_out)
-        self.analysis_dict['direction'].append(self.trade_direction)
+        self.analysis_dict['trade_direction'].append(self.trade_direction)
         self.analysis_dict['trade_amount'].append(self.trade_amount)
         self.analysis_dict['conversion_rate'].append(self.market.c)
         self.analysis_dict['normalizing_constant'].append(self.market.u)
@@ -284,6 +284,8 @@ class Market(object):
             if token_in == "fyt" and token_out == "base":
                 in_reserves = self.y + self.total_supply
                 out_reserves = self.x
+        #in_reserves = simulator.market.y+simulator.market.total_supply; out_reserves=simulator.market.x; g=simulator.market.g; t=simulator.market.t; u=simulator.market.u; c=simulator.market.c; in_=amount=simulator.trade_amount; direction=simulator.trade_direction; token_in=simulator.token_in; token_out=simulator.token_out
+        #(without_fee_or_slippage, output_with_fee, output_without_fee, fee) = simulator.market.pricing_model.calc_out_given_in(amount, in_reserves, out_reserves, token_out, g, t, u, c)
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
@@ -299,6 +301,9 @@ class Market(object):
                 dy = -output_with_fee
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
+        if isinstance(fee, complex):
+            print('Warning: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}')
+            fee = fee.real
         if fee > 0:
             self.x += dx
             self.y += dy
