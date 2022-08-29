@@ -301,7 +301,7 @@ class Market(object):
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         if isinstance(fee, complex):
             print(f'Warning: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}')
-            max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t):
+            max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
             print(f'max trade = {max_trade}')
             fee = fee.real
         if fee > 0:
