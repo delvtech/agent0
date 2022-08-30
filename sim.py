@@ -29,6 +29,7 @@ class YieldSimulator(object):
         self.trade_direction = kwargs.get('trade_direction')
         self.days_until_maturity = kwargs.get('days_until_maturity')
         self.num_trading_days = kwargs.get('num_trading_days')
+        self.rng = kwargs.get('rng')
         self.num_steps = self.t_max // self.step_size
         self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
@@ -54,8 +55,8 @@ class YieldSimulator(object):
             'token_out',
             'trade_direction',
             'trade_amount',
-            'conversion_rate', # TODO: Rename to current price per share
-            'normalizing_constant', # TODO: Rename to initial price per share
+            'price_per_share', # c in Yieldspace with Yield Bearing Vaults
+            'init_price_per_share', # u in Yieldspace with Yield Bearing Vaults
             'out_without_fee_slippage',
             'out_with_fee',
             'out_without_fee',
@@ -71,16 +72,16 @@ class YieldSimulator(object):
         self.sim_params_set = False
 
     def set_sim_params(self):
-        self.target_liquidity = np.random.uniform(self.min_target_liquidity, self.max_target_liquidity)
-        self.target_daily_volume = np.random.uniform(self.min_target_volume, self.max_target_volume)
-        self.start_apy = np.random.uniform(self.min_apy, self.max_apy) # starting fixed apr
-        self.fee_percent = np.random.uniform(self.min_fee, self.max_fee)
+        self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
+        self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
+        self.start_apy = self.rng.uniform(self.min_apy, self.max_apy) # starting fixed apr
+        self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # determine real-world parameters for estimating u and c (vault and pool details)
         # TODO: Should vault_age be used to set u instead of pool_age?
-        self.init_vault_age = np.random.uniform(self.min_vault_age, self.max_vault_age) # in years
-        self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
+        self.init_vault_age = self.rng.uniform(self.min_vault_age, self.max_vault_age) # in years
+        self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days) / 100 # as a decimal
         # TODO: pool_age is probably not correctly named, and could just be a function of days_until_maturity
-        self.pool_age = np.random.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
+        self.pool_age = self.rng.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.sim_params_set = True
 
     def print_sim_params(self):
@@ -90,12 +91,12 @@ class YieldSimulator(object):
             + f'start_apy: {self.start_apy}\n'
             + f'fee_percent: {self.fee_percent}\n'
             + f'init_vault_age: {self.init_vault_age}\n'
-            + f'vault_apy: {self.vault_apy}\n'
+            + f'init_vault_apy: {self.vault_apy[0]}\n'
             + f'pool_age: {self.pool_age}\n'
         )
 
     def set_random_time(self):
-        self.current_time_index = np.random.randint(0, self.num_times)
+        self.current_time_index = self.rng.integers(low=0, high=self.num_times)
 
     def increment_time(self):
         self.current_time_index += 1
@@ -110,15 +111,13 @@ class YieldSimulator(object):
             for key in override_dict.keys():
                 if hasattr(self, key):
                     setattr(self, key, override_dict[key])
-        # TODO: conversion_rate can just equal normalizing constant at init values
-        if override_dict is not None and 'conversion_rate' in override_dict.keys():
-            self.conversion_rate = override_dict['conversion_rate']
+                    if key == 'vault_apy':
+                        assert len(override_dict[key]) == self.num_trading_days, (
+                            f'vault_apy must have len equal to num_trading_days = {self.num_trading_days}, not {len(override_dict[key])}')
+        if override_dict is not None and 'init_price_per_share' in override_dict.keys():
+            self.init_price_per_share = override_dict['init_price_per_share']
         else:
-            self.conversion_rate = np.around((1 + self.vault_apy)**self.init_vault_age, self.precision) # c variable in the paper
-        if override_dict is not None and 'normalizing_constant' in override_dict.keys():
-            self.normalizing_constant = override_dict['normalizing_constant']
-        else:
-            self.normalizing_constant = np.around((1 + self.vault_apy)**self.pool_age, self.precision) # \mu variable in the paper
+            self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -130,6 +129,7 @@ class YieldSimulator(object):
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
         self.time = self.get_current_time()
+        self.price_per_share = self.init_price_per_share
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -137,8 +137,8 @@ class YieldSimulator(object):
             self.start_apy,
             self.days_until_maturity,
             self.t_stretch,
-            self.normalizing_constant,
-            self.conversion_rate)
+            self.init_price_per_share,
+            self.price_per_share)
         total_supply = x_reserves + y_reserves
         # TODO: Do we want to calculate & store this?
         #spot_price = self.pricing_model.calc_spot_price(
@@ -146,8 +146,8 @@ class YieldSimulator(object):
         #    y_reserves,
         #    total_supply,
         #    self.time / self.t_stretch,
-        #    self.normalizing_constant,
-        #    self.conversion_rate)
+        #    self.init_price_per_share,
+        #    self.price_per_share)
         #resulting_apy = self.pricing_model.apy(spot_price, self.days_until_maturity)
 
         self.market = Market(
@@ -156,28 +156,26 @@ class YieldSimulator(object):
             self.days_until_maturity / (365 * self.t_stretch),
             total_supply,
             self.pricing_model,
-            self.conversion_rate, # c from yieldspace w/ yieldbaringvaults
-            self.normalizing_constant) # u from yieldspace w/ yieldbaringvaults
+            self.price_per_share, # c from yieldspace w/ yieldbaringvaults
+            self.init_price_per_share) # u from yieldspace w/ yieldbaringvaults
 
         for day in range(self.num_trading_days):
             self.day = day
             self.current_vault_age = self.init_vault_age + self.day / 365
             # div 100 to convert percent to decimal; div 365 to convert annual to daily; market.u is the value of 1 share
 
-            # TODO: Make vault_apy able to be overwritten per day if it is a list in the override dict
-            # always a list, but with constant values if you don't want to change it
-            self.market.c += self.vault_apy / 100 / 365 * self.market.u
+            self.market.c += self.vault_apy[self.day] / 100 / 365 * self.market.u
 
             ## Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
                 # TODO: simplify market price conversion (not necessary) & allow for different trade amounts
-                #self.trade_amount = np.random.uniform(0, (liquidity / self.base_asset_price) / 5)
-                self.trade_amount = np.random.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
+                #self.trade_amount = self.rng.uniform(0, (liquidity / self.base_asset_price) / 5)
+                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
 
-                # TODO: improve trading distribution (e.g. actual historical trades or a fit to historical trades)
-                token_index = np.random.randint(0, 2) # 0 or 1
+                # TODO: improve trading distribution (e.g. support using actual historical trades or a fit to historical trades)
+                token_index = self.rng.integers(low=0, high=2) # 0 or 1
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1-token_index]
 
@@ -204,7 +202,7 @@ class YieldSimulator(object):
         self.analysis_dict['current_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
-        self.analysis_dict['vault_apy'].append(self.vault_apy)
+        self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
         self.analysis_dict['pool_age'].append(self.pool_age)
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
@@ -213,8 +211,8 @@ class YieldSimulator(object):
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['trade_direction'].append(self.trade_direction)
         self.analysis_dict['trade_amount'].append(self.trade_amount)
-        self.analysis_dict['conversion_rate'].append(self.market.c)
-        self.analysis_dict['normalizing_constant'].append(self.market.u)
+        self.analysis_dict['price_per_share'].append(self.market.c)
+        self.analysis_dict['init_price_per_share'].append(self.market.u)
         self.analysis_dict['out_without_fee_slippage'].append(self.without_fee_or_slippage)
         self.analysis_dict['out_with_fee'].append(self.with_fee)
         self.analysis_dict['out_without_fee'].append(self.without_fee)
@@ -228,8 +226,6 @@ class YieldSimulator(object):
 
 class Market(object):
     def __init__(self, x, y, g, t, total_supply, pricing_model, c=1, u=1, verbose=False):
-        #TODO: Rename these variables to be more descriptive
-        #TODO: c & u need to be able to be computed _or_ assigned at any time
         self.x = x
         self.y = y
         self.total_supply = total_supply
