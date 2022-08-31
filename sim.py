@@ -78,20 +78,17 @@ class YieldSimulator(object):
         self.set_random_variables()
 
     def set_random_variables(self):
-        np.random.seed(self.random_seed)
-        self.target_liquidity = np.random.uniform(self.min_target_liquidity, self.max_target_liquidity)
-        self.target_daily_volume = np.random.uniform(self.min_target_volume, self.max_target_volume)
-        self.start_apy = np.random.uniform(self.min_apy, self.max_apy) # starting fixed apr
-        self.fee_percent = np.random.uniform(self.min_fee, self.max_fee)
+        self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
+        self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
+        self.start_apy = self.rng.uniform(self.min_apy, self.max_apy) # starting fixed apr
+        self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # determine real-world parameters for estimating u and c (vault and pool details)
         # TODO: Should vault_age be used to set u instead of pool_age?
         self.init_vault_age = self.rng.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days) / 100 # as a decimal
         # TODO: pool_age is probably not correctly named, and could just be a function of days_until_maturity
-        self.pool_age = np.random.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
-        np.random.seed(self.random_seed) # reset seed after generating random variables, so trades are independent
+        self.pool_age = self.rng.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.random_variables_set = True
-        print('set random variables')
 
     def print_random_variables(self):
         print('Simulation random variables:\n'
