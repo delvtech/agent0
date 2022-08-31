@@ -63,7 +63,6 @@ class YieldSimulator(object):
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
         self.random_variables_set = False
-        self.set_random_variables()
 
     def set_random_variables(self):
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
@@ -103,9 +102,9 @@ class YieldSimulator(object):
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
             if self.precision is None:
-                self.init_price_per_share = (1 + self.vault_apy[0])**self.init_vault_age # \mu variable in the paper
+                self.init_price_per_share = (1 + self.vault_apy[0]/100)**self.init_vault_age # \mu variable in the paper
             else:
-                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.init_vault_age, self.precision) # \mu variable in the paper
+                self.init_price_per_share = np.around((1 + self.vault_apy[0]/100)**self.init_vault_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -169,6 +168,7 @@ class YieldSimulator(object):
                 self.trade_amount = np.minimum(self.trade_amount, target_reserves)
                 # print(f'{self.base_asset_price}')
                 # print(f'trade_amount={self.trade_amount}')
+                print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u})amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
 
                 # Conduct trade & update state
                 (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee) = self.market.swap(
