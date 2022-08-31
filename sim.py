@@ -103,9 +103,9 @@ class YieldSimulator(object):
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
             if self.precision is None:
-                self.init_price_per_share = (1 + self.vault_apy[0])**self.vault_age # \mu variable in the paper
+                self.init_price_per_share = (1 + self.vault_apy[0])**self.init_vault_age # \mu variable in the paper
             else:
-                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.vault_age, self.precision) # \mu variable in the paper
+                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.init_vault_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -131,18 +131,17 @@ class YieldSimulator(object):
             x_reserves,
             y_reserves,
             self.fee_percent,
-            self.days_until_maturity / (365 * self.t_stretch),
+            self.days_until_maturity / (365 * self.t_stretch), # stored as t inside Market class
             init_total_supply,
             self.pricing_model,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
             self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
             self.verbose)
 
-        for day in range(self.num_trading_days):
+        for day in range(1,self.num_trading_days+1):
             self.day = day
-            self.current_vault_age = self.init_vault_age + self.day / 365
             # div by 100 to convert percent to decimal; div by 365 to convert annual to daily; market.u is the value of 1 share
-            self.market.c += self.vault_apy[self.day] / 100 / 365 * self.market.u
+            self.market.c += self.vault_apy[self.day-1] / 100 / 365 * self.market.u
 
             # Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
@@ -156,14 +155,20 @@ class YieldSimulator(object):
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1-token_index]
 
-                # Compute trade amount
+                # Compute trade amount (convert from USD to token units)
                 self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
-                (x_reserves, y_reserves) = (self.market.x, self.market.y)
+                (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
+                # print(format('(x_reserves,y_reserves) = ({},{})'.format(self.market.x, self.market.y)))
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
                 elif self.trade_direction == 'out':
                     target_reserves = x_reserves if self.token_in == 'fyt' else y_reserves # Assumes 'out' trade direction
-                self.trade_amount = np.minimum(self.trade_amount, target_reserves) # Can't trade more than available reserves
+                # print(f'trade_amount={self.trade_amount} and target_reserves={target_reserves}')
+                # Can't trade more than available reserves
+                # TODO: if token_out=="base" else amount/market_price/m.spot_price()
+                self.trade_amount = np.minimum(self.trade_amount, target_reserves)
+                # print(f'{self.base_asset_price}')
+                # print(f'trade_amount={self.trade_amount}')
 
                 # Conduct trade & update state
                 (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee) = self.market.swap(
@@ -173,7 +178,7 @@ class YieldSimulator(object):
                     self.token_out)
                 self.update_analysis_dict()
 
-                day_trading_volume += self.trade_amount * self.base_asset_price
+                day_trading_volume += self.trade_amount * self.base_asset_price # track daily volume in USD terms
             self.market.tick(self.step_size)
         self.run_number += 1
 
@@ -195,7 +200,7 @@ class YieldSimulator(object):
         # Variables that change per run
         self.analysis_dict['day'].append(self.day)
         self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
-        self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
+        self.analysis_dict['vault_apy'].append(self.vault_apy[self.day-1])
         # Variables that change per trade
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
@@ -327,8 +332,8 @@ class Market(object):
         if isinstance(fee, complex):
             max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
             assert False, (
-                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}'
-                +f'max trade = {max_trade}'
+                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out};'
+                +f' the max trade = {max_trade}; trade_amount = {amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
             )
         if fee > 0:
             self.x += dx
