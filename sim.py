@@ -149,9 +149,6 @@ class YieldSimulator(object):
             self.init_price_per_share,
             self.init_price_per_share)
         init_total_supply = x_reserves + y_reserves
-        actual_apy = self.calc_apy_from_reserves(
-                x_reserves, y_reserves, x_reserves + y_reserves, self.t, self.time_stretch, self.init_price_per_share, self.init_price_per_share)
-        print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
         # TODO: Do we want to calculate & store this?
         #spot_price = self.pricing_model.calc_spot_price(
         #    x_reserves,
@@ -171,7 +168,7 @@ class YieldSimulator(object):
             self.pricing_model,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
             self.init_price_per_share) # c from YieldSpace w/ Yield Baring Vaults
-        self.market.verbose = True
+        # self.market.verbose = True
 
         for day in range(self.num_trading_days):
             self.day = day
@@ -192,7 +189,7 @@ class YieldSimulator(object):
                 self.token_out = self.tokens[1-token_index]
 
                 ## Compute trade amount
-                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price,
+                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
                 (x_reserves, y_reserves) = (self.market.x, self.market.y)
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
@@ -295,8 +292,8 @@ class Market(object):
                 dy_slippage = 0
                 dx_fee = 0
                 dy_fee = fee
-                dx_orders = 0
-                dy_orders = 1
+                dx_orders = 1
+                dy_orders = 0
                 dx_volume = output_with_fee
                 dy_volume = 0
             elif token_in == "base" and token_out == "fyt":
@@ -347,8 +344,8 @@ class Market(object):
                 dy_slippage = abs(without_fee_or_slippage - output_without_fee)
                 dx_fee = 0
                 dy_fee = fee
-                dx_orders = 1
-                dy_orders = 0
+                dx_orders = 0
+                dy_orders = 1
                 dx_volume = 0
                 dy_volume = output_with_fee
         else:
