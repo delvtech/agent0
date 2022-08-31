@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 # TODO: completely remove calc_in_given_out
 class YieldSimulator(object):
