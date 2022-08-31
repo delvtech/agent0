@@ -12,6 +12,7 @@ class YieldSimulator(object):
         self.t_min = kwargs.get('t_min') # minimum time (usually 0 or step_size)
         self.t_max = kwargs.get('t_max') # maximum time (must be <= 1)
         self.tokens = kwargs.get('tokens') # list of strings
+        self.base_asset_price = kwargs.get('base_asset_price')
         self.min_target_liquidity = kwargs.get('min_target_liquidity')
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
         self.min_target_volume = kwargs.get('min_target_volume')
@@ -37,7 +38,10 @@ class YieldSimulator(object):
         self.num_times = len(self.times)
         self.current_time_index = 0
         self.run_number = 0
+        if 'random_seed' in kwargs:
+            self.random_seed = kwargs.get('random_seed')
         analysis_keys = [
+            'run_number',
             'model_name',
             'simulation_time',
             'time_until_end',
@@ -48,6 +52,7 @@ class YieldSimulator(object):
             'current_apy',
             'fee_percent',
             'init_vault_age',
+            'base_asset_price',
             'vault_apy',
             'pool_age',
             'x_reserves',
@@ -67,13 +72,13 @@ class YieldSimulator(object):
             'num_trading_days',
             'day',
             'spot_price',
-            'num_orders',
-            'run_number',
+            'num_orders'
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
-        self.sim_params_set = False
+        self.random_variables_set = False
+        self.set_random_variables()
 
-    def set_sim_params(self):
+    def set_random_variables(self):
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
         self.start_apy = self.rng.uniform(self.min_apy, self.max_apy) # starting fixed apr
@@ -84,10 +89,10 @@ class YieldSimulator(object):
         self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days) / 100 # as a decimal
         # TODO: pool_age is probably not correctly named, and could just be a function of days_until_maturity
         self.pool_age = self.rng.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
-        self.sim_params_set = True
+        self.random_variables_set = True
 
-    def print_sim_params(self):
-        print('Simulation parameters:\n'
+    def print_random_variables(self):
+        print('Simulation random variables:\n'
             + f'target_liquidity: {self.target_liquidity}\n'
             + f'target_daily_volume: {self.target_daily_volume}\n'
             + f'start_apy: {self.start_apy}\n'
@@ -108,7 +113,7 @@ class YieldSimulator(object):
 
     def run_simulation(self, override_dict=None):
         # Update parameters if the user provided new ones
-        assert self.sim_params_set, ('ERROR: You must run simulator.set_sim_params() before running the simulation')
+        assert self.random_variables_set, ('ERROR: You must run simulator.set_random_variables() before running the simulation')
         if override_dict is not None:
             for key in override_dict.keys():
                 if hasattr(self, key):
@@ -210,6 +215,7 @@ class YieldSimulator(object):
 
     def update_analysis_dict(self):
         # TODO: Make sure all of these member variables are initialized in __init__ so that this func can be called whenever
+        # Variables that are constant across runs
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
         self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['simulation_time'].append(self.time)
@@ -221,11 +227,18 @@ class YieldSimulator(object):
         self.analysis_dict['current_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
+        self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
+        self.analysis_dict['num_trading_days'].append(self.num_trading_days)
+        # Variables that change per run
+        self.analysis_dict['day'].append(self.day)
+        self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
         self.analysis_dict['pool_age'].append(self.pool_age)
+        # Variables that change per trade
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
         self.analysis_dict['total_supply'].append(self.market.total_supply)
+        self.analysis_dict['base_asset_price'].append(self.base_asset_price)
         self.analysis_dict['token_in'].append(self.token_in)
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['trade_direction'].append(self.trade_direction)
@@ -236,11 +249,7 @@ class YieldSimulator(object):
         self.analysis_dict['out_with_fee'].append(self.with_fee)
         self.analysis_dict['out_without_fee'].append(self.without_fee)
         self.analysis_dict['fee'].append(self.fee)
-        self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
-        self.analysis_dict['num_trading_days'].append(self.num_trading_days)
-        self.analysis_dict['day'].append(self.day)
         self.analysis_dict['spot_price'].append(self.market.spot_price())
-        self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
 
 
 class Market(object):
