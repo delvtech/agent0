@@ -352,6 +352,13 @@ class Market(object):
                 dy_volume = output_with_fee
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
+        if self.verbose and self.x_orders + self.y_orders < 10:
+            print('conditional one')
+            print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.u, self.c])
+            print([without_fee_or_slippage, output_with_fee, output_without_fee, fee])
+        if self.verbose and any([isinstance(output_with_fee, complex), isinstance(output_without_fee, complex), isinstance(fee, complex)]):
+            print([amount, self.y + self.total_supply, self.x, token_in, self.g, self.t, self.u, self.c])
+            print([(without_fee_or_slippage, output_with_fee, output_without_fee, fee)])
         if isinstance(fee, complex):
             max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
             assert False, (
@@ -369,13 +376,6 @@ class Market(object):
             self.y_orders += dy_orders
             self.x_volume += dx_volume
             self.y_volume += dy_volume
-        if self.verbose and self.x_orders + self.y_orders < 10:
-            print('conditional one')
-            print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.u, self.c])
-            print([without_fee_or_slippage, output_with_fee, output_without_fee, fee])
-        if self.verbose and any([isinstance(output_with_fee, complex), isinstance(output_without_fee, complex), isinstance(fee, complex)]):
-            print([amount, self.y + self.total_supply, self.x, token_in, self.g, self.t, self.u, self.c])
-            print([(without_fee_or_slippage, output_with_fee, output_without_fee, fee)])
         return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
 
 
