@@ -290,6 +290,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
+                dx_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dy_slippage = 0
+                dx_fee = 0
+                dy_fee = fee
+                dx_orders = 1
+                dy_orders = 0
+                dx_volume = output_with_fee
+                dy_volume = 0
             elif token_in == "base" and token_out == "fyt":
                 in_reserves = self.x
                 out_reserves = self.y + self.total_supply
@@ -298,6 +306,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
+                dx_slippage = 0
+                dy_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dx_fee = fee
+                dy_fee = 0
+                dx_orders = 0
+                dy_orders = 1
+                dx_volume = 0
+                dy_volume = output_with_fee
             else:
                 raise ValueError(
                         f'token_in and token_out must be unique and in the set ("base", "fyt"), not in={token_in} and out={token_out}')
@@ -310,6 +326,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
+                dx_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dy_slippage = 0
+                dx_fee = fee
+                dy_fee = 0
+                dx_orders = 1
+                dy_orders = 0
+                dx_volume = output_with_fee
+                dy_volume = 0
             elif token_in == "base" and token_out == "fyt":
                 in_reserves = self.x
                 out_reserves = self.y + self.total_supply
@@ -318,6 +342,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
+                dx_slippage = 0
+                dy_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dx_fee = 0
+                dy_fee = fee
+                dx_orders = 0
+                dy_orders = 1
+                dx_volume = 0
+                dy_volume = output_with_fee
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         if isinstance(fee, complex):
@@ -326,14 +358,17 @@ class Market(object):
                 f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}'
                 +f'max trade = {max_trade}'
             )
-
         if fee > 0:
             self.x += dx
             self.y += dy
-            self.cum_x_slippage += abs(without_fee_or_slippage - output_without_fee)
-            self.cum_y_fees += fee
-            self.x_orders += 1
-            self.x_volume += output_with_fee
+            self.cum_x_slippage += dx_slippage
+            self.cum_y_slippage += dy_slippage
+            self.cum_x_fees += dx_fee
+            self.cum_y_fees += dy_fee
+            self.x_orders += dx_orders
+            self.y_orders += dy_orders
+            self.x_volume += dx_volume
+            self.y_volume += dy_volume
         if self.verbose and self.x_orders + self.y_orders < 10:
             print('conditional one')
             print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.u, self.c])
