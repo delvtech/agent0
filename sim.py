@@ -20,8 +20,6 @@ class YieldSimulator(object):
         self.max_vault_age = kwargs.get('max_vault_age')
         self.min_vault_apy = kwargs.get('min_vault_apy')
         self.max_vault_apy = kwargs.get('max_vault_apy')
-        self.min_pool_age = kwargs.get('min_pool_age')
-        self.max_pool_age = kwargs.get('max_pool_age')
         self.base_asset_price = kwargs.get('base_asset_price')
         self.precision = kwargs.get('precision')
         self.pricing_model_name = str(kwargs.get('pricing_model_name'))
@@ -44,7 +42,6 @@ class YieldSimulator(object):
             'init_vault_age',
             'base_asset_price',
             'vault_apy',
-            'pool_age',
             'x_reserves',
             'y_reserves',
             'total_supply',
@@ -74,11 +71,8 @@ class YieldSimulator(object):
         self.start_apy = self.rng.uniform(self.min_apy, self.max_apy) # starting fixed apr
         self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # Determine real-world parameters for estimating u and c (vault and pool details)
-        # TODO: Should vault_age be used to set u instead of pool_age?
         self.init_vault_age = self.rng.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days) / 100 # as a decimal
-        # TODO: pool_age is probably not correctly named, and could just be a function of days_until_maturity
-        self.pool_age = self.rng.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
         self.random_variables_set = True
 
     def print_random_variables(self):
@@ -89,7 +83,6 @@ class YieldSimulator(object):
             + f'fee_percent: {self.fee_percent}\n'
             + f'init_vault_age: {self.init_vault_age}\n'
             + f'init_vault_apy: {self.vault_apy[0]}\n'
-            + f'pool_age: {self.pool_age}\n'
         )
 
     def run_simulation(self, override_dict=None):
@@ -110,9 +103,9 @@ class YieldSimulator(object):
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
             if self.precision is None:
-                self.init_price_per_share = (1 + self.vault_apy[0])**self.pool_age # \mu variable in the paper
+                self.init_price_per_share = (1 + self.vault_apy[0])**self.vault_age # \mu variable in the paper
             else:
-                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.pool_age, self.precision) # \mu variable in the paper
+                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.vault_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -203,7 +196,6 @@ class YieldSimulator(object):
         self.analysis_dict['day'].append(self.day)
         self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
-        self.analysis_dict['pool_age'].append(self.pool_age)
         # Variables that change per trade
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
