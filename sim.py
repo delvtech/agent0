@@ -31,6 +31,7 @@ class YieldSimulator(object):
         self.days_until_maturity = kwargs.get('days_until_maturity')
         self.num_trading_days = kwargs.get('num_trading_days')
         self.rng = kwargs.get('rng')
+        self.verbose = kwargs.get('verbose')
         self.num_steps = self.t_max // self.step_size
         self.times = np.arange(self.t_min, self.t_max + self.step_size, self.step_size)
         self.num_times = len(self.times)
@@ -122,7 +123,10 @@ class YieldSimulator(object):
         if override_dict is not None and 'init_price_per_share' in override_dict.keys():
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
-            self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.pool_age, self.precision) # \mu variable in the paper
+            if self.precision is None:
+                self.init_price_per_share = (1 + self.vault_apy[0])**self.pool_age # \mu variable in the paper
+            else:
+                self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -141,8 +145,8 @@ class YieldSimulator(object):
             self.start_apy,
             self.days_until_maturity,
             self.t_stretch,
-            self.init_price_per_share,
-            self.init_price_per_share)
+            self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
+            self.init_price_per_share) # c from YieldSpace w/ Yield Baring Vaults
         init_total_supply = x_reserves + y_reserves
         # TODO: Do we want to calculate & store this?
         #spot_price = self.pricing_model.calc_spot_price(
@@ -162,7 +166,8 @@ class YieldSimulator(object):
             init_total_supply,
             self.pricing_model,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
-            self.init_price_per_share) # c from YieldSpace w/ Yield Baring Vaults
+            self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
+            self.verbose)
 
         for day in range(self.num_trading_days):
             self.day = day
@@ -204,6 +209,7 @@ class YieldSimulator(object):
         self.run_number += 1
 
     def update_analysis_dict(self):
+        # TODO: Make sure all of these member variables are initialized in __init__ so that this func can be called whenever
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
         self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['simulation_time'].append(self.time)
