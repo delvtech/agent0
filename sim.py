@@ -37,8 +37,6 @@ class YieldSimulator(object):
         self.num_times = len(self.times)
         self.current_time_index = 0
         self.run_number = 0
-        if 'random_seed' in kwargs:
-            self.random_seed = kwargs.get('random_seed')
         analysis_keys = [
             'run_number',
             'model_name',
