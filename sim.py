@@ -506,7 +506,10 @@ class ElementPricingModel(PricingModel):
         t = days_until_maturity / (365 * time_stretch)
         T = days_until_maturity / 365
         r = apy / 100
-        return 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
+        result = 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
+        if self.verbose:
+            print(f'calc_x_reserves result: {result}')
+        return result
 
 
 class YieldSpacev2PricingModel(PricingModel):
