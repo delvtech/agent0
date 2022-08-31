@@ -76,6 +76,7 @@ class YieldSimulator(object):
         self.analysis_dict = {key:[] for key in analysis_keys}
         self.random_variables_set = False
         self.set_random_variables()
+        self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch (doesn't change)
 
     def set_random_variables(self):
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
@@ -137,7 +138,6 @@ class YieldSimulator(object):
             self.pricing_model = ElementPricingModel()
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
-        self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
         self.time = self.get_current_time()
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
