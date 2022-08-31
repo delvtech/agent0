@@ -9,6 +9,7 @@ class YieldSimulator(object):
         self.t_min = kwargs.get('t_min') # minimum time (usually 0 or step_size)
         self.t_max = kwargs.get('t_max') # maximum time (must be <= 1)
         self.tokens = kwargs.get('tokens') # list of strings
+        self.base_asset_price = kwargs.get('base_asset_price')
         self.min_target_liquidity = kwargs.get('min_target_liquidity')
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
         self.min_target_volume = kwargs.get('min_target_volume')
@@ -32,7 +33,10 @@ class YieldSimulator(object):
         self.num_times = len(self.times)
         self.current_time_index = 0
         self.run_number = 0
+        if 'random_seed' in kwargs:
+            self.random_seed = kwargs.get('random_seed')
         analysis_keys = [
+            'run_number',
             'model_name',
             'simulation_time',
             'time_until_end',
@@ -43,6 +47,7 @@ class YieldSimulator(object):
             'current_apy',
             'fee_percent',
             'init_vault_age',
+            'base_asset_price',
             'vault_apy',
             'pool_age',
             'x_reserves',
@@ -62,13 +67,14 @@ class YieldSimulator(object):
             'num_trading_days',
             'day',
             'spot_price',
-            'num_orders',
-            'run_number',
+            'num_orders'
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
-        self.sim_params_set = False
+        self.random_variables_set = False
+        self.set_random_variables()
 
-    def set_sim_params(self):
+    def set_random_variables(self):
+        np.random.seed(self.random_seed)
         self.target_liquidity = np.random.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = np.random.uniform(self.min_target_volume, self.max_target_volume)
         self.start_apy = np.random.uniform(self.min_apy, self.max_apy)
@@ -77,10 +83,12 @@ class YieldSimulator(object):
         self.init_vault_age = np.random.uniform(self.min_vault_age, self.max_vault_age) # in years
         self.vault_apy = np.random.uniform(self.min_vault_apy, self.max_vault_apy) / 100 # as a decimal
         self.pool_age = np.random.uniform(min(self.init_vault_age, self.min_pool_age), self.max_pool_age) # in years
-        self.sim_params_set = True
+        np.random.seed(self.random_seed) # reset seed after generating random variables, so trades are independent
+        self.random_variables_set = True
+        print('set random variables')
 
-    def print_sim_params(self):
-        print('Simulation parameters:\n'
+    def print_random_variables(self):
+        print('Simulation random variables:\n'
             + f'target_liquidity: {self.target_liquidity}\n'
             + f'target_daily_volume: {self.target_daily_volume}\n'
             + f'start_apy: {self.start_apy}\n'
@@ -101,7 +109,7 @@ class YieldSimulator(object):
 
     def run_simulation(self, override_dict=None):
         # Update parameters if the user provided new ones
-        assert self.sim_params_set, ('ERROR: You must run simulator.set_sim_params() before running the simulation')
+        assert self.random_variables_set, ('ERROR: You must run simulator.set_random_variables() before running the simulation')
         if override_dict is not None:
             for key in override_dict.keys():
                 if hasattr(self, key):
@@ -207,6 +215,7 @@ class YieldSimulator(object):
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
         self.analysis_dict['total_supply'].append(self.market.total_supply)
+        self.analysis_dict['base_asset_price'].append(self.base_asset_price)
         self.analysis_dict['token_in'].append(self.token_in)
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['direction'].append(self.trade_direction)
