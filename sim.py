@@ -192,14 +192,7 @@ class YieldSimulator(object):
 
                 ## Compute trade amount
                 self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price,
-                (x_reserves, y_reserves, liquidity) = self.market.pricing_model.calc_liquidity(
-                    self.target_liquidity,
-                    self.base_asset_price,
-                    self.start_apy,
-                    self.days_until_maturity - self.day + 1,
-                    self.t_stretch,
-                    self.market.u,
-                    self.market.c)
+                (x_reserves, y_reserves) = (self.market.x, self.market.y)
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
                 elif self.trade_direction == 'out':
@@ -328,10 +321,12 @@ class Market(object):
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         if isinstance(fee, complex):
-            print(f'Warning: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}')
             max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
-            print(f'max trade = {max_trade}')
-            fee = fee.real
+            assert False, (
+                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}'
+                +f'max trade = {max_trade}'
+            )
+
         if fee > 0:
             self.x += dx
             self.y += dy
