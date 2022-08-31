@@ -124,8 +124,8 @@ class YieldSimulator(object):
                         else:
                             setattr(self, key, [override_dict[key],]*self.num_trading_days)
 
-        if override_dict is not None and 'init_price_per_share' in override_dict.keys():
-            self.init_price_per_share = override_dict['init_price_per_share']
+        if self.precision is None:
+            self.init_price_per_share = (1 + self.vault_apy[0])**self.pool_age # \mu variable in the paper
         else:
             self.init_price_per_share = np.around((1 + self.vault_apy[0])**self.pool_age, self.precision) # \mu variable in the paper
         # Initiate pricing model
@@ -149,6 +149,9 @@ class YieldSimulator(object):
             self.init_price_per_share,
             self.init_price_per_share)
         init_total_supply = x_reserves + y_reserves
+        actual_apy = self.calc_apy_from_reserves(
+                x_reserves, y_reserves, x_reserves + y_reserves, self.t, self.time_stretch, self.init_price_per_share, self.init_price_per_share)
+        print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
         # TODO: Do we want to calculate & store this?
         #spot_price = self.pricing_model.calc_spot_price(
         #    x_reserves,
@@ -168,6 +171,7 @@ class YieldSimulator(object):
             self.pricing_model,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
             self.init_price_per_share) # c from YieldSpace w/ Yield Baring Vaults
+        self.market.verbose = True
 
         for day in range(self.num_trading_days):
             self.day = day
@@ -287,6 +291,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
+                dx_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dy_slippage = 0
+                dx_fee = 0
+                dy_fee = fee
+                dx_orders = 0
+                dy_orders = 1
+                dx_volume = output_with_fee
+                dy_volume = 0
             elif token_in == "base" and token_out == "fyt":
                 in_reserves = self.x
                 out_reserves = self.y + self.total_supply
@@ -295,6 +307,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_in, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
+                dx_slippage = 0
+                dy_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dx_fee = fee
+                dy_fee = 0
+                dx_orders = 0
+                dy_orders = 1
+                dx_volume = 0
+                dy_volume = output_with_fee
             else:
                 raise ValueError(
                         f'token_in and token_out must be unique and in the set ("base", "fyt"), not in={token_in} and out={token_out}')
@@ -307,6 +327,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
+                dx_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dy_slippage = 0
+                dx_fee = fee
+                dy_fee = 0
+                dx_orders = 1
+                dy_orders = 0
+                dx_volume = output_with_fee
+                dy_volume = 0
             elif token_in == "base" and token_out == "fyt":
                 in_reserves = self.x
                 out_reserves = self.y + self.total_supply
@@ -315,6 +343,14 @@ class Market(object):
                                 amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
+                dx_slippage = 0
+                dy_slippage = abs(without_fee_or_slippage - output_without_fee)
+                dx_fee = 0
+                dy_fee = fee
+                dx_orders = 1
+                dy_orders = 0
+                dx_volume = 0
+                dy_volume = output_with_fee
         else:
             raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         if isinstance(fee, complex):
@@ -327,10 +363,15 @@ class Market(object):
         if fee > 0:
             self.x += dx
             self.y += dy
-            self.cum_x_slippage += abs(without_fee_or_slippage - output_without_fee)
-            self.cum_y_fees += fee
-            self.x_orders += 1
-            self.x_volume += output_with_fee
+            self.cum_x_slippage += dx_slippage
+            self.cum_y_slippage += dy_slippage
+            self.cum_x_fees += dx_fee
+            self.cum_y_fees += dy_fee
+            self.x_orders += dx_orders
+            self.y_orders += dy_orders
+            self.x_volume += dx_volume
+            self.y_volume += dy_volume
+                    
         if self.verbose and self.x_orders + self.y_orders < 10:
             print('conditional one')
             print([amount, self.y + self.total_supply, self.x / self.c, token_in, self.g, self.t, self.u, self.c])
@@ -497,7 +538,10 @@ class ElementPricingModel(PricingModel):
         t = days_until_maturity / (365 * time_stretch)
         T = days_until_maturity / 365
         r = apy / 100
-        return 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
+        result = 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
+        if self.verbose:
+            print(f'calc_x_reserves result: {result}')
+        return result
 
 
 class YieldSpacev2PricingModel(PricingModel):
