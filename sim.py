@@ -190,7 +190,7 @@ class YieldSimulator(object):
                 self.token_out = self.tokens[1-token_index]
 
                 ## Compute trade amount
-                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price,
+                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
                 (x_reserves, y_reserves) = (self.market.x, self.market.y)
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
