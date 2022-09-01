@@ -14,6 +14,6 @@ _later, some new commits show up in main, so we rebase our branch_
 git pull --rebase origin main
 git push my-feature-branch
 ```
-_we have completed our feature, so we create a PR to merge the branch into main__
+_we have completed our feature, so we create a PR to merge the branch into main_
 
-Once the PR is approved, we perform a *squash merge*. This means each PR results in a single commit to `main`.
+Once the PR is approved, we perform a final rebase, if necessary, and then a *squash merge*. This means each PR results in a single commit to `main`.
