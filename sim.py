@@ -9,7 +9,6 @@ class YieldSimulator(object):
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
         self.max_fee = kwargs.get('max_fee')
         self.tokens = kwargs.get('tokens') # list of strings
-        self.base_asset_price = kwargs.get('base_asset_price')
         self.min_target_liquidity = kwargs.get('min_target_liquidity')
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
         self.min_target_volume = kwargs.get('min_target_volume')
@@ -101,10 +100,9 @@ class YieldSimulator(object):
         if override_dict is not None and 'init_price_per_share' in override_dict.keys():
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
-            if self.precision is None:
-                self.init_price_per_share = (1 + self.vault_apy[0]/100)**self.init_vault_age # \mu variable in the paper
-            else:
-                self.init_price_per_share = np.around((1 + self.vault_apy[0]/100)**self.init_vault_age, self.precision) # \mu variable in the paper
+            self.init_price_per_share = (1 + self.vault_apy[0]/100)**self.init_vault_age # \mu variable in the paper
+            if self.precision is not None:
+                self.init_price_per_share = np.around(self.init_price_per_share, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
             self.pricing_model = YieldSpacev2PricingModel()
@@ -154,21 +152,18 @@ class YieldSimulator(object):
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1-token_index]
 
-                # Compute trade amount (convert from USD to token units)
-                self.trade_amount = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 10 / 10) / self.base_asset_price
+                # Compute trade amount (converted from USD to token units)
+                self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
                 (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
-                # print(format('(x_reserves,y_reserves) = ({},{})'.format(self.market.x, self.market.y)))
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
                 elif self.trade_direction == 'out':
                     target_reserves = x_reserves if self.token_in == 'fyt' else y_reserves # Assumes 'out' trade direction
-                # print(f'trade_amount={self.trade_amount} and target_reserves={target_reserves}')
                 # Can't trade more than available reserves
                 # TODO: if token_out=="base" else amount/market_price/m.spot_price()
-                self.trade_amount = np.minimum(self.trade_amount, target_reserves)
-                # print(f'{self.base_asset_price}')
-                # print(f'trade_amount={self.trade_amount}')
-                print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u})amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
+                self.trade_amount = np.minimum(self.trade_amount_usd / self.base_asset_price, target_reserves) # convert to token units
+                if self.verbose:
+                    print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u})amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
 
                 # Conduct trade & update state
                 (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee) = self.market.swap(
@@ -332,8 +327,8 @@ class Market(object):
         if isinstance(fee, complex):
             max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
             assert False, (
-                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out};'
-                +f' the max trade = {max_trade}; trade_amount = {amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
+                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}'
+                +f'\nmax trade = {max_trade}; trade_amount = {amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
             )
         if fee > 0:
             self.x += dx
