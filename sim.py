@@ -168,7 +168,7 @@ class YieldSimulator(object):
                 self.trade_amount = np.minimum(self.trade_amount, target_reserves)
                 # print(f'{self.base_asset_price}')
                 # print(f'trade_amount={self.trade_amount}')
-                print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u})amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
+                print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u}) amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
 
                 # Conduct trade & update state
                 (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee) = self.market.swap(
