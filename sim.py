@@ -13,8 +13,8 @@ class YieldSimulator(object):
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
         self.min_target_volume = kwargs.get('min_target_volume')
         self.max_target_volume = kwargs.get('max_target_volume')
-        self.min_apy = kwargs.get('min_apy')
-        self.max_apy = kwargs.get('max_apy')
+        self.min_pool_apy = kwargs.get('min_pool_apy')
+        self.max_pool_apy = kwargs.get('max_pool_apy')
         self.min_vault_age = kwargs.get('min_vault_age')
         self.max_vault_age = kwargs.get('max_vault_age')
         self.min_vault_apy = kwargs.get('min_vault_apy')
@@ -28,15 +28,14 @@ class YieldSimulator(object):
         self.rng = kwargs.get('rng')
         self.verbose = kwargs.get('verbose')
         self.run_number = 0
-        analysis_keys = [
+        analysis_keys = [ # used for logging on a trade-by-trade basis
             'run_number',
             'model_name',
             'time_until_end',
             't_stretch',
             'target_liquidity',
             'target_daily_volume',
-            'start_apy',
-            'current_apy',
+            'pool_apy',
             'fee_percent',
             'init_vault_age',
             'base_asset_price',
@@ -66,7 +65,7 @@ class YieldSimulator(object):
     def set_random_variables(self):
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
-        self.start_apy = self.rng.uniform(self.min_apy, self.max_apy) # starting fixed apr
+        self.init_pool_apy = self.rng.uniform(self.min_pool_apy, self.max_pool_apy) # starting fixed apr
         self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # Determine real-world parameters for estimating u and c (vault and pool details)
         self.init_vault_age = self.rng.uniform(self.min_vault_age, self.max_vault_age) # in years
@@ -77,10 +76,10 @@ class YieldSimulator(object):
         print('Simulation random variables:\n'
             + f'target_liquidity: {self.target_liquidity}\n'
             + f'target_daily_volume: {self.target_daily_volume}\n'
-            + f'start_apy: {self.start_apy}\n'
+            + f'init_pool_apy: {self.init_pool_apy}\n'
             + f'fee_percent: {self.fee_percent}\n'
             + f'init_vault_age: {self.init_vault_age}\n'
-            + f'init_vault_apy: {self.vault_apy[0]}\n'
+            + f'init_vault_apy: {self.vault_apy[0]}\n' # first element in vault_apy array
         )
 
     def run_simulation(self, override_dict=None):
@@ -112,12 +111,12 @@ class YieldSimulator(object):
             self.pricing_model = ElementPricingModel()
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
-        self.t_stretch = self.pricing_model.calc_time_stretch(self.start_apy) # determine time stretch
+        self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
-            self.start_apy,
+            self.init_pool_apy,
             self.days_until_maturity,
             self.t_stretch,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
@@ -186,8 +185,7 @@ class YieldSimulator(object):
         self.analysis_dict['t_stretch'].append(self.t_stretch)
         self.analysis_dict['target_liquidity'].append(self.target_liquidity)
         self.analysis_dict['target_daily_volume'].append(self.target_daily_volume)
-        self.analysis_dict['start_apy'].append(self.start_apy)
-        self.analysis_dict['current_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
+        self.analysis_dict['pool_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
         self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
