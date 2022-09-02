@@ -156,6 +156,7 @@ class YieldSimulator(object):
 
                 # Compute trade amount (converted from USD to token units)
                 self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
+                self.trade_amount_usd = self.target_daily_volume / 10
                 (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
@@ -247,7 +248,7 @@ class Market(object):
 
     def tick(self, step_size):
         self.t -= step_size
-        if self.t < 0:
+        if self.t < -1.5*step_size:
             assert False, (
                 f'ERROR: the time variable market.t={self.t} should never be negative.'
                 +f'\npricing_model={self.pricing_model}'
