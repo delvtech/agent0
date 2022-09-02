@@ -5,7 +5,6 @@ class YieldSimulator(object):
     #TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
     # Better to do named & typed args w/ defaults
     def __init__(self, **kwargs):
-        self.step_size = kwargs.get('step_size') # time resolution
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
         self.max_fee = kwargs.get('max_fee')
         self.tokens = kwargs.get('tokens') # list of strings
@@ -57,7 +56,8 @@ class YieldSimulator(object):
             'num_trading_days',
             'day',
             'spot_price',
-            'num_orders'
+            'num_orders',
+            'step_size',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
         self.random_variables_set = False
@@ -134,7 +134,9 @@ class YieldSimulator(object):
             self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
             self.verbose)
 
-        for day in range(1,self.num_trading_days+1):
+        self.step_size = self.market.t / self.days_until_maturity
+
+        for day in range(0, self.num_trading_days):
             self.day = day
             # div by 100 to convert percent to decimal; div by 365 to convert annual to daily; market.u is the value of 1 share
             self.market.c += self.vault_apy[self.day-1] / 100 / 365 * self.market.u
@@ -173,7 +175,8 @@ class YieldSimulator(object):
                 self.update_analysis_dict()
 
                 day_trading_volume += self.trade_amount * self.base_asset_price # track daily volume in USD terms
-            self.market.tick(self.step_size)
+            if day < self.num_trading_days-1: # no need to tick the market after the last day
+                self.market.tick(self.step_size)
         self.run_number += 1
 
     def update_analysis_dict(self):
@@ -182,7 +185,7 @@ class YieldSimulator(object):
         self.analysis_dict['model_name'].append(self.pricing_model.model_name())
         self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['time_until_end'].append(self.market.t)
-        self.analysis_dict['t_stretch'].append(self.t_stretch)
+        self.analysis_dict['t_stretch'].append(self.t_stretch) # TODO: rename to time_stretch
         self.analysis_dict['target_liquidity'].append(self.target_liquidity)
         self.analysis_dict['target_daily_volume'].append(self.target_daily_volume)
         self.analysis_dict['pool_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
@@ -190,10 +193,11 @@ class YieldSimulator(object):
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
         self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
         self.analysis_dict['num_trading_days'].append(self.num_trading_days)
+        self.analysis_dict['step_size'].append(self.step_size)
         # Variables that change per run
         self.analysis_dict['day'].append(self.day)
         self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
-        self.analysis_dict['vault_apy'].append(self.vault_apy[self.day-1])
+        self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
         # Variables that change per trade
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
@@ -242,6 +246,11 @@ class Market(object):
 
     def tick(self, step_size):
         self.t -= step_size
+        if self.t < 0:
+            assert False, (
+                f'ERROR: the time variable market.t={self.t} should never be negative.'
+                +f'\npricing_model={self.pricing_model}'
+            )
 
     def swap(self, amount, direction, token_in, token_out):
         if direction == "in":
@@ -325,20 +334,30 @@ class Market(object):
         if isinstance(fee, complex):
             max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
             assert False, (
-                f'Error: fee={fee} type is complex, only using real portion.\ndirection={direction}; token_in={token_in}; token_out={token_out}'
-                +f'\nmax trade = {max_trade}; trade_amount = {amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
+                f'Error: fee={fee} type should not be complex.'
+                +f'\npricing_modle={self.pricing_model}; direction={direction}; token_in={token_in}; token_out={token_out}'
+                +f'\nmax_trade={max_trade}; trade_amount={amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
+                +f'\ninitial_price_per_share={self.u}; price_per_share={self.c}; time={self.t}'
             )
-        if fee > 0:
-            self.x += dx
-            self.y += dy
-            self.cum_x_slippage += dx_slippage
-            self.cum_y_slippage += dy_slippage
-            self.cum_x_fees += dx_fee
-            self.cum_y_fees += dy_fee
-            self.x_orders += dx_orders
-            self.y_orders += dy_orders
-            self.x_volume += dx_volume
-            self.y_volume += dy_volume
+        if fee < 0:
+            max_trade = self.pricing_model.calc_max_trade(in_reserves, out_reserves, self.t)
+            assert False, (
+                f'Error: fee={fee} should never be negative.'
+                +f'\npricing_modle={self.pricing_model}; direction={direction}; token_in={token_in}; token_out={token_out}'
+                +f'\nmax_trade={max_trade}; trade_amount={amount}; in_reserves={in_reserves}; out_reserves={out_reserves}'
+                +f'\ninitial_price_per_share={self.u}; price_per_share={self.c}; time={self.t}'
+            )
+        # TODO: (dp) prev code did not do these if fee == 0, but I think you should?
+        self.x += dx
+        self.y += dy
+        self.cum_x_slippage += dx_slippage
+        self.cum_y_slippage += dy_slippage
+        self.cum_x_fees += dx_fee
+        self.cum_y_fees += dy_fee
+        self.x_orders += dx_orders
+        self.y_orders += dy_orders
+        self.x_volume += dx_volume
+        self.y_volume += dy_volume
         return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
 
 
@@ -485,11 +504,11 @@ class ElementPricingModel(PricingModel):
         k = self.calc_k_const(in_reserves, out_reserves, t) # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
         if token_out == "base":
-            fee = (in_ - without_fee) * g
+            fee = g * (in_ - without_fee)
         elif token_out == "fyt":
-            fee = (without_fee - in_) * g
+            fee = g * (without_fee - in_)
         with_fee = without_fee - fee
-        without_fee_or_slippage = 1 / pow(in_reserves / out_reserves, t) * in_
+        without_fee_or_slippage = in_ / (in_reserves / out_reserves)**t
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u=1, c=1):
