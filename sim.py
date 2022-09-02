@@ -134,6 +134,7 @@ class YieldSimulator(object):
             self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
             self.verbose)
 
+        # TODO: Allow one to alternatively specify a step_size in the override dict
         self.step_size = self.market.t / self.days_until_maturity
 
         for day in range(0, self.num_trading_days):
