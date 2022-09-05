@@ -480,9 +480,9 @@ class PricingModel(object):
         x_reserves = x_reserves * scaleUpFactor
         liquidity = x_reserves * market_price + y_reserves * market_price * spot_price
         actual_apy = self.calc_apy_from_reserves(
-                x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch, u, c)
-        # if self.verbose:
-        print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
+            x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch, u, c)
+        if self.verbose:
+            print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
         return (x_reserves, y_reserves, liquidity)
 
 
