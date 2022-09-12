@@ -7,6 +7,7 @@ class YieldSimulator(object):
     def __init__(self, **kwargs):
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
         self.max_fee = kwargs.get('max_fee')
+        self.floor_fee = kwargs.get('floor_fee') # minimum fee we take
         self.tokens = kwargs.get('tokens') # list of strings
         self.min_target_liquidity = kwargs.get('min_target_liquidity')
         self.max_target_liquidity = kwargs.get('max_target_liquidity')
@@ -24,9 +25,10 @@ class YieldSimulator(object):
         self.trade_direction = kwargs.get('trade_direction')
         self.days_until_maturity = kwargs.get('days_until_maturity')
         self.num_trading_days = kwargs.get('num_trading_days')
-        self.rng = kwargs.get('rng')
+        self.random_seed = kwargs.get('random_seed')
         self.verbose = kwargs.get('verbose')
         self.run_number = 0
+        self.trade_number = 0
         analysis_keys = [ # used for logging on a trade-by-trade basis
             'run_number',
             'model_name',
@@ -36,6 +38,7 @@ class YieldSimulator(object):
             'target_daily_volume',
             'pool_apy',
             'fee_percent',
+            'floor_fee',
             'init_vault_age',
             'base_asset_price',
             'vault_apy',
@@ -46,23 +49,29 @@ class YieldSimulator(object):
             'token_out',
             'trade_direction',
             'trade_amount',
+            'trade_amount_usd',
             'price_per_share', # c in YieldSpace with Yield Bearing Vaults
             'init_price_per_share', # u in YieldSpace with Yield Bearing Vaults
             'out_without_fee_slippage',
             'out_with_fee',
             'out_without_fee',
             'fee',
+            'slippage',
             'days_until_maturity',
             'num_trading_days',
+            'random_seed',
             'day',
+            'trade_number',
             'spot_price',
             'num_orders',
+            'trade_number',
             'step_size',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
         self.random_variables_set = False
 
     def set_random_variables(self):
+        self.rng = np.random.default_rng(self.random_seed)
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
         self.init_pool_apy = self.rng.uniform(self.min_pool_apy, self.max_pool_apy) # starting fixed apr
@@ -83,6 +92,7 @@ class YieldSimulator(object):
         )
 
     def run_simulation(self, override_dict=None):
+        self.trade_number = 0
         # Update parameters if the user provided new ones
         assert self.random_variables_set, ('ERROR: You must run simulator.set_random_variables() before running the simulation')
         if override_dict is not None:
@@ -113,6 +123,9 @@ class YieldSimulator(object):
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
 
+        # self.rng = np.random.default_rng(self.random_seed)
+        np.random.seed(self.random_seed)
+
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
@@ -124,15 +137,16 @@ class YieldSimulator(object):
         init_total_supply = x_reserves + y_reserves
 
         self.market = Market(
-            x_reserves,
-            y_reserves,
-            self.fee_percent,
-            self.days_until_maturity / (365 * self.t_stretch), # stored as t inside Market class
-            init_total_supply,
-            self.pricing_model,
-            self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
-            self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
-            self.verbose)
+            x=x_reserves,
+            y=y_reserves,
+            g=self.fee_percent,
+            t=self.days_until_maturity / (365 * self.t_stretch), # stored as t inside Market class
+            total_supply=init_total_supply,
+            pricing_model=self.pricing_model,
+            u=self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
+            c=self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
+            verbose=self.verbose,
+            floor_fee=self.floor_fee)
 
         # TODO: Allow one to alternatively specify a step_size in the override dict
         self.step_size = self.market.t / self.days_until_maturity
@@ -146,17 +160,25 @@ class YieldSimulator(object):
             # TODO: adjustable target daily volume that is a function of the day
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
+                # Compute trade amount (converted from USD to token units)
+                # self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
+                self.trade_amount_usd = np.random.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
+                self.trade_amount_usd = self.target_daily_volume / 10
+
                 # TODO: improve trading distriburtion & simplify (remove?) market price conversion & allow for different trade amounts
                 # Could define a 'trade amount & direction' time series that's a function of the vault apy
                 # Could support using actual historical trades or a fit to historical trades)
                 # Compute tokens to swap
-                token_index = self.rng.integers(low=0, high=2) # 0 or 1
-                self.token_in = self.tokens[token_index]
-                self.token_out = self.tokens[1-token_index]
+                # token_index = self.rng.integers(low=0, high=2) # 0 or 1
+                # self.token_in = self.tokens[token_index]
+                # self.token_out = self.tokens[1-token_index]
+                if np.random.uniform(0,1) < 0.5:
+                    self.token_in = self.tokens[0]  # in  = base
+                    self.token_out = self.tokens[1] # out = fyt
+                else:
+                    self.token_in = self.tokens[1]  # in  = fyt
+                    self.token_out = self.tokens[0] # out = base
 
-                # Compute trade amount (converted from USD to token units)
-                self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
-                self.trade_amount_usd = self.target_daily_volume / 10
                 (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
                 if self.trade_direction == 'in':
                     target_reserves = y_reserves if self.token_in == 'fyt' else x_reserves # Assumes 'in' trade direction
@@ -177,6 +199,7 @@ class YieldSimulator(object):
                 self.update_analysis_dict()
 
                 day_trading_volume += self.trade_amount * self.base_asset_price # track daily volume in USD terms
+                self.trade_number += 1
             if day < self.num_trading_days-1: # no need to tick the market after the last day
                 self.market.tick(self.step_size)
         self.run_number += 1
@@ -192,15 +215,18 @@ class YieldSimulator(object):
         self.analysis_dict['target_daily_volume'].append(self.target_daily_volume)
         self.analysis_dict['pool_apy'].append(self.market.apy(self.days_until_maturity - self.day + 1))
         self.analysis_dict['fee_percent'].append(self.fee_percent)
+        self.analysis_dict['floor_fee'].append(self.floor_fee)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
         self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
         self.analysis_dict['num_trading_days'].append(self.num_trading_days)
+        self.analysis_dict['random_seed'].append(self.random_seed)
         self.analysis_dict['step_size'].append(self.step_size)
         # Variables that change per run
         self.analysis_dict['day'].append(self.day)
         self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
         # Variables that change per trade
+        self.analysis_dict['trade_number'].append(self.trade_number)
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
         self.analysis_dict['total_supply'].append(self.market.total_supply)
@@ -209,19 +235,22 @@ class YieldSimulator(object):
         self.analysis_dict['token_out'].append(self.token_out)
         self.analysis_dict['trade_direction'].append(self.trade_direction)
         self.analysis_dict['trade_amount'].append(self.trade_amount)
+        self.analysis_dict['trade_amount_usd'].append(self.trade_amount_usd)
         self.analysis_dict['price_per_share'].append(self.market.c)
         self.analysis_dict['init_price_per_share'].append(self.market.u)
-        self.analysis_dict['out_without_fee_slippage'].append(self.without_fee_or_slippage)
-        self.analysis_dict['out_with_fee'].append(self.with_fee)
-        self.analysis_dict['out_without_fee'].append(self.without_fee)
-        self.analysis_dict['fee'].append(self.fee)
+        self.analysis_dict['out_without_fee_slippage'].append(self.without_fee_or_slippage*self.base_asset_price)
+        self.analysis_dict['out_with_fee'].append(self.with_fee*self.base_asset_price)
+        self.analysis_dict['out_without_fee'].append(self.without_fee*self.base_asset_price)
+        self.analysis_dict['fee'].append(self.fee*self.base_asset_price)
+        self.analysis_dict['slippage'].append((self.without_fee_or_slippage-self.without_fee)*self.base_asset_price)
         self.analysis_dict['spot_price'].append(self.market.spot_price())
 
 
 class Market(object):
-    def __init__(self, x, y, g, t, total_supply, pricing_model, u=1, c=1, verbose=False):
+    def __init__(self, x, y, g, t, total_supply, pricing_model, u=1, c=1, verbose=False, floor_fee=0):
         self.x = x
         self.y = y
+        self.floor_fee = floor_fee
         self.total_supply = total_supply
         self.g = g
         self.t = t
@@ -297,7 +326,7 @@ class Market(object):
                 out_reserves = self.x
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c, self.floor_fee)
                 dx = -output_with_fee
                 dy = amount
                 dx_slippage = abs(without_fee_or_slippage - output_without_fee)
@@ -313,7 +342,7 @@ class Market(object):
                 out_reserves = self.y + self.total_supply
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c, self.floor_fee)
                 dx = amount
                 dy = -output_with_fee
                 dx_slippage = 0
@@ -502,7 +531,7 @@ class ElementPricingModel(PricingModel):
         without_fee_or_slippage = out * (in_reserves / out_reserves)**t
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee):
         k = self.calc_k_const(in_reserves, out_reserves, t) # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
         if token_out == "base":
@@ -555,7 +584,7 @@ class YieldSpacev2PricingModel(PricingModel):
             without_fee_or_slippage = ((c / u * in_reserves) / out_reserves)**t * out
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee):
         scale = c / u
         if token_out == "base": # calc shares out for fyt in
             dy = in_
@@ -597,7 +626,7 @@ class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
     def model_name():
         return "YieldSpacev2MinFee"
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee=0):
         scale = c / u
         if token_out == "base": # calc shares out for fyt in
             dy = in_
@@ -607,8 +636,8 @@ class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
             without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
             without_fee = without_fee * c # convert from z to x (x=cz)
             fee =  (in_ - without_fee) * g
-            if fee / in_ < 5 / 100 / 100:
-                fee = in_ * 5/ 100 / 100
+            if fee / in_ < floor_fee / 100 / 100:
+                fee = in_ * floor_fee/ 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
         elif token_out == "fyt": # calc fyt out for shares in
@@ -618,8 +647,8 @@ class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
             fee =  (without_fee - in_) * g
-            if fee / in_ < 5 / 100 / 100:
-                fee = in_ * 5 / 100 / 100
+            if fee / in_ < floor_fee / 100 / 100:
+                fee = in_ * floor_fee / 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
