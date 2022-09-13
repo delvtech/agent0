@@ -64,7 +64,6 @@ class YieldSimulator(object):
             'trade_number',
             'spot_price',
             'num_orders',
-            'trade_number',
             'step_size',
         ]
         self.analysis_dict = {key:[] for key in analysis_keys}
