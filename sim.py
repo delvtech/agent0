@@ -122,8 +122,8 @@ class YieldSimulator(object):
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
 
-        # self.rng = np.random.default_rng(self.random_seed)
-        np.random.seed(self.random_seed)
+        self.rng = np.random.default_rng(self.random_seed)
+        # np.random.seed(self.random_seed)
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -160,23 +160,23 @@ class YieldSimulator(object):
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
                 # Compute trade amount (converted from USD to token units)
-                # self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
-                self.trade_amount_usd = np.random.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
+                self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
+                # self.trade_amount_usd = np.random.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
                 self.trade_amount_usd = self.target_daily_volume / 10
 
                 # TODO: improve trading distriburtion & simplify (remove?) market price conversion & allow for different trade amounts
                 # Could define a 'trade amount & direction' time series that's a function of the vault apy
                 # Could support using actual historical trades or a fit to historical trades)
                 # Compute tokens to swap
-                # token_index = self.rng.integers(low=0, high=2) # 0 or 1
-                # self.token_in = self.tokens[token_index]
-                # self.token_out = self.tokens[1-token_index]
-                if np.random.uniform(0,1) < 0.5:
-                    self.token_in = self.tokens[0]  # in  = base
-                    self.token_out = self.tokens[1] # out = fyt
-                else:
-                    self.token_in = self.tokens[1]  # in  = fyt
-                    self.token_out = self.tokens[0] # out = base
+                token_index = self.rng.integers(low=0, high=2) # 0 or 1
+                self.token_in = self.tokens[token_index]
+                self.token_out = self.tokens[1-token_index]
+                # if np.random.uniform(0,1) < 0.5:
+                #     self.token_in = self.tokens[0]  # in  = base
+                #     self.token_out = self.tokens[1] # out = fyt
+                # else:
+                #     self.token_in = self.tokens[1]  # in  = fyt
+                #     self.token_out = self.tokens[0] # out = base
 
                 (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
                 if self.trade_direction == 'in':
