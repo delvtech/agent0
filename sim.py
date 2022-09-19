@@ -1,3 +1,4 @@
+from ast import Yield
 import numpy as np
 
 # TODO: completely remove calc_in_given_out
@@ -113,11 +114,11 @@ class YieldSimulator(object):
                 self.init_price_per_share = np.around(self.init_price_per_share, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
-            self.pricing_model = YieldSpacev2PricingModel()
+            self.pricing_model = YieldSpacev2PricingModel(self.verbose)
         elif self.pricing_model_name.lower() == 'yieldspacev2minfee':
-            self.pricing_model = YieldSpacev2MinFeePricingModel()
+            self.pricing_model = YieldSpacev2MinFeePricingModel(self.verbose, self.floor_fee)
         elif self.pricing_model_name.lower() == 'element':
-            self.pricing_model = ElementPricingModel()
+            self.pricing_model = ElementPricingModel(self.verbose)
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
@@ -144,8 +145,7 @@ class YieldSimulator(object):
             pricing_model=self.pricing_model,
             u=self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
             c=self.init_price_per_share, # c from YieldSpace w/ Yield Baring Vaults
-            verbose=self.verbose,
-            floor_fee=self.floor_fee)
+            verbose=self.verbose)
 
         # TODO: Allow one to alternatively specify a step_size in the override dict
         self.step_size = self.market.t / self.days_until_maturity
@@ -206,7 +206,7 @@ class YieldSimulator(object):
     def update_analysis_dict(self):
         # TODO: Make sure all of these member variables are initialized in __init__ so that this func can be called whenever
         # Variables that are constant across runs
-        self.analysis_dict['model_name'].append(self.pricing_model.model_name())
+        self.analysis_dict['model_name'].append(self.market.pricing_model.model_name())
         self.analysis_dict['run_number'].append(self.run_number)
         self.analysis_dict['time_until_end'].append(self.market.t)
         self.analysis_dict['t_stretch'].append(self.t_stretch) # TODO: rename to time_stretch
@@ -246,10 +246,9 @@ class YieldSimulator(object):
 
 
 class Market(object):
-    def __init__(self, x, y, g, t, total_supply, pricing_model, u=1, c=1, verbose=False, floor_fee=0):
+    def __init__(self, x, y, g, t, total_supply, pricing_model, u=1, c=1, verbose=False):
         self.x = x
         self.y = y
-        self.floor_fee = floor_fee
         self.total_supply = total_supply
         self.g = g
         self.t = t
@@ -325,7 +324,7 @@ class Market(object):
                 out_reserves = self.x
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c, self.floor_fee)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = -output_with_fee
                 dy = amount
                 dx_slippage = abs(without_fee_or_slippage - output_without_fee)
@@ -341,7 +340,7 @@ class Market(object):
                 out_reserves = self.y + self.total_supply
                 (without_fee_or_slippage, output_with_fee, output_without_fee, fee) = \
                         self.pricing_model.calc_out_given_in(
-                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c, self.floor_fee)
+                                amount, in_reserves, out_reserves, token_out, self.g, self.t, self.u, self.c)
                 dx = amount
                 dy = -output_with_fee
                 dx_slippage = 0
@@ -392,6 +391,7 @@ class Market(object):
 
 
 class PricingModel(object):
+    # TODO: Change argument defaults to be None & set inside of def to avoid accidental overwrite
     def __init__(self, verbose=False):
         self.verbose = verbose
 
@@ -530,7 +530,7 @@ class ElementPricingModel(PricingModel):
         without_fee_or_slippage = out * (in_reserves / out_reserves)**t
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
         k = self.calc_k_const(in_reserves, out_reserves, t) # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
         if token_out == "base":
@@ -583,7 +583,7 @@ class YieldSpacev2PricingModel(PricingModel):
             without_fee_or_slippage = ((c / u * in_reserves) / out_reserves)**t * out
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
         scale = c / u
         if token_out == "base": # calc shares out for fyt in
             dy = in_
@@ -620,12 +620,17 @@ class YieldSpacev2PricingModel(PricingModel):
         return result
 
 
+
 class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
+    def __init__(self, verbose=False, floor_fee=0):
+        super(YieldSpacev2MinFeePricingModel, self).__init__(verbose)
+        self.floor_fee = floor_fee
+
     @staticmethod
     def model_name():
         return "YieldSpacev2MinFee"
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c, floor_fee=0):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
         scale = c / u
         if token_out == "base": # calc shares out for fyt in
             dy = in_
@@ -635,8 +640,8 @@ class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
             without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
             without_fee = without_fee * c # convert from z to x (x=cz)
             fee =  (in_ - without_fee) * g
-            if fee / in_ < floor_fee / 100 / 100:
-                fee = in_ * floor_fee/ 100 / 100
+            if fee / in_ < self.floor_fee / 100 / 100:
+                fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
         elif token_out == "fyt": # calc fyt out for shares in
@@ -646,8 +651,8 @@ class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
             k = scale * (u * z)**(1 - t) + y**(1 - t)
             without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
             fee =  (without_fee - in_) * g
-            if fee / in_ < floor_fee / 100 / 100:
-                fee = in_ * floor_fee / 100 / 100
+            if fee / in_ < self.floor_fee / 100 / 100:
+                fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
