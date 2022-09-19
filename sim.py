@@ -1,4 +1,3 @@
-from ast import Yield
 import numpy as np
 
 # TODO: completely remove calc_in_given_out
