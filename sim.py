@@ -150,7 +150,7 @@ class YieldSimulator(object):
         for day in range(0, self.num_trading_days):
             self.day = day
             # div by 100 to convert percent to decimal; div by 365 to convert annual to daily; market.u is the value of 1 share
-            self.market.c += self.vault_apy[self.day-1] / 100 / 365 * self.market.u
+            self.market.c += self.vault_apy[self.day] / 100 / 365 * self.market.u
 
             # Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
