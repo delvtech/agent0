@@ -28,7 +28,7 @@ class YieldSimulator(object):
         self.random_seed = kwargs.get('random_seed')
         self.verbose = kwargs.get('verbose')
         self.run_number = 0
-        self.trade_number = 0
+        self.run_trade_number = 0
         analysis_keys = [ # used for logging on a trade-by-trade basis
             'run_number',
             'model_name',
@@ -61,7 +61,7 @@ class YieldSimulator(object):
             'num_trading_days',
             'random_seed',
             'day',
-            'trade_number',
+            'run_trade_number',
             'spot_price',
             'num_orders',
             'step_size',
@@ -91,7 +91,7 @@ class YieldSimulator(object):
         )
 
     def run_simulation(self, override_dict=None):
-        self.trade_number = 0
+        self.run_trade_number = 0
         # Update parameters if the user provided new ones
         assert self.random_variables_set, ('ERROR: You must run simulator.set_random_variables() before running the simulation')
         if override_dict is not None:
@@ -198,7 +198,7 @@ class YieldSimulator(object):
                 self.update_analysis_dict()
 
                 day_trading_volume += self.trade_amount * self.base_asset_price # track daily volume in USD terms
-                self.trade_number += 1
+                self.run_trade_number += 1
             if day < self.num_trading_days-1: # no need to tick the market after the last day
                 self.market.tick(self.step_size)
         self.run_number += 1
@@ -225,7 +225,7 @@ class YieldSimulator(object):
         self.analysis_dict['num_orders'].append(self.market.x_orders + self.market.y_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
         # Variables that change per trade
-        self.analysis_dict['trade_number'].append(self.trade_number)
+        self.analysis_dict['run_trade_number'].append(self.run_trade_number)
         self.analysis_dict['x_reserves'].append(self.market.x)
         self.analysis_dict['y_reserves'].append(self.market.y)
         self.analysis_dict['total_supply'].append(self.market.total_supply)
