@@ -264,7 +264,7 @@ class Market(object):
 
     def tick(self, step_size):
         self.t -= step_size
-        if self.t < -1.5*step_size:
+        if self.t < -1.5 * step_size:
             assert False, (
                 f'ERROR: the time variable market.t={self.t} should never be negative.'
                 +f'\npricing_model={self.pricing_model}'
@@ -607,7 +607,6 @@ class YieldSpacev2PricingModel(PricingModel):
         if self.verbose:
             print(f'calc_x_reserves result: {result}')
         return result
-
 
 
 class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
