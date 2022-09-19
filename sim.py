@@ -264,7 +264,7 @@ class Market(object):
 
     def tick(self, step_size):
         self.t -= step_size
-        if self.t < -1.5 * step_size:
+        if self.t < 0:
             assert False, (
                 f'ERROR: the time variable market.t={self.t} should never be negative.'
                 +f'\npricing_model={self.pricing_model}'
