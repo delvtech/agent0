@@ -2,7 +2,7 @@ import numpy as np
 
 # TODO: completely remove calc_in_given_out
 class YieldSimulator(object):
-    #TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
+    # TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
     # Better to do named & typed args w/ defaults
     def __init__(self, **kwargs):
         self.min_fee = kwargs.get('min_fee') # percentage of the slippage we take as a fee
@@ -116,13 +116,11 @@ class YieldSimulator(object):
                 self.init_price_per_share = np.around(self.init_price_per_share, self.precision) # \mu variable in the paper
         # Initiate pricing model
         if self.pricing_model_name.lower() == 'yieldspacev2':
-            self.pricing_model = YieldSpacev2PricingModel(self.verbose)
-        elif self.pricing_model_name.lower() == 'yieldspacev2minfee':
-            self.pricing_model = YieldSpacev2MinFeePricingModel(self.verbose, self.floor_fee)
+            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
         elif self.pricing_model_name.lower() == 'element':
             self.pricing_model = ElementPricingModel(self.verbose)
         else:
-            raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
+            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
@@ -387,10 +385,6 @@ class PricingModel(object):
         self.verbose = verbose
 
     @staticmethod
-    def model_name():
-        raise NotImplementedError
-
-    @staticmethod
     def calc_in_given_out(out, in_reserves, out_reserves, token_in, g, t, u, c):
         raise NotImplementedError
 
@@ -465,12 +459,15 @@ class PricingModel(object):
     def calc_k_const(in_reserves, out_reserves, t, scale=1):
         return scale * in_reserves**(1 - t) + out_reserves**(1 - t)
 
-    def calc_max_trade(self, in_reserves, out_reserves, t):
-        k = self.calc_k_const(in_reserves, out_reserves, t)#in_reserves**(1 - t) + out_reserves**(1 - t)
-        return k**(1 / (1 - t)) - in_reserves
+    def model_name():
+        raise NotImplementedError
 
     def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
         raise NotImplementedError
+
+    def calc_max_trade(self, in_reserves, out_reserves, t):
+        k = self.calc_k_const(in_reserves, out_reserves, t)#in_reserves**(1 - t) + out_reserves**(1 - t)
+        return k**(1 / (1 - t)) - in_reserves
 
     def apy(self, price, days_until_maturity):
         T = days_until_maturity / 365
@@ -506,8 +503,7 @@ class PricingModel(object):
 
 
 class ElementPricingModel(PricingModel):
-    @staticmethod
-    def model_name():
+    def model_name(self):
         return "Element"
 
     def calc_in_given_out(self, out, in_reserves, out_reserves, token_in, g, t, u, c):
@@ -543,8 +539,13 @@ class ElementPricingModel(PricingModel):
 
 
 class YieldSpacev2PricingModel(PricingModel):
-    @staticmethod
-    def model_name():
+    def __init__(self, verbose=False, floor_fee=0):
+        super(YieldSpacev2PricingModel, self).__init__(verbose)
+        self.floor_fee = floor_fee
+
+    def model_name(self):
+        if self.floor_fee > 0:
+            return "YieldSpacev2MinFee"
         return "YieldSpacev2"
 
     def calc_in_given_out(self, out, in_reserves, out_reserves, token_in, g, t, u, c):
@@ -585,6 +586,9 @@ class YieldSpacev2PricingModel(PricingModel):
             without_fee = (z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))) * c
             # Fee math
             fee = (in_ - without_fee) * g
+            assert fee >= 0, ('ERROR: Fee should not be negative')
+            if fee / in_ < self.floor_fee / 100 / 100:
+                fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
 
@@ -597,6 +601,9 @@ class YieldSpacev2PricingModel(PricingModel):
             without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
             # Fee math
             fee = (without_fee - in_) * g
+            assert fee >= 0, ('ERROR: Fee should not be negative')
+            if fee / in_ < self.floor_fee / 100 / 100:
+                fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
@@ -609,40 +616,3 @@ class YieldSpacev2PricingModel(PricingModel):
         if self.verbose:
             print(f'calc_x_reserves result: {result}')
         return result
-
-
-class YieldSpacev2MinFeePricingModel(YieldSpacev2PricingModel):
-    def __init__(self, verbose=False, floor_fee=0):
-        super(YieldSpacev2MinFeePricingModel, self).__init__(verbose)
-        self.floor_fee = floor_fee
-
-    @staticmethod
-    def model_name():
-        return "YieldSpacev2MinFee"
-
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
-        scale = c / u
-        if token_out == "base": # calc shares out for fyt in
-            dy = in_
-            z = out_reserves / c # convert from x to z (x=cz)
-            y = in_reserves
-            k = self.calc_k_const(u * z, y, t, scale) # scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = z - 1 / u * ((k - (y + dy)**(1 - t)) / scale)**(1 / (1 - t))
-            without_fee = without_fee * c # convert from z to x (x=cz)
-            fee =  (in_ - without_fee) * g
-            if fee / in_ < self.floor_fee / 100 / 100:
-                fee = in_ * self.floor_fee / 100 / 100
-            with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / ((c / u * in_reserves) / out_reserves)**t * in_
-        elif token_out == "fyt": # calc fyt out for shares in
-            dz = in_ / c # convert from x to z (x=cz)
-            z = in_reserves / c # convert from x to z (x=cz)
-            y = out_reserves
-            k = scale * (u * z)**(1 - t) + y**(1 - t)
-            without_fee = y - (k - scale * (u * z + u * dz)**(1 - t))**(1 / (1 - t))
-            fee =  (without_fee - in_) * g
-            if fee / in_ < self.floor_fee / 100 / 100:
-                fee = in_ * self.floor_fee / 100 / 100
-            with_fee = without_fee - fee
-            without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
