@@ -88,8 +88,10 @@ class YieldSimulator(object):
             + f'init_vault_apy: {self.vault_apy[0]}\n' # first element in vault_apy array
         )
 
-    def reset_rng(self, seed):
-        self.rng = np.random.default_rng(seed)
+    def reset_rng(self, rng):
+        assert type(rng) == type(np.random.default_rng()), (
+            f'rng type must be a random number generator, not {type(rng)}.')
+        self.rng = rng
 
     def run_simulation(self, override_dict=None):
         self.run_trade_number = 0
