@@ -25,7 +25,7 @@ class YieldSimulator(object):
         self.trade_direction = kwargs.get('trade_direction')
         self.days_until_maturity = kwargs.get('days_until_maturity')
         self.num_trading_days = kwargs.get('num_trading_days')
-        self.random_seed = kwargs.get('random_seed')
+        self.rng = kwargs.get('rng')
         self.verbose = kwargs.get('verbose')
         self.run_number = 0
         self.run_trade_number = 0
@@ -59,7 +59,6 @@ class YieldSimulator(object):
             'slippage',
             'days_until_maturity',
             'num_trading_days',
-            'random_seed',
             'day',
             'run_trade_number',
             'spot_price',
@@ -70,7 +69,6 @@ class YieldSimulator(object):
         self.random_variables_set = False
 
     def set_random_variables(self):
-        self.rng = np.random.default_rng(self.random_seed)
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
         self.target_daily_volume = self.rng.uniform(self.min_target_volume, self.max_target_volume)
         self.init_pool_apy = self.rng.uniform(self.min_pool_apy, self.max_pool_apy) # starting fixed apr
@@ -89,6 +87,9 @@ class YieldSimulator(object):
             + f'init_vault_age: {self.init_vault_age}\n'
             + f'init_vault_apy: {self.vault_apy[0]}\n' # first element in vault_apy array
         )
+
+    def reset_rng(self, seed):
+        self.rng = np.random.default_rng(seed)
 
     def run_simulation(self, override_dict=None):
         self.run_trade_number = 0
@@ -121,9 +122,6 @@ class YieldSimulator(object):
         else:
             raise ValueError(f'pricing_model_name must be "YieldSpace", "YieldSpaceMinFee", or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
-
-        self.rng = np.random.default_rng(self.random_seed)
-        # np.random.seed(self.random_seed)
 
         (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -160,7 +158,6 @@ class YieldSimulator(object):
             while day_trading_volume < self.target_daily_volume:
                 # Compute trade amount (converted from USD to token units)
                 self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
-                # self.trade_amount_usd = np.random.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
                 self.trade_amount_usd = self.target_daily_volume / 10
 
                 # TODO: improve trading distriburtion & simplify (remove?) market price conversion & allow for different trade amounts
@@ -170,12 +167,6 @@ class YieldSimulator(object):
                 token_index = self.rng.integers(low=0, high=2) # 0 or 1
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1-token_index]
-                # if np.random.uniform(0,1) < 0.5:
-                #     self.token_in = self.tokens[0]  # in  = base
-                #     self.token_out = self.tokens[1] # out = fyt
-                # else:
-                #     self.token_in = self.tokens[1]  # in  = fyt
-                #     self.token_out = self.tokens[0] # out = base
 
                 (x_reserves, y_reserves) = (self.market.x, self.market.y) # in token units
                 if self.trade_direction == 'in':
@@ -217,7 +208,6 @@ class YieldSimulator(object):
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
         self.analysis_dict['days_until_maturity'].append(self.days_until_maturity)
         self.analysis_dict['num_trading_days'].append(self.num_trading_days)
-        self.analysis_dict['random_seed'].append(self.random_seed)
         self.analysis_dict['step_size'].append(self.step_size)
         # Variables that change per run
         self.analysis_dict['day'].append(self.day)
