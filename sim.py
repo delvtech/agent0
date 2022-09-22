@@ -1,4 +1,3 @@
-from xml.dom.minidom import Element
 import numpy as np
 
 # TODO: completely remove calc_in_given_out
@@ -108,7 +107,6 @@ class YieldSimulator(object):
                                 f'vault_apy must have len equal to num_trading_days = {self.num_trading_days}, not {len(override_dict[key])}')
                         else:
                             setattr(self, key, [override_dict[key],]*self.num_trading_days)
-
         if override_dict is not None and 'init_price_per_share' in override_dict.keys():
             self.init_price_per_share = override_dict['init_price_per_share']
         else:
@@ -124,7 +122,7 @@ class YieldSimulator(object):
             raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {self.pricing_model_name}')
         self.t_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy) # determine time stretch
 
-        (x_reserves, y_reserves, liquidity) = self.pricing_model.calc_liquidity(
+        (init_x_reserves, init_y_reserves, liquidity) = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
             self.init_pool_apy,
@@ -132,11 +130,11 @@ class YieldSimulator(object):
             self.t_stretch,
             self.init_price_per_share, # u from YieldSpace w/ Yield Baring Vaults
             self.init_price_per_share) # c from YieldSpace w/ Yield Baring Vaults
-        init_total_supply = x_reserves + y_reserves
+        init_total_supply = init_x_reserves + init_y_reserves
 
         self.market = Market(
-            x=x_reserves,
-            y=y_reserves,
+            x=init_x_reserves,
+            y=init_y_reserves,
             g=self.fee_percent,
             t=self.days_until_maturity / (365 * self.t_stretch), # stored as t inside Market class
             total_supply=init_total_supply,
@@ -161,7 +159,7 @@ class YieldSimulator(object):
                 self.trade_amount_usd = self.rng.normal(self.target_daily_volume / 10, self.target_daily_volume / 100)
                 self.trade_amount_usd = self.target_daily_volume / 10
 
-                # TODO: improve trading distriburtion & simplify (remove?) market price conversion & allow for different trade amounts
+                # TODO: improve trading distribution & simplify (remove?) market price conversion & allow for different trade amounts
                 # Could define a 'trade amount & direction' time series that's a function of the vault apy
                 # Could support using actual historical trades or a fit to historical trades)
                 # Compute tokens to swap
@@ -175,7 +173,6 @@ class YieldSimulator(object):
                 elif self.trade_direction == 'out':
                     target_reserves = x_reserves if self.token_in == 'fyt' else y_reserves # Assumes 'out' trade direction
                 # Can't trade more than available reserves
-                # TODO: if token_out=="base" else amount/market_price/m.spot_price()
                 self.trade_amount = np.minimum(self.trade_amount_usd / self.base_asset_price, target_reserves) # convert to token units
                 if self.verbose:
                     print(f'trades={self.market.x_orders+self.market.y_orders} (c,u)=({self.market.c},{self.market.u})amount={self.trade_amount} reserves={(x_reserves,y_reserves)}')
@@ -393,7 +390,7 @@ class PricingModel(object):
     def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
         raise NotImplementedError
 
-    def model_name():
+    def model_name(self):
         raise NotImplementedError
 
     def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
@@ -402,7 +399,7 @@ class PricingModel(object):
     @staticmethod
     def calc_time_stretch(apy):
         return 3.09396 / (0.02789 * apy)
-    
+
     @staticmethod
     def calc_tokens_in_given_lp_out(lp_out, x_reserves, y_reserves, total_supply):
         # Check if the pool is initialized
@@ -501,8 +498,17 @@ class PricingModel(object):
         actual_apy = self.calc_apy_from_reserves(
             x_reserves, y_reserves, x_reserves + y_reserves, t, time_stretch, u, c)
         if self.verbose:
-            print('x={} y={} total={} apy={}'.format(x_reserves,y_reserves,liquidity,actual_apy))
+            print(f'x={x_reserves} y={y_reserves} total={liquidity} apy={actual_apy}')
         return (x_reserves, y_reserves, liquidity)
+
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
+        t = days_until_maturity / (365 * time_stretch)
+        T = days_until_maturity / 365
+        r = apy / 100
+        result = 2 * c * y_reserves / (u * (-1 / (r * T - 1))**(1 / t) - c)
+        if self.verbose:
+            print(f'calc_x_reserves result: {result}')
+        return result
 
 
 class ElementPricingModel(PricingModel):
@@ -532,13 +538,7 @@ class ElementPricingModel(PricingModel):
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u=1, c=1):
-        t = days_until_maturity / (365 * time_stretch)
-        T = days_until_maturity / 365
-        r = apy / 100
-        result = 2 * y_reserves / ((-1 / (r * T - 1))**(1 / t) - 1)
-        if self.verbose:
-            print(f'calc_x_reserves result: {result}')
-        return result
+        return super(ElementPricingModel, self).calc_x_reserves(apy, y_reserves, days_until_maturity, time_stretch, u, c)
 
 
 class YieldSpacev2PricingModel(PricingModel):
@@ -579,7 +579,7 @@ class YieldSpacev2PricingModel(PricingModel):
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
-        scale = c / u
+        scale = c / u # normalized function of vault yields
         if token_out == "base": # calc shares out for fyt in
             dy = in_
             z = out_reserves / c # convert from x to z (x=cz)
@@ -610,12 +610,3 @@ class YieldSpacev2PricingModel(PricingModel):
             with_fee = without_fee - fee
             without_fee_or_slippage = 1 / (in_reserves / (c / u * out_reserves))**t * in_
         return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
-        t = days_until_maturity / (365 * time_stretch)
-        T = days_until_maturity / 365
-        r = apy / 100
-        result = 2 * c * y_reserves / (-c + u * (-1 / (r * T - 1))**(1 / t))
-        if self.verbose:
-            print(f'calc_x_reserves result: {result}')
-        return result
