@@ -1,3 +1,4 @@
+from xml.dom.minidom import Element
 import numpy as np
 
 # TODO: completely remove calc_in_given_out
@@ -392,6 +393,12 @@ class PricingModel(object):
     def calc_out_given_in(in_, in_reserves, out_reserves, token_out, g, t, u, c):
         raise NotImplementedError
 
+    def model_name():
+        raise NotImplementedError
+
+    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
+        raise NotImplementedError
+
     @staticmethod
     def calc_time_stretch(apy):
         return 3.09396 / (0.02789 * apy)
@@ -459,24 +466,20 @@ class PricingModel(object):
     def calc_k_const(in_reserves, out_reserves, t, scale=1):
         return scale * in_reserves**(1 - t) + out_reserves**(1 - t)
 
-    def model_name():
-        raise NotImplementedError
-
-    def calc_x_reserves(self, apy, y_reserves, days_until_maturity, time_stretch, u, c):
-        raise NotImplementedError
-
     def calc_max_trade(self, in_reserves, out_reserves, t):
         k = self.calc_k_const(in_reserves, out_reserves, t)#in_reserves**(1 - t) + out_reserves**(1 - t)
         return k**(1 / (1 - t)) - in_reserves
 
     def apy(self, price, days_until_maturity):
+        assert price > 0, (f'price argument should be greater than zero, not {price}')
+        assert days_until_maturity > 0, (f'days_until_maturity argument should be greater than zero, not {days_until_maturity}')
         T = days_until_maturity / 365
         return (1 - price) / price / T * 100 # APYW
 
-    def calc_spot_price(self, x_reserves, y_reserves, total_supply, t, u, c):
+    def calc_spot_price(self, x_reserves, y_reserves, total_supply, t, u=1, c=1):
         return 1 / pow(c * (y_reserves + total_supply) / (u * x_reserves), t)
 
-    def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch, u, c):
+    def calc_apy_from_reserves(self, x_reserves, y_reserves, total_supply, t, t_stretch, u=1, c=1):
         spot_price = self.calc_spot_price(x_reserves, y_reserves, total_supply, t, u, c)
         days_until_maturity = t * 365 * t_stretch
         return self.apy(spot_price, days_until_maturity)
@@ -485,7 +488,7 @@ class PricingModel(object):
         T = days_until_maturity / 365
         return 1 - apy * T / 100
 
-    def calc_liquidity(self, target_liquidity, market_price, apy, days_until_maturity, time_stretch, u, c):
+    def calc_liquidity(self, target_liquidity, market_price, apy, days_until_maturity, time_stretch, u=1, c=1):
         spot_price = self.calc_spot_price_from_apy(apy, days_until_maturity)
         t = days_until_maturity / (365 * time_stretch)
         y_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * t)
@@ -506,7 +509,7 @@ class ElementPricingModel(PricingModel):
     def model_name(self):
         return "Element"
 
-    def calc_in_given_out(self, out, in_reserves, out_reserves, token_in, g, t, u, c):
+    def calc_in_given_out(self, out, in_reserves, out_reserves, token_in, g, t, u=1, c=1):
         k = self.calc_k_const(in_reserves, out_reserves, t) # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = pow(k - pow(out_reserves - out, 1 - t), 1 / (1 - t)) - in_reserves
         if token_in == "base":
@@ -517,7 +520,7 @@ class ElementPricingModel(PricingModel):
         without_fee_or_slippage = out * (in_reserves / out_reserves)**t
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u, c):
+    def calc_out_given_in(self, in_, in_reserves, out_reserves, token_out, g, t, u=1, c=1):
         k = self.calc_k_const(in_reserves, out_reserves, t) # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, 1 - t), 1 / (1 - t))
         if token_out == "base":
