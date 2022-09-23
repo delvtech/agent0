@@ -75,7 +75,8 @@ class YieldSimulator(object):
         self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # Determine real-world parameters for estimating u and c (vault and pool details)
         self.init_vault_age = self.rng.uniform(self.min_vault_age, self.max_vault_age) # in years
-        self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days) / 100 # as a decimal
+        self.vault_apy = self.rng.uniform(self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days)
+        self.vault_apy /= 100 # as a decimal
         self.random_variables_set = True
 
     def print_random_variables(self):
