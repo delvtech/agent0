@@ -1,6 +1,7 @@
 import pandas as pd
 
 def format_trades(analysis_dict):
+    """Converts the simulator output dictionary to a pandas dataframe and computes derived variables"""
     trades = pd.DataFrame.from_dict(analysis_dict)    # construct simulation dataframe output
     # calculate derived variables across runs
     trades['time_diff'] = trades.time_until_end.diff()
@@ -8,14 +9,14 @@ def format_trades(analysis_dict):
     trades.loc[len(trades) - 1, 'time_diff_shift'] = 1
     trades['fee_in_usd'] = trades.fee #* trades.base_asset_price
     trades['fee_in_bps'] = trades.fee / trades.out_without_fee * 100 * 100
-    x_liquidity_usd = trades.x_reserves * trades.base_asset_price
-    y_liquidity_usd = trades.y_reserves * trades.base_asset_price * trades.spot_price
-    trades['total_liquidity_usd'] = x_liquidity_usd + y_liquidity_usd
+    base_asset_liquidity_usd = trades.base_asset_reserves * trades.base_asset_price
+    token_asset_liquidity_usd = trades.token_asset_reserves * trades.base_asset_price * trades.spot_price
+    trades['total_liquidity_usd'] = base_asset_liquidity_usd + token_asset_liquidity_usd
     trades['trade_volume_usd'] = trades.out_with_fee #* trades.base_asset_price
     # pr is the percent change in spot price since day 1
     trades['pr'] = trades.loc[:, 'spot_price'] - trades.loc[0, 'spot_price'] # this is APR (does not include compounding)
-    # pu takes that percent change and normalizes it to be equal to init_price_per_share at the beginning, so you can compare its progression vs. price_per_share
-    trades['pu'] = (trades.pr + 1) * trades.init_price_per_share # this is APR (does not include compounding)
+    # pu takes that percent change and normalizes it to be equal to init_share_price at the beginning, so you can compare its progression vs. share_price
+    trades['pu'] = (trades.pr + 1) * trades.init_share_price # this is APR (does not include compounding)
     # create explicit column that increments per trade
     trades = trades.reset_index()
     # aggregate trades
