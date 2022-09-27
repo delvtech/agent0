@@ -138,21 +138,8 @@ class YieldSimulator():
             f'rng type must be a random number generator, not {type(rng)}.')
         self.rng = rng
 
-    def run_simulation(self, override_dict=None):
-        """
-        Run the trade simulation and update the output state dictionary
-
-        Arguments:
-        override_dict [dict] Override member variables.
-        Keys in this dictionary must match member variables of the YieldSimulator class.
-
-        This is the primary function of the YieldSimulator class.
-        The PricingModel and Market objects will be constructed.
-        A loop will execute a group of trades with random volumes and directions for each day,
-        up to `self.num_trading_days` days.
-        """
-
-        self.run_trade_number = 0
+    def setup_pricing_and_market(self, override_dict=None):
+        """Constructs the pricing model and market member variables"""
         # Update parameters if the user provided new ones
         assert self.random_variables_set, (
             'ERROR: You must run simulator.set_random_variables() before running the simulation')
@@ -206,6 +193,23 @@ class YieldSimulator():
         step_scale = 1 # TODO: support scaling the step_size via the override dict (i.e. make a step_scale parameter)
         self.step_size = self.pricing_model.stretch_time(
             self.pricing_model.norm_days(step_scale), self.init_time_stretch)
+
+    def run_simulation(self, override_dict=None):
+        """
+        Run the trade simulation and update the output state dictionary
+
+        Arguments:
+        override_dict [dict] Override member variables.
+        Keys in this dictionary must match member variables of the YieldSimulator class.
+
+        This is the primary function of the YieldSimulator class.
+        The PricingModel and Market objects will be constructed.
+        A loop will execute a group of trades with random volumes and directions for each day,
+        up to `self.num_trading_days` days.
+        """
+
+        self.run_trade_number = 0
+        self.setup_pricing_and_market(override_dict)
         self.update_analysis_dict() # Initial conditions
         for day in range(0, self.num_trading_days):
             self.day = day
@@ -267,6 +271,7 @@ class YieldSimulator():
         unstretched_time_remaining = self.pricing_model.unstretch_time(time_remaining, self.init_time_stretch)
         days_remaining = self.pricing_model.unnorm_days(unstretched_time_remaining)
         return days_remaining
+
     #TODO: Test that this gets the same output as above
     #def calc_days_remaining(self, pool_duration, current_day):
     #    """Calculate the normalized position within the current pool duration"""
@@ -704,7 +709,7 @@ class PricingModel(object):
         """Returns the apy given reserve amounts"""
         spot_price = self.calc_spot_price(
             base_asset_reserves, token_asset_reserves, total_supply, time_remaining, init_share_price, share_price)
-        days_remaining = self.unnorm_days(self.unstretch_time(time_remaining, time_stretch)) # = time_remaining * 365 * time_stretch
+        days_remaining = self.unnorm_days(self.unstretch_time(time_remaining, time_stretch))
         return self.apy(spot_price, days_remaining)
 
     def calc_base_asset_reserves(self, apy, token_asset_reserves, days_remaining, time_stretch,
@@ -812,7 +817,8 @@ class YieldSpacev2PricingModel(PricingModel):
             share_reserves = in_reserves / share_price # convert from base_asset to z (x=cz)
             token_asset = out_reserves
             # AMM math
-            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)#scale * (u * z)**(1 - t) + y**(1 - t)
+            # k = scale * (u * z)**(1 - t) + y**(1 - t)
+            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
             inv_init_share_price = 1 / init_share_price
             new_token_asset = token_asset - d_token_asset
             without_fee = (
@@ -829,7 +835,8 @@ class YieldSpacev2PricingModel(PricingModel):
             share_reserves = out_reserves / share_price # convert from base_asset to z (x=cz)
             token_asset = in_reserves
             # AMM math
-            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale) # scale * (u * z)**(1 - t) + y**(1 - t)
+            # k = scale * (u * z)**(1 - t) + y**(1 - t)
+            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
             without_fee = (
                 k - scale
                 * (init_share_price * share_reserves - init_share_price * d_share_reserves)**time_elapsed
@@ -850,7 +857,8 @@ class YieldSpacev2PricingModel(PricingModel):
             share_reserves = out_reserves / share_price # convert from x to z (x=cz)
             token_asset = in_reserves
             # AMM math
-            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale) # scale * (u * z)**(1 - t) + y**(1 - t)
+            # k = scale * (u * z)**(1 - t) + y**(1 - t)
+            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
             inv_init_share_price = 1 / init_share_price
             without_fee = (
                 share_reserves - inv_init_share_price
@@ -869,7 +877,8 @@ class YieldSpacev2PricingModel(PricingModel):
             share_reserves = in_reserves / share_price # convert from base_asset to z (x=cz)
             token_asset = out_reserves
             # AMM math
-            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale) # scale * (u * z)**(1 - t) + y**(1 - t)
+            # k = scale * (u * z)**(1 - t) + y**(1 - t)
+            k = self.calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
             without_fee = token_asset - (
                 k - scale * (init_share_price * share_reserves + init_share_price * d_share_reserves)**time_elapsed
             )**(1 / time_elapsed)
