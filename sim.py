@@ -4,6 +4,7 @@ import numpy as np
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
+
 class YieldSimulator():
     """
     Stores environment varialbes & market simulation outputs for AMM experimentation
@@ -189,8 +190,6 @@ class YieldSimulator():
             init_share_price=self.init_share_price, # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price, # c from YieldSpace w/ Yield Baring Vaults
             verbose=self.verbose)
-        # self.step_size = step_scale / (365 * self.init_time_stretch)
-        #                = step_scale * (init_time_remaining / self.pool_duration)
         step_scale = 1 # TODO: support scaling the step_size via the override dict (i.e. make a step_scale parameter)
         self.step_size = self.pricing_model.stretch_time(
             self.pricing_model.norm_days(step_scale), self.init_time_stretch)
@@ -272,12 +271,6 @@ class YieldSimulator():
         unstretched_time_remaining = self.pricing_model.unstretch_time(time_remaining, self.init_time_stretch)
         days_remaining = self.pricing_model.unnorm_days(unstretched_time_remaining)
         return days_remaining
-
-    #TODO: Test that this gets the same output as above
-    #def calc_days_remaining(self, pool_duration, current_day):
-    #    """Calculate the normalized position within the current pool duration"""
-    #    return pool_duration - current_day + 1
-
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
@@ -691,7 +684,6 @@ class PricingModel(object):
         normalized_days_remaining = self.norm_days(days_remaining)
         return (1 - price) / price / normalized_days_remaining * 100 # APYW
 
-    # TODO: Test that the following two functions return the same amount
     def calc_spot_price(self, base_asset_reserves, token_asset_reserves,
             total_supply, time_remaining, init_share_price=1, share_price=1):
         """Returns the spot price given the current supply and temporal position along the yield curve"""
