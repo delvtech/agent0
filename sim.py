@@ -70,6 +70,7 @@ class YieldSimulator():
             'run_number',
             'model_name',
             'time_until_end',
+            'days_until_end',
             'init_time_stretch',
             'target_liquidity',
             'target_daily_volume',
@@ -287,8 +288,6 @@ class YieldSimulator():
         self.analysis_dict['init_time_stretch'].append(self.init_time_stretch)
         self.analysis_dict['target_liquidity'].append(self.target_liquidity)
         self.analysis_dict['target_daily_volume'].append(self.target_daily_volume)
-        days_remaining = self.get_days_remaining()
-        self.analysis_dict['pool_apy'].append(self.market.apy(days_remaining))
         self.analysis_dict['fee_percent'].append(self.market.fee_percent)
         self.analysis_dict['floor_fee'].append(self.floor_fee)
         self.analysis_dict['init_vault_age'].append(self.init_vault_age)
@@ -300,6 +299,9 @@ class YieldSimulator():
         self.analysis_dict['day'].append(self.day)
         self.analysis_dict['num_orders'].append(self.market.base_asset_orders + self.market.token_asset_orders)
         self.analysis_dict['vault_apy'].append(self.vault_apy[self.day])
+        days_remaining = self.get_days_remaining()
+        self.analysis_dict['days_until_end'].append(days_remaining)
+        self.analysis_dict['pool_apy'].append(self.market.apy(days_remaining))
         # Variables that change per trade
         self.analysis_dict['run_trade_number'].append(self.run_trade_number)
         self.analysis_dict['base_asset_reserves'].append(self.market.base_asset)
@@ -354,7 +356,6 @@ class Market():
         self.cum_token_asset_fees = 0
         self.cum_base_asset_fees = 0
         self.total_supply = self.base_asset + self.token_asset
-        self.starting_fyt_price = self.spot_price()
         self.verbose = verbose
 
     def apy(self, days_remaining):
