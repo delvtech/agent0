@@ -108,8 +108,7 @@ class TestUtils(unittest.TestCase):
         self.setup_test_vars()
         simulator = YieldSimulator(**self.config)
         simulator.set_random_variables()
-        num_trading_days_list = [1, 5, 10]
-        for num_trading_days in num_trading_days_list:
+        for num_trading_days in self.test_rng.integers(low=1, high=100, size=4):
             override_dict = {'num_trading_days': num_trading_days}
             simulator.setup_pricing_and_market(override_dict)
             for day in range(num_trading_days):
