@@ -179,8 +179,7 @@ class YieldSimulator():
             self.init_time_stretch,
             self.init_share_price, # u from YieldSpace w/ Yield Baring Vaults
             self.init_share_price)[:2] # c from YieldSpace w/ Yield Baring Vaults
-        init_days_remaining = self.pricing_model.norm_days(self.pool_duration)
-        init_time_remaining = self.pricing_model.stretch_time(init_days_remaining, self.init_time_stretch)
+        init_time_remaining = self.pricing_model.days_to_time_remaining(self.pool_duration, self.init_time_stretch)
         self.market = Market(
             base_asset=init_base_asset_reserves, # x
             token_asset=init_token_asset_reserves, # y
@@ -267,10 +266,7 @@ class YieldSimulator():
 
     def get_days_remaining(self):
         """Returns the days remaining in the pool"""
-        time_remaining = self.market.time_remaining
-        unstretched_time_remaining = self.pricing_model.unstretch_time(time_remaining, self.init_time_stretch)
-        days_remaining = self.pricing_model.unnorm_days(unstretched_time_remaining)
-        return days_remaining
+        return self.pricing_model.time_to_days_remaining(self.market.time_remaining, self.init_time_stretch)
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
@@ -669,6 +665,18 @@ class PricingModel(object):
         """Returns the 'k' constant variable for trade mathematics"""
         return scale * in_reserves**(time_elapsed) + out_reserves**(time_elapsed)
 
+    def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
+        """Converts remaining pool length in days to normalized and stretched time"""
+        normed_days_remaining = self.norm_days(days_remaining, normalizing_constant)
+        time_remaining = self.stretch_time(normed_days_remaining, time_stretch)
+        return time_remaining
+
+    def time_to_days_remaining(self, time_remaining, time_stretch=1, normalizing_constant=365):
+        """Converts normalized and stretched time remaining in pool to days"""
+        normed_days_remaining = self.unstretch_time(time_remaining, time_stretch)
+        days_remaining = self.unnorm_days(normed_days_remaining, normalizing_constant)
+        return days_remaining
+
     def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
         """Returns the maximum allowable trade amount given the current asset reserves"""
         time_elapsed = 1 - time_remaining
@@ -687,8 +695,8 @@ class PricingModel(object):
     def calc_spot_price(self, base_asset_reserves, token_asset_reserves,
             total_supply, time_remaining, init_share_price=1, share_price=1):
         """Returns the spot price given the current supply and temporal position along the yield curve"""
-        inv_log_price = share_price * (token_asset_reserves + total_supply) / (init_share_price * base_asset_reserves)
-        spot_price = 1 / inv_log_price**time_remaining
+        log_inv_price = share_price * (token_asset_reserves + total_supply) / (init_share_price * base_asset_reserves)
+        spot_price = 1 / log_inv_price**time_remaining
         return spot_price
 
     def calc_spot_price_from_apy(self, apy, days_remaining):
@@ -699,10 +707,15 @@ class PricingModel(object):
 
     def calc_apy_from_reserves(self, base_asset_reserves, token_asset_reserves, total_supply,
             time_remaining, time_stretch, init_share_price=1, share_price=1):
-        """Returns the apy given reserve amounts"""
+        """
+        Returns the apy given reserve amounts
+
+        TODO: Why is total supply passed as an argument?
+        Isn't it always base_asset_reserves + token_asset_reserves
+        """
         spot_price = self.calc_spot_price(
             base_asset_reserves, token_asset_reserves, total_supply, time_remaining, init_share_price, share_price)
-        days_remaining = self.unnorm_days(self.unstretch_time(time_remaining, time_stretch))
+        days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
         return self.apy(spot_price, days_remaining)
 
     def calc_base_asset_reserves(self, apy, token_asset_reserves, days_remaining, time_stretch,
@@ -723,7 +736,7 @@ class PricingModel(object):
             days_remaining, time_stretch, init_share_price=1, share_price=1):
         """Returns the reserve volumes and liquidity amounts"""
         spot_price = self.calc_spot_price_from_apy(apy, days_remaining)
-        time_remaining = self.stretch_time(self.norm_days(days_remaining), time_stretch)
+        time_remaining = self.days_to_time_remaining(days_remaining, time_stretch)
         token_asset_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * time_remaining)
         base_asset_reserves = self.calc_base_asset_reserves(
                 apy, token_asset_reserves, days_remaining, time_stretch, init_share_price, share_price)
