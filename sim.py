@@ -709,11 +709,10 @@ class PricingModel(object):
         normalized_days_remaining = self.norm_days(days_remaining)
         return (1 - price) / price / normalized_days_remaining * 100 # price = 1 / (1 + r * t)
 
-    def calc_spot_price_from_apy(self, apy, days_remaining):
+    def calc_spot_price_from_apy(self, apy, normalized_days_remaining):
         """Returns the current spot price based on the current APY and the remaining pool duration"""
-        normalized_days_remaining = self.norm_days(days_remaining)
         apy_decimal = apy / 100
-        return 1 / (1 + apy_decimal * normalized_days_remaining) # price = 1 / 
+        return 1 / (1 + apy_decimal * normalized_days_remaining) # price = 1 / (1 + r * t)
 
     def calc_apy_from_reserves(self, base_asset_reserves, token_asset_reserves, total_supply,
             time_remaining, time_stretch, init_share_price=1, share_price=1):
@@ -757,8 +756,8 @@ class PricingModel(object):
         total_liquidity = in USD terms, used to target liquidity as passed in (in USD terms)
         total_reserves  = in arbitrary units (AU), used for yieldspace math
         """
-        time_remaining = self.days_to_time_remaining(days_remaining, time_stretch) # = days_remaining / 365 / time_stretch
-        spot_price = self.calc_spot_price_from_apy(apy, days_remaining)
+        normalized_days_remaining = self.norm_days(days_remaining)
+        spot_price = self.calc_spot_price_from_apy(apy, normalized_days_remaining)
         est_token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price # guesstimate
         est_base_asset_reserves = self.calc_base_asset_reserves(
             apy, est_token_asset_reserves, days_remaining, time_stretch, init_share_price, share_price) # accurate ratio of prices
@@ -769,6 +768,7 @@ class PricingModel(object):
         total_liquidity = self.calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price)
         if self.verbose:
             total_reserves = base_asset_reserves + token_asset_reserves
+            time_remaining = self.days_to_time_remaining(days_remaining, time_stretch) # = days_remaining / 365 / time_stretch
             actual_apy = self.calc_apy_from_reserves(
                 base_asset_reserves, token_asset_reserves, total_reserves, time_remaining,
                 time_stretch, init_share_price, share_price)
