@@ -3,7 +3,7 @@
 # pylint: disable=missing-module-docstring
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=wrong-import-position
-# pylint: disable=too-many-instance-attributes 
+# pylint: disable=too-many-instance-attributes
 
 import os
 import sys
@@ -52,7 +52,7 @@ class TestUtils(unittest.TestCase):
         self.test_rng = np.random.default_rng(random_seed)
         self.target_liquidity = self.test_rng.uniform(low=1e5, high=1e6)
         self.base_asset_price = self.test_rng.uniform(low=2e3, high=3e3)
-        self.init_share_price = self.test_rng.uniform(low=1., high=2.)
+        self.init_share_price = 1#self.test_rng.uniform(low=1., high=2.)
 
     #def test_calc_apy(self):
     #    self.setup_test_vars()
@@ -75,7 +75,16 @@ class TestUtils(unittest.TestCase):
     #            time_stretch, self.init_share_price, self.init_share_price)
     #        np.testing.assert_allclose(random_apy, calculated_apy)
 
-    #def test_calc_spot_price(self):
+    def test_calc_spot_price_from_apy(self):
+        self.setup_test_vars()
+        random_apy = self.test_rng.normal(loc=10, scale=0.1)
+        days_remaining = 180
+        for pricing_model in self.pricing_models:
+            price = pricing_model.calc_spot_price_from_apy(random_apy, days_remaining)
+            calc_apy = pricing_model.apy(price, days_remaining)
+            np.testing.assert_allclose(random_apy, calc_apy)
+
+    #def test_calc_spot_price_from_reserves(self):
     #    self.setup_test_vars()
     #    pool_apy = self.test_rng.normal(loc=10, scale=0.1)
     #    days_remaining = 180
@@ -98,9 +107,11 @@ class TestUtils(unittest.TestCase):
     #            total_supply, time_remaining, self.init_share_price,
     #            self.init_share_price)
     #        # Version 2
-    #        apy = pricing_model.apy(spot_price_from_reserves, days_remaining)
+    #        #apy = pricing_model.apy(spot_price_from_reserves, days_remaining)
+    #        #spot_price_from_apy = pricing_model.calc_spot_price_from_apy(
+    #        #    apy, days_remaining)
     #        spot_price_from_apy = pricing_model.calc_spot_price_from_apy(
-    #            apy, days_remaining)
+    #            pool_apy, days_remaining)
     #        # Test
     #        np.testing.assert_allclose(spot_price_from_reserves, spot_price_from_apy)
 
