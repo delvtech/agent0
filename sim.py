@@ -349,13 +349,13 @@ class Market():
 
     def apy(self, days_remaining):
         """Returns current APY given the market conditions and pricing model"""
-        price = self.pricing_model.calc_spot_price(self.base_asset, self.token_asset,
+        price = self.pricing_model.calc_spot_price_from_reserves(self.base_asset, self.token_asset,
             self.total_supply, self.time_remaining, self.init_share_price, self.share_price)
-        return self.pricing_model.apy(price, days_remaining)
+        return self.pricing_model.calc_apy_from_spot_price(price, days_remaining)
 
     def spot_price(self):
         """Returns the current spot price given the market conditions and pricing model"""
-        return self.pricing_model.calc_spot_price(self.base_asset, self.token_asset,
+        return self.pricing_model.calc_spot_price_from_reserves(self.base_asset, self.token_asset,
             self.total_supply, self.time_remaining, self.init_share_price, self.share_price)
 
     def tick(self, step_size):
@@ -665,6 +665,23 @@ class PricingModel(object):
         """Returns the 'k' constant variable for trade mathematics"""
         return scale * in_reserves**(time_elapsed) + out_reserves**(time_elapsed)
 
+    @staticmethod
+    def calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price):
+        """
+        We are using spot_price when calculating est_total_liquidity to convert the two tokens into the same units.
+        Otherwise we're comparing apples(base_asset_reserves in ETH) and oranges (token_asset_reserves in ptETH)
+            ptEth = 1.0 ETH at maturity ONLY
+            ptEth = 0.95 ETH ahead of time
+        Discount factor from the time value of money
+            Present Value = Future Value / (1 + r)^n
+            Future Value = Present Value * (1 + r)^n
+        The equation converts from future value to present value at the appropriate discount rate,
+        which measures the opportunity cost of getting a dollar tomorrow instead of today.
+        discount rate = (1 + r)^n 
+        spot price APR = 1 / (1 + r)^n
+        """
+        return base_asset_reserves + token_asset_reserves * spot_price
+
     def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
         """Converts remaining pool length in days to normalized and stretched time"""
         normed_days_remaining = self.norm_days(days_remaining, normalizing_constant)
@@ -680,38 +697,35 @@ class PricingModel(object):
     def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
         """Returns the maximum allowable trade amount given the current asset reserves"""
         time_elapsed = 1 - time_remaining
-        k = self.calc_k_const(in_reserves, out_reserves, time_elapsed)#in_reserves**(1 - t) + out_reserves**(1 - t)
+        k = self.calc_k_const(in_reserves, out_reserves, time_elapsed)# in_reserves^(1 - t) + out_reserves^(1 - t)
         return k**(1 / time_elapsed) - in_reserves
 
-    def apy(self, price, days_remaining):
+    def calc_apy_from_spot_price(self, price, days_remaining):
         """Returns the APY given the current (positive) base asset price and the remaining pool duration"""
         assert price > 0, (
             f'price argument should be greater than zero, not {price}')
         assert days_remaining > 0, (
             f'days_remaining argument should be greater than zero, not {days_remaining}')
         normalized_days_remaining = self.norm_days(days_remaining)
-        return (1 - price) / price / normalized_days_remaining * 100 # APYW
+        return (1 - price) / price / normalized_days_remaining * 100 # price = 1 / (1 + r * t)
 
     def calc_spot_price_from_apy(self, apy, days_remaining):
         """Returns the current spot price based on the current APY and the remaining pool duration"""
         normalized_days_remaining = self.norm_days(days_remaining)
         apy_decimal = apy / 100
-        return 1 / (apy_decimal * normalized_days_remaining + 1)
+        return 1 / (1 + apy_decimal * normalized_days_remaining) # price = 1 / 
 
     def calc_apy_from_reserves(self, base_asset_reserves, token_asset_reserves, total_supply,
             time_remaining, time_stretch, init_share_price=1, share_price=1):
         """
         Returns the apy given reserve amounts
-
-        TODO: Why is total supply passed as an argument?
-        Isn't it always base_asset_reserves + token_asset_reserves
         """
-        spot_price = self.calc_spot_price(
+        spot_price = self.calc_spot_price_from_reserves(
             base_asset_reserves, token_asset_reserves, total_supply, time_remaining, init_share_price, share_price)
         days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
-        return self.apy(spot_price, days_remaining)
+        return self.calc_apy_from_spot_price(spot_price, days_remaining)
 
-    def calc_spot_price(self, base_asset_reserves, token_asset_reserves,
+    def calc_spot_price_from_reserves(self, base_asset_reserves, token_asset_reserves,
             total_supply, time_remaining, init_share_price=1, share_price=1):
         """Returns the spot price given the current supply and temporal position along the yield curve"""
         log_inv_price = share_price * (token_asset_reserves + total_supply) / (init_share_price * base_asset_reserves)
@@ -724,41 +738,43 @@ class PricingModel(object):
         normalized_days_remaining = self.norm_days(days_remaining)
         time_stretch_exp = 1 / self.stretch_time(normalized_days_remaining, time_stretch)
         apy_decimal = apy / 100
-        numerator = 2 * share_price * token_asset_reserves
-        inv_scaled_apy_decimal = 1 / (apy_decimal * normalized_days_remaining - 1)
-        denominator = (init_share_price * (-inv_scaled_apy_decimal)**time_stretch_exp - share_price)
-        result = numerator / denominator
+        numerator = 2 * share_price * token_asset_reserves # 2*c*y
+        scaled_apy_decimal = apy_decimal * normalized_days_remaining + 1 # assuming price_apr = 1/(1+r*t)
+        denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
+        result = numerator / denominator # 2*c*y/(u*(r*t + 1)**(1/T) - c)
         if self.verbose:
             print(f'calc_base_asset_reserves result: {result}')
         return result
 
-    def calc_liquidity(self, target_liquidity, market_price, apy,
+    def calc_liquidity(self, target_liquidity_usd, market_price, apy,
             days_remaining, time_stretch, init_share_price=1, share_price=1):
-        """Returns the reserve volumes and liquidity amounts"""
+        """
+        Returns the reserve volumes and total supply
+
+        The scaling factor ensures token_asset_reserves and base_asset_reserves add
+        up to target_liquidity, while keeping their ratio constant (preserves apy).
+
+        total_liquidity = in USD terms, used to target liquidity as passed in (in USD terms)
+        total_reserves  = in arbitrary units (AU), used for yieldspace math
+        """
         time_remaining = self.days_to_time_remaining(days_remaining, time_stretch) # = days_remaining / 365 / time_stretch
         spot_price = self.calc_spot_price_from_apy(apy, days_remaining)
-        #spot_price = self.calc_spot_price_from_apy(apy, time_remaining)
-        token_asset_reserves = target_liquidity / market_price / 2 / spot_price
-        #token_asset_reserves = target_liquidity / market_price / 2 / (1 - apy / 100 * time_remaining)
-        base_asset_reserves = self.calc_base_asset_reserves(
-                apy, token_asset_reserves, days_remaining, time_stretch, init_share_price, share_price)
-        scale_up_factor = (
-            target_liquidity
-            /
-            (base_asset_reserves * market_price + token_asset_reserves * market_price * spot_price)
-        )
-        token_asset_reserves = token_asset_reserves * scale_up_factor
-        base_asset_reserves = base_asset_reserves * scale_up_factor
-        liquidity = base_asset_reserves * market_price + token_asset_reserves * market_price * spot_price
+        est_token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price # guesstimate
+        est_base_asset_reserves = self.calc_base_asset_reserves(
+            apy, est_token_asset_reserves, days_remaining, time_stretch, init_share_price, share_price) # accurate ratio of prices
+        est_total_liquidity = self.calc_total_liquidity_from_reserves_and_price(est_base_asset_reserves, est_token_asset_reserves, spot_price)
+        scaling_factor = (target_liquidity_usd / market_price) / est_total_liquidity # both in token terms
+        token_asset_reserves = est_token_asset_reserves * scaling_factor
+        base_asset_reserves = est_base_asset_reserves * scaling_factor
+        total_liquidity = self.calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price)
         if self.verbose:
-            total_supply = base_asset_reserves + token_asset_reserves
+            total_reserves = base_asset_reserves + token_asset_reserves
             actual_apy = self.calc_apy_from_reserves(
-                base_asset_reserves, token_asset_reserves, total_supply, time_remaining,
+                base_asset_reserves, token_asset_reserves, total_reserves, time_remaining,
                 time_stretch, init_share_price, share_price)
-            print(f'base_asset_reserves={base_asset_reserves}, token_asset={token_asset_reserves}, '
-                +f'total={liquidity}, apy={actual_apy}')
-        return (base_asset_reserves, token_asset_reserves, liquidity)
-
+            print(f'base_asset_reserves={base_asset_reserves}, token_asset_reserves={token_asset_reserves}, '
+                +f'total_supply={total_liquidity:,.0f}({total_liquidity*market_price:,.0f} USD), apy={actual_apy}')
+        return (base_asset_reserves, token_asset_reserves, total_liquidity)
 
 class ElementPricingModel(PricingModel):
     """
@@ -801,9 +817,9 @@ class ElementPricingModel(PricingModel):
         return super().calc_base_asset_reserves(
             apy, token_asset_reserves, days_remaining, time_stretch, 1, 1)
 
-    def calc_spot_price(self, base_asset_reserves, token_asset_reserves,
+    def calc_spot_price_from_reserves(self, base_asset_reserves, token_asset_reserves,
             total_supply, time_remaining, init_share_price=1, share_price=1):
-        return super().calc_spot_price(base_asset_reserves, token_asset_reserves,
+        return super().calc_spot_price_from_reserves(base_asset_reserves, token_asset_reserves,
             total_supply, time_remaining, 1, 1)
 
     def calc_apy_from_reserves(self, base_asset_reserves, token_asset_reserves, total_supply,
