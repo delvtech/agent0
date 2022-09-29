@@ -23,7 +23,7 @@ class TestUtils(unittest.TestCase):
         random_seed = 123
         simulator_rng = np.random.default_rng(random_seed)
         self.config = {
-            'min_fee': 0.5, 
+            'min_fee': 0.5,
             'max_fee': 0.5,
             'floor_fee': 0,
             't_min': 0.1,
@@ -48,18 +48,25 @@ class TestUtils(unittest.TestCase):
             'rng': simulator_rng,
         }
         self.pricing_models = [ElementPricingModel(verbose=True), YieldSpacev2PricingModel(verbose=True)]
-        # random variables
+        # random variables for fuzzy testing
+        num_vals_per_variable = 4
         self.test_rng = np.random.default_rng(random_seed)
-        self.target_liquidity = 1e5#self.test_rng.uniform(low=1e5, high=1e6)
-        self.base_asset_price = 2500#self.test_rng.uniform(low=2e3, high=3e3)
-        self.init_share_price = 1#self.test_rng.uniform(low=1., high=2.)
+        self.target_liquidity_vals = self.test_rng.uniform(low=1e5, high=1e6, size=num_vals_per_variable)
+        self.base_asset_price_vals = self.test_rng.uniform(low=2e3, high=3e3, size=num_vals_per_variable)
+        self.init_share_price_vals = self.test_rng.uniform(low=1., high=2., size=num_vals_per_variable)
+        self.normalizing_constant_vals = self.test_rng.uniform(low=0, high=365, size=num_vals_per_variable)
+        self.time_stretch_vals = self.test_rng.normal(loc=10, scale=0.1, size=num_vals_per_variable)
+        self.num_trading_days_vals = self.test_rng.integers(low=1, high=100, size=num_vals_per_variable)
+        self.days_remaining_vals = self.test_rng.integers(low=0, high=180, size=num_vals_per_variable)
+        self.spot_price_vals = np.maximum(1e-5, self.test_rng.normal(loc=1, scale=0.5, size=num_vals_per_variable))
+        self.apy_vals = self.test_rng.normal(loc=10, scale=0.1, size=num_vals_per_variable)
 
     def test_pool_length_normalization(self):
         self.setup_test_vars()
         for pricing_model in self.pricing_models:
-            for normalizing_constant in self.test_rng.uniform(low=0, high=365, size=10):
-                for time_stretch in self.test_rng.normal(loc=10, scale=0.1, size=10):
-                    for days_remaining in self.test_rng.integers(low=0, high=180, size=10):
+            for normalizing_constant in self.normalizing_constant_vals:
+                for time_stretch in self.time_stretch_vals:
+                    for days_remaining in self.days_remaining_vals:
                         time_remaining = pricing_model.days_to_time_remaining(
                             days_remaining, time_stretch, normalizing_constant)
                         new_days_remaining = pricing_model.time_to_days_remaining(
@@ -70,7 +77,7 @@ class TestUtils(unittest.TestCase):
         self.setup_test_vars()
         simulator = YieldSimulator(**self.config)
         simulator.set_random_variables()
-        for num_trading_days in self.test_rng.integers(low=1, high=100, size=4):
+        for num_trading_days in self.num_trading_days_vals:
             override_dict = {'num_trading_days': num_trading_days}
             simulator.setup_pricing_and_market(override_dict)
             for day in range(num_trading_days):
@@ -81,76 +88,87 @@ class TestUtils(unittest.TestCase):
 
     def test_calc_spot_price_from_apy(self):
         self.setup_test_vars()
-        random_spot_price = 1.5#self.test_rng.normal(loc=1, scale=0.1)
-        days_remaining = 180
-        for pricing_model in self.pricing_models:
-            apy = pricing_model.calc_apy_from_spot_price(random_spot_price, days_remaining)
-            calculated_spot_price = pricing_model.calc_spot_price_from_apy(apy, days_remaining)
-            np.testing.assert_allclose(random_spot_price, calculated_spot_price)
+        for random_spot_price in self.spot_price_vals:
+            for days_remaining in self.days_remaining_vals:
+                for pricing_model in self.pricing_models:
+                    apy = pricing_model.calc_apy_from_spot_price(random_spot_price, days_remaining)
+                    normalized_days_remaining = pricing_model.norm_days(days_remaining)
+                    calculated_spot_price = pricing_model.calc_spot_price_from_apy(apy, normalized_days_remaining)
+                    np.testing.assert_allclose(random_spot_price, calculated_spot_price)
 
     # TODO: def test_calc_spot_price_from_reserves(self):
     # TODO: def test_calc_apy_from_reserves(self):
 
     def test_calc_liquidity_total_supply(self):
         self.setup_test_vars()
-        random_apy = 10#self.test_rng.normal(loc=10, scale=0.1)
-        days_remaining = 180
-        for pricing_model in self.pricing_models:
-            time_stretch = pricing_model.calc_time_stretch(random_apy)
-            calculated_total_liquidity_eth = pricing_model.calc_liquidity(
-                self.target_liquidity,
-                self.base_asset_price,
-                random_apy,
-                days_remaining,
-                time_stretch,
-                self.init_share_price,
-                self.init_share_price)[2]
-            calculated_total_liquidity_usd = calculated_total_liquidity_eth * self.base_asset_price
-            np.testing.assert_allclose(self.target_liquidity, calculated_total_liquidity_usd)
+        for random_apy in self.apy_vals:
+            for days_remaining in self.days_remaining_vals:
+                for target_liquidity in self.target_liquidity_vals:
+                    for base_asset_price in self.base_asset_price_vals:
+                        for init_share_price in self.init_share_price_vals:
+                            for pricing_model in self.pricing_models:
+                                time_stretch = pricing_model.calc_time_stretch(random_apy)
+                                calculated_total_liquidity_eth = pricing_model.calc_liquidity(
+                                    target_liquidity,
+                                    base_asset_price,
+                                    random_apy,
+                                    days_remaining,
+                                    time_stretch,
+                                    init_share_price,
+                                    init_share_price)[2]
+                                calculated_total_liquidity_usd = calculated_total_liquidity_eth * base_asset_price
+                                np.testing.assert_allclose(target_liquidity, calculated_total_liquidity_usd)
 
     def test_calc_liquidity_given_spot_price(self):
         self.setup_test_vars()
-        random_apy = 10#self.test_rng.normal(loc=10, scale=0.1)
-        days_remaining = 180
-        for pricing_model in self.pricing_models:
-            # Version 1
-            time_stretch = pricing_model.calc_time_stretch(random_apy)
-            (base_asset_reserves, token_asset_reserves) = pricing_model.calc_liquidity(
-                self.target_liquidity,
-                self.base_asset_price,
-                random_apy,
-                days_remaining,
-                time_stretch,
-                self.init_share_price,
-                self.init_share_price)[:2]
-            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
-            total_reserves = base_asset_reserves + token_asset_reserves
-            spot_price_from_reserves = pricing_model.calc_spot_price_from_reserves(
-                base_asset_reserves, token_asset_reserves,
-                total_reserves, time_remaining, self.init_share_price,
-                self.init_share_price)
-            # Version 2
-            spot_price_from_apy = pricing_model.calc_spot_price_from_apy(random_apy, days_remaining)
-            # Test version 1 output == version 2 output
-            np.testing.assert_allclose(spot_price_from_reserves, spot_price_from_apy)
+        for random_apy in self.apy_vals:
+            for days_remaining in self.days_remaining_vals:
+                for target_liquidity in self.target_liquidity_vals:
+                    for base_asset_price in self.base_asset_price_vals:
+                        for init_share_price in self.init_share_price_vals:
+                            for pricing_model in self.pricing_models:
+                                # Version 1
+                                time_stretch = pricing_model.calc_time_stretch(random_apy)
+                                (base_asset_reserves, token_asset_reserves) = pricing_model.calc_liquidity(
+                                    target_liquidity,
+                                    base_asset_price,
+                                    random_apy,
+                                    days_remaining,
+                                    time_stretch,
+                                    init_share_price,
+                                    init_share_price)[:2]
+                                time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
+                                total_reserves = base_asset_reserves + token_asset_reserves
+                                spot_price_from_reserves = pricing_model.calc_spot_price_from_reserves(
+                                    base_asset_reserves, token_asset_reserves,
+                                    total_reserves, time_remaining, init_share_price,
+                                    init_share_price)
+                                # Version 2
+                                normalized_days_remaining = pricing_model.norm_days(days_remaining)
+                                spot_price_from_apy = pricing_model.calc_spot_price_from_apy(random_apy, normalized_days_remaining)
+                                # Test version 1 output == version 2 output
+                                np.testing.assert_allclose(spot_price_from_reserves, spot_price_from_apy)
 
     def test_calc_apy_from_reserves_given_calc_liquidity(self):
         self.setup_test_vars()
-        random_apy = 10#self.test_rng.normal(loc=10, scale=0.1)
-        days_remaining = 180
-        for pricing_model in self.pricing_models:
-            time_stretch = pricing_model.calc_time_stretch(random_apy)
-            (base_asset_reserves, token_asset_reserves) = pricing_model.calc_liquidity(
-                self.target_liquidity,
-                self.base_asset_price,
-                random_apy,
-                days_remaining,
-                time_stretch,
-                self.init_share_price,
-                self.init_share_price)[:2]
-            total_reserves = base_asset_reserves + token_asset_reserves
-            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
-            calculated_apy = pricing_model.calc_apy_from_reserves(
-                base_asset_reserves, token_asset_reserves, total_reserves, time_remaining,
-                time_stretch, self.init_share_price, self.init_share_price)
-            np.testing.assert_allclose(random_apy, calculated_apy)
+        for random_apy in self.apy_vals:
+            for days_remaining in self.days_remaining_vals:
+                for target_liquidity in self.target_liquidity_vals:
+                    for base_asset_price in self.base_asset_price_vals:
+                        for init_share_price in self.init_share_price_vals:
+                            for pricing_model in self.pricing_models:
+                                time_stretch = pricing_model.calc_time_stretch(random_apy)
+                                (base_asset_reserves, token_asset_reserves) = pricing_model.calc_liquidity(
+                                    target_liquidity,
+                                    base_asset_price,
+                                    random_apy,
+                                    days_remaining,
+                                    time_stretch,
+                                    init_share_price,
+                                    init_share_price)[:2]
+                                total_reserves = base_asset_reserves + token_asset_reserves
+                                time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
+                                calculated_apy = pricing_model.calc_apy_from_reserves(
+                                    base_asset_reserves, token_asset_reserves, total_reserves, time_remaining,
+                                    time_stretch, init_share_price, init_share_price)
+                                np.testing.assert_allclose(random_apy, calculated_apy)
