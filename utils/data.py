@@ -4,7 +4,7 @@ import pandas as pd
 def format_trades(analysis_dict):
     """Converts the simulator output dictionary to a pandas dataframe and computes derived variables"""
     # construct simulation dataframe output
-    trades = pd.DataFrame.from_dict(analysis_dict)  
+    trades = pd.DataFrame.from_dict(analysis_dict)
     # calculate derived variables across runs
     trades["time_diff"] = trades.time_until_end.diff()
     trades["time_diff_shift"] = trades.time_until_end.shift(-1).diff()
@@ -19,9 +19,7 @@ def format_trades(analysis_dict):
     trades["trade_volume_usd"] = trades.out_with_fee  # * trades.base_asset_price
     # pr is the percent change in spot price since day 1
     # it is APR (does'nt include compounding)
-    trades["pr"] = (
-        trades.loc[:, "spot_price"] - trades.loc[0, "spot_price"]
-    )
+    trades["pr"] = trades.loc[:, "spot_price"] - trades.loc[0, "spot_price"]
     # pu takes that percent change and normalizes it to be equal to init_share_price at the beginning,
     # so you can compare its progression vs. share_price
     trades["pu"] = (
