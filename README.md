@@ -2,7 +2,14 @@
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![testing: nose](https://img.shields.io/badge/testing-nose-blue.svg)](https://nose.readthedocs.io/en/latest/)
 
-Analysis repo git workflow:
+#  [Element Finance](https://element.fi) market simulation and analysis repository
+This project is a work-in-progress. All code is provided as is and without guarantee.
+
+
+## Testing
+Testing is done with [nose](https://nose.readthedocs.io/en/latest). Install with `python3 -m pip install nose`; run from the repository root directory with `python3 -m nose`.
+
+## Analysis repo git workflow:
 
 We will follow the Rebase workflow that is used by the Element frontend team.
 Commits to `main` should only be made in the form of squash merges from pull requests.
