@@ -15,6 +15,7 @@ class PricingModel:
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
+
     # TODO: Change argument defaults to be None & set inside of def to avoid accidental overwrite
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
@@ -228,13 +229,12 @@ class PricingModel:
         )  # in_reserves^(1 - t) + out_reserves^(1 - t)
         return k ** (1 / time_elapsed) - in_reserves
 
-    def calc_apy_from_spot_price(self, price, days_remaining):
+    def calc_apy_from_spot_price(self, price, normalized_days_remaining):
         """Returns the APY given the current (positive) base asset price and the remaining pool duration"""
         assert price > 0, f"price argument should be greater than zero, not {price}"
         assert (
-            days_remaining > 0
-        ), f"days_remaining argument should be greater than zero, not {days_remaining}"
-        normalized_days_remaining = self._norm_days(days_remaining)
+            normalized_days_remaining > 0
+        ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
         return (
             (1 - price) / price / normalized_days_remaining * 100
         )  # price = 1 / (1 + r * t)
@@ -268,7 +268,8 @@ class PricingModel:
             share_price,
         )
         days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
-        return self.calc_apy_from_spot_price(spot_price, days_remaining)
+        apy = self.calc_apy_from_spot_price(spot_price, self._norm_days(days_remaining))
+        return apy
 
     def calc_spot_price_from_reserves(
         self,

@@ -8,6 +8,7 @@ Market simulators store state information when interfacing AMM pricing models wi
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
 
+
 class Market:
     """
     Holds state variables for market simulation and executes trades.
@@ -15,6 +16,7 @@ class Market:
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
     """
+
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 

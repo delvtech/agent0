@@ -1,6 +1,6 @@
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![testing: pytest](https://img.shields.io/badge/testing-pytest-yellow.svg)](https://github.com/pytest-dev/pytest)
+[![testing: nose](https://img.shields.io/badge/testing-nose-blue.svg)](https://nose.readthedocs.io/en/latest/)
 
 Analysis repo git workflow:
 

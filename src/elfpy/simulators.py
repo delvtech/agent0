@@ -5,9 +5,9 @@ for experiment tracking and execution
 
 import numpy as np
 
-from elfipy.markets import Market
-from elfipy.pricing_models import ElementPricingModel
-from elfipy.pricing_models import YieldSpacev2PricingModel
+from elfpy.markets import Market
+from elfpy.pricing_models import ElementPricingModel
+from elfpy.pricing_models import YieldSpacev2PricingModel
 
 
 class YieldSimulator:
@@ -17,6 +17,7 @@ class YieldSimulator:
     Member variables include input settings, random variable ranges, and simulation outputs.
     To be used in conjunction with the Market and PricingModel classes
     """
+
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 

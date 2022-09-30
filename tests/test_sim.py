@@ -130,17 +130,15 @@ class TestUtils(unittest.TestCase):
                 simulator.market.tick(simulator.step_size)
 
     def test_calc_spot_price_from_apy(self):
-        """Tests spot price calculation by calculating an APY
-        from a given spot price and then a calculated spot price from the APY.
-        """
+        """Tests spot price by converting to and from an APY."""
         self.setup_test_vars()
         for (random_spot_price, days_remaining, pricing_model) in itertools.product(
             self.spot_price_vals, self.days_remaining_vals, self.pricing_models
         ):
+            normalized_days_remaining = days_remaining / 365
             apy = pricing_model.calc_apy_from_spot_price(
-                random_spot_price, days_remaining
+                random_spot_price, normalized_days_remaining
             )
-            normalized_days_remaining = pricing_model.norm_days(days_remaining)
             calculated_spot_price = pricing_model.calc_spot_price_from_apy(
                 apy, normalized_days_remaining
             )
@@ -227,7 +225,7 @@ class TestUtils(unittest.TestCase):
                 init_share_price,
             )
             # Version 2
-            normalized_days_remaining = pricing_model.norm_days(days_remaining)
+            normalized_days_remaining = days_remaining / 365
             spot_price_from_apy = pricing_model.calc_spot_price_from_apy(
                 random_apy, normalized_days_remaining
             )
