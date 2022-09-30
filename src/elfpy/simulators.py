@@ -23,7 +23,8 @@ class YieldSimulator:
 
     def __init__(self, **kwargs):
         # TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
-        #       Better to do named & typed args w/ defaults. This will also fix difficult-to-parse errors when variables are `None`
+        #       Better to do named & typed args w/ defaults.
+        #       This will also fix difficult-to-parse errors when variables are `None`.
         # percentage of the slippage we take as a fee
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
