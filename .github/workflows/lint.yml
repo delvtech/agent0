@@ -19,6 +19,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint
       - name: Analysing the code with pylint
-        run: pylint --rcfile=.pylintrc $(git ls-files '*.py')
+        run: pylint --rcfile=.github/workflows/.pylintrc $(git ls-files '*.py')
       - name: Analysing the code with black
         run: black --diff --check $(git ls-files '*.py')
