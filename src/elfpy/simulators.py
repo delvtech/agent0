@@ -23,7 +23,7 @@ class YieldSimulator:
 
     def __init__(self, **kwargs):
         # TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
-        #       Better to do named & typed args w/ defaults
+        #       Better to do named & typed args w/ defaults. This will also fix difficult-to-parse errors when variables are `None`
         # percentage of the slippage we take as a fee
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
@@ -177,14 +177,10 @@ class YieldSimulator:
                                 + f" not {len(override_dict[key])}"
                             )
                         else:
-                            setattr(
-                                self,
-                                key,
-                                [
-                                    override_dict[key],
-                                ]
-                                * self.num_trading_days,
-                            )
+                            vault_apy = [
+                                override_dict[key],
+                            ] * self.num_trading_days
+                            setattr(self, key, vault_apy)
         if (
             override_dict is not None and "init_share_price" in override_dict.keys()
         ):  # \mu variable
