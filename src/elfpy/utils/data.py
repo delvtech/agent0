@@ -1,3 +1,7 @@
+"""
+Helper functions for post-processing simulation outputs
+"""
+
 import pandas as pd
 
 
