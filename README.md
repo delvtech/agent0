@@ -7,7 +7,7 @@ This project is a work-in-progress. All code is provided as is and without guara
 
 
 ## Testing
-Testing is done with [nose](https://nose.readthedocs.io/en/latest). Install with `python3 -m pip install nose`; run from the repository root directory with `python3 -m nose`.
+Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). First install pytest with `python3 -m pip install pytest`, then the ElfPy package with `python3 -m pip install .`, then from the repository root directory run `pytest`.
 
 ## Analysis repo git workflow:
 

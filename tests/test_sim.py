@@ -10,12 +10,6 @@ import unittest
 import itertools
 import numpy as np
 
-# import os
-# import sys
-# ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# if ROOT_DIR not in sys.path:
-#    sys.path.append(ROOT_DIR)
-
 from elfpy.simulators import YieldSimulator
 from elfpy.pricing_models import ElementPricingModel, YieldSpacev2PricingModel
 
