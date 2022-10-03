@@ -5,7 +5,7 @@ authors = [
   { name="Dylan Paiton", email="dpaiton@element.fi" },
   { name="Jonny Rhea", email="jonny@element.fi" },
   { name="Mihai Cosma", email="mihai@element.fi" },
-  { name="Violet", email="violet@element.fi" },
+  { name="Violet Vienhage", email="violet@element.fi" },
 ]
 description = "Experiment management and market simulators by Element Finance"
 readme = "README.md"
