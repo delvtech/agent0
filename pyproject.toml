@@ -1,5 +1,5 @@
 [project]
-name = "ElfPy"
+name = "elfpy"
 version = "0.0.1"
 authors = [
   { name="Dylan Paiton", email="dpaiton@element.fi" },
