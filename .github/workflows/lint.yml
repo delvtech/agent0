@@ -18,7 +18,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint numpy pandas
-      - name: Analysing the code with pylint
+      - name: Autolinting code with black
+        run: black $(git ls-files '*.py')
+      - name: Analysing code with pylint
         run: pylint --rcfile=.github/workflows/.pylintrc $(git ls-files '*.py')
-      - name: Analysing the code with black
-        run: black --diff --check $(git ls-files '*.py')

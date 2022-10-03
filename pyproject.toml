@@ -28,3 +28,6 @@ build-backend = "flit_core.buildapi"
 addopts = [
     "--import-mode=importlib",
 ]
+
+[tool.pylint.format]
+max-line-length = "120"
