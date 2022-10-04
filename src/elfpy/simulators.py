@@ -287,7 +287,8 @@ class YieldSimulator:
                 )  # convert to token units
                 if self.verbose:
                     print(
-                        f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
+                        "YieldSimulator.run_simulation:\n"
+                        + f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
                         + f"init_share_price={self.market.init_share_price}, "
                         + f"share_price={self.market.share_price}, "
                         + f"amount={self.trade_amount}, "

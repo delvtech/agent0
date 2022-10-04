@@ -130,14 +130,15 @@ class Market:
                 in_reserves, out_reserves, self.time_remaining
             )
             print(
-                f"token_asset+total_supply={self.token_asset + self.total_supply}, "
+                "market.check_fees:\n"
+                + f"token_asset+total_supply={self.token_asset + self.total_supply}, "
                 + f"base_asset/share_price={self.base_asset / self.share_price}, fee_percent={self.fee_percent}, "
                 + f"time_remaining={self.time_remaining}, init_share_price={self.init_share_price}, "
                 + f"share_price={self.share_price}"
-            )
-            print(
-                f"without_fee_or_slippage={without_fee_or_slippage}, "
-                + f"output_with_fee={output_with_fee}, output_without_fee={output_without_fee}, fee={fee}"
+                + f"\nwithout_fee_or_slippage={without_fee_or_slippage}, "
+                + f"output_with_fee={output_with_fee}, "
+                + f"output_without_fee={output_without_fee}, "
+                + f"fee={fee}"
             )
             assert False, (
                 f"Error: fee={fee} type should not be complex."

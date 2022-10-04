@@ -84,7 +84,8 @@ class PricingModel:
     @staticmethod
     def calc_time_stretch(apy):
         """Returns fixed time-stretch value based on current apy (as a decimal)"""
-        return 3.09396 / (0.02789 * apy)
+        apy_percent = apy * 100
+        return 3.09396 / (0.02789 * apy_percent)
 
     @staticmethod
     def calc_tokens_in_given_lp_out(
@@ -238,12 +239,11 @@ class PricingModel:
             normalized_days_remaining > 0
         ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
         return (
-            (1 - price) / price / normalized_days_remaining  # * 100
+            (1 - price) / price / normalized_days_remaining
         )  # price = 1 / (1 + r * t)
 
-    def calc_spot_price_from_apy(self, apy, normalized_days_remaining):
+    def calc_spot_price_from_apy(self, apy_decimal, normalized_days_remaining):
         """Returns the current spot price based on the current APY (decimal) and the remaining pool duration"""
-        apy_decimal = apy  # / 100
         return 1 / (
             1 + apy_decimal * normalized_days_remaining
         )  # price = 1 / (1 + r * t)
@@ -293,7 +293,7 @@ class PricingModel:
 
     def calc_base_asset_reserves(
         self,
-        apy,
+        apy_decimal,
         token_asset_reserves,
         days_remaining,
         time_stretch,
@@ -305,7 +305,6 @@ class PricingModel:
         time_stretch_exp = 1 / self._stretch_time(
             normalized_days_remaining, time_stretch
         )
-        apy_decimal = apy  # / 100
         numerator = 2 * share_price * token_asset_reserves  # 2*c*y
         scaled_apy_decimal = (
             apy_decimal * normalized_days_remaining + 1
@@ -315,7 +314,7 @@ class PricingModel:
         )
         result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
         if self.verbose:
-            print(f"calc_base_asset_reserves:\nbase_asset_reserves: {result}")
+            print(f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}")
         return result
 
     def calc_liquidity(
@@ -374,7 +373,7 @@ class PricingModel:
                 share_price,
             )
             print(
-                "calc_liquidity: \n"
+                "PricingModel.calc_liquidity: \n"
                 + f"base_asset_reserves={base_asset_reserves}, "
                 + f"token_asset_reserves={token_asset_reserves}, "
                 + f"scaling_factor={scaling_factor}, "
