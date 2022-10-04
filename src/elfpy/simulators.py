@@ -35,12 +35,12 @@ class YieldSimulator:
         self.max_target_liquidity = kwargs.get("max_target_liquidity")
         self.min_target_volume = kwargs.get("min_target_volume")
         self.max_target_volume = kwargs.get("max_target_volume")
-        self.min_pool_apy = kwargs.get("min_pool_apy")
-        self.max_pool_apy = kwargs.get("max_pool_apy")
+        self.min_pool_apy = kwargs.get("min_pool_apy")  # as a decimal
+        self.max_pool_apy = kwargs.get("max_pool_apy")  # as a decimal
         self.min_vault_age = kwargs.get("min_vault_age")
         self.max_vault_age = kwargs.get("max_vault_age")
-        self.min_vault_apy = kwargs.get("min_vault_apy")
-        self.max_vault_apy = kwargs.get("max_vault_apy")
+        self.min_vault_apy = kwargs.get("min_vault_apy")  # as a decimal
+        self.max_vault_apy = kwargs.get("max_vault_apy")  # as a decimal
         self.base_asset_price = kwargs.get("base_asset_price")
         self.precision = kwargs.get("precision")
         self.pricing_model_name = str(kwargs.get("pricing_model_name"))
@@ -125,7 +125,7 @@ class YieldSimulator:
         )
         self.init_pool_apy = self.rng.uniform(
             self.min_pool_apy, self.max_pool_apy
-        )  # starting fixed apr
+        )  # starting fixed apy as a decimal
         self.fee_percent = self.rng.uniform(self.min_fee, self.max_fee)
         # Determine real-world parameters for estimating initial (u) and current (c) price-per-share
         self.init_vault_age = self.rng.uniform(
@@ -133,8 +133,7 @@ class YieldSimulator:
         )  # in years
         self.vault_apy = self.rng.uniform(
             self.min_vault_apy, self.max_vault_apy, size=self.num_trading_days
-        )
-        self.vault_apy /= 100  # as a decimal
+        )  # vault apy over time as a decimal
         self.random_variables_set = True
 
     def print_random_variables(self):
@@ -146,7 +145,7 @@ class YieldSimulator:
             + f"init_pool_apy: {self.init_pool_apy}\n"
             + f"fee_percent: {self.fee_percent}\n"
             + f"init_vault_age: {self.init_vault_age}\n"
-            + f"init_vault_apy: {self.vault_apy[0]}\n"  # first element in vault_apy array
+            + f"init_vault_apy: {self.vault_apy[0]}\n"
         )
 
     def reset_rng(self, rng):
@@ -187,8 +186,7 @@ class YieldSimulator:
         ):  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
         else:
-            init_vault_apy_decimal = self.vault_apy[0] / 100
-            self.init_share_price = (1 + init_vault_apy_decimal) ** self.init_vault_age
+            self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
         # Initiate pricing model
@@ -247,15 +245,15 @@ class YieldSimulator:
 
         self.run_trade_number = 0
         self.setup_pricing_and_market(override_dict)
-        self.update_analysis_dict()  # Initial conditions
+        print("SIM -- INITIAL")
+        self.update_analysis_dict()  # initial conditions
         for day in range(0, self.num_trading_days):
             self.day = day
-            # APY can vary per day, which sets the current price per share.
-            # div by 100 to convert percent to decimal;
-            # div by 365 to convert annual to daily;
-            # market.init_share_price is the value of 1 share
+            # Vault APY can vary per day, which sets the current price per share.
             self.market.share_price += (
-                self.vault_apy[self.day] / 100 / 365 * self.market.init_share_price
+                self.vault_apy[self.day]  # current day's apy
+                / 365  # convert annual yield to daily
+                * self.market.init_share_price  # value of 1 share to convert units
             )
             # Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
@@ -308,11 +306,12 @@ class YieldSimulator:
                     self.token_in,  # base or fyt
                     self.token_out,  # opposite of token_in
                 )
-                self.update_analysis_dict()
                 day_trading_volume += (
                     self.trade_amount * self.base_asset_price
                 )  # track daily volume in USD terms
                 self.run_trade_number += 1
+                print(f"SIM -- RUN: {self.run_trade_number}")
+                self.update_analysis_dict()
             if (
                 self.day < self.num_trading_days - 1
             ):  # no need to tick the market after the last day

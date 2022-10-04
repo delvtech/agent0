@@ -83,7 +83,7 @@ class PricingModel:
 
     @staticmethod
     def calc_time_stretch(apy):
-        """Returns fixed time-stretch value based on current apy"""
+        """Returns fixed time-stretch value based on current apy (as a decimal)"""
         return 3.09396 / (0.02789 * apy)
 
     @staticmethod
@@ -230,18 +230,20 @@ class PricingModel:
         return k ** (1 / time_elapsed) - in_reserves
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
-        """Returns the APY given the current (positive) base asset price and the remaining pool duration"""
-        assert price > 0, f"price argument should be greater than zero, not {price}"
+        """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
+        assert (
+            price > 0
+        ), f"ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
         assert (
             normalized_days_remaining > 0
         ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
         return (
-            (1 - price) / price / normalized_days_remaining * 100
+            (1 - price) / price / normalized_days_remaining  # * 100
         )  # price = 1 / (1 + r * t)
 
     def calc_spot_price_from_apy(self, apy, normalized_days_remaining):
-        """Returns the current spot price based on the current APY and the remaining pool duration"""
-        apy_decimal = apy / 100
+        """Returns the current spot price based on the current APY (decimal) and the remaining pool duration"""
+        apy_decimal = apy  # / 100
         return 1 / (
             1 + apy_decimal * normalized_days_remaining
         )  # price = 1 / (1 + r * t)
@@ -298,12 +300,12 @@ class PricingModel:
         init_share_price,
         share_price,
     ):
-        """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY"""
+        """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY (as a decimal)"""
         normalized_days_remaining = self._norm_days(days_remaining)
         time_stretch_exp = 1 / self._stretch_time(
             normalized_days_remaining, time_stretch
         )
-        apy_decimal = apy / 100
+        apy_decimal = apy  # / 100
         numerator = 2 * share_price * token_asset_reserves  # 2*c*y
         scaled_apy_decimal = (
             apy_decimal * normalized_days_remaining + 1
@@ -313,7 +315,7 @@ class PricingModel:
         )
         result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
         if self.verbose:
-            print(f"calc_base_asset_reserves result: {result}")
+            print(f"calc_base_asset_reserves:\nbase_asset_reserves: {result}")
         return result
 
     def calc_liquidity(
@@ -372,8 +374,13 @@ class PricingModel:
                 share_price,
             )
             print(
-                f"base_asset_reserves={base_asset_reserves}, token_asset_reserves={token_asset_reserves}, "
-                + f"total_supply={total_liquidity:,.0f}({total_liquidity*market_price:,.0f} USD), apy={actual_apy}"
+                "calc_liquidity: \n"
+                + f"base_asset_reserves={base_asset_reserves}, "
+                + f"token_asset_reserves={token_asset_reserves}, "
+                + f"scaling_factor={scaling_factor}, "
+                + f"spot_price_from_apy={spot_price}, "
+                + f"total_supply={total_liquidity:,.0f}({total_liquidity*market_price:,.0f} USD), "
+                + f"apy={actual_apy}"
             )
         return (base_asset_reserves, token_asset_reserves, total_liquidity)
 
