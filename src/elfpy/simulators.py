@@ -245,7 +245,6 @@ class YieldSimulator:
 
         self.run_trade_number = 0
         self.setup_pricing_and_market(override_dict)
-        print("SIM -- INITIAL")
         self.update_analysis_dict()  # initial conditions
         for day in range(0, self.num_trading_days):
             self.day = day
@@ -310,7 +309,6 @@ class YieldSimulator:
                     self.trade_amount * self.base_asset_price
                 )  # track daily volume in USD terms
                 self.run_trade_number += 1
-                print(f"SIM -- RUN: {self.run_trade_number}")
                 self.update_analysis_dict()
             if (
                 self.day < self.num_trading_days - 1
