@@ -25,6 +25,8 @@ class YieldSimulator:
         # TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
         #       Better to do named & typed args w/ defaults.
         #       This will also fix difficult-to-parse errors when variables are `None`.
+        # TODO: Move time_stretch into market or pricing models
+        #       This will simplify e.g. market.apy & simulator.get_days_remaining
         # percentage of the slippage we take as a fee
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
@@ -292,6 +294,7 @@ class YieldSimulator:
                         + f"init_share_price={self.market.init_share_price}, "
                         + f"share_price={self.market.share_price}, "
                         + f"amount={self.trade_amount}, "
+                        + f"apy={self.market.apy(self.get_days_remaining())}, "
                         + f"reserves={(self.market.base_asset, self.market.token_asset)}"
                     )
                 # Conduct trade & update state
