@@ -12,6 +12,7 @@ import numpy as np
 
 from elfpy.simulators import YieldSimulator
 from elfpy.pricing_models import ElementPricingModel, YieldSpacev2PricingModel
+from elfpy.markets import Market
 
 
 class TestUtils(unittest.TestCase):
@@ -46,6 +47,7 @@ class TestUtils(unittest.TestCase):
             "pool_duration": 180,
             "num_trading_days": 180,  # should be <= days_until_maturity
             "rng": simulator_rng,
+            "verbose": True,
         }
         self.pricing_models = [
             ElementPricingModel(verbose=True),
@@ -78,8 +80,11 @@ class TestUtils(unittest.TestCase):
         self.spot_price_vals = np.maximum(
             1e-5, self.test_rng.normal(loc=1, scale=0.5, size=num_vals_per_variable)
         )
-        self.apy_vals = self.test_rng.normal(
-            loc=10, scale=0.1, size=num_vals_per_variable
+        self.pool_apy_vals = np.maximum(
+            1e-5, self.test_rng.normal(loc=0.2, scale=0.1, size=num_vals_per_variable)
+        )
+        self.fee_percent_vals = self.test_rng.normal(
+            loc=0.1, scale=0.01, size=num_vals_per_variable
         )
 
     def test_pool_length_normalization(self):
@@ -141,6 +146,7 @@ class TestUtils(unittest.TestCase):
     # TODO: def test_calc_spot_price_from_reserves(self):
     # TODO: def test_calc_apy_from_reserves(self):
 
+
     def test_calc_liquidity_total_supply(self):
         """Ensures that the total supply value returned from
         calc_liquidity matches the expected amount passed as the target_liquidity argument.
@@ -154,7 +160,7 @@ class TestUtils(unittest.TestCase):
             init_share_price,
             pricing_model,
         ) in itertools.product(
-            self.apy_vals,
+            self.pool_apy_vals,
             self.days_remaining_vals,
             self.target_liquidity_vals,
             self.base_asset_price_vals,
@@ -187,7 +193,7 @@ class TestUtils(unittest.TestCase):
             init_share_price,
             pricing_model,
         ) in itertools.product(
-            self.apy_vals,
+            self.pool_apy_vals,
             self.days_remaining_vals,
             self.target_liquidity_vals,
             self.base_asset_price_vals,
@@ -237,7 +243,7 @@ class TestUtils(unittest.TestCase):
             init_share_price,
             pricing_model,
         ) in itertools.product(
-            self.apy_vals,
+            self.pool_apy_vals,
             self.days_remaining_vals,
             self.target_liquidity_vals,
             self.base_asset_price_vals,
@@ -269,3 +275,62 @@ class TestUtils(unittest.TestCase):
                 init_share_price,
             )
             np.testing.assert_allclose(random_apy, calculated_apy)
+
+    def test_market_apy(self):
+        self.setup_test_vars()
+        for (
+            random_apy,
+            days_remaining,
+            target_liquidity,
+            base_asset_price,
+            init_share_price,
+            fee_percent,
+            pricing_model,
+        ) in itertools.product(
+            self.pool_apy_vals,
+            self.days_remaining_vals,
+            self.target_liquidity_vals,
+            self.base_asset_price_vals,
+            self.init_share_price_vals,
+            self.fee_percent_vals,
+            self.pricing_models,
+        ):
+            time_stretch = pricing_model.calc_time_stretch(random_apy)
+            reserves = pricing_model.calc_liquidity(
+                target_liquidity,
+                base_asset_price,
+                random_apy,
+                days_remaining,
+                time_stretch,
+                init_share_price,
+                init_share_price,
+            )
+            base_asset_reserves, token_asset_reserves = reserves[:2]
+            total_reserves = base_asset_reserves + token_asset_reserves
+            time_remaining = pricing_model.days_to_time_remaining(
+                days_remaining, time_stretch
+            )
+            calculated_apy = pricing_model.calc_apy_from_reserves(
+                base_asset_reserves,
+                token_asset_reserves,
+                total_reserves,
+                time_remaining,
+                time_stretch,
+                init_share_price,
+                init_share_price,
+            )
+            market = Market(
+                base_asset=base_asset_reserves,  # x
+                token_asset=token_asset_reserves,  # y
+                fee_percent=fee_percent,  # g
+                time_remaining=time_remaining,  # t
+                pricing_model=pricing_model,
+                init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+                share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
+                verbose=True,
+            )
+            sim_days_remaining = pricing_model.time_to_days_remaining(
+                market.time_remaining, time_stretch
+            )
+            market_apy = market.apy(sim_days_remaining)
+            np.testing.assert_allclose(calculated_apy, market_apy)

@@ -62,7 +62,7 @@ class PricingModel:
         raise NotImplementedError
 
     @staticmethod
-    def _norm_days(days, normalizing_constant=365):
+    def norm_days(days, normalizing_constant=365):
         """Returns days normalized between 0 and 1, with a default assumption of a year-long scale"""
         return days / normalizing_constant
 
@@ -210,7 +210,7 @@ class PricingModel:
         self, days_remaining, time_stretch=1, normalizing_constant=365
     ):
         """Converts remaining pool length in days to normalized and stretched time"""
-        normed_days_remaining = self._norm_days(days_remaining, normalizing_constant)
+        normed_days_remaining = self.norm_days(days_remaining, normalizing_constant)
         time_remaining = self._stretch_time(normed_days_remaining, time_stretch)
         return time_remaining
 
@@ -270,7 +270,7 @@ class PricingModel:
             share_price,
         )
         days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
-        apy = self.calc_apy_from_spot_price(spot_price, self._norm_days(days_remaining))
+        apy = self.calc_apy_from_spot_price(spot_price, self.norm_days(days_remaining))
         return apy
 
     def calc_spot_price_from_reserves(
@@ -300,8 +300,8 @@ class PricingModel:
         init_share_price,
         share_price,
     ):
-        """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY (as a decimal)"""
-        normalized_days_remaining = self._norm_days(days_remaining)
+        """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY"""
+        normalized_days_remaining = self.norm_days(days_remaining)
         time_stretch_exp = 1 / self._stretch_time(
             normalized_days_remaining, time_stretch
         )
@@ -337,7 +337,7 @@ class PricingModel:
         total_reserves  = in arbitrary units (AU), used for yieldspace math
         """
         # estimate reserve values with the information we have
-        spot_price = self.calc_spot_price_from_apy(apy, self._norm_days(days_remaining))
+        spot_price = self.calc_spot_price_from_apy(apy, self.norm_days(days_remaining))
         token_asset_reserves = (
             target_liquidity_usd / market_price / 2 / spot_price
         )  # guesstimate
@@ -448,7 +448,7 @@ class ElementPricingModel(PricingModel):
 
     def calc_base_asset_reserves(
         self,
-        apy,
+        apy_decimal,
         token_asset_reserves,
         days_remaining,
         time_stretch,
@@ -456,7 +456,7 @@ class ElementPricingModel(PricingModel):
         share_price=1,
     ):
         return super().calc_base_asset_reserves(
-            apy, token_asset_reserves, days_remaining, time_stretch, 1, 1
+            apy_decimal, token_asset_reserves, days_remaining, time_stretch, 1, 1
         )
 
     def calc_spot_price_from_reserves(

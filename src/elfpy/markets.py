@@ -59,7 +59,8 @@ class Market:
             self.init_share_price,
             self.share_price,
         )
-        return self.pricing_model.calc_apy_from_spot_price(price, days_remaining)
+        normalized_days_remaining = self.pricing_model.norm_days(days_remaining)
+        return self.pricing_model.calc_apy_from_spot_price(price, normalized_days_remaining)
 
     def spot_price(self):
         """Returns the current spot price given the market conditions and pricing model"""
