@@ -223,7 +223,11 @@ class PricingModel:
         return days_remaining
 
     def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
-        """Returns the maximum allowable trade amount given the current asset reserves"""
+        """
+        Returns the maximum allowable trade amount given the current asset reserves
+
+        TODO: write a test to verify that this is correct
+        """
         time_elapsed = 1 - time_remaining
         k = self._calc_k_const(
             in_reserves, out_reserves, time_elapsed
@@ -314,7 +318,9 @@ class PricingModel:
         )
         result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
         if self.verbose:
-            print(f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}")
+            print(
+                f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}"
+            )
         return result
 
     def calc_liquidity(
