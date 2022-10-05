@@ -9,6 +9,7 @@ Testing for the ElfPy package modules
 import unittest
 import itertools
 import numpy as np
+import pandas as pd
 
 from elfpy.simulators import YieldSimulator
 from elfpy.pricing_models import ElementPricingModel, YieldSpacev2PricingModel
@@ -24,34 +25,32 @@ class TestUtils(unittest.TestCase):
         random_seed = 123
         simulator_rng = np.random.default_rng(random_seed)
         self.config = {
-            "min_fee": 0.5,
+            "min_fee": 0.1,
             "max_fee": 0.5,
-            "floor_fee": 0,
-            "t_min": 0.1,
-            "t_max": 0.1,
+            "min_target_liquidity": 1e6,
+            "max_target_liquidity": 10e6,
+            "min_target_volume": 0.01,  # fraction of pool liquidity
+            "max_target_volume": 0.2,  # fration of pool liquidity
+            "min_pool_apy": 0.01,  # as a decimal
+            "max_pool_apy": 0.9,  # as a decimal
+            "min_vault_age": 0,  # fraction of a year
+            "max_vault_age": 1,  # fraction of a year
+            "min_vault_apy": 0.001,  # as a decimal
+            "max_vault_apy": 0.9,  # as a decimal
             "base_asset_price": 2500.0,  # aka market price
-            "min_target_liquidity": 100000.0,
-            "max_target_liquidity": 100000.0,
-            "min_target_volume": 2e5,
-            "max_target_volume": 2e5,
-            "min_pool_apy": 0.5,
-            "max_pool_apy": 50,
-            "min_vault_age": 0.0,
-            "max_vault_age": 2,
-            "min_vault_apy": 0.0,
-            "max_vault_apy": 10.0,
-            "precision": None,
-            "pricing_model_name": "YieldSpacev2",
+            "pool_duration": 180,
+            "num_trading_days": 180,  # should be <= pool_duration
+            "floor_fee": 0,  # minimum fee percentage
             "tokens": ["base", "fyt"],
             "trade_direction": "out",
-            "pool_duration": 180,
-            "num_trading_days": 180,  # should be <= days_until_maturity
+            "precision": None,
+            "pricing_model_name": "Element",
             "rng": simulator_rng,
-            "verbose": True,
+            "verbose": False,
         }
         self.pricing_models = [
-            ElementPricingModel(verbose=True),
-            YieldSpacev2PricingModel(verbose=True),
+            ElementPricingModel(verbose=self.config["verbose"]),
+            YieldSpacev2PricingModel(verbose=self.config["verbose"]),
         ]
         # random variables for fuzzy testing
         num_vals_per_variable = 4
@@ -145,7 +144,6 @@ class TestUtils(unittest.TestCase):
 
     # TODO: def test_calc_spot_price_from_reserves(self):
     # TODO: def test_calc_apy_from_reserves(self):
-
 
     def test_calc_liquidity_total_supply(self):
         """Ensures that the total supply value returned from
@@ -276,7 +274,8 @@ class TestUtils(unittest.TestCase):
             )
             np.testing.assert_allclose(random_apy, calculated_apy)
 
-    def test_market_apy(self):
+    def test_market_apy_given_calc_apy_from_reserves(self):
+        """Test the Market class apy calculation matches that from PricingModel.calc_apy_from_reserves"""
         self.setup_test_vars()
         for (
             random_apy,
@@ -334,3 +333,47 @@ class TestUtils(unittest.TestCase):
             )
             market_apy = market.apy(sim_days_remaining)
             np.testing.assert_allclose(calculated_apy, market_apy)
+
+    def test_simulator(self):
+        """Tests the simulator output to verify that indices are correct"""
+        self.setup_test_vars()
+        simulator = YieldSimulator(**self.config)
+        simulator.set_random_variables()
+        for pricing_model in self.pricing_models:
+            override_dict = {
+                "pricing_model_name": pricing_model.model_name(),
+            }
+            # Running the simulation will include asserts that can fail
+            simulator.print_random_variables()
+            simulator.run_simulation(override_dict)
+
+    def test_simulator_indexing(self):
+        """Tests the simulator output to verify that indices are correct"""
+        self.setup_test_vars()
+        simulator = YieldSimulator(**self.config)
+        simulator.set_random_variables()
+        for pricing_model in self.pricing_models:
+            override_dict = {
+                "pricing_model_name": pricing_model.model_name(),
+            }
+            simulator.run_simulation(override_dict)
+        analysis_df = pd.DataFrame.from_dict(simulator.analysis_dict)
+        init_day_list = []
+        end_day_list = []
+        for model in analysis_df.model_name.unique():
+            model_df = analysis_df.loc[analysis_df.model_name == model]
+            init_day = model_df.day.iloc[0]
+            end_day = model_df.day.iloc[-1]
+            init_day_list.append(init_day)
+            end_day_list.append(end_day)
+        # check that all values in the lists are equal across models
+        num_vals_eq_to_first = init_day_list.count(init_day_list[0])
+        total_num = len(init_day_list)
+        assert (
+            num_vals_eq_to_first == total_num
+        ), f"Error: All init day values should be the same but are {init_day_list}"
+        num_vals_eq_to_first = end_day_list.count(end_day_list[0])
+        total_num = len(end_day_list)
+        assert (
+            num_vals_eq_to_first == total_num
+        ), f"Error: All end day values should be the same but are {end_day_list}"
