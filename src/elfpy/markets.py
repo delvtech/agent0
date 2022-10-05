@@ -60,7 +60,9 @@ class Market:
             self.share_price,
         )
         normalized_days_remaining = self.pricing_model.norm_days(days_remaining)
-        return self.pricing_model.calc_apy_from_spot_price(price, normalized_days_remaining)
+        return self.pricing_model.calc_apy_from_spot_price(
+            price, normalized_days_remaining
+        )
 
     def spot_price(self):
         """Returns the current spot price given the market conditions and pricing model"""
@@ -95,71 +97,42 @@ class Market:
         self,
         amount,
         direction,
-        token_in,
-        token_out,
-        in_reserves,
-        out_reserves,
+        tokens,
+        reserves,
         trade_results,
     ):
         """Checks fee values for out of bounds and prints verbose outputs"""
+        (token_in, token_out) = tokens
+        (in_reserves, out_reserves) = reserves
         (
             without_fee_or_slippage,
             output_with_fee,
             output_without_fee,
             fee,
         ) = trade_results
-        if self.verbose and self.base_asset_orders + self.token_asset_orders < 10:
-            print("total orders are less than 10.")
-            print(
-                f"amount={amount}, token_asset+total_supply={self.token_asset + self.total_supply}, "
-                + f"base_asset/share_price={self.base_asset / self.share_price}, token_in={token_in}, "
-                + f"fee_percent={self.fee_percent}, time_remaining={self.time_remaining}, "
-                + f"init_share_price={self.init_share_price}, share_price={self.share_price}"
+        if (
+            any(
+                [
+                    isinstance(output_with_fee, complex),
+                    isinstance(output_without_fee, complex),
+                    isinstance(fee, complex),
+                ]
             )
-            print(
-                f"without_fee_or_slippage={without_fee_or_slippage}, "
-                + f"output_with_fee={output_with_fee}, output_without_fee={output_without_fee}, fee={fee}"
-            )
-        if self.verbose and any(
-            [
-                isinstance(output_with_fee, complex),
-                isinstance(output_without_fee, complex),
-                isinstance(fee, complex),
-            ]
+            or fee < 0
         ):
-            max_trade = self.pricing_model.calc_max_trade(
-                in_reserves, out_reserves, self.time_remaining
-            )
-            print(
-                "market.check_fees:\n"
-                + f"token_asset+total_supply={self.token_asset + self.total_supply}, "
-                + f"base_asset/share_price={self.base_asset / self.share_price}, fee_percent={self.fee_percent}, "
-                + f"time_remaining={self.time_remaining}, init_share_price={self.init_share_price}, "
-                + f"share_price={self.share_price}"
-                + f"\nwithout_fee_or_slippage={without_fee_or_slippage}, "
-                + f"output_with_fee={output_with_fee}, "
-                + f"output_without_fee={output_without_fee}, "
-                + f"fee={fee}"
-            )
+            state_string = self.get_market_state_string()
             assert False, (
-                f"Error: fee={fee} type should not be complex."
-                + f"\npricing_modle={self.pricing_model}; direction={direction}; token_in={token_in};"
-                + f"token_out={token_out}\nmax_trade={max_trade}; trade_amount={amount};"
-                + f"in_reserves={in_reserves}; out_reserves={out_reserves}"
-                + f"\ninitial_share_price={self.init_share_price}; share_price={self.share_price}; "
-                + f"time_remaining={self.time_remaining}"
-            )
-        if fee < 0:
-            max_trade = self.pricing_model.calc_max_trade(
-                in_reserves, out_reserves, self.time_remaining
-            )
-            assert False, (
-                f"Error: fee={fee} should never be negative."
-                + f"\npricing_modle={self.pricing_model}; direction={direction}; token_in={token_in};"
-                + f"token_out={token_out}\nmax_trade={max_trade}; trade_amount={amount};"
-                + f"in_reserves={in_reserves}; out_reserves={out_reserves}"
-                + f"\ninitial_share_price={self.init_share_price}; share_price={self.share_price}; "
-                + f"time_remaining={self.time_remaining}"
+                f"Market.check_fees: Error: fee={fee} should not be < 0 and the type should not be complex."
+                + f"\ntoken_in = {token_in}"
+                + f"\ntoken_out = {token_out}"
+                + f"\ndirection = {direction}"
+                + f"\nin_reserves = {in_reserves}"
+                + f"\nout_reserves = {out_reserves}"
+                + f"\ntrade_amount = {amount}"
+                + f"\nwithout_fee_or_slippage = {without_fee_or_slippage}"
+                + f"\noutput_with_fee = {output_with_fee}"
+                + f"\noutput_without_fee = {output_without_fee}\n"
+                + state_string
             )
 
     def update_market(self, d_asset, d_slippage, d_fees, d_orders, d_volume):
@@ -263,7 +236,7 @@ class Market:
                 d_token_asset_volume = output_with_fee
             else:
                 raise ValueError(
-                    'token_in and token_out must be unique and in the set ("base", "fyt"), '
+                    "token_in and token_out must be unique and in the set ('base', 'fyt'), "
                     + f"not in={token_in} and out={token_out}"
                 )
         elif direction == "out":
@@ -336,10 +309,8 @@ class Market:
         self.check_fees(
             amount,
             direction,
-            token_in,
-            token_out,
-            in_reserves,
-            out_reserves,
+            (token_in, token_out),
+            (in_reserves, out_reserves),
             trade_results,
         )
         self.update_market(
@@ -350,3 +321,11 @@ class Market:
             (d_base_asset_volume, d_token_asset_volume),
         )
         return (without_fee_or_slippage, output_with_fee, output_without_fee, fee)
+
+    def get_market_state_string(self):
+        """Returns a formatted string containing all of the Market class member variables"""
+        strings = [
+            f"{attribute} = {value}" for attribute, value in self.__dict__.items()
+        ]
+        state_string = "\n".join(strings)
+        return state_string
