@@ -27,6 +27,7 @@ class YieldSimulator:
         #       This will also fix difficult-to-parse errors when variables are `None`.
         # TODO: Move time_stretch into market or pricing models
         #       This will simplify e.g. market.apy & simulator.get_days_remaining
+        # TODO: change floor_fee to be a decimal like min_fee and max_fee
         # percentage of the slippage we take as a fee
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
@@ -122,9 +123,10 @@ class YieldSimulator:
         self.target_liquidity = self.rng.uniform(
             self.min_target_liquidity, self.max_target_liquidity
         )
-        self.target_daily_volume = self.rng.uniform(
+        target_daily_volume_frac = self.rng.uniform(
             self.min_target_volume, self.max_target_volume
         )
+        self.target_daily_volume = target_daily_volume_frac * self.target_liquidity
         self.init_pool_apy = self.rng.uniform(
             self.min_pool_apy, self.max_pool_apy
         )  # starting fixed apy as a decimal
@@ -142,13 +144,22 @@ class YieldSimulator:
         """Prints all variables that are set in set_random_variables()"""
         print(
             "Simulation random variables:\n"
-            + f"target_liquidity: {self.target_liquidity}\n"
-            + f"target_daily_volume: {self.target_daily_volume}\n"
-            + f"init_pool_apy: {self.init_pool_apy}\n"
-            + f"fee_percent: {self.fee_percent}\n"
-            + f"init_vault_age: {self.init_vault_age}\n"
-            + f"init_vault_apy: {self.vault_apy[0]}\n"
+            + f"target_liquidity = {self.target_liquidity}\n"
+            + f"target_daily_volume = {self.target_daily_volume}\n"
+            + f"init_pool_apy = {self.init_pool_apy}\n"
+            + f"fee_percent = {self.fee_percent}\n"
+            + f"init_vault_age = {self.init_vault_age}\n"
+            + f"init_vault_apy = {self.vault_apy[0]}\n"
         )
+
+    def get_simulation_state_string(self):
+        """Returns a formatted string containing all of the Simulation class member variables"""
+        strings = []
+        for attribute, value in self.__dict__.items():
+            if attribute != "analysis_dict" and attribute != "rng":
+                strings.append(f"{attribute} = {value}")
+        state_string = "\n".join(strings)
+        return state_string
 
     def reset_rng(self, rng):
         """
@@ -161,6 +172,26 @@ class YieldSimulator:
             rng, type(np.random.default_rng())
         ), f"rng type must be a random number generator, not {type(rng)}."
         self.rng = rng
+
+    def get_trade_amount_usd(
+        self, token_in, trade_direction, target_volume, market_price
+    ):
+        """Compute trade amount, which can't be more than the available reserves."""
+        if trade_direction == "in":
+            if token_in == "fyt":
+                target_reserves = self.market.token_asset
+            else:
+                target_reserves = self.market.base_asset
+        elif trade_direction == "out":
+            if token_in == "fyt":
+                target_reserves = self.market.base_asset
+            else:
+                target_reserves = self.market.token_asset
+        trade_mean = target_volume / 10
+        trade_std = target_volume / 100
+        trade_amount_usd = self.rng.normal(trade_mean, trade_std)
+        trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
+        return trade_amount_usd
 
     def setup_pricing_and_market(self, override_dict=None):
         """Constructs the pricing model and market member variables"""
@@ -247,7 +278,6 @@ class YieldSimulator:
 
         self.run_trade_number = 0
         self.setup_pricing_and_market(override_dict)
-        self.update_analysis_dict()  # initial conditions
         for day in range(0, self.num_trading_days):
             self.day = day
             # Vault APY can vary per day, which sets the current price per share.
@@ -267,22 +297,11 @@ class YieldSimulator:
                 token_index = self.rng.integers(low=0, high=2)  # 0 or 1
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1 - token_index]
-                if self.trade_direction == "in":
-                    if self.token_in == "fyt":
-                        target_reserves = self.market.token_asset
-                    else:
-                        target_reserves = self.market.base_asset
-                elif self.trade_direction == "out":
-                    if self.token_in == "fyt":
-                        target_reserves = self.market.base_asset
-                    else:
-                        target_reserves = self.market.token_asset
-                # Compute trade amount, which can't be more than the available reserves.
-                trade_mean = self.target_daily_volume / 10
-                trade_std = self.target_daily_volume / 100
-                self.trade_amount_usd = self.rng.normal(trade_mean, trade_std)
-                self.trade_amount_usd = np.minimum(
-                    self.trade_amount_usd, target_reserves * self.base_asset_price
+                self.trade_amount_usd = self.get_trade_amount_usd(
+                    self.token_in,
+                    self.trade_direction,
+                    self.target_daily_volume,
+                    self.base_asset_price,
                 )
                 self.trade_amount = (
                     self.trade_amount_usd / self.base_asset_price
@@ -312,8 +331,8 @@ class YieldSimulator:
                 day_trading_volume += (
                     self.trade_amount * self.base_asset_price
                 )  # track daily volume in USD terms
-                self.run_trade_number += 1
                 self.update_analysis_dict()
+                self.run_trade_number += 1
             if (
                 self.day < self.num_trading_days - 1
             ):  # no need to tick the market after the last day
