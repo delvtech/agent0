@@ -15,7 +15,7 @@ def format_trades(analysis_dict):
     trades["time_diff"] = trades.time_until_end.diff()
     trades["time_diff_shift"] = trades.time_until_end.shift(-1).diff()
     trades.loc[len(trades) - 1, "time_diff_shift"] = 1
-    trades["fee_in_usd"] = trades.fee  # * trades.base_asset_price
+    trades["fee_in_usd"] = trades.fee
     trades["fee_in_bps"] = trades.fee / trades.out_without_fee * 100 * 100
     base_asset_liquidity_usd = trades.base_asset_reserves * trades.base_asset_price
     token_asset_liquidity_usd = (
