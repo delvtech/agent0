@@ -39,6 +39,7 @@ def format_trades(analysis_dict):
     ]
     trades_agg = trades.groupby(keep_columns).agg(
         {
+            "spot_price": ["mean"],
             "trade_volume_usd": ["sum"],
             "fee_in_usd": ["mean", "std", "min", "max", "sum"],
             "fee_in_bps": ["mean", "sum"],
