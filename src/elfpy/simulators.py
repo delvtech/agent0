@@ -156,7 +156,7 @@ class YieldSimulator:
         """Returns a formatted string containing all of the Simulation class member variables"""
         strings = []
         for attribute, value in self.__dict__.items():
-            if attribute != "analysis_dict" and attribute != "rng":
+            if attribute not in ("analysis_dict", "rng"):
                 strings.append(f"{attribute} = {value}")
         state_string = "\n".join(strings)
         return state_string
