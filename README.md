@@ -1,18 +1,19 @@
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![testing: nose](https://img.shields.io/badge/testing-nose-blue.svg)](https://nose.readthedocs.io/en/latest/)
+[![testing: pytest](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
 
-#  [Element Finance](https://element.fi) market simulation and analysis repository
+#  [Element Finance](https://element.fi) market simulation and analysis
 This project is a work-in-progress. All code is provided as is and without guarantee.
-
 
 ## Testing
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). First install pytest with `python3 -m pip install pytest`, then the ElfPy package with `python3 -m pip install .`, then from the repository root directory run `pytest`.
 
-## Analysis repo git workflow:
+## Developing
+The ElfPy package can be installed by navigating into the `analysis` folder and running `python3 -m pip install -e .`, which will automatically update the pip package when you change files in the directory.
 
+## Analysis repo git workflow:
 We will follow the Rebase workflow that is used by the Element frontend team.
-Commits to `main` should only be made in the form of squash merges from pull requests.
+Commits to `main` should **only** be made in the form of squash merges from pull requests.
 For example,
 
 ```
