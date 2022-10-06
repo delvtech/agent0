@@ -24,8 +24,9 @@ def format_trades(analysis_dict):
     trades["total_liquidity_usd"] = base_asset_liquidity_usd + token_asset_liquidity_usd
     trades["trade_volume_usd"] = trades.out_with_fee
     # calculate percent change in spot price since the first spot price (after first trade, kinda weird)
-    trades["price_rate_of_change"] = trades.loc[:, "spot_price"] / trades.loc[0, "spot_price"] - 1
-    # rescales spot_price_rate_of_change to equal init_share_price for the first value, for comparison
+    trades["price_rate_of_change"] = (
+        trades.loc[:, "spot_price"] / trades.loc[0, "spot_price"] - 1
+    )  # rescales spot_price_rate_of_change to equal init_share_price for the first value, for comparison
     trades["price_total_return_scaled_to_share_price"] = (
         trades.price_rate_of_change + 1
     ) * trades.init_share_price  # this is APR (does not include compounding)
