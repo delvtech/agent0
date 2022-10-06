@@ -25,22 +25,22 @@ class BaseTest(unittest.TestCase):
         random_seed = 123
         simulator_rng = np.random.default_rng(random_seed)
         self.config = {
-            "min_fee": 0.1, # decimal that assigns fee_percent
-            "max_fee": 0.5, # decimal that assigns fee_percent
-            "min_target_liquidity": 1e6, # in USD
-            "max_target_liquidity": 10e6, # in USD
-            "min_target_volume": 0.001, # fraction of pool liquidity
-            "max_target_volume": 0.01, # fration of pool liquidity
-            "min_pool_apy": 0.02, # as a decimal
-            "max_pool_apy": 0.9, # as a decimal
-            "min_vault_age": 0, # fraction of a year
-            "max_vault_age": 1, # fraction of a year
-            "min_vault_apy": 0.001, # as a decimal
-            "max_vault_apy": 0.9, # as a decimal
-            "base_asset_price": 2.5e3, # aka market price
-            "pool_duration": 180, # in days
-            "num_trading_days": 180, # should be <= pool_duration
-            "floor_fee": 0, # minimum fee percentage (bps)
+            "min_fee": 0.1,  # decimal that assigns fee_percent
+            "max_fee": 0.5,  # decimal that assigns fee_percent
+            "min_target_liquidity": 1e6,  # in USD
+            "max_target_liquidity": 10e6,  # in USD
+            "min_target_volume": 0.001,  # fraction of pool liquidity
+            "max_target_volume": 0.01,  # fration of pool liquidity
+            "min_pool_apy": 0.02,  # as a decimal
+            "max_pool_apy": 0.9,  # as a decimal
+            "min_vault_age": 0,  # fraction of a year
+            "max_vault_age": 1,  # fraction of a year
+            "min_vault_apy": 0.001,  # as a decimal
+            "max_vault_apy": 0.9,  # as a decimal
+            "base_asset_price": 2.5e3,  # aka market price
+            "pool_duration": 180,  # in days
+            "num_trading_days": 180,  # should be <= pool_duration
+            "floor_fee": 0,  # minimum fee percentage (bps)
             "tokens": ["base", "fyt"],
             "trade_direction": "out",
             "precision": None,
@@ -96,7 +96,7 @@ class TestSimulator(BaseTest):
         self.setup_test_vars()
         simulator = YieldSimulator(**self.config)
         for rng_index in range(1, 15):
-            simulator.reset_rng(np.random.default_rng(rng_index)) # reset random inits
+            simulator.reset_rng(np.random.default_rng(rng_index))  # reset random inits
             simulator.set_random_variables()
             for pricing_model in self.pricing_models:
                 override_dict = {
