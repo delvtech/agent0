@@ -25,11 +25,11 @@ def format_trades(analysis_dict):
     trades["trade_volume_usd"] = trades.out_with_fee
     # pr is the percent change in spot price since day 1
     # it is APR (does'nt include compounding)
-    trades["pr"] = trades.loc[:, "spot_price"] - trades.loc[0, "spot_price"]
+    trades["price_rate_of_change"] = trades.loc[:, "spot_price"] / trades.loc[0, "spot_price"] - 1
     # pu takes that percent change and normalizes it to be equal to init_share_price at the beginning,
     # so you can compare its progression vs. share_price
-    trades["pu"] = (
-        trades.pr + 1
+    trades["price_total_return_scaled_to_share_price"] = (
+        trades.price_rate_of_change + 1
     ) * trades.init_share_price  # this is APR (does not include compounding)
     # create explicit column that increments per trade
     trades = trades.reset_index()

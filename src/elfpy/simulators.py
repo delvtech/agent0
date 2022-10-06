@@ -284,12 +284,14 @@ class YieldSimulator:
         self.setup_pricing_and_market(override_dict)
         for day in range(0, self.num_trading_days):
             self.day = day
-            # Vault APY can vary per day, which sets the current price per share.
-            self.market.share_price += (
-                self.vault_apy[self.day]  # current day's apy
-                / 365  # convert annual yield to daily
-                * self.market.init_share_price  # value of 1 share to convert units
-            )
+            # Vault return can vary per day, which sets the current price per share
+            if day > 0: # Update only after first day (first day set to init_share_price)
+                self.market.share_price += (
+                    self.vault_apy[self.day]  # current day's apy
+                    / 365  # convert annual yield to daily
+                    * self.market.init_share_price  # APR, apply return to starting price (no compounding)
+                    #* self.market.share_price # APY, apply return to latest price (full compounding)
+                )
             # Loop over trades on the given day
             # TODO: adjustable target daily volume that is a function of the day
             # TODO: improve trading dist, simplify  market price conversion, allow for different amounts
