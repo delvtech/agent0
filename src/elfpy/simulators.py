@@ -176,7 +176,11 @@ class YieldSimulator:
     def get_trade_amount_usd(
         self, token_in, trade_direction, target_volume, market_price
     ):
-        """Compute trade amount, which can't be more than the available reserves."""
+        """
+        Compute trade amount, which can't be more than the available reserves.
+
+        TODO: Sync with smart contract team & parity their check for maximum trade amount
+        """
         if trade_direction == "in":
             if token_in == "fyt":
                 target_reserves = self.market.token_asset
