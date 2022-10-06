@@ -16,8 +16,8 @@ from elfpy.pricing_models import ElementPricingModel, YieldSpacev2PricingModel
 from elfpy.markets import Market
 
 
-class TestUtils(unittest.TestCase):
-    """Primary test class"""
+class BaseTest(unittest.TestCase):
+    """Generic test class"""
 
     def setup_test_vars(self):
         """Assigns member variables that are useful for many tests"""
@@ -86,6 +86,72 @@ class TestUtils(unittest.TestCase):
             loc=0.1, scale=0.01, size=num_vals_per_variable
         )
 
+
+class TestSimulator(BaseTest):
+    """Simulator test class"""
+
+    def test_simulator(self):
+        """Tests the simulator output to verify that indices are correct"""
+        self.setup_test_vars()
+        simulator = YieldSimulator(**self.config)
+        simulator.set_random_variables()
+        for pricing_model in self.pricing_models:
+            override_dict = {
+                "pricing_model_name": pricing_model.model_name(),
+            }
+            # Running the simulation will include asserts that can fail
+            simulator.print_random_variables()
+            simulator.run_simulation(override_dict)
+
+    def test_get_days_remaining(self):
+        """Tests the simulator function for getting the number of days remaining in a pool"""
+        self.setup_test_vars()
+        simulator = YieldSimulator(**self.config)
+        simulator.set_random_variables()
+        for num_trading_days in self.num_trading_days_vals:
+            override_dict = {"num_trading_days": num_trading_days}
+            simulator.setup_pricing_and_market(override_dict)
+            for day in range(num_trading_days):
+                days_remaining = simulator.get_days_remaining()
+                test_days_remaining = self.config["pool_duration"] - day
+                np.testing.assert_allclose(days_remaining, test_days_remaining)
+                simulator.market.tick(simulator.step_size)
+
+    def test_simulator_indexing(self):
+        """Tests the simulator output to verify that indices are correct"""
+        self.setup_test_vars()
+        simulator = YieldSimulator(**self.config)
+        simulator.set_random_variables()
+        for pricing_model in self.pricing_models:
+            override_dict = {
+                "pricing_model_name": pricing_model.model_name(),
+            }
+            simulator.run_simulation(override_dict)
+        analysis_df = pd.DataFrame.from_dict(simulator.analysis_dict)
+        init_day_list = []
+        end_day_list = []
+        for model in analysis_df.model_name.unique():
+            model_df = analysis_df.loc[analysis_df.model_name == model]
+            init_day = model_df.day.iloc[0]
+            end_day = model_df.day.iloc[-1]
+            init_day_list.append(init_day)
+            end_day_list.append(end_day)
+        # check that all values in the lists are equal across models
+        num_vals_eq_to_first = init_day_list.count(init_day_list[0])
+        total_num = len(init_day_list)
+        assert (
+            num_vals_eq_to_first == total_num
+        ), f"Error: All init day values should be the same but are {init_day_list}"
+        num_vals_eq_to_first = end_day_list.count(end_day_list[0])
+        total_num = len(end_day_list)
+        assert (
+            num_vals_eq_to_first == total_num
+        ), f"Error: All end day values should be the same but are {end_day_list}"
+
+
+class TestPricingModels(BaseTest):
+    """Pricing Model test class"""
+
     def test_pool_length_normalization(self):
         """
         Tests time conversions
@@ -112,20 +178,6 @@ class TestUtils(unittest.TestCase):
                 time_remaining, time_stretch, normalizing_constant
             )
             np.testing.assert_allclose(days_remaining, new_days_remaining)
-
-    def test_get_days_remaining(self):
-        """Tests the simulator function for getting the number of days remaining in a pool"""
-        self.setup_test_vars()
-        simulator = YieldSimulator(**self.config)
-        simulator.set_random_variables()
-        for num_trading_days in self.num_trading_days_vals:
-            override_dict = {"num_trading_days": num_trading_days}
-            simulator.setup_pricing_and_market(override_dict)
-            for day in range(num_trading_days):
-                days_remaining = simulator.get_days_remaining()
-                test_days_remaining = self.config["pool_duration"] - day
-                np.testing.assert_allclose(days_remaining, test_days_remaining)
-                simulator.market.tick(simulator.step_size)
 
     def test_calc_spot_price_from_apy(self):
         """Tests spot price by converting to and from an APY."""
@@ -274,6 +326,10 @@ class TestUtils(unittest.TestCase):
             )
             np.testing.assert_allclose(random_apy, calculated_apy)
 
+
+class TestMarkets(BaseTest):
+    """Market test class"""
+
     def test_market_apy_given_calc_apy_from_reserves(self):
         """Test the Market class apy calculation matches that from PricingModel.calc_apy_from_reserves"""
         self.setup_test_vars()
@@ -333,47 +389,3 @@ class TestUtils(unittest.TestCase):
             )
             market_apy = market.apy(sim_days_remaining)
             np.testing.assert_allclose(calculated_apy, market_apy)
-
-    def test_simulator(self):
-        """Tests the simulator output to verify that indices are correct"""
-        self.setup_test_vars()
-        simulator = YieldSimulator(**self.config)
-        simulator.set_random_variables()
-        for pricing_model in self.pricing_models:
-            override_dict = {
-                "pricing_model_name": pricing_model.model_name(),
-            }
-            # Running the simulation will include asserts that can fail
-            simulator.print_random_variables()
-            simulator.run_simulation(override_dict)
-
-    def test_simulator_indexing(self):
-        """Tests the simulator output to verify that indices are correct"""
-        self.setup_test_vars()
-        simulator = YieldSimulator(**self.config)
-        simulator.set_random_variables()
-        for pricing_model in self.pricing_models:
-            override_dict = {
-                "pricing_model_name": pricing_model.model_name(),
-            }
-            simulator.run_simulation(override_dict)
-        analysis_df = pd.DataFrame.from_dict(simulator.analysis_dict)
-        init_day_list = []
-        end_day_list = []
-        for model in analysis_df.model_name.unique():
-            model_df = analysis_df.loc[analysis_df.model_name == model]
-            init_day = model_df.day.iloc[0]
-            end_day = model_df.day.iloc[-1]
-            init_day_list.append(init_day)
-            end_day_list.append(end_day)
-        # check that all values in the lists are equal across models
-        num_vals_eq_to_first = init_day_list.count(init_day_list[0])
-        total_num = len(init_day_list)
-        assert (
-            num_vals_eq_to_first == total_num
-        ), f"Error: All init day values should be the same but are {init_day_list}"
-        num_vals_eq_to_first = end_day_list.count(end_day_list[0])
-        total_num = len(end_day_list)
-        assert (
-            num_vals_eq_to_first == total_num
-        ), f"Error: All end day values should be the same but are {end_day_list}"
