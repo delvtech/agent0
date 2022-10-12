@@ -18,9 +18,7 @@ def format_trades(analysis_dict):
     trades["fee_in_usd"] = trades.fee
     trades["fee_in_bps"] = trades.fee / trades.out_without_fee * 100 * 100
     base_asset_liquidity_usd = trades.base_asset_reserves * trades.base_asset_price
-    token_asset_liquidity_usd = (
-        trades.token_asset_reserves * trades.base_asset_price * trades.spot_price
-    )
+    token_asset_liquidity_usd = trades.token_asset_reserves * trades.base_asset_price * trades.spot_price
     trades["total_liquidity_usd"] = base_asset_liquidity_usd + token_asset_liquidity_usd
     trades["trade_volume_usd"] = trades.out_with_fee
     # calculate percent change in spot price since the first spot price (after first trade, kinda weird)
@@ -37,9 +35,7 @@ def format_trades(analysis_dict):
         trades.loc[trades.run_number == run, "lp_total_return"] = trades.loc[
             trades.run_number == run, "lp_return"
         ].cumsum()
-        trades.loc[
-            trades.run_number == run, "lp_total_return_scaled_to_share_price"
-        ] = (
+        trades.loc[trades.run_number == run, "lp_total_return_scaled_to_share_price"] = (
             trades.lp_total_return + 1
         ) * trades.init_share_price  # this is APR (does not include compounding)
         trades.loc[trades.run_number == run, "share_price_total_return"] = (
@@ -68,7 +64,7 @@ def format_trades(analysis_dict):
     trades_agg["fee_in_usd_cum_sum"] = 0
     trades_agg = trades_agg.reset_index()
     for model in trades_agg.model_name.unique():
-        trades_agg.loc[
-            trades_agg.model_name == model, "fee_in_usd_cum_sum"
-        ] = trades_agg.loc[trades_agg.model_name == model, "fee_in_usd_sum"].cumsum()
+        trades_agg.loc[trades_agg.model_name == model, "fee_in_usd_cum_sum"] = trades_agg.loc[
+            trades_agg.model_name == model, "fee_in_usd_sum"
+        ].cumsum()
     return [trades, trades_agg]

@@ -60,9 +60,7 @@ class Market:
             self.share_price,
         )
         normalized_days_remaining = self.pricing_model.norm_days(days_remaining)
-        return self.pricing_model.calc_apy_from_spot_price(
-            price, normalized_days_remaining
-        )
+        return self.pricing_model.calc_apy_from_spot_price(price, normalized_days_remaining)
 
     def spot_price(self):
         """Returns the current spot price given the market conditions and pricing model"""
@@ -193,9 +191,7 @@ class Market:
                 ) = trade_results
                 d_base_asset = -output_with_fee
                 d_token_asset = amount
-                d_base_asset_slippage = abs(
-                    without_fee_or_slippage - output_without_fee
-                )
+                d_base_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
                 d_token_asset_slippage = 0
                 d_base_asset_fee = 0
                 d_token_asset_fee = fee
@@ -225,9 +221,7 @@ class Market:
                 d_base_asset = amount
                 d_token_asset = -output_with_fee
                 d_base_asset_slippage = 0
-                d_token_asset_slippage = abs(
-                    without_fee_or_slippage - output_without_fee
-                )
+                d_token_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
                 d_base_asset_fee = fee
                 d_token_asset_fee = 0
                 d_base_asset_orders = 0
@@ -261,9 +255,7 @@ class Market:
                 ) = trade_results
                 d_base_asset = -output_with_fee
                 d_token_asset = amount
-                d_base_asset_slippage = abs(
-                    without_fee_or_slippage - output_without_fee
-                )
+                d_base_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
                 d_token_asset_slippage = 0
                 d_base_asset_fee = fee
                 d_token_asset_fee = 0
@@ -293,9 +285,7 @@ class Market:
                 d_base_asset = amount
                 d_token_asset = -output_with_fee
                 d_base_asset_slippage = 0
-                d_token_asset_slippage = abs(
-                    without_fee_or_slippage - output_without_fee
-                )
+                d_token_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
                 d_base_asset_fee = 0
                 d_token_asset_fee = fee
                 d_base_asset_orders = 0
@@ -303,9 +293,7 @@ class Market:
                 d_base_asset_volume = 0
                 d_token_asset_volume = output_with_fee
         else:
-            raise ValueError(
-                f'direction argument must be "in" or "out", not {direction}'
-            )
+            raise ValueError(f'direction argument must be "in" or "out", not {direction}')
         self.check_fees(
             amount,
             direction,
@@ -324,8 +312,6 @@ class Market:
 
     def get_market_state_string(self):
         """Returns a formatted string containing all of the Market class member variables"""
-        strings = [
-            f"{attribute} = {value}" for attribute, value in self.__dict__.items()
-        ]
+        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
         state_string = "\n".join(strings)
         return state_string
