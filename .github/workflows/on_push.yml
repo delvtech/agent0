@@ -1,9 +1,0 @@
-name: on_push
-
-on: [push]
-
-jobs:
-  call-lint:
-    uses: ./.github/workflows/lint.yml
-  call-test:
-    uses: ./.github/workflows/test.yml

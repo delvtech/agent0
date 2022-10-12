@@ -1,9 +1,0 @@
-name: on_pr
-
-on: [pull_request]
-
-jobs:
-  call-lint:
-    uses: ./.github/workflows/lint.yml
-  call-test:
-    uses: ./.github/workflows/test.yml
