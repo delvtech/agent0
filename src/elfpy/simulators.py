@@ -336,16 +336,16 @@ class YieldSimulator:
                         print(
                             "trade"
                             f' {self.analysis_dict["run_trade_number"][-1:]}'
-                            f' days_trades={days_trades}+{token_index}k={sum(days_trades)}'
-                            f' n={len(days_trades)} ratio={sum(days_trades)/len(days_trades)}'
-                            f' streak_luck: {self.streak_luck}'
+                            f" days_trades={days_trades}+{token_index}k={sum(days_trades)}"
+                            f" n={len(days_trades)} ratio={sum(days_trades)/len(days_trades)}"
+                            f" streak_luck: {self.streak_luck}"
                         )
                     else:
-                        # if 0 < self.apy_distance_from_mid_when_in_range < 1:
-                        self.actual_convergence_strength = (
-                            self.actual_convergence_strength
-                            + (1 - self.actual_convergence_strength) * self.streak_luck**1.5
-                        )  # force convergence when on bad streaks
+                        if 0 < self.apy_distance_from_mid_when_in_range < 1:
+                            self.actual_convergence_strength = (
+                                self.actual_convergence_strength
+                                + (1 - self.actual_convergence_strength) * self.streak_luck**1.5
+                            )  # force convergence when on bad streaks
                         token_index = (
                             convergence_direction
                             if self.rng.random() < self.actual_convergence_strength
@@ -383,13 +383,13 @@ class YieldSimulator:
                 pool_apy = self.market.apy(self.get_days_remaining())
                 if pool_apy > 0.2:
                     print(
-                        'trade'
+                        "trade"
                         f' {self.analysis_dict["run_trade_number"][-1:]}'
-                        f' days_trades={days_trades}'
-                        f' k={sum(days_trades)}'
-                        f' n={len(days_trades)}'
-                        f' ratio={sum(days_trades)/len(days_trades)}'
-                        f' streak_luck: {self.streak_luck}'
+                        f" days_trades={days_trades}"
+                        f" k={sum(days_trades)}"
+                        f" n={len(days_trades)}"
+                        f" ratio={sum(days_trades)/len(days_trades)}"
+                        f" streak_luck: {self.streak_luck}"
                     )
                     print(btest)
                     print(f"expected_proportion={expected_proportion}")
