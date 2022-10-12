@@ -320,10 +320,10 @@ class YieldSimulator:
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
                     self.apy_distance_in_target_range = np.clip((pool_apy - self.pool_apy_target_range[0]) / (self.pool_apy_target_range[1] - self.pool_apy_target_range[0]), 0, 1)
-                    self.convergence_direction = 0 if self.apy_distance_in_target_range > 0.5 else 1 # if you're above the midpoint of the targe range
+                    convergence_direction = 0 if self.apy_distance_in_target_range > 0.5 else 1 # if you're above the midpoint of the targe range
                     self.apy_distance_from_mid_when_in_range = np.clip(np.abs(self.apy_distance_in_target_range - 0.5) * 2, 0, 1) # 0 if you're at the midpoint, 1 if you're at the edge
                     self.actual_convergence_strength = 0.5 + (self.pool_apy_target_range_convergence_speed - 0.5) * self.apy_distance_from_mid_when_in_range # pool_apy_target_range_convergence_speed at edge or outside, scales to 0 at midpoint
-                    expected_proportion = self.actual_convergence_strength if self.convergence_direction == 1 else 1 - self.actual_convergence_strength
+                    expected_proportion = self.actual_convergence_strength if convergence_direction == 1 else 1 - self.actual_convergence_strength
                     if len(days_trades)>0:
                         btest = binomtest(k=sum(days_trades), n=len(days_trades), p=expected_proportion)
                         # self.streak_luck = np.abs(0.5-btest.pvalue)*2
@@ -337,7 +337,7 @@ class YieldSimulator:
                     else:
                         # if 0 < self.apy_distance_from_mid_when_in_range < 1:
                         self.actual_convergence_strength = self.actual_convergence_strength + (1 - self.actual_convergence_strength) * self.streak_luck**1.5 # force convergence when on bad streaks
-                        token_index = self.convergence_direction if self.rng.random() < self.actual_convergence_strength else 1 - self.convergence_direction
+                        token_index = convergence_direction if self.rng.random() < self.actual_convergence_strength else 1 - convergence_direction
                         # print(f"pool_apy = {pool_apy}, apy_distance_in_target_range = {self.apy_distance_in_target_range}, apy_distance_from_mid_when_in_range = {self.apy_distance_from_mid_when_in_range}, actual_convergence_strength = {self.actual_convergence_strength}, token_index = {token_index}")
                 else:
                     token_index = self.rng.integers(low=0, high=2)  # 0 or 1
