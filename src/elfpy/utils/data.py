@@ -34,12 +34,20 @@ def format_trades(analysis_dict):
     trades["lp_total_return"] = 0
     trades["share_price_total_return"] = 0
     for run in trades.run_number.unique():
-        trades.loc[trades.run_number==run,"lp_total_return"] = trades.loc[trades.run_number==run,"lp_return"].cumsum()
-        trades.loc[trades.run_number==run,"lp_total_return_scaled_to_share_price"] = (
+        trades.loc[trades.run_number == run, "lp_total_return"] = trades.loc[
+            trades.run_number == run, "lp_return"
+        ].cumsum()
+        trades.loc[
+            trades.run_number == run, "lp_total_return_scaled_to_share_price"
+        ] = (
             trades.lp_total_return + 1
         ) * trades.init_share_price  # this is APR (does not include compounding)
-        trades.loc[trades.run_number==run,"share_price_total_return"] = trades.loc[trades.run_number==run,"share_price"] / trades.loc[trades.run_number==run,"share_price"].iloc[0] - 1
-    
+        trades.loc[trades.run_number == run, "share_price_total_return"] = (
+            trades.loc[trades.run_number == run, "share_price"]
+            / trades.loc[trades.run_number == run, "share_price"].iloc[0]
+            - 1
+        )
+
     # create explicit column that increments per trade
     trades = trades.reset_index()
 
