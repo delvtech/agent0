@@ -329,7 +329,7 @@ class YieldSimulator:
                             p=expected_proportion,
                         )
                         self.streak_luck = 1 - btest.pvalue
-                    if self.streak_luck > 0.99:
+                    if self.streak_luck > 0.98:
                         token_index = 1 - round(sum(days_trades) / len(days_trades))
                         print(
                             "trade"
