@@ -51,6 +51,7 @@ class YieldSimulator:
         self.base_asset_price = kwargs.get("base_asset_price")
         self.precision = kwargs.get("precision")
         self.pricing_model_name = str(kwargs.get("pricing_model_name"))
+        self.scenario_name = str(kwargs.get("scenario_name"))
         self.trade_direction = kwargs.get("trade_direction")
         self.pool_duration = kwargs.get("pool_duration")
         self.num_trading_days = kwargs.get("num_trading_days")
@@ -89,6 +90,7 @@ class YieldSimulator:
         analysis_keys = [
             "run_number",
             "model_name",
+            "scenario_name",
             "time_until_end",
             "days_until_end",
             "init_time_stretch",
@@ -360,6 +362,12 @@ class YieldSimulator:
                     self.target_daily_volume,
                     self.base_asset_price,
                 )
+                assert self.trade_amount_usd >= 0, (
+                    f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
+                    f' token_in={self.token_in} trade_direction={self.trade_direction}'
+                    f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
+                    f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
+                )
                 self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                 if self.verbose:
                     print(
@@ -416,6 +424,7 @@ class YieldSimulator:
         """Increment the list for each key in the analysis_dict output variable"""
         # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
+        self.analysis_dict["scenario_name"].append(self.scenario_name)
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["time_until_end"].append(self.market.time_remaining)
         self.analysis_dict["init_time_stretch"].append(self.init_time_stretch)
