@@ -3,7 +3,7 @@ name: trigger
 on: [push, pull_request]
 
 jobs:
-  lint:
-    uses: element-fi/analysis/.github/workflows/lint.yml
-  test:
-    uses: element-fi/analysis/.github/workflows/test.yml
+  call-lint:
+    uses: ./.github/workflows/lint.yml
+  call-test:
+    uses: ./.github/workflows/test.yml
