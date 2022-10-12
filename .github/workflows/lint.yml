@@ -10,6 +10,10 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
     steps:
+      - name: Skip Duplicate Actions
+        uses: fkirc/skip-duplicate-actions@v5.2.0
+        with:
+          concurrent_skipping: 'same_content_newer'
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
