@@ -49,7 +49,7 @@ def format_trades(analysis_dict):
 
     ### STATS AGGREGATED BY DAY ###
     keep_columns = [
-        "model_name",
+        "model_name" if trades.model_name.nunique() > trades.scenario_name.nunique() else "scenario_name",
         "day",
     ]
     trades_agg = trades.groupby(keep_columns).agg(
@@ -63,8 +63,8 @@ def format_trades(analysis_dict):
     trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
     trades_agg["fee_in_usd_cum_sum"] = 0
     trades_agg = trades_agg.reset_index()
-    for model in trades_agg.model_name.unique():
-        trades_agg.loc[trades_agg.model_name == model, "fee_in_usd_cum_sum"] = trades_agg.loc[
-            trades_agg.model_name == model, "fee_in_usd_sum"
+    for model in trades_agg.loc[:,keep_columns[0]].unique():
+        trades_agg.loc[trades_agg.loc[:,keep_columns[0]] == model, "fee_in_usd_cum_sum"] = trades_agg.loc[
+            trades_agg.loc[:,keep_columns[0]] == model, "fee_in_usd_sum"
         ].cumsum()
     return [trades, trades_agg]
