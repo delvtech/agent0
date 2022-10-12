@@ -297,6 +297,7 @@ class YieldSimulator:
             while day_trading_volume < self.target_daily_volume:
                 btest = []
                 expected_proportion = 0
+                self.streak_luck = 0
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
                     self.apy_distance_in_target_range = np.clip(
@@ -327,10 +328,7 @@ class YieldSimulator:
                             n=len(days_trades),
                             p=expected_proportion,
                         )
-                        # self.streak_luck = np.abs(0.5-btest.pvalue)*2
                         self.streak_luck = 1 - btest.pvalue
-                    else:
-                        self.streak_luck = 0
                     if self.streak_luck > 0.99:
                         token_index = 1 - round(sum(days_trades) / len(days_trades))
                         print(
