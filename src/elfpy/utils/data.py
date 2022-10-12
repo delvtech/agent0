@@ -43,6 +43,9 @@ def format_trades(analysis_dict):
             / trades.loc[trades.run_number == run, "share_price"].iloc[0]
             - 1
         )
+    trades["lp_total_return_percent"] = trades.lp_total_return * 100
+    trades["price_total_return_percent"] = trades.price_total_return * 100
+    trades["share_price_total_return_percent"] = trades.share_price_total_return * 100
 
     # create explicit column that increments per trade
     trades = trades.reset_index()
