@@ -1,6 +1,6 @@
-name: trigger
+name: on_push
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   call-lint:
