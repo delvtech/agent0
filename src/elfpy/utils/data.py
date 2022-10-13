@@ -46,6 +46,9 @@ def format_trades(analysis_dict):
     trades["lp_total_return_percent"] = trades.lp_total_return * 100
     trades["price_total_return_percent"] = trades.price_total_return * 100
     trades["share_price_total_return_percent"] = trades.share_price_total_return * 100
+    trades["lp_total_return_percent_annualized"]           = trades["lp_total_return_percent"]             * ( 365 / ( trades["day"] + 1 ) )
+    trades["price_total_return_percent_annualized"]        = trades["price_total_return_percent"]          * ( 365 / ( trades["day"] + 1 ) )
+    trades["share_price_total_return_percent_annualized"]  = trades["share_price_total_return_percent"]    * ( 365 / ( trades["day"] + 1 ) )
 
     # create explicit column that increments per trade
     trades = trades.reset_index()
@@ -71,3 +74,29 @@ def format_trades(analysis_dict):
             trades_agg.loc[:,keep_columns[0]] == model, "fee_in_usd_sum"
         ].cumsum()
     return [trades, trades_agg]
+
+def format_axis(ax, xlabel='', fontsize=18, linestyle='--', linewidth='1', color='grey', which='both', axis='y'):
+    ax.set_xlabel(xlabel)
+    ax.tick_params(axis='both', labelsize=fontsize)
+    ax.grid(
+        visible=True,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        color=color,
+        which=which,
+        axis=axis
+    )
+    if xlabel=='':
+        ax.xaxis.set_ticklabels([])
+    ax.legend(fontsize=fontsize)
+
+def annotate(ax,text,major_offset,minor_offset, val):
+    t=ax.annotate(
+        text,
+        xy=(val['position_x'], val['position_y']-val['major_offset']*major_offset-val['minor_offset']*minor_offset),
+        xytext=(val['position_x'], val['position_y']-val['major_offset']*major_offset-val['minor_offset']*minor_offset),
+        xycoords='subfigure fraction',
+        fontsize=val['font_size'],
+        alpha=val['alpha'],
+    )
+    t.set_bbox(dict(facecolor='white', edgecolor='black', alpha=val['alpha'], linewidth=0, boxstyle='round,pad=0.1'))
