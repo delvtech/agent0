@@ -54,7 +54,12 @@ def format_trades(analysis_dict):
     # create explicit column that increments per trade
     trades = trades.reset_index()
 
-    ### STATS AGGREGATED BY DAY ###
+    ### STATS AGGREGATED BY SIM AND DAY ###
+    # aggregates by two dimensions:
+    # 1. model_name or scenario_name (whichever has more unique values)
+    #      model_name is directly output from pricing_model class
+    #      scenario_name is manually assigned label like "spike" or "drop"
+    # 2. day
     keep_columns = [
         "model_name" if trades.model_name.nunique() > trades.scenario_name.nunique() else "scenario_name",
         "day",
