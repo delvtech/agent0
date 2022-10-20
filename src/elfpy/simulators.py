@@ -4,8 +4,6 @@ for experiment tracking and execution
 """
 
 import numpy as np
-from scipy.stats import binomtest
-
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import YieldSpacev2PricingModel
@@ -29,6 +27,8 @@ class YieldSimulator:
         # TODO: Move time_stretch into market or pricing models
         #       This will simplify e.g. market.apy & simulator.get_days_remaining
         # TODO: change floor_fee to be a decimal like min_fee and max_fee
+        # pylint: disable=too-many-statements
+
         # percentage of the slippage we take as a fee
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
@@ -41,9 +41,6 @@ class YieldSimulator:
         self.max_target_volume = kwargs.get("max_target_volume")
         self.min_pool_apy = kwargs.get("min_pool_apy")  # as a decimal
         self.max_pool_apy = kwargs.get("max_pool_apy")  # as a decimal
-        self.pool_apy_target_range = kwargs.get("pool_apy_target_range")
-        self.pool_apy_target_range_convergence_speed = kwargs.get("pool_apy_target_range_convergence_speed")
-        self.streak_luck = kwargs.get("streak_luck")
         self.min_vault_age = kwargs.get("min_vault_age")
         self.max_vault_age = kwargs.get("max_vault_age")
         self.min_vault_apy = kwargs.get("min_vault_apy")  # as a decimal
@@ -57,7 +54,7 @@ class YieldSimulator:
         self.num_trading_days = kwargs.get("num_trading_days")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
-        self.run_number = 0
+        self.run_number = 0.00
         self.run_trade_number = 0
         # Random variables
         self.target_liquidity = None
@@ -83,9 +80,6 @@ class YieldSimulator:
         self.without_fee = None
         self.fee = None
         self.random_variables_set = False
-        self.apy_distance_in_target_range = None
-        self.apy_distance_from_mid_when_in_range = None
-        self.actual_convergence_strength = None
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
             "run_number",
@@ -97,8 +91,6 @@ class YieldSimulator:
             "target_liquidity",
             "target_daily_volume",
             "pool_apy",
-            "pool_apy_target_range",
-            "pool_apy_target_range_convergence_speed",
             "streak_luck",
             "fee_percent",
             "floor_fee",
@@ -117,10 +109,7 @@ class YieldSimulator:
             "init_share_price",  # u in YieldSpace with Yield Bearing Vaults
             "out_without_fee_slippage",
             "out_with_fee",
-            "out_without_fee",
-            "apy_distance_in_target_range",
-            "apy_distance_from_mid_when_in_range",
-            "actual_convergence_strength",
+            "out_without_fee"
             "fee",
             "slippage",
             "pool_duration",
@@ -297,62 +286,7 @@ class YieldSimulator:
             day_trading_volume = 0
             days_trades = []
             while day_trading_volume < self.target_daily_volume:
-                btest = []
-                expected_proportion = 0
-                self.streak_luck = 0
-                if self.pool_apy_target_range is not None:
-                    pool_apy = self.market.apy(self.get_days_remaining())
-                    self.apy_distance_in_target_range = np.clip(
-                        (pool_apy - self.pool_apy_target_range[0])
-                        / (self.pool_apy_target_range[1] - self.pool_apy_target_range[0]),
-                        0,
-                        1,
-                    )
-                    convergence_direction = (
-                        0 if self.apy_distance_in_target_range > 0.5 else 1
-                    )  # if you're above the midpoint of the targe range
-                    self.apy_distance_from_mid_when_in_range = np.clip(
-                        np.abs(self.apy_distance_in_target_range - 0.5) * 2, 0, 1
-                    )  # 0 if you're at the midpoint, 1 if you're at the edge
-                    self.actual_convergence_strength = (
-                        0.5
-                        + (self.pool_apy_target_range_convergence_speed - 0.5)
-                        * self.apy_distance_from_mid_when_in_range
-                    )  # pool_apy_target_range_convergence_speed at edge or outside, scales to 0 at midpoint
-                    expected_proportion = (
-                        self.actual_convergence_strength
-                        if convergence_direction == 1
-                        else 1 - self.actual_convergence_strength
-                    )
-                    if len(days_trades) > 0:
-                        btest = binomtest(
-                            k=sum(days_trades),
-                            n=len(days_trades),
-                            p=expected_proportion,
-                        )
-                        self.streak_luck = 1 - btest.pvalue
-                    if self.streak_luck > 0.98:
-                        token_index = 1 - round(sum(days_trades) / len(days_trades))
-                        print(
-                            "trade"
-                            f' {self.analysis_dict["run_trade_number"][-1:]}'
-                            f" days_trades={days_trades}+{token_index}k={sum(days_trades)}"
-                            f" n={len(days_trades)} ratio={sum(days_trades)/len(days_trades)}"
-                            f" streak_luck: {self.streak_luck}"
-                        )
-                    else:
-                        if 0 < self.apy_distance_from_mid_when_in_range < 1:
-                            self.actual_convergence_strength = (
-                                self.actual_convergence_strength
-                                + (1 - self.actual_convergence_strength) * self.streak_luck**1.5
-                            )  # force convergence when on bad streaks
-                        token_index = (
-                            convergence_direction
-                            if self.rng.random() < self.actual_convergence_strength
-                            else 1 - convergence_direction
-                        )
-                else:
-                    token_index = self.rng.integers(low=0, high=2)  # 0 or 1
+                token_index = self.rng.integers(low=0, high=2)  # 0 or 1
                 days_trades.append(token_index)
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1 - token_index]
@@ -376,7 +310,6 @@ class YieldSimulator:
                         + f"init_share_price={self.market.init_share_price}, "
                         + f"share_price={self.market.share_price}, "
                         + f"amount={self.trade_amount}, "
-                        + f"apy={pool_apy}, "
                         + f"reserves={(self.market.base_asset, self.market.token_asset)}"
                     )
                 # Conduct trade & update state
@@ -386,29 +319,6 @@ class YieldSimulator:
                     self.token_in,  # base or fyt
                     self.token_out,  # opposite of token_in
                 )
-                pool_apy = self.market.apy(self.get_days_remaining())
-                if pool_apy > 0.2:
-                    print(
-                        "trade"
-                        f' {self.analysis_dict["run_trade_number"][-1:]}'
-                        f" days_trades={days_trades}"
-                        f" k={sum(days_trades)}"
-                        f" n={len(days_trades)}"
-                        f" ratio={sum(days_trades)/len(days_trades)}"
-                        f" streak_luck: {self.streak_luck}"
-                    )
-                    print(btest)
-                    print(f"expected_proportion={expected_proportion}")
-                    print(
-                        f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
-                        f" = {pool_apy:,.4%} apy_distance_in_target_range ="
-                        f" {self.apy_distance_in_target_range},"
-                        " apy_distance_from_mid_when_in_range ="
-                        f" {self.apy_distance_from_mid_when_in_range},"
-                        " actual_convergence_strength ="
-                        f" {self.actual_convergence_strength}, token_index ="
-                        f" {token_index}"
-                    )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
                 self.update_analysis_dict()
                 self.run_trade_number += 1
@@ -422,6 +332,7 @@ class YieldSimulator:
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
+        # pylint: disable=too-many-statements
         # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["scenario_name"].append(self.scenario_name)
@@ -430,11 +341,6 @@ class YieldSimulator:
         self.analysis_dict["init_time_stretch"].append(self.init_time_stretch)
         self.analysis_dict["target_liquidity"].append(self.target_liquidity)
         self.analysis_dict["target_daily_volume"].append(self.target_daily_volume)
-        self.analysis_dict["pool_apy_target_range"].append(self.pool_apy_target_range)
-        self.analysis_dict["pool_apy_target_range_convergence_speed"].append(
-            self.pool_apy_target_range_convergence_speed
-        )
-        self.analysis_dict["streak_luck"].append(self.streak_luck)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.init_vault_age)
@@ -461,9 +367,6 @@ class YieldSimulator:
         self.analysis_dict["trade_amount"].append(self.trade_amount)
         self.analysis_dict["trade_amount_usd"].append(self.trade_amount_usd)
         self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["apy_distance_in_target_range"].append(self.apy_distance_in_target_range)
-        self.analysis_dict["apy_distance_from_mid_when_in_range"].append(self.apy_distance_from_mid_when_in_range)
-        self.analysis_dict["actual_convergence_strength"].append(self.actual_convergence_strength)
         if self.fee is None:
             self.analysis_dict["out_without_fee_slippage"].append(None)
             self.analysis_dict["out_with_fee"].append(None)
