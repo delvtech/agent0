@@ -91,7 +91,6 @@ class YieldSimulator:
             "target_liquidity",
             "target_daily_volume",
             "pool_apy",
-            "streak_luck",
             "fee_percent",
             "floor_fee",
             "init_vault_age",
@@ -109,7 +108,6 @@ class YieldSimulator:
             "init_share_price",  # u in YieldSpace with Yield Bearing Vaults
             "out_without_fee_slippage",
             "out_with_fee",
-            "out_without_fee"
             "fee",
             "slippage",
             "pool_duration",
@@ -370,13 +368,11 @@ class YieldSimulator:
         if self.fee is None:
             self.analysis_dict["out_without_fee_slippage"].append(None)
             self.analysis_dict["out_with_fee"].append(None)
-            self.analysis_dict["out_without_fee"].append(None)
             self.analysis_dict["fee"].append(None)
             self.analysis_dict["slippage"].append(None)
         else:
             self.analysis_dict["out_without_fee_slippage"].append(self.without_fee_or_slippage * self.base_asset_price)
             self.analysis_dict["out_with_fee"].append(self.with_fee * self.base_asset_price)
-            self.analysis_dict["out_without_fee"].append(self.without_fee * self.base_asset_price)
             self.analysis_dict["fee"].append(self.fee * self.base_asset_price)
             slippage = (self.without_fee_or_slippage - self.without_fee) * self.base_asset_price
             self.analysis_dict["slippage"].append(slippage)
