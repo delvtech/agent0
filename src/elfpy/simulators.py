@@ -188,6 +188,12 @@ class YieldSimulator:
         trade_std = target_volume / 100
         trade_amount_usd = self.rng.normal(trade_mean, trade_std)
         trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
+        assert trade_amount_usd >= 0, (
+            f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
+            f' token_in={self.token_in} trade_direction={self.trade_direction}'
+            f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
+            f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
+        )
         return trade_amount_usd
 
     def setup_pricing_and_market(self, override_dict=None):
@@ -292,12 +298,6 @@ class YieldSimulator:
                     self.trade_direction,
                     self.target_daily_volume,
                     self.base_asset_price,
-                )
-                assert self.trade_amount_usd >= 0, (
-                    f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
-                    f' token_in={self.token_in} trade_direction={self.trade_direction}'
-                    f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
-                    f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
                 )
                 self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                 if self.verbose:
