@@ -283,10 +283,8 @@ class YieldSimulator:
             # Could define a 'trade amount & direction' time series that's a function of the vault apy
             # Could support using actual historical trades or a fit to historical trades)
             day_trading_volume = 0
-            days_trades = []
             while day_trading_volume < self.target_daily_volume:
                 token_index = self.rng.integers(low=0, high=2)  # 0 or 1
-                days_trades.append(token_index)
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1 - token_index]
                 self.trade_amount_usd = self.get_trade_amount_usd(
