@@ -56,36 +56,16 @@ class BaseTest(unittest.TestCase):
         # random variables for fuzzy testing
         num_vals_per_variable = 4
         self.test_rng = np.random.default_rng(random_seed)
-        self.target_liquidity_vals = self.test_rng.uniform(
-            low=1e5, high=1e6, size=num_vals_per_variable
-        )
-        self.base_asset_price_vals = self.test_rng.uniform(
-            low=2e3, high=3e3, size=num_vals_per_variable
-        )
-        self.init_share_price_vals = self.test_rng.uniform(
-            low=1.0, high=2.0, size=num_vals_per_variable
-        )
-        self.normalizing_constant_vals = self.test_rng.uniform(
-            low=0, high=365, size=num_vals_per_variable
-        )
-        self.time_stretch_vals = self.test_rng.normal(
-            loc=10, scale=0.1, size=num_vals_per_variable
-        )
-        self.num_trading_days_vals = self.test_rng.integers(
-            low=1, high=100, size=num_vals_per_variable
-        )
-        self.days_remaining_vals = self.test_rng.integers(
-            low=0, high=180, size=num_vals_per_variable
-        )
-        self.spot_price_vals = np.maximum(
-            1e-5, self.test_rng.normal(loc=1, scale=0.5, size=num_vals_per_variable)
-        )
-        self.pool_apy_vals = np.maximum(
-            1e-5, self.test_rng.normal(loc=0.2, scale=0.1, size=num_vals_per_variable)
-        )
-        self.fee_percent_vals = self.test_rng.normal(
-            loc=0.1, scale=0.01, size=num_vals_per_variable
-        )
+        self.target_liquidity_vals = self.test_rng.uniform(low=1e5, high=1e6, size=num_vals_per_variable)
+        self.base_asset_price_vals = self.test_rng.uniform(low=2e3, high=3e3, size=num_vals_per_variable)
+        self.init_share_price_vals = self.test_rng.uniform(low=1.0, high=2.0, size=num_vals_per_variable)
+        self.normalizing_constant_vals = self.test_rng.uniform(low=0, high=365, size=num_vals_per_variable)
+        self.time_stretch_vals = self.test_rng.normal(loc=10, scale=0.1, size=num_vals_per_variable)
+        self.num_trading_days_vals = self.test_rng.integers(low=1, high=100, size=num_vals_per_variable)
+        self.days_remaining_vals = self.test_rng.integers(low=0, high=180, size=num_vals_per_variable)
+        self.spot_price_vals = np.maximum(1e-5, self.test_rng.normal(loc=1, scale=0.5, size=num_vals_per_variable))
+        self.pool_apy_vals = np.maximum(1e-5, self.test_rng.normal(loc=0.2, scale=0.1, size=num_vals_per_variable))
+        self.fee_percent_vals = self.test_rng.normal(loc=0.1, scale=0.01, size=num_vals_per_variable)
 
 
 class TestSimulator(BaseTest):
@@ -146,9 +126,7 @@ class TestSimulator(BaseTest):
         ), f"Error: All init day values should be the same but are {init_day_list}"
         num_vals_eq_to_first = end_day_list.count(end_day_list[0])
         total_num = len(end_day_list)
-        assert (
-            num_vals_eq_to_first == total_num
-        ), f"Error: All end day values should be the same but are {end_day_list}"
+        assert num_vals_eq_to_first == total_num, f"Error: All end day values should be the same but are {end_day_list}"
 
 
 class TestPricingModels(BaseTest):
@@ -162,20 +140,13 @@ class TestPricingModels(BaseTest):
         and then back.
         """
         self.setup_test_vars()
-        for (
-            normalizing_constant,
-            time_stretch,
-            days_remaining,
-            pricing_model,
-        ) in itertools.product(
+        for normalizing_constant, time_stretch, days_remaining, pricing_model, in itertools.product(
             self.normalizing_constant_vals,
             self.time_stretch_vals,
             self.days_remaining_vals,
             self.pricing_models,
         ):
-            time_remaining = pricing_model.days_to_time_remaining(
-                days_remaining, time_stretch, normalizing_constant
-            )
+            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch, normalizing_constant)
             new_days_remaining = pricing_model.time_to_days_remaining(
                 time_remaining, time_stretch, normalizing_constant
             )
@@ -184,16 +155,12 @@ class TestPricingModels(BaseTest):
     def test_calc_spot_price_from_apy(self):
         """Tests spot price by converting to and from an APY."""
         self.setup_test_vars()
-        for (random_spot_price, days_remaining, pricing_model) in itertools.product(
+        for random_spot_price, days_remaining, pricing_model in itertools.product(
             self.spot_price_vals, self.days_remaining_vals, self.pricing_models
         ):
             normalized_days_remaining = days_remaining / 365
-            apy = pricing_model.calc_apy_from_spot_price(
-                random_spot_price, normalized_days_remaining
-            )
-            calculated_spot_price = pricing_model.calc_spot_price_from_apy(
-                apy, normalized_days_remaining
-            )
+            apy = pricing_model.calc_apy_from_spot_price(random_spot_price, normalized_days_remaining)
+            calculated_spot_price = pricing_model.calc_spot_price_from_apy(apy, normalized_days_remaining)
             np.testing.assert_allclose(random_spot_price, calculated_spot_price)
 
     # TODO: def test_calc_spot_price_from_reserves(self):
@@ -229,9 +196,7 @@ class TestPricingModels(BaseTest):
                 init_share_price,
                 init_share_price,
             )[2]
-            calculated_total_liquidity_usd = (
-                calculated_total_liquidity_eth * base_asset_price
-            )
+            calculated_total_liquidity_usd = calculated_total_liquidity_eth * base_asset_price
             np.testing.assert_allclose(target_liquidity, calculated_total_liquidity_usd)
 
     def test_calc_liquidity_given_spot_price(self):
@@ -264,9 +229,7 @@ class TestPricingModels(BaseTest):
                 init_share_price,
             )
             base_asset_reserves, token_asset_reserves = reserves[:2]
-            time_remaining = pricing_model.days_to_time_remaining(
-                days_remaining, time_stretch
-            )
+            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
             total_reserves = base_asset_reserves + token_asset_reserves
             spot_price_from_reserves = pricing_model.calc_spot_price_from_reserves(
                 base_asset_reserves,
@@ -278,9 +241,7 @@ class TestPricingModels(BaseTest):
             )
             # Version 2
             normalized_days_remaining = days_remaining / 365
-            spot_price_from_apy = pricing_model.calc_spot_price_from_apy(
-                random_apy, normalized_days_remaining
-            )
+            spot_price_from_apy = pricing_model.calc_spot_price_from_apy(random_apy, normalized_days_remaining)
             # Test version 1 output == version 2 output
             np.testing.assert_allclose(spot_price_from_reserves, spot_price_from_apy)
 
@@ -314,9 +275,7 @@ class TestPricingModels(BaseTest):
             )
             base_asset_reserves, token_asset_reserves = reserves[:2]
             total_reserves = base_asset_reserves + token_asset_reserves
-            time_remaining = pricing_model.days_to_time_remaining(
-                days_remaining, time_stretch
-            )
+            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
             calculated_apy = pricing_model.calc_apy_from_reserves(
                 base_asset_reserves,
                 token_asset_reserves,
@@ -364,9 +323,7 @@ class TestMarkets(BaseTest):
             )
             base_asset_reserves, token_asset_reserves = reserves[:2]
             total_reserves = base_asset_reserves + token_asset_reserves
-            time_remaining = pricing_model.days_to_time_remaining(
-                days_remaining, time_stretch
-            )
+            time_remaining = pricing_model.days_to_time_remaining(days_remaining, time_stretch)
             calculated_apy = pricing_model.calc_apy_from_reserves(
                 base_asset_reserves,
                 token_asset_reserves,
@@ -386,8 +343,6 @@ class TestMarkets(BaseTest):
                 share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
                 verbose=True,
             )
-            sim_days_remaining = pricing_model.time_to_days_remaining(
-                market.time_remaining, time_stretch
-            )
+            sim_days_remaining = pricing_model.time_to_days_remaining(market.time_remaining, time_stretch)
             market_apy = market.apy(sim_days_remaining)
             np.testing.assert_allclose(calculated_apy, market_apy)
