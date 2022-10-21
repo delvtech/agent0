@@ -307,8 +307,9 @@ class YieldSimulator:
             while day_trading_volume < self.target_daily_volume:
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
-                    (token_index, apy_distance_in_target_range, apy_distance_from_mid_when_in_range,
-                        actual_convergence_strength,expected_proportion,btest) = User.stochastic_direction(
+                    (token_index, self.apy_distance_in_target_range, self.apy_distance_from_mid_when_in_range,
+                        self.actual_convergence_strength,self.expected_proportion,
+                        self.streak_luck,btest) = User.stochastic_direction(
                         pool_apy=pool_apy,
                         pool_apy_target_range=self.pool_apy_target_range,
                         days_trades=days_trades,
@@ -365,15 +366,15 @@ class YieldSimulator:
                     )
                     if self.pool_apy_target_range is not None:
                         print(btest)
-                        print(f"expected_proportion={expected_proportion}")
+                        print(f"expected_proportion={self.expected_proportion}")
                         print(
                             f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
                             f" = {pool_apy:,.4%} apy_distance_in_target_range ="
-                            f" {apy_distance_in_target_range},"
+                            f" {self.apy_distance_in_target_range},"
                             " apy_distance_from_mid_when_in_range ="
-                            f" {apy_distance_from_mid_when_in_range},"
+                            f" {self.apy_distance_from_mid_when_in_range},"
                             " actual_convergence_strength ="
-                            f" {actual_convergence_strength}, token_index ="
+                            f" {self.actual_convergence_strength}, token_index ="
                             f" {token_index}"
                         )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
