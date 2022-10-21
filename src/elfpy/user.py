@@ -12,15 +12,17 @@ class User:
 
     def __init__(self, **kwargs):
         """Nothing to initialize"""
-        pass
 
+    @staticmethod
     def random_direction(rng):
         """Picks random direction"""
         return rng.integers(low=0, high=2)  # 0 or 1
 
+    @staticmethod
     def stochastic_direction(pool_apy,pool_apy_target_range,days_trades,pool_apy_target_range_convergence_speed,rng,
-        verbose=False):
+        run_trade_number,verbose=False):
         """Picks p-value-weighted direction, cutting off tails"""
+        # pylint: disable=too-many-arguments
         btest = []
         expected_proportion = 0
         streak_luck = 0
@@ -57,10 +59,10 @@ class User:
             token_index = 1 - round(sum(days_trades) / len(days_trades))
             print(
                 "trade"
-                f' {self.analysis_dict["run_trade_number"][-1:]}'
+                f' {run_trade_number}'
                 f" days_trades={days_trades}+{token_index}k={sum(days_trades)}"
                 f" n={len(days_trades)} ratio={sum(days_trades)/len(days_trades)}"
-                f" streak_luck: {self.streak_luck}"
+                f" streak_luck: {streak_luck}"
             )
         else:
             if 0 < apy_distance_from_mid_when_in_range < 1:
@@ -74,4 +76,4 @@ class User:
                 else 1 - convergence_direction
             )
         return (token_index, apy_distance_in_target_range, apy_distance_from_mid_when_in_range,
-            actual_convergence_strength,expected_proportion)
+            actual_convergence_strength,expected_proportion,btest)

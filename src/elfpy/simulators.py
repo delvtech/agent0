@@ -13,7 +13,7 @@ from elfpy.pricing_models import YieldSpacev2PricingModel
 
 class YieldSimulator:
     """
-    Stores environment varialbes & market simulation outputs for AMM experimentation
+    Stores environment variables & market simulation outputs for AMM experimentation
 
     Member variables include input settings, random variable ranges, and simulation outputs.
     To be used in conjunction with the Market and PricingModel classes
@@ -308,12 +308,13 @@ class YieldSimulator:
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
                     (token_index, apy_distance_in_target_range, apy_distance_from_mid_when_in_range,
-                        actual_convergence_strength,expected_proportion) = User.stochastic_direction(
+                        actual_convergence_strength,expected_proportion,btest) = User.stochastic_direction(
                         pool_apy=pool_apy,
                         pool_apy_target_range=self.pool_apy_target_range,
                         days_trades=days_trades,
                         pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
                         rng=self.rng,
+                        run_trade_number = self.run_trade_number,
                         verbose=self.verbose,
                     )
                 else:
