@@ -363,18 +363,19 @@ class YieldSimulator:
                         f" ratio={sum(days_trades)/len(days_trades)}"
                         f" streak_luck: {self.streak_luck}"
                     )
-                    print(btest)
-                    print(f"expected_proportion={expected_proportion}")
-                    print(
-                        f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
-                        f" = {pool_apy:,.4%} apy_distance_in_target_range ="
-                        f" {apy_distance_in_target_range},"
-                        " apy_distance_from_mid_when_in_range ="
-                        f" {apy_distance_from_mid_when_in_range},"
-                        " actual_convergence_strength ="
-                        f" {actual_convergence_strength}, token_index ="
-                        f" {token_index}"
-                    )
+                    if self.pool_apy_target_range is not None:
+                        print(btest)
+                        print(f"expected_proportion={expected_proportion}")
+                        print(
+                            f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
+                            f" = {pool_apy:,.4%} apy_distance_in_target_range ="
+                            f" {apy_distance_in_target_range},"
+                            " apy_distance_from_mid_when_in_range ="
+                            f" {apy_distance_from_mid_when_in_range},"
+                            " actual_convergence_strength ="
+                            f" {actual_convergence_strength}, token_index ="
+                            f" {token_index}"
+                        )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
                 self.update_analysis_dict()
                 self.run_trade_number += 1
