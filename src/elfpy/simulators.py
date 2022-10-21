@@ -4,8 +4,8 @@ for experiment tracking and execution
 """
 
 import numpy as np
-from scipy.stats import binomtest
 
+from elfpy.user import User
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import YieldSpacev2PricingModel
@@ -305,62 +305,19 @@ class YieldSimulator:
             day_trading_volume = 0
             days_trades = []
             while day_trading_volume < self.target_daily_volume:
-                btest = []
-                expected_proportion = 0
-                self.streak_luck = 0
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
-                    self.apy_distance_in_target_range = np.clip(
-                        (pool_apy - self.pool_apy_target_range[0])
-                        / (self.pool_apy_target_range[1] - self.pool_apy_target_range[0]),
-                        0,
-                        1,
+                    (token_index, apy_distance_in_target_range, apy_distance_from_mid_when_in_range,
+                        actual_convergence_strength,expected_proportion) = User.stochastic_direction(
+                        pool_apy=pool_apy,
+                        pool_apy_target_range=self.pool_apy_target_range,
+                        days_trades=days_trades,
+                        pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
+                        rng=self.rng,
+                        verbose=self.verbose,
                     )
-                    convergence_direction = (
-                        0 if self.apy_distance_in_target_range > 0.5 else 1
-                    )  # if you're above the midpoint of the targe range
-                    self.apy_distance_from_mid_when_in_range = np.clip(
-                        np.abs(self.apy_distance_in_target_range - 0.5) * 2, 0, 1
-                    )  # 0 if you're at the midpoint, 1 if you're at the edge
-                    self.actual_convergence_strength = (
-                        0.5
-                        + (self.pool_apy_target_range_convergence_speed - 0.5)
-                        * self.apy_distance_from_mid_when_in_range
-                    )  # pool_apy_target_range_convergence_speed at edge or outside, scales to 0 at midpoint
-                    expected_proportion = (
-                        self.actual_convergence_strength
-                        if convergence_direction == 1
-                        else 1 - self.actual_convergence_strength
-                    )
-                    if len(days_trades) > 0:
-                        btest = binomtest(
-                            k=sum(days_trades),
-                            n=len(days_trades),
-                            p=expected_proportion,
-                        )
-                        self.streak_luck = 1 - btest.pvalue
-                    if self.streak_luck > 0.98:
-                        token_index = 1 - round(sum(days_trades) / len(days_trades))
-                        print(
-                            "trade"
-                            f' {self.analysis_dict["run_trade_number"][-1:]}'
-                            f" days_trades={days_trades}+{token_index}k={sum(days_trades)}"
-                            f" n={len(days_trades)} ratio={sum(days_trades)/len(days_trades)}"
-                            f" streak_luck: {self.streak_luck}"
-                        )
-                    else:
-                        if 0 < self.apy_distance_from_mid_when_in_range < 1:
-                            self.actual_convergence_strength = (
-                                self.actual_convergence_strength
-                                + (1 - self.actual_convergence_strength) * self.streak_luck**1.5
-                            )  # force convergence when on bad streaks
-                        token_index = (
-                            convergence_direction
-                            if self.rng.random() < self.actual_convergence_strength
-                            else 1 - convergence_direction
-                        )
                 else:
-                    token_index = self.rng.integers(low=0, high=2)  # 0 or 1
+                    token_index = User.random_direction(self.rng)
                 days_trades.append(token_index)
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1 - token_index]
@@ -410,11 +367,11 @@ class YieldSimulator:
                     print(
                         f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
                         f" = {pool_apy:,.4%} apy_distance_in_target_range ="
-                        f" {self.apy_distance_in_target_range},"
+                        f" {apy_distance_in_target_range},"
                         " apy_distance_from_mid_when_in_range ="
-                        f" {self.apy_distance_from_mid_when_in_range},"
+                        f" {apy_distance_from_mid_when_in_range},"
                         " actual_convergence_strength ="
-                        f" {self.actual_convergence_strength}, token_index ="
+                        f" {actual_convergence_strength}, token_index ="
                         f" {token_index}"
                     )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
