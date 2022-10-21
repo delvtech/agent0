@@ -4,6 +4,8 @@ for experiment tracking and execution
 """
 
 import numpy as np
+
+from elfpy.user import User
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import YieldSpacev2PricingModel
@@ -11,7 +13,7 @@ from elfpy.pricing_models import YieldSpacev2PricingModel
 
 class YieldSimulator:
     """
-    Stores environment varialbes & market simulation outputs for AMM experimentation
+    Stores environment variables & market simulation outputs for AMM experimentation
 
     Member variables include input settings, random variable ranges, and simulation outputs.
     To be used in conjunction with the Market and PricingModel classes
@@ -41,6 +43,9 @@ class YieldSimulator:
         self.max_target_volume = kwargs.get("max_target_volume")
         self.min_pool_apy = kwargs.get("min_pool_apy")  # as a decimal
         self.max_pool_apy = kwargs.get("max_pool_apy")  # as a decimal
+        self.pool_apy_target_range = kwargs.get("pool_apy_target_range")
+        self.pool_apy_target_range_convergence_speed = kwargs.get("pool_apy_target_range_convergence_speed")
+        self.streak_luck = kwargs.get("streak_luck")
         self.min_vault_age = kwargs.get("min_vault_age")
         self.max_vault_age = kwargs.get("max_vault_age")
         self.min_vault_apy = kwargs.get("min_vault_apy")  # as a decimal
@@ -54,6 +59,7 @@ class YieldSimulator:
         self.num_trading_days = kwargs.get("num_trading_days")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
+        self.expected_proportion = 0
         self.run_number = 0.00
         self.run_trade_number = 0
         # Random variables
@@ -80,6 +86,9 @@ class YieldSimulator:
         self.without_fee = None
         self.fee = None
         self.random_variables_set = False
+        self.apy_distance_in_target_range = None
+        self.apy_distance_from_mid_when_in_range = None
+        self.actual_convergence_strength = None
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
             "run_number",
@@ -91,6 +100,9 @@ class YieldSimulator:
             "target_liquidity",
             "target_daily_volume",
             "pool_apy",
+            "pool_apy_target_range",
+            "pool_apy_target_range_convergence_speed",
+            "streak_luck",
             "fee_percent",
             "floor_fee",
             "init_vault_age",
@@ -109,6 +121,9 @@ class YieldSimulator:
             "out_without_fee_slippage",
             "out_with_fee",
             "out_without_fee",
+            "apy_distance_in_target_range",
+            "apy_distance_from_mid_when_in_range",
+            "actual_convergence_strength",
             "fee",
             "slippage",
             "pool_duration",
@@ -189,10 +204,10 @@ class YieldSimulator:
         trade_amount_usd = self.rng.normal(trade_mean, trade_std)
         trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
         assert trade_amount_usd >= 0, (
-            f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
-            f' token_in={self.token_in} trade_direction={self.trade_direction}'
-            f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
-            f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
+            f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
+            f" token_in={self.token_in} trade_direction={self.trade_direction}"
+            f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
+            f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
         )
         return trade_amount_usd
 
@@ -289,8 +304,30 @@ class YieldSimulator:
             # Could define a 'trade amount & direction' time series that's a function of the vault apy
             # Could support using actual historical trades or a fit to historical trades)
             day_trading_volume = 0
+            days_trades = []
             while day_trading_volume < self.target_daily_volume:
-                token_index = self.rng.integers(low=0, high=2)  # 0 or 1
+                if self.pool_apy_target_range is not None:
+                    pool_apy = self.market.apy(self.get_days_remaining())
+                    (
+                        token_index,
+                        self.apy_distance_in_target_range,
+                        self.apy_distance_from_mid_when_in_range,
+                        self.actual_convergence_strength,
+                        self.expected_proportion,
+                        self.streak_luck,
+                        btest,
+                    ) = User.stochastic_direction(
+                        pool_apy=pool_apy,
+                        pool_apy_target_range=self.pool_apy_target_range,
+                        days_trades=days_trades,
+                        pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
+                        rng=self.rng,
+                        run_trade_number=self.run_trade_number,
+                        verbose=self.verbose,
+                    )
+                else:
+                    token_index = User.random_direction(self.rng)
+                days_trades.append(token_index)
                 self.token_in = self.tokens[token_index]
                 self.token_out = self.tokens[1 - token_index]
                 self.trade_amount_usd = self.get_trade_amount_usd(
@@ -298,6 +335,12 @@ class YieldSimulator:
                     self.trade_direction,
                     self.target_daily_volume,
                     self.base_asset_price,
+                )
+                assert self.trade_amount_usd >= 0, (
+                    f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
+                    f" token_in={self.token_in} trade_direction={self.trade_direction}"
+                    f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
+                    f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
                 )
                 self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                 if self.verbose:
@@ -307,6 +350,7 @@ class YieldSimulator:
                         + f"init_share_price={self.market.init_share_price}, "
                         + f"share_price={self.market.share_price}, "
                         + f"amount={self.trade_amount}, "
+                        + f"apy={pool_apy}, "
                         + f"reserves={(self.market.base_asset, self.market.token_asset)}"
                     )
                 # Conduct trade & update state
@@ -316,6 +360,30 @@ class YieldSimulator:
                     self.token_in,  # base or fyt
                     self.token_out,  # opposite of token_in
                 )
+                pool_apy = self.market.apy(self.get_days_remaining())
+                if pool_apy > 0.2:
+                    print(
+                        "trade"
+                        f' {self.analysis_dict["run_trade_number"][-1:]}'
+                        f" days_trades={days_trades}"
+                        f" k={sum(days_trades)}"
+                        f" n={len(days_trades)}"
+                        f" ratio={sum(days_trades)/len(days_trades)}"
+                        f" streak_luck: {self.streak_luck}"
+                    )
+                    if self.pool_apy_target_range is not None:
+                        print(btest)
+                        print(f"expected_proportion={self.expected_proportion}")
+                        print(
+                            f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
+                            f" = {pool_apy:,.4%} apy_distance_in_target_range ="
+                            f" {self.apy_distance_in_target_range},"
+                            " apy_distance_from_mid_when_in_range ="
+                            f" {self.apy_distance_from_mid_when_in_range},"
+                            " actual_convergence_strength ="
+                            f" {self.actual_convergence_strength}, token_index ="
+                            f" {token_index}"
+                        )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
                 self.update_analysis_dict()
                 self.run_trade_number += 1
@@ -338,6 +406,11 @@ class YieldSimulator:
         self.analysis_dict["init_time_stretch"].append(self.init_time_stretch)
         self.analysis_dict["target_liquidity"].append(self.target_liquidity)
         self.analysis_dict["target_daily_volume"].append(self.target_daily_volume)
+        self.analysis_dict["pool_apy_target_range"].append(self.pool_apy_target_range)
+        self.analysis_dict["pool_apy_target_range_convergence_speed"].append(
+            self.pool_apy_target_range_convergence_speed
+        )
+        self.analysis_dict["streak_luck"].append(self.streak_luck)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.init_vault_age)
@@ -364,6 +437,9 @@ class YieldSimulator:
         self.analysis_dict["trade_amount"].append(self.trade_amount)
         self.analysis_dict["trade_amount_usd"].append(self.trade_amount_usd)
         self.analysis_dict["share_price"].append(self.market.share_price)
+        self.analysis_dict["apy_distance_in_target_range"].append(self.apy_distance_in_target_range)
+        self.analysis_dict["apy_distance_from_mid_when_in_range"].append(self.apy_distance_from_mid_when_in_range)
+        self.analysis_dict["actual_convergence_strength"].append(self.actual_convergence_strength)
         if self.fee is None:
             self.analysis_dict["out_without_fee_slippage"].append(None)
             self.analysis_dict["out_with_fee"].append(None)
