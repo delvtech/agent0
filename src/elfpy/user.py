@@ -75,5 +75,12 @@ class User:
             token_index = (
                 convergence_direction if rng.random() < actual_convergence_strength else 1 - convergence_direction
             )
-        return (token_index,apy_distance_in_target_range,apy_distance_from_mid_when_in_range,
-            actual_convergence_strength,expected_proportion,streak_luck,btest)
+        return (
+            token_index,
+            apy_distance_in_target_range,
+            apy_distance_from_mid_when_in_range,
+            actual_convergence_strength,
+            expected_proportion,
+            streak_luck,
+            btest,
+        )

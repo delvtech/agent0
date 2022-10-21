@@ -46,10 +46,10 @@ def format_trades(analysis_dict):
     trades["lp_total_return_percent"] = trades.lp_total_return * 100
     trades["price_total_return_percent"] = trades.price_total_return * 100
     trades["share_price_total_return_percent"] = trades.share_price_total_return * 100
-    scale = 365 / ( trades["day"] + 1 )
-    trades["lp_total_return_percent_annualized"]           = scale * trades["lp_total_return_percent"]
-    trades["price_total_return_percent_annualized"]        = scale * trades["price_total_return_percent"]
-    trades["share_price_total_return_percent_annualized"]  = scale * trades["share_price_total_return_percent"]
+    scale = 365 / (trades["day"] + 1)
+    trades["lp_total_return_percent_annualized"] = scale * trades["lp_total_return_percent"]
+    trades["price_total_return_percent_annualized"] = scale * trades["price_total_return_percent"]
+    trades["share_price_total_return_percent_annualized"] = scale * trades["share_price_total_return_percent"]
 
     # create explicit column that increments per trade
     trades = trades.reset_index()
@@ -75,9 +75,8 @@ def format_trades(analysis_dict):
     trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
     trades_agg["fee_in_usd_cum_sum"] = 0
     trades_agg = trades_agg.reset_index()
-    for model in trades_agg.loc[:,keep_columns[0]].unique():
-        trades_agg.loc[trades_agg.loc[:,keep_columns[0]] == model, "fee_in_usd_cum_sum"] = trades_agg.loc[
-            trades_agg.loc[:,keep_columns[0]] == model, "fee_in_usd_sum"
+    for model in trades_agg.loc[:, keep_columns[0]].unique():
+        trades_agg.loc[trades_agg.loc[:, keep_columns[0]] == model, "fee_in_usd_cum_sum"] = trades_agg.loc[
+            trades_agg.loc[:, keep_columns[0]] == model, "fee_in_usd_sum"
         ].cumsum()
     return [trades, trades_agg]
-    

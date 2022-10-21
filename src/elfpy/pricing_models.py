@@ -557,8 +557,8 @@ class YieldSpacev2PricingModel(PricingModel):
             # Fee math
             fee = (in_ - without_fee) * fee_percent
             assert fee >= 0, (
-                f'ERROR: Fee should not be negative fee={fee}'
-                f' in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}'
+                f"ERROR: Fee should not be negative fee={fee}"
+                f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
             if fee / in_ < self.floor_fee / 100 / 100:
                 fee = in_ * self.floor_fee / 100 / 100
@@ -579,8 +579,8 @@ class YieldSpacev2PricingModel(PricingModel):
             # Fee math
             fee = (without_fee - in_) * fee_percent
             assert fee >= 0, (
-                f'ERROR: Fee should not be negative fee={fee}'
-                f' in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}'
+                f"ERROR: Fee should not be negative fee={fee}"
+                f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
             if fee / in_ < self.floor_fee / 100 / 100:
                 fee = in_ * self.floor_fee / 100 / 100

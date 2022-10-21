@@ -59,6 +59,7 @@ class YieldSimulator:
         self.num_trading_days = kwargs.get("num_trading_days")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
+        self.expected_proportion = 0
         self.run_number = 0.00
         self.run_trade_number = 0
         # Random variables
@@ -203,10 +204,10 @@ class YieldSimulator:
         trade_amount_usd = self.rng.normal(trade_mean, trade_std)
         trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
         assert trade_amount_usd >= 0, (
-            f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
-            f' token_in={self.token_in} trade_direction={self.trade_direction}'
-            f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
-            f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
+            f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
+            f" token_in={self.token_in} trade_direction={self.trade_direction}"
+            f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
+            f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
         )
         return trade_amount_usd
 
@@ -307,15 +308,21 @@ class YieldSimulator:
             while day_trading_volume < self.target_daily_volume:
                 if self.pool_apy_target_range is not None:
                     pool_apy = self.market.apy(self.get_days_remaining())
-                    (token_index, self.apy_distance_in_target_range, self.apy_distance_from_mid_when_in_range,
-                        self.actual_convergence_strength,self.expected_proportion,
-                        self.streak_luck,btest) = User.stochastic_direction(
+                    (
+                        token_index,
+                        self.apy_distance_in_target_range,
+                        self.apy_distance_from_mid_when_in_range,
+                        self.actual_convergence_strength,
+                        self.expected_proportion,
+                        self.streak_luck,
+                        btest,
+                    ) = User.stochastic_direction(
                         pool_apy=pool_apy,
                         pool_apy_target_range=self.pool_apy_target_range,
                         days_trades=days_trades,
                         pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
                         rng=self.rng,
-                        run_trade_number = self.run_trade_number,
+                        run_trade_number=self.run_trade_number,
                         verbose=self.verbose,
                     )
                 else:
@@ -330,10 +337,10 @@ class YieldSimulator:
                     self.base_asset_price,
                 )
                 assert self.trade_amount_usd >= 0, (
-                    f'ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}'
-                    f' token_in={self.token_in} trade_direction={self.trade_direction}'
-                    f' target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}'
-                    f' base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}'
+                    f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
+                    f" token_in={self.token_in} trade_direction={self.trade_direction}"
+                    f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
+                    f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
                 )
                 self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                 if self.verbose:
