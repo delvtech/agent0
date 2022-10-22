@@ -93,6 +93,22 @@ class Market:
                 + f"\npricing_model={self.pricing_model}"
             )
 
+    def get_target_reserves(self, token_in, trade_direction):
+        """
+        Determine which asset is the target based on token_in and trade_direction
+        """
+        if trade_direction == "in":
+            if token_in == "fyt":
+                target_reserves = self.token_asset
+            else:
+                target_reserves = self.base_asset
+        elif trade_direction == "out":
+            if token_in == "fyt":
+                target_reserves = self.base_asset
+            else:
+                target_reserves = self.token_asset
+        return target_reserves
+
     def check_fees(
         self,
         amount,

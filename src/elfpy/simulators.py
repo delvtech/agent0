@@ -6,6 +6,7 @@ TODO: rewrite all functions to have typed inputs
 """
 
 import numpy as np
+from zmq import THREAD_SCHED_POLICY
 
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
@@ -80,6 +81,7 @@ class YieldSimulator:
         self.time_stretch = None
         self.pricing_model = None
         self.market = None
+        self.user = None
         self.step_size = None
         self.trade_amount = None
         self.trade_amount_usd = None
@@ -187,22 +189,6 @@ class YieldSimulator:
         ), f"rng type must be a random number generator, not {type(rng)}."
         self.rng = rng
 
-    def get_target_reserves(self, token_in, trade_direction):
-        """
-        Determine which asset is the target based on token_in and trade_direction
-        """
-        if trade_direction == "in":
-            if token_in == "fyt":
-                target_reserves = self.market.token_asset
-            else:
-                target_reserves = self.market.base_asset
-        elif trade_direction == "out":
-            if token_in == "fyt":
-                target_reserves = self.market.base_asset
-            else:
-                target_reserves = self.market.token_asset
-        return target_reserves
-
     def setup_pricing_and_market(self, override_dict=None):
         """Constructs the pricing model and market member variables"""
         # Update parameters if the user provided new ones
@@ -214,16 +200,10 @@ class YieldSimulator:
                 if hasattr(self, key):
                     setattr(self, key, override_dict[key])
                     if key == "vault_apy":
-                        if isinstance(override_dict[key], list):
-                            assert len(override_dict[key]) == self.num_trading_days, (
-                                f"vault_apy must have len equal to num_trading_days = {self.num_trading_days},"
-                                + f" not {len(override_dict[key])}"
-                            )
-                        else:
-                            vault_apy = [
-                                override_dict[key],
-                            ] * self.num_trading_days
-                            setattr(self, key, vault_apy)
+                        assert len(override_dict[key]) == self.num_trading_days, (
+                            f"vault_apy must have len equal to num_trading_days = {self.num_trading_days},"
+                            + f" not {len(override_dict[key])}"
+                        )
         if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
         else:
@@ -263,6 +243,7 @@ class YieldSimulator:
         self.step_size = self.pricing_model.days_to_time_remaining(
             step_scale, self.init_time_stretch, normalizing_constant=365
         )
+        # Construct user object
         user_kwargs = {
             "verbose": self.verbose,
             "rng": self.rng,
@@ -313,12 +294,8 @@ class YieldSimulator:
             # Could support using actual historical trades or a fit to historical trades)
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
-                (self.token_in, self.token_out) = self.user.get_tokens_in_out(self.tokens)
-                target_reserves = self.get_target_reserves(self.token_in, self.trade_direction)
-                self.trade_amount_usd = self.user.get_trade_amount_usd(
-                    target_reserves,
-                    self.target_daily_volume,
-                    self.base_asset_price,
+                (self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
+                    self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
                 )
                 if self.user_type.lower() == "weightedrandom":  # update internal state
                     self.user.update_internal_state(
