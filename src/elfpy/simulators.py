@@ -320,7 +320,7 @@ class YieldSimulator:
                     self.target_daily_volume,
                     self.base_asset_price,
                 )
-                if self.user_type.lower() == "weightedrandom": # update internal state
+                if self.user_type.lower() == "weightedrandom":  # update internal state
                     self.user.update_internal_state(
                         self.get_days_remaining(),
                         self.pool_apy_target_range,

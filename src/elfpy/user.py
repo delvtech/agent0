@@ -50,7 +50,7 @@ class RandomUser(User):
         token_in = tokens[direction_index]
         token_out = tokens[1 - direction_index]
         return (token_in, token_out)
-    
+
 
 class WeightedRandomUser(User):
     """
@@ -65,7 +65,7 @@ class WeightedRandomUser(User):
         self.pool_apy_target_range = kwargs["pool_apy_target_range"]
         self.pool_apy_target_range_convergence_speed = kwargs["pool_apy_target_range_convergence_speed"]
         self.run_trade_number = kwargs["run_trade_number"]
-        state_keys =  [
+        state_keys = [
             "token_index",
             "apy_distance_in_target_range",
             "apy_distance_from_mid_when_in_range",
@@ -75,8 +75,10 @@ class WeightedRandomUser(User):
             "btest",
         ]
         self.user_state = {key: [] for key in state_keys}
-    
-    def update_internal_state(self, days_remaining, pool_apy_target_range, pool_apy_target_range_convergence_speed, run_trade_number):
+
+    def update_internal_state(
+        self, days_remaining, pool_apy_target_range, pool_apy_target_range_convergence_speed, run_trade_number
+    ):
         """Updates the internal state"""
         self.days_remaining = days_remaining
         self.pool_apy_target_range = pool_apy_target_range
@@ -93,7 +95,6 @@ class WeightedRandomUser(User):
             pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
             rng=self.rng,
             run_trade_number=self.run_trade_number,
-            verbose=self.verbose,
         )
         self.update_external_state(**output)
         direction_index = output[0]
@@ -109,7 +110,6 @@ class WeightedRandomUser(User):
         pool_apy_target_range_convergence_speed,
         rng,
         run_trade_number,
-        verbose=False,
     ):
         """Picks p-value-weighted direction, cutting off tails"""
         # pylint: disable=too-many-arguments
@@ -140,7 +140,7 @@ class WeightedRandomUser(User):
                 p=expected_proportion,
             )
             streak_luck = 1 - btest.pvalue
-        if streak_luck > 0.98 and verbose:
+        if self.verbose and streak_luck > 0.98:
             token_index = 1 - round(sum(days_trades) / len(days_trades))
             print(
                 "trade"
@@ -158,7 +158,7 @@ class WeightedRandomUser(User):
                 convergence_direction if rng.random() < actual_convergence_strength else 1 - convergence_direction
             )
         self.days_trades.append(token_index)
-        if verbose and pool_apy > 0.2:
+        if self.verbose and pool_apy > 0.2:
             print(
                 "trade"
                 + f" {run_trade_number}"
@@ -190,7 +190,7 @@ class WeightedRandomUser(User):
             streak_luck,
             btest,
         )
-    
+
     def update_external_state(
         self,
         token_index,
