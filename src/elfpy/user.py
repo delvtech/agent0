@@ -70,12 +70,10 @@ class WeightedRandomUser(User):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.market = kwargs["market"]
-        self.days_remaining = kwargs["days_remaining"]
         self.days_trades = kwargs["days_trades"]
+        self.pool_apy = kwargs["pool_apy"]
         self.pool_apy_target_range = kwargs["pool_apy_target_range"]
         self.pool_apy_target_range_convergence_speed = kwargs["pool_apy_target_range_convergence_speed"]
-        self.run_trade_number = kwargs["run_trade_number"]
         state_keys = [
             "direction_index",
             "apy_distance_in_target_range",
@@ -87,19 +85,13 @@ class WeightedRandomUser(User):
         ]
         self.user_state = {key: [] for key in state_keys}
 
-    def update_internal_state(
-        self, days_remaining, pool_apy_target_range, pool_apy_target_range_convergence_speed, run_trade_number
-    ):
-        """Updates the internal state"""
-        self.days_remaining = days_remaining
-        self.pool_apy_target_range = pool_apy_target_range
-        self.pool_apy_target_range_convergence_speed = pool_apy_target_range_convergence_speed
-        self.run_trade_number = run_trade_number
+    def set_market_apy(self, apy):
+        """Required to track simulation state variables"""
+        self.pool_apy = apy
 
     def get_tokens_in_out(self, tokens):
         """Select one of two possible trade directions with equal probability"""
-        pool_apy = self.market.apy(self.days_remaining)
-        direction_index = self.stochastic_direction(pool_apy)
+        direction_index = self.stochastic_direction(self.pool_apy)
         token_in = tokens[direction_index]
         token_out = tokens[1 - direction_index]
         return (token_in, token_out)
@@ -138,8 +130,6 @@ class WeightedRandomUser(User):
         if self.verbose and streak_luck > 0.98:
             direction_index = 1 - round(sum(self.days_trades) / len(self.days_trades))
             print(
-                "trade"
-                f" {self.run_trade_number}"
                 f" days_trades={self.days_trades}+{direction_index}k={sum(self.days_trades)}"
                 f" n={len(self.days_trades)} ratio={sum(self.days_trades)/len(self.days_trades)}"
                 f" streak_luck: {streak_luck}"
@@ -155,8 +145,6 @@ class WeightedRandomUser(User):
         self.days_trades.append(direction_index)
         if self.verbose and pool_apy > 0.2:
             print(
-                "trade"
-                + f" {self.run_trade_number}"
                 + f" days_trades={self.days_trades}"
                 + f" k={sum(self.days_trades)}"
                 + f" n={len(self.days_trades)}"
@@ -167,8 +155,7 @@ class WeightedRandomUser(User):
                 print(btest)
                 print(f"expected_proportion={expected_proportion}")
                 print(
-                    f"trade {self.run_trade_number} pool_apy"
-                    + f" = {pool_apy:,.4%} apy_distance_in_target_range ="
+                    + f" pool_apy = {pool_apy:,.4%} apy_distance_in_target_range ="
                     + f" {apy_distance_in_target_range},"
                     + " apy_distance_from_mid_when_in_range ="
                     + f" {apy_distance_from_mid_when_in_range},"

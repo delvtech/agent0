@@ -254,6 +254,7 @@ class YieldSimulator:
             user_kwargs["market"] = self.market
             user_kwargs["days_remaining"] = self.get_days_remaining()
             user_kwargs["days_trades"] = []
+            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
             user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
             user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
             user_kwargs["run_trade_number"] = self.run_trade_number
@@ -297,13 +298,8 @@ class YieldSimulator:
                 (self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
                     self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
                 )
-                if self.user_type.lower() == "weightedrandom":  # update internal state
-                    self.user.update_internal_state(
-                        self.get_days_remaining(),
-                        self.pool_apy_target_range,
-                        self.pool_apy_target_range_convergence_speed,
-                        self.run_trade_number,
-                    )
+                if self.user_type.lower() == "weightedrandom":  # sync user with market
+                    self.user.set_market_apy(self.market.apy(self.get_days_remaining()))
                 assert self.trade_amount_usd >= 0, (
                     f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
                     f" token_in={self.token_in} trade_direction={self.trade_direction}"
