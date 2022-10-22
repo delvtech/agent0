@@ -1,5 +1,7 @@
 """
 Market simulators store state information when interfacing AMM pricing models with users
+
+TODO: rewrite all functions to have typed inputs
 """
 
 # Currently many functions use >5 arguments.

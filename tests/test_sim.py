@@ -45,6 +45,7 @@ class BaseTest(unittest.TestCase):
             "trade_direction": "out",
             "precision": None,
             "pricing_model_name": "Element",
+            "user_type": "Random",
             "rng": simulator_rng,
             "verbose": False,
         }
