@@ -4,6 +4,12 @@ Implements abstract classes that control user behavior
 TODO: rewrite all functions to have typed inputs
 """
 
+# Currently many functions use >5 arguments.
+# These should be packaged up into shared variables, e.g.
+#     reserves = (in_reserves, out_reserves)
+#     share_prices = (init_share_price, share_price)
+# pylint: disable=too-many-arguments
+
 import numpy as np
 from scipy.stats import binomtest
 
@@ -21,8 +27,9 @@ class User:
         """
         self.rng = kwargs["rng"]
         self.verbose = kwargs["verbose"]
-    
+
     def get_direction_index(self):
+        """Returns an index in the set (0, 1) that indicates the trade direction"""
         raise NotImplementedError
 
     def get_tokens_in_out(self, tokens):
@@ -145,23 +152,23 @@ class WeightedRandomUser(User):
         self.days_trades.append(direction_index)
         if self.verbose and pool_apy > 0.2:
             print(
-                + f" days_trades={self.days_trades}"
-                + f" k={sum(self.days_trades)}"
-                + f" n={len(self.days_trades)}"
-                + f" ratio={sum(self.days_trades)/len(self.days_trades)}"
-                + f" streak_luck: {streak_luck}"
+                f" days_trades={self.days_trades}"
+                f" k={sum(self.days_trades)}"
+                f" n={len(self.days_trades)}"
+                f" ratio={sum(self.days_trades)/len(self.days_trades)}"
+                f" streak_luck: {streak_luck}"
             )
             if self.pool_apy_target_range is not None:
                 print(btest)
                 print(f"expected_proportion={expected_proportion}")
                 print(
-                    + f" pool_apy = {pool_apy:,.4%} apy_distance_in_target_range ="
-                    + f" {apy_distance_in_target_range},"
-                    + " apy_distance_from_mid_when_in_range ="
-                    + f" {apy_distance_from_mid_when_in_range},"
-                    + " actual_convergence_strength ="
-                    + f" {actual_convergence_strength}, direction_index ="
-                    + f" {direction_index}"
+                    f" pool_apy = {pool_apy:,.4%} apy_distance_in_target_range ="
+                    f" {apy_distance_in_target_range},"
+                    " apy_distance_from_mid_when_in_range ="
+                    f" {apy_distance_from_mid_when_in_range},"
+                    " actual_convergence_strength ="
+                    f" {actual_convergence_strength}, direction_index ="
+                    f" {direction_index}"
                 )
         # Append new values the internal user state
         self.user_state["direction_index"].append(direction_index)
