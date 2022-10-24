@@ -1,5 +1,7 @@
 """
 Pricing models implement automated market makers (AMMs)
+
+TODO: rewrite all functions to have typed inputs
 """
 
 # Currently many functions use >5 arguments.

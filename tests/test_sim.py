@@ -45,6 +45,7 @@ class BaseTest(unittest.TestCase):
             "trade_direction": "out",
             "precision": None,
             "pricing_model_name": "Element",
+            "user_type": "Random",
             "rng": simulator_rng,
             "verbose": False,
         }
@@ -66,6 +67,23 @@ class BaseTest(unittest.TestCase):
         self.spot_price_vals = np.maximum(1e-5, self.test_rng.normal(loc=1, scale=0.5, size=num_vals_per_variable))
         self.pool_apy_vals = np.maximum(1e-5, self.test_rng.normal(loc=0.2, scale=0.1, size=num_vals_per_variable))
         self.fee_percent_vals = self.test_rng.normal(loc=0.1, scale=0.01, size=num_vals_per_variable)
+
+
+class TestUser(BaseTest):
+    """User test class"""
+
+    def test_user_types(self):
+        """Test constructing each user type"""
+        self.setup_test_vars()
+        self.config["pool_apy_target_range"] = [0.15,0.20]
+        self.config["pool_apy_target_range_convergence_speed"] = 0.52
+        for user_type in ["Random", "WeightedRandom"]:
+            override_dict = {
+                "user_type": user_type,
+            }
+            simulator = YieldSimulator(**self.config)
+            simulator.set_random_variables()
+            simulator.run_simulation(override_dict)
 
 
 class TestSimulator(BaseTest):

@@ -1,14 +1,17 @@
 """
 Simulator class wraps the pricing models and markets
 for experiment tracking and execution
+
+TODO: rewrite all functions to have typed inputs
 """
 
 import numpy as np
 
-from elfpy.user import User
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import YieldSpacev2PricingModel
+from elfpy.user import RandomUser
+from elfpy.user import WeightedRandomUser
 
 
 class YieldSimulator:
@@ -57,6 +60,7 @@ class YieldSimulator:
         self.trade_direction = kwargs.get("trade_direction")
         self.pool_duration = kwargs.get("pool_duration")
         self.num_trading_days = kwargs.get("num_trading_days")
+        self.user_type = kwargs.get("user_type")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
         self.expected_proportion = 0
@@ -76,6 +80,7 @@ class YieldSimulator:
         self.time_stretch = None
         self.pricing_model = None
         self.market = None
+        self.user = None
         self.step_size = None
         self.trade_amount = None
         self.trade_amount_usd = None
@@ -183,33 +188,31 @@ class YieldSimulator:
         ), f"rng type must be a random number generator, not {type(rng)}."
         self.rng = rng
 
-    def get_trade_amount_usd(self, token_in, trade_direction, target_volume, market_price):
-        """
-        Compute trade amount, which can't be more than the available reserves.
+    def set_pricing_model(self, model_name):
+        """Assign a PricingModel object to the pricing_model attribute"""
+        if model_name.lower() == "yieldspacev2":
+            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
+        elif model_name.lower() == "element":
+            self.pricing_model = ElementPricingModel(self.verbose)
+        else:
+            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {model_name}')
 
-        TODO: Sync with smart contract team & parity their check for maximum trade amount
-        """
-        if trade_direction == "in":
-            if token_in == "fyt":
-                target_reserves = self.market.token_asset
-            else:
-                target_reserves = self.market.base_asset
-        elif trade_direction == "out":
-            if token_in == "fyt":
-                target_reserves = self.market.base_asset
-            else:
-                target_reserves = self.market.token_asset
-        trade_mean = target_volume / 10
-        trade_std = target_volume / 100
-        trade_amount_usd = self.rng.normal(trade_mean, trade_std)
-        trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
-        assert trade_amount_usd >= 0, (
-            f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
-            f" token_in={self.token_in} trade_direction={self.trade_direction}"
-            f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
-            f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
-        )
-        return trade_amount_usd
+    def set_user(self, user_type):
+        """Assign a User object to the user attribute"""
+        user_kwargs = {
+            "verbose": self.verbose,
+            "rng": self.rng,
+        }
+        if user_type.lower() == "random":
+            self.user = RandomUser(**user_kwargs)
+        elif user_type.lower() == "weightedrandom":
+            user_kwargs["days_trades"] = []
+            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
+            user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
+            user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
+            self.user = WeightedRandomUser(**user_kwargs)
+        else:
+            raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
 
     def setup_pricing_and_market(self, override_dict=None):
         """Constructs the pricing model and market member variables"""
@@ -222,29 +225,17 @@ class YieldSimulator:
                 if hasattr(self, key):
                     setattr(self, key, override_dict[key])
                     if key == "vault_apy":
-                        if isinstance(override_dict[key], list):
-                            assert len(override_dict[key]) == self.num_trading_days, (
-                                f"vault_apy must have len equal to num_trading_days = {self.num_trading_days},"
-                                + f" not {len(override_dict[key])}"
-                            )
-                        else:
-                            vault_apy = [
-                                override_dict[key],
-                            ] * self.num_trading_days
-                            setattr(self, key, vault_apy)
+                        assert len(override_dict[key]) == self.num_trading_days, (
+                            f"vault_apy must have len equal to num_trading_days = {self.num_trading_days},"
+                            + f" not {len(override_dict[key])}"
+                        )
         if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
         else:
             self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
-        # Initiate pricing model
-        if self.pricing_model_name.lower() == "yieldspacev2":
-            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
-        elif self.pricing_model_name.lower() == "element":
-            self.pricing_model = ElementPricingModel(self.verbose)
-        else:
-            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {self.pricing_model_name}')
+        self.set_pricing_model(self.pricing_model_name) # construct pricing model object
         self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -271,6 +262,7 @@ class YieldSimulator:
         self.step_size = self.pricing_model.days_to_time_remaining(
             step_scale, self.init_time_stretch, normalizing_constant=365
         )
+        self.set_user(self.user_type) # construct user object
 
     def run_simulation(self, override_dict=None):
         """
@@ -304,38 +296,12 @@ class YieldSimulator:
             # Could define a 'trade amount & direction' time series that's a function of the vault apy
             # Could support using actual historical trades or a fit to historical trades)
             day_trading_volume = 0
-            days_trades = []
             while day_trading_volume < self.target_daily_volume:
-                if self.pool_apy_target_range is not None:
-                    pool_apy = self.market.apy(self.get_days_remaining())
-                    (
-                        token_index,
-                        self.apy_distance_in_target_range,
-                        self.apy_distance_from_mid_when_in_range,
-                        self.actual_convergence_strength,
-                        self.expected_proportion,
-                        self.streak_luck,
-                        btest,
-                    ) = User.stochastic_direction(
-                        pool_apy=pool_apy,
-                        pool_apy_target_range=self.pool_apy_target_range,
-                        days_trades=days_trades,
-                        pool_apy_target_range_convergence_speed=self.pool_apy_target_range_convergence_speed,
-                        rng=self.rng,
-                        run_trade_number=self.run_trade_number,
-                        verbose=self.verbose,
-                    )
-                else:
-                    token_index = User.random_direction(self.rng)
-                days_trades.append(token_index)
-                self.token_in = self.tokens[token_index]
-                self.token_out = self.tokens[1 - token_index]
-                self.trade_amount_usd = self.get_trade_amount_usd(
-                    self.token_in,
-                    self.trade_direction,
-                    self.target_daily_volume,
-                    self.base_asset_price,
+                (self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
+                    self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
                 )
+                if self.user_type.lower() == "weightedrandom":  # sync user with market
+                    self.user.set_market_apy(self.market.apy(self.get_days_remaining()))
                 assert self.trade_amount_usd >= 0, (
                     f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
                     f" token_in={self.token_in} trade_direction={self.trade_direction}"
@@ -361,29 +327,6 @@ class YieldSimulator:
                     self.token_out,  # opposite of token_in
                 )
                 pool_apy = self.market.apy(self.get_days_remaining())
-                if pool_apy > 0.2:
-                    print(
-                        "trade"
-                        f' {self.analysis_dict["run_trade_number"][-1:]}'
-                        f" days_trades={days_trades}"
-                        f" k={sum(days_trades)}"
-                        f" n={len(days_trades)}"
-                        f" ratio={sum(days_trades)/len(days_trades)}"
-                        f" streak_luck: {self.streak_luck}"
-                    )
-                    if self.pool_apy_target_range is not None:
-                        print(btest)
-                        print(f"expected_proportion={self.expected_proportion}")
-                        print(
-                            f"trade {self.analysis_dict['run_trade_number'][-1:]} pool_apy"
-                            f" = {pool_apy:,.4%} apy_distance_in_target_range ="
-                            f" {self.apy_distance_in_target_range},"
-                            " apy_distance_from_mid_when_in_range ="
-                            f" {self.apy_distance_from_mid_when_in_range},"
-                            " actual_convergence_strength ="
-                            f" {self.actual_convergence_strength}, token_index ="
-                            f" {token_index}"
-                        )
                 day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
                 self.update_analysis_dict()
                 self.run_trade_number += 1

@@ -1,5 +1,7 @@
 """
 Market simulators store state information when interfacing AMM pricing models with users
+
+TODO: rewrite all functions to have typed inputs
 """
 
 # Currently many functions use >5 arguments.
@@ -90,6 +92,22 @@ class Market:
                 f"ERROR: the time variable market.time_remaining={self.time_remaining} should never be negative."
                 + f"\npricing_model={self.pricing_model}"
             )
+
+    def get_target_reserves(self, token_in, trade_direction):
+        """
+        Determine which asset is the target based on token_in and trade_direction
+        """
+        if trade_direction == "in":
+            if token_in == "fyt":
+                target_reserves = self.token_asset
+            else:
+                target_reserves = self.base_asset
+        elif trade_direction == "out":
+            if token_in == "fyt":
+                target_reserves = self.base_asset
+            else:
+                target_reserves = self.token_asset
+        return target_reserves
 
     def check_fees(
         self,
