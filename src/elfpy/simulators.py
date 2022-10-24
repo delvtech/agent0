@@ -188,6 +188,32 @@ class YieldSimulator:
         ), f"rng type must be a random number generator, not {type(rng)}."
         self.rng = rng
 
+    def set_pricing_model(self, model_name):
+        """Assign a PricingModel object to the pricing_model attribute"""
+        if model_name.lower() == "yieldspacev2":
+            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
+        elif model_name.lower() == "element":
+            self.pricing_model = ElementPricingModel(self.verbose)
+        else:
+            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {model_name}')
+
+    def set_user(self, user_type):
+        """Assign a User object to the user attribute"""
+        user_kwargs = {
+            "verbose": self.verbose,
+            "rng": self.rng,
+        }
+        if user_type.lower() == "random":
+            self.user = RandomUser(**user_kwargs)
+        elif user_type.lower() == "weightedrandom":
+            user_kwargs["days_trades"] = []
+            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
+            user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
+            user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
+            self.user = WeightedRandomUser(**user_kwargs)
+        else:
+            raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
+
     def setup_pricing_and_market(self, override_dict=None):
         """Constructs the pricing model and market member variables"""
         # Update parameters if the user provided new ones
@@ -209,13 +235,7 @@ class YieldSimulator:
             self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
-        # Initiate pricing model
-        if self.pricing_model_name.lower() == "yieldspacev2":
-            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
-        elif self.pricing_model_name.lower() == "element":
-            self.pricing_model = ElementPricingModel(self.verbose)
-        else:
-            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {self.pricing_model_name}')
+        self.set_pricing_model(self.pricing_model_name) # construct pricing model object
         self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -242,21 +262,7 @@ class YieldSimulator:
         self.step_size = self.pricing_model.days_to_time_remaining(
             step_scale, self.init_time_stretch, normalizing_constant=365
         )
-        # Construct user object
-        user_kwargs = {
-            "verbose": self.verbose,
-            "rng": self.rng,
-        }
-        if self.user_type.lower() == "random":
-            self.user = RandomUser(**user_kwargs)
-        elif self.user_type.lower() == "weightedrandom":
-            user_kwargs["days_trades"] = []
-            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
-            user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
-            user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
-            self.user = WeightedRandomUser(**user_kwargs)
-        else:
-            raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {self.user_type}')
+        self.set_user(self.user_type) # construct user object
 
     def run_simulation(self, override_dict=None):
         """
