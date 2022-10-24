@@ -6,7 +6,6 @@ TODO: rewrite all functions to have typed inputs
 """
 
 import numpy as np
-from zmq import THREAD_SCHED_POLICY
 
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
@@ -251,13 +250,10 @@ class YieldSimulator:
         if self.user_type.lower() == "random":
             self.user = RandomUser(**user_kwargs)
         elif self.user_type.lower() == "weightedrandom":
-            user_kwargs["market"] = self.market
-            user_kwargs["days_remaining"] = self.get_days_remaining()
             user_kwargs["days_trades"] = []
             user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
             user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
             user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
-            user_kwargs["run_trade_number"] = self.run_trade_number
             self.user = WeightedRandomUser(**user_kwargs)
         else:
             raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {self.user_type}')
