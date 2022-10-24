@@ -69,6 +69,23 @@ class BaseTest(unittest.TestCase):
         self.fee_percent_vals = self.test_rng.normal(loc=0.1, scale=0.01, size=num_vals_per_variable)
 
 
+class TestUser(BaseTest):
+    """User test class"""
+
+    def test_user_types(self):
+        """Test constructing each user type"""
+        self.setup_test_vars()
+        self.config["pool_apy_target_range"] = [0.15,0.20]
+        self.config["pool_apy_target_range_convergence_speed"] = 0.52
+        for user_type in ["Random", "WeightedRandom"]:
+            override_dict = {
+                "user_type": user_type,
+            }
+            simulator = YieldSimulator(**self.config)
+            simulator.set_random_variables()
+            simulator.run_simulation(override_dict)
+
+
 class TestSimulator(BaseTest):
     """Simulator test class"""
 
