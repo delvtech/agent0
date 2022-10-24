@@ -21,10 +21,16 @@ class User:
         """
         self.rng = kwargs["rng"]
         self.verbose = kwargs["verbose"]
+    
+    def get_direction_index(self):
+        raise NotImplementedError
 
     def get_tokens_in_out(self, tokens):
         """Select one of two possible trade directions with some probability"""
-        raise NotImplementedError
+        direction_index = self.get_direction_index()
+        token_in = tokens[direction_index]
+        token_out = tokens[1 - direction_index]
+        return (token_in, token_out)
 
     def get_trade_amount_usd(self, target_reserves, target_volume, market_price):
         """
@@ -55,12 +61,9 @@ class RandomUser(User):
     Random user that exercises fair behavior
     """
 
-    def get_tokens_in_out(self, tokens):
+    def get_direction_index(self):
         """Select one of two possible trade directions with equal probability"""
-        direction_index = self.rng.integers(low=0, high=2)  # 0 or 1
-        token_in = tokens[direction_index]
-        token_out = tokens[1 - direction_index]
-        return (token_in, token_out)
+        return self.rng.integers(low=0, high=2)  # 0 or 1
 
 
 class WeightedRandomUser(User):
@@ -89,12 +92,9 @@ class WeightedRandomUser(User):
         """Required to track simulation state variables"""
         self.pool_apy = apy
 
-    def get_tokens_in_out(self, tokens):
-        """Select one of two possible trade directions with equal probability"""
-        direction_index = self.stochastic_direction(self.pool_apy)
-        token_in = tokens[direction_index]
-        token_out = tokens[1 - direction_index]
-        return (token_in, token_out)
+    def get_direction_index(self):
+        """Select one of two possible trade directions with weighted probability"""
+        return self.stochastic_direction(self.pool_apy)
 
     def stochastic_direction(self, pool_apy):
         """Picks p-value-weighted direction, cutting off tails"""
@@ -165,8 +165,8 @@ class WeightedRandomUser(User):
                 )
         # Append new values the internal user state
         self.user_state["direction_index"].append(direction_index)
-        self.user_state["apy_distance_in_target_range"].append(apy_distance_in_target_range)
         self.user_state["apy_distance_from_mid_when_in_range"].append(apy_distance_from_mid_when_in_range)
+        self.user_state["apy_distance_in_target_range"].append(apy_distance_in_target_range)
         self.user_state["actual_convergence_strength"].append(actual_convergence_strength)
         self.user_state["expected_proportion"].append(expected_proportion)
         self.user_state["streak_luck"].append(streak_luck)
