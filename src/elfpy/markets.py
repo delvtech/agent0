@@ -33,6 +33,8 @@ class Market:
         share_price=1,
         verbose=False,
     ):
+        # FIXME: In order for the AMM to work as expected we should store 
+        # a share reserve instead of a base reserve. 
         self.base_asset = base_asset  # x
         self.token_asset = token_asset  # y
         self.fee_percent = fee_percent  # g
