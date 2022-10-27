@@ -472,13 +472,10 @@ class HyperdrivePricingModel(PricingModel):
     enable the base reserves to be deposited into yield bearing vaults
     """
 
-    def __init__(self, verbose=False, floor_fee=0):
+    def __init__(self, verbose=False):
         super().__init__(verbose)
-        self.floor_fee = floor_fee
 
     def model_name(self):
-        if self.floor_fee > 0:
-            return "HyperdriveMinFee"
         return "Hyperdrive"
 
     def calc_in_given_out(
@@ -643,6 +640,8 @@ class HyperdrivePricingModel(PricingModel):
             #
             # (p - 1) * phi * c * d_z
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
+        else:
+            raise Exception('"token_in" must be "base" or "pt"')
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
@@ -770,10 +769,6 @@ class HyperdrivePricingModel(PricingModel):
                 f"ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
-            # If the fee calculated using the standard fee model doesn't exceed
-            # the minimum fee, the fee becomes the minimum fee.
-            if fee / in_ < self.floor_fee / 100 / 100:
-                fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
@@ -812,10 +807,8 @@ class HyperdrivePricingModel(PricingModel):
                 f"ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
-            # If the fee calculated using the standard fee model doesn't exceed
-            # the minimum fee, the fee becomes the minimum fee.
-            if fee / in_ < self.floor_fee / 100 / 100:
-                fee = in_ * self.floor_fee / 100 / 100
+        else:
+            raise Exception('"token_out" must be "base" or "pt"')
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
