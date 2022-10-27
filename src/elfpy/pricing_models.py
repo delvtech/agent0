@@ -485,7 +485,7 @@ class HyperdrivePricingModel(PricingModel):
         self,
         out,
         # TODO: This should be share_reserves when we update the market class
-        base_reserves,
+        share_reserves,
         bond_reserves,
         token_in,
         fee_percent,
@@ -493,49 +493,80 @@ class HyperdrivePricingModel(PricingModel):
         init_share_price,
         share_price,
     ):
-        # TODO: Add latex comments here.
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
 
+        The input is calculated as:
+
+        .. math::
+            in' =
+            \begin{cases}
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z), &\text{ if } token\_in = \text{"base"} \\
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
+            \end{cases} \\
+            f = 
+            \begin{cases}
+            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
+            (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
+            \end{cases} \\
+            in = in' + f
+
         Arguments
         ---------
         out : float
-            The amount of token_in that the user wishes to receive.
-        base_reserves : float
-            The reserves of the base token in the pool.
+            The amount of tokens that the user wants to receive. When the user
+            wants to pay in bonds, this value should be an amount of base tokens
+            rather than an amount of shares.
+        share_reserves : float
+            The reserves of shares in the pool.
         bond_reserves : float
             The reserves of bonds in the pool.
         token_in : str
-            The token that the user will need to provide. The only valid values
-            are "base" and "pt".
+            The token that the user pays. The only valid values are "base" and
+            "pt".
         fee_percent : float
-            The percentage of the difference between the no-slippage input
-            and the user's requested  output that should be added to the
-            input as a fee.
+            The percentage of the difference between the amount paid without
+            slippage and the amount received that will be added to the input
+            as a fee.
         time_remaining : float
             The time remaining for the asset (incorporates time stretch).
         init_share_price : float
             The share price when the pool was initialized.
         share_price : float
             The current share price.
+
+        Returns
+        -------
+        float
+            The amount the user pays without fees or slippage. The units
+            are always in terms of bonds or base.
+        float
+            The amount the user pays with fees and slippage. The units are
+            always in terms of bonds or base.
+        float
+            The amount the user pays with slippage and no fees. The units are
+            always in terms of bonds or base.
+        float
+            The fee the user pays. The units are always in terms of bonds or
+            base.
         """
 
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
+        time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
-        total_reserves = base_reserves + bond_reserves
-        share_reserves = base_reserves / share_price  # convert from base_asset to z (x=cz)
+        total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
         # k = (c / mu) * (mu * z)**(1 - t) + y**(1 - t)
-        k = self._calc_k_const(init_share_price * share_reserves, bond_reserves, 1 - time_remaining, scale)
+        k = self._calc_k_const(init_share_price * share_reserves, bond_reserves, time_elapsed, scale)
         if token_in == "base":  # calc shares in for pt out
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
-            d_bond_reserves = out
+            d_bonds = out
             # The amount the user would pay without fees or slippage is simply
             # the amount of bonds the user would receive times the spot price of
             # base in terms of bonds (this is the inverse of the usual spot
@@ -543,7 +574,7 @@ class HyperdrivePricingModel(PricingModel):
             # write this as:
             #
             # (1 / p) * d_y
-            without_fee_or_slippage = d_bond_reserves * (1 / spot_price)
+            without_fee_or_slippage = d_bonds * (1 / spot_price)
             # Solve the YieldSpace invariant for the base required to purchase
             # the requested amount of bonds.
             #
@@ -556,20 +587,27 @@ class HyperdrivePricingModel(PricingModel):
             # without including fees:
             #
             # d_z = (1 / mu) * ((k - (2y + cz - d_y)**(1 - t)) / (c / mu))**(1 / (1 - t)) - z
-            without_fee = (1 / init_share_price) * pow(
-                (k - pow(out_reserves - d_bond_reserves, 1 - time_remaining)) / scale,
-                1 / (1 - time_remaining),
-            ) - in_reserves
-            # The fees are calculated as the difference between the bonds the
-            # user receives and the base the user pays without slippage times
-            # the fee percentage. This can also be expressed as:
             #
-            # (1 - (1 / ((2y + cz)/(mu * z))**t)) * phi * d_y
-            fee = (1 - (1 / spot_price)) * fee_percent * d_bond_reserves
+            # We really want to know the value of d_x, the amount of base the
+            # user pays. This is simply c * d_x
+            without_fee = (
+                (1 / init_share_price)
+                * pow(
+                    (k - pow(out_reserves - d_bonds, time_elapsed)) / scale,
+                    1 / time_elapsed,
+                )
+                - in_reserves
+            ) * share_price
+            # The fees are calculated as the difference between the bonds
+            # received and the base paid without slippage times the fee
+            # percentage. This can also be expressed as:
+            #
+            # (1 - (1 / p)) * phi * d_y
+            fee = (1 - (1 / spot_price)) * fee_percent * d_bonds
         elif token_in == "pt":
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
-            d_share_reserves = out / share_price
+            d_shares = out / share_price
             # The amount the user would pay without fees or slippage is simply
             # the amount of base the user would receive times the spot price of
             # bonds in terms of base (this is the conventional spot price).
@@ -579,7 +617,7 @@ class HyperdrivePricingModel(PricingModel):
             # then we can write this as:
             #
             # p * c * d_z
-            without_fee_or_slippage = spot_price * share_price * d_share_reserves
+            without_fee_or_slippage = spot_price * share_price * d_shares
             # Solve the YieldSpace invariant for the bonds required to purchase
             # the requested amount of base.
             #
@@ -594,86 +632,194 @@ class HyperdrivePricingModel(PricingModel):
             # d_y = (k - (c / mu) * (mu * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
             without_fee = (
                 pow(
-                    k - scale * pow((init_share_price * (out_reserves - d_share_reserves)), (1 - time_remaining)),
-                    (1 / (1 - time_remaining)),
+                    k - scale * pow((init_share_price * (out_reserves - d_shares)), time_elapsed),
+                    1 / time_elapsed,
                 )
                 - in_reserves
             )
-            # The fees are calculated as the difference between the bonds the
-            # user pays without slippage and the base the user receives times
-            # the fee percentage. This can also be expressed as:
+            # The fees are calculated as the difference between the bonds paid
+            # without slippage and the base received times the fee percentage.
+            # This can also be expressed as:
             #
-            # (((2y + cz)/(mu * z))**t - 1) * phi * c * d_z
-            fee = (spot_price - 1) * fee_percent * share_price * d_share_reserves
-        # To get the amount that the user pays with fees, we add the
-        # fee to the calculation that excluded fees. We add the fees since
-        # a higher amount that the user pays implies a worse price, which
-        # means that the fees are doing their job.
+            # (p - 1) * phi * c * d_z
+            fee = (spot_price - 1) * fee_percent * share_price * d_shares
+        # To get the amount paid with fees, add the fee to the calculation that
+        # excluded fees. Adding the fees results in more tokens paid, which
+        # indicates that the fees are working correctly.
         with_fee = without_fee + fee
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_out_given_in(
         self,
         in_,
-        in_reserves,
-        out_reserves,
+        # TODO: This should be share_reserves when we update the market class
+        share_reserves,
+        bond_reserves,
         token_out,
         fee_percent,
         time_remaining,
         init_share_price,
         share_price,
     ):
+        r"""
+        Calculates the amount of an asset that must be provided to receive a
+        specified amount of the other asset given the current AMM reserves.
+
+        The output is calculated as:
+
+        .. math::
+            out' =
+            \begin{cases}
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            \end{cases} \\
+            f = 
+            \begin{cases}
+            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
+            (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+            \end{cases} \\
+            out = out' + f
+
+        Arguments
+        ---------
+        in_ : float
+            The amount of tokens that the user pays. When users receive bonds,
+            this value reflects the base paid.
+        share_reserves : float
+            The reserves of shares in the pool.
+        bond_reserves : float
+            The reserves of bonds in the pool.
+        token_out : str
+            The token that the user receives. The only valid values are "base"
+            and "pt".
+        fee_percent : float
+            The percentage of the difference between the amount paid and the
+            amount received without slippage that will be debited from the
+            output as a fee.
+        time_remaining : float
+            The time remaining for the asset (incorporates time stretch).
+        init_share_price : float
+            The share price when the pool was initialized.
+        share_price : float
+            The current share price.
+
+        Returns
+        -------
+        float
+            The amount the user receives without fees or slippage. The units
+            are always in terms of bonds or base.
+        float
+            The amount the user receives with fees and slippage. The units are
+            always in terms of bonds or base.
+        float
+            The amount the user receives with slippage and no fees. The units are
+            always in terms of bonds or base.
+        float
+            The fee the user pays. The units are always in terms of bonds or
+            base.
+        """
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
-        scale = share_price / init_share_price  # normalized function of vault yields
+        scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
-        if token_out == "base":  # calc shares out for fyt in
-            d_token_asset = in_
-            share_reserves = out_reserves / share_price  # convert from x to z (x=cz)
-            token_asset = in_reserves
-            # AMM math
-            # k = scale * (u * z)**(1 - t) + y**(1 - t)
-            k = self._calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
-            inv_init_share_price = 1 / init_share_price
+        total_reserves = share_price * share_reserves + bond_reserves
+        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        # We precompute the YieldSpace constant k using the current reserves and
+        # share price:
+        #
+        # k = (c / mu) * (mu * z)**(1 - t) + y**(1 - t)
+        k = self._calc_k_const(init_share_price * share_reserves, bond_reserves, time_elapsed, scale)
+        if token_out == "base":
+            d_bonds = in_
+            in_reserves = bond_reserves + total_reserves
+            out_reserves = share_reserves
+            # The amount the user would receive without fees or slippage is
+            # the amount of bonds the user pays times the spot price of
+            # base in terms of bonds (this is the inverse of the conventional
+            # spot price). If we let p be the conventional spot price, then we
+            # can write this as:
+            #
+            # (1 / p) * d_y
+            without_fee_or_slippage = (1 / spot_price) * d_bonds
+            # Solve the YieldSpace invariant for the base received from selling
+            # the specified amount of bonds.
+            #
+            # We set up the invariant where the user pays d_y bonds and
+            # receives d_z shares:
+            #
+            # (c / mu) * (mu * (z - d_z))**(1 - t) + (2y + cz + d_y)**(1 - t) = k
+            #
+            # Solving for d_z gives us the amount of shares the user receives
+            # without including fees:
+            #
+            # d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
+            #
+            # We really want to know the value of d_x, the amount of base the
+            # user receives. This is simply c * d_x
             without_fee = (
                 share_reserves
-                - inv_init_share_price
-                * ((k - (token_asset + d_token_asset) ** time_elapsed) / scale) ** (1 / time_elapsed)
+                - (1 / init_share_price) * ((pow(k - (in_reserves + d_bonds), time_elapsed) / scale), 1 / time_elapsed)
             ) * share_price
-            # Fee math
-            fee = (in_ - without_fee) * fee_percent
+            # The fees are calculated as the difference between the bonds paid
+            # and the base received without slippage times the fee percentage.
+            # This can also be expressed as:
+            #
+            # (1 - (1 / p) * phi * d_y
+            fee = (1 - (1 / spot_price)) * fee_percent * d_bonds
             assert fee >= 0, (
                 f"ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
+            # If the fee calculated using the standard fee model doesn't exceed
+            # the minimum fee, the fee becomes the minimum fee.
             if fee / in_ < self.floor_fee / 100 / 100:
                 fee = in_ * self.floor_fee / 100 / 100
             with_fee = without_fee - fee
-            without_fee_or_slippage = (
-                1 / ((share_price / init_share_price * in_reserves) / out_reserves) ** time_remaining * in_
+        elif token_out == "pt":
+            d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
+            in_reserves = share_reserves
+            out_reserves = bond_reserves + total_reserves
+            # The amount the user would receive without fees or slippage is
+            # the amount of base the user pays times the spot price of
+            # base in terms of bonds (this is the conventional spot price). If
+            # we let p be the conventional spot price, then we can write this
+            # as:
+            #
+            # p * c * d_z
+            without_fee_or_slippage = spot_price * share_price * d_shares
+            # Solve the YieldSpace invariant for the base received from selling
+            # the specified amount of bonds.
+            #
+            # We set up the invariant where the user pays d_y bonds and
+            # receives d_z shares:
+            #
+            # (c / mu) * (mu * (z + d_z))**(1 - t) + (2y + cz - d_y)**(1 - t) = k
+            #
+            # Solving for d_y gives us the amount of bonds the user receives
+            # without including fees:
+            #
+            # d_y = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - t))**(1 / (1 - t))
+            without_fee = out_reserves - pow(
+                k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
             )
-        elif token_out == "fyt":  # calc fyt out for shares in
-            d_share_reserves = in_ / share_price  # convert from base_asset to z (x=cz)
-            share_reserves = in_reserves / share_price  # convert from base_asset to z (x=cz)
-            token_asset = out_reserves
-            # AMM math
-            # k = scale * (u * z)**(1 - t) + y**(1 - t)
-            k = self._calc_k_const(init_share_price * share_reserves, token_asset, time_elapsed, scale)
-            without_fee = token_asset - (
-                k - scale * (init_share_price * share_reserves + init_share_price * d_share_reserves) ** time_elapsed
-            ) ** (1 / time_elapsed)
-            # Fee math
-            fee = (without_fee - in_) * fee_percent
+            # The fees are calculated as the difference between the bonds
+            # received without slippage and the base paid times the fee
+            # percentage. This can also be expressed as:
+            #
+            # (p - 1) * phi * c * d_z
+            fee = (spot_price - 1) * fee_percent * share_price * d_shares
             assert fee >= 0, (
                 f"ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
+            # If the fee calculated using the standard fee model doesn't exceed
+            # the minimum fee, the fee becomes the minimum fee.
             if fee / in_ < self.floor_fee / 100 / 100:
                 fee = in_ * self.floor_fee / 100 / 100
-            with_fee = without_fee - fee
-            without_fee_or_slippage = (
-                in_ / (in_reserves / (share_price / init_share_price * out_reserves)) ** time_remaining
-            )
+        # To get the amount paid with fees, subtract the fee from the
+        # calculation that excluded fees. Subtracting the fees results in less
+        # tokens received, which indicates that the fees are working correctly.
+        with_fee = without_fee - fee
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
@@ -700,8 +846,10 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining : float
             The time remaining for the asset (incorporates time stretch).
 
-        Returns:
-            float: The spot price of principal tokens.
+        Returns
+        -------
+        float
+            The spot price of principal tokens.
         """
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves
