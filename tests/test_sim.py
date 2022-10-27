@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from elfpy.simulators import YieldSimulator
-from elfpy.pricing_models import ElementPricingModel, YieldSpacev2PricingModel
+from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 from elfpy.markets import Market
 
 
@@ -52,7 +52,7 @@ class BaseTest(unittest.TestCase):
 
         self.pricing_models = [
             ElementPricingModel(verbose=self.config["verbose"]),
-            YieldSpacev2PricingModel(verbose=self.config["verbose"]),
+            HyperdrivePricingModel(verbose=self.config["verbose"]),
         ]
         # random variables for fuzzy testing
         num_vals_per_variable = 4
@@ -75,7 +75,7 @@ class TestUser(BaseTest):
     def test_user_types(self):
         """Test constructing each user type"""
         self.setup_test_vars()
-        self.config["pool_apy_target_range"] = [0.15,0.20]
+        self.config["pool_apy_target_range"] = [0.15, 0.20]
         self.config["pool_apy_target_range_convergence_speed"] = 0.52
         for user_type in ["Random", "WeightedRandom"]:
             override_dict = {
