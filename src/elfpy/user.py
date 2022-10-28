@@ -13,11 +13,36 @@ TODO: rewrite all functions to have typed inputs
 import numpy as np
 from scipy.stats import binomtest
 
-class UserList:
-    """"""
+def build_user_list(config):
+    """
+    Collection of User objects
+    config is a nested dictionary with the following structure
+    config = {
+        "rng" : # numpy.random.default_rng(seed) object
+        "verbose" : # boolean
+        "users" : user spec list
+    config["users"] is a list of dictionaries containing user specifications
+        each entry in the dictionary must contain "type" and "init_budget" keys
+        each type will have additional required keys
+    """
+    user_spec_list = config["users"]
+    user_list = []
+    for user_spec in user_spec_list:
+        user_type = user_spec["type"]
+        if user_type == "random":
+            user = RandomUser(config)
+        elif user_type == "liquidity_provider":
+            user = LiquidityProvider(config)
+        user.set_budget(user_spec["init_budget"])
+        user_list.append(user)
+    return user_list
+
+
 class User:
     """
     Implements abstract classes that control user behavior
+    user has a budget that is a dict, keyed with a date
+    value is an inte with how many tokens they have for that date
     """
 
     def __init__(self, **kwargs):
@@ -28,6 +53,10 @@ class User:
         """
         self.rng = kwargs["rng"]
         self.verbose = kwargs["verbose"]
+        self.budget = None
+
+    def set_budget(self, budget):
+        self.budget = budget
 
     def get_direction_index(self):
         """Returns an index in the set (0, 1) that indicates the trade direction"""
@@ -64,17 +93,54 @@ class User:
         return (token_in, token_out, trade_amount_usd)
 
 
+class LiquidityProvider(User):
+    """
+    User that puts money into a pool and collects fees
+    """
+    pass # no extra ops for now
+
+
 class RandomUser(User):
+    def __init__(config):
+        super().__init__(config)
+        self.rng = config["rng"]
+
+    def get_random_amount():
+        return random.normal(100, 10)
+
+class RandomHyperDriveUser(RandomUser):
+    def get_random_action():
+        return random("buy", "short", "sell")
+
+class RandomV1User(RandomUser):
     """
     Random user that exercises fair behavior
     """
+    def get_random_action():
+        return random("buy", "sell")
+
+    def get_action_plan():
+        action_plan = []
+        if market.apy > x:
+            action = get_random_action
+            amount = get_random_amount
+            action_plan.append({action: amount})
+        return action_plan
+    
+    def get_v1_actions():
+        action_dict = []
+        if market.apy > x:
+            action = get_random_action
+            amount = get_random_amount
+            action_dict.append({action: amount})
+        return action_dict
 
     def get_direction_index(self):
         """Select one of two possible trade directions with equal probability"""
         return self.rng.integers(low=0, high=2)  # 0 or 1
 
 
-class WeightedRandomUser(User):
+class WeightedRandomUser(RandomUser):
     """
     Implements abstract classes that control user behavior
     """

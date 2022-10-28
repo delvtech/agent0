@@ -264,6 +264,15 @@ class YieldSimulator:
         )
         self.set_user(self.user_type) # construct user object
 
+    """
+    def get_actions(market, users):
+        shuffle users following some policy
+    def apply_actions(market, actions):
+        take actions and sequentially apply them in the market
+    def update_users(market_output, users):
+        update user state with market outputs (pts bought, etc)
+    """
+
     def run_simulation(self, override_dict=None):
         """
         Run the trade simulation and update the output state dictionary
