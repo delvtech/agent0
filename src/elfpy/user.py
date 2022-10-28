@@ -13,7 +13,8 @@ TODO: rewrite all functions to have typed inputs
 import numpy as np
 from scipy.stats import binomtest
 
-
+class UserList:
+    """"""
 class User:
     """
     Implements abstract classes that control user behavior

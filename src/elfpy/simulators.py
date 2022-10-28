@@ -9,7 +9,7 @@ import numpy as np
 
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
-from elfpy.pricing_models import YieldSpacev2PricingModel
+from elfpy.pricing_models import HyperdrivePricingModel
 from elfpy.user import RandomUser
 from elfpy.user import WeightedRandomUser
 
@@ -190,12 +190,12 @@ class YieldSimulator:
 
     def set_pricing_model(self, model_name):
         """Assign a PricingModel object to the pricing_model attribute"""
-        if model_name.lower() == "yieldspacev2":
-            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
+        if model_name.lower() == "hyperdrive":
+            self.pricing_model = HyperdrivePricingModel(self.verbose)
         elif model_name.lower() == "element":
             self.pricing_model = ElementPricingModel(self.verbose)
         else:
-            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {model_name}')
+            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
     def set_user(self, user_type):
         """Assign a User object to the user attribute"""
