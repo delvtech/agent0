@@ -10,8 +10,7 @@ import numpy as np
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
-from elfpy.user import RandomUser
-from elfpy.user import WeightedRandomUser
+from elfpy.user import User
 
 
 class YieldSimulator:
@@ -60,7 +59,8 @@ class YieldSimulator:
         self.trade_direction = kwargs.get("trade_direction")
         self.pool_duration = kwargs.get("pool_duration")
         self.num_trading_days = kwargs.get("num_trading_days")
-        self.user_type = kwargs.get("user_type")
+        #self.user_type = kwargs.get("user_type")
+        self.user_policies = kwargs.get("usr_policies")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
         self.expected_proportion = 0
@@ -80,7 +80,7 @@ class YieldSimulator:
         self.time_stretch = None
         self.pricing_model = None
         self.market = None
-        self.user = None
+        self.users = None
         self.step_size = None
         self.trade_amount = None
         self.trade_amount_usd = None
@@ -197,22 +197,22 @@ class YieldSimulator:
         else:
             raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
-    def set_user(self, user_type):
-        """Assign a User object to the user attribute"""
-        user_kwargs = {
-            "verbose": self.verbose,
-            "rng": self.rng,
-        }
-        if user_type.lower() == "random":
-            self.user = RandomUser(**user_kwargs)
-        elif user_type.lower() == "weightedrandom":
-            user_kwargs["days_trades"] = []
-            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
-            user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
-            user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
-            self.user = WeightedRandomUser(**user_kwargs)
-        else:
-            raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
+    #def set_user(self, user_type):
+    #    """Assign a User object to the user attribute"""
+    #    user_kwargs = {
+    #        "verbose": self.verbose,
+    #        "rng": self.rng,
+    #    }
+    #    if user_type.lower() == "random":
+    #        self.user = RandomUser(**user_kwargs)
+    #    elif user_type.lower() == "weightedrandom":
+    #        user_kwargs["days_trades"] = []
+    #        user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
+    #        user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
+    #        user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
+    #        self.user = WeightedRandomUser(**user_kwargs)
+    #    else:
+    #        raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
 
     def setup_pricing_and_market(self, override_dict=None):
         """Constructs the pricing model and market member variables"""
@@ -262,11 +262,17 @@ class YieldSimulator:
         self.step_size = self.pricing_model.days_to_time_remaining(
             step_scale, self.init_time_stretch, normalizing_constant=365
         )
-        self.set_user(self.user_type) # construct user object
+        self.users = [User(policy, self.rng) for policy in self.user_policies]
+        #self.set_user(self.user_type) # construct user object
+
+    def get_user_actions(self, market, users):
+        user_actions = []
+        for user in self.rng.shuffle(users):
+            user_actions.append(user.get_action(market))
+        return user_actions
 
     """
-    def get_actions(market, users):
-        shuffle users following some policy
+
     def apply_actions(market, actions):
         take actions and sequentially apply them in the market
     def update_users(market_output, users):
@@ -306,11 +312,10 @@ class YieldSimulator:
             # Could support using actual historical trades or a fit to historical trades)
             day_trading_volume = 0
             while day_trading_volume < self.target_daily_volume:
-                (self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
-                    self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
-                )
-                if self.user_type.lower() == "weightedrandom":  # sync user with market
-                    self.user.set_market_apy(self.market.apy(self.get_days_remaining()))
+                user_actions = self.get_user_actions(self.market, self.users)
+                #(self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
+                #    self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
+                #)
                 assert self.trade_amount_usd >= 0, (
                     f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
                     f" token_in={self.token_in} trade_direction={self.trade_direction}"
