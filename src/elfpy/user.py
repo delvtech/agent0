@@ -19,14 +19,14 @@ class User:
         """
         Set up initial conditions
         """
-        self.rng = rng
-        self.verbose = verbose
         self.type = policy["type"]
         self.initial_budget = policy["budget"]
         self.trade_policy = policy["trade"]
         self.wallet = {
             "base": self.initial_budget
         }
+        self.rng = rng
+        self.verbose = verbose
 
     def get_trade(self, market):
         """Helper function for computing a user trade"""
