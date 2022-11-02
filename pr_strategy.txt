@@ -5,6 +5,13 @@
 Easy version --
 one trade per block
 easier, but doesn't allow for MEV or gas simulation
+
+The user can view the full market state (whatever set of variables we want to make public).
+Based on these, the user parses their strategy and returns some action.
+The market executes this action & returns the user state deltas (like updating their # of ptDAI).
+The user updates their state with the market output, and then we move on to the next user.
+So N users can trade in one time iteration (as indicated by `time_idx`), but each user gets to see the prev user's actions before deciding their own.
+If all N users buy, then they all get tokens minted with `(day, time_idx)` coded as the mint date.
 """
 for day in range(num_trading_days):
     for time_idx in range(time_steps_per_day): # discretized time
@@ -12,7 +19,7 @@ for day in range(num_trading_days):
             market_action = user.get_action(market) # user gets current market state
             user_state_update = market.execute_trade(market_action) # includes market state update
             user.update_state(user_state_update)
-            simulator.update_analysis_dict(user_states, market_state)
+            simulator.update_analysis_dict(user_state, market_state)
         market.tick()
 
 
@@ -20,8 +27,8 @@ for day in range(num_trading_days):
 Future version --
 multiple random trades per block
 needs to support "gas" so users can adjust their priority (users.time_weightings)
-needs to also support market safety for slippage
-and user contingent contracts that cancel trades if there is too much slippage
+needs to support market safety mechanism to cancel trades if there is high slippage
+needs user contingent contracts that cancel trades if there is too much slippage
 """
 for day in range(num_trading_days):
     for time_idx in range(times_per_day): # discretized time
@@ -67,9 +74,12 @@ wallet = {
 probably makes sense to include a user.wallet inner class
 this would support helper functions on the wallet, like "get_oldest_pt"; "get_largest_pt"
 
-user trading strategy is encoded in JSON format, e.g.:
+user trading strategies are encoded in json files,
+with one file per user in the `root/users`(elsewhere?) directory
+e.g.:
 
-simple_policy_json = {
+`users/simple_policy.json`
+policy = {
     "trade": {
         "conditional": {
             "if": {(">", "market.pool_apy", 0.5)},
@@ -79,7 +89,8 @@ simple_policy_json = {
     },
 }
 
-complex_policy_json_1 = {
+`users/complex_policy_1.json`
+policy = {
     "trade":{
         "conditional": {
             "if": {
@@ -103,7 +114,8 @@ complex_policy_json_1 = {
     },
 }
 
-complex_policy_json_2 = {
+`users/complex_policy_2.json`
+policy = {
     "trade": {
         "conditional": {
             "if": {
