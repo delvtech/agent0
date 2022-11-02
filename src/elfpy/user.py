@@ -31,6 +31,12 @@ class User:
     def get_trade(self, market):
         """Helper function for computing a user trade"""
         trade_action = parse_trade(self.trade_policy, market, self.rng)
+        if trade_action is not None:
+            token_in, token_out, trade_amount_usd = trade_action
+            assert trade_amount_usd >= 0, (
+                f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
+                f" token_in={token_in} token_out={token_out}"
+            )
         return trade_action
 
     def update_wallet(self, delta_wallet):
