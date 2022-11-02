@@ -27,7 +27,6 @@ class Market:
         base_asset,
         token_asset,
         fee_percent,
-        time_remaining,
         pricing_model,
         init_share_price=1,
         share_price=1,
@@ -38,7 +37,6 @@ class Market:
         self.base_asset = base_asset  # x
         self.token_asset = token_asset  # y
         self.fee_percent = fee_percent  # g
-        self.time_remaining = time_remaining  # t
         self.share_price = share_price  # c
         self.init_share_price = init_share_price  # u normalizing constant
         self.pricing_model = pricing_model
@@ -52,48 +50,6 @@ class Market:
         self.cum_base_asset_fees = 0
         self.total_supply = self.base_asset + self.token_asset
         self.verbose = verbose
-
-    def apy(self, days_remaining):
-        """Returns current APY given the market conditions and pricing model"""
-        price = self.pricing_model.calc_spot_price_from_reserves(
-            self.base_asset,
-            self.token_asset,
-            self.total_supply,
-            self.time_remaining,
-            self.init_share_price,
-            self.share_price,
-        )
-        normalized_days_remaining = self.pricing_model.norm_days(days_remaining)
-        return self.pricing_model.calc_apy_from_spot_price(price, normalized_days_remaining)
-
-    def spot_price(self):
-        """Returns the current spot price given the market conditions and pricing model"""
-        return self.pricing_model.calc_spot_price_from_reserves(
-            self.base_asset,
-            self.token_asset,
-            self.total_supply,
-            self.time_remaining,
-            self.init_share_price,
-            self.share_price,
-        )
-
-    def tick(self, step_size):
-        """
-        Decrements the time variable by the provided step_size.
-
-        Arguments:
-        step_size [float] must be less than self.time_remaining
-
-        It is assumed that self.time_remaining starts at 1 and decreases to 0.
-        This function cannot reduce self.time_remaining below 0.
-        """
-
-        self.time_remaining -= step_size
-        if self.time_remaining < 0:
-            assert False, (
-                f"ERROR: the time variable market.time_remaining={self.time_remaining} should never be negative."
-                + f"\npricing_model={self.pricing_model}"
-            )
 
     def get_target_reserves(self, token_in, trade_direction):
         """
@@ -170,7 +126,7 @@ class Market:
         self.base_asset_volume += d_volume[0]
         self.token_asset_volume += d_volume[1]
 
-    def swap(self, amount, direction, token_in, token_out):
+    def swap(self, amount, direction, token_in, token_out, time_remaining):
         """
         Execute a trade in the simulated market.
 
@@ -199,7 +155,7 @@ class Market:
                     out_reserves,
                     token_in,
                     self.fee_percent,
-                    self.time_remaining,
+                    time_remaining,
                     self.init_share_price,
                     self.share_price,
                 )
@@ -228,7 +184,7 @@ class Market:
                     out_reserves,
                     token_in,
                     self.fee_percent,
-                    self.time_remaining,
+                    time_remaining,
                     self.init_share_price,
                     self.share_price,
                 )
@@ -263,7 +219,7 @@ class Market:
                     out_reserves,
                     token_out,
                     self.fee_percent,
-                    self.time_remaining,
+                    time_remaining,
                     self.init_share_price,
                     self.share_price,
                 )
@@ -292,7 +248,7 @@ class Market:
                     out_reserves,
                     token_out,
                     self.fee_percent,
-                    self.time_remaining,
+                    time_remaining,
                     self.init_share_price,
                     self.share_price,
                 )

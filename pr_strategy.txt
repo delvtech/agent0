@@ -1,6 +1,9 @@
 --------------------------------------------------------------------
 ## simulators.py
 --------------------------------------------------------------------
+The simulator will track the current simulation time
+
+## simulator.run_simulation
 """
 Easy version --
 one trade per block
@@ -48,8 +51,10 @@ for day in range(num_trading_days):
 ## markets.py
 Future version -- auto-protect: if slippage is too big, stop execution
 --------------------------------------------------------------------
-market tracks the current day & time of day
-    market.time will tick up instead of down now
+The market will have no notion of time.
+Calls to market.swap() will now also include a normalized time_remaining that is 0 at token mint time and 1 at token expiry time.
+This variable will get passed to the respective pricing model functions.
+The simulator will track the current simulation time, and the tokens will track their individual mint times.
 
 market.execute_trade(action):
     # execute the given trade
@@ -82,6 +87,14 @@ e.g.:
 
 `users/simple_policy.json`
 policy = {
+    "type": "simple_trader",
+    "trade": {"sell": {"amount": 100}},
+    },
+}
+
+`users/simple_policy.json`
+policy = {
+    "type": "simple_trader",
     "trade": {
         "conditional": {
             "if": {(">", "market.pool_apy", 0.5)},
@@ -93,6 +106,8 @@ policy = {
 
 `users/complex_policy_1.json`
 policy = {
+    "type": "complex_trader",
+    "budget": 1000,
     "trade":{
         "conditional": {
             "if": {
@@ -118,6 +133,8 @@ policy = {
 
 `users/complex_policy_2.json`
 policy = {
+    "type": "complex_trader",
+    "budget": 1000,
     "trade": {
         "conditional": {
             "if": {
