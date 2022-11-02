@@ -52,6 +52,7 @@ operations = {
     "==": hard_equals,
 }
 
+
 def get_attr_from_market(market, arg):
     """Parse the market class to get an argument"""
     if "market" in arg:
@@ -59,9 +60,57 @@ def get_attr_from_market(market, arg):
         return getattr(market, attr)
     return arg
 
+
 def parse_conditional(market, conditional):
     """Parse conditional spec"""
-    operation = conditional["if"][0]
-    arg1 = get_attr_from_market(market, conditional["if"][1])
-    arg2 = get_attr_from_market(market, conditional["if"][2])
+    operation = conditional[0]
+    arg1 = get_attr_from_market(market, conditional[1])
+    arg2 = get_attr_from_market(market, conditional[2])
     return operations[operation](arg1, arg2)
+
+
+def parse_distribution(dist_spec, rng):
+    """Return a distribution described by the method policy"""
+    if dist_spec["method"] == "gaussian":
+        return rng.gaussian(dist_spec["mean"], dist_spec["std"])
+    raise ValueError(f'Only ["gaussian"] methods are supported, not {dist_spec["method"]}')
+
+
+def parse_trade(trade_spec, market, rng):
+    """Parse the trade specification"""
+    if "conditional" in trade_spec:
+        action_resolution = parse_conditional(market, trade_spec["conditional"]["if"])
+        if action_resolution:
+            action = parse_action(trade_spec["conditional"]["then"], rng)
+        else:
+            action = parse_action(trade_spec["conditional"]["else"], rng)
+    else:
+        action = parse_action(trade_spec, rng)
+    return action
+
+
+def parse_action(action_spec, rng):
+    """Parse the action specification"""
+    if action_spec == "none":
+        return None
+    if action_spec == "buy":
+        token_in = "base"
+        token_out = "pt"
+        amount = parse_trade_amount(action_spec["buy"], rng)
+    elif action_spec == "sell":
+        token_in = "pt"
+        token_out = "base"
+        amount = parse_trade_amount(action_spec["sell"], rng)
+    else:
+        raise ValueError(
+            f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action_spec}')
+    return (token_in, token_out, amount)
+
+
+def parse_trade_amount(amount_spec, rng):
+    """Return a trade amount"""
+    if "method" in amount_spec:
+        amount = parse_distribution(amount_spec["amount"], rng)
+    else:
+        amount = amount_spec["amount"]
+    return amount

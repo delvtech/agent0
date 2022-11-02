@@ -15,7 +15,7 @@ TODO: rewrite all functions to have typed inputs
 
 import numpy as np
 
-from elfpy.utils.parse_json import parse_conditional
+from elfpy.utils.parse_json import parse_trade
 
 #from scipy.stats import binomtest
 
@@ -53,21 +53,16 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, policy, rng):
+    def __init__(self, policy, rng, verbose=False):
         """
         Set up initial conditions
-
-        TODO: Like in simulators.py, we want to move away from kwargs for init config.
         """
-        self.rng = kwargs["rng"]
-        self.verbose = kwargs["verbose"]
-        self.budget = kwargs["budget"]
-        self.policy = kwargs["policy"]
-        self.type = kwargs["type"]
-        if "rng" in kwargs:
-            self.rng = kwargs["rng"]
-        else:
-            self.rng = None
+        self.rng = rng
+        self.verbose = verbose
+        self.type = policy["type"]
+        self.budget = policy["budget"]
+        self.trade_policy = policy["trade"]
+        self.wallet = {}
 
     def get_direction_index(self):
         """Returns an index in the set (0, 1) that indicates the trade direction"""
@@ -122,26 +117,6 @@ def get_action(policy_json, market):
             return action["conditional"]["then"]
         return action["conditional"]["else"]
     return action
-
-def get_distribution(method, rng):
-    """
-    Return a distribution described by the method string
-    """
-    if method == "gaussian":
-        return rng.gaussian
-    raise ValueError(f'Only "gaussian" method is supported, not {method}')
-
-def get_amount(policy_json, rng):
-    """
-    Return a trade amount
-    """
-    amount_spec = policy_json["amount"]
-    if "method" in amount:
-        dist = get_distribution(amount_spec["method"], rng)
-        amount = dist(amount_spec["mean"], amount_spec["std"])
-    else:
-        amount = amount_spec
-    return amount
 
 
 #class user:
