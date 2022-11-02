@@ -85,16 +85,39 @@ user trading strategies are encoded in json files,
 with one file per user in the `root/users`(elsewhere?) directory
 e.g.:
 
-`users/simple_policy.json`
+`users/simple_policy_1.json`
 policy = {
     "type": "simple_trader",
+    "budget": 1000,
     "trade": {"sell": {"amount": 100}},
+}
+
+`users/simple_policy_2.json`
+policy = {
+    "type": "simple_trader",
+    "budget": 1000,
+    "trade": {
+        "conditional": {
+            "if" {
+                "==",
+                "rand_variable": {
+                    "method": "random",
+                    "distribution": "integers",
+                    "low": 0,
+                    "high": 2,
+                },
+                0
+            },
+            "then": {"buy": {"amount": 100}},
+            "else": {"sell": {"amount": 100}},
+        },
     },
 }
 
-`users/simple_policy.json`
+`users/simple_policy_3.json`
 policy = {
     "type": "simple_trader",
+    "budget": 1000,
     "trade": {
         "conditional": {
             "if": {(">", "market.pool_apy", 0.5)},
@@ -158,10 +181,10 @@ policy = {
     },
 }
 
-user.get_action(market):
+user.get_trade(market):
     # given market conditions, execute a user trading strategy
     # this function will convert the user's json policy into actions
-    # return action in (buy, sell, none) and a float amount
+    # return (token_in, token_out, buy_amount) OR None
 
 user.update_state(user_state_update):
     # update all of the user member variables (e.g. wallet)

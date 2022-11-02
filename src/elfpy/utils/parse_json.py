@@ -3,6 +3,7 @@ example logic here:
 https://github.com/nadirizr/json-logic-py/blob/master/json_logic/__init__.py
 """
 
+
 def if_(*args):
     """Implements the 'if' operator with support for multiple elseif-s."""
     for i in range(0, len(args) - 1, 2):
@@ -13,9 +14,11 @@ def if_(*args):
     else:
         return None
 
+
 def greater(a, b):
     """Implements the '>' operator"""
     return less(b, a)
+
 
 def less(a, b):
     """Implements the '<' operator"""
@@ -27,19 +30,23 @@ def less(a, b):
             return False # NaN
     return a < b
 
+
 def hard_equals(a, b):
     """Implements the '===' operator."""
     if isinstance(a, b):
         return False
     return a == b
 
+
 def greater_or_equal(a, b):
     """Implements the '>=' operator."""
     return less_or_equal(b, a)
 
+
 def less_or_equal(a, b):
     """Implements the '<=' operator."""
     return less(a, b) or hard_equals(a, b)
+
 
 operations = {
     "if": if_,
@@ -53,33 +60,37 @@ operations = {
 }
 
 
-def get_attr_from_market(market, arg):
+def get_variable(arg, market, rng):
     """Parse the market class to get an argument"""
     if "market" in arg:
         attr = arg.split(".")[-1] # get the desired market attribute
         return getattr(market, attr)
+    if "rand_variable" in arg:
+        arg = parse_distribution(arg["rand_variable"], rng)
     return arg
 
 
-def parse_conditional(market, conditional):
+def parse_conditional(market, conditional, rng):
     """Parse conditional spec"""
     operation = conditional[0]
-    arg1 = get_attr_from_market(market, conditional[1])
-    arg2 = get_attr_from_market(market, conditional[2])
+    arg1 = get_variable(conditional[1], market, rng)
+    arg2 = get_variable(conditional[2], market, rng)
     return operations[operation](arg1, arg2)
 
 
 def parse_distribution(dist_spec, rng):
     """Return a distribution described by the method policy"""
-    if dist_spec["method"] == "gaussian":
+    if dist_spec["distribution"] == "gaussian":
         return rng.gaussian(dist_spec["mean"], dist_spec["std"])
-    raise ValueError(f'Only ["gaussian"] methods are supported, not {dist_spec["method"]}')
+    elif dist_spec["distribution"] == "integers":
+        return rng.integers(low=dist_spec["low"], high=dist_spec["high"])
+    raise ValueError(f'Only ["gaussian", "integers"] distributions are supported, not {dist_spec["distribution"]}')
 
 
 def parse_trade(trade_spec, market, rng):
     """Parse the trade specification"""
     if "conditional" in trade_spec:
-        action_resolution = parse_conditional(market, trade_spec["conditional"]["if"])
+        action_resolution = parse_conditional(trade_spec["conditional"]["if"], market, rng)
         if action_resolution:
             action = parse_action(trade_spec["conditional"]["then"], rng)
         else:

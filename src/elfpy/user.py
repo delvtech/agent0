@@ -64,59 +64,10 @@ class User:
         self.trade_policy = policy["trade"]
         self.wallet = {}
 
-    def get_direction_index(self):
-        """Returns an index in the set (0, 1) that indicates the trade direction"""
-        raise NotImplementedError
-
-    def get_tokens_in_out(self, tokens):
-        """Select one of two possible trade directions with some probability"""
-        direction_index = self.get_direction_index()
-        token_in = tokens[direction_index]
-        token_out = tokens[1 - direction_index]
-        return (token_in, token_out)
-
-    def get_trade_amount_usd(self, target_reserves, target_volume, market_price):
-        """
-        Compute trade amount, which can't be more than the available reserves.
-
-        TODO: Sync with smart contract team & parity their check for maximum trade amount
-        """
-        trade_mean = target_volume / 10
-        trade_std = target_volume / 100
-        trade_amount_usd = self.rng.normal(trade_mean, trade_std)
-        trade_amount_usd = np.minimum(trade_amount_usd, target_reserves * market_price)
-        return trade_amount_usd
-
-    def get_trade(self, market, tokens, trade_direction, target_daily_volume, base_asset_price):
+    def get_trade(self, market):
         """Helper function for computing a user trade"""
-        (token_in, token_out) = self.get_tokens_in_out(tokens)
-        target_reserves = market.get_target_reserves(token_in, trade_direction)
-        trade_amount_usd = self.get_trade_amount_usd(
-            target_reserves,
-            target_daily_volume,
-            base_asset_price,
-        )
-        return (token_in, token_out, trade_amount_usd)
-
-    def get_amount(self):
-        """
-        Get the amount that the user wants to trade
-        """
-        raise NotImplementedError
-
-def get_action(policy_json, market):
-    """
-    Returns an action for the user
-    Example policy_json file:
-
-    """
-    action = policy_json["trade"]
-    if "conditional" in action:
-        action_resolution = parse_conditional(market, action["conditional"]["if"])
-        if action_resolution:
-            return action["conditional"]["then"]
-        return action["conditional"]["else"]
-    return action
+        trade_action = parse_trade(self.trade_policy, market, self.rng)
+        return trade_action
 
 
 #class user:
