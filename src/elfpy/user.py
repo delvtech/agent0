@@ -114,23 +114,6 @@ def get_action(policy_json, market):
     Returns an action for the user
     Example policy_json file:
 
-    policy_json = {
-        "trade": {
-            "conditional": {
-                "if": {
-                    ("gt", "market.apy", 0.5)
-                },
-                "then": "buy"
-                "else": "none",
-            }
-        },
-        "amount": {
-            "method": "random",
-            "distribution": "gaussian",
-            "mean": 100,
-            "std": 10
-        }
-    }
     """
     action = policy_json["trade"]
     if "conditional" in action:

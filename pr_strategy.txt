@@ -1,0 +1,137 @@
+--------------------------------------------------------------------
+## simulators.py
+--------------------------------------------------------------------
+"""
+Easy version --
+one trade per block
+easier, but doesn't allow for MEV or gas simulation
+"""
+for day in range(num_trading_days):
+    for time_idx in range(time_steps_per_day): # discretized time
+        for user in shuffle(users): # random order; all users get a chance to trade
+            market_action = user.get_action(market) # user gets current market state
+            user_state_update = market.execute_trade(market_action) # includes market state update
+            user.update_state(user_state_update)
+            simulator.update_analysis_dict(user_states, market_state)
+        market.tick()
+
+
+"""
+Future version --
+multiple random trades per block
+needs to support "gas" so users can adjust their priority (users.time_weightings)
+needs to also support market safety for slippage
+and user contingent contracts that cancel trades if there is too much slippage
+"""
+for day in range(num_trading_days):
+    for time_idx in range(times_per_day): # discretized time
+        # minimum time pass between blocks of trades
+        shuffled_users = shuffle(users, weights=users.time_weightings) # random transaction ordering on the block
+        for user in shuffled_users: # random order in a block
+            action_list.append(user.get_action(market))
+        # user_state_updates includes deltas for every user state variable
+        user_state_updates = market.execute_trades(action_list)
+        for user, state in zip(shuffled_users, user_state_updates):
+            user.update_state(state)
+        simulator.update_analysis_dict(user_states, market_state)
+        market.tick()
+
+
+--------------------------------------------------------------------
+## markets.py
+Future version -- auto-protect: if slippage is too big, stop execution
+--------------------------------------------------------------------
+market tracks the current day & time of day
+
+market.execute_trade(action):
+    # execute the given trade
+    # update internal market state
+    #    user specifies amounts,
+    #        e.g. "buy 100DAI worth of ptDAI"
+    #    market computes volume of minted token & user deltas,
+    #        e.g. "user budget has 100 less DAI; 95 more ptDAI";
+    #             "market has 100 more DAI";
+    # return user state deltas
+
+
+--------------------------------------------------------------------
+## users.py
+--------------------------------------------------------------------
+user wallet
+   keys are dates (block number instead? what tokens are fungible?)
+   values are quantity of tokens purchased for that date
+wallet = {
+    "2022-11-01": 23,
+    "2022-11-13": 500
+}
+probably makes sense to include a user.wallet inner class
+this would support helper functions on the wallet, like "get_oldest_pt"; "get_largest_pt"
+
+user trading strategy is encoded in JSON format, e.g.:
+
+simple_policy_json = {
+    "trade": {
+        "conditional": {
+            "if": {(">", "market.pool_apy", 0.5)},
+            "then": {"buy": {"amount": 100}},
+            "else": "none",
+        },
+    },
+}
+
+complex_policy_json_1 = {
+    "trade":{
+        "conditional": {
+            "if": {
+                "and": [
+                    (">", "market.pool_apy", 0.5),
+                    ("<=", "market.vault_apy", 0.9),
+                ]
+            },
+            "then": {
+                "buy": {
+                    "amount": {
+                        "method": "random",
+                        "distribution": "gaussian",
+                        "mean": 100,
+                        "std": 10
+                    },
+                },
+            },
+            "else": "none",
+        },
+    },
+}
+
+complex_policy_json_2 = {
+    "trade": {
+        "conditional": {
+            "if": {
+                "and": [
+                    (">", "market.pool_apy", 0.5),
+                    (">=", "user.wallet.oldest_token", 85), # oldest token is near maturity
+                ]
+            },
+            "then": {
+                "buy": {
+                    "amount": {
+                        "method": "random",
+                        "distribution": "gaussian",
+                        "mean": 100,
+                        "std": 10
+                    },
+                },
+            },
+            "else": "none",
+        },
+    },
+}
+
+user.get_action(market):
+    # given market conditions, execute a user trading strategy
+    # this function will convert the user's json policy into actions
+    # return action in (buy, sell, none) and a float amount
+
+user.update_state(user_state_update):
+    # update all of the user member variables (e.g. wallet)
+    # using the member state that was returned from the market

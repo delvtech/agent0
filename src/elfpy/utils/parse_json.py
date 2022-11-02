@@ -44,7 +44,9 @@ def less_or_equal(a, b):
 operations = {
     "if": if_,
     ">": greater,
+    "gt": greater,
     "<": less,
+    "lt": less,
     "<=": less_or_equal,
     ">=": greater_or_equal,
     "==": hard_equals,
@@ -53,7 +55,7 @@ operations = {
 def get_attr_from_market(market, arg):
     """Parse the market class to get an argument"""
     if "market" in arg:
-        attr = arg.split(".")[1] # get the desired market attribute
+        attr = arg.split(".")[-1] # get the desired market attribute
         return getattr(market, attr)
     return arg
 
