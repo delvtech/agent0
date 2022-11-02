@@ -5,6 +5,9 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 
+import datetime
+import pytz
+
 import numpy as np
 
 from elfpy.markets import Market
@@ -75,6 +78,7 @@ class YieldSimulator:
         self.day = 0 # integer, day index in a given simulation
         self.block_number = 0 # integer, block index in a given simulation
         self.run_trade_number = 0 # integer, trade number in a given simulation
+        self.start_time = None # start datetime for a given simulation
         self.expected_proportion = 0
         self.init_time_stretch = 1
         self.init_share_price = None
@@ -97,6 +101,11 @@ class YieldSimulator:
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
             "run_number",
+            "simulation_start_time",
+            "day",
+            "block_number",
+            "block_timestamp",
+            "run_trade_number",
             "model_name",
             "scenario_name",
             "time_until_end",
@@ -134,14 +143,18 @@ class YieldSimulator:
             "pool_duration",
             "num_trading_days", # number of days in a simulation
             "num_blocks_per_day", # number of blocks in a day, simulates time between blocks
-            "day", # simulated day, reset per simulation
-            "block_number", # simulated block number, resets per simulation
-            "run_trade_number", # simulated trade number, increments across simulations
             "spot_price",
             "num_orders",
             #"step_size",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
+
+    def block_number_to_timestamp(self, block_number):
+        """Converts the current block number to a datetime based on the start datetime of the simulation"""
+        seconds_in_a_day = 86400
+        time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
+        delta_time = datetime.timedelta(seconds=self.block_number * time_between_blocks)
+        return self.start_time + delta_time
 
     def set_random_variables(self):
         """Use random number generator to assign initial simulation parameter values"""
@@ -216,8 +229,8 @@ class YieldSimulator:
     #    else:
     #        raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
 
-    def setup_pricing_and_market(self, override_dict=None):
-        """Constructs the pricing model and market member variables"""
+    def setup_simulated_entities(self, override_dict=None):
+        """Constructs the user list, pricing model, and market member variables"""
         # Update parameters if the user provided new ones
         assert (
             self.random_variables_set
@@ -237,8 +250,10 @@ class YieldSimulator:
             self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
+        # setup pricing model
         self.set_pricing_model(self.pricing_model_name) # construct pricing model object
         self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
+        # setup market
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
@@ -260,20 +275,7 @@ class YieldSimulator:
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
             verbose=self.verbose,
         )
-        #step_scale = 1  # TODO: support scaling the step_size via the override dict (i.e. make a step_scale parameter)
-        #self.step_size = self.pricing_model.days_to_time_remaining(
-        #    step_scale, self.init_time_stretch, normalizing_constant=365
-        #)
-        #self.users = [User(policy, self.rng) for policy in self.user_policies]
-        #self.set_user(self.user_type) # construct user object
-
-    #def get_user_actions(self, market, users):
-    #    user_actions = []
-    #    for user in self.rng.shuffle(users):
-    #        user_actions.append(user.get_action(market))
-    #    return user_actions
-
-    def block_number_to_timestamp(block_number):
+        # setup user list
 
 
     """
@@ -297,8 +299,9 @@ class YieldSimulator:
         up to `self.num_trading_days` days.
         """
 
+        self.start_time = datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
         self.block_number = 0
-        self.setup_pricing_and_market(override_dict)
+        self.setup_simulated_entities(override_dict)
         for day in range(0, self.num_trading_days):
             self.day = day
             # Vault return can vary per day, which sets the current price per share
