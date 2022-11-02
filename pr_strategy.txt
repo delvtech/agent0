@@ -14,7 +14,7 @@ So N users can trade in one time iteration (as indicated by `time_idx`), but eac
 If all N users buy, then they all get tokens minted with `(day, time_idx)` coded as the mint date.
 """
 for day in range(num_trading_days):
-    for time_idx in range(time_steps_per_day): # discretized time
+    for block_idx in range(blocks_per_day): # discretized time
         for user in shuffle(users): # random order; all users get a chance to trade
             market_action = user.get_action(market) # user gets current market state
             user_state_update = market.execute_trade(market_action) # includes market state update
@@ -49,6 +49,7 @@ for day in range(num_trading_days):
 Future version -- auto-protect: if slippage is too big, stop execution
 --------------------------------------------------------------------
 market tracks the current day & time of day
+    market.time will tick up instead of down now
 
 market.execute_trade(action):
     # execute the given trade
@@ -67,6 +68,7 @@ market.execute_trade(action):
 user wallet
    keys are dates (block number instead? what tokens are fungible?)
    values are quantity of tokens purchased for that date
+   tokens are only fungible if they were minted in the same block
 wallet = {
     "2022-11-01": 23,
     "2022-11-13": 500
