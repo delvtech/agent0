@@ -41,8 +41,27 @@ class BaseStrategyTest(unittest.TestCase):
             f" token_in={token_in} token_out={token_out}"
         )
 
+class TestBaseUser(BaseStrategyTest):
+    """Tests for the BaseUser class"""
+
+    def test_base_user(self):
+        """Tests the BaseUser class"""
+        from elfpy.user import User
+        self.setup_test_vars()
+
+        # assign directory
+        directory = os.path.join(os.getcwd(), "src", "elfpy", "strategies")
+        
+        # iterate over strategy files
+        for filename in os.scandir(directory):
+            if filename.is_file():
+                policy = json.load(open(filename.path))
+                user = User(policy, self.rng)
+                trade_action = user.get_trade(self.market)
+                self.check_trade(trade_action, policy)
+
 class TestStrategyDefinitions(BaseStrategyTest):
-    """User test class"""
+    """Tests for all strategies"""
 
     def test_strategy_definitions(self):
         """Test constructing each user type"""
