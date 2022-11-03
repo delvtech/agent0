@@ -10,6 +10,9 @@ import unittest
 import itertools
 import numpy as np
 import pandas as pd
+import os, sys
+
+sys.path.insert(1, os.path.join(os.getcwd(), "src"))
 
 from elfpy.simulators import YieldSimulator
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
@@ -84,6 +87,20 @@ class TestUser(BaseTest):
             simulator = YieldSimulator(**self.config)
             simulator.set_random_variables()
             simulator.run_simulation(override_dict)
+
+class TestDefaultConfig(BaseTest):
+    """Test default config save and load"""
+
+    def test_default_config(self):
+        """Test constructing each user type"""
+        import elfpy.utils.config as config
+        config.save(verbose=True)
+        read_back_config = config.load()
+        set_config, set_config_raw = config.set_default_config()
+        print(f"set config")
+        compare_result = config.compare_configs(set_config, read_back_config)
+        print(f"compare_result: {compare_result}")
+        assert compare_result
 
 
 class TestSimulator(BaseTest):

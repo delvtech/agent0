@@ -70,7 +70,7 @@ def get_variable(arg, market, rng):
     return arg
 
 
-def parse_conditional(market, conditional, rng):
+def parse_conditional(conditional, market, rng):
     """Parse conditional spec"""
     operation = conditional[0]
     arg1 = get_variable(conditional[1], market, rng)
@@ -102,20 +102,22 @@ def parse_trade(trade_spec, market, rng):
 
 def parse_action(action_spec, rng):
     """Parse the action specification"""
-    if action_spec == "none":
+    print(f"action_spec: {action_spec}")
+    action = list(action_spec)[0]
+    spec = action_spec[action]
+    if action == "none":
         return None
-    if action_spec == "buy":
+    if action == "buy":
         token_in = "base"
         token_out = "pt"
-        amount = parse_trade_amount(action_spec["buy"], rng)
-    elif action_spec == "sell":
+    elif action == "sell":
         token_in = "pt"
         token_out = "base"
-        amount = parse_trade_amount(action_spec["sell"], rng)
     else:
         raise ValueError(
-            f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action_spec}')
-    return (token_in, token_out, amount)
+            f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action}')
+    input_amount_in_usd = parse_trade_amount(spec, rng)
+    return (token_in, token_out, input_amount_in_usd)
 
 
 def parse_trade_amount(amount_spec, rng):
@@ -124,4 +126,37 @@ def parse_trade_amount(amount_spec, rng):
         amount = parse_distribution(amount_spec["amount"], rng)
     else:
         amount = amount_spec["amount"]
+    if amount <= 0:
+        raise ValueError(
+            f'parse_trade_amount: ERROR: amount must be >0')
     return amount
+
+def parse(tests, market, rng):
+    """
+    recursive looping across all items
+    not currently used
+    adapted from github link at top of this file
+    """
+    # You've recursed to a primitive, stop!
+    if tests is None or not isinstance(tests, dict):
+        return tests
+
+    operator = list(tests.keys())[0]
+    values = tests[operator]
+
+    # Easy syntax for unary operators, like {"var": "x"} instead of strict {"var": ["x"]}
+    if not isinstance(values, list) and not isinstance(values, tuple):
+        values = [values]
+
+    # Recursion!
+    values = [parse(val, market, rng) for val in values]
+
+    if operator == 'var':
+        return get_variable(values, market, rng)
+    elif operator == 'amount':
+        return values
+
+    if operator not in operations:
+        raise ValueError(f"Unrecognized operation {operator}")
+
+    return operations[operator](*values)
