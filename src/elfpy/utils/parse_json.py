@@ -62,19 +62,22 @@ operations = {
 
 def get_variable(arg, market, rng):
     """Parse the market class to get an argument"""
-    if "market" in arg:
-        attr = arg.split(".")[-1] # get the desired market attribute
-        return getattr(market, attr)
-    if "rand_variable" in arg:
-        arg = parse_distribution(arg["rand_variable"], rng)
+    if isinstance(market, dict):
+        if "market" in arg:
+            attr = arg.split(".")[-1] # get the desired market attribute
+            return getattr(market, attr)
+        if "rand_variable" in arg:
+            arg = parse_distribution(arg["rand_variable"], rng)
     return arg
 
 
 def parse_conditional(conditional, market, rng):
     """Parse conditional spec"""
-    operation = conditional[0]
-    arg1 = get_variable(conditional[1], market, rng)
-    arg2 = get_variable(conditional[2], market, rng)
+    print(f"conditional: {conditional} market: {market} rng: {rng}")
+    print(f"comparator {conditional['comparator']}")
+    operation = conditional["operator"]
+    arg1 = get_variable(conditional["comparator"], market, rng)
+    arg2 = get_variable(conditional["value"], market, rng)
     return operations[operation](arg1, arg2)
 
 
@@ -90,6 +93,7 @@ def parse_distribution(dist_spec, rng):
 def parse_trade(trade_spec, market, rng):
     """Parse the trade specification"""
     if "conditional" in trade_spec:
+        print(f"conditional: {trade_spec['conditional']}")
         action_resolution = parse_conditional(trade_spec["conditional"]["if"], market, rng)
         if action_resolution:
             action = parse_action(trade_spec["conditional"]["then"], rng)

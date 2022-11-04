@@ -264,7 +264,8 @@ class YieldSimulator:
             verbose=self.verbose,
         )
         # setup user list
-        self.user_list = [User(policy, self.rng, self.verbose) for policy in self.user_policies]
+        # TODO: read appropriate user policies from respective files, until then don't instantiate
+        # self.user_list = [User(policy, self.rng, self.verbose) for policy in self.user_policies]
 
     def run_simulation(self, override_dict=None):
         """

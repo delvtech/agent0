@@ -6,7 +6,7 @@ Testing for the ElfPy package modules
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-import os, sys
+import os
 import unittest
 import json
 import numpy as np
@@ -23,7 +23,7 @@ class BaseStrategyTest(unittest.TestCase):
         """Assigns member variables that are useful for many tests"""
         # load default config
         random_seed = 3
-        simulator_rng = np.random.default_rng(random_seed)
+        self.rng = np.random.default_rng(random_seed)
         self.config = {
             "min_fee": 0.1, # decimal that assigns fee_percent
             "max_fee": 0.5, # decimal that assigns fee_percent
@@ -46,15 +46,17 @@ class BaseStrategyTest(unittest.TestCase):
             "tokens": ["base", "fyt"],
             "trade_direction": "out",
             "precision": None,
-            "rng": simulator_rng,
+            "rng":self.rng,
             "verbose": False,
-            "pricing_model_name": 'YieldSpacev2',
-            "user_type": "WeightedRandom",
+            "pricing_model_name": 'HyperDrive',
+            "user_policies": "WeightedRandom",
+            "num_trading_days": 90,
+            "token_duration": 90
         }
-        self.rng = self.config["rng"]
 
         simulator = YieldSimulator(**self.config)
         simulator.set_random_variables()
+        simulator.setup_simulated_entities()
         self.market = simulator.market
 
     def check_trade(self, trade_action, trade_spec):
