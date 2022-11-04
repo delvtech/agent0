@@ -69,6 +69,20 @@ class BaseTest(unittest.TestCase):
         self.fee_percent_vals = self.test_rng.normal(loc=0.1, scale=0.01, size=num_vals_per_variable)
 
 
+class TestDefaultConfig(BaseTest):
+    """Test default config save and load"""
+
+    def test_default_config(self):
+        """Test constructing each user type"""
+        import elfpy.utils.config as config
+        config.save(verbose=True)
+        read_back_config = config.load()
+        set_config, set_config_raw = config.set_default_config()
+        print(f"set config")
+        compare_result = config.compare_configs(set_config, read_back_config)
+        print(f"compare_result: {compare_result}")
+        assert compare_result
+        
 class TestUser(BaseTest):
     """User test class"""
 
