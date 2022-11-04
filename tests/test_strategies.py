@@ -9,8 +9,7 @@ Testing for the ElfPy package modules
 import os, sys
 import unittest
 import json
-
-sys.path.insert(1, os.path.join(os.getcwd(), "src"))
+import numpy as np
 
 from elfpy.simulators import YieldSimulator
 # from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
@@ -22,9 +21,36 @@ class BaseStrategyTest(unittest.TestCase):
 
     def setup_test_vars(self):
         """Assigns member variables that are useful for many tests"""
-        import elfpy.utils.config as config
         # load default config
-        self.config = config.load()
+        random_seed = 3
+        simulator_rng = np.random.default_rng(random_seed)
+        self.config = {
+            "min_fee": 0.1, # decimal that assigns fee_percent
+            "max_fee": 0.5, # decimal that assigns fee_percent
+            "min_target_liquidity": 1e6, # in USD
+            "max_target_liquidity": 10e6, # in USD
+            "min_target_volume": 0.001, # fraction of pool liquidity
+            "max_target_volume": 0.01, # fration of pool liquidity
+            "min_pool_apy": 0.02, # as a decimal
+            "max_pool_apy": 0.9, # as a decimal
+            "pool_apy_target_range": [0.15,0.20], # as a decimal
+            "pool_apy_target_range_convergence_speed": 0.52, # as a share of trades that move in convergence direction
+            "min_vault_age": 0, # fraction of a year
+            "max_vault_age": 1, # fraction of a year
+            "min_vault_apy": 0.001, # as a decimal
+            "max_vault_apy": 0.9, # as a decimal
+            "base_asset_price": 2.5e3, # aka market price
+            "pool_duration": 180, # in days
+            "num_trading_days": 180, # should be <= pool_duration
+            "floor_fee": 0, # minimum fee percentage (bps)
+            "tokens": ["base", "fyt"],
+            "trade_direction": "out",
+            "precision": None,
+            "rng": simulator_rng,
+            "verbose": False,
+            "pricing_model_name": 'YieldSpacev2',
+            "user_type": "WeightedRandom",
+        }
         self.rng = self.config["rng"]
 
         simulator = YieldSimulator(**self.config)
