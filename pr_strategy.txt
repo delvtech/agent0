@@ -85,59 +85,60 @@ user trading strategies are encoded in json files,
 with one file per user in the `root/users`(elsewhere?) directory
 e.g.:
 
-`users/simple_policy_1.json`
-policy = {
-    "type": "simple_trader",
+`examples/user_policies/example_policy_1.json`
+"policy": {
+    "type": "example_trader",
     "budget": 1000,
-    "trade": {"sell": {"amount": 100}},
+    "trade": {"sell": {"amount": 100}}
 }
 
-`users/simple_policy_2.json`
-policy = {
-    "type": "simple_trader",
+`examples/user_policies/example_policy_2.json`
+"policy" : {
+    "type": "example_trader",
     "budget": 1000,
     "trade": {
         "conditional": {
-            "if" {
-                "==",
-                "rand_variable": {
-                    "method": "random",
-                    "distribution": "integers",
-                    "low": 0,
-                    "high": 2,
-                },
-                0
+            "if": {">": ["market.pool_apy", 0.5]},
+            "then": {"buy": {"amount": 100}},
+            "else": "none"
+        }
+    }
+}
+
+`examples/user_policies/example_policy_3.json`
+"policy" : {
+    "type": "example_trader",
+    "budget": 1000,
+    "trade": {
+        "conditional": {
+            "if": {
+                "==": [
+                    {"rand_variable": {
+                        "method": "random",
+                        "distribution": "integers",
+                        "low": 0,
+                        "high": 2
+                    }},
+                    0
+                ]
             },
             "then": {"buy": {"amount": 100}},
-            "else": {"sell": {"amount": 100}},
-        },
-    },
+            "else": {"sell": {"amount": 100}}
+        }
+    }
 }
 
-`users/simple_policy_3.json`
-policy = {
-    "type": "simple_trader",
-    "budget": 1000,
-    "trade": {
-        "conditional": {
-            "if": {(">", "market.pool_apy", 0.5)},
-            "then": {"buy": {"amount": 100}},
-            "else": "none",
-        },
-    },
-}
-
-`users/complex_policy_1.json`
-policy = {
-    "type": "complex_trader",
+`examples/user_policies/example_policy_4.json`
+"policy" : {
+    "type": "example_trader",
     "budget": 1000,
     "trade":{
         "conditional": {
             "if": {
-                "and": [
-                    (">", "market.pool_apy", 0.5),
-                    ("<=", "market.vault_apy", 0.9),
-                ]
+                "and": {
+                    ">": ["market.pool_apy", 0.5],
+                    "<=": ["market.vault_apy", 0.9]
+                }
             },
             "then": {
                 "buy": {
@@ -146,25 +147,25 @@ policy = {
                         "distribution": "gaussian",
                         "mean": 100,
                         "std": 10
-                    },
-                },
+                    }
+                }
             },
-            "else": "none",
-        },
-    },
+            "else": "none"
+        }
+    }
 }
 
-`users/complex_policy_2.json`
-policy = {
-    "type": "complex_trader",
+`examples/user_policies/example_policy_5.json`
+"policy": {
+    "type": "example_trader",
     "budget": 1000,
     "trade": {
         "conditional": {
             "if": {
-                "and": [
-                    (">", "market.pool_apy", 0.5),
-                    (">=", "user.wallet.oldest_token", 85), # oldest token is near maturity
-                ]
+                "and": {
+                    ">": ["market.pool_apy", 0.5],
+                    ">=": ["user.wallet.oldest_token", 85]
+                }
             },
             "then": {
                 "buy": {
@@ -173,12 +174,12 @@ policy = {
                         "distribution": "gaussian",
                         "mean": 100,
                         "std": 10
-                    },
-                },
+                    }
+                }
             },
-            "else": "none",
-        },
-    },
+            "else": "none"
+        }
+    }
 }
 
 user.get_trade(market):
