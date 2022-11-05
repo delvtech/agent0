@@ -75,6 +75,7 @@ class YieldSimulator:
         self.run_number = 0 
         self.day = 0
         self.block_number = 0
+        self.daily_block_number = 0
         self.run_trade_number = 0
         self.start_time = None
         self.expected_proportion = 0
@@ -264,8 +265,7 @@ class YieldSimulator:
             verbose=self.verbose,
         )
         # setup user list
-        # TODO: read appropriate user policies from respective files, until then don't instantiate
-        # self.user_list = [User(policy, self.rng, self.verbose) for policy in self.user_policies]
+        self.user_list = [User(policy, self.rng, self.verbose) for policy in self.user_policies]
 
     def run_simulation(self, override_dict=None):
         """
@@ -294,13 +294,14 @@ class YieldSimulator:
                     * self.market.init_share_price # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
-            for daily_block_idx in range(self.num_blocks_per_day):
+            for daily_block_number in range(self.num_blocks_per_day):
+                self.daily_block_number = daily_block_number
                 for user in np.shuffle(self.user_list):
                     user_action = user.get_trade(self.market)
                     if user_action is None:
                         pass
                     else:
-                        (self.token_in, self.token_out, self.trade_direction, self.trade_amount_usd) = user_action
+                        (self.token_in, self.trade_amount_usd) = user_action
                     self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                     # Calculate time remaining
                     if self.pricing_model_name == "elementv1":
@@ -310,9 +311,8 @@ class YieldSimulator:
                     # Conduct trade & update state
                     (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee,) = self.market.swap(
                         self.trade_amount,  # in units of target asset
-                        self.trade_direction,  # out or in
                         self.token_in,  # base or fyt
-                        self.token_out,  # opposite of token_in
+                        time_remaining
                     )
                     self.update_analysis_dict()
                     self.run_trade_number += 1
@@ -326,8 +326,6 @@ class YieldSimulator:
                             + f"reserves={(self.market.base_asset, self.market.token_asset)}"
                         )
                 self.block_number += 1
-            if self.day < self.num_trading_days - 1:  # no need to tick the market after the last day
-                self.market.tick()
         self.run_number += 1
 
     def update_analysis_dict(self):
@@ -357,8 +355,8 @@ class YieldSimulator:
         # Variables that change per day
         self.analysis_dict["num_orders"].append(self.market.base_asset_orders + self.market.token_asset_orders)
         self.analysis_dict["vault_apy"].append(self.vault_apy[self.day])
-        self.analysis_dict["pool_apy"].append(self.market.apy(days_remaining))
         self.analysis_dict["day"].append(self.day)
+        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
         self.analysis_dict["block_number"].append(self.block_number)
         self.analysis_dict["block_timestamp"].append(self.block_number_to_timestamp(self.block_number))
         # Variables that change per trade

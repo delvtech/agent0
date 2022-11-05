@@ -5,13 +5,26 @@ https://github.com/nadirizr/json-logic-py/blob/master/json_logic/__init__.py
 
 
 def if_(*args):
-    """Implements the 'if' operator with support for multiple elseif-s."""
-    for i in range(0, len(args) - 1, 2):
-        if args[i]:
-            return args[i + 1]
-    if len(args) % 2:
-        return args[-1]
-    else:
+    """
+    Implements the 'if' operator with support for multiple elseif-s
+    The first truth in the series is returned
+
+    Arguments
+    ---------
+    args: any number of comma seperated arguments
+        the args are assumed to be a sequence of (bool, val) pairs
+    
+    Returns
+    -------
+    resolution: any
+        the resoultion of the first if statement 
+    """
+    for i in range(0, len(args) - 1, 2): # every other arg is a bool
+        if args[i]: # the even args are conditionals (booleans)
+            return args[i + 1] # the odd args are resolved values
+    if len(args) % 2: # else was included
+        return args[-1] # last statement
+    else: # no else included
         return None
 
 
@@ -48,8 +61,26 @@ def less_or_equal(a, b):
     return less(a, b) or hard_equals(a, b)
 
 
+def and_(*args):
+    """Implements the 'and' operator."""
+    if all(args):
+        return True
+    else:
+        return False
+
+
+def or_(*args):
+    """Implements the 'or' operator."""
+    if any(args):
+        return True
+    else:
+        return False
+
+
 operations = {
     "if": if_,
+    "and": and_,
+    "or": or_,
     ">": greater,
     "gt": greater,
     "<": less,
@@ -60,40 +91,59 @@ operations = {
 }
 
 
-def get_variable(arg, market, rng):
-    """Parse the market class to get an argument"""
-    if isinstance(market, dict):
-        if "market" in arg:
-            attr = arg.split(".")[-1] # get the desired market attribute
-            return getattr(market, attr)
-        if "rand_variable" in arg:
-            arg = parse_distribution(arg["rand_variable"], rng)
-    return arg
-
-
-def parse_conditional(conditional, market, rng):
-    """Parse conditional spec"""
-    print(f"conditional: {conditional} market: {market} rng: {rng}")
-    print(f"comparator {conditional['comparator']}")
-    operation = conditional["operator"]
-    arg1 = get_variable(conditional["comparator"], market, rng)
-    arg2 = get_variable(conditional["value"], market, rng)
-    return operations[operation](arg1, arg2)
-
-
 def parse_distribution(dist_spec, rng):
     """Return a distribution described by the method policy"""
     if dist_spec["distribution"] == "gaussian":
         return rng.gaussian(dist_spec["mean"], dist_spec["std"])
-    elif dist_spec["distribution"] == "integers":
+    if dist_spec["distribution"] == "integers":
         return rng.integers(low=dist_spec["low"], high=dist_spec["high"])
     raise ValueError(f'Only ["gaussian", "integers"] distributions are supported, not {dist_spec["distribution"]}')
+
+
+def get_variable(arg, market, rng):
+    """Parse the market class to get an argument"""
+    if "market" in arg:
+        attr = arg.split(".")[-1] # get the desired market attribute
+        return getattr(market, attr)
+    if "rand_variable" in arg:
+        return parse_distribution(arg["rand_variable"], rng)
+    return arg
+
+
+def parse_conditional(conditional, market, rng):
+    """
+    Parse conditional spec
+
+    Arguments
+    ---------
+    conditional : dict
+        A dictionary containing a single key indicating the logic
+    market : Market object
+        An instantiated market object
+    rng : np.random.default_rng(random_seed)
+        Random number generator used in the simulation
+
+    Returns
+    -------
+    bool
+        The resolution of the conditional
+    """
+
+    operation = list(conditional.keys())[0]
+    """
+    ### TODO: 
+    this operation must be one of the values in operators, defined above
+    we want to recursively check each key & resolve the conditional until we get to the bottom
+    we also need to check args to make sure they don't require logic ("rand_variable" or "market.*"
+    """
+    arg1 = get_variable(conditional["comparator"], market, rng)
+    arg2 = get_variable(conditional["value"], market, rng)
+    return operations["if"](arg1, arg2)
 
 
 def parse_trade(trade_spec, market, rng):
     """Parse the trade specification"""
     if "conditional" in trade_spec:
-        print(f"conditional: {trade_spec['conditional']}")
         action_resolution = parse_conditional(trade_spec["conditional"]["if"], market, rng)
         if action_resolution:
             action = parse_action(trade_spec["conditional"]["then"], rng)
@@ -106,22 +156,19 @@ def parse_trade(trade_spec, market, rng):
 
 def parse_action(action_spec, rng):
     """Parse the action specification"""
-    print(f"action_spec: {action_spec}")
     action = list(action_spec)[0]
     spec = action_spec[action]
     if action == "none":
         return None
     if action == "buy":
         token_in = "base"
-        token_out = "pt"
     elif action == "sell":
         token_in = "pt"
-        token_out = "base"
     else:
         raise ValueError(
             f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action}')
     input_amount_in_usd = parse_trade_amount(spec, rng)
-    return (token_in, token_out, input_amount_in_usd)
+    return (token_in, input_amount_in_usd)
 
 
 def parse_trade_amount(amount_spec, rng):
@@ -132,8 +179,9 @@ def parse_trade_amount(amount_spec, rng):
         amount = amount_spec["amount"]
     if amount <= 0:
         raise ValueError(
-            f'parse_trade_amount: ERROR: amount must be >0')
+            f'parse_json: ERROR: amount must be >0, not {amount}.')
     return amount
+
 
 def parse(tests, market, rng):
     """
