@@ -19,7 +19,8 @@ class Policy(BasicPolicy):
             action_list.append(["open_short", 10]) # open a short with 10 PT
         mint_times = list(self.wallet.keys()).pop("base")
         for token_mint_time in mint_times:
-            enough_time_has_passed = self.market.time - token_mint_time >= 0.1
+            time_limit = 0.1 # fraction of a year
+            enough_time_has_passed = self.market.time - token_mint_time >= time_limit
             if enough_time_has_passed: # 10 % of a year after mint
                 action_list.append(["close_short", token_mint_time, 10])
         return action_list
