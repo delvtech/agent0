@@ -6,7 +6,7 @@ TODO: rewrite all functions to have typed inputs
 
 
 # from elfpy.utils.parse_json import parse_trade
-from importlib import import_module
+
 
 class User:
     """
@@ -15,13 +15,12 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, policy, market, rng, verbose=False):
+    def __init__(self, market, rng, verbose=False):
         """
         Set up initial conditions
         """
         self.market = market
         self.budget = -1 # not initialized
-        self.policy = import_module(f"elfpy.strategies.{policy}").Policy(self, policy)
         # print(f"User policy: {self.policy} of type {type(self.policy)}")
         # print(f" dir {dir(self.policy)}")
         print(f" budget should now be initialized. budget={self.budget}")

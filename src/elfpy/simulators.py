@@ -7,7 +7,7 @@ TODO: rewrite all functions to have typed inputs
 
 import datetime
 import pytz
-import os
+from importlib import import_module
 
 import numpy as np
 
@@ -266,7 +266,10 @@ class YieldSimulator:
             verbose=self.verbose,
         )
         # setup user list
-        self.user_list = [User(policy, self.market, self.rng) for policy in self.user_policies]
+        self.user_list = []
+        for policy_name in self.user_policies:
+            user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(self.market, self.rng, self.verbose)
+            self.user_list.append(user_with_policy)
 
     def run_simulation(self, override_dict=None):
         """
@@ -297,14 +300,12 @@ class YieldSimulator:
                 )
             for daily_block_number in range(self.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                self.rng.shuffle(self.user_list)
+                self.rng.shuffle(self.user_list) # shuffle the user action order each block
                 for user in self.user_list:
-                    print(f"got to user {user} on block {self.daily_block_number}")
                     user_action = user.get_trade(self.market)
                     if len(user_action) == 0: # empty list indicates no action
                         pass
-                    else:
-                        (self.token_in, self.trade_amount_usd) = user_action
+                    (self.token_in, self.trade_amount_usd) = user_action
                     self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                     # Conduct trade & update state
                     user_state_update = self.market.swap(
