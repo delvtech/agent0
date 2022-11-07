@@ -1,12 +1,13 @@
-class Policy:
+from elfpy.strategies.basic import BasicPolicy
+
+class Policy(BasicPolicy):
     """
     simple long
     only has one long open at a time
     """
-    def __init__(self, user, market):
-        """comment"""
-        self.user = user
-        self.market = market
+    def __init__(self, user, policy, budget=100):
+        """call basic policy init then add custom stuff"""
+        super().__init__(user, policy, budget)
         self.last_long_time = -1
 
     def action(self):
@@ -21,8 +22,4 @@ class Policy:
         elif enough_time_has_passed:
             action_list.append(["close_long", 100])
             self.last_long_time = -1
-        return action_list
-
-        
-
         return action_list

@@ -7,6 +7,7 @@ TODO: rewrite all functions to have typed inputs
 
 import datetime
 import pytz
+import os
 
 import numpy as np
 
@@ -265,7 +266,7 @@ class YieldSimulator:
             verbose=self.verbose,
         )
         # setup user list
-        self.user_list = [User(policy, self.rng, self.verbose) for policy in self.user_policies]
+        self.user_list = [User(policy, self.market, self.rng) for policy in self.user_policies]
 
     def run_simulation(self, override_dict=None):
         """
@@ -296,7 +297,15 @@ class YieldSimulator:
                 )
             for daily_block_number in range(self.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                for user in np.shuffle(self.user_list):
+                print(self.rng)
+                print(f"user list: {self.user_list} of type {type(self.user_list)} and length {len(self.user_list)}")
+                # shuffled_list_of_users = self.rng.shuffle(self.user_list)
+                # print(f"shuffled_list_of_users: {shuffled_list_of_users} of type {type(shuffled_list_of_users)} and length {(shuffled_list_of_users)}")
+                self.rng.shuffle(self.user_list)
+                # print(f"shuffled_list: {shuffled_list} of type {type(shuffled_list)} and length {len(shuffled_list)}")
+                for user in self.user_list:
+                    # user = self.user_list[user_index]
+                    print(f"got to user {user} on block {self.daily_block_number}")
                     user_action = user.get_trade(self.market)
                     if user_action is None:
                         pass
