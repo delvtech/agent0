@@ -1,19 +1,22 @@
-class Policy:
-    """
-    simple short
-    only has 1 short open at a time
-    """
-    def __init__(self, user, market):
-        """comment"""
-        self.user = user
-        self.market = market
+"""
+simple short
+only has 1 short open at a time
+"""
 
+
+from elfpy.strategies.basic import BasicPolicy
+
+
+class Policy(BasicPolicy):
+    """
+    User policy
+    """
     def action(self):
         """specify action"""
         action_list = []
-        mint_times = list(self.user.budget.keys()).pop("base")
+        mint_times = list(self.budget.keys()).pop("base")
         has_opened_short = len(mint_times) == 1
-        can_open_short = self.user.get_max_short(self.market) > 25
+        can_open_short = self.get_max_short(self.market) > 25
         if has_opened_short: # I have an open short
             enough_time_has_passed = self.market.time - mint_times[0] > 0.25
             if enough_time_has_passed:

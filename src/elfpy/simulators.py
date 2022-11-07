@@ -7,12 +7,12 @@ TODO: rewrite all functions to have typed inputs
 
 import datetime
 import pytz
+
 from importlib import import_module
 
 import numpy as np
 
 from elfpy.markets import Market
-from elfpy.user import User
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
 

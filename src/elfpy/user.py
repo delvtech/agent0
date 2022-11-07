@@ -21,9 +21,6 @@ class User:
         """
         self.market = market
         self.budget = -1 # not initialized
-        # print(f"User policy: {self.policy} of type {type(self.policy)}")
-        # print(f" dir {dir(self.policy)}")
-        print(f" budget should now be initialized. budget={self.budget}")
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
         self.wallet = {
             "base": self.budget
