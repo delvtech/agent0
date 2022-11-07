@@ -34,7 +34,7 @@ class Market:
     ):
         # TODO: In order for the AMM to work as expected we should store
         # a share reserve instead of a base reserve.
-        self.time = 0
+        self.time = 0 # time in year fractions
         self.base_asset = base_asset  # x
         self.token_asset = token_asset  # y
         self.fee_percent = fee_percent  # g

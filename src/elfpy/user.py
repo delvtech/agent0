@@ -29,6 +29,7 @@ class User:
         self.verbose = verbose
 
     def action(self):
+        """Specify action from the policy"""
         raise NotImplementedError
 
     def get_max_long(self):

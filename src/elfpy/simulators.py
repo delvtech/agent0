@@ -146,25 +146,6 @@ class YieldSimulator:
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
-    def block_number_to_timestamp(self, block_number):
-        """Converts the current block number to a datetime based on the start datetime of the simulation"""
-        seconds_in_a_day = 86400
-        time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
-        delta_time = datetime.timedelta(seconds=block_number * time_between_blocks)
-        return self.start_time + delta_time
-
-    @staticmethod
-    def current_time():
-        """Returns the current time"""
-        return datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
-
-    def get_time_remaining(self, mint_time):
-        """Get the time remaining on a token"""
-        time_elapsed = (self.current_time() - mint_time).total_seconds()
-        total_time = datetime.timedelta(days=self.token_duration).total_seconds()
-        time_remaining = 1 - (time_elapsed / total_time)
-        return time_remaining
-
     def set_random_variables(self):
         """Use random number generator to assign initial simulation parameter values"""
         self.target_liquidity = self.rng.uniform(self.min_target_liquidity, self.max_target_liquidity)
@@ -271,6 +252,39 @@ class YieldSimulator:
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(self.market, self.rng, self.verbose)
             self.user_list.append(user_with_policy)
 
+    def step_size(self):
+        """Returns minimum time increment"""
+        blocks_per_year = 365 * self.num_blocks_per_day
+        return 1 / blocks_per_year
+
+    def block_number_to_timestamp(self, block_number):
+        """Converts the current block number to a datetime based on the start datetime of the simulation"""
+        seconds_in_a_day = 86400
+        time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
+        delta_time = datetime.timedelta(seconds=block_number * time_between_blocks)
+        return self.start_time + delta_time
+
+    @staticmethod
+    def current_time():
+        """Returns the current time"""
+        return datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
+
+    def get_time_remaining(self, mint_time):
+        """Get the time remaining on a token"""
+        time_elapsed = (self.current_time() - mint_time).total_seconds()
+        total_time = datetime.timedelta(days=self.token_duration).total_seconds()
+        time_remaining = 1 - (time_elapsed / total_time)
+        return time_remaining
+
+    def compute_time_delta(year_fraction_time):
+        """TODO"""
+        return 0
+
+    def market_time_to_wall_time(self):
+        """TODO"""
+        time_delta = self.compute_time_delta(self.market.time)
+        return self.start_time + time_delta
+
     def run_simulation(self, override_dict=None):
         """
         Run the trade simulation and update the output state dictionary
@@ -315,6 +329,8 @@ class YieldSimulator:
                         self.token_in,  # base or pt
                         time_remaining
                     )
+                    # Update user state
+                    user.update_wallet(user_state_update)
                     self.update_analysis_dict()
                     self.run_trade_number += 1
                     if self.verbose:
@@ -326,6 +342,7 @@ class YieldSimulator:
                             + f"amount={self.trade_amount}, "
                             + f"reserves={(self.market.base_asset, self.market.token_asset)}"
                         )
+                self.market.tick(self.step_size())
                 self.block_number += 1
         self.run_number += 1
 
