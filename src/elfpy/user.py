@@ -28,6 +28,9 @@ class User:
         self.rng = rng
         self.verbose = verbose
 
+    def action(self):
+        raise NotImplementedError
+
     def get_max_long(self):
         """Returns the amount of base that the user can spend."""
         return self.wallet["base"]
