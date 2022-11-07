@@ -1,14 +1,19 @@
-class BasicPolicy:
+"""
+Base policy class
+
+Plicies inherit from Users (thus each policy is assigned to a user)
+subclasses of BasicPolicy will implement trade actions
+"""
+
+
+from elfpy.user import User
+
+
+class BasicPolicy(User):
     """
     most basic policy setup
     """
-    def __init__(self, user, policy=[], budget=100):
-        """comment"""
-        self.user = user
-        self.policy = policy
-        user.budget = budget
-
-    def get_trade(market):
+    def action(self):
         """specify action"""
         action_list = []
         # implement trade here
