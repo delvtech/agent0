@@ -297,31 +297,20 @@ class YieldSimulator:
                 )
             for daily_block_number in range(self.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                print(self.rng)
-                print(f"user list: {self.user_list} of type {type(self.user_list)} and length {len(self.user_list)}")
-                # shuffled_list_of_users = self.rng.shuffle(self.user_list)
-                # print(f"shuffled_list_of_users: {shuffled_list_of_users} of type {type(shuffled_list_of_users)} and length {(shuffled_list_of_users)}")
                 self.rng.shuffle(self.user_list)
-                # print(f"shuffled_list: {shuffled_list} of type {type(shuffled_list)} and length {len(shuffled_list)}")
                 for user in self.user_list:
-                    # user = self.user_list[user_index]
                     print(f"got to user {user} on block {self.daily_block_number}")
                     user_action = user.get_trade(self.market)
-                    if user_action is None:
+                    if len(user_action) == 0: # empty list indicates no action
                         pass
                     else:
                         (self.token_in, self.trade_amount_usd) = user_action
                     self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
-                    # Calculate time remaining
-                    if self.pricing_model_name == "elementv1":
-                        time_remaining = self.get_time_remaining(self.start_time)
-                    else: # hyperdrive
-                        time_remaining = self.get_time_remaining(self.token_out.mint_time)
                     # Conduct trade & update state
-                    (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee,) = self.market.swap(
+                    user_state_update = self.market.swap(
                         self.trade_amount,  # in units of target asset
                         self.token_in,  # base or fyt
-                        time_remaining
+                        self.current_time()
                     )
                     self.update_analysis_dict()
                     self.run_trade_number += 1

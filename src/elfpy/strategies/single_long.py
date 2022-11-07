@@ -10,15 +10,15 @@ class Policy(BasicPolicy):
         super().__init__(user, policy, budget)
         self.last_long_time = -1
 
-    def action(self):
+    def action(self, market):
         """specify action"""
         action_list = []
         has_opened_long = self.last_long_time > 0
         can_open_long = self.user.get_max_long() >= 100
-        enough_time_has_passed = self.market.time - self.last_long_time > 0.25
+        enough_time_has_passed = market.time - self.last_long_time > 0.25
         if has_opened_long and can_open_long:
             action_list.append(["open_long", 100])
-            self.last_long_time = self.market.time
+            self.last_long_time = market.time
         elif enough_time_has_passed:
             action_list.append(["close_long", 100])
             self.last_long_time = -1

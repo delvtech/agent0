@@ -34,6 +34,7 @@ class Market:
     ):
         # TODO: In order for the AMM to work as expected we should store
         # a share reserve instead of a base reserve.
+        self.time = 0
         self.base_asset = base_asset  # x
         self.token_asset = token_asset  # y
         self.fee_percent = fee_percent  # g
@@ -218,3 +219,23 @@ class Market:
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
         state_string = "\n".join(strings)
         return state_string
+
+    def tick(self, delta_time):
+        """Increments the time member variable"""
+        self.time += delta_time
+
+    def calc_max_pts_to_short(self, max_base):
+        """
+        Returns the amount of PTs to short that has a max loss of max_base
+        """
+        in_given_out = self.pricing_model.calc_in_given_out(
+            out=max_base,
+            share_reserves=self.token_asset,
+            bond_reserves=self.base_asset,
+            token_in='base',
+            fee_percent=self.fee_percent,
+            time_remaining=self.time,
+            init_share_price=self.init_share_price,
+            share_price=self.share_price,
+        )
+

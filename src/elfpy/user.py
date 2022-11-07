@@ -33,7 +33,7 @@ class User:
         self.verbose = verbose
 
     def get_max_long(self):
-        """what is the amount of base that the user can spend"""
+        """Returns the amount of base that the user can spend."""
         return self.wallet["base"]
 
     def get_max_short(self, market):
