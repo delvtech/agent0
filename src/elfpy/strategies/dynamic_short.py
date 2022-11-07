@@ -16,7 +16,7 @@ class Policy(BasicPolicy):
         specify action
         """
         action_list = []
-        mint_times = list(self.budget.keys()).pop("base")
+        mint_times = list(self.wallet.keys()).pop("base")
         have_position = len(mint_times) == 1
         fixed_rate = self.market.pool_apy()
         variable_rate = self.market.vault_apy

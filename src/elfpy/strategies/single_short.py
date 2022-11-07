@@ -14,7 +14,7 @@ class Policy(BasicPolicy):
     def action(self):
         """specify action"""
         action_list = []
-        mint_times = list(self.budget.keys()).pop("base")
+        mint_times = list(self.wallet.keys()).pop("base")
         has_opened_short = len(mint_times) == 1
         can_open_short = self.get_max_short(self.market) > 25
         if has_opened_short: # I have an open short
