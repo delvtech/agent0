@@ -45,17 +45,22 @@ class User:
             discount = max_short - PTsold
         return max_short - 1 # subtract 1 to get the max short
 
-    def get_trade(self, market):
+    def get_trade(self):
         """Helper function for computing a user trade"""
-        
         # trade_action = parse_trade(self.policy, market, self.rng)
-        trade_action = self.policy.get_trade(self, market, self.rng)
-        if trade_action is not None:
-            token_in, token_out, trade_amount_usd = trade_action
-            assert trade_amount_usd >= 0, (
-                f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
-                f" token_in={token_in} token_out={token_out}"
-            )
+        trade_action = self.action() # get the action list from the policy
+
+        # TODO: parse action list & turn into token_in, trade_amount
+
+        # TODO: checks that e.g. trade amount > 0; there is enough money in the account
+        #if len(trade_action) > 0: # there is a trade
+        #    token_in, token_out, trade_amount_usd = trade_action
+        #    assert trade_amount_usd >= 0, (
+        #        f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
+        #        f" token_in={token_in} token_out={token_out}"
+        #    )
+
+        # return the formatted action set to be passed to the market
         return trade_action
 
     def update_wallet(self, delta_wallet):

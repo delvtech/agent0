@@ -302,16 +302,18 @@ class YieldSimulator:
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list) # shuffle the user action order each block
                 for user in self.user_list:
-                    user_action = user.get_trade(self.market)
+                    user_action = user.get_trade()
                     if len(user_action) == 0: # empty list indicates no action
                         pass
-                    (self.token_in, self.trade_amount_usd) = user_action
+                    (self.token_in, self.trade_direction, self.trade_amount_usd) = user_action
                     self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                     # Conduct trade & update state
+                    time_remaining = self.get_time_remaining()
                     user_state_update = self.market.swap(
                         self.trade_amount,  # in units of target asset
-                        self.token_in,  # base or fyt
-                        self.current_time()
+                        self.trade_direction, # in vs out
+                        self.token_in,  # base or pt
+                        time_remaining
                     )
                     self.update_analysis_dict()
                     self.run_trade_number += 1

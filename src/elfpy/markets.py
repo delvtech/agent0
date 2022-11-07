@@ -125,80 +125,154 @@ class Market:
         self.base_asset_volume += d_volume[0]
         self.token_asset_volume += d_volume[1]
 
-    def swap(self, amount, token_in, time_remaining):
+    def swap(self, amount, trade_direction, token_in, time_remaining):
         """
         Execute a trade in the simulated market.
 
         Arguments:
         amount [float] volume to be traded, in units of the target asset
-        token_in [str] either "pt" or "base" -- the output token will be the opposite
+        trade_direction [str] either "in" or "out"
+        token_in [str] either "fyt" or "base" -- must be the opposite of token_out
+        token_out [str] either "fyt" or "base" -- must be the opposite of token_in
 
         Fees are computed, as well as the adjustments in asset volume.
         All internal market variables are updated from the trade.
+
         """
+        # TODO: Simplify the logic by forcing token_out to always equal the opposite of token_in
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-statements
+
         if token_in == "pt":
-            in_reserves = self.token_asset + self.total_supply
-            out_reserves = self.base_asset
             token_out = "base"
-            trade_results = self.pricing_model.calc_out_given_in(
-                amount,
-                in_reserves,
-                out_reserves,
-                token_out,
-                self.fee_percent,
-                time_remaining,
-                self.init_share_price,
-                self.share_price,
-            )
-            (
-                without_fee_or_slippage,
-                output_with_fee,
-                output_without_fee,
-                fee,
-            ) = trade_results
-            d_base_asset = -output_with_fee
-            d_token_asset = amount
-            d_base_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
-            d_token_asset_slippage = 0
-            d_base_asset_fee = fee
-            d_token_asset_fee = 0
-            d_base_asset_orders = 1
-            d_token_asset_orders = 0
-            d_base_asset_volume = output_with_fee
-            d_token_asset_volume = 0
-        elif token_in == "base":
-            in_reserves = self.base_asset
-            out_reserves = self.token_asset + self.total_supply
+        else:
             token_out = "pt"
-            trade_results = self.pricing_model.calc_out_given_in(
-                amount,
-                in_reserves,
-                out_reserves,
-                token_out,
-                self.fee_percent,
-                time_remaining,
-                self.init_share_price,
-                self.share_price,
-            )
-            (
-                without_fee_or_slippage,
-                output_with_fee,
-                output_without_fee,
-                fee,
-            ) = trade_results
-            d_base_asset = amount
-            d_token_asset = -output_with_fee
-            d_base_asset_slippage = 0
-            d_token_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
-            d_base_asset_fee = 0
-            d_token_asset_fee = fee
-            d_base_asset_orders = 0
-            d_token_asset_orders = 1
-            d_base_asset_volume = 0
-            d_token_asset_volume = output_with_fee
+        if trade_direction == "in":
+            if token_in == "pt":
+                in_reserves = self.token_asset + self.total_supply
+                out_reserves = self.base_asset
+                trade_results = self.pricing_model.calc_in_given_out(
+                    amount,
+                    in_reserves,
+                    out_reserves,
+                    token_in,
+                    self.fee_percent,
+                    time_remaining,
+                    self.init_share_price,
+                    self.share_price,
+                )
+                (
+                    without_fee_or_slippage,
+                    output_with_fee,
+                    output_without_fee,
+                    fee,
+                ) = trade_results
+                d_base_asset = -output_with_fee
+                d_token_asset = amount
+                d_base_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
+                d_token_asset_slippage = 0
+                d_base_asset_fee = 0
+                d_token_asset_fee = fee
+                d_base_asset_orders = 1
+                d_token_asset_orders = 0
+                d_base_asset_volume = output_with_fee
+                d_token_asset_volume = 0
+            elif token_in == "base":
+                in_reserves = self.base_asset
+                out_reserves = self.token_asset + self.total_supply
+                trade_results = self.pricing_model.calc_in_given_out(
+                    amount,
+                    in_reserves,
+                    out_reserves,
+                    token_in,
+                    self.fee_percent,
+                    time_remaining,
+                    self.init_share_price,
+                    self.share_price,
+                )
+                (
+                    without_fee_or_slippage,
+                    output_with_fee,
+                    output_without_fee,
+                    fee,
+                ) = trade_results
+                d_base_asset = amount
+                d_token_asset = -output_with_fee
+                d_base_asset_slippage = 0
+                d_token_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
+                d_base_asset_fee = fee
+                d_token_asset_fee = 0
+                d_base_asset_orders = 0
+                d_token_asset_orders = 1
+                d_base_asset_volume = 0
+                d_token_asset_volume = output_with_fee
+            else:
+                raise ValueError(
+                    "token_in and token_out must be unique and in the set ('base', 'fyt'), "
+                    + f"not in={token_in} and out={token_out}"
+                )
+        elif trade_direction == "out":
+            if token_in == "pt":
+                in_reserves = self.token_asset + self.total_supply
+                out_reserves = self.base_asset
+                trade_results = self.pricing_model.calc_out_given_in(
+                    amount,
+                    in_reserves,
+                    out_reserves,
+                    token_out,
+                    self.fee_percent,
+                    time_remaining,
+                    self.init_share_price,
+                    self.share_price,
+                )
+                (
+                    without_fee_or_slippage,
+                    output_with_fee,
+                    output_without_fee,
+                    fee,
+                ) = trade_results
+                d_base_asset = -output_with_fee
+                d_token_asset = amount
+                d_base_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
+                d_token_asset_slippage = 0
+                d_base_asset_fee = fee
+                d_token_asset_fee = 0
+                d_base_asset_orders = 1
+                d_token_asset_orders = 0
+                d_base_asset_volume = output_with_fee
+                d_token_asset_volume = 0
+            elif token_in == "base":
+                in_reserves = self.base_asset
+                out_reserves = self.token_asset + self.total_supply
+                trade_results = self.pricing_model.calc_out_given_in(
+                    amount,
+                    in_reserves,
+                    out_reserves,
+                    token_out,
+                    self.fee_percent,
+                    time_remaining,
+                    self.init_share_price,
+                    self.share_price,
+                )
+                (
+                    without_fee_or_slippage,
+                    output_with_fee,
+                    output_without_fee,
+                    fee,
+                ) = trade_results
+                d_base_asset = amount
+                d_token_asset = -output_with_fee
+                d_base_asset_slippage = 0
+                d_token_asset_slippage = abs(without_fee_or_slippage - output_without_fee)
+                d_base_asset_fee = 0
+                d_token_asset_fee = fee
+                d_base_asset_orders = 0
+                d_token_asset_orders = 1
+                d_base_asset_volume = 0
+                d_token_asset_volume = output_with_fee
+        else:
+            raise ValueError(f'trade_direction argument must be "in" or "out", not {trade_direction}')
         self.check_fees(
             amount,
             (token_in, token_out),
