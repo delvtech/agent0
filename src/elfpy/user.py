@@ -28,6 +28,17 @@ class User:
         self.rng = rng
         self.verbose = verbose
 
+    def get_max_long(self):
+        """what is the amount of base that the user can spend"""
+        return self.wallet["base"]
+
+    def get_max_short(self, market):
+        """
+        what is the amount of PTs to short that has a max loss of my current base balance
+        """
+        max_short = market.policy.calc_max_pts_to_short(self.wallet["base"])
+        return max_short
+
     def get_trade(self, market):
         """Helper function for computing a user trade"""
         trade_action = parse_trade(self.trade_policy, market, self.rng)
