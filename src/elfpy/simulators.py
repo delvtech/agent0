@@ -270,11 +270,20 @@ class YieldSimulator:
         """Returns the current time"""
         return datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
 
-    def get_time_remaining(self, mint_time):
+    def get_time_remaining(self, mint_time=None):
         """Get the time remaining on a token"""
         time_elapsed = (self.current_time() - mint_time).total_seconds()
         total_time = datetime.timedelta(days=self.token_duration).total_seconds()
         time_remaining = 1 - (time_elapsed / total_time)
+        return time_remaining
+
+    def get_yearfrac_remaining(self, mint_time=None):
+        """Get the year fraction remaining on a token"""
+        if mint_time is None or mint_time == -1:
+            mint_time = self.market.time
+        yearfrac_elapsed = self.market.time - mint_time
+        yearfrac_token_duration = self.token_duration/365
+        time_remaining = yearfrac_token_duration - yearfrac_elapsed
         return time_remaining
 
     def compute_time_delta(year_fraction_time):
@@ -317,36 +326,39 @@ class YieldSimulator:
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list) # shuffle the user action order each block
                 for user in self.user_list:
-                    user_action = user.get_trade()
-                    if len(user_action) == 0: # empty list indicates no action
+                    trade_list = user.get_trade()
+                    if len(trade_list) == 0: # empty list indicates no action
                         pass
-                    (self.token_in, self.trade_direction, self.trade_amount_usd) = (
-                        user_action["trade_amount"],
-                        user_action["direction"],
-                        user_action["token_in"]
-                    )
-                    self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
-                    # Conduct trade & update state
-                    time_remaining = self.get_time_remaining()
-                    user_state_update = self.market.swap(
-                        self.trade_amount,  # in units of target asset
-                        self.trade_direction, # in vs out
-                        self.token_in,  # base or pt
-                        time_remaining
-                    )
-                    # Update user state
-                    user.update_wallet(user_state_update)
-                    self.update_analysis_dict()
-                    self.run_trade_number += 1
-                    if self.verbose:
-                        print(
-                            "YieldSimulator.run_simulation:\n"
-                            + f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
-                            + f"init_share_price={self.market.init_share_price}, "
-                            + f"share_price={self.market.share_price}, "
-                            + f"amount={self.trade_amount}, "
-                            + f"reserves={(self.market.base_asset, self.market.token_asset)}"
+                    for trade in trade_list:
+                        print(trade)
+                        self.token_in, self.trade_direction, self.trade_amount_usd, self.mint_time = (
+                            trade["token_in"],
+                            trade["direction"],
+                            trade["trade_amount"],
+                            trade["mint_time"],
                         )
+                        self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
+                        # Conduct trade & update state
+                        time_remaining = self.get_yearfrac_remaining(self.mint_time)
+                        user_state_update = self.market.swap(
+                            self.trade_amount,  # in units of target asset
+                            self.trade_direction, # in vs out
+                            self.token_in,  # base or pt
+                            time_remaining
+                        )
+                        # Update user state
+                        user.update_wallet(user_state_update)
+                        self.update_analysis_dict()
+                        self.run_trade_number += 1
+                        if self.verbose:
+                            print(
+                                "YieldSimulator.run_simulation:\n"
+                                + f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
+                                + f"init_share_price={self.market.init_share_price}, "
+                                + f"share_price={self.market.share_price}, "
+                                + f"amount={self.trade_amount}, "
+                                + f"reserves={(self.market.base_asset, self.market.token_asset)}"
+                            )
                 self.market.tick(self.step_size())
                 self.block_number += 1
         self.run_number += 1

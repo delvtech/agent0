@@ -9,7 +9,8 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, verbose=False):
         """call basic policy init then add custom stuff"""
-        super().__init__(market, rng, verbose)
+        budget = 1000
+        super().__init__(market=market, rng=rng, verbose=verbose, budget=budget)
         self.last_long_time = -1
 
     def action(self):
@@ -17,11 +18,11 @@ class Policy(BasicPolicy):
         action_list = []
         has_opened_long = self.last_long_time > 0
         can_open_long = self.get_max_long() >= 100
-        enough_time_has_passed = self.market.time - self.last_long_time > 0.25
-        if has_opened_long and can_open_long:
+        enough_time_has_passed = self.market.time - self.last_long_time > 0.25 if self.last_long_time >=0 else False
+        if can_open_long:
             action_list.append(["open_long", 100])
             self.last_long_time = self.market.time
-        elif enough_time_has_passed:
-            action_list.append(["close_long", 100])
+        elif has_opened_long and enough_time_has_passed:
+            action_list.append(["close_long", 100, self.last_long_time])
             self.last_long_time = -1
         return action_list
