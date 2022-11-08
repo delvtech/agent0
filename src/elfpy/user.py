@@ -61,11 +61,11 @@ class User:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        # trade_action = parse_trade(self.policy, market, self.rng)
         action_list = self.action() # get the action list from the policy
         trade_details = []
         for action in action_list:
             print(f"user.py input action: {action}")
+            trade_detail = {"action_type": action[0]}
             if action[0] == "open_long": # buy to open long
                 trade_detail = {
                     "trade_amount": action[1],
