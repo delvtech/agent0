@@ -69,7 +69,7 @@ class PricingModel:
         return days / normalizing_constant
 
     @staticmethod
-    def _stretch_time(time, time_stretch=1):
+    def stretch_time(time, time_stretch=1):
         """Returns stretched time values"""
         return time / time_stretch
 
@@ -195,7 +195,7 @@ class PricingModel:
     def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
         """Converts remaining pool length in days to normalized and stretched time"""
         normed_days_remaining = self.norm_days(days_remaining, normalizing_constant)
-        time_remaining = self._stretch_time(normed_days_remaining, time_stretch)
+        time_remaining = self.stretch_time(normed_days_remaining, time_stretch)
         return time_remaining
 
     def time_to_days_remaining(self, time_remaining, time_stretch=1, normalizing_constant=365):
@@ -216,7 +216,8 @@ class PricingModel:
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
         """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
-        assert price > 0, f"ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
+        assert price > 0, (
+            f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}")
         assert (
             normalized_days_remaining > 0
         ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
@@ -276,7 +277,7 @@ class PricingModel:
     ):
         """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY"""
         normalized_days_remaining = self.norm_days(days_remaining)
-        time_stretch_exp = 1 / self._stretch_time(normalized_days_remaining, time_stretch)
+        time_stretch_exp = 1 / self.stretch_time(normalized_days_remaining, time_stretch)
         numerator = 2 * share_price * token_asset_reserves  # 2*c*y
         scaled_apy_decimal = apy_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
         denominator = init_share_price * scaled_apy_decimal ** time_stretch_exp - share_price
@@ -496,15 +497,15 @@ class HyperdrivePricingModel(PricingModel):
         # test trade spec = {'trade_amount': 100, 'direction': 'out', 'token_in': 'base', 'mint_time': -1}
         # logic: use calcOutGivenIn because we want to buy unknown PT with known base
         #        use current mint time because this is a fresh 
-        in_reserves = self.get_virtual_bonds(trade_detail["base_asset"], trade_detail["token_asset"])
-        out_reserves = self.get_virtual_shares(trade_detail["base_asset"], trade_detail["token_asset"])
+        #in_reserves = trade_detail["base_asset"]#self.get_virtual_shares(trade_detail["base_asset"], trade_detail["token_asset"])
+        #out_reserves = trade_detail["token_asset"]#self.get_virtual_bonds(trade_detail["base_asset"], trade_detail["token_asset"])
         trade_results = self.calc_out_given_in(
             trade_detail["trade_amount"],
-            in_reserves,
-            out_reserves,
-            trade_detail["token_in"],
+            trade_detail["share_reserves"],
+            trade_detail["bond_reserves"],
+            trade_detail["token_out"],
             trade_detail["fee_percent"],
-            trade_detail["time_remaining"],
+            trade_detail["stretched_time_remaining"],
             trade_detail["init_share_price"],
             trade_detail["share_price"],
         )
@@ -526,7 +527,14 @@ class HyperdrivePricingModel(PricingModel):
             "d_base_asset_volume": 0,
             "d_token_asset_volume": output_with_fee,
         }
-        return market_deltas
+        wallet_deltas = {
+            "base_in_wallet": -1 * trade_detail["trade_amount"],
+            "base_in_protocol": 0,
+            "token_in_wallet": [trade_detail["mint_time"], output_with_fee],
+            "token_in_protocol": [trade_detail["mint_time"], 0],
+            "fee": [trade_detail["mint_time"], fee]
+        }
+        return market_deltas, wallet_deltas
 
     def calc_in_given_out(
         self,
@@ -805,7 +813,6 @@ class HyperdrivePricingModel(PricingModel):
             #
             # We really want to know the value of d_x, the amount of base the
             # user receives. This is simply c * d_x
-            #print(f"pricing model\n k={k}\n spot_price={spot_price}\n fee_percent={fee_percent}\n d_bonds={d_bonds}\n share_reserves={share_reserves}\n init_share_price={init_share_price}\n in_reserves={in_reserves}\n time_elapsed={time_elapsed}\n scale={scale}")
             without_fee = (
                 share_reserves
                 - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
@@ -817,7 +824,7 @@ class HyperdrivePricingModel(PricingModel):
             # (1 - (1 / p) * phi * d_y
             fee = (1 - (1 / spot_price)) * fee_percent * d_bonds
             assert fee >= 0, (
-                f"ERROR: Fee should not be negative fee={fee}"
+                f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
             with_fee = without_fee - fee
@@ -855,7 +862,7 @@ class HyperdrivePricingModel(PricingModel):
             # (p - 1) * phi * c * d_z
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
             assert fee >= 0, (
-                f"ERROR: Fee should not be negative fee={fee}"
+                f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative fee={fee}"
                 f" in_={in_} without_fee={without_fee} fee_percent={fee_percent} token_out={token_out}"
             )
         else:

@@ -23,7 +23,10 @@ class User:
         self.budget = budget
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
         self.wallet = {
-            "base": self.budget
+            "base_in_wallet": self.budget,
+            "base_in_protocol": 0,
+            "token_in_wallet": {},
+            "token_in_protocol": {}
         }
         self.rng = rng
         self.verbose = verbose
@@ -34,16 +37,16 @@ class User:
 
     def get_max_long(self):
         """Returns the amount of base that the user can spend."""
-        return self.wallet["base"]
+        return self.wallet["base_in_wallet"]
 
     def get_max_short(self, market):
         """
         what is the amount of PTs to short that has a max loss of my current base balance
         """
-        max_short = self.wallet["base"]
+        max_short = self.wallet["base_in_wallet"]
         PTsold = market.pricing_model.calcInGivenOut(max_short)
         discount = max_short - PTsold
-        while discount < self.wallet["base"]:
+        while discount < self.wallet["base_in_wallet"]:
             max_short += 1
             PTsold = market.pricing_model.calcInGivenOut(max_short)
             discount = max_short - PTsold
@@ -120,12 +123,30 @@ class User:
         #    )
 
         # return the formatted action set to be passed to the market
-        return trade_details
+        #return trade_details
 
-    def update_wallet(self, delta_wallet):
+    def update_wallet(self, trade_result):
         """Update the user's wallet"""
-        for key in delta_wallet:
-            if key in self.wallet:
-                self.wallet[key] += delta_wallet[key]
-            else:
-                self.wallet[key] = delta_wallet[key]
+        for key, value in trade_result.items():
+            if key == "base_in_wallet":
+                self.wallet["base_in_wallet"] += value
+            if key == "base_in_protocol":
+                self.wallet["base_in_protocol"] += value
+            if key == "token_in_wallet":
+                mint_time = value[0]
+                delta_token = value[1]
+                if mint_time in self.wallet["token_in_wallet"]:
+                    self.wallet["token_in_wallet"][mint_time] += delta_token
+                else:
+                    self.wallet["token_in_wallet"].update(
+                        {mint_time: delta_token}
+                    )
+            if key == "token_in_protocol":
+                mint_time = value[0]
+                delta_token = value[1]
+                if mint_time in self.wallet["token_in_protocol"]:
+                    self.wallet["token_in_protocol"][mint_time] += delta_token
+                else:
+                    self.wallet["token_in_protocol"].update(
+                        {mint_time: delta_token}
+                    )

@@ -244,8 +244,8 @@ class YieldSimulator:
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
-            base_asset=init_base_asset_reserves, # x
-            token_asset=init_token_asset_reserves, # y
+            share_reserves=init_base_asset_reserves, # x
+            bond_reserves=init_token_asset_reserves, # y
             fee_percent=self.fee_percent, # g
             pricing_model=self.pricing_model,
             init_share_price=self.init_share_price, # u from YieldSpace w/ Yield Baring Vaults
@@ -255,8 +255,9 @@ class YieldSimulator:
         # setup user list
         self.user_list = []
         for policy_name in self.user_policies:
-            user_with_policy = import_module(f"elfpy.strategies.{policy_name}")\
-                .Policy(self.market, self.rng, self.verbose)
+            user_with_policy = import_module(
+                f"elfpy.strategies.{policy_name}").Policy(
+                    self.market, self.rng, self.verbose)
             self.user_list.append(user_with_policy)
 
     def step_size(self):
@@ -283,7 +284,7 @@ class YieldSimulator:
     def get_yearfrac_remaining(self, mint_time):
         """Get the year fraction remaining on a token"""
         yearfrac_elapsed = self.market.time - mint_time
-        time_remaining = self.token_duration - yearfrac_elapsed
+        time_remaining = np.maximum(self.token_duration - yearfrac_elapsed, 0)
         return time_remaining
 
     def run_simulation(self, override_dict=None):
@@ -331,16 +332,11 @@ class YieldSimulator:
                         # Conduct trade & update state
                         time_remaining = self.get_yearfrac_remaining(trade["mint_time"])
                         trade["time_remaining"] = time_remaining
+                        trade["stretched_time_remaining"] = self.pricing_model.stretch_time(time_remaining, self.init_time_stretch)
                         trade["trade_amount"] = trade["trade_amount_fiat"] / self.base_asset_price
-                        user_state_update = self.market.swap(trade)
-                        #user_state_update = self.market.swap(
-                        #    self.trade_amount,  # in units of target asset
-                        #    self.trade_direction, # in vs out
-                        #    self.token_in,  # base or pt
-                        #    time_remaining
-                        #)
+                        trade_result = self.market.swap(trade)
                         # Update user state
-                        user.update_wallet(user_state_update)
+                        user.update_wallet(trade_result)
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         if self.verbose:
@@ -350,7 +346,7 @@ class YieldSimulator:
                                 + f"init_share_price={self.market.init_share_price}, "
                                 + f"share_price={self.market.share_price}, "
                                 + f"amount={self.trade_amount}, "
-                                + f"reserves={(self.market.base_asset, self.market.token_asset)}"
+                                + f"reserves={(self.market.share_reserves, self.market.bond_reserves)}"
                             )
                 self.market.tick(self.step_size())
                 self.block_number += 1
@@ -391,8 +387,8 @@ class YieldSimulator:
         self.analysis_dict["current_market_yearfrac"].append(self.market.time)
         self.analysis_dict["current_market_datetime"].append(self.yearfrac_as_datetime(self.market.time))
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
-        self.analysis_dict["base_asset_reserves"].append(self.market.base_asset)
-        self.analysis_dict["token_asset_reserves"].append(self.market.token_asset)
+        self.analysis_dict["base_asset_reserves"].append(self.market.share_reserves)
+        self.analysis_dict["token_asset_reserves"].append(self.market.bond_reserves)
         self.analysis_dict["total_supply"].append(self.market.total_supply)
         self.analysis_dict["base_asset_price"].append(self.base_asset_price)
         self.analysis_dict["token_in"].append(self.token_in)

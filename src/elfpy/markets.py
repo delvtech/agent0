@@ -4,6 +4,8 @@ Market simulators store state information when interfacing AMM pricing models wi
 TODO: rewrite all functions to have typed inputs
 """
 
+import numpy as np
+
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
 #     reserves = (in_reserves, out_reserves)
@@ -24,8 +26,8 @@ class Market:
 
     def __init__(
         self,
-        base_asset,
-        token_asset,
+        share_reserves,
+        bond_reserves,
         fee_percent,
         pricing_model,
         init_share_price=1,
@@ -35,8 +37,8 @@ class Market:
         # TODO: In order for the AMM to work as expected we should store
         # a share reserve instead of a base reserve.
         self.time = 0 # time in year fractions
-        self.base_asset = base_asset  # x
-        self.token_asset = token_asset  # y
+        self.share_reserves = share_reserves  # z
+        self.bond_reserves = bond_reserves  # y
         self.fee_percent = fee_percent  # g
         self.share_price = share_price  # c
         self.init_share_price = init_share_price  # u normalizing constant
@@ -49,8 +51,12 @@ class Market:
         self.cum_base_asset_slippage = 0
         self.cum_token_asset_fees = 0
         self.cum_base_asset_fees = 0
-        self.total_supply = self.base_asset + self.token_asset
+        self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
+
+    def base_reserves(self):
+        """get base reserves"""
+        return self.share_reserves * self.share_price
 
     def get_target_reserves(self, token_in, trade_direction):
         """
@@ -58,14 +64,14 @@ class Market:
         """
         if trade_direction == "in":
             if token_in == "fyt":
-                target_reserves = self.token_asset
+                target_reserves = self.bond_reserves
             else:
-                target_reserves = self.base_asset
+                target_reserves = self.share_reserves
         elif trade_direction == "out":
             if token_in == "fyt":
-                target_reserves = self.base_asset
+                target_reserves = self.share_reserves
             else:
-                target_reserves = self.token_asset
+                target_reserves = self.bond_reserves
         return target_reserves
 
     def check_fees(
@@ -112,8 +118,10 @@ class Market:
         """
         Increments member variables to reflect current market conditions
         """
-        self.base_asset += market_deltas["d_base_asset"]
-        self.token_asset += market_deltas["d_token_asset"]
+        for key, value in market_deltas.items():
+            assert np.isfinite(value), (f"markets.update_market: ERROR: market delta key {key} is not finite.")
+        self.share_reserves += market_deltas["d_base_asset"]
+        self.bond_reserves += market_deltas["d_token_asset"]
         self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
         self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
         self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
@@ -158,11 +166,23 @@ class Market:
         trade_detail["share_price"] = self.share_price
         if user_action["action_type"] == "open_long": # buy to open long
             trade_detail["direction"] = "out" # calcOutGivenIn
-            trade_detail["token_in"] = "base" # buy unknown PT with known base
-            trade_detail["base_asset"] = self.base_asset
-            trade_detail["token_asset"] = self.token_asset
+            trade_detail["token_out"] = "pt" # buy unknown PT with known base
+            trade_detail["share_reserves"] = self.share_reserves
+            trade_detail["bond_reserves"] = self.bond_reserves
             # open long position
-            market_deltas = self.pricing_model.open_long(trade_detail)
+            (market_deltas, wallet_deltas) = self.pricing_model.open_long(trade_detail)
+            # update market state
+            self.update_market(market_deltas)
+            # TODO: self.update_LP_pool(wallet_deltas["fees"])
+            # resolve user wallet update
+            return wallet_deltas
+        if user_action["action_type"] == "close_long": # sell to close long
+            trade_detail["direction"] = "out" # calcOutGivenIn
+            trade_detail["token_out"] = "base" # buy unknown PT with known base
+            trade_detail["share_reserves"] = self.share_reserves
+            trade_detail["bond_reserves"] = self.bond_reserves
+            # open long position
+            market_deltas = self.pricing_model.close_long(trade_detail)
             # update market state
             self.update_market(market_deltas)
             # resolve user wallet update
@@ -171,9 +191,6 @@ class Market:
                 "pt": market_deltas["d_token_asset_volume"], # out_with_fee
             }
             return delta_wallet
-        if user_action["action_type"] == "close_long": # sell to close long
-            trade_detail["direction"] = "out" # calcOutGivenIn
-            trade_detail["token_in"] = "pt" # sell back known PT for unknown base
         elif user_action["action_type"] == "open_short": # sell to open short
             trade_detail["direction"] = "out" # calcOutGivenIn
             trade_detail["token_in"] = "pt" # sell known PT for unknown base
@@ -209,8 +226,8 @@ class Market:
             token_out = "pt"
         if trade_direction == "in":
             if token_in == "pt":
-                in_reserves = self.token_asset + self.total_supply
-                out_reserves = self.base_asset
+                in_reserves = self.bond_reserves + self.total_supply
+                out_reserves = self.share_reserves
                 trade_results = self.pricing_model.calc_in_given_out(
                     amount,
                     in_reserves,
@@ -238,8 +255,8 @@ class Market:
                 d_base_asset_volume = output_with_fee
                 d_token_asset_volume = 0
             elif token_in == "base":
-                in_reserves = self.base_asset
-                out_reserves = self.token_asset + self.total_supply
+                in_reserves = self.share_reserves
+                out_reserves = self.bond_reserves + self.total_supply
                 trade_results = self.pricing_model.calc_in_given_out(
                     amount,
                     in_reserves,
@@ -273,8 +290,8 @@ class Market:
                 )
         elif trade_direction == "out":
             if token_in == "pt":
-                in_reserves = self.token_asset + self.total_supply
-                out_reserves = self.base_asset
+                in_reserves = self.bond_reserves + self.total_supply
+                out_reserves = self.share_reserves
                 trade_results = self.pricing_model.calc_out_given_in(
                     amount,
                     in_reserves,
@@ -302,8 +319,8 @@ class Market:
                 d_base_asset_volume = output_with_fee
                 d_token_asset_volume = 0
             elif token_in == "base":
-                in_reserves = self.base_asset
-                out_reserves = self.token_asset + self.total_supply
+                in_reserves = self.share_reserves
+                out_reserves = self.bond_reserves + self.total_supply
                 trade_results = self.pricing_model.calc_out_given_in(
                     amount,
                     in_reserves,
@@ -363,8 +380,8 @@ class Market:
         """
         in_given_out = self.pricing_model.calc_in_given_out(
             out=max_base,
-            share_reserves=self.token_asset,
-            bond_reserves=self.base_asset,
+            share_reserves=self.bond_reserves,
+            bond_reserves=self.share_reserves,
             token_in='base',
             fee_percent=self.fee_percent,
             time_remaining=self.time,
