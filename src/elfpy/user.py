@@ -15,12 +15,12 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, verbose=False):
+    def __init__(self, market, rng, verbose=False, budget=1000):
         """
         Set up initial conditions
         """
         self.market = market
-        self.budget = -1 # not initialized
+        self.budget = budget
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
         self.wallet = {
             "base": self.budget
