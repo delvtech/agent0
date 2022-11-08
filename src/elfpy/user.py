@@ -50,11 +50,49 @@ class User:
         return max_short - 1 # subtract 1 to get the max short
 
     def get_trade(self):
-        """Helper function for computing a user trade"""
+        """
+        Helper function for computing a user trade
+        direction is chosen based on this logic:
+        when entering a trade (open long or short),
+        we use calcOutGivenIn because we know how much we want to spend,
+        and care less about how much we get for it.
+        when exiting a trade (close long or short),
+        we use calcInGivenOut because we know how much we want to get,
+        and care less about how much we have to spend.
+        we spend what we have to spend, and get what we get.
+        """
         # trade_action = parse_trade(self.policy, market, self.rng)
         trade_action = self.action() # get the action list from the policy
-
-        # TODO: parse action list & turn into token_in, trade_amount
+        print(f"trade_action: {trade_action}")
+        trade_details = []
+        for trade in trade_action:
+            if trade[0] == "open_long": # buy to open long
+                trade_detail = {
+                    "trade_amount": trade[1],
+                    "direction": "out",  # calcOutGivenIn
+                    "token_in": "base"   # buy unknown PT with known base
+                }
+            elif trade[0] == "close_long": # sell to close long
+                trade_detail = {
+                    "trade_amount": trade[1],
+                    "direction": "out",  # calcOutGivenIn
+                    "token_in": "pt"     # sell back known PT for unknown base
+                }
+            elif trade[0] == "open_short": # sell to open short
+                trade_detail = {
+                    "trade_amount": trade[1],
+                    "direction": "out", # calcOutGivenIn
+                    "token_in": "pt"    # sell known PT for unknown base
+                }
+            elif trade[0] == "close_short": # buy to close short
+                trade_detail = {
+                    "trade_amount": trade[1],
+                    "direction": "in",  # calcInGivenOut
+                    "token_in": "base"  # buy back known PT for unknown base
+                }
+            else:
+                raise ValueError(f"ERROR: unknown trade type {trade[0]}")
+            trade_details.append(trade_detail)
 
         # TODO: checks that e.g. trade amount > 0; there is enough money in the account
         #if len(trade_action) > 0: # there is a trade

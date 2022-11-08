@@ -249,7 +249,8 @@ class YieldSimulator:
         # setup user list
         self.user_list = []
         for policy_name in self.user_policies:
-            user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(self.market, self.rng, self.verbose)
+            user_with_policy = import_module(f"elfpy.strategies.{policy_name}")\
+                .Policy(self.market, self.rng, self.verbose)
             self.user_list.append(user_with_policy)
 
     def step_size(self):
@@ -319,7 +320,11 @@ class YieldSimulator:
                     user_action = user.get_trade()
                     if len(user_action) == 0: # empty list indicates no action
                         pass
-                    (self.token_in, self.trade_direction, self.trade_amount_usd) = user_action
+                    (self.token_in, self.trade_direction, self.trade_amount_usd) = (
+                        user_action["trade_amount"],
+                        user_action["direction"],
+                        user_action["token_in"]
+                    )
                     self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                     # Conduct trade & update state
                     time_remaining = self.get_time_remaining()
