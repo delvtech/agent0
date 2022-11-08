@@ -77,6 +77,8 @@ class YieldSimulator:
         self.day = 0
         self.block_number = 0
         self.daily_block_number = 0
+        seconds_in_a_day = 86400
+        self.time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time = None
         self.expected_proportion = 0
@@ -108,7 +110,7 @@ class YieldSimulator:
             "run_trade_number", # integer, trade number in a given simulation
             "model_name",
             "scenario_name",
-            "token_duration", # time lapse between token mint and expiry
+            "token_duration", # time lapse between token mint and expiry as a yearfrac
             "init_time_stretch",
             "target_liquidity",
             "target_daily_volume",
@@ -258,42 +260,26 @@ class YieldSimulator:
         blocks_per_year = 365 * self.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def block_number_to_timestamp(self, block_number):
-        """Converts the current block number to a datetime based on the start datetime of the simulation"""
-        seconds_in_a_day = 86400
-        time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
-        delta_time = datetime.timedelta(seconds=block_number * time_between_blocks)
-        return self.start_time + delta_time
-
     @staticmethod
-    def current_time():
+    def current_datetime():
         """Returns the current time"""
         return datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
 
-    def get_time_remaining(self, mint_time=None):
-        """Get the time remaining on a token"""
-        time_elapsed = (self.current_time() - mint_time).total_seconds()
-        total_time = datetime.timedelta(days=self.token_duration).total_seconds()
-        time_remaining = 1 - (time_elapsed / total_time)
-        return time_remaining
+    def block_number_to_datetime(self, block_number):
+        """Converts the current block number to a datetime based on the start datetime of the simulation"""
+        delta_time = datetime.timedelta(seconds=block_number * self.time_between_blocks)
+        return self.start_time + delta_time
 
-    def get_yearfrac_remaining(self, mint_time=None):
+    def yearfrac_as_datetime(self, yearfrac):
+        """Returns a yearfrac (e.g. the current market time) in datetime format"""
+        delta_time = datetime.timedelta(years=yearfrac).total_seconds()
+        return self.start_time + delta_time
+
+    def get_yearfrac_remaining(self, mint_time):
         """Get the year fraction remaining on a token"""
-        if mint_time is None or mint_time == -1:
-            mint_time = self.market.time
         yearfrac_elapsed = self.market.time - mint_time
-        yearfrac_token_duration = self.token_duration/365
-        time_remaining = yearfrac_token_duration - yearfrac_elapsed
+        time_remaining = self.token_duration - yearfrac_elapsed
         return time_remaining
-
-    def compute_time_delta(year_fraction_time):
-        """TODO"""
-        return 0
-
-    def market_time_to_wall_time(self):
-        """TODO"""
-        time_delta = self.compute_time_delta(self.market.time)
-        return self.start_time + time_delta
 
     def run_simulation(self, override_dict=None):
         """
@@ -309,7 +295,7 @@ class YieldSimulator:
         up to `self.num_trading_days` days.
         """
 
-        self.start_time = self.current_time()
+        self.start_time = self.current_datetime()
         self.block_number = 0
         self.setup_simulated_entities(override_dict)
         for day in range(0, self.num_trading_days):
@@ -384,7 +370,7 @@ class YieldSimulator:
         self.analysis_dict["token_duration"].append(self.token_duration)
         self.analysis_dict["num_trading_days"].append(self.num_trading_days)
         self.analysis_dict["num_blocks_per_day"].append(self.num_blocks_per_day)
-        #self.analysis_dict["step_size"].append(self.step_size)
+        self.analysis_dict["step_size"].append(self.step_size())
         self.analysis_dict["init_share_price"].append(self.market.init_share_price)
         self.analysis_dict["simulation_start_time"].append(self.start_time)
         # Variables that change per day
@@ -393,8 +379,10 @@ class YieldSimulator:
         self.analysis_dict["day"].append(self.day)
         self.analysis_dict["daily_block_number"].append(self.daily_block_number)
         self.analysis_dict["block_number"].append(self.block_number)
-        self.analysis_dict["block_timestamp"].append(self.block_number_to_timestamp(self.block_number))
+        self.analysis_dict["block_timestamp"].append(self.block_number_to_datetime(self.block_number))
         # Variables that change per trade
+        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
+        self.analysis_dict["current_market_datetime"].append(self.yearfrac_as_datetime(self.market.time))
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["base_asset_reserves"].append(self.market.base_asset)
         self.analysis_dict["token_asset_reserves"].append(self.market.token_asset)
