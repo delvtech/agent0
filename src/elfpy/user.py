@@ -62,42 +62,54 @@ class User:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action() # get the action list from the policy
-        trade_details = []
+        action_list_dict = []
         for action in action_list:
-            print(f"user.py input action: {action}")
-            trade_detail = {"action_type": action[0]}
-            if action[0] == "open_long": # buy to open long
-                trade_detail = {
-                    "trade_amount": action[1],
-                    "direction": "out",  # calcOutGivenIn
-                    "token_in": "base",  # buy unknown PT with known base
-                    "mint_time": -1      # fresh mint
-                }
-            elif action[0] == "close_long": # sell to close long
-                trade_detail = {
-                    "trade_amount": action[1],
-                    "direction": "out",   # calcOutGivenIn
-                    "token_in": "pt",     # sell back known PT for unknown base
-                    "mint_time": action[2]
-                }
-            elif action[0] == "open_short": # sell to open short
-                trade_detail = {
-                    "trade_amount": action[1],
-                    "direction": "out",  # calcOutGivenIn
-                    "token_in": "pt",    # sell known PT for unknown base
-                    "mint_time": -1      # fresh mint
-                }
-            elif action[0] == "close_short": # buy to close short
-                trade_detail = {
-                    "trade_amount": action[1],
-                    "direction": "in",  # calcInGivenOut
-                    "token_in": "base",  # buy back known PT for unknown base
-                    "mint_time": action[2]
-                }
-            else:
-                raise ValueError(f"ERROR: unknown trade type {action[0]}")
-            print(f"user.py output trade: {trade_detail}")
-            trade_details.append(trade_detail)
+            action_dict = {}
+            action_dict["action_type"] = action[0]
+            action_dict["trade_amount_fiat"] = action[1]
+            if len(action) > 2: # close, so mint_time is the time for the token we want to close
+                action_dict["mint_time"] = action[2]
+            else: # open, so mint_time is assigned to current market time (fresh mint)
+                action_dict["mint_time"] = self.market.time
+            action_list_dict.append(action_dict)
+        return action_list_dict
+        # TODO: Add safety checks
+        #trade_details = []
+        #for action in action_list:
+        #    print(f"user.py input action: {action}")
+        #    trade_detail = {"action_type": action[0]}
+        #    if action[0] == "open_long": # buy to open long
+        #        trade_detail = {
+        #            "trade_amount": action[1],
+        #            "direction": "out",  # calcOutGivenIn
+        #            "token_in": "base",  # buy unknown PT with known base
+        #            "mint_time": -1      # fresh mint
+        #        }
+        #    elif action[0] == "close_long": # sell to close long
+        #        trade_detail = {
+        #            "trade_amount": action[1],
+        #            "direction": "out",   # calcOutGivenIn
+        #            "token_in": "pt",     # sell back known PT for unknown base
+        #            "mint_time": action[2]
+        #        }
+        #    elif action[0] == "open_short": # sell to open short
+        #        trade_detail = {
+        #            "trade_amount": action[1],
+        #            "direction": "out",  # calcOutGivenIn
+        #            "token_in": "pt",    # sell known PT for unknown base
+        #            "mint_time": -1      # fresh mint
+        #        }
+        #    elif action[0] == "close_short": # buy to close short
+        #        trade_detail = {
+        #            "trade_amount": action[1],
+        #            "direction": "in",  # calcInGivenOut
+        #            "token_in": "base",  # buy back known PT for unknown base
+        #            "mint_time": action[2]
+        #        }
+        #    else:
+        #        raise ValueError(f"ERROR: unknown trade type {action[0]}")
+        #    print(f"user.py output trade: {trade_detail}")
+        #    trade_details.append(trade_detail)
 
         # TODO: checks that e.g. trade amount > 0; there is enough money in the account
         #if len(trade_action) > 0: # there is a trade

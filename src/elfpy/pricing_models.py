@@ -478,6 +478,56 @@ class HyperdrivePricingModel(PricingModel):
     def model_name(self):
         return "Hyperdrive"
 
+    def get_virtual_shares(self, shares, bonds):
+        """ return virtual shares """
+        return shares
+        
+    def get_virtual_bonds(self, share, bonds):
+        """ return virtual bonds """
+        total_supply = share + bonds
+        return bonds + total_supply
+
+    def open_long(self, trade_detail):
+        """
+        take trade spec & turn it into trade details
+        compute wallet update spec with specific details
+            will be conditional on the pricing model
+        """
+        # test trade spec = {'trade_amount': 100, 'direction': 'out', 'token_in': 'base', 'mint_time': -1}
+        # logic: use calcOutGivenIn because we want to buy unknown PT with known base
+        #        use current mint time because this is a fresh 
+        in_reserves = self.get_virtual_bonds(trade_detail["base_asset"], trade_detail["token_asset"])
+        out_reserves = self.get_virtual_shares(trade_detail["base_asset"], trade_detail["token_asset"])
+        trade_results = self.calc_out_given_in(
+            trade_detail["trade_amount"],
+            in_reserves,
+            out_reserves,
+            trade_detail["token_in"],
+            trade_detail["fee_percent"],
+            trade_detail["time_remaining"],
+            trade_detail["init_share_price"],
+            trade_detail["share_price"],
+        )
+        (
+            without_fee_or_slippage,
+            output_with_fee,
+            output_without_fee,
+            fee,
+        ) = trade_results
+        market_deltas = {
+            "d_base_asset": trade_detail["trade_amount"],
+            "d_token_asset": -output_with_fee,
+            "d_base_asset_slippage": 0,
+            "d_token_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
+            "d_base_asset_fee": 0,
+            "d_token_asset_fee": fee,
+            "d_base_asset_orders": 0,
+            "d_token_asset_orders": 1,
+            "d_base_asset_volume": 0,
+            "d_token_asset_volume": output_with_fee,
+        }
+        return market_deltas
+
     def calc_in_given_out(
         self,
         out,
@@ -751,13 +801,14 @@ class HyperdrivePricingModel(PricingModel):
             # Solving for d_z gives us the amount of shares the user receives
             # without including fees:
             #
-            # d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
+            #  d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
             #
             # We really want to know the value of d_x, the amount of base the
             # user receives. This is simply c * d_x
+            #print(f"pricing model\n k={k}\n spot_price={spot_price}\n fee_percent={fee_percent}\n d_bonds={d_bonds}\n share_reserves={share_reserves}\n init_share_price={init_share_price}\n in_reserves={in_reserves}\n time_elapsed={time_elapsed}\n scale={scale}")
             without_fee = (
                 share_reserves
-                - (1 / init_share_price) * ((pow(k - (in_reserves + d_bonds), time_elapsed) / scale), 1 / time_elapsed)
+                - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
             ) * share_price
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.

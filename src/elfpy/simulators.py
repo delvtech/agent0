@@ -106,8 +106,12 @@ class YieldSimulator:
             "simulation_start_time", # start datetime for a given simulation
             "day", # integer, day index in a given simulation
             "block_number", # integer, block index in a given simulation
+            "daily_block_number", # integer, block index in a given day
             "block_timestamp", # datetime of a given block's creation
+            "current_market_datetime", # float, current market time as a datetime
+            "current_market_yearfrac", # float, current market time as a yearfrac
             "run_trade_number", # integer, trade number in a given simulation
+            "step_size",
             "model_name",
             "scenario_name",
             "token_duration", # time lapse between token mint and expiry as a yearfrac
@@ -272,7 +276,8 @@ class YieldSimulator:
 
     def yearfrac_as_datetime(self, yearfrac):
         """Returns a yearfrac (e.g. the current market time) in datetime format"""
-        delta_time = datetime.timedelta(years=yearfrac).total_seconds()
+        dayfrac = yearfrac * 365
+        delta_time = datetime.timedelta(days=dayfrac)
         return self.start_time + delta_time
 
     def get_yearfrac_remaining(self, mint_time):
@@ -316,22 +321,24 @@ class YieldSimulator:
                     if len(trade_list) == 0: # empty list indicates no action
                         pass
                     for trade in trade_list:
-                        print(trade)
-                        self.token_in, self.trade_direction, self.trade_amount_usd, self.mint_time = (
-                            trade["token_in"],
-                            trade["direction"],
-                            trade["trade_amount"],
-                            trade["mint_time"],
-                        )
-                        self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
+                        ## self.token_in, self.trade_direction, self.trade_amount_usd, mint_time = (
+                        ##     trade["token_in"],
+                        ##     trade["direction"],
+                        ##     trade["trade_amount"],
+                        ##     trade["mint_time"],
+                        ## )
+                        ## self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                         # Conduct trade & update state
-                        time_remaining = self.get_yearfrac_remaining(self.mint_time)
-                        user_state_update = self.market.swap(
-                            self.trade_amount,  # in units of target asset
-                            self.trade_direction, # in vs out
-                            self.token_in,  # base or pt
-                            time_remaining
-                        )
+                        time_remaining = self.get_yearfrac_remaining(trade["mint_time"])
+                        trade["time_remaining"] = time_remaining
+                        trade["trade_amount"] = trade["trade_amount_fiat"] / self.base_asset_price
+                        user_state_update = self.market.swap(trade)
+                        #user_state_update = self.market.swap(
+                        #    self.trade_amount,  # in units of target asset
+                        #    self.trade_direction, # in vs out
+                        #    self.token_in,  # base or pt
+                        #    time_remaining
+                        #)
                         # Update user state
                         user.update_wallet(user_state_update)
                         self.update_analysis_dict()
@@ -410,4 +417,4 @@ class YieldSimulator:
             self.analysis_dict["fee"].append(self.fee * self.base_asset_price)
             slippage = (self.without_fee_or_slippage - self.without_fee) * self.base_asset_price
             self.analysis_dict["slippage"].append(slippage)
-        self.analysis_dict["spot_price"].append(self.market.spot_price())
+        #self.analysis_dict["spot_price"].append(self.market.spot_price())
