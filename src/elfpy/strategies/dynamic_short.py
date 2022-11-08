@@ -24,5 +24,5 @@ class Policy(BasicPolicy):
         if fixed_rate < variable_rate and not have_position and can_open_short:
             action_list.append(["open_short", 10])
         elif fixed_rate > variable_rate and have_position:
-            action_list.append(["close_short", mint_times[0], 10])
+            action_list.append(["close_short", 10, mint_times[0]])
         return action_list # empty list implies no action
