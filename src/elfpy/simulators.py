@@ -322,13 +322,6 @@ class YieldSimulator:
                     if len(trade_list) == 0: # empty list indicates no action
                         pass
                     for trade in trade_list:
-                        ## self.token_in, self.trade_direction, self.trade_amount_usd, mint_time = (
-                        ##     trade["token_in"],
-                        ##     trade["direction"],
-                        ##     trade["trade_amount"],
-                        ##     trade["mint_time"],
-                        ## )
-                        ## self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
                         # Conduct trade & update state
                         time_remaining = self.get_yearfrac_remaining(trade["mint_time"])
                         trade["time_remaining"] = time_remaining

@@ -479,14 +479,64 @@ class HyperdrivePricingModel(PricingModel):
     def model_name(self):
         return "Hyperdrive"
 
-    def get_virtual_shares(self, shares, bonds):
-        """ return virtual shares """
-        return shares
-        
-    def get_virtual_bonds(self, share, bonds):
-        """ return virtual bonds """
-        total_supply = share + bonds
-        return bonds + total_supply
+    def open_short(self, trade_detail):
+        """
+        take trade spec & turn it into trade details
+        compute wallet update spec with specific details
+            will be conditional on the pricing model
+        """
+        return 0
+
+    def close_short(self, trade_detail):
+        """
+        take trade spec & turn it into trade details
+        compute wallet update spec with specific details
+            will be conditional on the pricing model
+        """
+        return 0
+ 
+    def close_long(self, trade_detail):
+        """
+        take trade spec & turn it into trade details
+        compute wallet update spec with specific details
+            will be conditional on the pricing model
+        """
+        trade_results = self.calc_out_given_in(
+            trade_detail["trade_amount"],
+            trade_detail["share_reserves"],
+            trade_detail["bond_reserves"],
+            trade_detail["token_out"],
+            trade_detail["fee_percent"],
+            trade_detail["stretched_time_remaining"],
+            trade_detail["init_share_price"],
+            trade_detail["share_price"]
+        )
+        (
+            without_fee_or_slippage,
+            output_with_fee,
+            output_without_fee,
+            fee,
+        ) = trade_results
+        market_deltas = {
+            "d_base_asset": -output_with_fee,
+            "d_token_asset": trade_detail["trade_amount"],
+            "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
+            "d_token_asset_slippage": 0,
+            "d_base_asset_fee": fee,
+            "d_token_asset_fee": 0,
+            "d_base_asset_orders": 1,
+            "d_token_asset_orders": 0,
+            "d_base_asset_volume": output_with_fee,
+            "d_token_asset_volume": 0,
+        }
+        wallet_deltas = {
+            "base_in_wallet": output_with_fee,
+            "base_in_protocol": 0,
+            "token_in_wallet": [trade_detail["mint_time"], -1 * trade_detail["trade_amount"]],
+            "token_in_protocol": [trade_detail["mint_time"], 0],
+            "fee": [trade_detail["mint_time"], fee]
+        }
+        return market_deltas, wallet_deltas
 
     def open_long(self, trade_detail):
         """
@@ -496,9 +546,7 @@ class HyperdrivePricingModel(PricingModel):
         """
         # test trade spec = {'trade_amount': 100, 'direction': 'out', 'token_in': 'base', 'mint_time': -1}
         # logic: use calcOutGivenIn because we want to buy unknown PT with known base
-        #        use current mint time because this is a fresh 
-        #in_reserves = trade_detail["base_asset"]#self.get_virtual_shares(trade_detail["base_asset"], trade_detail["token_asset"])
-        #out_reserves = trade_detail["token_asset"]#self.get_virtual_bonds(trade_detail["base_asset"], trade_detail["token_asset"])
+        #        use current mint time because this is a fresh
         trade_results = self.calc_out_given_in(
             trade_detail["trade_amount"],
             trade_detail["share_reserves"],

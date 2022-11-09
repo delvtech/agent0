@@ -131,30 +131,6 @@ class Market:
         self.base_asset_volume += market_deltas["d_base_asset_volume"]
         self.token_asset_volume += market_deltas["d_token_asset_volume"]
 
-    def close_long(self, trade_detail):
-        """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-            will be conditional on the pricing model
-        """
-        return 0
-
-    def open_short(self, trade_detail):
-        """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-            will be conditional on the pricing model
-        """
-        return 0
-
-    def close_short(self, trade_detail):
-        """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-            will be conditional on the pricing model
-        """
-        return 0
-        
     def swap(self, user_action):
         """
         Execute a trade in the simulated market.
@@ -164,33 +140,28 @@ class Market:
         trade_detail["fee_percent"] = self.fee_percent
         trade_detail["init_share_price"] = self.init_share_price
         trade_detail["share_price"] = self.share_price
+        trade_detail["share_reserves"] = self.share_reserves
+        trade_detail["bond_reserves"] = self.bond_reserves
         if user_action["action_type"] == "open_long": # buy to open long
+            # specify how to formulate the trade
             trade_detail["direction"] = "out" # calcOutGivenIn
             trade_detail["token_out"] = "pt" # buy unknown PT with known base
-            trade_detail["share_reserves"] = self.share_reserves
-            trade_detail["bond_reserves"] = self.bond_reserves
             # open long position
-            (market_deltas, wallet_deltas) = self.pricing_model.open_long(trade_detail)
+            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_detail)
             # update market state
             self.update_market(market_deltas)
             # TODO: self.update_LP_pool(wallet_deltas["fees"])
-            # resolve user wallet update
             return wallet_deltas
         if user_action["action_type"] == "close_long": # sell to close long
+            # specify how to formulate the trade
             trade_detail["direction"] = "out" # calcOutGivenIn
             trade_detail["token_out"] = "base" # buy unknown PT with known base
-            trade_detail["share_reserves"] = self.share_reserves
-            trade_detail["bond_reserves"] = self.bond_reserves
-            # open long position
-            market_deltas = self.pricing_model.close_long(trade_detail)
+            # close long position
+            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_detail)
             # update market state
             self.update_market(market_deltas)
-            # resolve user wallet update
-            delta_wallet = {
-                "base": trade_detail["trade_amount"],
-                "pt": market_deltas["d_token_asset_volume"], # out_with_fee
-            }
-            return delta_wallet
+            # TODO: self.update_LP_pool(wallet_deltas["fees"])
+            return wallet_deltas
         elif user_action["action_type"] == "open_short": # sell to open short
             trade_detail["direction"] = "out" # calcOutGivenIn
             trade_detail["token_in"] = "pt" # sell known PT for unknown base
