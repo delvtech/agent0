@@ -231,8 +231,8 @@ class YieldSimulator:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
         # setup pricing model
         self.set_pricing_model(self.pricing_model_name) # construct pricing model object
-        self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         # setup market
+        self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
@@ -304,6 +304,18 @@ class YieldSimulator:
         self.start_time = self.current_datetime()
         self.block_number = 0
         self.setup_simulated_entities(override_dict)
+        if self.verbose:
+            print(f"\n-----\ninitial market values:"
+                f"\nshare_reserves = {self.market.share_reserves}"
+                f"\nbond_reserves = {self.market.bond_reserves}"
+                f"\ntarget_liquidity = {self.target_liquidity}"
+                f"\ntotal market liquidity = {self.market.share_reserves + self.market.bond_reserves}"
+                f"\nfee_percent = {self.market.fee_percent}"
+                f"\nshare_price = {self.market.share_price}"
+                f"\ninit_share_price = {self.market.init_share_price}"
+                f"\ninit_time_stretch = {self.init_time_stretch}"
+                "\n-----\n"
+            )
         for day in range(0, self.num_trading_days):
             self.day = day
             # Vault return can vary per day, which sets the current price per share
@@ -318,29 +330,31 @@ class YieldSimulator:
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list) # shuffle the user action order each block
                 for user in self.user_list:
-                    trade_list = user.get_trade()
-                    if len(trade_list) == 0: # empty list indicates no action
+                    action_list = user.get_trade()
+                    if len(action_list) == 0: # empty list indicates no action
                         pass
-                    for trade in trade_list:
-                        print(f"Simulator trade: {trade}")
+                    for user_action in action_list:
                         # Conduct trade & update state
-                        time_remaining = self.get_yearfrac_remaining(trade["mint_time"])
-                        trade["time_remaining"] = time_remaining
-                        trade["stretched_time_remaining"] = self.pricing_model.stretch_time(time_remaining, self.init_time_stretch)
-                        trade["trade_amount"] = trade["trade_amount_fiat"] / self.base_asset_price
-                        trade_result = self.market.swap(trade)
+                        time_remaining = self.get_yearfrac_remaining(user_action["mint_time"])
+                        user_action["time_remaining"] = time_remaining
+                        user_action["stretched_time_remaining"] = self.pricing_model.stretch_time(time_remaining, self.init_time_stretch)
+                        #user_action["trade_amount"] = user_action["trade_amount_fiat"] / self.base_asset_price
+                        action_result = self.market.swap(user_action)
                         # Update user state
-                        user.update_wallet(trade_result)
+                        user.update_wallet(action_result)
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         if self.verbose:
-                            print(
-                                "YieldSimulator.run_simulation:\n"
-                                + f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
-                                + f"init_share_price={self.market.init_share_price}, "
-                                + f"share_price={self.market.share_price}, "
-                                + f"amount={self.trade_amount}, "
-                                + f"reserves={(self.market.share_reserves, self.market.bond_reserves)}"
+                            print("YieldSimulator.run_simulation:"
+                                f"\n\ttime = {self.market.time}"
+                                f"\n\tuser trade = {user_action}"
+                                f"\n\tuser_wallet = {user.wallet}"
+                                f"\n\tinit pool apy = {self.init_pool_apy}"
+                                f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
+                                f"\n\tinit_share_price = {self.market.init_share_price}"
+                                f"\n\tshare_price = {self.market.share_price}"
+                                f"\n\tamount = {self.trade_amount}"
+                                f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
                             )
                 self.market.tick(self.step_size())
                 self.block_number += 1

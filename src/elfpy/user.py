@@ -69,7 +69,7 @@ class User:
         for action in action_list:
             action_dict = {}
             action_dict["action_type"] = action[0]
-            action_dict["trade_amount_fiat"] = action[1]
+            action_dict["trade_amount"] = action[1]
             if len(action) > 2: # close, so mint_time is the time for the token we want to close
                 action_dict["mint_time"] = action[2]
             else: # open, so mint_time is assigned to current market time (fresh mint)
@@ -120,5 +120,7 @@ class User:
                     self.wallet["token_in_protocol"].update(
                         {mint_time: delta_token}
                     )
+            elif key == "fee":
+                pass
             else:
                 raise ValueError(f"key={key} is not allowed.")

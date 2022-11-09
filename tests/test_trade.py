@@ -32,7 +32,7 @@ class BaseTradeTest(unittest.TestCase):
             "max_vault_age": 1,  # fraction of a year
             "min_vault_apy": 0.001,  # as a decimal
             "max_vault_apy": 0.9,  # as a decimal
-            "base_asset_price": 2.5e3,  # aka market price
+            "base_asset_price": 1,  # aka market price
             "pool_duration": 180,  # in days
             "num_trading_days": 180,  # should be <= pool_duration
             "floor_fee": 0,  # minimum fee percentage (bps)
@@ -42,15 +42,19 @@ class BaseTradeTest(unittest.TestCase):
             "pricing_model_name": "HyperDrive",
             "user_type": "Random",
             "rng": simulator_rng,
-            "verbose": False,
+            "verbose": True,
             "user_policies": [policy],  # list of user policies by name
-            "token_duration": 90/365,  # remember default time unit is yearfrac
+            "token_duration": 90/365,  # 3 month term; time unit is yearfrac
             "num_blocks_per_day": int(24*60*60/12)  # 12 second block time
         }
 
         simulator = YieldSimulator(**config)
         simulator.set_random_variables()
-        override_dict = {"target_liquidity": 10e6}
+        override_dict = {
+            "target_liquidity": 10e6,
+            "fee_percent": 0.1,
+            "init_pool_apy": 0.05,
+        }
         simulator.run_simulation(override_dict)
 
 class SingleLongTradeTest(BaseTradeTest):

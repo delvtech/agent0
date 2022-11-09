@@ -1,7 +1,7 @@
 """
 Base policy class
 
-Plicies inherit from Users (thus each policy is assigned to a user)
+Policies inherit from Users (thus each policy is assigned to a user)
 subclasses of BasicPolicy will implement trade actions
 """
 
