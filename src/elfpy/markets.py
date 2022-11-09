@@ -148,29 +148,22 @@ class Market:
             trade_detail["token_out"] = "pt" # buy unknown PT with known base
             # open long position
             market_deltas, wallet_deltas = self.pricing_model.open_long(trade_detail)
-            # update market state
-            self.update_market(market_deltas)
-            # TODO: self.update_LP_pool(wallet_deltas["fees"])
-            return wallet_deltas
         if user_action["action_type"] == "close_long": # sell to close long
             # specify how to formulate the trade
             trade_detail["direction"] = "out" # calcOutGivenIn
             trade_detail["token_out"] = "base" # buy unknown PT with known base
             # close long position
             market_deltas, wallet_deltas = self.pricing_model.close_long(trade_detail)
-            # update market state
-            self.update_market(market_deltas)
-            # TODO: self.update_LP_pool(wallet_deltas["fees"])
-            return wallet_deltas
         elif user_action["action_type"] == "open_short": # sell to open short
-            trade_detail["direction"] = "out" # calcOutGivenIn
-            trade_detail["token_in"] = "pt" # sell known PT for unknown base
+            market_deltas, wallet_deltas = (None, None)
         elif user_action["action_type"] == "close_short": # buy to close short
-            trade_detail["direction"] = "in" # calcInGivenOut
-            trade_detail["token_in"] = "base" # buy back known PT for unknown base
+            market_deltas, wallet_deltas = (None, None)
         else:
             raise ValueError(f"ERROR: unknown trade type {user_action['trade_type']}")
-        return None
+        # update market state
+        self.update_market(market_deltas)
+        # TODO: self.update_LP_pool(wallet_deltas["fees"])
+        return wallet_deltas
 
     def old_swap(self, amount, trade_direction, token_in, time_remaining):
         """
