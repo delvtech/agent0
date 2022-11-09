@@ -24,7 +24,7 @@ class User:
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
         self.wallet = {
             "base_in_wallet": self.budget,
-            "base_in_protocol": 0,
+            "base_in_protocol": {},
             "token_in_wallet": {},
             "token_in_protocol": {}
         }
