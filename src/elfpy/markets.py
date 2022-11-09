@@ -136,30 +136,31 @@ class Market:
         Execute a trade in the simulated market.
         """
         # assign general trade details, irrespective of trade type
-        trade_detail = user_action.copy()
-        trade_detail["fee_percent"] = self.fee_percent
-        trade_detail["init_share_price"] = self.init_share_price
-        trade_detail["share_price"] = self.share_price
-        trade_detail["share_reserves"] = self.share_reserves
-        trade_detail["bond_reserves"] = self.bond_reserves
+        trade_details = user_action.copy()
+        trade_details["fee_percent"] = self.fee_percent
+        trade_details["init_share_price"] = self.init_share_price
+        trade_details["share_price"] = self.share_price
+        trade_details["share_reserves"] = self.share_reserves
+        trade_details["bond_reserves"] = self.bond_reserves
+        # for each position, specify how to forumulate trade and then execute
         if user_action["action_type"] == "open_long": # buy to open long
-            # specify how to formulate the trade
-            trade_detail["direction"] = "out" # calcOutGivenIn
-            trade_detail["token_out"] = "pt" # buy unknown PT with known base
-            # open long position
-            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_detail)
-        if user_action["action_type"] == "close_long": # sell to close long
-            # specify how to formulate the trade
-            trade_detail["direction"] = "out" # calcOutGivenIn
-            trade_detail["token_out"] = "base" # buy unknown PT with known base
-            # close long position
-            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_detail)
+            trade_details["direction"] = "out" # calcOutGivenIn
+            trade_details["token_out"] = "pt" # buy unknown PT with known base
+            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
+        elif user_action["action_type"] == "close_long": # sell to close long
+            trade_details["direction"] = "out" # calcOutGivenIn
+            trade_details["token_out"] = "base" # buy unknown PT with known base
+            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
         elif user_action["action_type"] == "open_short": # sell to open short
-            market_deltas, wallet_deltas = (None, None)
+            trade_details["direction"] = "out" # calcOutGivenIn
+            trade_details["token_out"] = "base" # sell known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.open_short(trade_details)
         elif user_action["action_type"] == "close_short": # buy to close short
-            market_deltas, wallet_deltas = (None, None)
+            trade_details["direction"] = "in" # calcInGivenOut
+            trade_details["token_in"] = "base" # buy back known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
         else:
-            raise ValueError(f"ERROR: unknown trade type {user_action['trade_type']}")
+            raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
         self.update_market(market_deltas)
         # TODO: self.update_LP_pool(wallet_deltas["fees"])

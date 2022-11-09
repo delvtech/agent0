@@ -74,65 +74,35 @@ class User:
                 action_dict["mint_time"] = action[2]
             else: # open, so mint_time is assigned to current market time (fresh mint)
                 action_dict["mint_time"] = self.market.time
+            if action_dict["action_type"] == "close_short":
+                action_dict["token_in_protocol"] = self.wallet["token_in_protocol"][action_dict["mint_time"]]
+                action_dict["base_in_protocol"] = self.wallet["base_in_protocol"][action_dict["mint_time"]]
             action_list_dict.append(action_dict)
-        return action_list_dict
         # TODO: Add safety checks
-        #trade_details = []
-        #for action in action_list:
-        #    print(f"user.py input action: {action}")
-        #    trade_detail = {"action_type": action[0]}
-        #    if action[0] == "open_long": # buy to open long
-        #        trade_detail = {
-        #            "trade_amount": action[1],
-        #            "direction": "out",  # calcOutGivenIn
-        #            "token_in": "base",  # buy unknown PT with known base
-        #            "mint_time": -1      # fresh mint
-        #        }
-        #    elif action[0] == "close_long": # sell to close long
-        #        trade_detail = {
-        #            "trade_amount": action[1],
-        #            "direction": "out",   # calcOutGivenIn
-        #            "token_in": "pt",     # sell back known PT for unknown base
-        #            "mint_time": action[2]
-        #        }
-        #    elif action[0] == "open_short": # sell to open short
-        #        trade_detail = {
-        #            "trade_amount": action[1],
-        #            "direction": "out",  # calcOutGivenIn
-        #            "token_in": "pt",    # sell known PT for unknown base
-        #            "mint_time": -1      # fresh mint
-        #        }
-        #    elif action[0] == "close_short": # buy to close short
-        #        trade_detail = {
-        #            "trade_amount": action[1],
-        #            "direction": "in",  # calcInGivenOut
-        #            "token_in": "base",  # buy back known PT for unknown base
-        #            "mint_time": action[2]
-        #        }
-        #    else:
-        #        raise ValueError(f"ERROR: unknown trade type {action[0]}")
-        #    print(f"user.py output trade: {trade_detail}")
-        #    trade_details.append(trade_detail)
-
-        # TODO: checks that e.g. trade amount > 0; there is enough money in the account
+        # e.g. if trade amount > 0, whether there is enough money in the account
         #if len(trade_action) > 0: # there is a trade
         #    token_in, token_out, trade_amount_usd = trade_action
         #    assert trade_amount_usd >= 0, (
         #        f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
         #        f" token_in={token_in} token_out={token_out}"
         #    )
-
-        # return the formatted action set to be passed to the market
-        #return trade_details
+        return action_list_dict
 
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
         for key, value in trade_result.items():
             if key == "base_in_wallet":
                 self.wallet["base_in_wallet"] += value
-            if key == "base_in_protocol":
-                self.wallet["base_in_protocol"] += value
-            if key == "token_in_wallet":
+            elif key == "base_in_protocol":
+                mint_time = value[0]
+                delta_base = value[1]
+                if mint_time in self.wallet["base_in_protocol"]:
+                    self.wallet["base_in_protocol"][mint_time] += delta_base
+                else:
+                    self.wallet["base_in_protocol"].update(
+                        {mint_time: delta_base}
+                    )
+            elif key == "token_in_wallet":
                 mint_time = value[0]
                 delta_token = value[1]
                 if mint_time in self.wallet["token_in_wallet"]:
@@ -141,7 +111,7 @@ class User:
                     self.wallet["token_in_wallet"].update(
                         {mint_time: delta_token}
                     )
-            if key == "token_in_protocol":
+            elif key == "token_in_protocol":
                 mint_time = value[0]
                 delta_token = value[1]
                 if mint_time in self.wallet["token_in_protocol"]:
@@ -150,3 +120,5 @@ class User:
                     self.wallet["token_in_protocol"].update(
                         {mint_time: delta_token}
                     )
+            else:
+                raise ValueError(f"key={key} is not allowed.")

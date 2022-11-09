@@ -322,6 +322,7 @@ class YieldSimulator:
                     if len(trade_list) == 0: # empty list indicates no action
                         pass
                     for trade in trade_list:
+                        print(f"Simulator trade: {trade}")
                         # Conduct trade & update state
                         time_remaining = self.get_yearfrac_remaining(trade["mint_time"])
                         trade["time_remaining"] = time_remaining
