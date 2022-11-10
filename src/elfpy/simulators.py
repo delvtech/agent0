@@ -229,7 +229,6 @@ class YieldSimulator:
         # setup pricing model
         self.set_pricing_model(self.pricing_model_name)  # construct pricing model object
         # setup market
-        ### TODO: rename to time_stretch_constant
         time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -321,7 +320,6 @@ class YieldSimulator:
                         user_action["stretched_time_remaining"] = self.pricing_model.stretch_time(
                             time_remaining, self.market.time_stretch_constant
                         )
-                        # user_action["trade_amount"] = user_action["trade_amount_fiat"] / self.base_asset_price
                         action_result = self.market.swap(user_action)
                         # Update user state
                         user.update_wallet(action_result)
