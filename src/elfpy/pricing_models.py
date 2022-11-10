@@ -168,12 +168,15 @@ class PricingModel:
         base_asset_needed = (base_asset_reserves / token_asset_reserves) * token_asset_needed
         return (base_asset_needed, token_asset_needed)
 
-    # TODO: We always apply the scale factor to the share reserves component,
-    # so these parameters could be better named.
+    # FIXME: This has been re-parameterized. More updates will be required.
     @staticmethod
-    def _calc_k_const(in_reserves, out_reserves, time_elapsed, scale=1):
+    def _calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
         """Returns the 'k' constant variable for trade mathematics"""
-        return scale * in_reserves ** (time_elapsed) + out_reserves ** (time_elapsed)
+        scale = share_price / init_share_price
+        total_reserves = bond_reserves + share_price * share_reserves
+        return scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (
+            time_elapsed
+        )
 
     @staticmethod
     def _calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price):
@@ -262,7 +265,7 @@ class PricingModel:
     ):
         """Returns the spot price given the current supply and temporal position along the yield curve"""
         log_inv_price = share_price * (token_asset_reserves + total_supply) / (init_share_price * base_asset_reserves)
-        spot_price = 1 / log_inv_price ** time_remaining
+        spot_price = 1 / log_inv_price**time_remaining
         return spot_price
 
     def calc_base_asset_reserves(
@@ -279,7 +282,7 @@ class PricingModel:
         time_stretch_exp = 1 / self._stretch_time(normalized_days_remaining, time_stretch)
         numerator = 2 * share_price * token_asset_reserves  # 2*c*y
         scaled_apy_decimal = apy_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
-        denominator = init_share_price * scaled_apy_decimal ** time_stretch_exp - share_price
+        denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
         result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
         if self.verbose:
             print(f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}")
@@ -558,8 +561,8 @@ class HyperdrivePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / mu) * (mu * z)**(1 - t) + y**(1 - t)
-        k = self._calc_k_const(init_share_price * share_reserves, bond_reserves, time_elapsed, scale)
+        # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
+        k = self._calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_in == "base":  # calc shares in for pt out
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
@@ -726,8 +729,8 @@ class HyperdrivePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / mu) * (mu * z)**(1 - t) + y**(1 - t)
-        k = self._calc_k_const(init_share_price * share_reserves, bond_reserves, time_elapsed, scale)
+        # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
+        k = self._calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_out == "base":
             d_bonds = in_
             in_reserves = bond_reserves + total_reserves
