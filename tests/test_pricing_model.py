@@ -15,6 +15,8 @@ from elfpy.pricing_models import HyperdrivePricingModel
 
 
 class TestCaseCalcInGivenOut:
+    __test__ = False
+
     def __init__(
         self,
         out,
@@ -39,6 +41,8 @@ class TestCaseCalcInGivenOut:
 
 
 class TestCaseCalcOutGivenIn:
+    __test__ = False
+
     def __init__(
         self,
         in_,
@@ -94,22 +98,42 @@ class TestHyperdrivePricingModel(unittest.TestCase):
     def test_calc_out_given_in(self):
         pricing_model = HyperdrivePricingModel(False)
         test_cases = [
-            # FIXME: Use the correct output.
-            #
-            # (
-            #     TestCaseCalcOutGivenIn(
-            #         in_=100,
-            #         share_reserves=100_000,
-            #         bond_reserves=100_000,
-            #         token_out="pt",
-            #         fee_percent=0.01,
-            #         days_remaining=182.5,
-            #         time_stretch_apy=0.05,
-            #         share_price=1,
-            #         init_share_price=1,
-            #     ),
-            #     (0, 0, 0, 0),
-            # ),
+            (
+                TestCaseCalcOutGivenIn(
+                    in_=100,
+                    share_reserves=100_000,
+                    bond_reserves=100_000,
+                    token_out="pt",
+                    fee_percent=0.01,
+                    days_remaining=182.5,
+                    time_stretch_apy=0.05,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                # From the input, we have the following values:
+                # - T = 0.02253584403159705
+                # - p = 1.0250671833648672
+                # - k = 302929.51067963685
+                (
+                    # Using the spot price, the expected output without slippage or fees is given by:
+                    #   1.0250671833648672 * 100 = 102.50671833648673 (using python precision).
+                    102.50671833648673,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 102.50516899477225 - 0.02506718336486724
+                    102.48010181140738,
+                    # We set up the problem as:
+                    #   100_100 ^ (1 - T) + (300_000 - d_y) ^ (1 - T) = k
+                    #
+                    # Solving for d_y, we get the following calculation:
+                    #   d_y = 300_000 - (k - 100_100 ^ (1 - T)) ^ (1 / (1 - T)) = 102.50516899477225
+                    #
+                    # Note that this is slightly smaller than the without slippage value
+                    102.50516899477225,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
+                    0.02506718336486724,
+                ),
+            ),
         ]
         for (
             test_case,
@@ -131,7 +155,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 test_case.init_share_price,
                 test_case.share_price,
             )
-            assert without_fee_or_slippage == expected_without_fee_or_slippage
-            assert with_fee == expected_with_fee
-            assert without_fee == expected_without_fee
-            assert fee == expected_fee
+            assert without_fee_or_slippage == expected_without_fee_or_slippage, "unexpected without_fee_or_slippage"
+            assert without_fee == expected_without_fee, "unexpected without_fee"
+            assert fee == expected_fee, "unexpected fee"
+            assert with_fee == expected_with_fee, "unexpected with_fee"
