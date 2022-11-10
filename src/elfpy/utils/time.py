@@ -11,7 +11,7 @@ import numpy as np
 
 def current_datetime():
     """Returns the current time"""
-    return datetime.datetime.now(pytz.timezone('Etc/GMT-0'))
+    return datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
 
 
 def block_number_to_datetime(start_time, block_number, time_between_blocks):

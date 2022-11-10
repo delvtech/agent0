@@ -38,13 +38,13 @@ class Market:
     ):
         # TODO: In order for the AMM to work as expected we should store
         # a share reserve instead of a base reserve.
-        self.time = 0 # time in year fractions
+        self.time = 0  # time in year fractions
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
         self.fee_percent = fee_percent  # g
         self.init_share_price = init_share_price  # u normalizing constant
         self.share_price = share_price  # c
-        self.token_duration = token_duration # how long does a token last before expiry
+        self.token_duration = token_duration  # how long does a token last before expiry
         self.pricing_model = pricing_model
         self.time_stretch_constant = time_stretch_constant
         self.base_asset_orders = 0
@@ -123,7 +123,7 @@ class Market:
         Increments member variables to reflect current market conditions
         """
         for key, value in market_deltas.items():
-            assert np.isfinite(value), (f"markets.update_market: ERROR: market delta key {key} is not finite.")
+            assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.share_reserves += market_deltas["d_base_asset"]
         self.bond_reserves += market_deltas["d_token_asset"]
         self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
@@ -147,21 +147,21 @@ class Market:
         trade_details["share_reserves"] = self.share_reserves
         trade_details["bond_reserves"] = self.bond_reserves
         # for each position, specify how to forumulate trade and then execute
-        if user_action["action_type"] == "open_long": # buy to open long
-            trade_details["direction"] = "out" # calcOutGivenIn
-            trade_details["token_out"] = "pt" # buy unknown PT with known base
+        if user_action["action_type"] == "open_long":  # buy to open long
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "pt"  # buy unknown PT with known base
             market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
-        elif user_action["action_type"] == "close_long": # sell to close long
-            trade_details["direction"] = "out" # calcOutGivenIn
-            trade_details["token_out"] = "base" # buy unknown PT with known base
+        elif user_action["action_type"] == "close_long":  # sell to close long
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "base"  # buy unknown PT with known base
             market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
-        elif user_action["action_type"] == "open_short": # sell to open short
-            trade_details["direction"] = "out" # calcOutGivenIn
-            trade_details["token_out"] = "base" # sell known PT for unknown base
+        elif user_action["action_type"] == "open_short":  # sell to open short
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "base"  # sell known PT for unknown base
             market_deltas, wallet_deltas = self.pricing_model.open_short(trade_details)
-        elif user_action["action_type"] == "close_short": # buy to close short
-            trade_details["direction"] = "in" # calcInGivenOut
-            trade_details["token_in"] = "base" # buy back known PT for unknown base
+        elif user_action["action_type"] == "close_short":  # buy to close short
+            trade_details["direction"] = "in"  # calcInGivenOut
+            trade_details["token_in"] = "base"  # buy back known PT for unknown base
             market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')

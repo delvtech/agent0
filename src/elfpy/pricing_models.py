@@ -215,7 +215,7 @@ class PricingModel:
         """
         time_elapsed = 1 - time_remaining
         # TODO: fix calc_k_const args
-        k = 1# self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
+        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
         return k ** (1 / time_elapsed) - in_reserves
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
@@ -376,8 +376,8 @@ class ElementPricingModel(PricingModel):
         share_price=1,
     ):
         time_elapsed = 1 - time_remaining
-        #TODO: Fix k calculation for element v1
-        k = 1# self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
+        # TODO: Fix k calculation for element v1
+        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = (k - (out_reserves - out) ** time_elapsed) ** (1 / time_elapsed) - in_reserves
         if token_in == "base":
             fee = fee_percent * (out - without_fee)
@@ -400,7 +400,7 @@ class ElementPricingModel(PricingModel):
     ):
         time_elapsed = 1 - time_remaining
         # TODO: Fix k calculation for element v1
-        k = 1 # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
+        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, time_elapsed), 1 / time_elapsed)
         if token_out == "base":
             fee = fee_percent * (in_ - without_fee)

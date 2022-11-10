@@ -1,11 +1,11 @@
 from elfpy.strategies.basic import BasicPolicy
 
+
 class Policy(BasicPolicy):
     """
     simple long
     only has one long open at a time
     """
-
 
     def __init__(self, market, rng, verbose=False):
         """call basic policy init then add custom stuff"""

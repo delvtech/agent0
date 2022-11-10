@@ -13,18 +13,18 @@ def if_(*args):
     ---------
     args: any number of comma seperated arguments
         the args are assumed to be a sequence of (bool, val) pairs
-    
+
     Returns
     -------
     resolution: any
-        the resoultion of the first if statement 
+        the resoultion of the first if statement
     """
-    for i in range(0, len(args) - 1, 2): # every other arg is a bool
-        if args[i]: # the even args are conditionals (booleans)
-            return args[i + 1] # the odd args are resolved values
-    if len(args) % 2: # else was included
-        return args[-1] # last statement
-    else: # no else included
+    for i in range(0, len(args) - 1, 2):  # every other arg is a bool
+        if args[i]:  # the even args are conditionals (booleans)
+            return args[i + 1]  # the odd args are resolved values
+    if len(args) % 2:  # else was included
+        return args[-1]  # last statement
+    else:  # no else included
         return None
 
 
@@ -40,7 +40,7 @@ def less(a, b):
         try:
             a, b = float(a), float(b)
         except TypeError:
-            return False # NaN
+            return False  # NaN
     return a < b
 
 
@@ -103,7 +103,7 @@ def parse_distribution(dist_spec, rng):
 def get_variable(arg, market, rng):
     """Parse the market class to get an argument"""
     if "market" in arg:
-        attr = arg.split(".")[-1] # get the desired market attribute
+        attr = arg.split(".")[-1]  # get the desired market attribute
         return getattr(market, attr)
     if "rand_variable" in arg:
         return parse_distribution(arg["rand_variable"], rng)
@@ -165,8 +165,7 @@ def parse_action(action_spec, rng):
     elif action == "sell":
         token_in = "pt"
     else:
-        raise ValueError(
-            f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action}')
+        raise ValueError(f'parse_json: ERROR: action_spec must be ["buy", "sell", "none"], not {action}')
     input_amount_in_usd = parse_trade_amount(spec, rng)
     return (token_in, input_amount_in_usd)
 
@@ -178,8 +177,7 @@ def parse_trade_amount(amount_spec, rng):
     else:
         amount = amount_spec["amount"]
     if amount <= 0:
-        raise ValueError(
-            f'parse_json: ERROR: amount must be >0, not {amount}.')
+        raise ValueError(f"parse_json: ERROR: amount must be >0, not {amount}.")
     return amount
 
 
@@ -203,9 +201,9 @@ def parse(tests, market, rng):
     # Recursion!
     values = [parse(val, market, rng) for val in values]
 
-    if operator == 'var':
+    if operator == "var":
         return get_variable(values, market, rng)
-    elif operator == 'amount':
+    elif operator == "amount":
         return values
 
     if operator not in operations:

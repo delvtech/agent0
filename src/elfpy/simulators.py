@@ -71,7 +71,7 @@ class YieldSimulator:
         self.vault_apy = None
         self.random_variables_set = False
         # Simulation variables
-        self.run_number = 0 
+        self.run_number = 0
         self.day = 0
         self.block_number = 0
         self.daily_block_number = 0
@@ -99,19 +99,19 @@ class YieldSimulator:
         self.actual_convergence_strength = None
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
-            "run_number",# integer, simulation index
-            "simulation_start_time", # start datetime for a given simulation
-            "day", # integer, day index in a given simulation
-            "block_number", # integer, block index in a given simulation
-            "daily_block_number", # integer, block index in a given day
-            "block_timestamp", # datetime of a given block's creation
-            "current_market_datetime", # float, current market time as a datetime
-            "current_market_yearfrac", # float, current market time as a yearfrac
-            "run_trade_number", # integer, trade number in a given simulation
+            "run_number",  # integer, simulation index
+            "simulation_start_time",  # start datetime for a given simulation
+            "day",  # integer, day index in a given simulation
+            "block_number",  # integer, block index in a given simulation
+            "daily_block_number",  # integer, block index in a given day
+            "block_timestamp",  # datetime of a given block's creation
+            "current_market_datetime",  # float, current market time as a datetime
+            "current_market_yearfrac",  # float, current market time as a yearfrac
+            "run_trade_number",  # integer, trade number in a given simulation
             "step_size",
             "model_name",
             "scenario_name",
-            "token_duration", # time lapse between token mint and expiry as a yearfrac
+            "token_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
             "target_daily_volume",
@@ -120,7 +120,7 @@ class YieldSimulator:
             "pool_apy_target_range_convergence_speed",
             "streak_luck",
             "fee_percent",
-            "floor_fee", # minimum fee we take
+            "floor_fee",  # minimum fee we take
             "init_vault_age",
             "base_asset_price",
             "vault_apy",
@@ -140,10 +140,10 @@ class YieldSimulator:
             "apy_distance_in_target_range",
             "apy_distance_from_mid_when_in_range",
             "actual_convergence_strength",
-            "fee", # percentage of the slippage we take as a fee (expressed as a decimal)
+            "fee",  # percentage of the slippage we take as a fee (expressed as a decimal)
             "slippage",
-            "num_trading_days", # number of days in a simulation
-            "num_blocks_per_day", # number of blocks in a day, simulates time between blocks
+            "num_trading_days",  # number of days in a simulation
+            "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
             "num_orders",
         ]
@@ -227,7 +227,7 @@ class YieldSimulator:
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
         # setup pricing model
-        self.set_pricing_model(self.pricing_model_name) # construct pricing model object
+        self.set_pricing_model(self.pricing_model_name)  # construct pricing model object
         # setup market
         ### TODO: rename to time_stretch_constant
         time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
@@ -242,29 +242,28 @@ class YieldSimulator:
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
-            share_reserves=init_base_asset_reserves, # x
-            bond_reserves=init_token_asset_reserves, # y
-            fee_percent=self.fee_percent, # g
+            share_reserves=init_base_asset_reserves,  # x
+            bond_reserves=init_token_asset_reserves,  # y
+            fee_percent=self.fee_percent,  # g
             token_duration=self.token_duration,
             pricing_model=self.pricing_model,
             time_stretch_constant=time_stretch_constant,
-            init_share_price=self.init_share_price, # u from YieldSpace w/ Yield Baring Vaults
-            share_price=self.init_share_price, # c from YieldSpace w/ Yield Baring Vaults
+            init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+            share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
             verbose=self.verbose,
         )
         # setup user list
         self.user_list = []
         for policy_name in self.user_policies:
-            user_with_policy = import_module(
-                f"elfpy.strategies.{policy_name}").Policy(
-                    self.market, self.rng, self.verbose)
+            user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
+                self.market, self.rng, self.verbose
+            )
             self.user_list.append(user_with_policy)
 
     def step_size(self):
         """Returns minimum time increment"""
         blocks_per_year = 365 * self.num_blocks_per_day
         return 1 / blocks_per_year
-
 
     def run_simulation(self, override_dict=None):
         """
@@ -284,7 +283,8 @@ class YieldSimulator:
         self.block_number = 0
         self.setup_simulated_entities(override_dict)
         if self.verbose:
-            print(f"\n-----\ninitial market values:"
+            print(
+                f"\n-----\ninitial market values:"
                 f"\nshare_reserves = {self.market.share_reserves}"
                 f"\nbond_reserves = {self.market.bond_reserves}"
                 f"\ntarget_liquidity = {self.target_liquidity}"
@@ -300,32 +300,36 @@ class YieldSimulator:
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 self.market.share_price += (
-                    self.vault_apy[self.day] # current day's apy
-                    / 365 # convert annual yield to daily
-                    * self.market.init_share_price # APR, apply return to starting price (no compounding)
+                    self.vault_apy[self.day]  # current day's apy
+                    / 365  # convert annual yield to daily
+                    * self.market.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
             for daily_block_number in range(self.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                self.rng.shuffle(self.user_list) # shuffle the user action order each block
+                self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 for user in self.user_list:
                     action_list = user.get_trade()
-                    if len(action_list) == 0: # empty list indicates no action
+                    if len(action_list) == 0:  # empty list indicates no action
                         pass
                     for user_action in action_list:
                         # Conduct trade & update state
                         time_remaining = time_utils.get_yearfrac_remaining(
-                            self.market.time, user_action["mint_time"], self.market.token_duration)
+                            self.market.time, user_action["mint_time"], self.market.token_duration
+                        )
                         user_action["time_remaining"] = time_remaining
-                        user_action["stretched_time_remaining"] = self.pricing_model.stretch_time(time_remaining, self.market.time_stretch_constant)
-                        #user_action["trade_amount"] = user_action["trade_amount_fiat"] / self.base_asset_price
+                        user_action["stretched_time_remaining"] = self.pricing_model.stretch_time(
+                            time_remaining, self.market.time_stretch_constant
+                        )
+                        # user_action["trade_amount"] = user_action["trade_amount_fiat"] / self.base_asset_price
                         action_result = self.market.swap(user_action)
                         # Update user state
                         user.update_wallet(action_result)
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         if self.verbose:
-                            print("YieldSimulator.run_simulation:"
+                            print(
+                                "YieldSimulator.run_simulation:"
                                 f"\n\ttime = {self.market.time}"
                                 f"\n\tuser trade = {user_action}"
                                 f"\n\tuser_wallet = {user.wallet}"
@@ -371,11 +375,13 @@ class YieldSimulator:
         self.analysis_dict["daily_block_number"].append(self.daily_block_number)
         self.analysis_dict["block_number"].append(self.block_number)
         self.analysis_dict["block_timestamp"].append(
-            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks))
+            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+        )
         # Variables that change per trade
         self.analysis_dict["current_market_yearfrac"].append(self.market.time)
         self.analysis_dict["current_market_datetime"].append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time))
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time)
+        )
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["base_asset_reserves"].append(self.market.share_reserves)
         self.analysis_dict["token_asset_reserves"].append(self.market.bond_reserves)
@@ -403,4 +409,4 @@ class YieldSimulator:
             self.analysis_dict["fee"].append(self.fee * self.base_asset_price)
             slippage = (self.without_fee_or_slippage - self.without_fee) * self.base_asset_price
             self.analysis_dict["slippage"].append(slippage)
-        #self.analysis_dict["spot_price"].append(self.market.spot_price())
+        # self.analysis_dict["spot_price"].append(self.market.spot_price())

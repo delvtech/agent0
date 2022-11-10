@@ -6,17 +6,17 @@ Testing for the ElfPy package modules
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-#import os
-#import unittest
-#import json
-#import numpy as np
+# import os
+# import unittest
+# import json
+# import numpy as np
 #
-#from elfpy.simulators import YieldSimulator
+# from elfpy.simulators import YieldSimulator
 ## from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 ## from elfpy.markets import Market
-#from elfpy.utils.parse_json import parse_trade
+# from elfpy.utils.parse_json import parse_trade
 #
-#class BaseStrategyTest(unittest.TestCase):
+# class BaseStrategyTest(unittest.TestCase):
 #    """Generic test class"""
 #
 #    def setup_test_vars(self):
@@ -69,7 +69,7 @@ Testing for the ElfPy package modules
 #            f" token_in={token_in} token_out={token_out}"
 #        )
 #
-#class TestBaseUser(BaseStrategyTest):
+# class TestBaseUser(BaseStrategyTest):
 #    """Tests for the BaseUser class"""
 #
 #    def test_base_user(self):
@@ -79,7 +79,7 @@ Testing for the ElfPy package modules
 #
 #        # assign directory
 #        directory = os.path.join(os.getcwd(), "src", "elfpy", "strategies")
-#        
+#
 #        # iterate over strategy files
 #        for filename in os.scandir(directory):
 #            if filename.is_file():
@@ -88,16 +88,16 @@ Testing for the ElfPy package modules
 #                trade_action = user.get_trade(self.market)
 #                self.check_trade(trade_action, policy)
 #
-#class TestStrategyDefinitions(BaseStrategyTest):
+# class TestStrategyDefinitions(BaseStrategyTest):
 #    """Tests for all strategies"""
 #
 #    def test_strategy_definitions(self):
 #        """Test constructing each user type"""
 #        self.setup_test_vars()
-#              
+#
 #        # assign directory
 #        directory = os.path.join(os.getcwd(), "src", "elfpy", "strategies")
-#        
+#
 #        # iterate over strategy files
 #        for filename in os.scandir(directory):
 #            if filename.is_file():

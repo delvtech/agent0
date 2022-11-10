@@ -13,6 +13,7 @@ class BasicPolicy(User):
     """
     most basic policy setup
     """
+
     def action(self):
         """specify action"""
         action_list = []
