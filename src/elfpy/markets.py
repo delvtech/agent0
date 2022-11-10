@@ -179,18 +179,3 @@ class Market:
     def tick(self, delta_time):
         """Increments the time member variable"""
         self.time += delta_time
-
-    def calc_max_pts_to_short(self, max_base):
-        """
-        Returns the amount of PTs to short that has a max loss of max_base
-        """
-        in_given_out = self.pricing_model.calc_in_given_out(
-            out=max_base,
-            share_reserves=self.bond_reserves,
-            bond_reserves=self.share_reserves,
-            token_in='base',
-            fee_percent=self.fee_percent,
-            time_remaining=self.time,
-            init_share_price=self.init_share_price,
-            share_price=self.share_price,
-        )

@@ -214,7 +214,8 @@ class PricingModel:
         TODO: write a test to verify that this is correct
         """
         time_elapsed = 1 - time_remaining
-        k = self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
+        # TODO: fix calc_k_const args
+        k = 1# self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
         return k ** (1 / time_elapsed) - in_reserves
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
@@ -375,7 +376,8 @@ class ElementPricingModel(PricingModel):
         share_price=1,
     ):
         time_elapsed = 1 - time_remaining
-        k = self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
+        #TODO: Fix k calculation for element v1
+        k = 1# self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = (k - (out_reserves - out) ** time_elapsed) ** (1 / time_elapsed) - in_reserves
         if token_in == "base":
             fee = fee_percent * (out - without_fee)
@@ -397,7 +399,8 @@ class ElementPricingModel(PricingModel):
         share_price=1,
     ):
         time_elapsed = 1 - time_remaining
-        k = self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
+        # TODO: Fix k calculation for element v1
+        k = 1 # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
         without_fee = out_reserves - pow(k - pow(in_reserves + in_, time_elapsed), 1 / time_elapsed)
         if token_out == "base":
             fee = fee_percent * (in_ - without_fee)
@@ -835,7 +838,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
             f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
             f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
@@ -1009,7 +1012,7 @@ class HyperdrivePricingModel(PricingModel):
                 f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
                 f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
             )
-        assert fee >= 0, f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative!"
+        assert fee >= 0, f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative, not {fee}!"
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
