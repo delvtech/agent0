@@ -519,7 +519,7 @@ class HyperdrivePricingModel(PricingModel):
         wallet_deltas = {
             "base_in_wallet": -1 * max_loss,
             "base_in_protocol": [trade_details["mint_time"], max_loss],
-            "token_in_wallet": [trade_details["mint_time"], 0],
+            "token_in_wallet": None,
             "token_in_protocol": [trade_details["mint_time"], trade_details["trade_amount"]],
             "fee": [trade_details["mint_time"], fee],
         }

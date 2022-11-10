@@ -5,6 +5,7 @@ TODO: rewrite all functions to have typed inputs
 """
 
 
+import elfpy.utils.time as time_utils
 # from elfpy.utils.parse_json import parse_trade
 
 
@@ -15,7 +16,7 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, verbose=False, budget=1000):
+    def __init__(self, market, rng, verbose=False, budget=0):
         """
         Set up initial conditions
         """
@@ -39,18 +40,28 @@ class User:
         """Returns the amount of base that the user can spend."""
         return self.wallet["base_in_wallet"]
 
-    def get_max_short(self, market):
+    def get_max_short(self, mint_time, eps=1.0):
         """
-        what is the amount of PTs to short that has a max loss of my current base balance
+        Returns the maximum amount of base that the user can short given current market conditions
         """
-        max_short = self.wallet["base_in_wallet"]
-        PTsold = market.pricing_model.calcInGivenOut(max_short)
-        discount = max_short - PTsold
-        while discount < self.wallet["base_in_wallet"]:
-            max_short += 1
-            PTsold = market.pricing_model.calcInGivenOut(max_short)
-            discount = max_short - PTsold
-        return max_short - 1 # subtract 1 to get the max short
+        time_remaining = time_utils.get_yearfrac_remaining(
+            self.market.time, mint_time, self.market.token_duration)
+        stretched_time_remaining = self.market.pricing_model.stretch_time(
+            time_remaining,
+            self.market.time_stretch_constant
+        )
+        output_with_fee = self.market.pricing_model.calc_out_given_in(
+            self.wallet["base_in_wallet"],
+            self.market.share_reserves,
+            self.market.bond_reserves,
+            "base",
+            self.market.fee_percent,
+            stretched_time_remaining,
+            self.market.init_share_price,
+            self.market.share_price
+        )[1]
+        max_short = self.wallet["base_in_wallet"] + output_with_fee - eps
+        return max_short
 
     def get_trade(self):
         """
@@ -91,36 +102,19 @@ class User:
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
         for key, value in trade_result.items():
-            if key == "base_in_wallet":
-                self.wallet["base_in_wallet"] += value
-            elif key == "base_in_protocol":
-                mint_time = value[0]
-                delta_base = value[1]
-                if mint_time in self.wallet["base_in_protocol"]:
-                    self.wallet["base_in_protocol"][mint_time] += delta_base
+            if value is not None:
+                if key == "base_in_wallet":
+                    self.wallet[key] += value
+                elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
+                    mint_time = value[0]
+                    delta_token = value[1]
+                    if mint_time in self.wallet[key]:
+                        self.wallet[key][mint_time] += delta_token
+                    else:
+                        self.wallet[key].update(
+                            {mint_time: delta_token}
+                        )
+                elif key == "fee":
+                    pass
                 else:
-                    self.wallet["base_in_protocol"].update(
-                        {mint_time: delta_base}
-                    )
-            elif key == "token_in_wallet":
-                mint_time = value[0]
-                delta_token = value[1]
-                if mint_time in self.wallet["token_in_wallet"]:
-                    self.wallet["token_in_wallet"][mint_time] += delta_token
-                else:
-                    self.wallet["token_in_wallet"].update(
-                        {mint_time: delta_token}
-                    )
-            elif key == "token_in_protocol":
-                mint_time = value[0]
-                delta_token = value[1]
-                if mint_time in self.wallet["token_in_protocol"]:
-                    self.wallet["token_in_protocol"][mint_time] += delta_token
-                else:
-                    self.wallet["token_in_protocol"].update(
-                        {mint_time: delta_token}
-                    )
-            elif key == "fee":
-                pass
-            else:
-                raise ValueError(f"key={key} is not allowed.")
+                    raise ValueError(f"key={key} is not allowed.")

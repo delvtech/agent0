@@ -29,7 +29,9 @@ class Market:
         share_reserves,
         bond_reserves,
         fee_percent,
+        token_duration,
         pricing_model,
+        time_stretch_constant=1,
         init_share_price=1,
         share_price=1,
         verbose=False,
@@ -40,9 +42,11 @@ class Market:
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
         self.fee_percent = fee_percent  # g
-        self.share_price = share_price  # c
         self.init_share_price = init_share_price  # u normalizing constant
+        self.share_price = share_price  # c
+        self.token_duration = token_duration # how long does a token last before expiry
         self.pricing_model = pricing_model
+        self.time_stretch_constant = time_stretch_constant
         self.base_asset_orders = 0
         self.token_asset_orders = 0
         self.base_asset_volume = 0

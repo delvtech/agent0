@@ -11,18 +11,19 @@ class Policy(BasicPolicy):
         """call basic policy init then add custom stuff"""
         budget = 1000
         super().__init__(market=market, rng=rng, verbose=verbose, budget=budget)
-        self.last_long_time = -1
 
     def action(self):
         """specify action"""
         action_list = []
-        has_opened_long = self.last_long_time >= 0
-        can_open_long = self.get_max_long() >= 100
-        enough_time_has_passed = self.market.time - self.last_long_time > 0.25 if self.last_long_time >=0 else False
-        if not has_opened_long and can_open_long:
-            action_list.append(["open_long", 100])
-            self.last_long_time = self.market.time
-        elif has_opened_long and enough_time_has_passed:
-            action_list.append(["close_long", 100, self.last_long_time])
-            self.last_long_time = -1
+        amount_to_trade = 100
+        mint_times = list(self.wallet["token_in_wallet"].keys())
+        has_opened_long = len(mint_times) > 0
+        can_open_long = self.get_max_long() >= amount_to_trade
+        if has_opened_long:
+            mint_time = mint_times[0]
+            enough_time_has_passed = self.market.time - mint_time > 0.25
+            if enough_time_has_passed:
+                action_list.append(["close_long", amount_to_trade, mint_time])
+        elif not has_opened_long and can_open_long:
+            action_list.append(["open_long", amount_to_trade])
         return action_list
