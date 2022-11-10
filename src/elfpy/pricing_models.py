@@ -69,7 +69,7 @@ class PricingModel:
         return days / normalizing_constant
 
     @staticmethod
-    def _stretch_time(time, time_stretch=1):
+    def _stretch_time(time, time_stretch=1.0):
         """Returns stretched time values"""
         return time / time_stretch
 
