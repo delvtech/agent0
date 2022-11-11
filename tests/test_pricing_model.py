@@ -361,7 +361,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # From the input, we have the following values:
                 # - T = 0.02253584403159705
                 # - p = 1.0623907066406753
-                # - k = 2_303_312.315329303
+                # - k = 1_735_927.3223407117
                 (
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0623907066406753 * 200 = 212.47814132813505
@@ -382,7 +382,45 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     0.1247814132813505,
                 ),
             ),
+            # A term of a quarter year.
+            (
+                TestCaseCalcOutGivenIn(
+                    in_=200,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_out="pt",
+                    fee_percent=0.01,
+                    days_remaining=91.25,
+                    time_stretch_apy=0.05,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                # From the input, we have the following values:
+                # - T = 0.011267922015798525
+                # - p = 1.0307233899745727
+                # - k = 2_041_060.1949973335
+                (
+                    # Using the spot price, the expected output without slippage or fees is given by:
+                    #   1.0307233899745727 * 200 = 206.14467799491453
+                    206.14467799491453,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 206.14340814948082 - 0.06144677994914538 = 206.08196136953168
+                    206.08196136953168,
+                    # We set up the problem as:
+                    #   (2 / 1.5) * (1.5 * 100_100) ^ (1 - T) + (2_200_000 - d_y) ^ (1 - T) = k
+                    #
+                    # Solving for d_y, we get the following calculation:
+                    #   d_y = 2_200_000 - (k - (2 / 1.5) * (1.5 * 100_100) ^ (1 - T)) ^ (1 / (1 - T)) = 206.14340814948082
+                    #
+                    # Note that this is slightly smaller than the without slippage value
+                    206.14340814948082,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
+                    0.06144677994914538,
+                ),
+            ),
         ]
+
         # Test cases where token_out = "base".
         base_out_test_cases = []
 
