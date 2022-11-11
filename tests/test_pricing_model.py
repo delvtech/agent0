@@ -15,7 +15,7 @@ from elfpy.pricing_models import HyperdrivePricingModel
 
 
 class TestCaseCalcInGivenOut:
-    __test__ = False
+    __test__ = False # pytest: don't test this class
 
     def __init__(
         self,
@@ -41,7 +41,7 @@ class TestCaseCalcInGivenOut:
 
 
 class TestCaseCalcOutGivenIn:
-    __test__ = False
+    __test__ = False # pytest: don't test this class
 
     def __init__(
         self,
@@ -65,14 +65,73 @@ class TestCaseCalcOutGivenIn:
         self.share_price = share_price
         self.init_share_price = init_share_price
 
+class TradeResult:
+    __test__ = False # pytest: don't test this class
+
+    def __init__(
+        self,
+        without_fee_or_slippage,
+        with_fee,
+        without_fee,
+        fee
+    ):
+        self.without_fee_or_slippage = without_fee_or_slippage
+        self.with_fee = with_fee
+        self.without_fee = without_fee
+        self.fee = fee
+
+def compare_trade_results(actual,expected):
+    np.testing.assert_almost_equal(actual.without_fee_or_slippage, expected.without_fee_or_slippage,
+        err_msg="unexpected without_fee_or_slippage")
+    np.testing.assert_almost_equal(actual.with_fee, expected.with_fee, err_msg="unexpected without_fee")
+    np.testing.assert_almost_equal(actual.without_fee, expected.without_fee, err_msg="unexpected fee")
+    np.testing.assert_almost_equal(actual.fee, expected.fee, err_msg="unexpected with_fee")
 
 class TestHyperdrivePricingModel(unittest.TestCase):
     def test_calc_in_given_out(self):
         pricing_model = HyperdrivePricingModel(False)
-        test_cases = []
+        test_cases = [
+            (
+                TestCaseCalcInGivenOut(
+                    out=100,                # how many tokens you expect to get
+                    share_reserves=100_000, # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="base",        # what token you're putting in
+                    fee_percent=0.1,        # fee percent (normally 10%)
+                    days_remaining=182.5,   # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=1,          # share price of the LP in the yield source
+                    init_share_price=1,     # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                # k = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                # k = 302929.51067963685
+                (
+                    TradeResult(
+                    # p = ((2y+cz)/uz)**τ
+                    #   = 1.0250671833648672
+                    # without_fee_or_slippage = 1/p * out = 97.55458141947516
+                    without_fee_or_slippage=97.55458141947516
+                    # fee is 10% of discount before slippage = (100-97.55601990513969)*0.1 = 2.4454185805248443*0.1 = 0.24454185805248443
+                    ,fee=0.24454185805248443
+                    # deltaZ = 1/u * (u/c*(k - (2*y + c*z - deltaY)**(1-τ)))**(1/(1-τ)) - z
+                    # deltaZ = 1/1 * (1/1*(302929.51067963685 - (2*100000 + 100000 - 100)**(1-0.0225358440315970471499308329778)))**(1/(1-0.0225358440315970471499308329778)) - 100000
+                    #        = 97.55601990513969
+                    ,without_fee=97.55601990513969
+                    # with_fee = without_fee + fee = 97.55601990513969 + 0.24454185805248443 = 97.80056176319217
+                    ,with_fee=97.80056176319218
+                    )
+                ), # expected: without_fee_or_slippage, with_fee, without_fee, fee
+                # slippage is 0.001439052282364628
+            ),
+        ]
         for [
             test_case,
-            (expected_without_fee_or_slippage, expected_with_fee, expected_without_fee, expected_fee),
+            expected
         ] in test_cases:
             time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
             time_remaining = pricing_model._stretch_time(
@@ -90,10 +149,8 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 test_case.init_share_price,
                 test_case.share_price,
             )
-            assert without_fee_or_slippage == expected_without_fee_or_slippage
-            assert with_fee == expected_with_fee
-            assert without_fee == expected_without_fee
-            assert fee == expected_fee
+            actual = TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
+            compare_trade_results(actual,expected)
 
     def test_calc_out_given_in(self):
         pricing_model = HyperdrivePricingModel(False)
