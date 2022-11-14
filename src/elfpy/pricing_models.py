@@ -4,6 +4,7 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+import types
 import elfpy.utils.time as time_utils
 
 # Currently many functions use >5 arguments.
@@ -1013,16 +1014,23 @@ class HyperdrivePricingModel(PricingModel):
                 f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
                 f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
             )
+
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check with_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, without_fee = with_fee + fee
+        # so it is a positive float if with_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
         assert (
-            without_fee_or_slippage >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: without_fee_or_slippage should be non-negative, not {without_fee_or_slippage}!"
+            type(with_fee) == float
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
         assert (
             with_fee >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
-        assert (
-            without_fee >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: without_fee should be non-negative, not {without_fee}!"
-        assert fee >= 0, f"pricing_models.calc_out_given_in: ERROR: Fee should be non-negative, not {fee}!"
+
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):

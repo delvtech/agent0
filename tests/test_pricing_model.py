@@ -399,7 +399,6 @@ class TestHyperdrivePricingModel(unittest.TestCase):
             )
             actual = TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
             compare_trade_results(actual, expected)
-        return test_cases
 
     def test_calc_out_given_in_success(self):
         pricing_model = HyperdrivePricingModel(False)
@@ -1248,6 +1247,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     init_share_price=1.5,
                 ),
                 'pricing_models.calc_out_given_in: ERROR: expected token_out == "base" or token_out == "pt", not fyt!',
+            ),
+            (
+                TestCaseCalcOutGivenInFailure(
+                    in_=10_000_000,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_out="pt",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not <class 'complex'>!",
             ),
         ]
 
