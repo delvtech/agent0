@@ -32,3 +32,28 @@ def get_yearfrac_remaining(market_time, mint_time, token_duration):
     yearfrac_elapsed = market_time - mint_time
     time_remaining = np.maximum(token_duration - yearfrac_elapsed, 0)
     return time_remaining
+
+def norm_days(days, normalizing_constant=365):
+    """Returns days normalized between 0 and 1, with a default assumption of a year-long scale"""
+    return days / normalizing_constant
+
+
+def stretch_time(time, time_stretch=1):
+    """Returns stretched time values"""
+    return time / time_stretch
+
+
+def unnorm_days(normed_days, normalizing_constant=365):
+    """Returns days from a value between 0 and 1"""
+    return normed_days * normalizing_constant
+
+
+def unstretch_time(stretched_time, time_stretch=1):
+    """Returns unstretched time value, which should be between 0 and 1"""
+    return stretched_time * time_stretch
+
+
+def calc_time_stretch(apy):
+    """Returns fixed time-stretch value based on current apy (as a decimal)"""
+    apy_percent = apy * 100
+    return 3.09396 / (0.02789 * apy_percent)

@@ -58,10 +58,6 @@ class Market:
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
-    def base_reserves(self):
-        """get base reserves"""
-        return self.share_reserves * self.share_price
-
     def get_target_reserves(self, token_in, trade_direction):
         """
         Determine which asset is the target based on token_in and trade_direction

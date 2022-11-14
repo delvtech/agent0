@@ -229,6 +229,7 @@ class YieldSimulator:
         # setup pricing model
         self.set_pricing_model(self.pricing_model_name)  # construct pricing model object
         # setup market
+        # TODO: redo this to initialize an empty market and add liquidity from an LP user
         time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
@@ -241,7 +242,7 @@ class YieldSimulator:
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
-            share_reserves=init_base_asset_reserves,  # x
+            share_reserves=init_base_asset_reserves,  # z
             bond_reserves=init_token_asset_reserves,  # y
             fee_percent=self.fee_percent,  # g
             token_duration=self.token_duration,
@@ -317,7 +318,7 @@ class YieldSimulator:
                             self.market.time, user_action["mint_time"], self.market.token_duration
                         )
                         user_action["time_remaining"] = time_remaining
-                        user_action["stretched_time_remaining"] = self.pricing_model.stretch_time(
+                        user_action["stretched_time_remaining"] = time_utils.stretch_time(
                             time_remaining, self.market.time_stretch_constant
                         )
                         action_result = self.market.swap(user_action)

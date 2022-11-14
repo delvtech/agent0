@@ -4,6 +4,8 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+import elfpy.utils.time as time_utils
+
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
 #     reserves = (in_reserves, out_reserves)
@@ -62,26 +64,6 @@ class PricingModel:
     def model_name(self):
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
-
-    @staticmethod
-    def norm_days(days, normalizing_constant=365):
-        """Returns days normalized between 0 and 1, with a default assumption of a year-long scale"""
-        return days / normalizing_constant
-
-    @staticmethod
-    def stretch_time(time, time_stretch=1):
-        """Returns stretched time values"""
-        return time / time_stretch
-
-    @staticmethod
-    def _unnorm_days(normed_days, normalizing_constant=365):
-        """Returns days from a value between 0 and 1"""
-        return normed_days * normalizing_constant
-
-    @staticmethod
-    def _unstretch_time(stretched_time, time_stretch=1):
-        """Returns unstretched time value, which should be between 0 and 1"""
-        return stretched_time * time_stretch
 
     @staticmethod
     def calc_time_stretch(apy):
@@ -197,14 +179,14 @@ class PricingModel:
 
     def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
         """Converts remaining pool length in days to normalized and stretched time"""
-        normed_days_remaining = self.norm_days(days_remaining, normalizing_constant)
-        time_remaining = self.stretch_time(normed_days_remaining, time_stretch)
+        normed_days_remaining = time_utils.norm_days(days_remaining, normalizing_constant)
+        time_remaining = time_utils.stretch_time(normed_days_remaining, time_stretch)
         return time_remaining
 
     def time_to_days_remaining(self, time_remaining, time_stretch=1, normalizing_constant=365):
         """Converts normalized and stretched time remaining in pool to days"""
-        normed_days_remaining = self._unstretch_time(time_remaining, time_stretch)
-        days_remaining = self._unnorm_days(normed_days_remaining, normalizing_constant)
+        normed_days_remaining = time_utils.unstretch_time(time_remaining, time_stretch)
+        days_remaining = time_utils.unnorm_days(normed_days_remaining, normalizing_constant)
         return days_remaining
 
     def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
@@ -254,7 +236,7 @@ class PricingModel:
             share_price,
         )
         days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
-        apy = self.calc_apy_from_spot_price(spot_price, self.norm_days(days_remaining))
+        apy = self.calc_apy_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
         return apy
 
     def calc_spot_price_from_reserves(
@@ -281,8 +263,8 @@ class PricingModel:
         share_price,
     ):
         """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY"""
-        normalized_days_remaining = self.norm_days(days_remaining)
-        time_stretch_exp = 1 / self.stretch_time(normalized_days_remaining, time_stretch)
+        normalized_days_remaining = time_utils.norm_days(days_remaining)
+        time_stretch_exp = 1 / time_utils.stretch_time(normalized_days_remaining, time_stretch)
         numerator = 2 * share_price * token_asset_reserves  # 2*c*y
         scaled_apy_decimal = apy_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
         denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
@@ -311,7 +293,7 @@ class PricingModel:
         total_reserves  = in arbitrary units (AU), used for yieldspace math
         """
         # estimate reserve values with the information we have
-        spot_price = self.calc_spot_price_from_apy(apy, self.norm_days(days_remaining))
+        spot_price = self.calc_spot_price_from_apy(apy, time_utils.norm_days(days_remaining))
         token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price  # guesstimate
         base_asset_reserves = self.calc_base_asset_reserves(
             apy,
