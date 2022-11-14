@@ -100,14 +100,13 @@ class TradeResult:
         self.without_fee = without_fee
         self.fee = fee
 
-
-def compare_trade_results(actual, expected):
-    np.testing.assert_almost_equal(
-        actual.without_fee_or_slippage, expected.without_fee_or_slippage, err_msg="unexpected without_fee_or_slippage"
-    )
-    np.testing.assert_almost_equal(actual.with_fee, expected.with_fee, err_msg="unexpected without_fee")
-    np.testing.assert_almost_equal(actual.without_fee, expected.without_fee, err_msg="unexpected fee")
-    np.testing.assert_almost_equal(actual.fee, expected.fee, err_msg="unexpected with_fee")
+    def compare_trade_results(self, other):
+        np.testing.assert_almost_equal(
+            self.without_fee_or_slippage, other.without_fee_or_slippage, err_msg="unexpected without_fee_or_slippage"
+        )
+        np.testing.assert_almost_equal(self.with_fee, other.with_fee, err_msg="unexpected without_fee")
+        np.testing.assert_almost_equal(self.without_fee, other.without_fee, err_msg="unexpected fee")
+        np.testing.assert_almost_equal(self.fee, other.fee, err_msg="unexpected with_fee")
 
 
 class TestHyperdrivePricingModel(unittest.TestCase):
@@ -397,8 +396,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 test_case.init_share_price,
                 test_case.share_price,
             )
-            actual = TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
-            compare_trade_results(actual, expected)
+            expected.compare_trade_results(TradeResult(without_fee_or_slippage, with_fee, without_fee, fee))
 
     def test_calc_out_given_in_success(self):
         pricing_model = HyperdrivePricingModel(False)
@@ -422,13 +420,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0250671833648672 * 100 = 102.50671833648673
-                    102.50671833648673,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 102.50516899477225 - 0.02506718336486724
-                    102.48010181140738,
+                    without_fee_or_slippage=102.50671833648673,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
+                    fee=0.02506718336486724,
                     # We set up the problem as:
                     #   100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
                     #
@@ -436,10 +434,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T)) = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    102.50516899477225,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
-                    0.02506718336486724,
+                    without_fee=102.50516899477225,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 102.50516899477225 - 0.02506718336486724
+                    with_fee=102.48010181140738,
                 ),
             ),
             # High fee percentage - 20%.
@@ -459,13 +457,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0250671833648672 * 100 = 102.50671833648673
-                    102.50671833648673,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 102.50516899477225 - 0.5013436672973448 = 102.0038253274749
-                    102.0038253274749,
+                    without_fee_or_slippage=102.50671833648673,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
+                    fee=0.5013436672973448,
                     # We set up the problem as:
                     #   100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
                     #
@@ -473,10 +471,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T)) = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    102.50516899477225,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
-                    0.5013436672973448,
+                    without_fee=102.50516899477225,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 102.50516899477225 - 0.5013436672973448 = 102.0038253274749
+                    with_fee=102.0038253274749,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -496,13 +494,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0250671833648672 * 10_000 = 10250.671833648672
-                    10250.671833648672,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 10235.514826394327 - 2.506718336486724 = 10233.00810805784
-                    10233.00810805784,
+                    without_fee_or_slippage=10250.671833648672,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 10_000 = 2.506718336486724
+                    fee=2.506718336486724,
                     # We set up the problem as:
                     #   110_000 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
                     #
@@ -510,10 +508,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 300_000 - (k - 110_000 ** (1 - T)) ** (1 / (1 - T)) = 10235.514826394327
                     #
                     # Note that this is smaller than the without slippage value
-                    10235.514826394327,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 10_000 = 2.506718336486724
-                    2.506718336486724,
+                    without_fee=10235.514826394327,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 10235.514826394327 - 2.506718336486724 = 10233.00810805784
+                    with_fee=10233.00810805784,
                 ),
             ),
             # TODO: The slippage should arguably be much higher. This is something
@@ -537,13 +535,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0250671833648672 * 80_000 = 82005.37466918938
-                    82005.37466918938,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 81138.27602200207 - 20.053746691893792 = 81118.22227531018
-                    81118.22227531018,
+                    without_fee_or_slippage=82005.37466918938,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 80_000 = 20.053746691893792
+                    fee=20.053746691893792,
                     # We set up the problem as:
                     #   180_000 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
                     #
@@ -551,10 +549,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 300_000 - (k - 180_000 ** (1 - T)) ** (1 / (1 - T)) = 81138.27602200207
                     #
                     # Note that this is smaller than the without slippage value
-                    81138.27602200207,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 80_000 = 20.053746691893792
-                    20.053746691893792,
+                    without_fee=81138.27602200207,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 81138.27602200207 - 20.053746691893792 = 81118.22227531018
+                    with_fee=81118.22227531018,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -575,13 +573,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0223499142867662
                 # - k = 451_988.7122137336
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0223499142867662 * 200 = 204.46998285735324
-                    204.46998285735324,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 204.46650180319557 - 0.044699828573532496 = 204.42180197462204
-                    204.42180197462204,
+                    without_fee_or_slippage=204.46998285735324,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 200 = 0.044699828573532496
+                    fee=0.044699828573532496,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * 100_100) ** (1 - T) + (400_000 - d_y) ** (1 - T) = k
                     #
@@ -589,10 +587,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 400_000 - (k - (2 / 1.5) * (1.5 * 100_100) ** (1 - T)) ** (1 / (1 - T)) = 204.46650180319557
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    204.46650180319557,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 200 = 0.044699828573532496
-                    0.044699828573532496,
+                    without_fee=204.46650180319557,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 204.46650180319557 - 0.044699828573532496 = 204.42180197462204
+                    with_fee=204.42180197462204,
                 ),
             ),
             # Very unbalanced reserves.
@@ -612,13 +610,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0623907066406753
                 # - k = 1_735_927.3223407117
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0623907066406753 * 200 = 212.47814132813505
-                    212.47814132813505,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 212.47551672440022 - 0.1247814132813505 = 212.35073531111888
-                    212.35073531111888,
+                    without_fee_or_slippage=212.47814132813505,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
+                    fee=0.1247814132813505,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * 100_100) ** (1 - T) + (2_200_000 - d_y) ** (1 - T) = k
                     #
@@ -626,10 +624,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 2_200_000 - (k - (2 / 1.5) * (1.5 * 100_100) ** (1 - T)) ** (1 / (1 - T)) = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    212.47551672440022,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    0.1247814132813505,
+                    without_fee=212.47551672440022,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 212.47551672440022 - 0.1247814132813505 = 212.35073531111888
+                    with_fee=212.35073531111888,
                 ),
             ),
             # A term of a quarter year.
@@ -649,13 +647,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.011267922015798525
                 # - p = 1.0307233899745727
                 # - k = 2_041_060.1949973335
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0307233899745727 * 200 = 206.14467799491453
-                    206.14467799491453,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 206.14340814948082 - 0.06144677994914538 = 206.08196136953168
-                    206.08196136953168,
+                    without_fee_or_slippage=206.14467799491453,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
+                    fee=0.06144677994914538,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * 100_100) ** (1 - T) + (2_200_000 - d_y) ** (1 - T) = k
                     #
@@ -663,10 +661,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 2_200_000 - (k - (2 / 1.5) * (1.5 * 100_100) ** (1 - T)) ** (1 / (1 - T)) = 206.14340814948082
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    206.14340814948082,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
-                    0.06144677994914538,
+                    without_fee=206.14340814948082,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 206.14340814948082 - 0.06144677994914538 = 206.08196136953168
+                    with_fee=206.08196136953168,
                 ),
             ),
             # A time stretch targetting 10% APY.
@@ -686,13 +684,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0623907066406753
                 # - k = 1_735_927.3223407117
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   1.0623907066406753 * 200 = 212.47814132813505
-                    212.47814132813505,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 212.47551672440022 - 0.1247814132813505 = 212.35073531111888
-                    212.35073531111888,
+                    without_fee_or_slippage=212.47814132813505,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
+                    fee=0.1247814132813505,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * 100_100) ** (1 - T) + (2_200_000 - d_y) ** (1 - T) = k
                     #
@@ -700,10 +698,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #   d_y = 2_200_000 - (k - (2 / 1.5) * (1.5 * 100_100) ** (1 - T)) ** (1 / (1 - T)) = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
-                    212.47551672440022,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    0.1247814132813505,
+                    without_fee=212.47551672440022,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 212.47551672440022 - 0.1247814132813505 = 212.35073531111888
+                    with_fee=212.35073531111888,
                 ),
             ),
         ]
@@ -727,13 +725,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0250671833648672) * 100 = 97.55458141947516
-                    97.55458141947516,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 97.55314236719278 - 0.024454185805248493 = 97.52868818138752
-                    97.52868818138752,
+                    without_fee_or_slippage=97.55458141947516,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
+                    fee=0.024454185805248493,
                     # We set up the problem as:
                     #   (100_000 - d_z) ** (1 - T) + 300_100 ** (1 - T) = k
                     #
@@ -742,10 +740,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z. Since c = 1, d_x = d_z.
                     # Note that this is slightly smaller than the without slippage value
-                    97.55314236719278,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                    0.024454185805248493,
+                    without_fee=97.55314236719278,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 97.55314236719278 - 0.024454185805248493 = 97.52868818138752
+                    with_fee=97.52868818138752,
                 ),
             ),
             # High fee percentage - 20%.
@@ -765,13 +763,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0250671833648672) * 100 = 97.55458141947516
-                    97.55458141947516,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 97.55314236719278 - 0.48908371610497 = 97.0640586510878
-                    97.0640586510878,
+                    without_fee_or_slippage=97.55458141947516,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.2 * (1 - (1 / p)) * 100 = 0.5013436672973448
+                    fee=0.48908371610497,
                     # We set up the problem as:
                     #   (100_000 - d_z) ** (1 - T) + 300_100 ** (1 - T) = k
                     #
@@ -780,10 +778,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z. Since c = 1, d_x = d_z.
                     # Note that this is slightly smaller than the without slippage value
-                    97.55314236719278,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.2 * (1 - (1 / p)) * 100 = 0.5013436672973448
-                    0.48908371610497,
+                    without_fee=97.55314236719278,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 97.55314236719278 - 0.48908371610497 = 97.0640586510878
+                    with_fee=97.0640586510878,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -803,13 +801,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0250671833648672) * 10_000 = 9755.458141947514
-                    9755.458141947514,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 9740.77011591768 - 2.4454185805248496 = 9738.324697337155
-                    9738.324697337155,
+                    without_fee_or_slippage=9755.458141947514,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 10_000 = 2.4454185805248496
+                    fee=2.4454185805248496,
                     # We set up the problem as:
                     #   (100_000 - d_z) ** (1 - T) + 310_000 ** (1 - T) = k
                     #
@@ -818,10 +816,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z. Since c = 1, d_x = d_z.
                     # Note that this is slightly smaller than the without slippage value
-                    9740.77011591768,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 10_000 = 2.4454185805248496
-                    2.4454185805248496,
+                    without_fee=9740.77011591768,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 9740.77011591768 - 2.4454185805248496 = 9738.324697337155
+                    with_fee=9738.324697337155,
                 ),
             ),
             # TODO: The slippage should arguably be much higher. This is something
@@ -845,13 +843,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0250671833648672
                 # - k = 302_929.51067963685
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0250671833648672) * 80_000 = 78043.66513558012
-                    78043.66513558012,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 76850.14470187116 - 19.563348644198797 = 76830.58135322697
-                    76830.58135322697,
+                    without_fee_or_slippage=78043.66513558012,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 80_000 = 19.563348644198797
+                    fee=19.563348644198797,
                     # We set up the problem as:
                     #   (100_000 - d_z) ** (1 - T) + 380_000 ** (1 - T) = k
                     #
@@ -860,10 +858,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z. Since c = 1, d_x = d_z.
                     # Note that this is slightly smaller than the without slippage value
-                    76850.14470187116,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 80_000 = 19.563348644198797
-                    19.563348644198797,
+                    without_fee=76850.14470187116,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 76850.14470187116 - 19.563348644198797 = 76830.58135322697
+                    with_fee=76830.58135322697,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -883,13 +881,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0223499142867662
                 # - k = 451_988.7122137336
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0223499142867662) * 100 = 97.813868424652
-                    97.813868424652,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 97.81305379542755 - 0.02186131575348005 = 97.79119247967407
-                    97.79119247967407,
+                    without_fee_or_slippage=97.813868424652,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.02186131575348005
+                    fee=0.02186131575348005,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 400_100 ** (1 - T) = k
                     #
@@ -898,10 +896,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z = 2 * 48.906526897713775 = 97.81305379542755.
                     # Note that this is slightly smaller than the without slippage value
-                    97.81305379542755,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.02186131575348005
-                    0.02186131575348005,
+                    without_fee=97.81305379542755,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 97.81305379542755 - 0.02186131575348005 = 97.79119247967407
+                    with_fee=97.79119247967407,
                 ),
             ),
             # Very unbalanced reserves.
@@ -921,13 +919,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0623907066406753
                 # - k = 1_735_927.3223407117
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0623907066406753) * 100 = 94.1273294042681
-                    94.1273294042681,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 94.12678195475019 - 0.05872670595731899 = 94.06805524879287
-                    94.06805524879287,
+                    without_fee_or_slippage=94.1273294042681,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
+                    fee=0.05872670595731899,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T) = k
                     #
@@ -936,10 +934,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z = 2 * 47.06339097737509 = 94.12678195475019.
                     # Note that this is slightly smaller than the without slippage value
-                    94.12678195475019,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
-                    0.05872670595731899,
+                    without_fee=94.12678195475019,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 94.12678195475019 - 0.05872670595731899 = 94.06805524879287
+                    with_fee=94.06805524879287,
                 ),
             ),
             # A term of a quarter year.
@@ -959,13 +957,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.011267922015798525
                 # - p = 1.0307233899745727
                 # - k = 2_041_060.1949973335
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0307233899745727) * 100 = 97.0192400528205
-                    97.0192400528205,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 97.01895001129014 - 0.0298075994717949 = 96.98914241181835
-                    96.98914241181835,
+                    without_fee_or_slippage=97.0192400528205,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.0298075994717949
+                    fee=0.0298075994717949,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T) = k
                     #
@@ -974,10 +972,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z = 2 * 48.50947500564507 = 97.01895001129014.
                     # Note that this is slightly smaller than the without slippage value
-                    97.01895001129014,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.0298075994717949
-                    0.0298075994717949,
+                    without_fee=97.01895001129014,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 97.01895001129014 - 0.0298075994717949 = 96.98914241181835
+                    with_fee=96.98914241181835,
                 ),
             ),
             # A time stretch targetting 10% APY.
@@ -997,13 +995,13 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 # - T = 0.02253584403159705
                 # - p = 1.0623907066406753
                 # - k = 1_735_927.3223407117
-                (
+                TradeResult(
                     # Using the spot price, the expected output without slippage or fees is given by:
                     #   (1 / 1.0623907066406753) * 100 = 94.1273294042681
-                    94.1273294042681,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 94.12678195475019 - 0.05872670595731899 = 94.06805524879287
-                    94.06805524879287,
+                    without_fee_or_slippage=94.1273294042681,
+                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
+                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
+                    fee=0.05872670595731899,
                     # We set up the problem as:
                     #   (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T) = k
                     #
@@ -1012,10 +1010,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     #
                     # The output is d_x = c * d_z = 2 * 47.06339097737509 = 94.12678195475019.
                     # Note that this is slightly smaller than the without slippage value
-                    94.12678195475019,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
-                    0.05872670595731899,
+                    without_fee=94.12678195475019,
+                    # Combining the without_fee and the fee, we calculate with_fee as:
+                    #   with_fee = 94.12678195475019 - 0.05872670595731899 = 94.06805524879287
+                    with_fee=94.06805524879287,
                 ),
             ),
         ]
@@ -1025,7 +1023,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
         test_cases = pt_out_test_cases + base_out_test_cases
         for (
             test_case,
-            (expected_without_fee_or_slippage, expected_with_fee, expected_without_fee, expected_fee),
+            expected,
         ) in test_cases:
             time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
             time_remaining = stretch_time(pricing_model.days_to_time_remaining(test_case.days_remaining), time_stretch)
@@ -1041,12 +1039,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 test_case.init_share_price,
                 test_case.share_price,
             )
-            self.assertEqual(
-                without_fee_or_slippage, expected_without_fee_or_slippage, "unexpected without_fee_or_slippage"
-            )
-            self.assertEqual(without_fee, expected_without_fee, "unexpected without_fee")
-            self.assertEqual(fee, expected_fee, "unexpected fee")
-            self.assertEqual(with_fee, expected_with_fee, "unexpected with_fee")
+            expected.compare_trade_results(TradeResult(without_fee_or_slippage, with_fee, without_fee, fee))
 
     def test_calc_out_given_in_failure(self):
         pricing_model = HyperdrivePricingModel(False)
