@@ -5,13 +5,14 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 
+from importlib import import_module
+
 import numpy as np
 
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
-from elfpy.pricing_models import YieldSpacev2PricingModel
-from elfpy.user import RandomUser
-from elfpy.user import WeightedRandomUser
+from elfpy.pricing_models import HyperdrivePricingModel
+import elfpy.utils.time as time_utils
 
 
 class YieldSimulator:
@@ -29,43 +30,38 @@ class YieldSimulator:
         # TODO: Move away from using kwargs (this was a hack and can introduce bugs if the dict gets updated)
         #       Better to do named & typed args w/ defaults.
         #       This will also fix difficult-to-parse errors when variables are `None`.
-        # TODO: Move time_stretch into market or pricing models
-        #       This will simplify e.g. market.apy & simulator.get_days_remaining
         # TODO: change floor_fee to be a decimal like min_fee and max_fee
         # pylint: disable=too-many-statements
 
-        # percentage of the slippage we take as a fee
+        # User specified variables
         self.min_fee = kwargs.get("min_fee")
         self.max_fee = kwargs.get("max_fee")
-        self.floor_fee = kwargs.get("floor_fee")  # minimum fee we take
-        # tokens to be traded
-        self.tokens = kwargs.get("tokens")  # list of strings
+        self.floor_fee = kwargs.get("floor_fee")
+        self.tokens = kwargs.get("tokens")  # tokens to be traded; list of strings
         self.min_target_liquidity = kwargs.get("min_target_liquidity")
         self.max_target_liquidity = kwargs.get("max_target_liquidity")
         self.min_target_volume = kwargs.get("min_target_volume")
         self.max_target_volume = kwargs.get("max_target_volume")
-        self.min_pool_apy = kwargs.get("min_pool_apy")  # as a decimal
-        self.max_pool_apy = kwargs.get("max_pool_apy")  # as a decimal
+        self.min_pool_apy = kwargs.get("min_pool_apy")  # float (not a percentage)
+        self.max_pool_apy = kwargs.get("max_pool_apy")  # float (not a percentage)
         self.pool_apy_target_range = kwargs.get("pool_apy_target_range")
         self.pool_apy_target_range_convergence_speed = kwargs.get("pool_apy_target_range_convergence_speed")
         self.streak_luck = kwargs.get("streak_luck")
         self.min_vault_age = kwargs.get("min_vault_age")
         self.max_vault_age = kwargs.get("max_vault_age")
-        self.min_vault_apy = kwargs.get("min_vault_apy")  # as a decimal
-        self.max_vault_apy = kwargs.get("max_vault_apy")  # as a decimal
+        self.min_vault_apy = kwargs.get("min_vault_apy")  # float (not a percentage)
+        self.max_vault_apy = kwargs.get("max_vault_apy")  # float (not a percentage)
         self.base_asset_price = kwargs.get("base_asset_price")
         self.precision = kwargs.get("precision")
         self.pricing_model_name = str(kwargs.get("pricing_model_name"))
         self.scenario_name = str(kwargs.get("scenario_name"))
         self.trade_direction = kwargs.get("trade_direction")
-        self.pool_duration = kwargs.get("pool_duration")
+        self.token_duration = kwargs.get("token_duration")
         self.num_trading_days = kwargs.get("num_trading_days")
-        self.user_type = kwargs.get("user_type")
+        self.num_blocks_per_day = kwargs.get("num_blocks_per_day")
+        self.user_policies = kwargs.get("user_policies")
         self.rng = kwargs.get("rng")
         self.verbose = kwargs.get("verbose")
-        self.expected_proportion = 0
-        self.run_number = 0.00
-        self.run_trade_number = 0
         # Random variables
         self.target_liquidity = None
         self.target_daily_volume = None
@@ -73,15 +69,22 @@ class YieldSimulator:
         self.fee_percent = None
         self.init_vault_age = None
         self.vault_apy = None
+        self.random_variables_set = False
         # Simulation variables
+        self.run_number = 0
         self.day = 0
-        self.init_time_stretch = 1
+        self.block_number = 0
+        self.daily_block_number = 0
+        seconds_in_a_day = 86400
+        self.time_between_blocks = seconds_in_a_day / self.num_blocks_per_day
+        self.run_trade_number = 0
+        self.start_time = None
+        self.expected_proportion = 0
         self.init_share_price = None
         self.time_stretch = None
         self.pricing_model = None
         self.market = None
-        self.user = None
-        self.step_size = None
+        self.user_list = None
         self.trade_amount = None
         self.trade_amount_usd = None
         self.token_in = None
@@ -96,12 +99,20 @@ class YieldSimulator:
         self.actual_convergence_strength = None
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
-            "run_number",
+            "run_number",  # integer, simulation index
+            "simulation_start_time",  # start datetime for a given simulation
+            "day",  # integer, day index in a given simulation
+            "block_number",  # integer, block index in a given simulation
+            "daily_block_number",  # integer, block index in a given day
+            "block_timestamp",  # datetime of a given block's creation
+            "current_market_datetime",  # float, current market time as a datetime
+            "current_market_yearfrac",  # float, current market time as a yearfrac
+            "run_trade_number",  # integer, trade number in a given simulation
+            "step_size",
             "model_name",
             "scenario_name",
-            "time_until_end",
-            "days_until_end",
-            "init_time_stretch",
+            "token_duration",  # time lapse between token mint and expiry as a yearfrac
+            "time_stretch_constant",
             "target_liquidity",
             "target_daily_volume",
             "pool_apy",
@@ -109,7 +120,7 @@ class YieldSimulator:
             "pool_apy_target_range_convergence_speed",
             "streak_luck",
             "fee_percent",
-            "floor_fee",
+            "floor_fee",  # minimum fee we take
             "init_vault_age",
             "base_asset_price",
             "vault_apy",
@@ -129,15 +140,12 @@ class YieldSimulator:
             "apy_distance_in_target_range",
             "apy_distance_from_mid_when_in_range",
             "actual_convergence_strength",
-            "fee",
+            "fee",  # percentage of the slippage we take as a fee (expressed as a decimal)
             "slippage",
-            "pool_duration",
-            "num_trading_days",
-            "day",
-            "run_trade_number",
+            "num_trading_days",  # number of days in a simulation
+            "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
             "num_orders",
-            "step_size",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
@@ -190,33 +198,16 @@ class YieldSimulator:
 
     def set_pricing_model(self, model_name):
         """Assign a PricingModel object to the pricing_model attribute"""
-        if model_name.lower() == "yieldspacev2":
-            self.pricing_model = YieldSpacev2PricingModel(self.verbose, self.floor_fee)
+        if model_name.lower() == "hyperdrive":
+            self.pricing_model = HyperdrivePricingModel(self.verbose)
         elif model_name.lower() == "element":
             self.pricing_model = ElementPricingModel(self.verbose)
         else:
-            raise ValueError(f'pricing_model_name must be "YieldSpacev2" or "Element", not {model_name}')
+            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
-    def set_user(self, user_type):
-        """Assign a User object to the user attribute"""
-        user_kwargs = {
-            "verbose": self.verbose,
-            "rng": self.rng,
-        }
-        if user_type.lower() == "random":
-            self.user = RandomUser(**user_kwargs)
-        elif user_type.lower() == "weightedrandom":
-            user_kwargs["days_trades"] = []
-            user_kwargs["pool_apy"] = self.market.apy(self.get_days_remaining())
-            user_kwargs["pool_apy_target_range"] = self.pool_apy_target_range
-            user_kwargs["pool_apy_target_range_convergence_speed"] = self.pool_apy_target_range_convergence_speed
-            self.user = WeightedRandomUser(**user_kwargs)
-        else:
-            raise ValueError(f'user_type must be "Random" or "WeightedRandom", not {user_type}')
-
-    def setup_pricing_and_market(self, override_dict=None):
-        """Constructs the pricing model and market member variables"""
-        # Update parameters if the user provided new ones
+    def setup_simulated_entities(self, override_dict=None):
+        """Constructs the user list, pricing model, and market member variables"""
+        # update parameters if the user provided new ones
         assert (
             self.random_variables_set
         ), "ERROR: You must run simulator.set_random_variables() before running the simulation"
@@ -235,34 +226,44 @@ class YieldSimulator:
             self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
             if self.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.precision)
-        self.set_pricing_model(self.pricing_model_name) # construct pricing model object
-        self.init_time_stretch = self.pricing_model.calc_time_stretch(self.init_pool_apy)
+        # setup pricing model
+        self.set_pricing_model(self.pricing_model_name)  # construct pricing model object
+        # setup market
+        # TODO: redo this to initialize an empty market and add liquidity from an LP user
+        time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = self.pricing_model.calc_liquidity(
             self.target_liquidity,
             self.base_asset_price,
             self.init_pool_apy,
-            self.pool_duration,
-            self.init_time_stretch,
+            self.token_duration,
+            time_stretch_constant,
             self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
-        init_time_remaining = self.pricing_model.days_to_time_remaining(self.pool_duration, self.init_time_stretch)
         self.market = Market(
-            base_asset=init_base_asset_reserves,  # x
-            token_asset=init_token_asset_reserves,  # y
+            share_reserves=init_base_asset_reserves,  # z
+            bond_reserves=init_token_asset_reserves,  # y
             fee_percent=self.fee_percent,  # g
-            time_remaining=init_time_remaining,  # t
+            token_duration=self.token_duration,
             pricing_model=self.pricing_model,
+            time_stretch_constant=time_stretch_constant,
             init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
             verbose=self.verbose,
         )
-        step_scale = 1  # TODO: support scaling the step_size via the override dict (i.e. make a step_scale parameter)
-        self.step_size = self.pricing_model.days_to_time_remaining(
-            step_scale, self.init_time_stretch, normalizing_constant=365
-        )
-        self.set_user(self.user_type) # construct user object
+        # setup user list
+        self.user_list = []
+        for policy_name in self.user_policies:
+            user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
+                self.market, self.rng, self.verbose
+            )
+            self.user_list.append(user_with_policy)
+
+    def step_size(self):
+        """Returns minimum time increment"""
+        blocks_per_year = 365 * self.num_blocks_per_day
+        return 1 / blocks_per_year
 
     def run_simulation(self, override_dict=None):
         """
@@ -278,8 +279,22 @@ class YieldSimulator:
         up to `self.num_trading_days` days.
         """
 
-        self.run_trade_number = 0
-        self.setup_pricing_and_market(override_dict)
+        self.start_time = time_utils.current_datetime()
+        self.block_number = 0
+        self.setup_simulated_entities(override_dict)
+        if self.verbose:
+            print(
+                f"\n-----\ninitial market values:"
+                f"\nshare_reserves = {self.market.share_reserves}"
+                f"\nbond_reserves = {self.market.bond_reserves}"
+                f"\ntarget_liquidity = {self.target_liquidity}"
+                f"\ntotal market liquidity = {self.market.share_reserves + self.market.bond_reserves}"
+                f"\nfee_percent = {self.market.fee_percent}"
+                f"\nshare_price = {self.market.share_price}"
+                f"\ninit_share_price = {self.market.init_share_price}"
+                f"\ninit_time_stretch = {self.market.time_stretch_constant}"
+                "\n-----\n"
+            )
         for day in range(0, self.num_trading_days):
             self.day = day
             # Vault return can vary per day, which sets the current price per share
@@ -290,53 +305,43 @@ class YieldSimulator:
                     * self.market.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
-            # Loop over trades on the given day
-            # TODO: adjustable target daily volume that is a function of the day
-            # TODO: improve trading dist, simplify  market price conversion, allow for different amounts
-            # Could define a 'trade amount & direction' time series that's a function of the vault apy
-            # Could support using actual historical trades or a fit to historical trades)
-            day_trading_volume = 0
-            while day_trading_volume < self.target_daily_volume:
-                (self.token_in, self.token_out, self.trade_amount_usd) = self.user.get_trade(
-                    self.market, self.tokens, self.trade_direction, self.target_daily_volume, self.base_asset_price
-                )
-                if self.user_type.lower() == "weightedrandom":  # sync user with market
-                    self.user.set_market_apy(self.market.apy(self.get_days_remaining()))
-                assert self.trade_amount_usd >= 0, (
-                    f"ERROR: Trade amount should not be negative trade_amount_usd={self.trade_amount_usd}"
-                    f" token_in={self.token_in} trade_direction={self.trade_direction}"
-                    f" target_daily_volume={self.target_daily_volume} base_asset_price={self.base_asset_price}"
-                    f" base_reserves={self.market.base_asset} token_reserves={self.market.token_asset}"
-                )
-                self.trade_amount = self.trade_amount_usd / self.base_asset_price  # convert to token units
-                if self.verbose:
-                    print(
-                        "YieldSimulator.run_simulation:\n"
-                        + f"trades={self.market.base_asset_orders + self.market.token_asset_orders} "
-                        + f"init_share_price={self.market.init_share_price}, "
-                        + f"share_price={self.market.share_price}, "
-                        + f"amount={self.trade_amount}, "
-                        + f"apy={pool_apy}, "
-                        + f"reserves={(self.market.base_asset, self.market.token_asset)}"
-                    )
-                # Conduct trade & update state
-                (self.without_fee_or_slippage, self.with_fee, self.without_fee, self.fee,) = self.market.swap(
-                    self.trade_amount,  # in units of target asset
-                    self.trade_direction,  # out or in
-                    self.token_in,  # base or fyt
-                    self.token_out,  # opposite of token_in
-                )
-                pool_apy = self.market.apy(self.get_days_remaining())
-                day_trading_volume += self.trade_amount * self.base_asset_price  # track daily volume in USD terms
-                self.update_analysis_dict()
-                self.run_trade_number += 1
-            if self.day < self.num_trading_days - 1:  # no need to tick the market after the last day
-                self.market.tick(self.step_size)
+            for daily_block_number in range(self.num_blocks_per_day):
+                self.daily_block_number = daily_block_number
+                self.rng.shuffle(self.user_list)  # shuffle the user action order each block
+                for user in self.user_list:
+                    action_list = user.get_trade()
+                    if len(action_list) == 0:  # empty list indicates no action
+                        pass
+                    for user_action in action_list:
+                        # Conduct trade & update state
+                        time_remaining = time_utils.get_yearfrac_remaining(
+                            self.market.time, user_action["mint_time"], self.market.token_duration
+                        )
+                        user_action["time_remaining"] = time_remaining
+                        user_action["stretched_time_remaining"] = time_utils.stretch_time(
+                            time_remaining, self.market.time_stretch_constant
+                        )
+                        action_result = self.market.swap(user_action)
+                        # Update user state
+                        user.update_wallet(action_result)
+                        self.update_analysis_dict()
+                        self.run_trade_number += 1
+                        if self.verbose:
+                            print(
+                                "YieldSimulator.run_simulation:"
+                                f"\n\ttime = {self.market.time}"
+                                f"\n\tuser trade = {user_action}"
+                                f"\n\tuser_wallet = {user.wallet}"
+                                f"\n\tinit pool apy = {self.init_pool_apy}"
+                                f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
+                                f"\n\tinit_share_price = {self.market.init_share_price}"
+                                f"\n\tshare_price = {self.market.share_price}"
+                                f"\n\tamount = {self.trade_amount}"
+                                f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
+                            )
+                self.market.tick(self.step_size())
+                self.block_number += 1
         self.run_number += 1
-
-    def get_days_remaining(self):
-        """Returns the days remaining in the pool"""
-        return self.pricing_model.time_to_days_remaining(self.market.time_remaining, self.init_time_stretch)
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
@@ -345,8 +350,7 @@ class YieldSimulator:
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["scenario_name"].append(self.scenario_name)
         self.analysis_dict["run_number"].append(self.run_number)
-        self.analysis_dict["time_until_end"].append(self.market.time_remaining)
-        self.analysis_dict["init_time_stretch"].append(self.init_time_stretch)
+        self.analysis_dict["time_stretch_constant"].append(self.market.time_stretch_constant)
         self.analysis_dict["target_liquidity"].append(self.target_liquidity)
         self.analysis_dict["target_daily_volume"].append(self.target_daily_volume)
         self.analysis_dict["pool_apy_target_range"].append(self.pool_apy_target_range)
@@ -357,21 +361,29 @@ class YieldSimulator:
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.init_vault_age)
-        self.analysis_dict["pool_duration"].append(self.pool_duration)
+        self.analysis_dict["token_duration"].append(self.market.token_duration)
         self.analysis_dict["num_trading_days"].append(self.num_trading_days)
-        self.analysis_dict["step_size"].append(self.step_size)
+        self.analysis_dict["num_blocks_per_day"].append(self.num_blocks_per_day)
+        self.analysis_dict["step_size"].append(self.step_size())
         self.analysis_dict["init_share_price"].append(self.market.init_share_price)
-        # Variables that change per run
-        self.analysis_dict["day"].append(self.day)
+        self.analysis_dict["simulation_start_time"].append(self.start_time)
+        # Variables that change per day
         self.analysis_dict["num_orders"].append(self.market.base_asset_orders + self.market.token_asset_orders)
         self.analysis_dict["vault_apy"].append(self.vault_apy[self.day])
-        days_remaining = self.get_days_remaining()
-        self.analysis_dict["days_until_end"].append(days_remaining)
-        self.analysis_dict["pool_apy"].append(self.market.apy(days_remaining))
+        self.analysis_dict["day"].append(self.day)
+        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
+        self.analysis_dict["block_number"].append(self.block_number)
+        self.analysis_dict["block_timestamp"].append(
+            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+        )
         # Variables that change per trade
+        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
+        self.analysis_dict["current_market_datetime"].append(
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time)
+        )
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
-        self.analysis_dict["base_asset_reserves"].append(self.market.base_asset)
-        self.analysis_dict["token_asset_reserves"].append(self.market.token_asset)
+        self.analysis_dict["base_asset_reserves"].append(self.market.share_reserves)
+        self.analysis_dict["token_asset_reserves"].append(self.market.bond_reserves)
         self.analysis_dict["total_supply"].append(self.market.total_supply)
         self.analysis_dict["base_asset_price"].append(self.base_asset_price)
         self.analysis_dict["token_in"].append(self.token_in)
@@ -396,4 +408,4 @@ class YieldSimulator:
             self.analysis_dict["fee"].append(self.fee * self.base_asset_price)
             slippage = (self.without_fee_or_slippage - self.without_fee) * self.base_asset_price
             self.analysis_dict["slippage"].append(slippage)
-        self.analysis_dict["spot_price"].append(self.market.spot_price())
+        # self.analysis_dict["spot_price"].append(self.market.spot_price())
