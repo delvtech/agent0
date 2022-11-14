@@ -53,7 +53,3 @@ def unstretch_time(stretched_time, time_stretch=1):
     return stretched_time * time_stretch
 
 
-def calc_time_stretch(apy):
-    """Returns fixed time-stretch value based on current apy (as a decimal)"""
-    apy_percent = apy * 100
-    return 3.09396 / (0.02789 * apy_percent)

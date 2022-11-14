@@ -43,7 +43,11 @@ class User:
 
     def get_max_short(self, mint_time, eps=1.0):
         """
-        Returns the maximum amount of base that the user can short given current market conditions
+        Returns an approximation of maximum amount of base that the user can short given current market conditions
+
+        TODO: This currently is a first-order approximation.
+        An alternative is to do this iteratively and find a max trade, but that is probably too slow.
+        Maybe we could add an optional flag to iteratively solve it, like num_iters.
         """
         time_remaining = time_utils.get_yearfrac_remaining(self.market.time, mint_time, self.market.token_duration)
         stretched_time_remaining = self.market.pricing_model.stretch_time(
