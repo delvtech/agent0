@@ -50,9 +50,7 @@ class User:
         Maybe we could add an optional flag to iteratively solve it, like num_iters.
         """
         time_remaining = time_utils.get_yearfrac_remaining(self.market.time, mint_time, self.market.token_duration)
-        stretched_time_remaining = time_utils.stretch_time(
-            time_remaining, self.market.time_stretch_constant
-        )
+        stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
         output_with_fee = self.market.pricing_model.calc_out_given_in(
             self.wallet["base_in_wallet"],
             self.market.share_reserves,

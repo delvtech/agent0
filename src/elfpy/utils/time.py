@@ -33,6 +33,7 @@ def get_yearfrac_remaining(market_time, mint_time, token_duration):
     time_remaining = np.maximum(token_duration - yearfrac_elapsed, 0)
     return time_remaining
 
+
 def norm_days(days, normalizing_constant=365):
     """Returns days normalized between 0 and 1, with a default assumption of a year-long scale"""
     return days / normalizing_constant
@@ -51,5 +52,3 @@ def unnorm_days(normed_days, normalizing_constant=365):
 def unstretch_time(stretched_time, time_stretch=1):
     """Returns unstretched time value, which should be between 0 and 1"""
     return stretched_time * time_stretch
-
-
