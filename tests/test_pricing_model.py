@@ -417,26 +417,45 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     init_share_price=1,
                 ),
                 # From the input, we have the following values:
-                # - T = 0.02253584403159705
-                # - p = 1.0250671833648672
-                # - k = 302_929.51067963685
+                #
+                #   t_stretch = 22.1868770168519182502689135891
+                #
+                #   τ = d / (365 * t_stretch)
+                #     = 182.5 / (365 * 22.1868770168519182502689135891)
+                #     = 0.0225358440315970471499308329778
+                #
+                #   1 - τ = 0.977464155968402952850069167022
+                #
+                #   k = (c / μ) * (μ * z) **(1 - τ) + (2 * y + c * z)**(1 - τ)
+                #     = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                #     = 302929.51067963685
+                #
+                #   p = ((2 * y + c * z) / (μ * z)) ** τ
+                #     = ((2 * 100_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.0225358440315970471499308329778
+                #     = 1.0250671833648672
                 TradeResult(
-                    # Using the spot price, the expected output without slippage or fees is given by:
-                    #   1.0250671833648672 * 100 = 102.50671833648673
+                    # without_fee_or_slippage = p * in_
+                    #                         = 1.0250671833648672 * 100
+                    #                         = 102.50671833648673
                     without_fee_or_slippage=102.50671833648673,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
+                    # fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
                     fee=0.02506718336486724,
-                    # We set up the problem as:
-                    #   100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
+                    # We want to solve for the amount of bonds out given the
+                    # amount of shares coming in, so we set up the problem as:
+                    #
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
+                    #     = 100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
-                    #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T)) = 102.50516899477225
+                    #
+                    #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T))
+                    #       = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=102.50516899477225,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 102.50516899477225 - 0.02506718336486724
+                    # with_fee = d_y - fee
+                    #          = 102.50516899477225 - 0.02506718336486724
+                    #          = 102.48010181140738
                     with_fee=102.48010181140738,
                 ),
             ),
@@ -453,27 +472,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
-                # From the input, we have the following values:
-                # - T = 0.02253584403159705
-                # - p = 1.0250671833648672
-                # - k = 302_929.51067963685
+                # The trading constants are the same as the previous case. The
+                # only values that should change are `fee` and `with_fee` since
+                # the fee percentage changed.
                 TradeResult(
-                    # Using the spot price, the expected output without slippage or fees is given by:
-                    #   1.0250671833648672 * 100 = 102.50671833648673
                     without_fee_or_slippage=102.50671833648673,
-                    # Since we are buying bonds, in_ is an amount of base and we calculate the fee using the spot price as:
-                    #   fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
+                    # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
                     fee=0.5013436672973448,
-                    # We set up the problem as:
-                    #   100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T) = k
-                    #
-                    # Solving for d_y, we get the following calculation:
-                    #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T)) = 102.50516899477225
-                    #
-                    # Note that this is slightly smaller than the without slippage value
                     without_fee=102.50516899477225,
-                    # Combining the without_fee and the fee, we calculate with_fee as:
-                    #   with_fee = 102.50516899477225 - 0.5013436672973448 = 102.0038253274749
+                    # with_fee = d_y - fee
+                    #          = 102.50516899477225 - 0.5013436672973448
+                    #          = 102.0038253274749
                     with_fee=102.0038253274749,
                 ),
             ),
