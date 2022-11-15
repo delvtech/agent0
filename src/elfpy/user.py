@@ -23,7 +23,7 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, budget=0, verbose=False):
+    def __init__(self, market, rng, wallet_address, budget=0, verbose=False):
         """
         Set up initial conditions
         """
@@ -32,6 +32,7 @@ class User:
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
         self.wallet = self.UserWallet(base_in_wallet=self.budget)
         self.rng = rng
+        self.wallet_address = wallet_address
         self.verbose = verbose
         self.last_update_spend = 0
         self.weighted_average_spend = 0
