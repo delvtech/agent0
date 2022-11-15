@@ -24,7 +24,7 @@ class PricingModel:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, verbose=None):
+    def __init__(self, verbose=None, very_verbose=None):
         """
         Arguments
         ---------
@@ -32,6 +32,7 @@ class PricingModel:
             if True, print verbose outputs
         """
         self.verbose = False if verbose is None else verbose
+        self.very_verbose = False if very_verbose is None else verbose
 
     def calc_in_given_out(
         self,
@@ -1005,7 +1006,7 @@ class HyperdrivePricingModel(PricingModel):
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
-        if self.verbose:
+        if self.very_verbose:
             print(
                 f"pricing_models.calc_out_given_in:"
                 f"\n\tin_ = {in_}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"

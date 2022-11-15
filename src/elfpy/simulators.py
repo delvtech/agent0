@@ -324,21 +324,22 @@ class YieldSimulator:
                         action_result = self.market.swap(user_action)
                         # Update user state
                         user.update_wallet(action_result)
+                        print(f"t={self.market.time}\n action: {user_action}\n result: {action_result}\n")
                         self.update_analysis_dict()
                         self.run_trade_number += 1
-                        if self.verbose:
-                            print(
-                                "YieldSimulator.run_simulation:"
-                                f"\n\ttime = {self.market.time}"
-                                f"\n\tuser trade = {user_action}"
-                                f"\n\tuser_wallet = {user.wallet}"
-                                f"\n\tinit pool apy = {self.init_pool_apy}"
-                                f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
-                                f"\n\tinit_share_price = {self.market.init_share_price}"
-                                f"\n\tshare_price = {self.market.share_price}"
-                                f"\n\tamount = {self.trade_amount}"
-                                f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
-                            )
+                        # if self.verbose:
+                            # print(
+                            #     "YieldSimulator.run_simulation:"
+                            #     f"\n\ttime = {self.market.time}"
+                            #     f"\n\tuser trade = {user_action}"
+                            #     f"\n\tuser_wallet = {user.wallet}"
+                            #     f"\n\tinit pool apy = {self.init_pool_apy}"
+                            #     f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
+                            #     f"\n\tinit_share_price = {self.market.init_share_price}"
+                            #     f"\n\tshare_price = {self.market.share_price}"
+                            #     f"\n\tamount = {self.trade_amount}"
+                            #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
+                            # )
                 self.market.tick(self.step_size())
                 self.block_number += 1
         self.run_number += 1

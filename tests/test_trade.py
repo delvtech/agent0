@@ -43,7 +43,7 @@ class BaseTradeTest(unittest.TestCase):
             "pricing_model_name": "HyperDrive",
             "user_type": "Random",
             "rng": simulator_rng,
-            "verbose": False,
+            "verbose": True,
             "user_policies": [policy],  # list of user policies by name
             "token_duration": 90 / 365,  # 3 month term; time unit is yearfrac
             "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
@@ -65,4 +65,4 @@ class SingleLongTradeTest(BaseTradeTest):
     def test_base_user(self):
         """Tests the BaseUser class"""
         self.run_base_trade_test("single_long")
-        self.run_base_trade_test("single_short")
+        # self.run_base_trade_test("single_short")
