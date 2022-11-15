@@ -7,9 +7,9 @@ class Policy(BasicPolicy):
     only has one long open at a time
     """
 
-    def __init__(self, market, rng, budget=1000, verbose=False):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=False):
         """call basic policy init then add custom stuff"""
-        super().__init__(market=market, rng=rng, budget=budget, verbose=verbose)
+        super().__init__(market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose)
         self.amount_to_trade = 100
         self.status_update()
 

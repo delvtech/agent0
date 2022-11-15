@@ -203,6 +203,77 @@ class Market:
                 + state_string
             )
 
+    def update_market(self, market_deltas):
+        """
+        Increments member variables to reflect current market conditions
+        """
+        for key, value in market_deltas.items():
+            assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
+        self.share_reserves += market_deltas["d_base_asset"]
+        self.bond_reserves += market_deltas["d_token_asset"]
+        self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
+        self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
+        self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
+        self.cum_token_asset_fees += market_deltas["d_token_asset_fee"]
+        self.base_asset_orders += market_deltas["d_base_asset_orders"]
+        self.token_asset_orders += market_deltas["d_token_asset_orders"]
+        self.base_asset_volume += market_deltas["d_base_asset_volume"]
+        self.token_asset_volume += market_deltas["d_token_asset_volume"]
+
+    def swap(self, user_action):
+        """
+        Execute a trade in the simulated market.
+        """
+        # assign general trade details, irrespective of trade type
+        trade_details = user_action.copy()
+        trade_details["fee_percent"] = self.fee_percent
+        trade_details["init_share_price"] = self.init_share_price
+        trade_details["share_price"] = self.share_price
+        trade_details["share_reserves"] = self.share_reserves
+        trade_details["bond_reserves"] = self.bond_reserves
+        # for each position, specify how to forumulate trade and then execute
+        if user_action["action_type"] == "open_long":  # buy to open long
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "pt"  # buy unknown PT with known base
+            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
+        elif user_action["action_type"] == "close_long":  # sell to close long
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "base"  # sell known PT for unkonwn base
+            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
+        elif user_action["action_type"] == "open_short":  # sell PT to open short
+            trade_details["direction"] = "out"  # calcOutGivenIn
+            trade_details["token_out"] = "base"  # sell known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.open_short(trade_details)
+        elif user_action["action_type"] == "close_short":  # buy PT to close short
+            trade_details["direction"] = "in"  # calcInGivenOut
+            trade_details["token_in"] = "base"  # buy known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
+        elif user_action["action_type"] == "add_liquidity":  # 
+            # pricing_model.add_liquidity returns new market deltas
+            # market updates the "liquidity pool" data class, which stores each LP wallet address & how much they added per trade
+            # liquidity pool is owned by the market and should store fees & pool share by user
+            # this can also store the *_in_protocol values instead of user wallets.
+            pass
+        elif user_action["action_type"] == "remove_liquidity":  # 
+            # market figures out how much the user has contributed (calcualtes their fee weighting)
+            # market resolves fees, adds this to the trade_details
+            # pricing model computes new market deltas
+            # market updates the liquidity pool with the new transaction
+            pass
+        else:
+            raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
+        # update market state
+        self.update_market(market_deltas)
+        self.update_spot_price()
+        # TODO: self.update_LP_pool(wallet_deltas["fees"])
+        return wallet_deltas
+
+    def get_market_state_string(self):
+        """Returns a formatted string containing all of the Market class member variables"""
+        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
+        state_string = "\n".join(strings)
+        return state_string
+
     def tick(self, delta_time):
         """Increments the time member variable"""
         self.time += delta_time

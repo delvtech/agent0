@@ -103,7 +103,60 @@ class PricingModel:
         bond_reserves_ = bond_reserves + total_reserves
         return 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
 
+<<<<<<< HEAD
     def calc_apr_from_reserves(
+=======
+    def add_liquidity(self, trade_details):
+        """
+        Computes new deltas for bond & share reserves after liquidity is added
+        """
+        raise NotImplementedError
+
+    def remove_liquidity(self, trade_details):
+        """
+        Computes new deltas for bond & share reserves after liquidity is removed
+        """
+        raise NotImplementedError
+
+    def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
+        """Converts remaining pool length in days to normalized and stretched time"""
+        normed_days_remaining = time_utils.norm_days(days_remaining, normalizing_constant)
+        time_remaining = time_utils.stretch_time(normed_days_remaining, time_stretch)
+        return time_remaining
+
+    def time_to_days_remaining(self, time_remaining, time_stretch=1, normalizing_constant=365):
+        """Converts normalized and stretched time remaining in pool to days"""
+        normed_days_remaining = time_utils.unstretch_time(time_remaining, time_stretch)
+        days_remaining = time_utils.unnorm_days(normed_days_remaining, normalizing_constant)
+        return days_remaining
+
+    def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
+        """
+        Returns the maximum allowable trade amount given the current asset reserves
+
+        TODO: write a test to verify that this is correct
+        """
+        time_elapsed = 1 - time_remaining
+        # TODO: fix calc_k_const args
+        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
+        return k ** (1 / time_elapsed) - in_reserves
+
+    def calc_apy_from_spot_price(self, price, normalized_days_remaining):
+        """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
+        assert (
+            price > 0
+        ), f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
+        assert (
+            normalized_days_remaining > 0
+        ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
+        return (1 - price) / price / normalized_days_remaining  # price = 1 / (1 + r * t)
+
+    def calc_spot_price_from_apy(self, apy_decimal, normalized_days_remaining):
+        """Returns the current spot price based on the current APY (decimal) and the remaining pool duration"""
+        return 1 / (1 + apy_decimal * normalized_days_remaining)  # price = 1 / (1 + r * t)
+
+    def calc_apy_from_reserves(
+>>>>>>> c1b4dad (adds some scaffolding & comments for new LP user)
         self,
         share_reserves,
         bond_reserves,
