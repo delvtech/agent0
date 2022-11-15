@@ -6,7 +6,8 @@
 This project is a work-in-progress. All code is provided as is and without guarantee.
 
 ## Install
-Set up your favorite [python virutal environment](https://github.com/pyenv/pyenv#how-it-works) with python >= 3.7
+Set up your favorite [python virutal environment](https://github.com/pyenv/pyenv#how-it-works) with python >= 3.7.
+
 Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip with `python3 -m pip install --upgrade pip` and then install the required packages with `python3 -m pip install -r requirements.txt`. Finally, you can install the elfpy package with `python3 -m pip install -e .` from the git directory root.
 
 ## Testing
