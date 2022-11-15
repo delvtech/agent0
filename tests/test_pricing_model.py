@@ -553,10 +553,6 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     with_fee=10233.00810805784,
                 ),
             ),
-            # TODO: The slippage should arguably be much higher. This is something
-            # we should consider more when thinking about the use of a time stretch
-            # parameter.
-            #
             # High slippage trade - in_ is 80% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(

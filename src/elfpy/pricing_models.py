@@ -834,6 +834,9 @@ class HyperdrivePricingModel(PricingModel):
         bond_reserves,
         token_out,
         fee_percent,
+        # TODO: The high slippage tests in tests/test_pricing_model.py should
+        # arguably have much higher slippage. This is something we should
+        # consider more when thinking about the use of a time stretch parameter.
         time_remaining,
         init_share_price,
         share_price,
