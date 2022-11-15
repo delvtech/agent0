@@ -39,7 +39,7 @@ def norm_days(days, normalizing_constant=365):
     return days / normalizing_constant
 
 
-def stretch_time(time, time_stretch=1):
+def stretch_time(time, time_stretch=1.0):
     """Returns stretched time values"""
     return time / time_stretch
 
