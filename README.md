@@ -5,11 +5,12 @@
 #  [Element Finance](https://element.fi) market simulation and analysis
 This project is a work-in-progress. All code is provided as is and without guarantee.
 
-## Testing
-Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). First install pytest with `python3 -m pip install pytest`, then the ElfPy package with `python3 -m pip install .`, then from the repository root directory run `pytest`.
+## Install
+Set up your favorite [python virutal environment](https://github.com/pyenv/pyenv#how-it-works) with python >= 3.7
+Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip with `python3 -m pip install --upgrade pip` and then install the required packages with `python3 -m pip install -r requirements.txt`. Finally, you can install the elfpy package with `python3 -m pip install -e .` from the git directory root.
 
-## Developing
-The ElfPy package can be installed by navigating into the `analysis` folder and running `python3 -m pip install -e .`, which will automatically update the pip package when you change files in the directory.
+## Testing
+Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python3 -m pytest`, or you can pick a specific test in the `tests/` folder with `python3 -m pytest tests/{test_file.py}`.
 
 ## Analysis repo git workflow:
 We will follow the Rebase workflow that is used by the Element frontend team.
