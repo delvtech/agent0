@@ -443,17 +443,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = 100_100 ** (1 - T) + (300_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = 100_100 ** (1 - T) + (300_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T))
                     #       = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=102.50516899477225,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.02506718336486724
                     #          = 102.48010181140738
                     with_fee=102.48010181140738,
@@ -480,7 +480,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
                     fee=0.5013436672973448,
                     without_fee=102.50516899477225,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.5013436672973448
                     #          = 102.0038253274749
                     with_fee=102.0038253274749,
@@ -511,17 +511,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = 110_000 ** (1 - T) + (300_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = 110_000 ** (1 - T) + (300_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 300_000 - (k - 110_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 110_000 ** (1 - T)) ** (1 / (1 - T))
                     #       = 10235.514826394327
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=10235.514826394327,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 10235.514826394327 - 2.506718336486724
                     #          = 10233.00810805784
                     with_fee=10233.00810805784,
@@ -557,17 +557,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = 180_000 ** (1 - T) + (300_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = 180_000 ** (1 - T) + (300_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 300_000 - (k - 180_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 180_000 ** (1 - T)) ** (1 / (1 - T))
                     #       = 81138.27602200207
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=81138.27602200207,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 81138.27602200207 - 20.053746691893792
                     #          = 81118.22227531018
                     with_fee=81118.22227531018,
@@ -614,17 +614,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (400_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (400_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 400_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 400_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
                     #       = 204.46650180319557
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=204.46650180319557,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 204.46650180319557 - 0.044699828573532496
                     #          = 204.42180197462204
                     with_fee=204.42180197462204,
@@ -670,17 +670,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
                     with_fee=212.35073531111888,
@@ -726,17 +726,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
                     #       = 206.14340814948082
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=206.14340814948082,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 206.14340814948082 - 0.06144677994914538
                     #          = 206.08196136953168
                     with_fee=206.08196136953168,
@@ -782,17 +782,17 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y) ** (1 - T)
+                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - τ) + (2 * y + c * z - d_y') ** (1 - τ)
+                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
-                    # with_fee = d_y - fee
+                    # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
                     with_fee=212.35073531111888,
@@ -842,19 +842,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (100_000 - d_z) ** (1 - T) + 300_100 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (100_000 - d_z') ** (1 - T) + 300_100 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (k - 300_100 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 300_100 ** (1 - T)) ** (1 / (1 - T))
                     #       = 97.55314236719278
                     #
-                    # The output is d_x = c * d_z. Since c = 1, d_x = d_z. Note
+                    # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.55314236719278,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.024454185805248493
                     #          = 97.52868818138752
                     with_fee=97.52868818138752,
@@ -881,7 +881,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # fee = 0.2 * (1 - (1 / p)) * 100 = 0.48908371610497
                     fee=0.48908371610497,
                     without_fee=97.55314236719278,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.48908371610497
                     #          = 97.0640586510878
                     with_fee=97.0640586510878,
@@ -912,19 +912,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (100_000 - d_z) ** (1 - T) + 310_000 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (100_000 - d_z') ** (1 - T) + 310_000 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (k - 310_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 310_000 ** (1 - T)) ** (1 / (1 - T))
                     #       = 9740.77011591768
                     #
-                    # The output is d_x = c * d_z. Since c = 1, d_x = d_z. Note
+                    # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=9740.77011591768,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 9740.77011591768 - 2.4454185805248496
                     #          = 9738.324697337155
                     with_fee=9738.324697337155,
@@ -959,19 +959,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (100_000 - d_z) ** (1 - T) + 380_000 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (100_000 - d_z') ** (1 - T) + 380_000 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (k - 380_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 380_000 ** (1 - T)) ** (1 / (1 - T))
                     #       = 76850.14470187116
                     #
-                    # The output is d_x = c * d_z. Since c = 1, d_x = d_z. Note
+                    # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=76850.14470187116,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 76850.14470187116 - 19.563348644198797
                     #          = 76830.58135322697
                     with_fee=76830.58135322697,
@@ -995,7 +995,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 #
                 # From the new values, we have:
                 #
-                #   k = (c / μ) * (μ * z) **(1 - τ) + (2 * y + c * z)**(1 - τ)
+                #   k = (c / μ) * (μ * z) ** (1 - τ) + (2 * y + c * z) ** (1 - τ)
                 #     = (2 / 1.5) * (1.5 * 100000) ** 0.977464155968403 + (2 * 100000 + 2 * 100000) ** 0.977464155968403
                 #     = 451_988.7122137336
                 #
@@ -1012,19 +1012,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 400_100 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 400_100 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** (1 - T))) ** (1 / (1 - T))
                     #       = 48.906526897713775
                     #
-                    # The output is d_x = c * d_z = 2 * 48.906526897713775 = 97.81305379542755.
+                    # The output is d_x' = c * d_z' = 2 * 48.906526897713775 = 97.81305379542755.
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.81305379542755,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 97.81305379542755 - 0.02186131575348005
                     #          = 97.79119247967407
                     with_fee=97.79119247967407,
@@ -1065,19 +1065,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 2_200_100 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
                     #       = 47.06339097737509
                     #
-                    # The output is d_x = c * d_z = 2 * 47.06339097737509 = 94.12678195475019.
+                    # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=94.12678195475019,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
                     with_fee=94.06805524879287,
@@ -1123,19 +1123,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 2_200_100 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
                     #       = 48.50947500564507
                     #
-                    # The output is d_x = c * d_z = 2 * 48.50947500564507 = 97.01895001129014.
+                    # The output is d_x' = c * d_z' = 2 * 48.50947500564507 = 97.01895001129014.
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.01895001129014,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 97.01895001129014 - 0.0298075994717949
                     #          = 96.98914241181835
                     with_fee=96.98914241181835,
@@ -1181,19 +1181,19 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z)) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
+                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - τ) + (2 * y + c * z + d_y) ** (1 - τ)
                     #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
                     #       = 47.06339097737509
                     #
-                    # The output is d_x = c * d_z = 2 * 47.06339097737509 = 94.12678195475019.
+                    # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=94.12678195475019,
-                    # with_fee = d_z - fee
+                    # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
                     with_fee=94.06805524879287,
