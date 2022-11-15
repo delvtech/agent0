@@ -263,17 +263,22 @@ class YieldSimulator:
         return 1 / blocks_per_year
 
     def run_simulation(self, override_dict=None):
-        """
+        r"""
         Run the trade simulation and update the output state dictionary
-
-        Arguments:
-        override_dict [dict] Override member variables.
-        Keys in this dictionary must match member variables of the YieldSimulator class.
-
         This is the primary function of the YieldSimulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
         up to `self.num_trading_days` days.
+
+        Arguments
+        ---------
+        override_dict : dict
+            Override member variables.
+            Keys in this dictionary must match member variables of the YieldSimulator class.
+
+        Returns
+        -------
+        There are no returns, but the function does update the analysis_dict member variable 
         """
         self.start_time = time_utils.current_datetime()
         self.block_number = 0
