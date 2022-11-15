@@ -110,7 +110,7 @@ class TradeResult:
 
 
 class TestHyperdrivePricingModel(unittest.TestCase):
-    def test_calc_in_given_out(self):
+    def test_calc_in_given_out_success(self):
         # Test cases where token_in = "base" indicating that bonds are being
         # purchased for base.
         #
@@ -139,7 +139,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
         #    2 share price; 1.5 init share price; t_stretch targeting 10% APY;
         #    3 mo remaining
         pricing_model = HyperdrivePricingModel(False)
-        test_cases = [
+        base_in_test_cases = [
             (  ## test one, basic starting point
                 TestCaseCalcInGivenOut(
                     out=100,  # how many tokens you expect to get
@@ -165,7 +165,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                         #   = 1.0250671833648672
                         # without_fee_or_slippage = 1/p * out = 97.55458141947516
                         without_fee_or_slippage = 97.55458141947516 ,
-                        # fee is 10% of discount before slippage = (100-97.55601990513969)*0.2 = 0.4887960189720616
+                        # fee is 10% of discount before slippage = (100-97.55458141947516)*0.1 = 0.24454185805248443
                         fee = 0.24454185805248443 ,
                         # deltaZ' = 1/u * (u/c*(k - (2*y + c*z - deltaY)**(1-τ)))**(1/(1-τ)) - z
                         # deltaZ' = 1/1 * (1/1*(302929.51067963685 - (2*100000 + 100000 - 100)**(1-0.0225358440315970471499308329778)))**(1/(1-0.0225358440315970471499308329778)) - 100000
@@ -431,8 +431,304 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                         with_fee = 197.2976182186442
                     )
                 ),
-            ),  # end of test seven
+            ),  # end of test eight
         ]
+        pt_in_test_cases = [
+            (  ## test one, basic starting point
+                TestCaseCalcInGivenOut(
+                    out=100,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=1,  # share price of the LP in the yield source
+                    init_share_price=1,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                #   = 302929.51067963685
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = 1.0250671833648672
+                        # without_fee_or_slippage = p * out = 102.50671833648673
+                        without_fee_or_slippage = 102.50671833648673 ,
+                        # fee is 10% of discount before slippage = (102.50671833648673-100)*0.1 = 0.2506718336486728
+                        fee = 0.2506718336486728 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (302929.51067963685 - 1/1*(1*100000 - 1*100)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
+                        #         = 102.50826839753427
+                        without_fee = 102.50826839753427 ,
+                        # with_fee = deltaY' + fee = 102.50826839753427 + 0.2506718336486728 = 102.75894023118293
+                        with_fee = 102.75894023118293
+                    )
+                ),
+            ),  # end of test one
+            (  ## test two, double the fee
+                TestCaseCalcInGivenOut(
+                    out=100,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.2,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=1,  # share price of the LP in the yield source
+                    init_share_price=1,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                #   = 302929.51067963685
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = 1.0250671833648672
+                        # without_fee_or_slippage = p * out = 102.50671833648673
+                        without_fee_or_slippage = 102.50671833648673 ,
+                        # fee is 20% of discount before slippage = (102.50671833648673-100)*0.2 = 0.5013436672973456
+                        fee = 0.5013436672973456 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (302929.51067963685 - 1/1*(1*100000 - 1*100)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
+                        #         = 102.50826839753427
+                        without_fee = 102.50826839753427 ,
+                        # with_fee = deltaY' + fee = 102.50826839753427 + 0.5013436672973456 = 103.00961206483161
+                        with_fee = 103.00961206483161
+                    )
+                ),
+            ),  # end of test two
+            (  ## test three, 10k out
+                TestCaseCalcInGivenOut(
+                    out=10_000,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=1,  # share price of the LP in the yield source
+                    init_share_price=1,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                #   = 302929.51067963685
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = 1.0250671833648672
+                        # without_fee_or_slippage = p * out = 10250.671833648673
+                        without_fee_or_slippage = 10250.671833648673 ,
+                        # fee is 10% of discount before slippage = (10250.671833648673-10000)*0.1 = 25.06718336486738
+                        fee = 25.06718336486738 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (302929.51067963685 - 1/1*(1*100000 - 1*10000)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
+                        #         = 10266.550575620378
+                        without_fee = 10266.550575620378 ,
+                        # with_fee = deltaY' + fee = 10266.550575620378 + 25.06718336486738 = 10291.617758985245
+                        with_fee = 10291.617758985245
+                    )
+                ),
+            ),  # end of test three
+            (  ## test four, 80k out
+                TestCaseCalcInGivenOut(
+                    out=80_000,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=1,  # share price of the LP in the yield source
+                    init_share_price=1,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
+                #   = 302929.51067963685
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = 1.0250671833648672
+                        # without_fee_or_slippage = p * out = 82005.37466918938
+                        without_fee_or_slippage = 82005.37466918938 ,
+                        # fee is 10% of discount before slippage = (82005.37466918938-80000)*0.1 = 200.53746691893758
+                        fee = 200.53746691893758 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (302929.51067963685 - 1/1*(1*100000 - 1*80000)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
+                        #         = 83360.61360923108
+                        without_fee = 83360.61360923108 ,
+                        # with_fee = deltaY' + fee = 83360.61360923108 + 200.53746691893758 = 83561.15107615001
+                        with_fee = 83561.15107615001
+                    )
+                ),
+            ),  # end of test four
+            (  ## test five, change share price
+                TestCaseCalcInGivenOut(
+                    out=200,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=100_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=2,  # share price of the LP in the yield source
+                    init_share_price=1.5,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 2/1.5*(1.5*100000)**0.9774641559684029528500691670222 + (2*100000 + 2*100000)**0.9774641559684029528500691670222
+                #   = 451988.7122137336
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = ((2*100000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
+                        #   = 1.0223499142867662
+                        # without_fee_or_slippage = p * out = 204.46998285735324
+                        without_fee_or_slippage = 204.46998285735324 ,
+                        # fee is 10% of discount before slippage = (204.46998285735324-200)*0.1 = 0.44699828573532446
+                        fee = 0.44699828573532446 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (451988.7122137336 - 2/1.5*(1.5*100000 - 1.5*100)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_000 + 2*100_000)
+                        #         = 204.4734651519102
+                        without_fee = 204.4734651519102 ,
+                        # with_fee = deltaZ' + fee = 204.4734651519102 + 0.44699828573532446 = 204.92046343764554
+                        with_fee = 204.92046343764554
+                    )
+                ),
+            ),  # end of test five
+            (  ## test six, up bond reserves to 1,000,000
+                TestCaseCalcInGivenOut(
+                    out=200,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=1_000_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=182.5,  # 6 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=2,  # share price of the LP in the yield source
+                    init_share_price=1.5,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 0.0225358440315970471499308329778
+                # 1 - τ = 0.977464155968402952850069167022
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 2/1.5*(1.5*100000)**0.9774641559684029528500691670222 + (2*1000000 + 2*100000)**0.9774641559684029528500691670222
+                #   = 1735927.3223407117
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
+                        #   = 1.062390706640675
+                        # without_fee_or_slippage = p * out = 212.478141328135
+                        without_fee_or_slippage = 212.478141328135 ,
+                        # fee is 10% of discount before slippage = (212.478141328135-200)*0.1 = 1.2478141328134997
+                        fee = 1.2478141328134997 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (1735927.3223407117 - 2/1.5*(1.5*100000 - 1.5*100)**0.977464155968402952850069167022)**(1/0.977464155968402952850069167022) - (2*100_0000 + 2*100_000)
+                        #         = 212.48076756019145
+                        without_fee = 212.48076756019145 ,
+                        # with_fee = deltaZ' + fee = 212.48076756019145 + 1.2478141328134997 = 213.72858169300494
+                        with_fee = 213.72858169300494
+                    )
+                ),
+            ),  # end of test six
+            (  ## test seven, halve the days remaining
+                TestCaseCalcInGivenOut(
+                    out=200,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=1_000_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=91.25,  # 3 months remaining
+                    time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+                    share_price=2,  # share price of the LP in the yield source
+                    init_share_price=1.5,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 22.1868770168519182502689135891
+                # τ = 91.25/365/22.1868770168519182502689135891 = 0.011267922015798524
+                # 1 - τ = 0.9887320779842015
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 2/1.5*(1.5*100000)**0.9887320779842015 + (2*100000 + 2*100000)**0.9887320779842015
+                #   = 520755.0666286863
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = ((2*100000 + 2*100000)/(1.5*100000))**0.011267922015798524
+                        #   = 1.0111132054754137
+                        # without_fee_or_slippage = p * out = 202.22264109508274
+                        without_fee_or_slippage = 202.22264109508274 ,
+                        # fee is 10% of discount before slippage = (202.22264109508274-200)*0.1 = 0.22226410950827358
+                        fee = 0.22226410950827358 ,
+                        # deltaY' = (k - c/u*(u*z - u*d_z)**(1-τ))**(1/(1-τ)) - y
+                        #         = (520755.0666286863 - 2/1.5*(1.5*100000 - 1.5*100)**0.9887320779842015)**(1/0.9887320779842015) - (2*100_000 + 2*100_000)
+                        #         = 202.22435669286642
+                        without_fee = 202.22435669286642 ,
+                        # with_fee = deltaZ' + fee = 202.22435669286642 + 0.22226410950827358 = 202.4466208023747
+                        with_fee = 203.4466208023747
+                    )
+                ),
+            ),  # end of test seven
+            (  ## test eight, halve the APY
+                TestCaseCalcInGivenOut(
+                    out=200,  # how many tokens you expect to get
+                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                    bond_reserves=1_000_000,  # PT reserves
+                    token_in="pt",  # what token you're putting in
+                    fee_percent=0.1,  # fee percent (normally 10%)
+                    days_remaining=91.25,  # 3 months remaining
+                    time_stretch_apy=0.025,  # APY of 5% used to calculate time_stretch
+                    share_price=2,  # share price of the LP in the yield source
+                    init_share_price=1.5,  # original share price pool started
+                ),
+                # From the input, we have the following values:
+                # T = 3.09396 / 0.02789 / 2.5 = 44.37375403370383
+                # τ = 91.25/365/44.37375403370383 = 0.005633961007899263
+                # 1 - τ = 0.9943660389921007
+                # k = c/u*(u*z)**(1-τ) + (2*y + c*z)**(1-τ)
+                #   = 2/1.5*((1.5*100000)**0.9943660389921007) + (2*1000000 + 2*100000)**0.9943660389921007
+                #   = 2213245.968723062
+                (
+                    TradeResult(
+                        # p = ((2y+cz)/uz)**τ
+                        #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.005633961007899263
+                        #   = 1.015245482617171
+                        # without_fee_or_slippage = 1/p * out = 196.99669038115388
+                        without_fee_or_slippage= 196.99669038115388 ,
+                        # fee is 10% of discount before slippage = (200-196.99669038115388)*0.1 = 0.3003309618846117
+                        fee = 0.3003309618846117 ,
+                        # deltaZ' = 1/u * (u/c*(k - (2*y + c*z - deltaY)**(1-τ)))**(1/(1-τ)) - z
+                        # deltaZ' = 2*(1/1.5 * (1.5/2*(2213245.968723062 - (2*1000000 + 2*100000 - 200)**(1-0.005633961007899263)))**(1/(1-0.005633961007899263)) - 100000)
+                        #         = 196.9972872567596
+                        without_fee = 196.9972872567596 ,
+                        # with_fee = deltaZ' + fee = 196.9972872567596 + 0.3003309618846117 = 197.2976182186442
+                        with_fee = 197.2976182186442
+                    )
+                ),
+            ),  # end of test eight
+        ]
+        test_cases = base_in_test_cases + pt_in_test_cases
+        test_cases = [pt_in_test_cases[6]]
         for (test_case, expected) in test_cases:
             time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
             time_remaining = stretch_time(pricing_model.days_to_time_remaining(test_case.days_remaining), time_stretch)
