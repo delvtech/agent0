@@ -150,7 +150,7 @@ class PricingModel:
         base_asset_needed = (base_asset_reserves / token_asset_reserves) * token_asset_needed
         return (base_asset_needed, token_asset_needed)
 
-    # FIXME: Update the existing pricing models.
+    # TODO: This has been re-parameterized. More updates will be required.
     @staticmethod
     def _calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
         """Returns the 'k' constant variable for trade mathematics"""
@@ -834,6 +834,9 @@ class HyperdrivePricingModel(PricingModel):
         bond_reserves,
         token_out,
         fee_percent,
+        # TODO: The high slippage tests in tests/test_pricing_model.py should
+        # arguably have much higher slippage. This is something we should
+        # consider more when thinking about the use of a time stretch parameter.
         time_remaining,
         init_share_price,
         share_price,
@@ -895,6 +898,23 @@ class HyperdrivePricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
+        assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            share_price >= init_share_price >= 1
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
+
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         scale = share_price / init_share_price
@@ -929,7 +949,7 @@ class HyperdrivePricingModel(PricingModel):
             # Solving for d_z gives us the amount of shares the user receives
             # without including fees:
             #
-            #  d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
+            # d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
             #
             # We really want to know the value of d_x, the amount of base the
             # user receives. This is simply c * d_x
@@ -978,7 +998,9 @@ class HyperdrivePricingModel(PricingModel):
             # (p - 1) * phi * c * d_z
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
         else:
-            raise Exception('"token_out" must be "base" or "pt"')
+            raise AssertionError(
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out == "base" or token_out == "pt", not {token_out}!'
+            )
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
@@ -994,7 +1016,23 @@ class HyperdrivePricingModel(PricingModel):
                 f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
                 f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
             )
-        assert fee >= 0, f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative, not {fee}!"
+
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check with_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, without_fee = with_fee + fee
+        # so it is a positive float if with_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            with_fee, float
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
+        assert (
+            with_fee >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
+
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
