@@ -4,7 +4,6 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
-import types
 import elfpy.utils.time as time_utils
 
 # Currently many functions use >5 arguments.
@@ -1024,8 +1023,8 @@ class HyperdrivePricingModel(PricingModel):
         # float due to the constraints on the inputs, without_fee = with_fee + fee
         # so it is a positive float if with_fee and fee are positive floats, and
         # fee is a positive float due to the constraints on the inputs.
-        assert (
-            type(with_fee) == float
+        assert isinstance(
+            with_fee, float
         ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
         assert (
             with_fee >= 0

@@ -401,7 +401,33 @@ class TestHyperdrivePricingModel(unittest.TestCase):
     def test_calc_out_given_in_success(self):
         pricing_model = HyperdrivePricingModel(False)
 
-        # Test cases where token_out = "pt".
+        # Test cases where token_out = "pt" indicating that bonds are being
+        # purchased for base.
+        #
+        # 1. in_ = 100; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 2. in_ = 100; 20% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 3. in_ = 10k; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 4. in_ = 80k; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 5. in_ = 200; 1% fee; 100k share reserves; 100k bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 6. in_ = 200; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 7. in_ = 200; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    3 mo remaining
+        # 8. in_ = 200; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 10% APY;
+        #    3 mo remaining
         pt_out_test_cases = [
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
@@ -800,7 +826,33 @@ class TestHyperdrivePricingModel(unittest.TestCase):
             ),
         ]
 
-        # Test cases where token_out = "base".
+        # Test cases where token_out = "base" indicating that bonds are being
+        # sold for base.
+        #
+        # 1. in_ = 100; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 2. in_ = 100; 20% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 3. in_ = 10k; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 4. in_ = 80k; 1% fee; 100k share reserves; 100k bond reserves;
+        #    1 share price; 1 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 5. in_ = 100; 1% fee; 100k share reserves; 100k bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 6. in_ = 100; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    6 mo remaining
+        # 7. in_ = 100; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 5% APY;
+        #    3 mo remaining
+        # 8. in_ = 100; 1% fee; 100k share reserves; 1M bond reserves;
+        #    2 share price; 1.5 init share price; t_stretch targeting 10% APY;
+        #    3 mo remaining
         base_out_test_cases = [
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
@@ -930,10 +982,6 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     with_fee=9738.324697337155,
                 ),
             ),
-            # TODO: The slippage should arguably be much higher. This is something
-            # we should consider more when thinking about the use of a time stretch
-            # parameter.
-            #
             # High slippage trade - in_ is 80% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
