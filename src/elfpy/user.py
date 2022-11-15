@@ -5,6 +5,9 @@ TODO: rewrite all functions to have typed inputs
 """
 
 
+import numpy as np
+
+
 import elfpy.utils.time as time_utils
 
 # from elfpy.utils.parse_json import parse_trade
@@ -39,7 +42,7 @@ class User:
 
     def get_max_long(self):
         """Returns the amount of base that the user can spend."""
-        return self.wallet["base_in_wallet"]
+        return np.minimum(self.wallet["base_in_wallet"], self.market.bond_reserves)
 
     def get_max_short(self, mint_time, eps=1.0):
         """

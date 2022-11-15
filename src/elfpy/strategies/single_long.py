@@ -24,6 +24,6 @@ class Policy(BasicPolicy):
             enough_time_has_passed = self.market.time - mint_time > 0.25
             if enough_time_has_passed:
                 action_list.append(["close_long", amount_to_trade, mint_time])
-        elif not has_opened_long and can_open_long:
+        elif (not has_opened_long) and can_open_long:
             action_list.append(["open_long", amount_to_trade])
         return action_list
