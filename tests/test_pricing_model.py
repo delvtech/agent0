@@ -91,6 +91,8 @@ class TradeResult:
 class TestHyperdrivePricingModel(unittest.TestCase):
     """Unit tests for the Hyperdrive pricing model"""
 
+    # pylint: disable=line-too-long
+
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         pricing_model = HyperdrivePricingModel(False)
