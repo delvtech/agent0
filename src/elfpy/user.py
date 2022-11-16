@@ -144,14 +144,15 @@ class User:
         for key, value in trade_result.items():
             if value is None:
                 pass
-            if key == "base_in_wallet":
-                self.update_spend()
-                self.wallet[key] += value
+            elif key == ["base_in_wallet", "lp_in_wallet"]:
+                    self.wallet[key] += value
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 mint_time = value[0]
                 delta_token = value[1]
                 if mint_time in self.wallet[key]:
                     self.wallet[key][mint_time] += delta_token
+                elif key == "fee":
+                    pass
                 else:
                     self.wallet[key].update({mint_time: delta_token})
             elif key == "fee":
