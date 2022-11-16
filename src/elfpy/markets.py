@@ -144,6 +144,8 @@ class Market:
         self.base_asset_volume += market_deltas["d_base_asset_volume"]
         self.token_asset_volume += market_deltas["d_token_asset_volume"]
 
+    # FIXME: Think of ways of generically adding guardrails here. In the case of
+    # V1, we didn't allow shorts and longs to be opened.
     def swap(self, user_action):
         """
         Execute a trade in the simulated market.

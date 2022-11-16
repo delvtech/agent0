@@ -67,10 +67,6 @@ class PricingModel:
         raise NotImplementedError
 
 
-# TODO: Update the docstring comments
-#
-# FIXME: Consider giving these error messages a special signature so they aren't
-#        identical to the error messages for the other pricing models.
 class ElementPricingModel(PricingModel):
     """
     Element v1 pricing model
@@ -78,15 +74,9 @@ class ElementPricingModel(PricingModel):
     Does not use the Yield Bearing Vault `init_share_price` (mu) and `share_price` (c) variables.
     """
 
-    # FIXME: This should have v1 in the name
     def model_name(self):
         return "Element"
 
-    # FIXME: Add assertions on the inputs and outputs
-    #
-    # FIXME: Improve the documentation of this function.
-    #
-    # FIXME: Do we need to add virtual reserve accounting to this function?
     def calc_in_given_out(
         self,
         out,
@@ -184,12 +174,12 @@ class ElementPricingModel(PricingModel):
         #
         # k = x**(1 - t) + (2y + x)**(1 - t)
         k = price_utils.calc_k_const(base_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
-        # Solve for the amount of token that must be paid to receive the
-        # specified amount of the output token.
+        # Solve for the amount that must be paid to receive the specified amount
+        # of the output.
         if token_in == "base":
             d_bonds = out
             # The amount the user pays without fees or slippage is the amount of
-            # bonds the user would receive times the spot price of base in terms
+            # bonds the user receives times the spot price of base in terms
             # of bonds. If we let p be the conventional spot price, then we can
             # write this as:
             #
@@ -197,7 +187,7 @@ class ElementPricingModel(PricingModel):
             without_fee_or_slippage = spot_price * d_bonds
             # We solve the YieldSpace invariant for the base required to
             # purchase the requested amount of bonds. We set up the invariant
-            # where the user pays d_x base and receives d_y bonds:
+            # where the user pays d_x' base and receives d_y bonds:
             #
             # (x + d_x')**(1 - t) + (2y + x - d_y)**(1 - t) = k
             #
@@ -215,32 +205,33 @@ class ElementPricingModel(PricingModel):
             # fee = phi * (d_y - d_x')
             fee = fee_percent * (d_bonds - without_fee)
         elif token_in == "pt":
+            d_base = out
             # The amount the user pays without fees or slippage is the amount of
-            # bonds the user would receive times the inverse of the spot price
+            # bonds the user receives times the inverse of the spot price
             # of base in terms of bonds. If we let p be the conventional spot
             # price, then we can write this as:
             #
             # without_fee_or_slippage = (1 / p) * d_x
             without_fee_or_slippage = (1 / spot_price) * out
             # We solve the YieldSpace invariant for the bonds required to
-            # purchase the requested amount of bbase. We set up the invariant
-            # where the user pays d_x base and receives d_y bonds:
+            # purchase the requested amount of base. We set up the invariant
+            # where the user pays d_y bonds and receives d_x base:
             #
             # (x - d_x)**(1 - t) + (2y + x + d_y')**(1 - t) = k
             #
-            # Solving for d_y' gives us the amount of base the user must pay
+            # Solving for d_y' gives us the amount of bonds the user must pay
             # without including fees:
             #
             # d_y' = (k - (x - d_x)**(1 - t))**(1 / (1 - t)) - (2y + x)
             #
             # without_fee = d_y'
-            without_fee = (k - (base_reserves - out) ** time_elapsed) ** (1 / time_elapsed) - bond_reserves_
+            without_fee = (k - (base_reserves - d_base) ** time_elapsed) ** (1 / time_elapsed) - bond_reserves_
             # The fees are calculated as the difference between the bonds
             # paid without fees and the base received times the fee percentage.
             # This can also be expressed as:
             #
             # fee = phi * (d_y' - d_x)
-            fee = fee_percent * (without_fee - out)
+            fee = fee_percent * (without_fee - d_base)
         else:
             raise AssertionError(
                 f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
@@ -249,32 +240,207 @@ class ElementPricingModel(PricingModel):
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
         with_fee = without_fee + fee
+        if self.verbose:
+            print(
+                f"pricing_models.calc_in_given_out:"
+                f"\n\tout = {out}\n\tbase_reserves = {base_reserves}\n\tbond_reserves = {bond_reserves}"
+                f"\n\ttotal_reserves = {base_reserves + bond_reserves}\n\tinit_share_price = {init_share_price}"
+                f"\n\tshare_price = {share_price}\n\tfee_percent = {fee_percent}"
+                f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
+                f"\n\ttoken_in = {token_in}\n\tspot_price = {spot_price}"
+                f"\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
+                f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
+            )
+
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check without_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, with_fee = without_fee + fee
+        # so it is a positive float if without_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            without_fee, float
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
+        assert (
+            without_fee >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
+
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    # FIXME: Add assertions on the inputs and outputs
-    #
-    # FIXME: Improve the documentation of this function.
     def calc_out_given_in(
         self,
         in_,
-        in_reserves,
-        out_reserves,
+        base_reserves,
+        bond_reserves,
         token_out,
         fee_percent,
         time_remaining,
         init_share_price=1,
         share_price=1,
     ):
+        r"""
+        Calculates the amount of an asset that must be provided to receive a
+        specified amount of the other asset given the current AMM reserves.
+
+        The output is calculated as:
+
+        .. math::
+            out' =
+            \begin{cases}
+            (x - (k - (2y + x + \Delta y)^{1 - t})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
+            2y + x - (k - (x + \Delta x)^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            \end{cases} \\
+            f = 
+            \begin{cases}
+            (\Delta y - out') \cdot \phi, &\text{ if } token\_out = \text{"base"} \\
+            (out' - \Delta x) \cdot \phi, &\text{ if } token\_out = \text{"pt"}
+            \end{cases} \\
+            out = out' + f
+
+        Arguments
+        ---------
+        in_ : float
+            The amount of tokens that the user pays. When users receive bonds,
+            this value reflects the base paid.
+        base_reserves : float
+            The reserves of base in the pool.
+        bond_reserves : float
+            The reserves of bonds (PT) in the pool.
+        token_out : str
+            The token that the user receives. The only valid values are "base"
+            and "pt".
+        fee_percent : float
+            The percentage of the difference between the amount paid and the
+            amount received without slippage that will be debited from the
+            output as a fee.
+        time_remaining : float
+            The time remaining for the asset (incorporates time stretch).
+        init_share_price : float
+            The share price when the pool was initialized. NOTE: For this 
+            pricing model, the initial share price must always be one.
+        share_price : float
+            The current share price. NOTE: For this pricing model, the share 
+            price must always be one.
+
+        Returns
+        -------
+        float
+            The amount the user receives without fees or slippage. The units
+            are always in terms of bonds or base.
+        float
+            The amount the user receives with fees and slippage. The units are
+            always in terms of bonds or base.
+        float
+            The amount the user receives with slippage and no fees. The units are
+            always in terms of bonds or base.
+        float
+            The fee the user pays. The units are always in terms of bonds or
+            base.
+        """
+        assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
+        assert (
+            base_reserves > 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected base_reserves > 0, not {base_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            share_price == init_share_price == 1
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1, not share_price={share_price} and init_share_price={init_share_price}!"
+
         time_elapsed = 1 - time_remaining
-        # TODO: Fix k calculation for element v1
-        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
-        without_fee = out_reserves - pow(k - pow(in_reserves + in_, time_elapsed), 1 / time_elapsed)
+        bond_reserves_ = 2 * bond_reserves + base_reserves
+        spot_price = price_utils.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining)
+        # We precompute the YieldSpace constant k using the current reserves and
+        # share price:
+        #
+        # k = x**(1 - t) + (2y + x)**(1 - t)
+        k = price_utils.calc_k_const(base_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        # Solve for the amount that received if the specified amount is paid.
         if token_out == "base":
-            fee = fee_percent * (in_ - without_fee)
-        elif token_out == "fyt":
-            fee = fee_percent * (without_fee - in_)
+            d_bonds = in_
+            # The amount the user pays without fees or slippage is the amount of
+            # bonds the user pays times the spot price of base in terms of bonds.
+            # If we let p be the conventional spot price, then we can write this
+            # as:
+            #
+            # without_fee_or_slippage = p * d_y
+            without_fee_or_slippage = spot_price * d_bonds
+            # We solve the YieldSpace invariant for the base received from
+            # paying the specified amount of bonds. We set up the invariant
+            # where the user pays d_y bonds and receives d_x' base:
+            #
+            # (x - d_x')**(1 - t) + (2y + x + d_y)**(1 - t) = k
+            #
+            # Solving for d_x' gives us the amount of base the user must pay
+            # without including fees:
+            #
+            # d_x' = x - (k - (2y + x + d_y)**(1 - t))**(1 / (1 - t))
+            #
+            # without_fee = d_x'
+            without_fee = base_reserves - (k - (bond_reserves_ + d_bonds) ** time_elapsed) ** (1 / time_elapsed)
+            # The fees are calculated as the difference between the bonds paid
+            # and the base received without fees times the fee percentage. This
+            # can also be expressed as:
+            #
+            # fee = phi * (d_y - d_x')
+            fee = fee_percent * (d_bonds - without_fee)
+        elif token_out == "pt":
+            d_base = in_
+            # The amount the user pays without fees or slippage is the amount of
+            # base the user pays times the inverse of the spot price of base in
+            # terms of bonds. If we let p be the conventional spot price, then
+            # we can write this as:
+            #
+            # without_fee_or_slippage = (1 / p) * d_x
+            without_fee_or_slippage = (1 / spot_price) * d_base
+            # We solve the YieldSpace invariant for the bonds received from
+            # paying the specified amount of base. We set up the invariant
+            # where the user pays d_x base and receives d_y' bonds:
+            #
+            # (x + d_x)**(1 - t) + (2y + x - d_y')**(1 - t) = k
+            #
+            # Solving for d_x' gives us the amount of base the user must pay
+            # without including fees:
+            #
+            # d_y' = 2y + x - (k - (x + d_x)**(1 - t))**(1 / (1 - t))
+            #
+            # without_fee = d_x'
+            without_fee = base_reserves - (k - (bond_reserves_ + d_base) ** time_elapsed) ** (1 / time_elapsed)
+            # The fees are calculated as the difference between the bonds paid
+            # and the base received without fees times the fee percentage. This
+            # can also be expressed as:
+            #
+            # fee = phi * (d_y' - d_x)
+            fee = fee_percent * (without_fee - d_base)
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_in_given_out: ERROR: expected token_out == "base" or token_in == "pt", not {token_out}!'
+            )
+        # To get the amount paid with fees, subtract the fee from the
+        # calculation that excluded fees. Subtracting the fees results in less
+        # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
-        without_fee_or_slippage = in_ / (in_reserves / out_reserves) ** time_remaining
+        if self.verbose:
+            print(
+                f"pricing_models.calc_out_given_in:"
+                f"\n\tin_ = {in_}\n\tbase_reserves = {base_reserves}\n\tbond_reserves = {bond_reserves}"
+                f"\n\ttotal_reserves = {base_reserves + bond_reserves}\n\tinit_share_price = {init_share_price}"
+                f"\n\tshare_price = {share_price}\n\tfee_percent = {fee_percent}"
+                f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
+                f"\n\ttoken_out = {token_out}\n\tspot_price = {spot_price}"
+                f"\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
+                f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
+            )
 
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
@@ -295,6 +461,7 @@ class ElementPricingModel(PricingModel):
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
 
+# FIXME: Move these action functions into the market class.
 class HyperdrivePricingModel(PricingModel):
     """
     Hyperdrive Pricing Model
@@ -499,22 +666,6 @@ class HyperdrivePricingModel(PricingModel):
         init_share_price,
         share_price,
     ):
-        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
-        assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
-        assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
-        assert (
-            1 >= fee_percent >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
-        assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -573,6 +724,22 @@ class HyperdrivePricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
+        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            share_price >= init_share_price >= 1
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
 
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
@@ -801,7 +968,7 @@ class HyperdrivePricingModel(PricingModel):
         # share price:
         #
         # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = self._calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_out == "base":
             d_bonds = in_
             in_reserves = bond_reserves + total_reserves
