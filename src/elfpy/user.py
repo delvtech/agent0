@@ -139,6 +139,14 @@ class User:
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
+    def update_spend(self):
+        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
+        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        self.weighted_average_spend += new_spend
+        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}")
+        self.last_update_spend = self.market.time
+        return self.weighted_average_spend
+
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
         for key, value in trade_result.items():

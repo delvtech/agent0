@@ -7,6 +7,7 @@ TODO: rewrite all functions to have typed inputs
 
 
 from importlib import import_module
+from dataclasses import dataclass
 
 
 import numpy as np
@@ -18,7 +19,6 @@ from elfpy.pricing_models import HyperdrivePricingModel
 from elfpy.utils.parse_config import parse_simulation_config
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
-
 
 class YieldSimulator:
     """
