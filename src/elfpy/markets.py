@@ -64,15 +64,27 @@ class Market:
         Determine which asset is the target based on token_in and trade_direction
         """
         if trade_direction == "in":
-            if token_in == "fyt":
+            if token_in == "base":
+                target_reserves = self.share_reserves
+            elif token_in == "pt":
                 target_reserves = self.bond_reserves
             else:
-                target_reserves = self.share_reserves
+                raise AssertionError(
+                    f'markets.get_target_reserves: ERROR: token_in should be "base" or "pt", not {token_in}!'
+                )
         elif trade_direction == "out":
-            if token_in == "fyt":
+            if token_in == "base":
                 target_reserves = self.share_reserves
-            else:
+            elif token_in == "pt":
                 target_reserves = self.bond_reserves
+            else:
+                raise AssertionError(
+                    f'markets.get_target_reserves: ERROR: token_in should be "base" or "pt", not {token_in}!'
+                )
+        else:
+            raise AssertionError(
+                f'markets.get_target_reserves: ERROR: trade_direction should be "in" or "out", not {trade_direction}!'
+            )
         return target_reserves
 
     def check_fees(

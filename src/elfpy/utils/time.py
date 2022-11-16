@@ -39,6 +39,12 @@ def norm_days(days, normalizing_constant=365):
     return days / normalizing_constant
 
 
+def calc_time_stretch(apy):
+    """Returns fixed time-stretch value based on current apy (as a decimal)"""
+    apy_percent = apy * 100
+    return 3.09396 / (0.02789 * apy_percent)
+
+
 def stretch_time(time, time_stretch=1.0):
     """Returns stretched time values"""
     return time / time_stretch
@@ -52,3 +58,17 @@ def unnorm_days(normed_days, normalizing_constant=365):
 def unstretch_time(stretched_time, time_stretch=1):
     """Returns unstretched time value, which should be between 0 and 1"""
     return stretched_time * time_stretch
+
+
+def days_to_time_remaining(days_remaining, time_stretch=1, normalizing_constant=365):
+    """Converts remaining pool length in days to normalized and stretched time"""
+    normed_days_remaining = norm_days(days_remaining, normalizing_constant)
+    time_remaining = stretch_time(normed_days_remaining, time_stretch)
+    return time_remaining
+
+
+def time_to_days_remaining(time_remaining, time_stretch=1, normalizing_constant=365):
+    """Converts normalized and stretched time remaining in pool to days"""
+    normed_days_remaining = unstretch_time(time_remaining, time_stretch)
+    days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
+    return days_remaining

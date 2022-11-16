@@ -4,6 +4,7 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
 # Currently many functions use >5 arguments.
@@ -65,310 +66,194 @@ class PricingModel:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
-    @staticmethod
-    def calc_time_stretch(apy):
-        """Returns fixed time-stretch value based on current apy (as a decimal)"""
-        apy_percent = apy * 100
-        return 3.09396 / (0.02789 * apy_percent)
 
-    @staticmethod
-    def calc_tokens_in_given_lp_out(lp_out, base_asset_reserves, token_asset_reserves, total_supply):
-        """Returns how much supply is needed if liquidity is removed"""
-        # Check if the pool is initialized
-        if total_supply == 0:
-            base_asset_needed = lp_out
-            token_asset_needed = 0
-        else:
-            # solve for y_needed: lp_out = ((x_reserves / y_reserves) * y_needed * total_supply) / x_reserves
-            token_asset_needed = (lp_out * base_asset_reserves) / (
-                (base_asset_reserves / token_asset_reserves) * total_supply
-            )
-            # solve for x_needed: x_reserves / y_reserves = x_needed / y_needed
-            base_asset_needed = (base_asset_reserves / token_asset_reserves) * token_asset_needed
-        return (base_asset_needed, token_asset_needed)
-
-    @staticmethod
-    def calc_lp_out_given_tokens_in(
-        base_asset_in,
-        token_asset_in,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-    ):
-        """Returns how much liquidity can be removed given newly minted assets"""
-        # Check if the pool is initialized
-        if total_supply == 0:
-            # When uninitialized we mint exactly the underlying input in LP tokens
-            lp_out = base_asset_in
-            base_asset_needed = base_asset_in
-            token_asset_needed = 0
-        else:
-            # Calc the number of base_asset needed for the y_in provided
-            base_asset_needed = (base_asset_reserves / token_asset_reserves) * token_asset_in
-            # If there isn't enough x_in provided
-            if base_asset_needed > base_asset_in:
-                lp_out = (base_asset_in * total_supply) / base_asset_reserves
-                base_asset_needed = base_asset_in  # use all the x_in
-                # Solve for: x_reserves / y_reserves = x_needed / y_needed
-                token_asset_needed = base_asset_needed / (base_asset_reserves / token_asset_reserves)
-            else:
-                # We calculate the percent increase in the reserves from contributing all of the bond
-                lp_out = (base_asset_needed * total_supply) / base_asset_reserves
-                token_asset_needed = token_asset_in
-        return (base_asset_needed, token_asset_needed, lp_out)
-
-    @staticmethod
-    def calc_lp_in_given_tokens_out(
-        min_base_asset_out,
-        min_token_asset_out,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-    ):
-        """Returns how much liquidity is needed given a removal of asset quantities"""
-        # Calc the number of base_asset needed for the y_out provided
-        base_asset_needed = (base_asset_reserves / token_asset_reserves) * min_token_asset_out
-        # If there isn't enough x_out provided
-        if min_base_asset_out > base_asset_needed:
-            lp_in = (min_base_asset_out * total_supply) / base_asset_reserves
-            base_asset_needed = min_base_asset_out  # use all the x_out
-            # Solve for: x_reserves/y_reserves = x_needed/y_needed
-            token_asset_needed = base_asset_needed / (base_asset_reserves / token_asset_reserves)
-        else:
-            token_asset_needed = min_token_asset_out
-            lp_in = (token_asset_needed * total_supply) / token_asset_reserves
-        return (base_asset_needed, token_asset_needed, lp_in)
-
-    @staticmethod
-    def calc_tokens_out_for_lp_in(lp_in, base_asset_reserves, token_asset_reserves, total_supply):
-        """Returns allowable asset reduction for an increase in liquidity"""
-        # Solve for y_needed: lp_out = ((x_reserves / y_reserves) * y_needed * total_supply)/x_reserves
-        token_asset_needed = (lp_in * base_asset_reserves) / (
-            (base_asset_reserves / token_asset_reserves) * total_supply
-        )
-        # Solve for x_needed: x_reserves/y_reserves = x_needed/y_needed
-        base_asset_needed = (base_asset_reserves / token_asset_reserves) * token_asset_needed
-        return (base_asset_needed, token_asset_needed)
-
-    # TODO: This has been re-parameterized. More updates will be required.
-    @staticmethod
-    def _calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
-        """Returns the 'k' constant variable for trade mathematics"""
-        scale = share_price / init_share_price
-        total_reserves = bond_reserves + share_price * share_reserves
-        return scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (
-            time_elapsed
-        )
-
-    @staticmethod
-    def _calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price):
-        """
-        We are using spot_price when calculating total_liquidity to convert the two tokens into the same units.
-        Otherwise we're comparing apples(base_asset_reserves in ETH) and oranges (token_asset_reserves in ptETH)
-            ptEth = 1.0 ETH at maturity ONLY
-            ptEth = 0.95 ETH ahead of time
-        Discount factor from the time value of money
-            Present Value = Future Value / (1 + r)^n
-            Future Value = Present Value * (1 + r)^n
-        The equation converts from future value to present value at the appropriate discount rate,
-        which measures the opportunity cost of getting a dollar tomorrow instead of today.
-        discount rate = (1 + r)^n
-        spot price APR = 1 / (1 + r)^n
-        """
-        return base_asset_reserves + token_asset_reserves * spot_price
-
-    def days_to_time_remaining(self, days_remaining, time_stretch=1, normalizing_constant=365):
-        """Converts remaining pool length in days to normalized and stretched time"""
-        normed_days_remaining = time_utils.norm_days(days_remaining, normalizing_constant)
-        time_remaining = time_utils.stretch_time(normed_days_remaining, time_stretch)
-        return time_remaining
-
-    def time_to_days_remaining(self, time_remaining, time_stretch=1, normalizing_constant=365):
-        """Converts normalized and stretched time remaining in pool to days"""
-        normed_days_remaining = time_utils.unstretch_time(time_remaining, time_stretch)
-        days_remaining = time_utils.unnorm_days(normed_days_remaining, normalizing_constant)
-        return days_remaining
-
-    def calc_max_trade(self, in_reserves, out_reserves, time_remaining):
-        """
-        Returns the maximum allowable trade amount given the current asset reserves
-
-        TODO: write a test to verify that this is correct
-        """
-        time_elapsed = 1 - time_remaining
-        # TODO: fix calc_k_const args
-        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves^(1 - t) + out_reserves^(1 - t)
-        return k ** (1 / time_elapsed) - in_reserves
-
-    def calc_apy_from_spot_price(self, price, normalized_days_remaining):
-        """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
-        assert (
-            price > 0
-        ), f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
-        assert (
-            normalized_days_remaining > 0
-        ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
-        return (1 - price) / price / normalized_days_remaining  # price = 1 / (1 + r * t)
-
-    def calc_spot_price_from_apy(self, apy_decimal, normalized_days_remaining):
-        """Returns the current spot price based on the current APY (decimal) and the remaining pool duration"""
-        return 1 / (1 + apy_decimal * normalized_days_remaining)  # price = 1 / (1 + r * t)
-
-    def calc_apy_from_reserves(
-        self,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-        time_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
-        """
-        Returns the apy given reserve amounts
-        """
-        spot_price = self.calc_spot_price_from_reserves(
-            base_asset_reserves,
-            token_asset_reserves,
-            total_supply,
-            time_remaining,
-            init_share_price,
-            share_price,
-        )
-        days_remaining = self.time_to_days_remaining(time_remaining, time_stretch)
-        apy = self.calc_apy_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
-        return apy
-
-    def calc_spot_price_from_reserves(
-        self,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-        time_remaining,
-        init_share_price=1,
-        share_price=1,
-    ):
-        """Returns the spot price given the current supply and temporal position along the yield curve"""
-        log_inv_price = share_price * (token_asset_reserves + total_supply) / (init_share_price * base_asset_reserves)
-        spot_price = 1 / log_inv_price**time_remaining
-        return spot_price
-
-    def calc_base_asset_reserves(
-        self,
-        apy_decimal,
-        token_asset_reserves,
-        days_remaining,
-        time_stretch,
-        init_share_price,
-        share_price,
-    ):
-        """Returns the assumed base_asset reserve amounts given the token_asset reserves and APY"""
-        normalized_days_remaining = time_utils.norm_days(days_remaining)
-        time_stretch_exp = 1 / time_utils.stretch_time(normalized_days_remaining, time_stretch)
-        numerator = 2 * share_price * token_asset_reserves  # 2*c*y
-        scaled_apy_decimal = apy_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
-        denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
-        result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
-        if self.verbose:
-            print(f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}")
-        return result
-
-    def calc_liquidity(
-        self,
-        target_liquidity_usd,
-        market_price,
-        apy,
-        days_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
-        """
-        Returns the reserve volumes and total supply
-
-        The scaling factor ensures token_asset_reserves and base_asset_reserves add
-        up to target_liquidity, while keeping their ratio constant (preserves apy).
-
-        total_liquidity = in USD terms, used to target liquidity as passed in (in USD terms)
-        total_reserves  = in arbitrary units (AU), used for yieldspace math
-        """
-        # estimate reserve values with the information we have
-        spot_price = self.calc_spot_price_from_apy(apy, time_utils.norm_days(days_remaining))
-        token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price  # guesstimate
-        base_asset_reserves = self.calc_base_asset_reserves(
-            apy,
-            token_asset_reserves,
-            days_remaining,
-            time_stretch,
-            init_share_price,
-            share_price,
-        )  # ensures an accurate ratio of prices
-        total_liquidity = self._calc_total_liquidity_from_reserves_and_price(
-            base_asset_reserves, token_asset_reserves, spot_price
-        )
-        # compute scaling factor to adjust reserves so that they match the target liquidity
-        scaling_factor = (target_liquidity_usd / market_price) / total_liquidity  # both in token terms
-        # update variables by rescaling the original estimates
-        token_asset_reserves = token_asset_reserves * scaling_factor
-        base_asset_reserves = base_asset_reserves * scaling_factor
-        total_liquidity = self._calc_total_liquidity_from_reserves_and_price(
-            base_asset_reserves, token_asset_reserves, spot_price
-        )
-        if self.verbose:
-            actual_apy = self.calc_apy_from_reserves(
-                base_asset_reserves,
-                token_asset_reserves,
-                base_asset_reserves + token_asset_reserves,
-                self.days_to_time_remaining(days_remaining, time_stretch),
-                time_stretch,
-                init_share_price,
-                share_price,
-            )
-            print(
-                "PricingModel.calc_liquidity: \n"
-                + f"base_asset_reserves={base_asset_reserves}, "
-                + f"token_asset_reserves={token_asset_reserves}, "
-                + f"scaling_factor={scaling_factor}, "
-                + f"spot_price_from_apy={spot_price}, "
-                + f"total_supply={total_liquidity:,.0f}({total_liquidity*market_price:,.0f} USD), "
-                + f"apy={actual_apy}"
-            )
-        return (base_asset_reserves, token_asset_reserves, total_liquidity)
-
-
+# TODO: Update the docstring comments
+#
+# FIXME: Consider giving these error messages a special signature so they aren't
+#        identical to the error messages for the other pricing models.
 class ElementPricingModel(PricingModel):
     """
     Element v1 pricing model
 
-    Does not use the Yield Bearing Vault `init_share_price` (u) and `share_price` (c) variables.
+    Does not use the Yield Bearing Vault `init_share_price` (mu) and `share_price` (c) variables.
     """
 
+    # FIXME: This should have v1 in the name
     def model_name(self):
         return "Element"
 
+    # FIXME: Add assertions on the inputs and outputs
+    #
+    # FIXME: Improve the documentation of this function.
+    #
+    # FIXME: Do we need to add virtual reserve accounting to this function?
     def calc_in_given_out(
         self,
         out,
-        in_reserves,
-        out_reserves,
+        base_reserves,
+        bond_reserves,
         token_in,
         fee_percent,
         time_remaining,
         init_share_price=1,
         share_price=1,
     ):
+        r"""
+        Calculates the amount of an asset that must be provided to receive a
+        specified amount of the other asset given the current AMM reserves.
+
+        The input is calculated as:
+
+        .. math::
+            in' =
+            \begin{cases}
+            (\frac{k - (2y + x - \Delta y)^{1-t}})^{\frac{1}{1-t}} - x, &\text{ if } token\_in = \text{"base"} \\
+            (k - (x - \Delta x)^{1 - t})^{\frac{1}{1 - t}} - (2y + x), &\text{ if } token\_in = \text{"pt"}
+            \end{cases} \\
+            f = 
+            \begin{cases}
+            (\Delta y - in') \cdot \phi, &\text{ if } token\_in = \text{"base"} \\
+            (in' - \Delta x) \cdot \phi, &\text{ if } token\_in = \text{"pt"}
+            \end{cases} \\
+            in = in' + f
+
+        Arguments
+        ---------
+        out : float
+            The amount of tokens that the user wants to receive. When the user
+            wants to pay in bonds, this value should be an amount of base tokens
+            rather than an amount of shares.
+        base_reserves : float
+            The reserves of base in the pool.
+        bond_reserves : float
+            The reserves of bonds in the pool.
+        token_in : str
+            The token that the user pays. The only valid values are "base" and
+            "pt".
+        fee_percent : float
+            The percentage of the difference between the amount paid without
+            slippage and the amount received that will be added to the input
+            as a fee.
+        time_remaining : float
+            The time remaining for the asset (incorporates time stretch).
+        init_share_price : float
+            The share price when the pool was initialized. NOTE: For this 
+            pricing model, the initial share price must always be one.
+        share_price : float
+            The current share price. NOTE: For this pricing model, the share 
+            price must always be one.
+
+        Returns
+        -------
+        float
+            The amount the user pays without fees or slippage. The units
+            are always in terms of bonds or base.
+        float
+            The amount the user pays with fees and slippage. The units are
+            always in terms of bonds or base.
+        float
+            The amount the user pays with slippage and no fees. The units are
+            always in terms of bonds or base.
+        float
+            The fee the user pays. The units are always in terms of bonds or
+            base.
+        """
+
+        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert (
+            base_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected base_reserves > 0, not {base_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            share_price == init_share_price == 1
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1, not share_price={share_price} and init_share_price={init_share_price}!"
+
         time_elapsed = 1 - time_remaining
-        # TODO: Fix k calculation for element v1
-        k = 1  # self._calc_k_const(in_reserves, out_reserves, time_elapsed)  # in_reserves**(1 - t) + out_reserves**(1 - t)
-        without_fee = (k - (out_reserves - out) ** time_elapsed) ** (1 / time_elapsed) - in_reserves
+        bond_reserves_ = 2 * bond_reserves + base_reserves
+        spot_price = price_utils.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining)
+        # We precompute the YieldSpace constant k using the current reserves and
+        # share price:
+        #
+        # k = x**(1 - t) + (2y + x)**(1 - t)
+        k = price_utils.calc_k_const(base_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        # Solve for the amount of token that must be paid to receive the
+        # specified amount of the output token.
         if token_in == "base":
-            fee = fee_percent * (out - without_fee)
-        elif token_in == "fyt":
+            d_bonds = out
+            # The amount the user pays without fees or slippage is the amount of
+            # bonds the user would receive times the spot price of base in terms
+            # of bonds. If we let p be the conventional spot price, then we can
+            # write this as:
+            #
+            # without_fee_or_slippage = p * d_y
+            without_fee_or_slippage = spot_price * d_bonds
+            # We solve the YieldSpace invariant for the base required to
+            # purchase the requested amount of bonds. We set up the invariant
+            # where the user pays d_x base and receives d_y bonds:
+            #
+            # (x + d_x')**(1 - t) + (2y + x - d_y)**(1 - t) = k
+            #
+            # Solving for d_x' gives us the amount of base the user must pay
+            # without including fees:
+            #
+            # d_x' = (k - (2y + x - d_y)**(1 - t))**(1 / (1 - t)) - x
+            #
+            # without_fee = d_x'
+            without_fee = (k - (bond_reserves_ - d_bonds) ** time_elapsed) ** (1 / time_elapsed) - base_reserves
+            # The fees are calculated as the difference between the bonds
+            # received and the base paid without fees times the fee percentage.
+            # This can also be expressed as:
+            #
+            # fee = phi * (d_y - d_x')
+            fee = fee_percent * (d_bonds - without_fee)
+        elif token_in == "pt":
+            # The amount the user pays without fees or slippage is the amount of
+            # bonds the user would receive times the inverse of the spot price
+            # of base in terms of bonds. If we let p be the conventional spot
+            # price, then we can write this as:
+            #
+            # without_fee_or_slippage = (1 / p) * d_x
+            without_fee_or_slippage = (1 / spot_price) * out
+            # We solve the YieldSpace invariant for the bonds required to
+            # purchase the requested amount of bbase. We set up the invariant
+            # where the user pays d_x base and receives d_y bonds:
+            #
+            # (x - d_x)**(1 - t) + (2y + x + d_y')**(1 - t) = k
+            #
+            # Solving for d_y' gives us the amount of base the user must pay
+            # without including fees:
+            #
+            # d_y' = (k - (x - d_x)**(1 - t))**(1 / (1 - t)) - (2y + x)
+            #
+            # without_fee = d_y'
+            without_fee = (k - (base_reserves - out) ** time_elapsed) ** (1 / time_elapsed) - bond_reserves_
+            # The fees are calculated as the difference between the bonds
+            # paid without fees and the base received times the fee percentage.
+            # This can also be expressed as:
+            #
+            # fee = phi * (d_y' - d_x)
             fee = fee_percent * (without_fee - out)
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+            )
+        # To get the amount paid with fees, add the fee to the calculation that
+        # excluded fees. Adding the fees results in more tokens paid, which
+        # indicates that the fees are working correctly.
         with_fee = without_fee + fee
-        without_fee_or_slippage = out * (in_reserves / out_reserves) ** time_remaining
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
+    # FIXME: Add assertions on the inputs and outputs
+    #
+    # FIXME: Improve the documentation of this function.
     def calc_out_given_in(
         self,
         in_,
@@ -390,68 +275,24 @@ class ElementPricingModel(PricingModel):
             fee = fee_percent * (without_fee - in_)
         with_fee = without_fee - fee
         without_fee_or_slippage = in_ / (in_reserves / out_reserves) ** time_remaining
+
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check with_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, without_fee = with_fee + fee
+        # so it is a positive float if with_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            with_fee, float
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
+        assert (
+            with_fee >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
+
         return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    def calc_base_asset_reserves(
-        self,
-        apy_decimal,
-        token_asset_reserves,
-        days_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
-        return super().calc_base_asset_reserves(apy_decimal, token_asset_reserves, days_remaining, time_stretch, 1, 1)
-
-    def calc_spot_price_from_reserves(
-        self,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-        time_remaining,
-        init_share_price=1,
-        share_price=1,
-    ):
-        return super().calc_spot_price_from_reserves(
-            base_asset_reserves,
-            token_asset_reserves,
-            total_supply,
-            time_remaining,
-            1,
-            1,
-        )
-
-    def calc_apy_from_reserves(
-        self,
-        base_asset_reserves,
-        token_asset_reserves,
-        total_supply,
-        time_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
-        return super().calc_apy_from_reserves(
-            base_asset_reserves,
-            token_asset_reserves,
-            total_supply,
-            time_remaining,
-            time_stretch,
-            1,
-            1,
-        )
-
-    def calc_liquidity(
-        self,
-        target_liquidity_usd,
-        market_price,
-        apy,
-        days_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
-        return super().calc_liquidity(target_liquidity_usd, market_price, apy, days_remaining, time_stretch, 1, 1)
 
 
 class HyperdrivePricingModel(PricingModel):
@@ -743,7 +584,7 @@ class HyperdrivePricingModel(PricingModel):
         # share price:
         #
         # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = self._calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_in == "base":  # calc shares in for pt out
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
