@@ -1,9 +1,10 @@
 # TODO:
 #
 # 1. [ ] Remove any hanging FIXMEs
-# 2. [ ] Review the comments in this file to ensure that the documentation is
+# 2. [ ] Add appropriate assertions in every function.
+# 3. [ ] Review the comments in this file to ensure that the documentation is
 #        clear about the intent.
-# 3. [ ] Use latex in the comments to typeset the derivations.
+# 4. [ ] Use latex in the comments to typeset the derivations.
 from . import time as time_utils
 
 ### Reserves ###
@@ -42,10 +43,6 @@ def calc_base_asset_reserves(
     scaled_apy_decimal = apr_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
     denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
     result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
-    # FIXME: Do we really need this?
-    #
-    # if self.verbose:
-    #     print(f"PricingModel.calc_base_asset_reserves:\nbase_asset_reserves: {result}")
     return result
 
 
@@ -89,27 +86,6 @@ def calc_liquidity(
     total_liquidity = calc_total_liquidity_from_reserves_and_price(
         base_asset_reserves, token_asset_reserves, spot_price
     )
-    # FIXME: Do we really need this?
-    #
-    # if self.verbose:
-    #     actual_apy = calc_apy_from_reserves(
-    #         base_asset_reserves,
-    #         token_asset_reserves,
-    #         base_asset_reserves + token_asset_reserves,
-    #         self.days_to_time_remaining(days_remaining, time_stretch),
-    #         time_stretch,
-    #         init_share_price,
-    #         share_price,
-    #     )
-    #     print(
-    #         "PricingModel.calc_liquidity: \n"
-    #         + f"base_asset_reserves={base_asset_reserves}, "
-    #         + f"token_asset_reserves={token_asset_reserves}, "
-    #         + f"scaling_factor={scaling_factor}, "
-    #         + f"spot_price_from_apy={spot_price}, "
-    #         + f"total_supply={total_liquidity:,.0f}({total_liquidity*market_price:,.0f} USD), "
-    #         + f"apy={actual_apy}"
-    #     )
     return (base_asset_reserves, token_asset_reserves, total_liquidity)
 
 
@@ -130,48 +106,6 @@ def calc_apr_from_spot_price(price, normalized_days_remaining):
 def calc_spot_price_from_apr(apr_decimal, normalized_days_remaining):
     """Returns the current spot price based on the current APY (decimal) and the remaining pool duration"""
     return 1 / (1 + apr_decimal * normalized_days_remaining)  # price = 1 / (1 + r * t)
-
-
-def calc_apr_from_reserves(
-    share_reserves,
-    bond_reserves,
-    time_remaining,
-    time_stretch,
-    init_share_price=1,
-    share_price=1,
-):
-    """
-    Returns the apr given reserve amounts
-    """
-    spot_price = calc_spot_price_from_reserves(
-        share_reserves,
-        bond_reserves,
-        time_remaining,
-        init_share_price,
-        share_price,
-    )
-    days_remaining = time_utils.time_to_days_remaining(time_remaining, time_stretch)
-    apy = calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
-    return apy
-
-
-# FIXME: This should be updated for the HyperdrivePricingModel when we change the
-#        virtual share accounting.
-#
-# FIXME: Considering that there are different valid ways to calculate the price,
-#        it may be preferable to keep this in the pricing model classes.
-def calc_spot_price_from_reserves(
-    share_reserves,
-    bond_reserves,
-    time_remaining,
-    init_share_price=1,
-    share_price=1,
-):
-    """Returns the spot price given the current supply and temporal position along the yield curve"""
-    bond_reserves_ = 2 * bond_reserves + share_price * share_reserves
-    inverse_price = (bond_reserves_ / (init_share_price * share_reserves)) ** time_remaining
-    spot_price = 1 / inverse_price
-    return spot_price
 
 
 ### YieldSpace ###

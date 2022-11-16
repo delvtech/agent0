@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import unittest
 import numpy as np
 
-from elfpy.utils.time import stretch_time
+from elfpy.utils import time as time_utils
 from elfpy.pricing_models import HyperdrivePricingModel
 
 
@@ -30,6 +30,7 @@ class TestCaseCalcInGivenOutSuccess:
     init_share_price: float
 
     __test__ = False  # pytest: don't test this class
+
 
 @dataclass
 class TestCaseCalcInGivenOutFailure:
@@ -730,8 +731,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
         test_cases = base_in_test_cases + pt_in_test_cases
         # test_cases = [pt_in_test_cases[6]]
         for (test_case, expected) in test_cases:
-            time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-            time_remaining = stretch_time(pricing_model.days_to_time_remaining(test_case.days_remaining), time_stretch)
+            time_stretch = time_utils.calc_time_stretch(test_case.time_stretch_apy)
+            time_remaining = time_utils.stretch_time(
+                time_utils.days_to_time_remaining(test_case.days_remaining), time_stretch
+            )
 
             # Ensure we get the expected results from the pricing model.
             (without_fee_or_slippage, with_fee, without_fee, fee) = pricing_model.calc_in_given_out(
@@ -1601,8 +1604,10 @@ class TestHyperdrivePricingModel(unittest.TestCase):
             test_case,
             expected,
         ) in test_cases:
-            time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-            time_remaining = stretch_time(pricing_model.days_to_time_remaining(test_case.days_remaining), time_stretch)
+            time_stretch = time_utils.calc_time_stretch(test_case.time_stretch_apy)
+            time_remaining = time_utils.stretch_time(
+                time_utils.days_to_time_remaining(test_case.days_remaining), time_stretch
+            )
 
             # Ensure we get the expected results from the pricing model.
             (without_fee_or_slippage, with_fee, without_fee, fee) = pricing_model.calc_out_given_in(

@@ -66,6 +66,65 @@ class PricingModel:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
+    def calc_spot_price_from_reserves(
+        self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining
+    ):
+        r"""
+        Calculates the spot price of base in terms of bonds.
+
+        The spot price is defined as:
+
+        .. math::
+            \begin{align}
+            p = (\frac{2y + cz}{\mu z})^{-\tau}
+            \end{align}
+
+        Arguments
+        ---------
+        share_reserves : float
+            The reserves of shares in the pool.
+        bond_reserves : float
+            The reserves of bonds in the pool.
+        init_share_price : float
+            The share price when the pool was initialized.
+        share_price : float
+            The current share price.
+        time_remaining : float
+            The time remaining for the asset (incorporates time stretch).
+
+        Returns
+        -------
+        float
+            The spot price of principal tokens.
+        """
+        total_reserves = share_price * share_reserves + bond_reserves
+        bond_reserves_ = bond_reserves + total_reserves
+        return 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
+
+    def calc_apr_from_reserves(
+        self,
+        share_reserves,
+        bond_reserves,
+        time_remaining,
+        time_stretch,
+        init_share_price=1,
+        share_price=1,
+    ):
+        # TODO: Update this comment so that it matches the style of the other comments.
+        """
+        Returns the apr given reserve amounts
+        """
+        spot_price = self.calc_spot_price_from_reserves(
+            share_reserves,
+            bond_reserves,
+            time_remaining,
+            init_share_price,
+            share_price,
+        )
+        days_remaining = time_utils.time_to_days_remaining(time_remaining, time_stretch)
+        apy = price_utils.calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
+        return apy
+
 
 class ElementPricingModel(PricingModel):
     """
@@ -97,8 +156,8 @@ class ElementPricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            (\frac{k - (2y + x - \Delta y)^{1-t}})^{\frac{1}{1-t}} - x, &\text{ if } token\_in = \text{"base"} \\
-            (k - (x - \Delta x)^{1 - t})^{\frac{1}{1 - t}} - (2y + x), &\text{ if } token\_in = \text{"pt"}
+            (\frac{k - (2y + x - \Delta y)^{1 - \tau}})^{\frac{1}{1 - \tau}} - x, &\text{ if } token\_in = \text{"base"} \\
+            (k - (x - \Delta x)^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + x), &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
@@ -168,11 +227,11 @@ class ElementPricingModel(PricingModel):
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + base_reserves
-        spot_price = price_utils.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining)
+        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining, 1, 1)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = x**(1 - t) + (2y + x)**(1 - t)
+        # k = x**(1 - τ) + (2y + x)**(1 - τ)
         k = price_utils.calc_k_const(base_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         # Solve for the amount that must be paid to receive the specified amount
         # of the output.
@@ -290,8 +349,8 @@ class ElementPricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            (x - (k - (2y + x + \Delta y)^{1 - t})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
-            2y + x - (k - (x + \Delta x)^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            (x - (k - (2y + x + \Delta y)^{1 - \tau})^{\frac{1}{1 - \tau}}), &\text{ if } token\_out = \text{"base"} \\
+            2y + x - (k - (x + \Delta x)^{1 - \tau})^{\frac{1}{1 - \tau}}, &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
@@ -359,11 +418,11 @@ class ElementPricingModel(PricingModel):
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + base_reserves
-        spot_price = price_utils.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining)
+        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining, 1, 1)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = x**(1 - t) + (2y + x)**(1 - t)
+        # k = x**(1 - τ) + (2y + x)**(1 - τ)
         k = price_utils.calc_k_const(base_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         # Solve for the amount that received if the specified amount is paid.
         if token_out == "base":
@@ -675,13 +734,13 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z), &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}} - z), &\text{ if } token\_in = \text{"base"} \\
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
+            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
+            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
             in = in' + f
 
@@ -741,44 +800,47 @@ class HyperdrivePricingModel(PricingModel):
             share_price >= init_share_price >= 1
         ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
 
-        # TODO: Break this function up to use private class functions
-        # pylint: disable=too-many-locals
         time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price_from_reserves(
+            share_reserves,
+            bond_reserves,
+            init_share_price,
+            share_price,
+            time_remaining,
+        )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
+        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
-        if token_in == "base":  # calc shares in for pt out
+        if token_in == "base":
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             d_bonds = out
-            # The amount the user would pay without fees or slippage is simply
+            # The amount the user pays without fees or slippage is simply
             # the amount of bonds the user would receive times the spot price of
-            # base in terms of bonds (this is the inverse of the usual spot
-            # price). If we let p be the conventional spot price, then we can
-            # write this as:
+            # base in terms of bonds. If we let p be the conventional spot price,
+            # then we can write this as:
             #
-            # (1 / p) * d_y
-            without_fee_or_slippage = d_bonds * (1 / spot_price)
-            # Solve the YieldSpace invariant for the base required to purchase
-            # the requested amount of bonds.
+            # without_fee_or_slippage = p * d_y
+            without_fee_or_slippage = spot_price * d_bonds
+            # We solve the YieldSpace invariant for the base paid for the
+            # requested amount of bonds. We set up the invariant where the user
+            # pays d_z' shares and receives d_y bonds:
             #
-            # We set up the invariant where the user pays d_z shares and
-            # receives d_y bonds:
+            # (c / μ) * (μ * (z + d_z'))**(1 - t) + (2y + cz - d_y)**(1 - t) = k
             #
-            # (c / mu) * (mu * (z + d_z))**(1 - t) + (2y + cz - d_y)**(1 - t) = k
-            #
-            # Solving for d_z gives us the amount of shares the user must pay
+            # Solving for d_z' gives us the amount of shares the user pays
             # without including fees:
             #
-            # d_z = (1 / mu) * ((k - (2y + cz - d_y)**(1 - t)) / (c / mu))**(1 / (1 - t)) - z
+            # d_z' = (1 / μ) * ((k - (2y + cz - d_y)**(1 - t)) / (c / μ))**(1 / (1 - t)) - z
             #
-            # We really want to know the value of d_x, the amount of base the
-            # user pays. This is simply c * d_x
+            # We really want to know the value of d_x', the amount of base the
+            # user pays. This is given by d_x' = c * d_z'.
+            #
+            # without_fee = d_x'
             without_fee = (
                 (1 / init_share_price)
                 * pow(
@@ -791,34 +853,33 @@ class HyperdrivePricingModel(PricingModel):
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
             #
-            # (1 - (1 / p)) * phi * d_y
-            fee = (1 - (1 / spot_price)) * fee_percent * d_bonds
+            # fee = (1 - p) * φ * d_y
+            fee = (1 - spot_price) * fee_percent * d_bonds
         elif token_in == "pt":
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
             d_shares = out / share_price
-            # The amount the user would pay without fees or slippage is simply
-            # the amount of base the user would receive times the spot price of
-            # bonds in terms of base (this is the conventional spot price).
-            # The amount of base the user receives is given by c * d_z where
-            # d_z is the number of shares the pool will need to unwrap to give
-            # the user their base. If we let p be the conventional spot price,
-            # then we can write this as:
+            # The amount the user pays without fees or slippage is simply the
+            # amount of base the user would receive times the inverse of the
+            # spot price of base in terms of bonds. The amount of base the user
+            # receives is given by c * d_z where d_z is the number of shares the
+            # pool will need to unwrap to give the user their base. If we let p
+            # be the conventional spot price, then we can write this as:
             #
-            # p * c * d_z
-            without_fee_or_slippage = spot_price * share_price * d_shares
-            # Solve the YieldSpace invariant for the bonds required to purchase
-            # the requested amount of base.
+            # without_fee_or_slippage = (1 / p) * c * d_z
+            without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
+            # We solve the YieldSpace invariant for the bonds paid to receive
+            # the requested amount of base. We set up the invariant where the
+            # user pays d_y' bonds and receives d_z shares:
             #
-            # We set up the invariant where the user pays d_y bonds and
-            # receives d_z shares:
+            # (c / μ) * (μ * (z - d_z))**(1 - τ) + (2y + cz + d_y')**(1 - τ) = k
             #
-            # (c / mu) * (mu * (z - d_z))**(1 - t) + (2y + cz + d_y)**(1 - t) = k
-            #
-            # Solving for d_y gives us the amount of bonds the user must pay
+            # Solving for d_y' gives us the amount of bonds the user must pay
             # without including fees:
             #
-            # d_y = (k - (c / mu) * (mu * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
+            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - τ))**(1 / (1 - τ)) - (2y + cz)
+            #
+            # without_fee = d_y'
             without_fee = (
                 pow(
                     k - scale * pow((init_share_price * (out_reserves - d_shares)), time_elapsed),
@@ -830,8 +891,8 @@ class HyperdrivePricingModel(PricingModel):
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
             #
-            # (p - 1) * phi * c * d_z
-            fee = (spot_price - 1) * fee_percent * share_price * d_shares
+            # fee = ((1 / p) - 1) * φ * c * d_z
+            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
                 f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
@@ -893,13 +954,13 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}}), &\text{ if } token\_out = \text{"base"} \\
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}}, &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
+            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             out = out' + f
 
@@ -958,44 +1019,43 @@ class HyperdrivePricingModel(PricingModel):
             share_price >= init_share_price >= 1
         ), f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
 
-        # TODO: Break this function up to use private class functions
-        # pylint: disable=too-many-locals
         scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price_from_reserves(
+            share_reserves, bond_reserves, init_share_price, share_price, time_remaining
+        )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / mu) * (mu * z)**(1 - t) + (2y + cz)**(1 - t)
+        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_out == "base":
             d_bonds = in_
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
-            # The amount the user would receive without fees or slippage is
-            # the amount of bonds the user pays times the spot price of
-            # base in terms of bonds (this is the inverse of the conventional
-            # spot price). If we let p be the conventional spot price, then we
-            # can write this as:
+            # The amount the user would receive without fees or slippage is the
+            # amount of bonds the user pays times the spot price of base in
+            # terms of bonds. If we let p be the conventional spot price, then
+            # we can write this as:
             #
-            # (1 / p) * d_y
-            without_fee_or_slippage = (1 / spot_price) * d_bonds
-            # Solve the YieldSpace invariant for the base received from selling
-            # the specified amount of bonds.
+            # p * d_y
+            without_fee_or_slippage = spot_price * d_bonds
+            # We solve the YieldSpace invariant for the base received from
+            # selling the specified amount of bonds. We set up the invariant
+            # where the user pays d_y bonds and receives d_z' shares:
             #
-            # We set up the invariant where the user pays d_y bonds and
-            # receives d_z shares:
+            # (c / μ) * (μ * (z - d_z'))**(1 - τ) + (2y + cz + d_y)**(1 - τ) = k
             #
-            # (c / mu) * (mu * (z - d_z))**(1 - t) + (2y + cz + d_y)**(1 - t) = k
+            # Solving for d_z' gives us the amount of shares the user receives
+            # without fees:
             #
-            # Solving for d_z gives us the amount of shares the user receives
-            # without including fees:
+            # d_z' = z - (1 / μ) * ((k - (2y + cz + d_y)**(1 - τ)) / (c / μ))**(1 / (1 - τ))
             #
-            # d_z = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - t)) / (c / mu))**(1 / (1 - t))
+            # We really want to know the value of d_x', the amount of base the
+            # user receives without fees. This is given by d_x' = c * d_z'.
             #
-            # We really want to know the value of d_x, the amount of base the
-            # user receives. This is simply c * d_x
+            # without_fee = d_x'
             without_fee = (
                 share_reserves
                 - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
@@ -1004,33 +1064,30 @@ class HyperdrivePricingModel(PricingModel):
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
             #
-            # (1 - (1 / p) * phi * d_y
-            fee = (1 - (1 / spot_price)) * fee_percent * d_bonds
+            # fee = (1 - p) * φ * d_y
+            fee = (1 - spot_price) * fee_percent * d_bonds
             with_fee = without_fee - fee
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             # The amount the user would receive without fees or slippage is
-            # the amount of base the user pays times the spot price of
-            # base in terms of bonds (this is the conventional spot price). If
-            # we let p be the conventional spot price, then we can write this
-            # as:
+            # the amount of base the user pays times inverse of the spot price
+            # of base in terms of bonds. If we let p be the conventional spot
+            # price, then we can write this as:
             #
-            # p * c * d_z
-            without_fee_or_slippage = spot_price * share_price * d_shares
-            # Solve the YieldSpace invariant for the base received from selling
-            # the specified amount of bonds.
+            # (1 / p) * c * d_z
+            without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
+            # We solve the YieldSpace invariant for the bonds received from
+            # paying the specified amount of base. We set up the invariant where
+            # the user pays d_z shares and receives d_y' bonds:
             #
-            # We set up the invariant where the user pays d_y bonds and
-            # receives d_z shares:
+            # (c / μ) * (μ * (z + d_z))**(1 - τ) + (2y + cz - d_y')**(1 - τ) = k
             #
-            # (c / mu) * (mu * (z + d_z))**(1 - t) + (2y + cz - d_y)**(1 - t) = k
-            #
-            # Solving for d_y gives us the amount of bonds the user receives
+            # Solving for d_y' gives us the amount of bonds the user receives
             # without including fees:
             #
-            # d_y = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - t))**(1 / (1 - t))
+            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - τ))**(1 / (1 - τ))
             without_fee = out_reserves - pow(
                 k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
             )
@@ -1038,8 +1095,8 @@ class HyperdrivePricingModel(PricingModel):
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
             #
-            # (p - 1) * phi * c * d_z
-            fee = (spot_price - 1) * fee_percent * share_price * d_shares
+            # ((1 / p) - 1) * φ * c * d_z
+            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
                 f'pricing_models.calc_out_given_in: ERROR: expected token_out == "base" or token_out == "pt", not {token_out}!'
@@ -1077,36 +1134,3 @@ class HyperdrivePricingModel(PricingModel):
         ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)
-
-    def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
-        r"""
-        Calculates the spot price of a principal token in terms of the base asset.
-
-        The spot price is defined as:
-
-        .. math::
-            \begin{align}
-            p = (\frac{2y + cz}{\mu z})^{t}
-            \end{align}
-
-        Arguments
-        ---------
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds in the pool.
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
-        time_remaining : float
-            The time remaining for the asset (incorporates time stretch).
-
-        Returns
-        -------
-        float
-            The spot price of principal tokens.
-        """
-        total_reserves = share_price * share_reserves + bond_reserves
-        bond_reserves_ = bond_reserves + total_reserves
-        return pow((bond_reserves_) / (init_share_price * share_reserves), time_remaining)
