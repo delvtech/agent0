@@ -35,7 +35,7 @@ class BaseTradeTest(unittest.TestCase):
             "max_vault_apy": 0.9,  # as a decimal
             "base_asset_price": 1,  # aka market price
             "pool_duration": 180,  # in days
-            "num_trading_days": 180,  # should be <= pool_duration
+            "num_trading_days": 180,  # how long to simulate for
             "floor_fee": 0,  # minimum fee percentage (bps)
             "tokens": ["base", "pt"],
             "trade_direction": "out",
@@ -46,7 +46,7 @@ class BaseTradeTest(unittest.TestCase):
             "verbose": True,
             "user_policies": [policy],  # list of user policies by name
             "token_duration": 90 / 365,  # 3 month term; time unit is yearfrac
-            "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
+            "num_blocks_per_day": 1,  # 1 block a day keeps the MEV away!
         }
 
         simulator = YieldSimulator(**config)
@@ -62,10 +62,13 @@ class BaseTradeTest(unittest.TestCase):
         simulator.run_simulation(override_dict)
 
 
-class SingleLongTradeTest(BaseTradeTest):
+class SingleTradeTests(BaseTradeTest):
     """Tests for the SingeLong policy"""
 
-    def test_base_user(self):
+    def test_single_long(self):
         """Tests the BaseUser class"""
         self.run_base_trade_test("single_long")
+
+    def test_single_short(self):
+        """Tests the BaseUser class"""
         self.run_base_trade_test("single_short")

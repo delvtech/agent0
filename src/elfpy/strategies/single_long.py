@@ -9,9 +9,6 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, budget=1000, verbose=False):
         """call basic policy init then add custom stuff"""
-        # self.position_list = []
-        # self.has_opened_long = []
-        # self.can_open_long = []
         super().__init__(market=market, rng=rng, verbose=verbose, budget=budget)
         self.amount_to_trade = 100
         self.status_update()
