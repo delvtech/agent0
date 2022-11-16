@@ -1829,7 +1829,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                     share_price=2,
                     init_share_price=1.5,
                 ),
-                "pricing_models.calc_in_given_out: ERROR: with_fee should be a float, not <class 'complex'>!",
+                "pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not <class 'complex'>!",
             ),
         ]
 

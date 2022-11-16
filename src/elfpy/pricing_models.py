@@ -848,16 +848,16 @@ class HyperdrivePricingModel(PricingModel):
         # hitting negative reals.
         #
         # Ensure that the outputs are all non-negative floats. We only need to
-        # check with_fee since without_fee_or_slippage will always be a positive
-        # float due to the constraints on the inputs, without_fee = with_fee + fee
-        # so it is a positive float if with_fee and fee are positive floats, and
+        # check without_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, with_fee = without_fee + fee
+        # so it is a positive float if without_fee and fee are positive floats, and
         # fee is a positive float due to the constraints on the inputs.
         assert isinstance(
-            with_fee, float
-        ), f"pricing_models.calc_in_given_out: ERROR: with_fee should be a float, not {type(with_fee)}!"
+            without_fee, float
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
         assert (
-            with_fee >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: with_fee should be non-negative, not {with_fee}!"
+            without_fee >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
