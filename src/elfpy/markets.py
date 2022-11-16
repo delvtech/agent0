@@ -238,7 +238,7 @@ class Market:
             market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
         elif user_action["action_type"] == "close_long":  # sell to close long
             trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unkonwn base
+            trade_details["token_out"] = "base"  # sell known PT for unknown base
             market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
         elif user_action["action_type"] == "open_short":  # sell PT to open short
             trade_details["direction"] = "out"  # calcOutGivenIn
@@ -249,16 +249,19 @@ class Market:
             trade_details["token_in"] = "base"  # buy known PT for unknown base
             market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
         elif user_action["action_type"] == "add_liquidity":  # 
-            # pricing_model.add_liquidity returns new market deltas
-            # market updates the "liquidity pool" data class, which stores each LP wallet address & how much they added per trade
-            # liquidity pool is owned by the market and should store fees & pool share by user
-            # this can also store the *_in_protocol values instead of user wallets.
+            # pricing model computes new market deltas
+            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
+            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
+            market_deltas, wallet_deltas = self.pricing_model.add_liquidity(trade_details)
             pass
         elif user_action["action_type"] == "remove_liquidity":  # 
             # market figures out how much the user has contributed (calcualtes their fee weighting)
             # market resolves fees, adds this to the trade_details
             # pricing model computes new market deltas
-            # market updates the liquidity pool with the new transaction
+            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
+            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
+            # TODO: implement fee attribution and withdrawal
+            market_deltas, wallet_deltas = self.pricing_model.remove_liquidity(trade_details)
             pass
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
