@@ -17,10 +17,10 @@ class Policy(BasicPolicy):
         action_list = []
         amount_to_trade = 100
         mint_times = list(self.wallet["token_in_wallet"].keys())
-        has_opened_long = len(mint_times) > 0
+        has_opened_long = True if any([x > 0 for x in list(self.wallet['token_in_wallet'].values())]) else False
         can_open_long = self.get_max_long() >= amount_to_trade
         if has_opened_long:
-            mint_time = mint_times[0]
+            mint_time = mint_times[-1]
             enough_time_has_passed = self.market.time - mint_time > 0.25
             if enough_time_has_passed:
                 action_list.append(["close_long", amount_to_trade, mint_time])

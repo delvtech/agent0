@@ -65,4 +65,4 @@ class SingleLongTradeTest(BaseTradeTest):
     def test_base_user(self):
         """Tests the BaseUser class"""
         self.run_base_trade_test("single_long")
-        #self.run_base_trade_test("single_short")
+        self.run_base_trade_test("single_short")

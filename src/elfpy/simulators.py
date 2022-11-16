@@ -324,7 +324,12 @@ class YieldSimulator:
                         action_result = self.market.swap(user_action)
                         # Update user state
                         user.update_wallet(action_result)
-                        print(f"t={self.market.time}\n action: {user_action}\n result: {action_result}\n")
+                        if self.verbose:
+                            print(
+                                f"t={self.market.time}"+
+                                f" reserves=[x={self.market.share_reserves},y={self.market.bond_reserves}]\n"+
+                                f" action: {user_action}\n result: {action_result}\n"
+                            )
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         # if self.verbose:

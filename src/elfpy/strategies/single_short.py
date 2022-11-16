@@ -22,7 +22,7 @@ class Policy(BasicPolicy):
         amount_to_trade = 100
         action_list = []
         mint_times = list(self.wallet["base_in_protocol"].keys())
-        has_opened_short = len(mint_times) > 0
+        has_opened_short = True if any([x < 0 for x in list(self.wallet['token_in_wallet'].values())]) else False
         if has_opened_short:
             mint_time = mint_times[0]
             enough_time_has_passed = self.market.time - mint_time > 0.25
