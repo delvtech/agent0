@@ -658,6 +658,22 @@ class HyperdrivePricingModel(PricingModel):
         init_share_price,
         share_price,
     ):
+        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            share_price >= init_share_price >= 1
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -809,7 +825,9 @@ class HyperdrivePricingModel(PricingModel):
             # (p - 1) * phi * c * d_z
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
         else:
-            raise Exception('"token_in" must be "base" or "pt"')
+            raise AssertionError(
+                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+            )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
@@ -824,6 +842,23 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
+
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check without_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, with_fee = without_fee + fee
+        # so it is a positive float if without_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            without_fee, float
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
+        assert (
+            without_fee >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
+
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_out_given_in(

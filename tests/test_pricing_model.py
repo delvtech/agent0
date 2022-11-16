@@ -16,7 +16,7 @@ from elfpy.pricing_models import HyperdrivePricingModel
 
 
 @dataclass
-class TestCaseCalcInGivenOut:
+class TestCaseCalcInGivenOutSuccess:
     """Dataclass for calc_in_given_out test cases"""
 
     out: float
@@ -26,6 +26,21 @@ class TestCaseCalcInGivenOut:
     fee_percent: float
     days_remaining: float
     time_stretch_apy: float
+    share_price: float
+    init_share_price: float
+
+    __test__ = False  # pytest: don't test this class
+
+@dataclass
+class TestCaseCalcInGivenOutFailure:
+    """Dataclass for calc_in_given_out test cases"""
+
+    out: float
+    share_reserves: float
+    bond_reserves: float
+    token_in: str
+    fee_percent: float
+    time_remaining: float
     share_price: float
     init_share_price: float
 
@@ -126,7 +141,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
         #    3 mo remaining
         base_in_test_cases = [
             (  ## test one, basic starting point
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=100,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -162,7 +177,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test one
             (  ## test two, double the fee
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=100,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -198,7 +213,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test two
             (  ## test three, 10k out
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=10_000,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -234,7 +249,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test three
             (  ## test four, 80k out
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=80_000,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -270,7 +285,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test four
             (  ## test five, change share price
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -307,7 +322,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -344,7 +359,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test six
             (  ## test seven, halve the days remaining
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -381,7 +396,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test seven
             (  ## test eight, halve the APY
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -420,7 +435,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
         ]
         pt_in_test_cases = [
             (  ## test one, basic starting point
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=100,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -456,7 +471,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test one
             (  ## test two, double the fee
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=100,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -492,7 +507,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test two
             (  ## test three, 10k out
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=10_000,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -528,7 +543,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test three
             (  ## test four, 80k out
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=80_000,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -564,7 +579,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test four
             (  ## test five, change share price
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=100_000,  # PT reserves
@@ -601,7 +616,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -638,7 +653,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test six
             (  ## test seven, halve the days remaining
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -675,7 +690,7 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 ),
             ),  # end of test seven
             (  ## test eight, halve the APY
-                TestCaseCalcInGivenOut(
+                TestCaseCalcInGivenOutSuccess(
                     out=200,  # how many tokens you expect to get
                     share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                     bond_reserves=1_000_000,  # PT reserves
@@ -1601,6 +1616,237 @@ class TestHyperdrivePricingModel(unittest.TestCase):
                 test_case.share_price,
             )
             expected.compare_trade_results(TradeResult(without_fee_or_slippage, with_fee, without_fee, fee))
+
+    def test_calc_in_given_out_failure(self):
+        """Failure tests for calc_in_given_out"""
+        pricing_model = HyperdrivePricingModel(False)
+
+        # Failure test cases.
+        test_cases = [
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=-1,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected out > 0, not -1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=0,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected out > 0, not 0!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=-1,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not -1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not 0!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=-1,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not -1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=0,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not 0!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=-1,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not -1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=1.1,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not 1.1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=-1,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not -1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=1,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not 1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=1.1,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not 1.1!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=0,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price=2 and init_share_price=0!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=1,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price=1 and init_share_price=1.5!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="base",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price=0 and init_share_price=1.5!",
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=100,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="fyt",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not fyt!',
+            ),
+            (
+                TestCaseCalcInGivenOutFailure(
+                    out=10_000_000,
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    token_in="pt",
+                    fee_percent=0.01,
+                    time_remaining=0.25,
+                    share_price=2,
+                    init_share_price=1.5,
+                ),
+                "pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not <class 'complex'>!",
+            ),
+        ]
+
+        # Iterate over all of the test cases and verify that the pricing model
+        # raises the expected AssertionError for each test case.
+        for (test_case, expected_error_message) in test_cases:
+            with self.assertRaisesRegex(AssertionError, expected_error_message):
+                pricing_model.calc_in_given_out(
+                    test_case.out,
+                    test_case.share_reserves,
+                    test_case.bond_reserves,
+                    test_case.token_in,
+                    test_case.fee_percent,
+                    test_case.time_remaining,
+                    test_case.init_share_price,
+                    test_case.share_price,
+                )
 
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
