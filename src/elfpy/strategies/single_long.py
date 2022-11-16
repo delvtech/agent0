@@ -23,9 +23,11 @@ class Policy(BasicPolicy):
         mint_times = list(self.wallet["token_in_wallet"].keys())
         if self.has_opened_long:
             mint_time = mint_times[-1]
-            enough_time_has_passed = self.market.time - mint_time > 0.5
+            enough_time_has_passed = self.market.time - mint_time > 0.25
             if enough_time_has_passed:
-                action_list.append(["close_long", sum(self.position_list)*self.market.spot_price*0.995, mint_time])
+                action_list.append(["close_long",
+                sum(self.position_list)/(self.market.spot_price*0.99), # assume 1% slippage
+                mint_time])
         elif (not self.has_opened_long) and self.can_open_long:
             action_list.append(["open_long", self.amount_to_trade])
         return action_list

@@ -187,7 +187,7 @@ class Market:
                 init_share_price=self.init_share_price,
                 share_price=self.share_price,
                 time_remaining=time_utils.stretch_time(
-                    self.token_duration/365, self.time_stretch_constant
+                    self.token_duration, self.time_stretch_constant
                 )
             )
         else:
