@@ -5,6 +5,7 @@ TODO: rewrite all functions to have typed inputs
 """
 
 import numpy as np
+import elfpy.utils.time as time_utils
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -163,6 +164,7 @@ class Market:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
         self.update_market(market_deltas)
+        self.update_spot_price()
         # TODO: self.update_LP_pool(wallet_deltas["fees"])
         return wallet_deltas
 
@@ -175,3 +177,18 @@ class Market:
     def tick(self, delta_time):
         """Increments the time member variable"""
         self.time += delta_time
+
+    def update_spot_price(self):
+        """Update the spot price"""
+        if self.pricing_model.model_name() == "Hyperdrive":
+            self.spot_price = self.pricing_model._calc_spot_price(
+                share_reserves=self.share_reserves,
+                bond_reserves=self.bond_reserves,
+                init_share_price=self.init_share_price,
+                share_price=self.share_price,
+                time_remaining=time_utils.stretch_time(
+                    self.token_duration, self.time_stretch_constant
+                )
+            )
+        else:
+            self.spot_price = np.nan

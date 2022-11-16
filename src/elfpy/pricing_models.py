@@ -1040,17 +1040,17 @@ class HyperdrivePricingModel(PricingModel):
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
-        if self.verbose:
-            print(
-                f"pricing_models.calc_out_given_in:"
-                f"\n\tin_ = {in_}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"
-                f"\n\ttotal_reserves = {total_reserves}\n\tinit_share_price = {init_share_price}"
-                f"\n\tshare_price = {share_price}\n\tscale = {scale}\n\tfee_percent = {fee_percent}"
-                f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
-                f"\n\tin_reserves = {in_reserves}\n\tout_reserves = {out_reserves}\n\ttoken_out = {token_out}"
-                f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
-                f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
-            )
+        # TODO: add back in with proper logging
+        # print(
+        #     f"pricing_models.calc_out_given_in:"
+        #     f"\n\tin_ = {in_}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"
+        #     f"\n\ttotal_reserves = {total_reserves}\n\tinit_share_price = {init_share_price}"
+        #     f"\n\tshare_price = {share_price}\n\tscale = {scale}\n\tfee_percent = {fee_percent}"
+        #     f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
+        #     f"\n\tin_reserves = {in_reserves}\n\tout_reserves = {out_reserves}\n\ttoken_out = {token_out}"
+        #     f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
+        #     f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
+        # )
 
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
