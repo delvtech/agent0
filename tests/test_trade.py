@@ -15,7 +15,7 @@ from elfpy.simulators import YieldSimulator
 class BaseTradeTest(unittest.TestCase):
     """Generic Trade Test class"""
 
-    def run_base_trade_test(self, policy):
+    def run_base_trade_test(self, policy, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         # load default config
         random_seed = 3
@@ -56,6 +56,9 @@ class BaseTradeTest(unittest.TestCase):
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,
         }
+        if additional_overrides:
+            for key, value in additional_overrides.items():
+                override_dict[key] = value
         simulator.run_simulation(override_dict)
 
 

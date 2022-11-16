@@ -6,6 +6,7 @@ TODO: rewrite all functions to have typed inputs
 """
 
 from importlib import import_module
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -13,7 +14,7 @@ from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
 import elfpy.utils.time as time_utils
-
+from elfpy.utils.bcolors import bcolors
 
 class YieldSimulator:
     """
@@ -256,8 +257,10 @@ class YieldSimulator:
         self.user_list = []
         for policy_name in self.user_policies:
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
-                self.market, self.rng, self.verbose
+                market=self.market, rng=self.rng, verbose=self.verbose
             )
+            if self.verbose:
+                print(user_with_policy.status_report())
             self.user_list.append(user_with_policy)
 
     def step_size(self):
@@ -295,6 +298,7 @@ class YieldSimulator:
                 f"\ninit_time_stretch = {self.market.time_stretch_constant}"
                 "\n-----\n"
             )
+        last_user_action_time = 0
         for day in range(0, self.num_trading_days):
             self.day = day
             # Vault return can vary per day, which sets the current price per share
@@ -322,16 +326,18 @@ class YieldSimulator:
                             time_remaining, self.market.time_stretch_constant
                         )
                         action_result = self.market.swap(user_action)
-                        # Update user state
-                        user.update_wallet(action_result)
                         if self.verbose:
                             print(
-                                f"t={self.market.time}"+
-                                f" reserves=[x={self.market.share_reserves},y={self.market.bond_reserves}]\n"+
-                                f" action: {user_action}\n result: {action_result}\n"
+                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                                f" action: {user_action}\n result: {action_result}"
                             )
+                        # Update user state
+                        user.update_wallet(action_result)
                         self.update_analysis_dict()
                         self.run_trade_number += 1
+                        last_user_action_time = self.market.time
                         # if self.verbose:
                             # print(
                             #     "YieldSimulator.run_simulation:"
@@ -345,6 +351,31 @@ class YieldSimulator:
                             #     f"\n\tamount = {self.trade_amount}"
                             #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
                             # )
+                if (self.market.time - last_user_action_time > 0.1) and (self.market.time - last_user_action_time) % 0.5 < 1/365/self.num_blocks_per_day/2:
+                    print(
+                        f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                        f" no user action 😴"+
+                        f" user report = {self.user_list[0].status_report()}"
+                    )
+                if (day == self.num_trading_days - 1 and daily_block_number == self.num_blocks_per_day - 1):
+                    price = 1/self.market.spot_price
+                    base = self.user_list[0].wallet['base_in_wallet']
+                    tokens = sum(self.user_list[0].position_list)
+                    worth = base + tokens * price
+                    PnL = worth - self.user_list[0].budget
+                    spend = self.user_list[0].update_spend() / self.market.time
+                    HPR = PnL / spend
+                    APR = HPR / self.market.time
+                    print(
+                        f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                        f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from {base} base and {tokens} tokens at p={price}\n"+
+                        f" over {self.market.time} years that\'s an APR of {bcolors.OKGREEN}{APR:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
+                    )
+
                 self.market.tick(self.step_size())
                 self.block_number += 1
         self.run_number += 1
@@ -414,4 +445,4 @@ class YieldSimulator:
             self.analysis_dict["fee"].append(self.fee * self.base_asset_price)
             slippage = (self.without_fee_or_slippage - self.without_fee) * self.base_asset_price
             self.analysis_dict["slippage"].append(slippage)
-        # self.analysis_dict["spot_price"].append(self.market.spot_price())
+        self.analysis_dict["spot_price"].append(self.market.spot_price)

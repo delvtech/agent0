@@ -9,10 +9,9 @@ import numpy as np
 
 
 import elfpy.utils.time as time_utils
+from elfpy.utils.bcolors import bcolors
 
 # from elfpy.utils.parse_json import parse_trade
-
-
 class User:
     """
     Implements abstract classes that control user behavior
@@ -20,7 +19,7 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, verbose=False, budget=0):
+    def __init__(self, market, rng, budget=0, verbose=False):
         """
         Set up initial conditions
         """
@@ -35,6 +34,8 @@ class User:
         }
         self.rng = rng
         self.verbose = verbose
+        self.last_update_spend = 0
+        self.weighted_average_spend = 0
 
     def action(self):
         """Specify action from the policy"""
@@ -103,11 +104,20 @@ class User:
         #    )
         return action_list_dict
 
+    def update_spend(self):
+        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
+        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        self.weighted_average_spend += new_spend
+        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}")
+        self.last_update_spend = self.market.time
+        return self.weighted_average_spend
+
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
         for key, value in trade_result.items():
             if value is not None:
                 if key == "base_in_wallet":
+                    self.update_spend()
                     self.wallet[key] += value
                 elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                     mint_time = value[0]
@@ -120,3 +130,19 @@ class User:
                     pass
                 else:
                     raise ValueError(f"key={key} is not allowed.")
+        wallet_string = ""
+        # for account_dict in self.wallet.values():
+        #     for mint_time, amount in account_dict.items():
+        #         wallet_string += f"{mint_time}: {amount} "
+        for key, value in self.wallet.items():
+            if isinstance(value, dict):
+                total_amount = sum(value.values())
+                if total_amount != 0:
+                    color = bcolors.OKGREEN if sum(value.values()) > 0 else bcolors.WARNING
+                    wallet_string += f" {key} = ₡{color}{sum(value.values())}{bcolors.ENDC}"
+            elif isinstance(value, (int, float)):
+                if value != 0:
+                    color = bcolors.OKGREEN if value > 0 else bcolors.WARNING
+                    wallet_string += f" {key} = ₡{color}{value}{bcolors.ENDC}"
+        # wallet_string = ", ".join([f"{key}=₡{sum(value.values()):,.2f}" for key, value in self.wallet.items()])
+        print(f" hello, human. this 🤖 now has{wallet_string} of your puny currencies")
