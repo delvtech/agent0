@@ -20,38 +20,12 @@ class BaseTradeTest(unittest.TestCase):
         # load default config
         random_seed = 3
         simulator_rng = np.random.default_rng(random_seed)
-        config = {
-            "min_fee": 0.1,  # decimal that assigns fee_percent
-            "max_fee": 0.5,  # decimal that assigns fee_percent
-            "min_target_liquidity": 1e6,  # in USD
-            "max_target_liquidity": 10e6,  # in USD
-            "min_target_volume": 0.001,  # fraction of pool liquidity
-            "max_target_volume": 0.01,  # fration of pool liquidity
-            "min_pool_apy": 0.02,  # as a decimal
-            "max_pool_apy": 0.9,  # as a decimal
-            "min_vault_age": 0,  # fraction of a year
-            "max_vault_age": 1,  # fraction of a year
-            "min_vault_apy": 0.001,  # as a decimal
-            "max_vault_apy": 0.9,  # as a decimal
-            "base_asset_price": 1,  # aka market price
-            "pool_duration": 180,  # in days
-            "num_trading_days": 180,  # how long to simulate for
-            "floor_fee": 0,  # minimum fee percentage (bps)
-            "tokens": ["base", "pt"],
-            "trade_direction": "out",
-            "precision": None,
-            "pricing_model_name": "HyperDrive",
-            "user_type": "Random",
-            "rng": simulator_rng,
-            "verbose": True,
-            "user_policies": [policy],  # list of user policies by name
-            "token_duration": 90 / 365,  # 3 month term; time unit is yearfrac
-            "num_blocks_per_day": 1,  # 1 block a day keeps the MEV away!
-        }
-
-        simulator = YieldSimulator(**config)
+        config_file = "./config/simulation_config.toml"
+        simulator = YieldSimulator(config_file)
+        simulator.reset_rng(simulator_rng)
         simulator.set_random_variables()
         override_dict = {
+            "pricing_model_name": "HyperDrive",
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,
