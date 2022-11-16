@@ -130,19 +130,18 @@ class User:
                     pass
                 else:
                     raise ValueError(f"key={key} is not allowed.")
-        wallet_string = ""
-        # for account_dict in self.wallet.values():
-        #     for mint_time, amount in account_dict.items():
-        #         wallet_string += f"{mint_time}: {amount} "
-        for key, value in self.wallet.items():
-            if isinstance(value, dict):
-                total_amount = sum(value.values())
-                if total_amount != 0:
-                    color = bcolors.OKGREEN if sum(value.values()) > 0 else bcolors.WARNING
-                    wallet_string += f" {key} = ₡{color}{sum(value.values())}{bcolors.ENDC}"
-            elif isinstance(value, (int, float)):
-                if value != 0:
-                    color = bcolors.OKGREEN if value > 0 else bcolors.WARNING
-                    wallet_string += f" {key} = ₡{color}{value}{bcolors.ENDC}"
-        # wallet_string = ", ".join([f"{key}=₡{sum(value.values()):,.2f}" for key, value in self.wallet.items()])
-        print(f" hello, human. this 🤖 now has{wallet_string} of your puny currencies")
+        # TODO: convert to proper logging
+        if self.verbose:
+            wallet_string = ""
+            for key, value in self.wallet.items():
+                if isinstance(value, dict):
+                    total_amount = sum(value.values())
+                    if total_amount != 0:
+                        color = bcolors.OKGREEN if sum(value.values()) > 0 else bcolors.WARNING
+                        wallet_string += f" {key} = ₡{color}{sum(value.values())}{bcolors.ENDC}"
+                elif isinstance(value, (int, float)):
+                    if value != 0:
+                        color = bcolors.OKGREEN if value > 0 else bcolors.WARNING
+                        wallet_string += f" {key} = ₡{color}{value}{bcolors.ENDC}"
+            # wallet_string = ", ".join([f"{key}=₡{sum(value.values()):,.2f}" for key, value in self.wallet.items()])
+            print(f" hello, human. this 🤖 now has{wallet_string} of your puny currencies")

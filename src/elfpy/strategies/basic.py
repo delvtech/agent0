@@ -14,10 +14,6 @@ class BasicPolicy(User):
     most basic policy setup
     """
 
-    def __init__(self, market, rng, budget=1000, verbose=False):
-        """call basic policy init then add custom stuff"""
-        super().__init__(market=market, rng=rng, budget=budget, verbose=verbose)
-
     def action(self):
         """specify action"""
         action_list = []
