@@ -298,6 +298,7 @@ class YieldSimulator:
                 f"\ninit_time_stretch = {self.market.time_stretch_constant}"
                 "\n-----\n"
             )
+        # TODO: convert "last_user_action_time" to proper logging (used for debug only, not part of simulation output)
         last_user_action_time = 0
         for day in range(0, self.num_trading_days):
             self.day = day
@@ -351,7 +352,8 @@ class YieldSimulator:
                             #     f"\n\tamount = {self.trade_amount}"
                             #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
                             # )
-                if (self.market.time - last_user_action_time > 0.1) and (self.market.time - last_user_action_time) % 0.5 < 1/365/self.num_blocks_per_day/2:
+                # TODO: convert to proper logging
+                if self.verbose and (self.market.time - last_user_action_time > 0.1) and (self.market.time - last_user_action_time) % 0.5 < 1/365/self.num_blocks_per_day/2:
                     print(
                         f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
                         f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+

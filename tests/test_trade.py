@@ -57,8 +57,7 @@ class BaseTradeTest(unittest.TestCase):
             "init_pool_apy": 0.05,
         }
         if additional_overrides:
-            for key, value in additional_overrides.items():
-                override_dict[key] = value
+            override_dict.update(additional_overrides)
         simulator.run_simulation(override_dict)
 
 
