@@ -26,7 +26,6 @@ class BaseTradeTest(unittest.TestCase):
         simulator.set_random_variables()
         override_dict = {
             "pricing_model_name": "HyperDrive",
-            "user_policy_list": [policy],
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,

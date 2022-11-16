@@ -7,7 +7,6 @@ TODO: rewrite all functions to have typed inputs
 
 
 from importlib import import_module
-from dataclasses import dataclass
 
 
 import numpy as np
