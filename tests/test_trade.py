@@ -30,7 +30,7 @@ class BaseTradeTest(unittest.TestCase):
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,
-            "user_policies": [policy]
+            "user_policies": [policy],
         }
         if additional_overrides:
             override_dict.update(additional_overrides)

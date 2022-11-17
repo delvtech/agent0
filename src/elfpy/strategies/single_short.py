@@ -25,16 +25,11 @@ class Policy(BasicPolicy):
                     self.UserAction(
                         action_type="close_short",
                         trade_amount=self.wallet["token_in_wallet"][mint_time],
-                        mint_time=mint_time
+                        mint_time=mint_time,
                     )
                 )
         elif (not self.has_opened_short) and self.can_open_short:
-            action_list.append(
-                self.UserAction(
-                    action_type="open_short",
-                    trade_amount=self.amount_to_trade
-                )
-            )
+            action_list.append(self.UserAction(action_type="open_short", trade_amount=self.amount_to_trade))
         return action_list
 
     def status_update(self):

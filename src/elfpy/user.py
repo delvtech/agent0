@@ -39,28 +39,35 @@ class User:
     @dataclass
     class UserWallet:
         """user wallet store"""
+
         # pylint: disable=missing-function-docstring
         base_in_wallet: float = 0
         token_in_wallet: dict = field(default_factory=dict)
         base_in_protocol: dict = field(default_factory=dict)
         token_in_protocol: dict = field(default_factory=dict)
+
         def __getitem__(self, key):
             return getattr(self, key)
+
         def __setitem__(self, key, value):
             setattr(self, key, value)
+
         def update(self, *args, **kwargs):
             return self.__dict__.update(*args, **kwargs)
+
         def keys(self):
             return self.__dict__.keys()
+
         def values(self):
             return self.__dict__.values()
+
         def items(self):
             return self.__dict__.items()
-
 
     @dataclass
     class UserAction:
         """user action specification"""
+
         action_type: str
         trade_amount: float
         mint_time: float = field(default=None)
@@ -109,7 +116,7 @@ class User:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action()  # get the action list from the policy
-        for action in action_list: # edit each action in place
+        for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time
             if action.action_type == "close_short":
@@ -127,32 +134,32 @@ class User:
 
     def update_spend(self):
         """Update the amount to spend"""
-        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet.base_in_wallet}")
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet.base_in_wallet)
         self.weighted_average_spend += new_spend
-        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet.base_in_wallet}")
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
         for key, value in trade_result.items():
-            if value is not None:
-                if key == "base_in_wallet":
-                    self.update_spend()
-                    self.wallet[key] += value
-                elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
-                    mint_time = value[0]
-                    delta_token = value[1]
-                    if mint_time in self.wallet[key]:
-                        self.wallet[key][mint_time] += delta_token
-                    else:
-                        self.wallet[key].update({mint_time: delta_token})
-                elif key == "fee":
-                    pass
+            if value is None:
+                pass
+            if key == "base_in_wallet":
+                self.update_spend()
+                self.wallet[key] += value
+            elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
+                mint_time = value[0]
+                delta_token = value[1]
+                if mint_time in self.wallet[key]:
+                    self.wallet[key][mint_time] += delta_token
                 else:
-                    raise ValueError(f"key={key} is not allowed.")
+                    self.wallet[key].update({mint_time: delta_token})
+            elif key == "fee":
+                pass
+            else:
+                raise ValueError(f"key={key} is not allowed.")
         # TODO: convert to proper logging
+        # TODO: This verbose section upsets the linter bc it creates too many branches
         if self.verbose:
             wallet_string = ""
             for key, value in self.wallet.items():

@@ -31,6 +31,7 @@ class TestCaseCalcInGivenOutSuccess:
 
     __test__ = False  # pytest: don't test this class
 
+
 @dataclass
 class TestCaseCalcInGivenOutFailure:
     """Dataclass for calc_in_given_out test cases"""

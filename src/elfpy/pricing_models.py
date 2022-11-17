@@ -204,9 +204,10 @@ class PricingModel:
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
         """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
-        assert (
-            price > 0
-        ), f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
+        assert price > 0, (
+            f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price:"
+            f" Price argument should be greater than zero, not {price}"
+        )
         assert (
             normalized_days_remaining > 0
         ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
@@ -669,10 +670,12 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z), &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z),
+            &\text{ if } token\_in = \text{"base"} \\
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz),
+            &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
@@ -731,15 +734,17 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_in_given_out: ERROR:"
+            f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
+            f" and init_share_price={init_share_price}!"
+        )
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -827,7 +832,8 @@ class HyperdrivePricingModel(PricingModel):
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+                f"pricing_models.calc_in_given_out: ERROR: "
+                f'expected token_in == "base" or token_in == "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -886,8 +892,10 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}),
+            &\text{ if } token\_out = \text{"base"} \\
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}},
+            &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
@@ -947,15 +955,16 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, "
+            f"not share_price={share_price} and init_share_price={init_share_price}!"
+        )
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -1070,7 +1079,7 @@ class HyperdrivePricingModel(PricingModel):
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
+    def calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
         r"""
         Calculates the spot price of a principal token in terms of the base asset.
 

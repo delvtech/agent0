@@ -26,16 +26,11 @@ class Policy(BasicPolicy):
                     self.UserAction(
                         action_type="close_long",
                         trade_amount=sum(self.position_list) / (self.market.spot_price * 0.99),  # assume 1% slippage
-                        mint_time=mint_time
+                        mint_time=mint_time,
                     )
                 )
         elif (not self.has_opened_long) and self.can_open_long:
-            action_list.append(
-                self.UserAction(
-                    action_type="open_long",
-                    trade_amount=self.amount_to_trade
-                )
-            )
+            action_list.append(self.UserAction(action_type="open_long", trade_amount=self.amount_to_trade))
         return action_list
 
     def status_update(self):

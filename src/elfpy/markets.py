@@ -4,8 +4,6 @@ Market simulators store state information when interfacing AMM pricing models wi
 TODO: rewrite all functions to have typed inputs
 """
 
-import copy
-
 import numpy as np
 import elfpy.utils.time as time_utils
 
@@ -58,6 +56,7 @@ class Market:
         self.cum_base_asset_slippage = 0
         self.cum_token_asset_fees = 0
         self.cum_base_asset_fees = 0
+        self.spot_price = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
@@ -182,14 +181,12 @@ class Market:
     def update_spot_price(self):
         """Update the spot price"""
         if self.pricing_model.model_name() == "Hyperdrive":
-            self.spot_price = self.pricing_model._calc_spot_price(
+            self.spot_price = self.pricing_model.calc_spot_price(
                 share_reserves=self.share_reserves,
                 bond_reserves=self.bond_reserves,
                 init_share_price=self.init_share_price,
                 share_price=self.share_price,
-                time_remaining=time_utils.stretch_time(
-                    self.token_duration, self.time_stretch_constant
-                )
+                time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
             )
         else:
             self.spot_price = np.nan
