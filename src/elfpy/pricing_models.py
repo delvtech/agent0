@@ -293,7 +293,7 @@ class ElementPricingModel(PricingModel):
             fee = fee_percent * (without_fee - d_base)
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -474,7 +474,7 @@ class ElementPricingModel(PricingModel):
             # d_y' = 2y + x - (k - (x + d_x)**(1 - t))**(1 / (1 - t))
             #
             # without_fee = d_x'
-            without_fee = base_reserves - (k - (bond_reserves_ + d_base) ** time_elapsed) ** (1 / time_elapsed)
+            without_fee = bond_reserves_ - (k - (base_reserves + d_base) ** time_elapsed) ** (1 / time_elapsed)
             # The fees are calculated as the difference between the bonds paid
             # and the base received without fees times the fee percentage. This
             # can also be expressed as:
@@ -483,7 +483,7 @@ class ElementPricingModel(PricingModel):
             fee = fee_percent * (without_fee - d_base)
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_out == "base" or token_in == "pt", not {token_out}!'
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
             )
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
@@ -712,7 +712,7 @@ class HyperdrivePricingModel(PricingModel):
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -915,7 +915,7 @@ class HyperdrivePricingModel(PricingModel):
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected token_out == "base" or token_out == "pt", not {token_out}!'
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
             )
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
