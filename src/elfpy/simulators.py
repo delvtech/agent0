@@ -19,6 +19,7 @@ from elfpy.utils.parse_config import parse_simulation_config
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
+
 class YieldSimulator:
     """
     Stores environment variables & market simulation outputs for AMM experimentation
