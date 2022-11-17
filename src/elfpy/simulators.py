@@ -290,10 +290,10 @@ class YieldSimulator:
                     for user_action in action_list:
                         # Conduct trade & update state
                         time_remaining = time_utils.get_yearfrac_remaining(
-                            self.market.time, user_action["mint_time"], self.market.token_duration
+                            self.market.time, user_action.mint_time, self.market.token_duration
                         )
-                        user_action["time_remaining"] = time_remaining
-                        user_action["stretched_time_remaining"] = time_utils.stretch_time(
+                        user_action.time_remaining = time_remaining
+                        user_action.stretched_time_remaining = time_utils.stretch_time(
                             time_remaining, self.market.time_stretch_constant
                         )
                         action_result = self.market.swap(user_action)
