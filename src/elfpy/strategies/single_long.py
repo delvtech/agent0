@@ -14,7 +14,7 @@ class Policy(BasicPolicy):
         self.status_update()
 
     def action(self):
-        """specify action"""
+        """Specify action"""
         self.status_update()
         action_list = []
         mint_times = list(self.wallet["token_in_wallet"].keys())
