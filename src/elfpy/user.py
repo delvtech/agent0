@@ -6,12 +6,13 @@ TODO: rewrite all functions to have typed inputs
 
 
 import numpy as np
+from dataclasses import dataclass, field
 
 
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
-# from elfpy.utils.parse_json import parse_trade
+
 class User:
     """
     Implements abstract classes that control user behavior
@@ -36,6 +37,13 @@ class User:
         self.verbose = verbose
         self.last_update_spend = 0
         self.weighted_average_spend = 0
+
+    @dataclass
+    class UserAction:
+        """user action specification"""
+        action_type: str
+        trade_amount: float
+        mint_time: float = field(default=None)
 
     def action(self):
         """Specify action from the policy"""
@@ -81,19 +89,12 @@ class User:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action()  # get the action list from the policy
-        action_list_dict = []
-        for action in action_list:
-            action_dict = {}
-            action_dict["action_type"] = action[0]
-            action_dict["trade_amount"] = action[1]
-            if len(action) > 2:  # close, so mint_time is the time for the token we want to close
-                action_dict["mint_time"] = action[2]
-            else:  # open, so mint_time is assigned to current market time (fresh mint)
-                action_dict["mint_time"] = self.market.time
-            if action_dict["action_type"] == "close_short":
-                action_dict["token_in_protocol"] = self.wallet["token_in_protocol"][action_dict["mint_time"]]
-                action_dict["base_in_protocol"] = self.wallet["base_in_protocol"][action_dict["mint_time"]]
-            action_list_dict.append(action_dict)
+        for action in action_list: # edit each action in place
+            if action.mint_time is None:
+                action.mint_time = self.market.time
+            if action.action_type == "close_short":
+                action.token_in_protocol = self.wallet["token_in_protocol"][action.mint_time]
+                action.base_in_protocol = self.wallet["base_in_protocol"][action.mint_time]
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # if len(trade_action) > 0: # there is a trade
@@ -102,9 +103,10 @@ class User:
         #        f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
         #        f" token_in={token_in} token_out={token_out}"
         #    )
-        return action_list_dict
+        return action_list
 
     def update_spend(self):
+        """Update the amount to spend"""
         print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.weighted_average_spend += new_spend

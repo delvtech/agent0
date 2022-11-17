@@ -22,14 +22,19 @@ class Policy(BasicPolicy):
             enough_time_has_passed = self.market.time - mint_time > 0.25
             if enough_time_has_passed:
                 action_list.append(
-                    [
-                        "close_short",
-                        self.wallet["token_in_wallet"][mint_time],
-                        mint_time,
-                    ]
+                    self.UserAction(
+                        action_type="close_short",
+                        trade_amount=self.wallet["token_in_wallet"][mint_time],
+                        mint_time=mint_time
+                    )
                 )
         elif (not self.has_opened_short) and self.can_open_short:
-            action_list.append(["open_short", self.amount_to_trade])
+            action_list.append(
+                self.UserAction(
+                    action_type="open_short",
+                    trade_amount=self.amount_to_trade
+                )
+            )
         return action_list
 
     def status_update(self):

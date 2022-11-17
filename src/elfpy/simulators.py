@@ -323,7 +323,7 @@ class YieldSimulator:
                         f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
                         f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
                         f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                        f" no user action 😴"+
+                        " no user action 😴"+
                         f" user report = {self.user_list[0].status_report()}"
                     )
                 if (day == self.config.simulator.num_trading_days - 1 and daily_block_number == self.config.simulator.num_blocks_per_day - 1):

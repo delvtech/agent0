@@ -4,7 +4,12 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+
+from dataclasses import dataclass
+
+
 import elfpy.utils.time as time_utils
+
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -508,7 +513,7 @@ class HyperdrivePricingModel(PricingModel):
             "token_in_protocol": [trade_details["mint_time"], trade_details["trade_amount"]],
             "fee": [trade_details["mint_time"], fee],
         }
-        return market_deltas, wallet_deltas
+        return (market_deltas, wallet_deltas)
 
     def close_short(self, trade_details):
         """
