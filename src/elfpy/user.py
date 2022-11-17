@@ -36,6 +36,7 @@ class User:
         self.verbose = verbose
         self.last_update_spend = 0
         self.weighted_average_spend = 0
+        self.position_list = []
 
     @dataclass
     class UserWallet:
@@ -118,6 +119,13 @@ class User:
         action_list = self.action()  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
+                action.mint_time = self.market.time
+            if action.action_type == "close_short":
+                action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
+                action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]
+            if len(action) > 2:  # close, so mint_time is the time for the token we want to close
+                action.mint_time = action[2]
+            else:  # open, so mint_time is assigned to current market time (fresh mint)
                 action.mint_time = self.market.time
             if action.action_type == "close_short":
                 action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]

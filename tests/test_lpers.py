@@ -15,7 +15,7 @@ from elfpy.simulators import YieldSimulator
 class BaseLPTest(unittest.TestCase):
     """Generic Trade Test class"""
 
-    def run_base_lp_test(self, policy):
+    def run_base_lp_test(self, policy, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         # load default config
         random_seed = 3
@@ -46,7 +46,7 @@ class BaseLPTest(unittest.TestCase):
             "verbose": False,
             "user_policies": [policy],  # list of user policies by name
             "token_duration": 90 / 365,  # 3 month term; time unit is yearfrac
-            "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
+            "num_blocks_per_day": 1,  # 1 block a day keeps the MEV away!
         }
 
         simulator = YieldSimulator(**config)
@@ -56,6 +56,8 @@ class BaseLPTest(unittest.TestCase):
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,
         }
+        if additional_overrides:
+            override_dict.update(additional_overrides)
         simulator.run_simulation(override_dict)
 
 
@@ -64,7 +66,7 @@ class LPTests(BaseLPTest):
 
     def test_base_LPs(self):
         """Tests base LP setups"""
-        self.run_base_lp_test("simple_lp")
+        self.run_base_lp_test("simple_LP")
 
     # def test_comlicated_LPs(self):
         """Tests complicated LP setups"""

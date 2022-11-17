@@ -562,17 +562,18 @@ class HyperdrivePricingModel(PricingModel):
             "d_token_asset_orders": 0,
             "d_base_asset_volume": output_with_fee,
             "d_token_asset_volume": 0,
+            "share_price": trade_details["share_price"],
         }
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details["trade_amount"] - output_with_fee
-        wallet_deltas = {
+        user_deltas = {
             "base_in_wallet": -1 * max_loss,
             "base_in_protocol": [trade_details["mint_time"], max_loss],
             "token_in_wallet": None,
             "token_in_protocol": [trade_details["mint_time"], trade_details["trade_amount"]],
             "fee": [trade_details["mint_time"], fee],
         }
-        return market_deltas, wallet_deltas
+        return market_deltas, user_deltas
 
     def close_short(self, trade_details):
         """
@@ -603,67 +604,59 @@ class HyperdrivePricingModel(PricingModel):
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
             "d_token_asset_fee": 0,
-            "d_base_asset_orders": 1,
+            "d_base_asset_orders": 1, 
             "d_token_asset_orders": 0,
             "d_base_asset_volume": output_with_fee,
             "d_token_asset_volume": 0,
+            "share_price": trade_details["share_price"],
         }
         # TODO: Add logic:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
-        wallet_deltas = {
+        user_deltas = {
             "base_in_wallet": trade_details["token_in_protocol"] - output_with_fee,
             "base_in_protocol": [trade_details["mint_time"], -trade_details["base_in_protocol"]],
             "token_in_wallet": [trade_details["mint_time"], 0],
             "token_in_protocol": [trade_details["mint_time"], -trade_details["trade_amount"]],
             "fee": [trade_details["mint_time"], fee],
         }
-        return (market_deltas, wallet_deltas)
+        return market_deltas, user_deltas
 
-    def calc_lp_out_given_tokens_in(self, base_asset_in, base_reserves, token_reserves, buffer_base, initial_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
+    def calc_lp_out_given_tokens_in(self, base_asset_in, share_reserves, bond_reserves, share_buffer, init_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
         """
         Computes the amount of LP tokens to be minted for a given amount of base asset
         """
-        # convert following 3 values from base to shares
-        d_z = base_asset_in / share_price
-        share_reserves = base_reserves / share_price
-        buffer_shares = buffer_base / share_price
-        lp_out = d_z * liquidity_pool / (share_reserves - buffer_shares)
-        d_token = (share_reserves + d_z) / 2 * (initial_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - token_reserves
-        return lp_out, base_asset_in, d_token
+        d_share_reserves = base_asset_in / share_price
+        lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves
+        return lp_out, base_asset_in, d_token_reserves
 
-    def calc_lp_in_given_tokens_out(self, base_asset_out, base_reserves, token_reserves, buffer_base, initial_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
+    def calc_lp_in_given_tokens_out(self, base_asset_out, share_reserves, bond_reserves, share_buffer, init_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
         """
         Computes the amount of LP tokens to be minted for a given amount of base asset
         """
-        # convert following 3 values from base to shares
-        d_z = base_asset_out / share_price
-        share_reserves = base_reserves / share_price
-        buffer_shares = buffer_base / share_price
-        lp_in = d_z * liquidity_pool / (share_reserves - buffer_shares)
-        d_token = (share_reserves + d_z) / 2 * (initial_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - token_reserves
-        return lp_in, base_asset_out, d_token
+        d_share_reserves = base_asset_out / share_price
+        lp_in = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves
+        return -lp_in, -base_asset_out, -d_token_reserves
 
-    def calc_tokens_out_given_lp_in(self, lp_in, base_reserves, token_reserves, buffer_base, initial_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
-        # convert following 3 values from base to shares
-        d_z = base_reserves / share_price
-        share_reserves = base_reserves / share_price
-        buffer_shares = buffer_base / share_price
-        d_base = share_price * ( share_reserves - buffer_shares ) * lp_in / liquidity_pool
-        d_token = (share_reserves + d_z) / 2 * (initial_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - token_reserves
-        return lp_in, d_base, d_token
+    def calc_tokens_out_given_lp_in(self, lp_in, share_reserves, bond_reserves, share_buffer, init_share_price, share_price, liquidity_pool, rate, time_remaining, stretched_time_remaining):
+        d_base_reserves = share_price * ( share_reserves - share_buffer ) * lp_in / liquidity_pool
+        d_share_reserves = d_base_reserves / share_price
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves
+        return -lp_in, -d_base_reserves, -d_token_reserves
 
     def add_liquidity(self, trade_details):
         """
         Computes new deltas for bond & share reserves after liquidity is added
         """
-        lp_out,d_base,d_token = self.calc_lp_out_given_tokens_in(
+        lp_out, d_base_reserves, d_token_reserves = self.calc_lp_out_given_tokens_in(
             base_asset_in = trade_details["trade_amount"],
-            base_reserves = trade_details["base_reserves"],
-            token_reserves = trade_details["token_reserves"],
-            buffer_base = trade_details["buffer_base"],
-            initial_share_price = trade_details["initial_share_price"],
+            share_reserves = trade_details["share_reserves"],
+            bond_reserves = trade_details["bond_reserves"],
+            share_buffer = trade_details["share_buffer"],
+            init_share_price = trade_details["init_share_price"],
             share_price = trade_details["share_price"],
             liquidity_pool = trade_details["liquidity_pool"],
             rate = trade_details["rate"],
@@ -671,32 +664,32 @@ class HyperdrivePricingModel(PricingModel):
             stretched_time_remaining = trade_details["stretched_time_remaining"]
         )
         market_deltas = {
-            "d_base_asset": d_base,
-            "d_token_asset": d_token,
-            "d_lp": lp_out,
+            "d_base_asset": d_base_reserves,
+            "d_token_asset": d_token_reserves,
+            "d_share_buffer": 0,
+            "d_token_buffer": 0,
+            "d_liquidity_pool": lp_out,
+            "d_liquidity_pool_history": [trade_details["mint_time"], trade_details["trade_amount"]]
         }
-        wallet_deltas = {
-            # user perspective
-            "base_in_wallet": -d_base,
+        user_deltas = {
+            "base_in_wallet": d_base_reserves,
             "base_in_protocol": [trade_details["mint_time"], 0],
             "token_in_wallet": [trade_details["mint_time"], 0],
             "token_in_protocol": [trade_details["mint_time"], 0],
             "lp_in_wallet": lp_out,
-            # market perspective
-            "liquidity_pool": [trade_details["mint_time"], lp_out, trade_details["user_address"]],
         }
-        return market_deltas, wallet_deltas
+        return market_deltas, user_deltas
 
     def remove_liquidity(self, trade_details):
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
-        lp_out,d_base,d_token = self.calc_tokens_out_given_lp_in(
+        lp_in, d_base_reserves, d_token_reserves = self.calc_tokens_out_given_lp_in(
             lp_in = trade_details["trade_amount"],
-            base_reserves = trade_details["base_reserves"],
-            token_reserves = trade_details["token_reserves"],
-            buffer_base = trade_details["buffer_base"],
-            initial_share_price = trade_details["initial_share_price"],
+            share_reserves = trade_details["share_reserves"],
+            bond_reserves = trade_details["bond_reserves"],
+            share_buffer = trade_details["share_buffer"],
+            init_share_price = trade_details["init_share_price"],
             share_price = trade_details["share_price"],
             liquidity_pool = trade_details["liquidity_pool"],
             rate = trade_details["rate"],
@@ -704,21 +697,21 @@ class HyperdrivePricingModel(PricingModel):
             stretched_time_remaining = trade_details["stretched_time_remaining"]
         )
         market_deltas = {
-            "d_base_asset": d_base,
-            "d_token_asset": d_token,
-            "d_lp": lp_out,
+            "d_share_reserves": d_base_reserves,
+            "d_token_reserves": d_token_reserves,
+            "d_share_buffer": 0,
+            "d_token_buffer": 0,
+            "d_liquidity_pool": lp_in,
+            "d_liquidity_pool_history": [trade_details["mint_time"], trade_details["trade_amount"]]
         }
-        wallet_deltas = {
-            # user perspective
-            "base_in_wallet": -d_base,
+        user_deltas = {
+            "base_in_wallet": d_base_reserves,
             "base_in_protocol": [trade_details["mint_time"], 0],
             "token_in_wallet": [trade_details["mint_time"], 0],
             "token_in_protocol": [trade_details["mint_time"], 0],
-            "lp_in_wallet": lp_out,
-            # market perspective
-            "liquidity_pool": [trade_details["mint_time"], lp_out, trade_details["user_address"]],
+            "lp_in_wallet": lp_in,
         }
-        return market_deltas, wallet_deltas
+        return market_deltas, user_deltas
 
     def open_long(self, trade_details):
         """
@@ -756,14 +749,14 @@ class HyperdrivePricingModel(PricingModel):
             "d_base_asset_volume": 0,
             "d_token_asset_volume": output_with_fee,
         }
-        wallet_deltas = {
+        user_deltas = {
             "base_in_wallet": -trade_details["trade_amount"],
             "base_in_protocol": [trade_details["mint_time"], 0],
             "token_in_wallet": [trade_details["mint_time"], output_with_fee],
             "token_in_protocol": [trade_details["mint_time"], 0],
             "fee": [trade_details["mint_time"], fee],
         }
-        return market_deltas, wallet_deltas
+        return market_deltas, user_deltas
 
     def close_long(self, trade_details):
         """
@@ -801,14 +794,14 @@ class HyperdrivePricingModel(PricingModel):
             "d_base_asset_volume": output_with_fee,
             "d_token_asset_volume": 0,
         }
-        wallet_deltas = {
+        user_deltas = {
             "base_in_wallet": output_with_fee,
             "base_in_protocol": [trade_details["mint_time"], 0],
             "token_in_wallet": [trade_details["mint_time"], -1 * trade_details["trade_amount"]],
             "token_in_protocol": [trade_details["mint_time"], 0],
             "fee": [trade_details["mint_time"], fee],
         }
-        return market_deltas, wallet_deltas
+        return market_deltas, user_deltas
 
     def calc_in_given_out(
         self,

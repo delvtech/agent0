@@ -226,7 +226,7 @@ class YieldSimulator:
         self.user_list = []
         for policy_number, policy_name in enumerate(self.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
-                market=self.market, rng=self.rng, verbose=self.config.simulator.verbose
+                market=self.market, rng=self.rng, wallet_address=policy_number, verbose=self.verbose
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
@@ -283,7 +283,8 @@ class YieldSimulator:
                         user_action.stretched_time_remaining = time_utils.stretch_time(
                             user_action.time_remaining, self.market.time_stretch_constant
                         )
-                        action_result = self.market.swap(user_action)
+                        user_deltas = self.market.trade_and_update(user_action)
+                        user.update_wallet(user_deltas)  # update user state since market doesn't know about users
                         if self.config.simulator.verbose:
                             print(
                                 f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
@@ -291,8 +292,6 @@ class YieldSimulator:
                                 f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
                                 f" action: {user_action}\n result: {action_result}"
                             )
-                        # Update user state
-                        user.update_wallet(action_result)
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                 # TODO: convert to proper logging; @wakamex fix variable names

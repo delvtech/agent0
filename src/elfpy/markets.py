@@ -42,6 +42,10 @@ class Market:
         self.time = 0  # time in year fractions
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
+        self.share_buffer = 0
+        self.bond_buffer = 0
+        self.liquidity_pool = 0
+        self.liquidity_pool_history = []  # list trades by user and time, initialize as empty list to allow appending
         self.fee_percent = fee_percent  # g
         self.time_stretch_constant = time_stretch_constant
         self.init_share_price = init_share_price  # u normalizing constant
@@ -72,6 +76,8 @@ class Market:
         self.spot_price = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
+        self.rate = np.nan
+        self.update_spot_price_and_rate()
 
     def swap(self, user_action):
         """
@@ -203,34 +209,48 @@ class Market:
                 + state_string
             )
 
-    def update_market(self, market_deltas):
+    def update_market(self, market_deltas, trade_type):
         """
         Increments member variables to reflect current market conditions
         """
         for key, value in market_deltas.items():
-            assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-        self.share_reserves += market_deltas["d_base_asset"]
+            if key == "d_liquidity_pool_history":
+                assert isinstance(value, list), f"markets.updatE_market: Error:"\
+                + f" d_liquidity_pool_history has value={value} should be a list"
+            else:
+                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
+        self.share_reserves += market_deltas["d_base_asset"]/self.share_price
         self.bond_reserves += market_deltas["d_token_asset"]
-        self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
-        self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
-        self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
-        self.cum_token_asset_fees += market_deltas["d_token_asset_fee"]
-        self.base_asset_orders += market_deltas["d_base_asset_orders"]
-        self.token_asset_orders += market_deltas["d_token_asset_orders"]
-        self.base_asset_volume += market_deltas["d_base_asset_volume"]
-        self.token_asset_volume += market_deltas["d_token_asset_volume"]
-
-    def swap(self, user_action):
+        self.share_buffer += market_deltas["d_share_buffer"] if "d_share_buffer" in market_deltas else 0
+        self.bond_buffer += market_deltas["d_bond_buffer"] if "d_bond_buffer" in market_deltas else 0
+        if trade_type in ["add_liquidity", "remove_liquidity"]:
+            self.liquidity_pool += market_deltas["d_liquidity_pool"] if "d_liquidity_pool" in market_deltas else 0
+            self.liquidity_pool_history.append(market_deltas["d_liquidity_pool_history"])
+        else: #  it's a swap!
+            self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
+            self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
+            self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
+            self.cum_token_asset_fees += market_deltas["d_token_asset_fee"]
+            self.base_asset_orders += market_deltas["d_base_asset_orders"]
+            self.token_asset_orders += market_deltas["d_token_asset_orders"]
+            self.base_asset_volume += market_deltas["d_base_asset_volume"]
+            self.token_asset_volume += market_deltas["d_token_asset_volume"]
+    
+    def trade_and_update(self, user_action):
         """
-        Execute a trade in the simulated market.
+        Execute a swap in the simulated market.
         """
-        # assign general trade details, irrespective of trade type
         trade_details = user_action.copy()
         trade_details["fee_percent"] = self.fee_percent
         trade_details["init_share_price"] = self.init_share_price
+        trade_details["rate"] = self.rate
         trade_details["share_price"] = self.share_price
+        trade_details["init_share_price"] = self.init_share_price
         trade_details["share_reserves"] = self.share_reserves
         trade_details["bond_reserves"] = self.bond_reserves
+        trade_details["share_buffer"] = self.share_buffer
+        trade_details["bond_buffer"] = self.bond_buffer
+        trade_details["liquidity_pool"] = self.liquidity_pool
         # for each position, specify how to forumulate trade and then execute
         if user_action["action_type"] == "open_long":  # buy to open long
             trade_details["direction"] = "out"  # calcOutGivenIn
@@ -266,8 +286,8 @@ class Market:
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
-        self.update_market(market_deltas)
-        self.update_spot_price()
+        self.update_market(market_deltas, user_action["action_type"])
+        self.update_spot_price_and_rate()
         # TODO: self.update_LP_pool(wallet_deltas["fees"])
         return wallet_deltas
 
@@ -281,7 +301,7 @@ class Market:
         """Increments the time member variable"""
         self.time += delta_time
 
-    def update_spot_price(self):
+    def update_spot_price_and_rate(self):
         """Update the spot price"""
         self.spot_price = self.pricing_model.calc_spot_price_from_reserves(
             share_reserves=self.share_reserves,
@@ -290,6 +310,7 @@ class Market:
             share_price=self.share_price,
             time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
         )
+        self.rate = self.pricing_model.calc_apy_from_spot_price(self.spot_price, self.token_duration)
 
     def _open_short(self, trade_details):
         """
