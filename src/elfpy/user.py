@@ -5,8 +5,11 @@ TODO: rewrite all functions to have typed inputs
 """
 
 
+from dataclasses import dataclass
+from dataclasses import field
+
+
 import numpy as np
-from dataclasses import dataclass, field
 
 
 import elfpy.utils.time as time_utils
@@ -27,16 +30,33 @@ class User:
         self.market = market
         self.budget = budget
         assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
-        self.wallet = {
-            "base_in_wallet": self.budget,
-            "base_in_protocol": {},
-            "token_in_wallet": {},
-            "token_in_protocol": {},
-        }
+        self.wallet = self.UserWallet(base_in_wallet=self.budget)
         self.rng = rng
         self.verbose = verbose
         self.last_update_spend = 0
         self.weighted_average_spend = 0
+
+    @dataclass
+    class UserWallet:
+        """user wallet store"""
+        # pylint: disable=missing-function-docstring
+        base_in_wallet: float = 0
+        token_in_wallet: dict = field(default_factory=dict)
+        base_in_protocol: dict = field(default_factory=dict)
+        token_in_protocol: dict = field(default_factory=dict)
+        def __getitem__(self, key):
+            return getattr(self, key)
+        def __setitem__(self, key, value):
+            setattr(self, key, value)
+        def update(self, *args, **kwargs):
+            return self.__dict__.update(*args, **kwargs)
+        def keys(self):
+            return self.__dict__.keys()
+        def values(self):
+            return self.__dict__.values()
+        def items(self):
+            return self.__dict__.items()
+
 
     @dataclass
     class UserAction:
@@ -51,7 +71,7 @@ class User:
 
     def get_max_long(self):
         """Returns the amount of base that the user can spend."""
-        return np.minimum(self.wallet["base_in_wallet"], self.market.bond_reserves)
+        return np.minimum(self.wallet.base_in_wallet, self.market.bond_reserves)
 
     def get_max_short(self, mint_time, eps=1.0):
         """
@@ -64,7 +84,7 @@ class User:
         time_remaining = time_utils.get_yearfrac_remaining(self.market.time, mint_time, self.market.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
         output_with_fee = self.market.pricing_model.calc_out_given_in(
-            self.wallet["base_in_wallet"],
+            self.wallet.base_in_wallet,
             self.market.share_reserves,
             self.market.bond_reserves,
             "base",
@@ -73,7 +93,7 @@ class User:
             self.market.init_share_price,
             self.market.share_price,
         )[1]
-        max_short = self.wallet["base_in_wallet"] + output_with_fee - eps
+        max_short = self.wallet.base_in_wallet + output_with_fee - eps
         return max_short
 
     def get_trade(self):
@@ -93,8 +113,8 @@ class User:
             if action.mint_time is None:
                 action.mint_time = self.market.time
             if action.action_type == "close_short":
-                action.token_in_protocol = self.wallet["token_in_protocol"][action.mint_time]
-                action.base_in_protocol = self.wallet["base_in_protocol"][action.mint_time]
+                action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
+                action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # if len(trade_action) > 0: # there is a trade
@@ -107,10 +127,10 @@ class User:
 
     def update_spend(self):
         """Update the amount to spend"""
-        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
-        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet.base_in_wallet}")
+        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet.base_in_wallet)
         self.weighted_average_spend += new_spend
-        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}")
+        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet.base_in_wallet}")
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
