@@ -227,7 +227,7 @@ class ElementPricingModel(PricingModel):
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + base_reserves
-        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining, 1, 1)
+        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, 1, 1, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -418,7 +418,7 @@ class ElementPricingModel(PricingModel):
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + base_reserves
-        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, time_remaining, 1, 1)
+        spot_price = self.calc_spot_price_from_reserves(base_reserves, bond_reserves, 1, 1, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -520,7 +520,6 @@ class ElementPricingModel(PricingModel):
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
 
-# FIXME: Move these action functions into the market class.
 class HyperdrivePricingModel(PricingModel):
     """
     Hyperdrive Pricing Model
