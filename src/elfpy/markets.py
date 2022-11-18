@@ -56,6 +56,7 @@ class Market:
         self.cum_base_asset_slippage = 0
         self.cum_token_asset_fees = 0
         self.cum_base_asset_fees = 0
+        self.spot_price = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
@@ -137,29 +138,28 @@ class Market:
         Execute a trade in the simulated market.
         """
         # assign general trade details, irrespective of trade type
-        trade_details = user_action.copy()
-        trade_details["fee_percent"] = self.fee_percent
-        trade_details["init_share_price"] = self.init_share_price
-        trade_details["share_price"] = self.share_price
-        trade_details["share_reserves"] = self.share_reserves
-        trade_details["bond_reserves"] = self.bond_reserves
+        user_action.fee_percent = self.fee_percent
+        user_action.init_share_price = self.init_share_price
+        user_action.share_price = self.share_price
+        user_action.share_reserves = self.share_reserves
+        user_action.bond_reserves = self.bond_reserves
         # for each position, specify how to forumulate trade and then execute
-        if user_action["action_type"] == "open_long":  # buy to open long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "pt"  # buy unknown PT with known base
-            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
-        elif user_action["action_type"] == "close_long":  # sell to close long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unkonwn base
-            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
-        elif user_action["action_type"] == "open_short":  # sell PT to open short
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unknown base
-            market_deltas, wallet_deltas = self.pricing_model.open_short(trade_details)
-        elif user_action["action_type"] == "close_short":  # buy PT to close short
-            trade_details["direction"] = "in"  # calcInGivenOut
-            trade_details["token_in"] = "base"  # buy known PT for unknown base
-            market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
+        if user_action.action_type == "open_long":  # buy to open long
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "pt"  # buy unknown PT with known base
+            market_deltas, wallet_deltas = self.pricing_model.open_long(user_action)
+        elif user_action.action_type == "close_long":  # sell to close long
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "base"  # sell known PT for unkonwn base
+            market_deltas, wallet_deltas = self.pricing_model.close_long(user_action)
+        elif user_action.action_type == "open_short":  # sell PT to open short
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "base"  # sell known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.open_short(user_action)
+        elif user_action.action_type == "close_short":  # buy PT to close short
+            user_action.direction = "in"  # calcInGivenOut
+            user_action.token_in = "base"  # buy known PT for unknown base
+            market_deltas, wallet_deltas = self.pricing_model.close_short(user_action)
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
@@ -181,14 +181,12 @@ class Market:
     def update_spot_price(self):
         """Update the spot price"""
         if self.pricing_model.model_name() == "Hyperdrive":
-            self.spot_price = self.pricing_model._calc_spot_price(
+            self.spot_price = self.pricing_model.calc_spot_price(
                 share_reserves=self.share_reserves,
                 bond_reserves=self.bond_reserves,
                 init_share_price=self.init_share_price,
                 share_price=self.share_price,
-                time_remaining=time_utils.stretch_time(
-                    self.token_duration, self.time_stretch_constant
-                )
+                time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
             )
         else:
             self.spot_price = np.nan
