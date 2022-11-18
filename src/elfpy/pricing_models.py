@@ -39,8 +39,8 @@ class PricingModel:
     def calc_in_given_out(
         self,
         out,
-        in_reserves,
-        out_reserves,
+        share_reserves,
+        bond_reserves,
         token_in,
         fee_percent,
         time_remaining,
@@ -53,8 +53,8 @@ class PricingModel:
     def calc_out_given_in(
         self,
         in_,
-        in_reserves,
-        out_reserves,
+        share_reserves,
+        bond_reserves,
         token_out,
         fee_percent,
         time_remaining,
@@ -119,9 +119,9 @@ class PricingModel:
         spot_price = self.calc_spot_price_from_reserves(
             share_reserves,
             bond_reserves,
-            time_remaining,
             init_share_price,
             share_price,
+            time_remaining,
         )
         days_remaining = time_utils.time_to_days_remaining(time_remaining, time_stretch)
         apr = price_utils.calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
