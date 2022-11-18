@@ -35,6 +35,7 @@ class User:
         self.wallet_address = wallet_address
         self.verbose = verbose
         self.last_update_spend = 0
+        self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
         self.position_list = []
 
@@ -141,14 +142,17 @@ class User:
         return action_list
 
     def update_spend(self):
-        """Update the amount to spend"""
-        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet.base_in_wallet)
-        self.weighted_average_spend += new_spend
+        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
+        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        self.product_of_time_and_base += new_spend
+        self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
+        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}")
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
     def update_wallet(self, trade_result):
         """Update the user's wallet"""
+        self.update_spend()
         for key, value in trade_result.items():
             if value is None:
                 pass

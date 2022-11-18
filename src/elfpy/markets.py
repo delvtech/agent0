@@ -29,6 +29,7 @@ class Market:
         self,
         share_reserves,
         bond_reserves,
+        liquidity_pool,
         fee_percent,
         token_duration,
         pricing_model,
@@ -37,14 +38,12 @@ class Market:
         share_price=1,
         verbose=False,
     ):
-        # TODO: In order for the AMM to work as expected we should store
-        # a share reserve instead of a base reserve.
         self.time = 0  # time in year fractions
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
         self.share_buffer = 0
         self.bond_buffer = 0
-        self.liquidity_pool = 0
+        self.liquidity_pool = liquidity_pool
         self.liquidity_pool_history = []  # list trades by user and time, initialize as empty list to allow appending
         self.fee_percent = fee_percent  # g
         self.time_stretch_constant = time_stretch_constant
@@ -60,7 +59,7 @@ class Market:
         if pricing_model_name == "Element":
             self.allowed_actions = ["open_long", "close_long"]
         elif pricing_model_name == "Hyperdrive":
-            self.allowed_actions = ["open_long", "close_long", "open_short", "close_short"]
+            self.allowed_actions = ["open_long", "close_long", "open_short", "close_short", "add_liquidity", "remove_liquidity"]
         else:
             raise AssertionError(
                 f'markets.__init__: ERROR: self.pricing.model_name() should be "Element" or "Hyperdrive", not {pricing_model_name}!'
@@ -79,7 +78,7 @@ class Market:
         self.rate = np.nan
         self.update_spot_price_and_rate()
 
-    def swap(self, user_action):
+    def trade_and_update(self, user_action):
         """
         Execute a trade in the simulated market.
         """
@@ -89,12 +88,16 @@ class Market:
         user_action.share_price = self.share_price
         user_action.share_reserves = self.share_reserves
         user_action.bond_reserves = self.bond_reserves
+        user_action.share_buffer = self.share_buffer
+        user_action.bond_buffer. = self.bond_buffer
+        user_action.liquidity_pool. = self.liquidity_pool
         # ensure that the user action is an allowed action for this market
         if not user_action["action_type"] in self.allowed_actions:
             raise AssertionError(
                 f'markets.swap: ERROR: user_action["action_type"] should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action["action_type"]}!'
             )
         # for each position, specify how to forumulate trade and then execute
+
         if user_action.action_type == "open_long":  # buy to open long
             user_action.direction = "out"  # calcOutGivenIn
             user_action.token_out = "pt"  # buy unknown PT with known base
@@ -111,21 +114,41 @@ class Market:
             user_action.direction = "in"  # calcInGivenOut
             user_action.token_in = "base"  # buy known PT for unknown base
             market_deltas, wallet_deltas = self._close_short(user_action)
+        elif user_action.action_type == "add_liquidity":  # 
+            # pricing model computes new market deltas
+            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
+            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
+            market_deltas, wallet_deltas = self.pricing_model.add_liquidity(user_action)
+            pass
+        elif user_action.action_type == "remove_liquidity":  # 
+            # market figures out how much the user has contributed (calcualtes their fee weighting)
+            # market resolves fees, adds this to the user_action
+            # pricing model computes new market deltas
+            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
+            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
+            # TODO: implement fee attribution and withdrawal
+            market_deltas, wallet_deltas = self.pricing_model.remove_liquidity(user_action)
+            pass
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
         self.update_market(market_deltas)
+        self.update_spot_price_and_rate()
         # TODO: self.update_LP_pool(wallet_deltas["fees"])
-        return wallet_deltas
-
+        return wallet_deltas, market_deltas
+    
     def update_market(self, market_deltas):
         """
         Increments member variables to reflect current market conditions
         """
         for key, value in market_deltas.items():
             assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-        self.share_reserves += market_deltas["d_base_asset"]
+        self.share_reserves += market_deltas["d_base_asset"]/self.share_price
         self.bond_reserves += market_deltas["d_token_asset"]
+        self.share_buffer += market_deltas["d_share_buffer"] if "d_share_buffer" in market_deltas else 0
+        self.bond_buffer += market_deltas["d_bond_buffer"] if "d_bond_buffer" in market_deltas else 0
+        self.liquidity_pool += market_deltas["d_liquidity_pool"] if "d_liquidity_pool" in market_deltas else 0
+        self.liquidity_pool_history.append(market_deltas["d_liquidity_pool_history"])
         self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
         self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
         self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
@@ -208,94 +231,6 @@ class Market:
                 + f"\noutput_without_fee = {output_without_fee}\n"
                 + state_string
             )
-
-    def update_market(self, market_deltas, trade_type):
-        """
-        Increments member variables to reflect current market conditions
-        """
-        for key, value in market_deltas.items():
-            if key == "d_liquidity_pool_history":
-                assert isinstance(value, list), f"markets.updatE_market: Error:"\
-                + f" d_liquidity_pool_history has value={value} should be a list"
-            else:
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-        self.share_reserves += market_deltas["d_base_asset"]/self.share_price
-        self.bond_reserves += market_deltas["d_token_asset"]
-        self.share_buffer += market_deltas["d_share_buffer"] if "d_share_buffer" in market_deltas else 0
-        self.bond_buffer += market_deltas["d_bond_buffer"] if "d_bond_buffer" in market_deltas else 0
-        if trade_type in ["add_liquidity", "remove_liquidity"]:
-            self.liquidity_pool += market_deltas["d_liquidity_pool"] if "d_liquidity_pool" in market_deltas else 0
-            self.liquidity_pool_history.append(market_deltas["d_liquidity_pool_history"])
-        else: #  it's a swap!
-            self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
-            self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
-            self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
-            self.cum_token_asset_fees += market_deltas["d_token_asset_fee"]
-            self.base_asset_orders += market_deltas["d_base_asset_orders"]
-            self.token_asset_orders += market_deltas["d_token_asset_orders"]
-            self.base_asset_volume += market_deltas["d_base_asset_volume"]
-            self.token_asset_volume += market_deltas["d_token_asset_volume"]
-    
-    def trade_and_update(self, user_action):
-        """
-        Execute a swap in the simulated market.
-        """
-        trade_details = user_action.copy()
-        trade_details["fee_percent"] = self.fee_percent
-        trade_details["init_share_price"] = self.init_share_price
-        trade_details["rate"] = self.rate
-        trade_details["share_price"] = self.share_price
-        trade_details["init_share_price"] = self.init_share_price
-        trade_details["share_reserves"] = self.share_reserves
-        trade_details["bond_reserves"] = self.bond_reserves
-        trade_details["share_buffer"] = self.share_buffer
-        trade_details["bond_buffer"] = self.bond_buffer
-        trade_details["liquidity_pool"] = self.liquidity_pool
-        # for each position, specify how to forumulate trade and then execute
-        if user_action["action_type"] == "open_long":  # buy to open long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "pt"  # buy unknown PT with known base
-            market_deltas, wallet_deltas = self.pricing_model.open_long(trade_details)
-        elif user_action["action_type"] == "close_long":  # sell to close long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unknown base
-            market_deltas, wallet_deltas = self.pricing_model.close_long(trade_details)
-        elif user_action["action_type"] == "open_short":  # sell PT to open short
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unknown base
-            market_deltas, wallet_deltas = self.pricing_model.open_short(trade_details)
-        elif user_action["action_type"] == "close_short":  # buy PT to close short
-            trade_details["direction"] = "in"  # calcInGivenOut
-            trade_details["token_in"] = "base"  # buy known PT for unknown base
-            market_deltas, wallet_deltas = self.pricing_model.close_short(trade_details)
-        elif user_action["action_type"] == "add_liquidity":  # 
-            # pricing model computes new market deltas
-            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
-            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
-            market_deltas, wallet_deltas = self.pricing_model.add_liquidity(trade_details)
-            pass
-        elif user_action["action_type"] == "remove_liquidity":  # 
-            # market figures out how much the user has contributed (calcualtes their fee weighting)
-            # market resolves fees, adds this to the trade_details
-            # pricing model computes new market deltas
-            # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
-            # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
-            # TODO: implement fee attribution and withdrawal
-            market_deltas, wallet_deltas = self.pricing_model.remove_liquidity(trade_details)
-            pass
-        else:
-            raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
-        # update market state
-        self.update_market(market_deltas, user_action["action_type"])
-        self.update_spot_price_and_rate()
-        # TODO: self.update_LP_pool(wallet_deltas["fees"])
-        return wallet_deltas
-
-    def get_market_state_string(self):
-        """Returns a formatted string containing all of the Market class member variables"""
-        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        state_string = "\n".join(strings)
-        return state_string
 
     def tick(self, delta_time):
         """Increments the time member variable"""
@@ -492,3 +427,168 @@ class Market:
             "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
+
+    def _calc_lp_out_given_tokens_in(
+        self,
+        base_asset_in,
+        share_reserves,
+        bond_reserves,
+        share_buffer,
+        init_share_price,
+        share_price,
+        liquidity_pool,
+        rate,
+        time_remaining,
+        stretched_time_remaining,
+    ):
+        assert (
+            base_asset_in > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_asset_in > 0, not {base_asset_in}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            share_buffer >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+        assert (
+            liquidity_pool >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected liquidity_pool >= 0, not {liquidity_pool}!"
+        assert (
+            rate >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert (
+            time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            stretched_time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert share_price >= init_share_price >= 1, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+            f" share_price={share_price} and init_share_price={init_share_price}!"
+        )
+        r"""
+        Computes the amount of LP tokens to be minted for a given amount of base asset
+
+        .. math::
+
+        y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+
+        """
+        print(f"  inputs: base_asset_in={base_asset_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
+        d_share_reserves = base_asset_in / share_price
+        print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})")
+        lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
+        print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))")
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
+            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
+        ) - bond_reserves
+        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
+        return lp_out, base_asset_in, d_token_reserves
+
+    def _calc_lp_in_given_tokens_out(
+        self,
+        base_asset_out,
+        share_reserves,
+        bond_reserves,
+        share_buffer,
+        init_share_price,
+        share_price,
+        liquidity_pool,
+        rate,
+        time_remaining,
+        stretched_time_remaining,
+    ):
+        assert (
+            base_asset_out > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_asset_out > 0, not {base_asset_out}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            share_buffer >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+        assert (
+            liquidity_pool >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected liquidity_pool >= 0, not {liquidity_pool}!"
+        assert (
+            rate >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert (
+            time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert (
+            stretched_time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert share_price >= init_share_price >= 1, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+        )
+        r"""
+        Computes the amount of LP tokens to be minted for a given amount of base asset
+        
+        .. math::
+
+        y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+
+        """
+        d_share_reserves = base_asset_out / share_price
+        lp_in = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
+            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
+        ) - bond_reserves
+        return lp_in, base_asset_out, d_token_reserves
+
+    def _calc_tokens_out_given_lp_in(
+        self,
+        lp_in,
+        share_reserves,
+        bond_reserves,
+        share_buffer,
+        init_share_price,
+        share_price,
+        liquidity_pool,
+        rate,
+        time_remaining,
+        stretched_time_remaining,
+    ):
+        assert (
+            lp_in > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            share_buffer >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+        assert (
+            liquidity_pool >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected liquidity_pool >= 0, not {liquidity_pool}!"
+        assert (
+            rate >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert (
+            time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected time_remaining >= 0, not {time_remaining}!"
+        assert (
+            stretched_time_remaining >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert share_price >= init_share_price >= 1, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+        )
+        print(f"  inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
+        d_base_reserves = share_price * (share_reserves - share_buffer) * lp_in / liquidity_pool
+        d_share_reserves = d_base_reserves / share_price
+        print(f"  d_share_reserves={d_share_reserves} (d_base_reserves / share_price = {d_base_reserves} / {share_price})")
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
+            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
+        ) - bond_reserves
+        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
+        return lp_in, d_base_reserves, d_token_reserves

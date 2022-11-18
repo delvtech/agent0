@@ -201,6 +201,7 @@ class YieldSimulator:
         self.market = Market(
             share_reserves=init_base_asset_reserves,  # z
             bond_reserves=init_token_asset_reserves,  # y
+            liquidity_pool=init_base_asset_reserves/self.init_share_price,
             fee_percent=self.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
             pricing_model=self.pricing_model,
@@ -276,6 +277,13 @@ class YieldSimulator:
                     if len(action_list) == 0:  # empty list indicates no action
                         pass
                     for user_action in action_list:
+                        # print this as soon as you get it, before something crashes
+                        print (
+                            f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                            f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                            f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                            f" user action = {user_action}"
+                        )
                         # Conduct trade & update state
                         user_action.time_remaining = time_utils.get_yearfrac_remaining(
                             self.market.time, user_action.mint_time, self.market.token_duration
@@ -283,62 +291,70 @@ class YieldSimulator:
                         user_action.stretched_time_remaining = time_utils.stretch_time(
                             user_action.time_remaining, self.market.time_stretch_constant
                         )
-                        user_deltas = self.market.trade_and_update(user_action)
+                        user_deltas, market_deltas = self.market.trade_and_update(user_action)
+                        print(
+                            f" user deltas = {user_deltas}\n"+
+                            f" market deltas = {market_deltas}"
+                        )
                         user.update_wallet(user_deltas)  # update user state since market doesn't know about users
-                        if self.config.simulator.verbose:
-                            print(
-                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                                f" action: {user_action}\n result: {action_result}"
-                            )
+                        print(f" user report = {user.status_report()}")
                         self.update_analysis_dict()
                         self.run_trade_number += 1
-                # TODO: convert to proper logging; @wakamex fix variable names
-                if self.config.simulator.verbose:
-                    # TODO: convert "last_user_action_time" to proper logging
-                    # (used for debug only, not part of simulation output)
-                    last_user_action_time = self.analysis_dict["current_market_yearfrac"][self.run_trade_number - 1]
-                    # print(
-                    #     "YieldSimulator.run_simulation:"
-                    #     f"\n\ttime = {self.market.time}"
-                    #     f"\n\tuser trade = {user_action}"
-                    #     f"\n\tuser_wallet = {user.wallet}"
-                    #     f"\n\tinit pool apy = {self.init_pool_apy}"
-                    #     f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
-                    #     f"\n\tinit_share_price = {self.market.init_share_price}"
-                    #     f"\n\tshare_price = {self.market.share_price}"
-                    #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
-                    # )
-                    if (self.market.time - last_user_action_time > 0.1) and (
-                        self.market.time - last_user_action_time
-                    ) % 0.5 < 1 / 365 / self.config.simulator.num_blocks_per_day / 2:
-                        print(
-                            f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                            + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                            + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                            + " no user action 😴"
-                            + f" user report = {self.user_list[0].status_report()}"
-                        )
-                    if (
+                        last_user_action_time = self.market.time
+                        # print(f"last_user_action_time = {last_user_action_time}")
+                        # print(
+                        #     f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                        #     f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                        #     f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                        #     f" user report = {user.status_report()}"
+                        # )       
+                        # if self.verbose:
+                            # print(
+                            #     "YieldSimulator.run_simulation:"
+                            #     f"\n\ttime = {self.market.time}"
+                            #     f"\n\tuser trade = {user_action}"
+                            #     f"\n\tuser_wallet = {user.wallet}"
+                            #     f"\n\tinit pool apy = {self.init_pool_apy}"
+                            #     f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
+                            #     f"\n\tinit_share_price = {self.market.init_share_price}"
+                            #     f"\n\tshare_price = {self.market.share_price}"
+                            #     f"\n\tamount = {self.trade_amount}"
+                            #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
+                            # )
+                # TODO: convert to proper logging
+                log_at_least_every_n_years = 0.1
+                if (self.market.time - last_user_action_time > log_at_least_every_n_years/2) and (self.market.time - last_user_action_time) % log_at_least_every_n_years <= 1/365/self.config.simulator.num_blocks_per_day:
+                    print(
+                        f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                        f" no user action 😴"+
+                        f" user report = {self.user_list[0].status_report()}"
+                    )
+                if (
                         day == self.config.simulator.num_trading_days - 1
                         and daily_block_number == self.config.simulator.num_blocks_per_day - 1
                     ):
-                        user = self.user_list[0]
-                        worth = user.wallet.base_in_wallet + sum(user.position_list) / self.market.spot_price
-                        annual_percentage_rate = (
-                            (worth - user.budget) / (user.update_spend() / self.market.time)
-                        ) / self.market.time
-                        print(
-                            f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                            f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                            f", y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                            f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from"
-                            f" {user.wallet.base_in_wallet} base and {sum(user.position_list)}"
-                            f" tokens at p={1 / self.market.spot_price}\n over {self.market.time}"
-                            f" years that's an APR of {bcolors.OKGREEN}{annual_percentage_rate:,.2%}{bcolors.ENDC} on"
-                            f" ₡{(user.update_spend() / self.market.time)} weighted average spend"
-                        )
+                    price = 1/self.market.spot_price
+                    base = self.user_list[0].wallet['base_in_wallet']
+                    tokens = sum(self.user_list[0].position_list)
+                    worth = base + tokens * price
+                    PnL = worth - self.user_list[0].budget
+                    spend = self.user_list[0].weighted_average_spend
+                    HPR = PnL / spend
+                    annual_percentage_rate = (
+                        (worth - user.budget) / (user.update_spend() / self.market.time)
+                    ) / self.market.time
+                    print(
+                        f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
+                        + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
+                        + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+                        + f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from {base} base"
+                        + f" and {tokens} tokens at p={price}\n"
+                        + f" over {self.market.time} years that\'s an APR of {bcolors.OKGREEN}"
+                        + f"{annual_percentage_rate:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
+                    )
+
                 self.market.tick(self.step_size())
                 self.block_number += 1
         self.run_number += 1
