@@ -4,7 +4,9 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+
 import elfpy.utils.time as time_utils
+
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -202,9 +204,10 @@ class PricingModel:
 
     def calc_apy_from_spot_price(self, price, normalized_days_remaining):
         """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
-        assert (
-            price > 0
-        ), f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be greater than zero, not {price}"
+        assert price > 0, (
+            f"pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price:"
+            f" Price argument should be greater than zero, not {price}"
+        )
         assert (
             normalized_days_remaining > 0
         ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
@@ -472,14 +475,14 @@ class HyperdrivePricingModel(PricingModel):
             will be conditional on the pricing model
         """
         trade_results = self.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -489,7 +492,7 @@ class HyperdrivePricingModel(PricingModel):
         ) = trade_results
         market_deltas = {
             "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details["trade_amount"],
+            "d_token_asset": trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -500,15 +503,15 @@ class HyperdrivePricingModel(PricingModel):
             "d_token_asset_volume": 0,
         }
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
-        max_loss = trade_details["trade_amount"] - output_with_fee
+        max_loss = trade_details.trade_amount - output_with_fee
         wallet_deltas = {
             "base_in_wallet": -1 * max_loss,
-            "base_in_protocol": [trade_details["mint_time"], max_loss],
+            "base_in_protocol": [trade_details.mint_time, max_loss],
             "token_in_wallet": None,
-            "token_in_protocol": [trade_details["mint_time"], trade_details["trade_amount"]],
-            "fee": [trade_details["mint_time"], fee],
+            "token_in_protocol": [trade_details.mint_time, trade_details.trade_amount],
+            "fee": [trade_details.mint_time, fee],
         }
-        return market_deltas, wallet_deltas
+        return (market_deltas, wallet_deltas)
 
     def close_short(self, trade_details):
         """
@@ -517,14 +520,14 @@ class HyperdrivePricingModel(PricingModel):
             will be conditional on the pricing model
         """
         trade_results = self.calc_in_given_out(
-            trade_details["trade_amount"],  # tokens
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_in"],  # to be calculated, in base units
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,  # tokens
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_in,  # to be calculated, in base units
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -534,7 +537,7 @@ class HyperdrivePricingModel(PricingModel):
         ) = trade_results
         market_deltas = {
             "d_base_asset": output_with_fee,
-            "d_token_asset": -trade_details["trade_amount"],
+            "d_token_asset": -trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -549,11 +552,11 @@ class HyperdrivePricingModel(PricingModel):
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
         wallet_deltas = {
-            "base_in_wallet": trade_details["token_in_protocol"] - output_with_fee,
-            "base_in_protocol": [trade_details["mint_time"], -trade_details["base_in_protocol"]],
-            "token_in_wallet": [trade_details["mint_time"], 0],
-            "token_in_protocol": [trade_details["mint_time"], -trade_details["trade_amount"]],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_wallet": trade_details.token_in_protocol - output_with_fee,
+            "base_in_protocol": [trade_details.mint_time, -trade_details.base_in_protocol],
+            "token_in_wallet": [trade_details.mint_time, 0],
+            "token_in_protocol": [trade_details.mint_time, -trade_details.trade_amount],
+            "fee": [trade_details.mint_time, fee],
         }
         return (market_deltas, wallet_deltas)
 
@@ -567,14 +570,14 @@ class HyperdrivePricingModel(PricingModel):
         # logic: use calcOutGivenIn because we want to buy unknown PT with known base
         #        use current mint time because this is a fresh
         trade_results = self.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -583,7 +586,7 @@ class HyperdrivePricingModel(PricingModel):
             fee,
         ) = trade_results
         market_deltas = {
-            "d_base_asset": trade_details["trade_amount"],
+            "d_base_asset": trade_details.trade_amount,
             "d_token_asset": -output_with_fee,
             "d_base_asset_slippage": 0,
             "d_token_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
@@ -595,11 +598,11 @@ class HyperdrivePricingModel(PricingModel):
             "d_token_asset_volume": output_with_fee,
         }
         wallet_deltas = {
-            "base_in_wallet": -trade_details["trade_amount"],
-            "base_in_protocol": [trade_details["mint_time"], 0],
-            "token_in_wallet": [trade_details["mint_time"], output_with_fee],
-            "token_in_protocol": [trade_details["mint_time"], 0],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_wallet": -trade_details.trade_amount,
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, output_with_fee],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
 
@@ -610,14 +613,14 @@ class HyperdrivePricingModel(PricingModel):
             will be conditional on the pricing model
         """
         trade_results = self.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -627,7 +630,7 @@ class HyperdrivePricingModel(PricingModel):
         ) = trade_results
         market_deltas = {
             "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details["trade_amount"],
+            "d_token_asset": trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -639,10 +642,10 @@ class HyperdrivePricingModel(PricingModel):
         }
         wallet_deltas = {
             "base_in_wallet": output_with_fee,
-            "base_in_protocol": [trade_details["mint_time"], 0],
-            "token_in_wallet": [trade_details["mint_time"], -1 * trade_details["trade_amount"]],
-            "token_in_protocol": [trade_details["mint_time"], 0],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, -1 * trade_details.trade_amount],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
 
@@ -658,22 +661,6 @@ class HyperdrivePricingModel(PricingModel):
         init_share_price,
         share_price,
     ):
-        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
-        assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
-        assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
-        assert (
-            1 >= fee_percent >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
-        assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -683,10 +670,12 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z), &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z),
+            &\text{ if } token\_in = \text{"base"} \\
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz),
+            &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^t}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^t - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
@@ -732,13 +721,30 @@ class HyperdrivePricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
-
+        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert (
+            share_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        assert (
+            bond_reserves > 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+        assert (
+            1 >= fee_percent >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert (
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_in_given_out: ERROR:"
+            f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
+            f" and init_share_price={init_share_price}!"
+        )
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -826,7 +832,8 @@ class HyperdrivePricingModel(PricingModel):
             fee = (spot_price - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in == "base" or token_in == "pt", not {token_in}!'
+                f"pricing_models.calc_in_given_out: ERROR: "
+                f'expected token_in == "base" or token_in == "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -885,8 +892,10 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}), &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}}, &\text{ if } token\_out = \text{"pt"}
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}),
+            &\text{ if } token\_out = \text{"base"} \\
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}},
+            &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
@@ -946,16 +955,16 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
-
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, "
+            f"not share_price={share_price} and init_share_price={init_share_price}!"
+        )
         # TODO: Break this function up to use private class functions
         # pylint: disable=too-many-locals
         scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
+        spot_price = self.calc_spot_price(share_reserves, bond_reserves, init_share_price, share_price, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
@@ -1070,7 +1079,7 @@ class HyperdrivePricingModel(PricingModel):
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def _calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
+    def calc_spot_price(self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining):
         r"""
         Calculates the spot price of a principal token in terms of the base asset.
 
