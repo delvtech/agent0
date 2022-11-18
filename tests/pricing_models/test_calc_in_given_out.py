@@ -876,7 +876,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
-                "pricing_models.calc_in_given_out: ERROR: expected base_reserves > 0, not -1!",
+                "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not -1!",
                 "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not -1!",
             ),
             (
@@ -890,7 +890,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
-                "pricing_models.calc_in_given_out: ERROR: expected base_reserves > 0, not 0!",
+                "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not 0!",
                 "pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not 0!",
             ),
             (
