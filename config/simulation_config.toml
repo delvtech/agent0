@@ -1,6 +1,3 @@
-
-# Random variables are set within the simulator and will be between these ranges
-
 title = "example simulation config"
 
 [market]
