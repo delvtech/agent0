@@ -18,6 +18,7 @@ from elfpy.pricing_models import HyperdrivePricingModel
 from elfpy.utils.parse_config import parse_simulation_config
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
+import elfpy.utils.price as price_utils
 
 
 class YieldSimulator:
@@ -146,12 +147,12 @@ class YieldSimulator:
         """Prints all variables that are set in set_random_variables()"""
         print(
             "Simulation random variables:\n"
-            + f"target_liquidity = {self.target_liquidity}\n"
-            + f"target_daily_volume = {self.target_daily_volume}\n"
-            + f"init_pool_apy = {self.init_pool_apy}\n"
-            + f"fee_percent = {self.fee_percent}\n"
-            + f"init_vault_age = {self.init_vault_age}\n"
-            + f"init_vault_apy = {self.vault_apy[0]}\n"
+            f"target_liquidity = {self.target_liquidity}\n"
+            f"target_daily_volume = {self.target_daily_volume}\n"
+            f"init_pool_apy = {self.init_pool_apy}\n"
+            f"fee_percent = {self.fee_percent}\n"
+            f"init_vault_age = {self.init_vault_age}\n"
+            f"init_vault_apy = {self.vault_apy[0]}\n"
         )
 
     def get_simulation_state_string(self):
@@ -211,8 +212,8 @@ class YieldSimulator:
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
         # TODO: redo this to initialize an empty market and add liquidity from an LP user
-        time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
-        init_reserves = self.pricing_model.calc_liquidity(
+        time_stretch_constant = time_utils.calc_time_stretch(self.init_pool_apy)
+        init_reserves = price_utils.calc_liquidity(
             self.target_liquidity,
             self.config.market.base_asset_price,
             self.init_pool_apy,
@@ -306,9 +307,9 @@ class YieldSimulator:
                         if self.config.simulator.verbose:
                             print(
                                 f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                                + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                                + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                                + f" action: {user_action}\n result: {action_result}"
+                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
+                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+                                f" action: {user_action}\n result: {action_result}"
                             )
                         # Update user state
                         user.update_wallet(action_result)
