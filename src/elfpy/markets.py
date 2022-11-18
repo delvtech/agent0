@@ -69,6 +69,7 @@ class Market:
         self.cum_base_asset_slippage = 0
         self.cum_token_asset_fees = 0
         self.cum_base_asset_fees = 0
+        self.spot_price = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
@@ -77,34 +78,33 @@ class Market:
         Execute a trade in the simulated market.
         """
         # assign general trade details, irrespective of trade type
-        trade_details = user_action.copy()
-        trade_details["fee_percent"] = self.fee_percent
-        trade_details["init_share_price"] = self.init_share_price
-        trade_details["share_price"] = self.share_price
-        trade_details["share_reserves"] = self.share_reserves
-        trade_details["bond_reserves"] = self.bond_reserves
+        user_action.fee_percent = self.fee_percent
+        user_action.init_share_price = self.init_share_price
+        user_action.share_price = self.share_price
+        user_action.share_reserves = self.share_reserves
+        user_action.bond_reserves = self.bond_reserves
         # ensure that the user action is an allowed action for this market
         if not user_action["action_type"] in self.allowed_actions:
             raise AssertionError(
                 f'markets.swap: ERROR: user_action["action_type"] should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action["action_type"]}!'
             )
         # for each position, specify how to forumulate trade and then execute
-        if user_action["action_type"] == "open_long":  # buy to open long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "pt"  # buy unknown PT with known base
-            market_deltas, wallet_deltas = self._open_long(trade_details)
-        elif user_action["action_type"] == "close_long":  # sell to close long
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unkonwn base
-            market_deltas, wallet_deltas = self._close_long(trade_details)
-        elif user_action["action_type"] == "open_short":  # sell PT to open short
-            trade_details["direction"] = "out"  # calcOutGivenIn
-            trade_details["token_out"] = "base"  # sell known PT for unknown base
-            market_deltas, wallet_deltas = self._open_short(trade_details)
-        elif user_action["action_type"] == "close_short":  # buy PT to close short
-            trade_details["direction"] = "in"  # calcInGivenOut
-            trade_details["token_in"] = "base"  # buy known PT for unknown base
-            market_deltas, wallet_deltas = self._close_short(trade_details)
+        if user_action.action_type == "open_long":  # buy to open long
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "pt"  # buy unknown PT with known base
+            market_deltas, wallet_deltas = self._open_long(user_action)
+        elif user_action.action_type == "close_long":  # sell to close long
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "base"  # sell known PT for unkonwn base
+            market_deltas, wallet_deltas = self._close_long(user_action)
+        elif user_action.action_type == "open_short":  # sell PT to open short
+            user_action.direction = "out"  # calcOutGivenIn
+            user_action.token_out = "base"  # sell known PT for unknown base
+            market_deltas, wallet_deltas = self._open_short(user_action)
+        elif user_action.action_type == "close_short":  # buy PT to close short
+            user_action.direction = "in"  # calcInGivenOut
+            user_action.token_in = "base"  # buy known PT for unknown base
+            market_deltas, wallet_deltas = self._close_short(user_action)
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
@@ -224,14 +224,14 @@ class Market:
             will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -241,7 +241,7 @@ class Market:
         ) = trade_results
         market_deltas = {
             "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details["trade_amount"],
+            "d_token_asset": trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -252,13 +252,13 @@ class Market:
             "d_token_asset_volume": 0,
         }
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
-        max_loss = trade_details["trade_amount"] - output_with_fee
+        max_loss = trade_details.trade_amount - output_with_fee
         wallet_deltas = {
             "base_in_wallet": -1 * max_loss,
-            "base_in_protocol": [trade_details["mint_time"], max_loss],
+            "base_in_protocol": [trade_details.mint_time, max_loss],
             "token_in_wallet": None,
-            "token_in_protocol": [trade_details["mint_time"], trade_details["trade_amount"]],
-            "fee": [trade_details["mint_time"], fee],
+            "token_in_protocol": [trade_details.mint_time, trade_details.trade_amount],
+            "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
 
@@ -269,14 +269,14 @@ class Market:
             will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_in_given_out(
-            trade_details["trade_amount"],  # tokens
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_in"],  # to be calculated, in base units
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_in,  # to be calculated, in base units
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -286,7 +286,7 @@ class Market:
         ) = trade_results
         market_deltas = {
             "d_base_asset": output_with_fee,
-            "d_token_asset": -trade_details["trade_amount"],
+            "d_token_asset": -trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -301,11 +301,11 @@ class Market:
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
         wallet_deltas = {
-            "base_in_wallet": trade_details["token_in_protocol"] - output_with_fee,
-            "base_in_protocol": [trade_details["mint_time"], -trade_details["base_in_protocol"]],
-            "token_in_wallet": [trade_details["mint_time"], 0],
-            "token_in_protocol": [trade_details["mint_time"], -trade_details["trade_amount"]],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_wallet": trade_details.token_in_protocol - output_with_fee,
+            "base_in_protocol": [trade_details.mint_time, -trade_details.base_in_protocol],
+            "token_in_wallet": [trade_details.mint_time, 0],
+            "token_in_protocol": [trade_details.mint_time, -trade_details.trade_amount],
+            "fee": [trade_details.mint_time, fee],
         }
         return (market_deltas, wallet_deltas)
 
@@ -319,14 +319,14 @@ class Market:
         # logic: use calcOutGivenIn because we want to buy unknown PT with known base
         #        use current mint time because this is a fresh
         trade_results = self.pricing_model.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -335,7 +335,7 @@ class Market:
             fee,
         ) = trade_results
         market_deltas = {
-            "d_base_asset": trade_details["trade_amount"],
+            "d_base_asset": trade_details.trade_amount,
             "d_token_asset": -output_with_fee,
             "d_base_asset_slippage": 0,
             "d_token_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
@@ -347,11 +347,11 @@ class Market:
             "d_token_asset_volume": output_with_fee,
         }
         wallet_deltas = {
-            "base_in_wallet": -trade_details["trade_amount"],
-            "base_in_protocol": [trade_details["mint_time"], 0],
-            "token_in_wallet": [trade_details["mint_time"], output_with_fee],
-            "token_in_protocol": [trade_details["mint_time"], 0],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_wallet": -trade_details.trade_amount,
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, output_with_fee],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
 
@@ -362,14 +362,14 @@ class Market:
             will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            trade_details["trade_amount"],
-            trade_details["share_reserves"],
-            trade_details["bond_reserves"],
-            trade_details["token_out"],
-            trade_details["fee_percent"],
-            trade_details["stretched_time_remaining"],
-            trade_details["init_share_price"],
-            trade_details["share_price"],
+            trade_details.trade_amount,
+            trade_details.share_reserves,
+            trade_details.bond_reserves,
+            trade_details.token_out,
+            trade_details.fee_percent,
+            trade_details.stretched_time_remaining,
+            trade_details.init_share_price,
+            trade_details.share_price,
         )
         (
             without_fee_or_slippage,
@@ -379,7 +379,7 @@ class Market:
         ) = trade_results
         market_deltas = {
             "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details["trade_amount"],
+            "d_token_asset": trade_details.trade_amount,
             "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
             "d_token_asset_slippage": 0,
             "d_base_asset_fee": fee,
@@ -391,9 +391,9 @@ class Market:
         }
         wallet_deltas = {
             "base_in_wallet": output_with_fee,
-            "base_in_protocol": [trade_details["mint_time"], 0],
-            "token_in_wallet": [trade_details["mint_time"], -1 * trade_details["trade_amount"]],
-            "token_in_protocol": [trade_details["mint_time"], 0],
-            "fee": [trade_details["mint_time"], fee],
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, -1 * trade_details.trade_amount],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas

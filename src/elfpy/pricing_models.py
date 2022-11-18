@@ -4,8 +4,10 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
+
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -556,10 +558,12 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}} - z), &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz), &\text{ if } token\_in = \text{"pt"}
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z),
+            &\text{ if } token\_in = \text{"base"} \\
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz),
+            &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
@@ -618,10 +622,13 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
-
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_in_given_out: ERROR:"
+            f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
+            f" and init_share_price={init_share_price}!"
+        )
+        # TODO: Break this function up to use private class functions
+        # pylint: disable=too-many-locals
         time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
@@ -717,7 +724,8 @@ class HyperdrivePricingModel(PricingModel):
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {token_in}!'
+                f"pricing_models.calc_in_given_out: ERROR: "
+                f'expected token_in == "base" or token_in == "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -789,8 +797,10 @@ class HyperdrivePricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}}), &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}}, &\text{ if } token\_out = \text{"pt"}
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}),
+            &\text{ if } token\_out = \text{"base"} \\
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}},
+            &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f = 
             \begin{cases}
@@ -850,10 +860,12 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
-
+        assert share_price >= init_share_price >= 1, (
+            f"pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, "
+            f"not share_price={share_price} and init_share_price={init_share_price}!"
+        )
+        # TODO: Break this function up to use private class functions
+        # pylint: disable=too-many-locals
         scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves
