@@ -122,15 +122,20 @@ class PricingModel:
             share_price,
         )
         days_remaining = time_utils.time_to_days_remaining(time_remaining, time_stretch)
-        apy = price_utils.calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
-        return apy
+        apr = price_utils.calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
+        return apr
+
+    def calc_time_stretch(self, apr):
+        """Returns fixed time-stretch value based on current apr (as a decimal)"""
+        apr_percent = apr * 100
+        return 3.09396 / (0.02789 * apr_percent)
 
 
 class ElementPricingModel(PricingModel):
     """
     Element v1 pricing model
 
-    Does not use the Yield Bearing Vault `init_share_price` (mu) and `share_price` (c) variables.
+    Does not use the Yield Bearing Vault `init_share_price` (μ) and `share_price` (c) variables.
     """
 
     def model_name(self):
@@ -718,16 +723,6 @@ class HyperdrivePricingModel(PricingModel):
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
         with_fee = without_fee + fee
-        assert fee >= 0, (
-            f"pricing_models.calc_in_given_out: ERROR: Fee should not be negative!"
-            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
-            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
-            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
-        )
 
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
@@ -738,15 +733,42 @@ class HyperdrivePricingModel(PricingModel):
         # float due to the constraints on the inputs, with_fee = without_fee + fee
         # so it is a positive float if without_fee and fee are positive floats, and
         # fee is a positive float due to the constraints on the inputs.
-        assert isinstance(
-            without_fee, float
-        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
-        assert (
-            without_fee >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
+        assert fee >= 0, (
+            f"pricing_models.calc_in_given_out: ERROR: Fee should not be negative!"
+            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
+        assert isinstance(without_fee, float), (
+            f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
+            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
+        assert without_fee >= 0, (
+            f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
+            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)
 
+    # TODO: The high slippage tests in tests/test_pricing_model.py should
+    # arguably have much higher slippage. This is something we should
+    # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
         in_,
@@ -754,9 +776,6 @@ class HyperdrivePricingModel(PricingModel):
         bond_reserves,
         token_out,
         fee_percent,
-        # TODO: The high slippage tests in tests/test_pricing_model.py should
-        # arguably have much higher slippage. This is something we should
-        # consider more when thinking about the use of a time stretch parameter.
         time_remaining,
         init_share_price,
         share_price,
@@ -921,17 +940,6 @@ class HyperdrivePricingModel(PricingModel):
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
-        # TODO: add back in with proper logging
-        # print(
-        #     f"pricing_models.calc_out_given_in:"
-        #     f"\n\tin_ = {in_}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"
-        #     f"\n\ttotal_reserves = {total_reserves}\n\tinit_share_price = {init_share_price}"
-        #     f"\n\tshare_price = {share_price}\n\tscale = {scale}\n\tfee_percent = {fee_percent}"
-        #     f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
-        #     f"\n\tin_reserves = {in_reserves}\n\tout_reserves = {out_reserves}\n\ttoken_out = {token_out}"
-        #     f"\n\tspot_price = {spot_price}\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
-        #     f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
-        # )
 
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
@@ -942,11 +950,35 @@ class HyperdrivePricingModel(PricingModel):
         # float due to the constraints on the inputs, without_fee = with_fee + fee
         # so it is a positive float if with_fee and fee are positive floats, and
         # fee is a positive float due to the constraints on the inputs.
-        assert isinstance(
-            with_fee, float
-        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
-        assert (
-            with_fee >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
+        assert fee >= 0, (
+            f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative!"
+            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
+        assert isinstance(with_fee, float), (
+            f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
+            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
+        assert with_fee >= 0, (
+            f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
+            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
+            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
+            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
+            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        )
 
         return (without_fee_or_slippage, with_fee, without_fee, fee)

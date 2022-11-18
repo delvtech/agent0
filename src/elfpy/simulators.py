@@ -170,12 +170,12 @@ class YieldSimulator:
         """Prints all variables that are set in set_random_variables()"""
         print(
             "Simulation random variables:\n"
-            + f"target_liquidity = {self.target_liquidity}\n"
-            + f"target_daily_volume = {self.target_daily_volume}\n"
-            + f"init_pool_apy = {self.init_pool_apy}\n"
-            + f"fee_percent = {self.fee_percent}\n"
-            + f"init_vault_age = {self.init_vault_age}\n"
-            + f"init_vault_apy = {self.vault_apy[0]}\n"
+            f"target_liquidity = {self.target_liquidity}\n"
+            f"target_daily_volume = {self.target_daily_volume}\n"
+            f"init_pool_apy = {self.init_pool_apy}\n"
+            f"fee_percent = {self.fee_percent}\n"
+            f"init_vault_age = {self.init_vault_age}\n"
+            f"init_vault_apy = {self.vault_apy[0]}\n"
         )
 
     def get_simulation_state_string(self):
@@ -221,7 +221,7 @@ class YieldSimulator:
                     if key == "vault_apy":
                         assert len(override_dict[key]) == self.num_trading_days, (
                             f"vault_apy must have len equal to num_trading_days = {self.num_trading_days},"
-                            + f" not {len(override_dict[key])}"
+                            f" not {len(override_dict[key])}"
                         )
         if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
@@ -332,9 +332,9 @@ class YieldSimulator:
                         if self.verbose:
                             print(
                                 f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                                + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                                + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                                + f" action: {user_action}\n result: {action_result}"
+                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
+                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+                                f" action: {user_action}\n result: {action_result}"
                             )
                         # Update user state
                         user.update_wallet(action_result)
@@ -362,10 +362,10 @@ class YieldSimulator:
                 ):
                     print(
                         f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                        + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                        + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                        + f" no user action 😴"
-                        + f" user report = {self.user_list[0].status_report()}"
+                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
+                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+                        f" no user action 😴"
+                        f" user report = {self.user_list[0].status_report()}"
                     )
                 if day == self.num_trading_days - 1 and daily_block_number == self.num_blocks_per_day - 1:
                     price = 1 / self.market.spot_price
@@ -378,10 +378,10 @@ class YieldSimulator:
                     APR = HPR / self.market.time
                     print(
                         f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                        + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                        + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                        + f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from {base} base and {tokens} tokens at p={price}\n"
-                        + f" over {self.market.time} years that's an APR of {bcolors.OKGREEN}{APR:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
+                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
+                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+                        f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from {base} base and {tokens} tokens at p={price}\n"
+                        f" over {self.market.time} years that's an APR of {bcolors.OKGREEN}{APR:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
                     )
 
                 self.market.tick(self.step_size())

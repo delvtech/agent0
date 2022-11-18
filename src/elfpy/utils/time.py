@@ -39,12 +39,6 @@ def norm_days(days, normalizing_constant=365):
     return days / normalizing_constant
 
 
-def calc_time_stretch(apy):
-    """Returns fixed time-stretch value based on current apy (as a decimal)"""
-    apy_percent = apy * 100
-    return 3.09396 / (0.02789 * apy_percent)
-
-
 def stretch_time(time, time_stretch=1.0):
     """Returns stretched time values"""
     return time / time_stretch

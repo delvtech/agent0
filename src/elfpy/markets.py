@@ -92,19 +92,19 @@ class Market:
         if user_action["action_type"] == "open_long":  # buy to open long
             trade_details["direction"] = "out"  # calcOutGivenIn
             trade_details["token_out"] = "pt"  # buy unknown PT with known base
-            market_deltas, wallet_deltas = self.__open_long(trade_details)
+            market_deltas, wallet_deltas = self._open_long(trade_details)
         elif user_action["action_type"] == "close_long":  # sell to close long
             trade_details["direction"] = "out"  # calcOutGivenIn
             trade_details["token_out"] = "base"  # sell known PT for unkonwn base
-            market_deltas, wallet_deltas = self.__close_long(trade_details)
+            market_deltas, wallet_deltas = self._close_long(trade_details)
         elif user_action["action_type"] == "open_short":  # sell PT to open short
             trade_details["direction"] = "out"  # calcOutGivenIn
             trade_details["token_out"] = "base"  # sell known PT for unknown base
-            market_deltas, wallet_deltas = self.__open_short(trade_details)
+            market_deltas, wallet_deltas = self._open_short(trade_details)
         elif user_action["action_type"] == "close_short":  # buy PT to close short
             trade_details["direction"] = "in"  # calcInGivenOut
             trade_details["token_in"] = "base"  # buy known PT for unknown base
-            market_deltas, wallet_deltas = self.__close_short(trade_details)
+            market_deltas, wallet_deltas = self._close_short(trade_details)
         else:
             raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
         # update market state
@@ -217,7 +217,7 @@ class Market:
             time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
         )
 
-    def __open_short(self, trade_details):
+    def _open_short(self, trade_details):
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -229,7 +229,7 @@ class Market:
             trade_details["bond_reserves"],
             trade_details["token_out"],
             trade_details["fee_percent"],
-            self.__get_time_parameter_for_model(trade_details),
+            trade_details["stretched_time_remaining"],
             trade_details["init_share_price"],
             trade_details["share_price"],
         )
@@ -262,7 +262,7 @@ class Market:
         }
         return market_deltas, wallet_deltas
 
-    def __close_short(self, trade_details):
+    def _close_short(self, trade_details):
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -274,7 +274,7 @@ class Market:
             trade_details["bond_reserves"],
             trade_details["token_in"],  # to be calculated, in base units
             trade_details["fee_percent"],
-            self.__get_time_parameter_for_model(trade_details),
+            trade_details["stretched_time_remaining"],
             trade_details["init_share_price"],
             trade_details["share_price"],
         )
@@ -309,7 +309,7 @@ class Market:
         }
         return (market_deltas, wallet_deltas)
 
-    def __open_long(self, trade_details):
+    def _open_long(self, trade_details):
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -324,7 +324,7 @@ class Market:
             trade_details["bond_reserves"],
             trade_details["token_out"],
             trade_details["fee_percent"],
-            self.__get_time_parameter_for_model(trade_details),
+            trade_details["stretched_time_remaining"],
             trade_details["init_share_price"],
             trade_details["share_price"],
         )
@@ -355,7 +355,7 @@ class Market:
         }
         return market_deltas, wallet_deltas
 
-    def __close_long(self, trade_details):
+    def _close_long(self, trade_details):
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -367,7 +367,7 @@ class Market:
             trade_details["bond_reserves"],
             trade_details["token_out"],
             trade_details["fee_percent"],
-            self.__get_time_parameter_for_model(trade_details),
+            trade_details["stretched_time_remaining"],
             trade_details["init_share_price"],
             trade_details["share_price"],
         )
@@ -397,13 +397,3 @@ class Market:
             "fee": [trade_details["mint_time"], fee],
         }
         return market_deltas, wallet_deltas
-
-    def __get_time_parameter_for_model(self, trade_details):
-        pricing_model_name = self.pricing_model.model_name()
-        if pricing_model_name == "Element":
-            return trade_details["time_remaining"]
-        elif pricing_model_name == "Hyperdrive":
-            return trade_details["stretched_time_remaining"]
-        raise AssertionError(
-            f'markets.__get_time_parameter_for_model: ERROR: self.pricing.model_name() should be "Element" or "Hyperdrive", not {pricing_model_name}!'
-        )
