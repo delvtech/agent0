@@ -26,6 +26,7 @@ class Policy(BasicPolicy):
                         action_type="close_short",
                         trade_amount=self.wallet["token_in_wallet"][mint_time],
                         mint_time=mint_time,
+                        market=self.market,
                     )
                 )
         elif (not self.has_opened_short) and self.can_open_short:

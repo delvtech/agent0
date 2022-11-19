@@ -27,6 +27,7 @@ class Policy(BasicPolicy):
                         action_type="close_long",
                         trade_amount=sum(self.position_list) / (self.market.spot_price * 0.99),  # assume 1% slippage
                         mint_time=mint_time,
+                        market=self.market,
                     )
                 )
         elif (not self.has_opened_long) and self.can_open_long:

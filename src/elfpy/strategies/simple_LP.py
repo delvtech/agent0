@@ -22,7 +22,8 @@ class Policy(BasicPolicy):
             action_list.append(
                 self.UserAction(
                     action_type="add_liquidity",
-                    trade_amount=self.amount_to_trade
+                    trade_amount=self.amount_to_trade,
+                    market=self.market,
                 )
             )
         elif self.has_LPd:

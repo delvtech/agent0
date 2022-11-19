@@ -6,6 +6,8 @@ TODO: rewrite all functions to have typed inputs
 
 import numpy as np
 import elfpy.utils.time as time_utils
+from dataclasses import dataclass
+from dataclasses import field
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -78,23 +80,39 @@ class Market:
         self.rate = np.nan
         self.update_spot_price_and_rate()
 
+    @dataclass
+    class MarketDeltas:
+        """specifies changes to values in the market"""
+        d_base_asset: float = 0
+        d_token_asset: float = 0
+        d_share_buffer: float = 0
+        d_bond_buffer: float = 0
+        d_liquidity_pool: float = 0
+        d_liquidity_pool_history: list = None
+        d_base_asset_slippage: float = 0
+        d_token_asset_slippage: float = 0
+        d_base_asset_fee: float = 0
+        d_token_asset_fee: float = 0
+        d_base_asset_orders: int = 0
+        d_token_asset_orders: int = 0
+        d_base_asset_volume: float = 0
+        d_token_asset_volume: float = 0
+
+    @dataclass
+    class TradeDetails:
+        """specifies trade details"""
+        action_type: str
+        trade_amount: float
+        mint_time: float = field(default=None)
+
     def trade_and_update(self, user_action):
         """
         Execute a trade in the simulated market.
         """
-        # assign general trade details, irrespective of trade type
-        user_action.fee_percent = self.fee_percent
-        user_action.init_share_price = self.init_share_price
-        user_action.share_price = self.share_price
-        user_action.share_reserves = self.share_reserves
-        user_action.bond_reserves = self.bond_reserves
-        user_action.share_buffer = self.share_buffer
-        user_action.bond_buffer = self.bond_buffer
-        user_action.liquidity_pool = self.liquidity_pool
         # ensure that the user action is an allowed action for this market
         if not user_action.action_type in self.allowed_actions:
             raise AssertionError(
-                f'markets.swap: ERROR: user_action["action_type"] should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action["action_type"]}!'
+                f'markets.swap: ERROR: user_action.action_type should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action.action_type}!'
             )
         # for each position, specify how to forumulate trade and then execute
 
@@ -114,13 +132,13 @@ class Market:
             user_action.direction = "in"  # calcInGivenOut
             user_action.token_in = "base"  # buy known PT for unknown base
             market_deltas, wallet_deltas = self._close_short(user_action)
-        elif user_action.action_type == "add_liquidity":  # 
+        elif user_action.action_type == "add_liquidity":
             # pricing model computes new market deltas
             # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
             market_deltas, wallet_deltas = self._add_liquidity(user_action)
             pass
-        elif user_action.action_type == "remove_liquidity":  # 
+        elif user_action.action_type == "remove_liquidity":
             # market figures out how much the user has contributed (calcualtes their fee weighting)
             # market resolves fees, adds this to the user_action
             # pricing model computes new market deltas
@@ -141,26 +159,27 @@ class Market:
         """
         Increments member variables to reflect current market conditions
         """
-        for key, value in market_deltas.items():
-            if key == "d_liquidity_pool_history":
-                assert isinstance(value, list), f"markets.updatE_market: Error:"\
+        for field in market_deltas.__dataclass_fields__:
+            value = getattr(market_deltas, field)
+            if field == "d_liquidity_pool_history":
+                assert isinstance(value, list), f"markets.update_market: Error:"\
                 + f" d_liquidity_pool_history has value={value} should be a list"
             else:
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-        self.share_reserves += market_deltas["d_base_asset"]/self.share_price
-        self.bond_reserves += market_deltas["d_token_asset"]
-        self.share_buffer += market_deltas["d_share_buffer"] if "d_share_buffer" in market_deltas else 0
-        self.bond_buffer += market_deltas["d_bond_buffer"] if "d_bond_buffer" in market_deltas else 0
-        self.liquidity_pool += market_deltas["d_liquidity_pool"] if "d_liquidity_pool" in market_deltas else 0
-        self.liquidity_pool_history.append(market_deltas["d_liquidity_pool_history"])
-        self.cum_base_asset_slippage += market_deltas["d_base_asset_slippage"]
-        self.cum_token_asset_slippage += market_deltas["d_token_asset_slippage"]
-        self.cum_base_asset_fees += market_deltas["d_base_asset_fee"]
-        self.cum_token_asset_fees += market_deltas["d_token_asset_fee"]
-        self.base_asset_orders += market_deltas["d_base_asset_orders"]
-        self.token_asset_orders += market_deltas["d_token_asset_orders"]
-        self.base_asset_volume += market_deltas["d_base_asset_volume"]
-        self.token_asset_volume += market_deltas["d_token_asset_volume"]
+                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {field} is not finite."
+        self.share_reserves += market_deltas.d_base_asset/self.share_price
+        self.bond_reserves += market_deltas.d_token_asset
+        self.share_buffer += market_deltas.d_share_buffer
+        self.bond_buffer += market_deltas.d_bond_buffer
+        self.liquidity_pool += market_deltas.d_liquidity_pool
+        self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
+        self.cum_base_asset_slippage += market_deltas.d_base_asset_slippage
+        self.cum_token_asset_slippage += market_deltas.d_token_asset_slippage
+        self.cum_base_asset_fees += market_deltas.d_base_asset_fee
+        self.cum_token_asset_fees += market_deltas.d_token_asset_fee
+        self.base_asset_orders += market_deltas.d_base_asset_orders
+        self.token_asset_orders += market_deltas.d_token_asset_orders
+        self.base_asset_volume += market_deltas.d_base_asset_volume
+        self.token_asset_volume += market_deltas.d_token_asset_volume
 
     def get_market_state_string(self):
         """Returns a formatted string containing all of the Market class member variables"""
@@ -273,18 +292,15 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        market_deltas = {
-            "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details.trade_amount,
-            "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
-            "d_token_asset_slippage": 0,
-            "d_base_asset_fee": fee,
-            "d_token_asset_fee": 0,
-            "d_base_asset_orders": 1,
-            "d_token_asset_orders": 0,
-            "d_base_asset_volume": output_with_fee,
-            "d_token_asset_volume": 0,
-        }
+        
+        market_deltas = self.MarketDeltas(
+                d_base_asset=-output_with_fee,
+                d_token_asset=trade_details.trade_amount,
+                d_base_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
+                d_base_asset_fee=fee,
+                d_base_asset_orders=1,
+                d_base_asset_volume=output_with_fee,
+        )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details.trade_amount - output_with_fee
         wallet_deltas = {
@@ -318,18 +334,15 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        market_deltas = {
-            "d_base_asset": output_with_fee,
-            "d_token_asset": -trade_details.trade_amount,
-            "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
-            "d_token_asset_slippage": 0,
-            "d_base_asset_fee": fee,
-            "d_token_asset_fee": 0,
-            "d_base_asset_orders": 1,
-            "d_token_asset_orders": 0,
-            "d_base_asset_volume": output_with_fee,
-            "d_token_asset_volume": 0,
-        }
+        
+        market_deltas = self.MarketDeltas(
+            d_base_asset=output_with_fee,
+            d_token_asset=-trade_details.trade_amount,
+            d_base_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_fee=fee,
+            d_base_asset_orders=1,
+            d_base_asset_volume=output_with_fee,
+        )
         # TODO: Add logic:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
         # then the user does not get any money into their wallet
@@ -368,18 +381,15 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        market_deltas = {
-            "d_base_asset": trade_details.trade_amount,
-            "d_token_asset": -output_with_fee,
-            "d_base_asset_slippage": 0,
-            "d_token_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
-            "d_base_asset_fee": 0,
-            "d_token_asset_fee": fee,
-            "d_base_asset_orders": 0,
-            "d_token_asset_orders": 1,
-            "d_base_asset_volume": 0,
-            "d_token_asset_volume": output_with_fee,
-        }
+
+        market_deltas = self.MarketDeltas(
+            d_base_asset=trade_details.trade_amount,
+            d_token_asset=-output_with_fee,
+            d_token_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
+            d_token_asset_fee=fee,
+            d_token_asset_orders=1,
+            d_token_asset_volume=output_with_fee,
+        )
         wallet_deltas = {
             "base_in_wallet": -trade_details.trade_amount,
             "base_in_protocol": [trade_details.mint_time, 0],
@@ -411,18 +421,14 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        market_deltas = {
-            "d_base_asset": -output_with_fee,
-            "d_token_asset": trade_details.trade_amount,
-            "d_base_asset_slippage": abs(without_fee_or_slippage - output_without_fee),
-            "d_token_asset_slippage": 0,
-            "d_base_asset_fee": fee,
-            "d_token_asset_fee": 0,
-            "d_base_asset_orders": 1,
-            "d_token_asset_orders": 0,
-            "d_base_asset_volume": output_with_fee,
-            "d_token_asset_volume": 0,
-        }
+        market_deltas = self.MarketDeltas(
+            d_base_asset=-output_with_fee,
+            d_token_asset=trade_details.trade_amount,
+            d_base_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_fee=fee,
+            d_base_asset_orders=1,
+            d_base_asset_volume=output_with_fee,
+        )
         wallet_deltas = {
             "base_in_wallet": output_with_fee,
             "base_in_protocol": [trade_details.mint_time, 0],
@@ -431,3 +437,67 @@ class Market:
             "fee": [trade_details.mint_time, fee],
         }
         return market_deltas, wallet_deltas
+
+    def _add_liquidity(self, trade_details):
+        """
+        Computes new deltas for bond & share reserves after liquidity is added
+        """
+        lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
+            base_asset_in = trade_details.trade_amount,
+            share_reserves = trade_details.share_reserves,
+            bond_reserves = trade_details.bond_reserves,
+            share_buffer = trade_details.share_buffer,
+            init_share_price = trade_details.init_share_price,
+            share_price = trade_details.share_price,
+            liquidity_pool = trade_details.liquidity_pool,
+            rate = trade_details.rate,
+            time_remaining = trade_details.time_remaining,
+            stretched_time_remaining = trade_details.stretched_time_remaining
+        )
+
+        market_deltas = self.MarketDeltas(
+            d_base_asset=d_base_reserves,
+            d_token_asset=d_token_reserves,
+            d_liquidity_pool=lp_out,
+            d_liquidity_pool_history=[trade_details.mint_time, trade_details.trade_amount]
+        )
+        user_deltas = {
+            "base_in_wallet": -d_base_reserves,
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, 0],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "lp_in_wallet": lp_out,
+        }
+        return market_deltas, user_deltas
+
+    def _remove_liquidity(self, trade_details):
+        """
+        Computes new deltas for bond & share reserves after liquidity is removed
+        """
+        lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
+            lp_in = trade_details.trade_amount,
+            share_reserves = trade_details.share_reserves,
+            bond_reserves = trade_details.bond_reserves,
+            share_buffer = trade_details.share_buffer,
+            init_share_price = trade_details.init_share_price,
+            share_price = trade_details.share_price,
+            liquidity_pool = trade_details.liquidity_pool,
+            rate = trade_details.rate,
+            time_remaining = trade_details.time_remaining,
+            stretched_time_remaining = trade_details.stretched_time_remaining
+        )
+
+        market_deltas = self.MarketDeltas(
+            d_base_asset=-d_base_reserves,
+            d_token_asset=-d_token_reserves,
+            d_liquidity_pool=-lp_in,
+            d_liquidity_pool_history=[trade_details.mint_time, trade_details.trade_amount]
+        )
+        user_deltas = {
+            "base_in_wallet": d_base_reserves,
+            "base_in_protocol": [trade_details.mint_time, 0],
+            "token_in_wallet": [trade_details.mint_time, 0],
+            "token_in_protocol": [trade_details.mint_time, 0],
+            "lp_in_wallet": -lp_in,
+        }
+        return market_deltas, user_deltas

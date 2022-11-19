@@ -152,7 +152,8 @@ class YieldSimulator:
 
     def set_pricing_model(self, model_name):
         """Assign a PricingModel object to the pricing_model attribute"""
-        print("\n\n", model_name, "\n\n")
+        if self.config.simulator.verbose:
+            print("\n\n", model_name, "\n\n")
         if model_name.lower() == "hyperdrive":
             self.pricing_model = HyperdrivePricingModel(self.config.simulator.verbose)
         elif model_name.lower() == "element":
@@ -338,16 +339,15 @@ class YieldSimulator:
                         f" user report = {self.user_list[0].status_report()}"
                     )
                 if last_block_in_sim:
+                    self.user_list[0].update_spend()
                     price = 1/self.market.spot_price
                     base = self.user_list[0].wallet['base_in_wallet']
                     tokens = sum(self.user_list[0].position_list)
                     worth = base + tokens * price
                     PnL = worth - self.user_list[0].budget
                     spend = self.user_list[0].weighted_average_spend
-                    HPR = PnL / spend
-                    annual_percentage_rate = (
-                        (worth - user.budget) / (user.update_spend() / self.market.time)
-                    ) / self.market.time
+                    holding_period_rate = PnL / spend if spend != 0 else 0
+                    annual_percentage_rate = holding_period_rate / self.market.time
                     print(
                         f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
                         + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"

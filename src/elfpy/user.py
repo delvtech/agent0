@@ -73,7 +73,30 @@ class User:
 
         action_type: str
         trade_amount: float
-        mint_time: float = field(default=None)
+        mint_time: float = None
+        market: object = None
+        fee_percent: float = field(init=False)
+        init_share_price: float = field(init=False)
+        share_price: float = field(init=False)  
+        share_reserves: float = field(init=False)
+        bond_reserves: float = field(init=False)
+        share_buffer: float = field(init=False)
+        bond_buffer: float = field(init=False)
+        liquidity_pool: float = field(init=False)
+        rate: float = field(init=False)
+        
+        def __post_init__(self):
+            if self.mint_time is None:
+                self.mint_time = self.market.time
+            self.fee_percent = self.market.fee_percent
+            self.init_share_price = self.market.init_share_price
+            self.share_price = self.market.share_price
+            self.share_reserves = self.market.share_reserves
+            self.bond_reserves = self.market.bond_reserves
+            self.share_buffer = self.market.share_buffer
+            self.bond_buffer = self.market.bond_buffer
+            self.liquidity_pool = self.market.liquidity_pool
+            self.rate = self.market.rate
 
     def action(self):
         """Specify action from the policy"""
@@ -153,7 +176,7 @@ class User:
         for key, value in trade_result.items():
             if value is None:
                 pass
-            elif key == ["base_in_wallet", "lp_in_wallet"]:
+            elif key in ["base_in_wallet", "lp_in_wallet"]:
                     self.wallet[key] += value
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 mint_time = value[0]
