@@ -142,7 +142,11 @@ class Market:
         Increments member variables to reflect current market conditions
         """
         for key, value in market_deltas.items():
-            assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
+            if key == "d_liquidity_pool_history":
+                assert isinstance(value, list), f"markets.updatE_market: Error:"\
+                + f" d_liquidity_pool_history has value={value} should be a list"
+            else:
+                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.share_reserves += market_deltas["d_base_asset"]/self.share_price
         self.bond_reserves += market_deltas["d_token_asset"]
         self.share_buffer += market_deltas["d_share_buffer"] if "d_share_buffer" in market_deltas else 0
