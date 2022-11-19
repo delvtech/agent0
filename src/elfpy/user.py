@@ -84,6 +84,8 @@ class User:
         bond_buffer: float = field(init=False)
         liquidity_pool: float = field(init=False)
         rate: float = field(init=False)
+        time_remaining: float = field(init=False)
+        stretched_time_remaining: float = field(init=False)
         
         def __post_init__(self):
             if self.mint_time is None:
@@ -97,6 +99,12 @@ class User:
             self.bond_buffer = self.market.bond_buffer
             self.liquidity_pool = self.market.liquidity_pool
             self.rate = self.market.rate
+            self.time_remaining = time_utils.get_yearfrac_remaining(
+                self.market.time, self.mint_time, self.market.token_duration
+            )
+            self.stretched_time_remaining = time_utils.stretch_time(
+                self.time_remaining, self.market.time_stretch_constant
+            )
 
     def action(self):
         """Specify action from the policy"""
@@ -162,11 +170,11 @@ class User:
         return action_list
 
     def update_spend(self):
-        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}")
+        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.product_of_time_and_base += new_spend
         self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
-        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}")
+        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 

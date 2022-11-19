@@ -27,14 +27,14 @@ class PricingModel:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, verbose=None):
+    def __init__(self, verbose=False):
         """
         Arguments
         ---------
         verbose : bool
             if True, print verbose outputs
         """
-        self.verbose = False if verbose is None else verbose
+        self.verbose = verbose
 
     def calc_in_given_out(
         self,
@@ -637,15 +637,15 @@ class HyperdrivePricingModel(PricingModel):
         y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
         """
-        print(f"  inputs: base_asset_in={base_asset_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
+        print(f"  inputs: base_asset_in={base_asset_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}") if self.verbose else None
         d_share_reserves = base_asset_in / share_price
-        print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})")
+        print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})") if self.verbose else None
         lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
-        print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))")
+        print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))") if self.verbose else None
         d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
-        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
+        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})") if self.verbose else None
         return lp_out, base_asset_in, d_token_reserves
 
     def calc_lp_in_given_tokens_out(
@@ -743,14 +743,14 @@ class HyperdrivePricingModel(PricingModel):
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
         )
-        print(f"  inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
+        print(f"  inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}") if self.verbose else None
         d_base_reserves = share_price * (share_reserves - share_buffer) * lp_in / liquidity_pool
         d_share_reserves = d_base_reserves / share_price
-        print(f"  d_share_reserves={d_share_reserves} (d_base_reserves / share_price = {d_base_reserves} / {share_price})")
+        print(f"  d_share_reserves={d_share_reserves} (d_base_reserves / share_price = {d_base_reserves} / {share_price})") if self.verbose else None
         d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
-        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
+        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})") if self.verbose else None
         return lp_in, d_base_reserves, d_token_reserves
 
     def calc_in_given_out(

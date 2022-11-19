@@ -130,8 +130,14 @@ class YieldSimulator:
             f"init_vault_apy = {self.vault_apy[0]}\n"
         )
 
+    def get_simulation_step_string(self):
+        """Returns a string that describes the current simulation step"""
+        return f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"\
+            + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"\
+            + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
+
     def get_simulation_state_string(self):
-        """Returns a formatted string containing all of the Simulation class member variables"""
+        """returns a formatted string containing all of the Simulation class member variables"""
         strings = []
         for attribute, value in self.__dict__.items():
             if attribute not in ("analysis_dict", "rng"):
@@ -172,12 +178,17 @@ class YieldSimulator:
                 for config_obj in [self.config.market, self.config.amm, self.config.simulator]:
                     if hasattr(config_obj, key):
                         setattr(config_obj, key, override_dict[key])
-                        if key == "vault_apy":
-                            assert len(override_dict[key]) == self.config.simulator.num_trading_days, (
-                                "vault_apy must have len equal to num_trading_days = "
-                                + f"{self.config.simulator.num_trading_days},"
-                                + f" not {len(override_dict[key])}"
-                            )
+                if key == "vault_apy":
+                    if isinstance(override_dict[key], float):
+                        self.vault_apy = np.ones(self.config.simulator.num_trading_days) * override_dict[
+                            key
+                        ]
+                    else:
+                        assert len(override_dict[key]) == self.config.simulator.num_trading_days, (
+                            "vault_apy must have len equal to num_trading_days = "
+                            + f"{self.config.simulator.num_trading_days},"
+                            + f" not {len(override_dict[key])}"
+                        )
         if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
         else:
@@ -278,69 +289,29 @@ class YieldSimulator:
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 for user in self.user_list:
-                    action_list = user.get_trade()
-                    if len(action_list) == 0:  # empty list indicates no action
-                        pass
+                    action_list = user.get_trade() if not last_block_in_sim else user.liquidate() 
                     for user_action in action_list:
                         # print this as soon as you get it, before something crashes
-                        if self.config.simulator.verbose:
-                            print(
-                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
-                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
-                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                                f" user action = {user_action}"
-                            )
+                        print(f"{self.get_simulation_step_string()} user action = {user_action}")
                         # Conduct trade & update state
-                        user_action.time_remaining = time_utils.get_yearfrac_remaining(
-                            self.market.time, user_action.mint_time, self.market.token_duration
-                        )
-                        user_action.stretched_time_remaining = time_utils.stretch_time(
-                            user_action.time_remaining, self.market.time_stretch_constant
-                        )
                         user_deltas, market_deltas = self.market.trade_and_update(user_action)
                         if self.config.simulator.verbose:
-                            print(
-                                f" user deltas = {user_deltas}\n"+
-                                f" market deltas = {market_deltas}"
-                            )
+                            print(f" user deltas = {user_deltas}\n market deltas = {market_deltas}")
                         user.update_wallet(user_deltas)  # update user state since market doesn't know about users
-                        if self.config.simulator.verbose:
-                            print(f" user report = {user.status_report()}")
+                        print(f" user report = {user.status_report()}") if self.config.simulator.verbose else None
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         last_user_action_time = self.market.time
                         if self.config.simulator.verbose:
-                            print(
-                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
-                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
-                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                                f" user report = {user.status_report()}"
-                            )
-                            # print(
-                            #     "YieldSimulator.run_simulation:"
-                            #     f"\n\ttime = {self.market.time}"
-                            #     f"\n\tuser trade = {user_action}"
-                            #     f"\n\tuser_wallet = {user.wallet}"
-                            #     f"\n\tinit pool apy = {self.init_pool_apy}"
-                            #     f"\n\ttrades = {self.market.base_asset_orders + self.market.token_asset_orders}"
-                            #     f"\n\tinit_share_price = {self.market.init_share_price}"
-                            #     f"\n\tshare_price = {self.market.share_price}"
-                            #     f"\n\tamount = {self.trade_amount}"
-                            #     f"\n\treserves = {(self.market.share_reserves, self.market.bond_reserves)}"
-                            # )
+                            print(f"{self.get_simulation_step_string()} user report = {user.status_report()}")
                 # TODO: convert to proper logging
                 log_at_least_every_n_years = 0.1
                 if (self.market.time - last_user_action_time > log_at_least_every_n_years/2) and (self.market.time - last_user_action_time) % log_at_least_every_n_years <= 1/365/self.config.simulator.num_blocks_per_day:
-                    print(
-                        f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
-                        f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
-                        f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                        f" no user action 😴"+
-                        f" user report = {self.user_list[0].status_report()}"
+                    print(f"{self.get_simulation_step_string()} no user action 😴"\
+                        + f" user report = {self.user_list[0].status_report()}"
                     )
                 if last_block_in_sim:
-                    self.user_list[0].update_spend()
-                    price = 1/self.market.spot_price
+                    price = self.market.spot_price
                     base = self.user_list[0].wallet['base_in_wallet']
                     tokens = sum(self.user_list[0].position_list)
                     worth = base + tokens * price
@@ -349,11 +320,10 @@ class YieldSimulator:
                     holding_period_rate = PnL / spend if spend != 0 else 0
                     annual_percentage_rate = holding_period_rate / self.market.time
                     print(
-                        f"SIM_END t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"
-                        + f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"
-                        + f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"
-                        + f" user result 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC} from {base} base"
-                        + f" and {tokens} tokens at p={price}\n"
+                        self.get_simulation_step_string()\
+                        + f" user net worth 😱 = ₡{bcolors.FAIL}{worth}{bcolors.ENDC}"\
+                        + f" from {base} base and {tokens} tokens at p={price}\n"
+                        + f" made {holding_period_rate:,.2%} in {self.market.time*365} days\n"
                         + f" over {self.market.time} years that\'s an APR of {bcolors.OKGREEN}"
                         + f"{annual_percentage_rate:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
                     )

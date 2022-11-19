@@ -29,7 +29,11 @@ class Policy(BasicPolicy):
         elif self.has_LPd:
             enough_time_has_passed = self.market.time > 0.5  # this is dumb, more of a placeholder
             if enough_time_has_passed:
-                action_list.append(["remove_liquidity", self.wallet["lp_in_wallet"]])
+                action_list.append(self.UserAction(
+                        action_type="remove_liquidity",
+                        trade_amount=self.wallet.lp_in_wallet,
+                        market=self.market,
+                ))
         return action_list
 
     def liquidate(self):
@@ -37,7 +41,11 @@ class Policy(BasicPolicy):
         self.status_update()
         action_list = []
         if self.has_LPd:
-            action_list.append(["remove_liquidity", self.wallet["lp_in_wallet"]])
+            action_list.append(self.UserAction(
+                    action_type="remove_liquidity",
+                    trade_amount=self.wallet.lp_in_wallet,
+                    market=self.market,
+            ))
         return action_list
 
     def status_update(self):
