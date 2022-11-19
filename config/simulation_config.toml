@@ -11,7 +11,7 @@ max_vault_age = 1  # fraction of a year
 min_vault_apy = 0.001  # as a decimal
 max_vault_apy = 0.9  # as a decimal
 # fixed variables
-base_asset_price = 2.5e3  # aka market price
+base_asset_price = 1  # aka market price
 
 [amm]
 # random variables
@@ -27,6 +27,7 @@ floor_fee = 0  # minimum fee percentage (bps)
 token_duration = 180  # in days
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
+token_duration = 0.24657534246575342465753424657534  # 90 / 365 = time lapse between token mint and expiry as a yearfrac
 precision = 64 # 64 is max precision (and the default for numpy)
 pricing_model_name = "Element" # specify a pricing model
 user_policies = ["single_long"] # specify a list of trading strategies by name

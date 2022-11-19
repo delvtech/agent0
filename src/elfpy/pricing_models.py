@@ -620,11 +620,11 @@ class HyperdrivePricingModel(PricingModel):
             rate >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert (
-            time_remaining >= 0
+            1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
             f" share_price={share_price} and init_share_price={init_share_price}!"
@@ -680,11 +680,11 @@ class HyperdrivePricingModel(PricingModel):
             rate >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert (
-            time_remaining >= 0
+            1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
         )
@@ -735,11 +735,11 @@ class HyperdrivePricingModel(PricingModel):
             rate >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert (
-            time_remaining >= 0
+            1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
         )
@@ -1083,8 +1083,8 @@ class HyperdrivePricingModel(PricingModel):
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            time_remaining >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected time_remaining >= 0, not {time_remaining}!"
+            1 > time_remaining >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
             f" share_price={share_price} and init_share_price={init_share_price}!"

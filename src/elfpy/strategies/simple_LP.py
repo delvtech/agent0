@@ -19,12 +19,24 @@ class Policy(BasicPolicy):
         self.status_update()
         action_list = []
         if not self.has_LPd and self.can_LP:
-            action_list.append(["add_liquidity", self.amount_to_trade])
+            action_list.append(
+                self.UserAction(
+                    action_type="add_liquidity",
+                    trade_amount=self.amount_to_trade
+                )
+            )
         elif self.has_LPd:
-            enough_time_has_passed = (self.market.end_of_time - self.market.time < 1e-9)
+            enough_time_has_passed = self.market.time > 0.5  # this is dumb, more of a placeholder
             if enough_time_has_passed:
                 action_list.append(["remove_liquidity", self.wallet["lp_in_wallet"]])
+        return action_list
 
+    def liquidate(self):
+        """close up shop"""
+        self.status_update()
+        action_list = []
+        if self.has_LPd:
+            action_list.append(["remove_liquidity", self.wallet["lp_in_wallet"]])
         return action_list
 
     def status_update(self):

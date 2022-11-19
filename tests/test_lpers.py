@@ -8,6 +8,7 @@ Testing for the ElfPy package modules
 
 import unittest
 import numpy as np
+import os
 
 from elfpy.simulators import YieldSimulator
 
@@ -15,46 +16,16 @@ from elfpy.simulators import YieldSimulator
 class BaseLPTest(unittest.TestCase):
     """Generic Trade Test class"""
 
-    def run_base_lp_test(self, policy, additional_overrides=None):
+    def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
-        # load default config
-        random_seed = 3
-        simulator_rng = np.random.default_rng(random_seed)
-        config = {
-            "min_fee": 0.1,  # decimal that assigns fee_percent
-            "max_fee": 0.5,  # decimal that assigns fee_percent
-            "min_target_liquidity": 1e6,  # in USD
-            "max_target_liquidity": 10e6,  # in USD
-            "min_target_volume": 0.001,  # fraction of pool liquidity
-            "max_target_volume": 0.01,  # fration of pool liquidity
-            "min_pool_apy": 0.02,  # as a decimal
-            "max_pool_apy": 0.9,  # as a decimal
-            "min_vault_age": 0,  # fraction of a year
-            "max_vault_age": 1,  # fraction of a year
-            "min_vault_apy": 0.001,  # as a decimal
-            "max_vault_apy": 0.9,  # as a decimal
-            "base_asset_price": 1,  # aka market price
-            "pool_duration": 180,  # in days
-            "num_trading_days": 180,  # should be <= pool_duration
-            "floor_fee": 0,  # minimum fee percentage (bps)
-            "tokens": ["base", "pt"],
-            "trade_direction": "out",
-            "precision": None,
-            "pricing_model_name": "HyperDrive",
-            "user_type": "Random",
-            "rng": simulator_rng,
-            "verbose": False,
-            "user_policies": [policy],  # list of user policies by name
-            "token_duration": 90 / 365,  # 3 month term; time unit is yearfrac
-            "num_blocks_per_day": 1,  # 1 block a day keeps the MEV away!
-        }
-
-        simulator = YieldSimulator(**config)
+        simulator = YieldSimulator(config_file)
         simulator.set_random_variables()
         override_dict = {
             "target_liquidity": 10e6,
-            "fee_percent": 0.1,
+            "fee_percent": 0.1,  # a fraction which represents a percentage!
             "init_pool_apy": 0.05,
+            "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
+            "user_policies": user_policies,  # list of user policies by name
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
@@ -66,7 +37,7 @@ class LPTests(BaseLPTest):
 
     def test_base_LPs(self):
         """Tests base LP setups"""
-        self.run_base_lp_test("simple_LP")
+        self.run_base_lp_test(user_policies=["simple_LP"],config_file="config/hyperdrive_config.toml")
 
     # def test_comlicated_LPs(self):
         """Tests complicated LP setups"""

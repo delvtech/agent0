@@ -44,6 +44,7 @@ class User:
         """user wallet store"""
 
         base_in_wallet: float = 0
+        lp_in_wallet: float = 0  # they're fungible!
         token_in_wallet: dict = field(default_factory=dict)
         base_in_protocol: dict = field(default_factory=dict)
         token_in_protocol: dict = field(default_factory=dict)
@@ -124,10 +125,6 @@ class User:
             if action.action_type == "close_short":
                 action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
                 action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]
-            if len(action) > 2:  # close, so mint_time is the time for the token we want to close
-                action.mint_time = action[2]
-            else:  # open, so mint_time is assigned to current market time (fresh mint)
-                action.mint_time = self.market.time
             if action.action_type == "close_short":
                 action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
                 action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]

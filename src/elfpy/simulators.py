@@ -259,6 +259,7 @@ class YieldSimulator:
         self.start_time = time_utils.current_datetime()
         self.block_number = 0
         self.setup_simulated_entities(override_dict)
+        last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
             # Vault return can vary per day, which sets the current price per share
@@ -270,6 +271,9 @@ class YieldSimulator:
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
+                if self.day == self.config.simulator.num_trading_days - 1:
+                    if daily_block_number == self.config.simulator.num_blocks_per_day - 1:
+                        last_block_in_sim = True
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 for user in self.user_list:
@@ -278,12 +282,13 @@ class YieldSimulator:
                         pass
                     for user_action in action_list:
                         # print this as soon as you get it, before something crashes
-                        print (
-                            f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
-                            f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
-                            f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                            f" user action = {user_action}"
-                        )
+                        if self.config.simulator.verbose:
+                            print(
+                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                                f" user action = {user_action}"
+                            )
                         # Conduct trade & update state
                         user_action.time_remaining = time_utils.get_yearfrac_remaining(
                             self.market.time, user_action.mint_time, self.market.token_duration
@@ -292,23 +297,24 @@ class YieldSimulator:
                             user_action.time_remaining, self.market.time_stretch_constant
                         )
                         user_deltas, market_deltas = self.market.trade_and_update(user_action)
-                        print(
-                            f" user deltas = {user_deltas}\n"+
-                            f" market deltas = {market_deltas}"
-                        )
+                        if self.config.simulator.verbose:
+                            print(
+                                f" user deltas = {user_deltas}\n"+
+                                f" market deltas = {market_deltas}"
+                            )
                         user.update_wallet(user_deltas)  # update user state since market doesn't know about users
-                        print(f" user report = {user.status_report()}")
+                        if self.config.simulator.verbose:
+                            print(f" user report = {user.status_report()}")
                         self.update_analysis_dict()
                         self.run_trade_number += 1
                         last_user_action_time = self.market.time
-                        # print(f"last_user_action_time = {last_user_action_time}")
-                        # print(
-                        #     f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
-                        #     f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
-                        #     f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
-                        #     f" user report = {user.status_report()}"
-                        # )       
-                        # if self.verbose:
+                        if self.config.simulator.verbose:
+                            print(
+                                f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"+
+                                f" reserves=[x={bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}"+
+                                f",y={bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}]\n"+
+                                f" user report = {user.status_report()}"
+                            )
                             # print(
                             #     "YieldSimulator.run_simulation:"
                             #     f"\n\ttime = {self.market.time}"
@@ -331,10 +337,7 @@ class YieldSimulator:
                         f" no user action 😴"+
                         f" user report = {self.user_list[0].status_report()}"
                     )
-                if (
-                        day == self.config.simulator.num_trading_days - 1
-                        and daily_block_number == self.config.simulator.num_blocks_per_day - 1
-                    ):
+                if last_block_in_sim:
                     price = 1/self.market.spot_price
                     base = self.user_list[0].wallet['base_in_wallet']
                     tokens = sum(self.user_list[0].position_list)

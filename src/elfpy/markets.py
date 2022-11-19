@@ -89,10 +89,10 @@ class Market:
         user_action.share_reserves = self.share_reserves
         user_action.bond_reserves = self.bond_reserves
         user_action.share_buffer = self.share_buffer
-        user_action.bond_buffer. = self.bond_buffer
-        user_action.liquidity_pool. = self.liquidity_pool
+        user_action.bond_buffer = self.bond_buffer
+        user_action.liquidity_pool = self.liquidity_pool
         # ensure that the user action is an allowed action for this market
-        if not user_action["action_type"] in self.allowed_actions:
+        if not user_action.action_type in self.allowed_actions:
             raise AssertionError(
                 f'markets.swap: ERROR: user_action["action_type"] should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action["action_type"]}!'
             )
@@ -249,7 +249,7 @@ class Market:
             share_price=self.share_price,
             time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
         )
-        self.rate = self.pricing_model.calc_apy_from_spot_price(self.spot_price, self.token_duration)
+        self.rate = self.pricing_model.calc_apr_from_spot_price(self.spot_price, self.token_duration)
 
     def _open_short(self, trade_details):
         """
