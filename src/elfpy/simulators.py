@@ -225,9 +225,9 @@ class YieldSimulator:
             )
         # setup user list
         self.user_list = []
-        for policy_number, policy_name in enumerate(self.user_policies):
+        for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
-                market=self.market, rng=self.rng, wallet_address=policy_number, verbose=self.verbose
+                market=self.market, rng=self.rng, wallet_address=policy_number, verbose=self.config.simulator.verbose
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
