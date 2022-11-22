@@ -29,12 +29,12 @@ class Market:
 
     def __init__(
         self,
-        share_reserves,
-        bond_reserves,
-        liquidity_pool,
         fee_percent,
         token_duration,
         pricing_model,
+        share_reserves = 0,
+        bond_reserves = 0,
+        liquidity_pool = 0,
         time_stretch_constant=1,
         init_share_price=1,
         share_price=1,
@@ -77,8 +77,8 @@ class Market:
         self.spot_price = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
-        self.rate = np.nan
-        self.update_spot_price_and_rate()
+        self.rate = 0
+        self.update_spot_price_and_rate() if self.share_reserves > 0 else None
 
     @dataclass
     class MarketDeltas:

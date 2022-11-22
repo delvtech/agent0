@@ -86,8 +86,10 @@ class User:
         rate: float = field(init=False)
         time_remaining: float = field(init=False)
         stretched_time_remaining: float = field(init=False)
-        
-        def __post_init__(self):
+        wallet_address: int = field(init=False)
+
+        def set_variables(self, market, wallet_address):
+            self.market = market
             if self.mint_time is None:
                 self.mint_time = self.market.time
             self.fee_percent = self.market.fee_percent
@@ -99,12 +101,18 @@ class User:
             self.bond_buffer = self.market.bond_buffer
             self.liquidity_pool = self.market.liquidity_pool
             self.rate = self.market.rate
+            self.wallet_address = wallet_address
             self.time_remaining = time_utils.get_yearfrac_remaining(
                 self.market.time, self.mint_time, self.market.token_duration
             )
             self.stretched_time_remaining = time_utils.stretch_time(
                 self.time_remaining, self.market.time_stretch_constant
             )
+
+    def create_user_action(self, action_type, trade_amount):
+        user_action = self.UserAction(action_type, trade_amount)
+        user_action.set_variables(self.market, self.wallet_address)
+        return user_action
 
     def action(self):
         """Specify action from the policy"""
@@ -213,5 +221,21 @@ class User:
                     if value != 0:
                         color = bcolors.OKGREEN if value > 0 else bcolors.WARNING
                         wallet_string += f" {key} = ₡{color}{value}{bcolors.ENDC}"
-            # wallet_string = ", ".join([f"{key}=₡{sum(value.values()):,.2f}" for key, value in self.wallet.items()])
-            print(f" hello, human. this 🤖 now has{wallet_string} of your puny currencies")
+
+    def final_report(self):
+        price = self.market.spot_price
+        base = self.wallet['base_in_wallet']
+        tokens = sum(self.position_list)
+        worth = base + tokens * price
+        PnL = worth - self.budget
+        spend = self.weighted_average_spend
+        holding_period_rate = PnL / spend if spend != 0 else 0
+        annual_percentage_rate = holding_period_rate / self.market.time
+        print(
+            f" 🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"\
+            + f" net worth = ₡{bcolors.FAIL}{worth}{bcolors.ENDC}"\
+            + f" from {base} base and {tokens} tokens at p={price}\n"
+            + f"  made {holding_period_rate:,.2%} in {self.market.time*365:,.2f} days"
+            + f" over {self.market.time} years that\'s an APR of {bcolors.OKGREEN}"
+            + f"{annual_percentage_rate:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
+        )

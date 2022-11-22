@@ -33,3 +33,6 @@ pricing_model_name = "HyperDrive" # specify a pricing model
 user_policies = ["single_long"] # specify a list of trading strategies by name
 random_seed = 123 # to be passed to a rng
 verbose = false # toggle verbose output level
+
+[pricing_model]
+verbose = false

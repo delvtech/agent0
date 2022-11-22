@@ -8,32 +8,26 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=False):
+    def __init__(self, market, rng, wallet_address, budget=1000, amount_to_trade=100, verbose=False):
         """call basic policy init then add custom stuff"""
         super().__init__(market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose)
-        self.amount_to_trade = 100
+        self.amount_to_trade = amount_to_trade
         self.status_update()
 
     def action(self):
-        """specify action"""
+        """
+        implement user strategy
+        LP if you can, but only do it once
+        """
         self.status_update()
         action_list = []
         if not self.has_LPd and self.can_LP:
             action_list.append(
-                self.UserAction(
+                self.create_user_action(
                     action_type="add_liquidity",
-                    trade_amount=self.amount_to_trade,
-                    market=self.market,
+                    trade_amount=self.amount_to_trade
                 )
             )
-        elif self.has_LPd:
-            enough_time_has_passed = self.market.time > 0.5  # this is dumb, more of a placeholder
-            if enough_time_has_passed:
-                action_list.append(self.UserAction(
-                        action_type="remove_liquidity",
-                        trade_amount=self.wallet.lp_in_wallet,
-                        market=self.market,
-                ))
         return action_list
 
     def liquidate(self):
@@ -41,10 +35,9 @@ class Policy(BasicPolicy):
         self.status_update()
         action_list = []
         if self.has_LPd:
-            action_list.append(self.UserAction(
+            action_list.append(self.create_user_action(
                     action_type="remove_liquidity",
-                    trade_amount=self.wallet.lp_in_wallet,
-                    market=self.market,
+                    trade_amount=self.wallet.lp_in_wallet
             ))
         return action_list
 
@@ -54,7 +47,7 @@ class Policy(BasicPolicy):
 
     def status_report(self):
         return (
-            f"has_LPd: {self.has_LPd}, can_LP: {self.can_LP}"
+            f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} has_LPd: {self.has_LPd}, can_LP: {self.can_LP}"
             + f" base_in_wallet: {bcolors.OKBLUE}{self.wallet['base_in_wallet']}{bcolors.ENDC}"
             + f" LP_position: {bcolors.OKCYAN}{self.wallet['lp_in_wallet']}{bcolors.ENDC}"
         )

@@ -101,6 +101,9 @@ class PricingModel:
         """
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves
+        # if share_reserves == 0:
+        #     return np.inf
+        # else:
         return 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
 
     def add_liquidity(self, trade_details):
@@ -148,9 +151,9 @@ class PricingModel:
 
     def calc_apr_from_spot_price(self, price, normalized_days_remaining):
         """Returns the APY (decimal) given the current (positive) base asset price and the remaining pool duration"""
-        assert price > 0, (
+        assert price >= 0, (
             "pricing_models.calc_apy_from_spot_price: ERROR: calc_apy_from_spot_price: Price argument should be"
-            f" greater than zero, not {price}"
+            f" greater than or equal to zero, not {price}"
         )
         assert (
             normalized_days_remaining > 0
@@ -605,11 +608,11 @@ class HyperdrivePricingModel(PricingModel):
             base_asset_in > 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_asset_in > 0, not {base_asset_in}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             share_buffer >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
@@ -637,15 +640,21 @@ class HyperdrivePricingModel(PricingModel):
         y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
         """
-        print(f"  inputs: base_asset_in={base_asset_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}") if self.verbose else None
+        if self.verbose:
+            print(f"  inputs: base_asset_in={base_asset_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
         d_share_reserves = base_asset_in / share_price
-        print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})") if self.verbose else None
-        lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
-        print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))") if self.verbose else None
-        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
-            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
-        ) - bond_reserves
-        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})") if self.verbose else None
+        if self.verbose:
+            print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})")
+        if share_reserves > 0:
+            lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
+        else:
+            lp_out = d_share_reserves
+            d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
+                init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
+            ) - bond_reserves
+            if self.verbose:
+                print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))")
+                print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
         return lp_out, base_asset_in, d_token_reserves
 
     def calc_lp_in_given_tokens_out(
@@ -663,30 +672,30 @@ class HyperdrivePricingModel(PricingModel):
     ):
         assert (
             base_asset_out > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_asset_out > 0, not {base_asset_out}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected base_asset_out > 0, not {base_asset_out}!"
         assert (
             share_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             share_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_buffer >= 0, not {share_buffer}!"
         assert (
             liquidity_pool >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected liquidity_pool >= 0, not {liquidity_pool}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected liquidity_pool >= 0, not {liquidity_pool}!"
         assert (
             rate >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
         assert (
             1 > time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
         )
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -723,8 +732,8 @@ class HyperdrivePricingModel(PricingModel):
             share_reserves > 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             share_buffer >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
@@ -743,14 +752,17 @@ class HyperdrivePricingModel(PricingModel):
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
         )
-        print(f"  inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}") if self.verbose else None
+        if self.verbose:
+            print(f"  inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, init_share_price={init_share_price}, share_price={share_price}, liquidity_pool={liquidity_pool}, rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}")
         d_base_reserves = share_price * (share_reserves - share_buffer) * lp_in / liquidity_pool
         d_share_reserves = d_base_reserves / share_price
-        print(f"  d_share_reserves={d_share_reserves} (d_base_reserves / share_price = {d_base_reserves} / {share_price})") if self.verbose else None
+        if self.verbose:
+            print(f"  d_share_reserves={d_share_reserves} (d_base_reserves / share_price = {d_base_reserves} / {share_price})")
         d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
-        print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})") if self.verbose else None
+        if self.verbose:
+            print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
         return lp_in, d_base_reserves, d_token_reserves
 
     def calc_in_given_out(
@@ -848,11 +860,11 @@ class HyperdrivePricingModel(PricingModel):
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self.calc_spot_price_from_reserves(
-            share_reserves,
-            bond_reserves,
-            init_share_price,
-            share_price,
-            time_remaining,
+            share_reserves=share_reserves,
+            bond_reserves=bond_reserves,
+            init_share_price=init_share_price,
+            share_price=share_price,
+            time_remaining=time_remaining,
         )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
@@ -1096,7 +1108,11 @@ class HyperdrivePricingModel(PricingModel):
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self.calc_spot_price_from_reserves(
-            share_reserves, bond_reserves, init_share_price, share_price, time_remaining
+            share_reserves=share_reserves,
+            bond_reserves=bond_reserves,
+            init_share_price=init_share_price,
+            share_price=share_price,
+            time_remaining=time_remaining
         )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
