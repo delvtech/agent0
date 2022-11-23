@@ -5,7 +5,7 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 from importlib import import_module
-from elfpy.utils.fmt import *
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
