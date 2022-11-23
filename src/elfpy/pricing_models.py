@@ -242,6 +242,7 @@ class ElementPricingModel(PricingModel):
         # share price:
         #
         # k = x**(1 - τ) + (2y + x)**(1 - τ)
+        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         # Solve for the amount that must be paid to receive the specified amount
         # of the output.

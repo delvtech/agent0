@@ -4,11 +4,12 @@ Market simulators store state information when interfacing AMM pricing models wi
 TODO: rewrite all functions to have typed inputs
 """
 
-import numpy as np
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 import elfpy.utils.time as time_utils
 from elfpy.user import AgentWallet
 from elfpy.utils.bcolors import bcolors
 from elfpy.utils.basic_dataclass import *
+import elfpy.utils.price as price_utils
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -272,7 +273,7 @@ class Market:
             share_price=self.share_price,
             time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
         )
-        self.rate = self.pricing_model.calc_apr_from_spot_price(self.spot_price, self.token_duration)
+        self.rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.token_duration)
 
     def swap(self, trade_details):
         if trade_details.direction == "in":

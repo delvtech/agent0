@@ -45,6 +45,7 @@ class User:
         self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
         self.position_list = []
+        self.status_update()
 
     @dataclass
     class UserAction:
@@ -162,6 +163,7 @@ class User:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
+        self.status_update()
         action_list = self.action()  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
@@ -248,25 +250,37 @@ class User:
                 ))
         return action_list
 
+    def status_update(self):
+        self.is_LP = True if hasattr(self, "amount_to_LP") else False
+        self.is_shorter = True if hasattr(self, "pt_to_short") else False
+        if self.is_LP:
+            self.has_LPd = self.wallet.lp_in_wallet > 0
+            self.can_LP = self.wallet.base_in_wallet >= self.amount_to_LP
+        self.position_list = list(self.wallet.token_in_protocol.values())
+        self.mint_times = list(self.wallet.token_in_protocol.keys())
+        if self.is_shorter:
+            self.has_opened_short = True if any([x < -1 for x in self.position_list]) else False
+            self.can_open_short = self.get_max_pt_short(self.market.time) >= self.pt_to_short
+
     def status_report(self):
+        self.status_update()
         output_string = f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
         string_list = []
-        is_LP = True if hasattr(self, "can_LP") else False
-        is_shorter = True if hasattr(self, "can_open_short") else False
-        if is_LP:         # this agent can LP! he has the logic circuits to do so
+        if self.is_LP:         # this agent can LP! he has the logic circuits to do so
             string_list.append(f"has_LPd: {self.has_LPd}, can_LP: {self.can_LP}")
-        if is_shorter:  # this agent can short! he has the logic circuits to do so
+        if self.is_shorter:  # this agent can short! he has the logic circuits to do so
             string_list.append(f"has_opened_short: {self.has_opened_short}")
             string_list.append(f"can_open_short: {self.can_open_short}")
             string_list.append(f"max_short: {self.get_max_pt_short(self.market.time):,.0f}")
         string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
         string_list.append(f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}") if self.position_list else None
-        string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}") if is_LP else None
+        string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}") if self.is_LP else None
         string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}") if self.wallet.fees_paid > 0 else None
         output_string += ", ".join(string_list)
         return output_string
 
     def final_report(self):
+        self.status_update()
         price = self.market.spot_price
         base = self.wallet['base_in_wallet']
         tokens = sum(self.position_list)
@@ -286,5 +300,5 @@ class User:
         output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
         output_string += f" ({holding_period_rate:,.2%} in {fmt(self.market.time,precision=2)} years)"
         output_string += f", net worth = ₡{bcolors.FAIL}{fmt(worth)}{bcolors.ENDC}"
-        output_string += f" from {base} base and {tokens} tokens at p={price}\n"
+        output_string += f" from {fmt(base)} base and {fmt(tokens)} tokens at p={price}\n"
         print(output_string)
