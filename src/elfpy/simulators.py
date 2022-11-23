@@ -5,7 +5,7 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 from importlib import import_module
-from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
+from elfpy.utils.fmt import *  # float→str formatter, also imports numpy as np
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
@@ -31,7 +31,6 @@ class YieldSimulator:
         self.config = parse_simulation_config(config_file)
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
-        self.random_variables_set = False
         self.run_number = 0
         self.day = 0
         self.block_number = 0
@@ -139,7 +138,9 @@ class YieldSimulator:
     def set_pricing_model(self, model_name):
         """Assign a PricingModel object to the pricing_model attribute"""
         if self.config.simulator.verbose:
-            print(f"{'#'*20} {model_name} {'#'*20}\n verbose=(simulator:{self.config.simulator.verbose},pricing_model:{self.config.pricing_model.verbose})")
+            print(
+                f"{'#'*20} {model_name} {'#'*20}\n verbose=(simulator:{self.config.simulator.verbose},pricing_model:{self.config.pricing_model.verbose})"
+            )
         if model_name.lower() == "hyperdrive":
             self.pricing_model = HyperdrivePricingModel(self.config.pricing_model.verbose)
         elif model_name.lower() == "element":
@@ -147,32 +148,39 @@ class YieldSimulator:
         else:
             raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
-    def setup_simulated_entities(self, override_dict=None):
-        """Constructs the user list, pricing model, and market member variables"""
-        # update parameters if the user provided new ones
-        assert (
-            self.random_variables_set
-        ), "ERROR: You must run simulator.set_random_variables() before constructing simulation entities"
+    def override_variables(self, override_dict=None):
+        """Replace existing member & config variables with ones defined in override_dict"""
+        # override the config variables, including random variables that were set
         if override_dict is not None:
             for key, value in override_dict.items():
                 for config_obj in [self.config.market, self.config.amm, self.config.simulator]:
                     if hasattr(config_obj, key):
                         setattr(config_obj, key, value)
-                if key == "vault_apy":
+                if key == "vault_apy":  # support for float or list[float] types
                     if isinstance(value, float):
-                        self.config.simulator.vault_apy = [value]*self.config.simulator.num_trading_days
+                        self.config.simulator.vault_apy = [value] * self.config.simulator.num_trading_days
                     else:
                         assert len(value) == self.config.simulator.num_trading_days, (
                             "vault_apy must have len equal to num_trading_days = "
                             + f"{self.config.simulator.num_trading_days},"
                             + f" not {len(value)}"
                         )
-        if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
-            self.init_share_price = override_dict["init_share_price"]
+        # override the init_share_price if it is in the override_dict
+        if override_dict is not None and "init_share_price" in override_dict.keys():
+            self.init_share_price = override_dict["init_share_price"]  # \mu variable
         else:
             self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
             if self.config.simulator.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
+
+    def setup_simulated_entities(self, override_dict=None):
+        """Constructs the user list, pricing model, and market member variables"""
+        # update parameters if the user provided new ones
+        assert (
+            self.random_variables_set
+        ), "ERROR: You must run simulator.set_random_variables() before constructing simulation entities"
+        # apply the override dict
+        self.override_variables(override_dict)
         # setup pricing model
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
@@ -214,11 +222,11 @@ class YieldSimulator:
             market=self.market,
             rng=self.rng,
             wallet_address=0,
-            budget = init_base_asset_reserves*100,
-            amount_to_LP = init_base_asset_reserves,
-            pt_to_short = init_token_asset_reserves/10,
-            short_until_apr = self.config.simulator.init_pool_apy,
-            verbose=self.config.simulator.verbose
+            budget=init_base_asset_reserves * 100,
+            amount_to_LP=init_base_asset_reserves,
+            pt_to_short=init_token_asset_reserves / 10,
+            short_until_apr=self.config.simulator.init_pool_apy,
+            verbose=self.config.simulator.verbose,
         )
         self.block_number = 0
         self.user_list = [initial_lp]
@@ -227,7 +235,9 @@ class YieldSimulator:
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
-                market=self.market, rng=self.rng, wallet_address=policy_number+1,
+                market=self.market,
+                rng=self.rng,
+                wallet_address=policy_number + 1,
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
@@ -294,10 +304,10 @@ class YieldSimulator:
                 self.last_user_action_time = self.market.time
                 # TODO: convert to proper logging
         log_at_least_every_n_years = 0.1
-        if (self.market.time - self.last_user_action_time > log_at_least_every_n_years/2) and (self.market.time - self.last_user_action_time) % log_at_least_every_n_years <= 1/365/self.config.simulator.num_blocks_per_day:
-            print(f"{self.market.get_market_step_string()} 😴"\
-                + f" {self.user_list[0].status_report()}"
-            )
+        if (self.market.time - self.last_user_action_time > log_at_least_every_n_years / 2) and (
+            self.market.time - self.last_user_action_time
+        ) % log_at_least_every_n_years <= 1 / 365 / self.config.simulator.num_blocks_per_day:
+            print(f"{self.market.get_market_step_string()} 😴" + f" {self.user_list[0].status_report()}")
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
