@@ -645,16 +645,16 @@ class HyperdrivePricingModel(PricingModel):
         d_share_reserves = base_asset_in / share_price
         if self.verbose:
             print(f"  d_share_reserves={d_share_reserves} (base_asset_in / share_price = {base_asset_in} / {share_price})")
-        if share_reserves > 0:
+        if share_reserves > 0:  # normal case where we have some share reserves
             lp_out = d_share_reserves * liquidity_pool / (share_reserves - share_buffer)
-        else:
+        else:  # initial case where we have 0 share reserves
             lp_out = d_share_reserves
-            d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
-                init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
-            ) - bond_reserves
-            if self.verbose:
-                print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))")
-                print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
+        d_token_reserves = (share_reserves + d_share_reserves) / 2 * (
+            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
+        ) - bond_reserves
+        if self.verbose:
+            print(f"  lp_out={lp_out} (d_share_reserves * liquidity_pool / (share_reserves - share_buffer) = {d_share_reserves} * {liquidity_pool} / ({share_reserves} - {share_buffer}))")
+            print(f"  d_token_reserves={d_token_reserves} ((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price) - bond_reserves = ({share_reserves} + {d_share_reserves}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})")
         return lp_out, base_asset_in, d_token_reserves
 
     def calc_lp_in_given_tokens_out(
@@ -1086,11 +1086,11 @@ class HyperdrivePricingModel(PricingModel):
         """
         assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
@@ -1117,11 +1117,12 @@ class HyperdrivePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
+        # k_old = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
+        # k_new = 
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_out == "base":
-            d_bonds = in_
-            in_reserves = bond_reserves + total_reserves
+            d_bonds = in_  # PTs passed in
+            in_reserves = bond_reserves + total_reserves  # add virtual liquidity
             out_reserves = share_reserves
             # The amount the user would receive without fees or slippage is the
             # amount of bonds the user pays times the spot price of base in
@@ -1145,10 +1146,56 @@ class HyperdrivePricingModel(PricingModel):
             # user receives without fees. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
+            k_y = (in_reserves + d_bonds)**time_elapsed
+            print(f"k = {k}, k_y = (in_reserves + d_bonds)**time_remaining = {k_y}")
+            # assert k > k_y, f"pricing_models.calc_out_given_in: ERROR: expected k > k_y, not k={k:,.0f} and k_y={k_y:,.0f}!"
+            # assert k - (in_reserves + d_bonds)**time_remaining >= 0, f"pricing_models.calc_out_given_in: ERROR: k_old - k_new should be non-negative , not {k - (in_reserves + d_bonds)**time_remaining}!"
+            print(f"  inputs: in_={in_}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, init_share_price={init_share_price}, share_price={share_price}, time_remaining={time_remaining}")
+            print(f"  without_fee = (share_reserves - (1 / init_share_price) * ((k - (in_reserves + d_bonds)**time_elapsed) / scale)**(1 / time_elapsed)) * share_price")
+            print(f"              = ({share_reserves} - (1 / {init_share_price}) * ({k} - ({in_reserves} + {d_bonds})**{time_elapsed}) / {scale})**(1 / {time_elapsed}) * {share_price}")
+            q = (3512220.26881576 - (1 / 1.0086194128439765) * (3458879.8184826043 - (3542493.545311665 + 31881541.90780499)**0.9524524514445957) / 1.0)**(1 / 0.9524524514445957) * 1.0086194128439765
+            q = (3512220.26881576 - (1 / 1.0086194128439765) * ((3458879.8184826043 - pow(3542493.545311665 + 31881541.90780499,0.9524524514445957)) / 1.0)**(1 / 0.9524524514445957)) * 1.0086194128439765
+            q = pow(3512220.26881576 - (1 / 1.0086194128439765) * ((3458879.8184826043 - pow(3542493.545311665 + 31881541.90780499,0.9524524514445957)) / 1.0), 1 / 0.9524524514445957) * 1.0086194128439765
             without_fee = (
                 share_reserves
                 - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
             ) * share_price
+            print(f"  without_fee #1 = {without_fee}")
+            without_fee = (
+                share_reserves
+                - (1 / init_share_price)
+                * pow(
+                    (
+                        k - 
+                        pow(in_reserves + d_bonds, time_elapsed)
+                    )
+                    / scale
+                , 1 / time_elapsed)
+            ) * share_price
+            print(f"  without_fee #2 = {without_fee}")
+            without_fee = (share_reserves - (1 / init_share_price) * pow((k - pow(in_reserves + d_bonds, time_elapsed)) / scale, 1 / time_elapsed)) * share_price
+            print(f"  without_fee #3 = {without_fee}")
+            test_piece = (
+                        k - 
+                        pow(in_reserves + d_bonds, time_elapsed)
+                    )
+            print(f"  test_piece = {test_piece}")
+            test_piece = (
+                    (
+                        k - 
+                        pow(in_reserves + d_bonds, time_elapsed)
+                    )
+                    / scale)
+            print(f"  test_piece = {test_piece}")
+            print(f"  k = {k}, in_reserves = {in_reserves}, d_bonds = {d_bonds}, time_elapsed = {time_elapsed}, scale = {scale}")
+            test_piece = pow(
+                    (
+                        k -  # 3.5 million
+                        pow(in_reserves + d_bonds, time_elapsed)  # 15.6 million
+                    )  # -12.1 million
+                    / scale  # -12.1 million
+                , 1 / time_elapsed)
+            print(f"  test_piece = {test_piece}")
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:

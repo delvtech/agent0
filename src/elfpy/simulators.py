@@ -17,7 +17,6 @@ from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
 from elfpy.utils.parse_config import parse_simulation_config
 import elfpy.utils.time as time_utils
-from elfpy.utils.bcolors import bcolors
 import elfpy.utils.price as price_utils
 
 
@@ -130,15 +129,6 @@ class YieldSimulator:
             f"init_vault_apy = {self.vault_apy[0]}\n"
         )
 
-    def get_simulation_step_string(self):
-        """Returns a string that describes the current simulation step"""
-        return f"t={bcolors.HEADER}{self.market.time}{bcolors.ENDC}"\
-            + f" reserves=[x:{bcolors.OKBLUE}{self.market.share_reserves*self.market.share_price}{bcolors.ENDC}"\
-            + f",y:{bcolors.OKBLUE}{self.market.bond_reserves}{bcolors.ENDC}"\
-            + f",z:{bcolors.OKBLUE}{self.market.share_reserves}{bcolors.ENDC}]"\
-            + f" p={bcolors.FAIL}{self.market.spot_price}{bcolors.ENDC}"\
-            + f" rate={bcolors.FAIL}{self.market.rate}{bcolors.ENDC}"\
-
     def get_simulation_state_string(self):
         """returns a formatted string containing all of the Simulation class member variables"""
         strings = []
@@ -235,18 +225,23 @@ class YieldSimulator:
                 f"\ninit_time_stretch = {self.market.time_stretch_constant}"
                 "\n-----\n"
             )
-        initial_lp = import_module(f"elfpy.strategies.simple_LP").Policy(
-            market=self.market, rng=self.rng, wallet_address=0, verbose=self.config.simulator.verbose
+        initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
+            market=self.market,
+            rng=self.rng,
+            wallet_address=0,
+            budget = init_base_asset_reserves*100,
+            amount_to_LP = init_base_asset_reserves*10,
+            pt_to_short = init_token_asset_reserves,
+            verbose=self.config.simulator.verbose
         )
-        initial_lp.amount_to_trade = init_base_asset_reserves
-        # self.user_list = [initial_lp] #  set up user list
-        self.user_list = []
+        self.block_number = 0
+        self.user_list = [initial_lp]
+        # execute one special block just for the initial_lp
+        self.collect_and_execute_trades()
+        # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market, rng=self.rng, wallet_address=policy_number+1,
-                budget = 3542393.545311665,
-                amount_to_trade = 3542393.545311665,
-                verbose=self.config.simulator.verbose
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
@@ -276,8 +271,7 @@ class YieldSimulator:
         There are no returns, but the function does update the analysis_dict member variable
         """
         self.start_time = time_utils.current_datetime()
-        self.block_number = 0
-        last_user_action_time = 0
+        self.last_user_action_time = 0
         self.setup_simulated_entities(override_dict)
         last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
@@ -296,35 +290,29 @@ class YieldSimulator:
                         last_block_in_sim = True
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list)  # shuffle the user action order each block
-                for user in self.user_list:
-                    action_list = user.get_trade() if not last_block_in_sim else user.liquidate()
-                    for user_action in action_list:
-                        # print this as soon as you get it, before something crashes
-                        print(user_action)
-                        print(f"{self.get_simulation_step_string()} user action = {user_action}")
-                        # Conduct trade & update state
-                        user_deltas, market_deltas = self.market.trade_and_update(user_action)
-                        # if self.config.simulator.verbose:
-                        print(f" user deltas = {user_deltas}\n market deltas = {market_deltas}")
-                        user.update_wallet(user_deltas)  # update user state since market doesn't know about users
-                        print(f" {user.status_report()}") if self.config.simulator.verbose else None
-                        self.update_analysis_dict()
-                        self.run_trade_number += 1
-                        last_user_action_time = self.market.time
-                        if self.config.simulator.verbose:
-                            print(f"{self.get_simulation_step_string()} user report = {user.status_report()}")
-                # TODO: convert to proper logging
-                log_at_least_every_n_years = 0.1
-                if (self.market.time - last_user_action_time > log_at_least_every_n_years/2) and (self.market.time - last_user_action_time) % log_at_least_every_n_years <= 1/365/self.config.simulator.num_blocks_per_day:
-                    print(f"{self.get_simulation_step_string()} 😴"\
-                        + f" {self.user_list[0].status_report()}"
-                    )
+                self.collect_and_execute_trades(last_block_in_sim)
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())
                     self.block_number += 1
         # simulation has ended
         for user in self.user_list:
             user.final_report()
+
+    def collect_and_execute_trades(self, last_block_in_sim=False):
+        for user in self.user_list:
+            action_list = user.get_trade() if not last_block_in_sim else user.liquidate()
+            for user_action in action_list:
+                self.market.trade_and_update(user_action)
+                print(f" post-trade {user.status_report()}") if self.config.simulator.verbose else None
+                self.update_analysis_dict()
+                self.run_trade_number += 1
+                self.last_user_action_time = self.market.time
+                # TODO: convert to proper logging
+        log_at_least_every_n_years = 0.1
+        if (self.market.time - self.last_user_action_time > log_at_least_every_n_years/2) and (self.market.time - self.last_user_action_time) % log_at_least_every_n_years <= 1/365/self.config.simulator.num_blocks_per_day:
+            print(f"{self.market.get_market_step_string()} 😴"\
+                + f" {self.user_list[0].status_report()}"
+            )
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
