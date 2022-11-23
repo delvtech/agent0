@@ -11,6 +11,7 @@ import numpy as np
 
 
 from elfpy.simulators import YieldSimulator
+from elfpy.utils.parse_config import parse_simulation_config
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -20,7 +21,7 @@ class BaseTradeTest(unittest.TestCase):
         """Assigns member variables that are useful for many tests"""
         # load default config
         config_file = "./config/simulation_config.toml"
-        simulator = YieldSimulator(config_file)
+        simulator = YieldSimulator(parse_simulation_config(config_file))
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)
         simulator.set_random_variables()
