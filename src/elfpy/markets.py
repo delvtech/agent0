@@ -32,7 +32,6 @@ class Market:
         fee_percent,
         token_duration,
         pricing_model,
-        time_stretch_constant=1,
         init_share_price=1,
         share_price=1,
         verbose=False,
@@ -60,7 +59,6 @@ class Market:
             raise AssertionError(
                 f'markets.__init__: ERROR: self.pricing.model_name() should be "Element" or "Hyperdrive", not {pricing_model_name}!'
             )
-        self.time_stretch_constant = time_stretch_constant
         self.base_asset_orders = 0
         self.token_asset_orders = 0
         self.base_asset_volume = 0
@@ -207,14 +205,14 @@ class Market:
         """Increments the time member variable"""
         self.time += delta_time
 
-    def update_spot_price(self):
+    def update_spot_price(self, time_stretch_constant):
         """Update the spot price"""
         self.spot_price = self.pricing_model.calc_spot_price_from_reserves(
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
-            time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
+            time_remaining=time_utils.stretch_time(self.token_duration, time_stretch_constant),
         )
 
     def _open_short(self, trade_details):
