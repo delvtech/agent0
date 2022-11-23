@@ -726,7 +726,7 @@ class HyperdrivePricingModel(PricingModel):
         else:
             raise AssertionError(
                 f"pricing_models.calc_in_given_out: ERROR: "
-                f'expected token_in == "base" or token_in == "pt", not {token_in}!'
+                f'expected token_in to be "base" or "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
