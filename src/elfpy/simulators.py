@@ -21,7 +21,6 @@ from elfpy.utils.bcolors import bcolors
 import elfpy.utils.price as price_utils
 
 
-
 class YieldSimulator:
     """
     Stores environment variables & market simulation outputs for AMM experimentation
@@ -254,7 +253,7 @@ class YieldSimulator:
 
         Returns
         -------
-        There are no returns, but the function does update the analysis_dict member variable 
+        There are no returns, but the function does update the analysis_dict member variable
         """
         self.start_time = time_utils.current_datetime()
         self.block_number = 0
