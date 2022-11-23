@@ -7,6 +7,8 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
+from typing import Union
+
 from dataclasses import dataclass
 import unittest
 import numpy as np
@@ -54,8 +56,8 @@ class TestResultCalcOutGivenInSuccess:
 
     without_fee_or_slippage: float
     without_fee: float
-    element_fee: float | None
-    element_with_fee: float | None
+    element_fee: Union[float, None]
+    element_with_fee: Union[float, None]
     hyperdrive_fee: float
     hyperdrive_with_fee: float
 

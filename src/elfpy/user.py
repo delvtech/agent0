@@ -40,7 +40,6 @@ class User:
     class UserWallet:
         """user wallet store"""
 
-        # pylint: disable=missing-function-docstring
         base_in_wallet: float = 0
         token_in_wallet: dict = field(default_factory=dict)
         base_in_protocol: dict = field(default_factory=dict)

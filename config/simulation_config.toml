@@ -24,7 +24,7 @@ floor_fee = 0  # minimum fee percentage (bps)
 
 [simulator]
 # fixed variables
-pool_duration = 180  # in days
+token_duration = 180  # in days
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
 precision = 64 # 64 is max precision (and the default for numpy)
