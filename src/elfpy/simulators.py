@@ -30,15 +30,8 @@ class YieldSimulator:
         # User specified variables
         self.config = parse_simulation_config(config_file)
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
-        # Random variables
-        self.target_liquidity = None
-        self.target_daily_volume = None
-        self.init_pool_apy = None
-        self.fee_percent = None
-        self.init_vault_age = None
-        self.vault_apy = None
-        self.random_variables_set = False
         # Simulation variables
+        self.random_variables_set = False
         self.run_number = 0
         self.day = 0
         self.block_number = 0
@@ -89,22 +82,22 @@ class YieldSimulator:
 
     def set_random_variables(self):
         """Use random number generator to assign initial simulation parameter values"""
-        self.target_liquidity = self.rng.uniform(
+        self.config.simulator.target_liquidity = self.rng.uniform(
             low=self.config.market.min_target_liquidity, high=self.config.market.max_target_liquidity
         )
         target_daily_volume_frac = self.rng.uniform(
             low=self.config.market.min_target_volume, high=self.config.market.max_target_volume
         )
-        self.target_daily_volume = target_daily_volume_frac * self.target_liquidity
-        self.init_pool_apy = self.rng.uniform(
+        self.config.simulator.target_daily_volume = target_daily_volume_frac * self.config.simulator.target_liquidity
+        self.config.simulator.init_pool_apy = self.rng.uniform(
             low=self.config.amm.min_pool_apy, high=self.config.amm.max_pool_apy
         )  # starting fixed apy as a decimal
-        self.fee_percent = self.rng.uniform(self.config.amm.min_fee, self.config.amm.max_fee)
+        self.config.simulator.fee_percent = self.rng.uniform(self.config.amm.min_fee, self.config.amm.max_fee)
         # Determine real-world parameters for estimating initial (u) and current (c) price-per-share
-        self.init_vault_age = self.rng.uniform(
+        self.config.simulator.init_vault_age = self.rng.uniform(
             low=self.config.market.min_vault_age, high=self.config.market.max_vault_age
         )  # in years
-        self.vault_apy = self.rng.uniform(
+        self.config.simulator.vault_apy = self.rng.uniform(
             low=self.config.market.min_vault_apy,
             high=self.config.market.max_vault_apy,
             size=self.config.simulator.num_trading_days,
@@ -115,12 +108,12 @@ class YieldSimulator:
         """Prints all variables that are set in set_random_variables()"""
         print(
             "Simulation random variables:\n"
-            f"target_liquidity = {self.target_liquidity}\n"
-            f"target_daily_volume = {self.target_daily_volume}\n"
-            f"init_pool_apy = {self.init_pool_apy}\n"
-            f"fee_percent = {self.fee_percent}\n"
-            f"init_vault_age = {self.init_vault_age}\n"
-            f"init_vault_apy = {self.vault_apy[0]}\n"
+            f"target_liquidity = {self.config.simulator.target_liquidity}\n"
+            f"target_daily_volume = {self.config.simulator.target_daily_volume}\n"
+            f"init_pool_apy = {self.config.simulator.init_pool_apy}\n"
+            f"fee_percent = {self.config.simulator.fee_percent}\n"
+            f"init_vault_age = {self.config.simulator.init_vault_age}\n"
+            f"init_vault_apy = {self.config.simulator.vault_apy[0]}\n"
         )
 
     def get_simulation_state_string(self):
@@ -167,7 +160,7 @@ class YieldSimulator:
                         setattr(config_obj, key, value)
                 if key == "vault_apy":
                     if isinstance(value, float):
-                        self.vault_apy = [value]*self.config.simulator.num_trading_days
+                        self.config.simulator.vault_apy = [value]*self.config.simulator.num_trading_days
                     else:
                         assert len(value) == self.config.simulator.num_trading_days, (
                             "vault_apy must have len equal to num_trading_days = "
@@ -177,19 +170,19 @@ class YieldSimulator:
         if override_dict is not None and "init_share_price" in override_dict.keys():  # \mu variable
             self.init_share_price = override_dict["init_share_price"]
         else:
-            self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
+            self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
             if self.config.simulator.precision is not None:
                 self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
         # setup pricing model
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
         # TODO: redo this to initialize an empty market and add liquidity from an LP user
-        time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
+        time_stretch_constant = self.pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
         # calculate x and y needed to deposit to hit target liquidity and APY
         init_reserves = price_utils.calc_liquidity(
-            self.target_liquidity,
+            self.config.simulator.target_liquidity,
             self.config.market.base_asset_price,
-            self.init_pool_apy,
+            self.config.simulator.init_pool_apy,
             self.config.simulator.token_duration,
             time_stretch_constant,
             self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
@@ -197,7 +190,7 @@ class YieldSimulator:
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
-            fee_percent=self.fee_percent,  # g
+            fee_percent=self.config.simulator.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
             pricing_model=self.pricing_model,
             time_stretch_constant=time_stretch_constant,
@@ -208,7 +201,7 @@ class YieldSimulator:
         if self.config.simulator.verbose:
             print(
                 f"initial market values:"
-                f"\n target_liquidity = {self.target_liquidity:,.0f}"
+                f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
                 f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
                 f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
                 f"\n fee_percent = {self.market.fee_percent}"
@@ -224,7 +217,7 @@ class YieldSimulator:
             budget = init_base_asset_reserves*100,
             amount_to_LP = init_base_asset_reserves,
             pt_to_short = init_token_asset_reserves/10,
-            short_until_apr = self.init_pool_apy,
+            short_until_apr = self.config.simulator.init_pool_apy,
             verbose=self.config.simulator.verbose
         )
         self.block_number = 0
@@ -272,7 +265,7 @@ class YieldSimulator:
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 self.market.share_price += (
-                    self.vault_apy[self.day]  # current day's apy
+                    self.config.simulator.vault_apy[self.day]  # current day's apy
                     / 365  # convert annual yield to daily
                     * self.market.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
@@ -313,11 +306,11 @@ class YieldSimulator:
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["time_stretch_constant"].append(self.market.time_stretch_constant)
-        self.analysis_dict["target_liquidity"].append(self.target_liquidity)
-        self.analysis_dict["target_daily_volume"].append(self.target_daily_volume)
+        self.analysis_dict["target_liquidity"].append(self.config.simulator.target_liquidity)
+        self.analysis_dict["target_daily_volume"].append(self.config.simulator.target_daily_volume)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
-        self.analysis_dict["init_vault_age"].append(self.init_vault_age)
+        self.analysis_dict["init_vault_age"].append(self.config.simulator.init_vault_age)
         self.analysis_dict["token_duration"].append(self.market.token_duration)
         self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
         self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
@@ -326,7 +319,7 @@ class YieldSimulator:
         self.analysis_dict["simulation_start_time"].append(self.start_time)
         # Variables that change per day
         self.analysis_dict["num_orders"].append(self.market.base_asset_orders + self.market.token_asset_orders)
-        self.analysis_dict["vault_apy"].append(self.vault_apy[self.day])
+        self.analysis_dict["vault_apy"].append(self.config.simulator.vault_apy[self.day])
         self.analysis_dict["day"].append(self.day)
         self.analysis_dict["daily_block_number"].append(self.daily_block_number)
         self.analysis_dict["block_number"].append(self.block_number)
