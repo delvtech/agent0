@@ -3,21 +3,14 @@ Implements abstract classes that control user behavior
 
 TODO: rewrite all functions to have typed inputs
 """
-
-
-from dataclasses import dataclass
-from dataclasses import field
-
-
+from elfpy.utils.basic_dataclass import *
 import numpy as np
-
-
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
 
 @dataclass
-class AgentWallet:
+class AgentWallet(BasicDataclass):
     """stores what's in the agent's wallet"""
 
     # fungible
@@ -28,24 +21,6 @@ class AgentWallet:
     token_in_wallet: dict = field(default_factory=dict)
     base_in_protocol: dict = field(default_factory=dict)
     token_in_protocol: dict = field(default_factory=dict)
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-    def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def items(self):
-        return self.__dict__.items()
 
 
 class User:
@@ -219,38 +194,45 @@ class User:
         """Update the user's wallet"""
         self.update_spend()
         for wallet_key, wallet_value in agent_deltas.items():
-            print(wallet_key)
             if wallet_value is None:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                    self.wallet[wallet_key] += wallet_value
-                    print(f"  {wallet_key} += {wallet_value}") if self.verbose else None
+                if self.verbose and wallet_value != 0 and self.wallet[wallet_key] !=0:
+                    print(f"   pre-trade {wallet_key:14s} = {self.wallet[wallet_key]:,.0f}")
+                self.wallet[wallet_key] += wallet_value
+                if self.verbose and wallet_value != 0 and self.wallet[wallet_key] !=0:
+                    print(f"  post-trade {wallet_key:14s} = {self.wallet[wallet_key]:,.0f}")
+                    print(f"              delta         = {wallet_value:,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
-                if wallet_value:
+                if wallet_value: # dict is not empty
                     if self.verbose:
-                        print("pre-trade wallet:  {self.wallet[wallet_key]}")
+                        print(f"  pre-trade {wallet_key:14s} = ({' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])})")
                     self.wallet[wallet_key].update(wallet_value)
                     if self.verbose:
-                        print("post-trade wallet: {self.wallet[wallet_key]}")
+                        print(f"  post-trade {wallet_key:14s} = ({' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])})")
             elif wallet_key == "fees_paid":
                 pass
             else:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
-        # TODO: convert to proper logging
-        # TODO: This verbose section upsets the linter bc it creates too many branches
-        if self.verbose:
-            wallet_string = ""
-            for key, value in self.wallet.items():
-                if isinstance(value, dict):
-                    total_amount = sum(value.values())
-                    if total_amount != 0:
-                        color = bcolors.OKGREEN if sum(value.values()) > 0 else bcolors.WARNING
-                        wallet_string += f" {key} = ₡{color}{sum(value.values())}{bcolors.ENDC}"
-                elif isinstance(value, (int, float)):
-                    if value != 0:
-                        color = bcolors.OKGREEN if value > 0 else bcolors.WARNING
-                        wallet_string += f" {key} = ₡{color}{value}{bcolors.ENDC}"
+
+    def status_report(self):
+        output_string = f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
+        string_list = []
+        is_LP = True if hasattr(self, "can_LP") else False
+        is_shorter = True if hasattr(self, "can_open_short") else False
+        if is_LP:         # this agent can LP! he has the logic circuits to do so
+            string_list.append(f"has_LPd: {self.has_LPd}, can_LP: {self.can_LP}")
+        if is_shorter:  # this agent can short! he has the logic circuits to do so
+            string_list.append(f"has_opened_short: {self.has_opened_short}")
+            string_list.append(f"can_open_short: {self.can_open_short}")
+            string_list.append(f"max_short: {self.get_max_pt_short(self.market.time):,.0f}")
+        string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
+        string_list.append(f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}") if self.position_list else None
+        string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}") if is_LP else None
+        string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}") if self.wallet.fees_paid > 0 else None
+        output_string += ", ".join(string_list)
+        return output_string
 
     def final_report(self):
         price = self.market.spot_price

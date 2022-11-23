@@ -44,10 +44,3 @@ class Policy(BasicPolicy):
     def status_update(self):
         self.has_LPd = self.wallet["lp_in_wallet"] > 0
         self.can_LP = self.wallet["base_in_wallet"] >= self.amount_to_trade
-
-    def status_report(self):
-        return (
-            f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} has_LPd: {self.has_LPd}, can_LP: {self.can_LP}"
-            + f" base_in_wallet: {bcolors.OKBLUE}{self.wallet['base_in_wallet']}{bcolors.ENDC}"
-            + f" LP_position: {bcolors.OKCYAN}{self.wallet['lp_in_wallet']}{bcolors.ENDC}"
-        )

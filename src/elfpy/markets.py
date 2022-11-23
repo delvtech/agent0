@@ -6,10 +6,9 @@ TODO: rewrite all functions to have typed inputs
 
 import numpy as np
 import elfpy.utils.time as time_utils
-from dataclasses import dataclass
-from dataclasses import field
 from elfpy.user import AgentWallet
 from elfpy.utils.bcolors import bcolors
+from elfpy.utils.basic_dataclass import *
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -19,7 +18,7 @@ from elfpy.utils.bcolors import bcolors
 
 
 @dataclass
-class MarketDeltas:
+class MarketDeltas(BasicDataclass):
     """specifies changes to values in the market"""
     d_base_asset: float = 0
     d_token_asset: float = 0
@@ -102,63 +101,64 @@ class Market:
         self.update_spot_price_and_rate() if self.share_reserves > 0 else None
 
 
-    def trade_and_update(self, user_action):
+    def trade_and_update(self, agent_action):
         """
         Execute a trade in the simulated market.
         """
         # ensure that the user action is an allowed action for this market
-        if not user_action.action_type in self.allowed_actions:
+        if not agent_action.action_type in self.allowed_actions:
             raise AssertionError(
-                f'markets.swap: ERROR: user_action.action_type should be an allowed action for the model={self.pricing_model.model_name()}, not {user_action.action_type}!'
+                f'markets.swap: ERROR: agent_action.action_type should be an allowed action for the model={self.pricing_model.model_name()}, not {agent_action.action_type}!'
             )
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        user_action.update_market_variables(market=self)
-        user_action.print_description_string()
+        agent_action.update_market_variables(market=self)
+        agent_action.print_description_string()
 
         # for each position, specify how to forumulate trade and then execute
-        if user_action.action_type == "open_long":  # buy to open long
-            user_action.direction = "out"  # calcOutGivenIn
-            user_action.token_out = "pt"  # buy unknown PT with known base
-            market_deltas, agent_deltas = self._open_long(user_action)
-        elif user_action.action_type == "close_long":  # sell to close long
-            user_action.direction = "out"  # calcOutGivenIn
-            user_action.token_out = "base"  # sell known PT for unkonwn base
-            market_deltas, agent_deltas = self._close_long(user_action)
-        elif user_action.action_type == "open_short":  # sell PT to open short
-            user_action.direction = "in"  # calcOutGivenIn
-            user_action.token_out = "pt"  # sell known PT for unknown base
-            market_deltas, agent_deltas = self._open_short(user_action)
-        elif user_action.action_type == "close_short":  # buy PT to close short
-            user_action.direction = "in"  # calcInGivenOut
-            user_action.token_in = "pt"  # buy known PT for unknown base
-            market_deltas, agent_deltas = self._close_short(user_action)
-        elif user_action.action_type == "add_liquidity":
+        if agent_action.action_type == "open_long":  # buy to open long
+            agent_action.direction = "out"  # calcOutGivenIn
+            agent_action.token_out = "pt"  # buy unknown PT with known base
+            market_deltas, agent_deltas = self._open_long(agent_action)
+        elif agent_action.action_type == "close_long":  # sell to close long
+            agent_action.direction = "out"  # calcOutGivenIn
+            agent_action.token_out = "base"  # sell known PT for unkonwn base
+            market_deltas, agent_deltas = self._close_long(agent_action)
+        elif agent_action.action_type == "open_short":  # sell PT to open short
+            agent_action.direction = "in"  # calcOutGivenIn
+            agent_action.token_out = "pt"  # sell known PT for unknown base
+            market_deltas, agent_deltas = self._open_short(agent_action)
+        elif agent_action.action_type == "close_short":  # buy PT to close short
+            agent_action.direction = "in"  # calcInGivenOut
+            agent_action.token_in = "pt"  # buy known PT for unknown base
+            market_deltas, agent_deltas = self._close_short(agent_action)
+        elif agent_action.action_type == "add_liquidity":
             # pricing model computes new market deltas
             # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
-            market_deltas, agent_deltas = self._add_liquidity(user_action)
+            market_deltas, agent_deltas = self._add_liquidity(agent_action)
             pass
-        elif user_action.action_type == "remove_liquidity":
+        elif agent_action.action_type == "remove_liquidity":
             # market figures out how much the user has contributed (calcualtes their fee weighting)
-            # market resolves fees, adds this to the user_action
+            # market resolves fees, adds this to the agent_action
             # pricing model computes new market deltas
             # market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             # LP tokens are also storeds in user wallet as fungible amounts, for ease of user
             # TODO: implement fee attribution and withdrawal
-            market_deltas, agent_deltas = self._remove_liquidity(user_action)
+            market_deltas, agent_deltas = self._remove_liquidity(agent_action)
             pass
         else:
-            raise ValueError(f'ERROR: Unknown trade type "{user_action["action_type"]}".')
+            raise ValueError(f'ERROR: Unknown trade type "{agent_action["action_type"]}".')
         # update market state
         self.update_market(market_deltas)
-        print(f"PRE-TRADE: {self.get_market_step_string()}")
+        print(f"PRE-TRADE:  {self.get_market_step_string()}")
         self.update_spot_price_and_rate()
         print(f"POST-TRADE: {self.get_market_step_string()}")
         # TODO: self.update_LP_pool(agent_deltas["fees"])
-        user_action.agent.update_wallet(agent_deltas)  # update user state since market doesn't know about users
+        agent_action.agent.update_wallet(agent_deltas)  # update user state since market doesn't know about users
         if self.verbose:
-            print(f"  agent Δs = {agent_deltas}\n market Δs = {market_deltas}")
+            print(f" agent  Δs ={agent_deltas.display()}\n market Δs ={market_deltas.display()}")
+            print(f" post-trade {agent_action.agent.status_report()}") if self.verbose else None
     
     def update_market(self, market_deltas):
         """

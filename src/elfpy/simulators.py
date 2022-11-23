@@ -303,7 +303,6 @@ class YieldSimulator:
             action_list = user.get_trade() if not last_block_in_sim else user.liquidate()
             for user_action in action_list:
                 self.market.trade_and_update(user_action)
-                print(f" post-trade {user.status_report()}") if self.config.simulator.verbose else None
                 self.update_analysis_dict()
                 self.run_trade_number += 1
                 self.last_user_action_time = self.market.time

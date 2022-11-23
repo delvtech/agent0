@@ -57,13 +57,3 @@ class Policy(BasicPolicy):
         self.mint_times = list(self.wallet.token_in_protocol.keys())
         self.has_opened_short = True if any([x < -1 for x in self.position_list]) else False
         self.can_open_short = self.get_max_pt_short(self.market.time) >= self.pt_to_short
-
-    def status_report(self):
-        return (
-            f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} has_LPd: {self.has_LPd}, can_LP: {self.can_LP}"
-            + f" has_opened_short: {self.has_opened_short}, can_open_short: {self.can_open_short}"
-            + f" max_short: {self.get_max_pt_short(self.market.time)}"
-            + f" base_in_wallet: {bcolors.OKBLUE}{self.wallet['base_in_wallet']}{bcolors.ENDC}"
-            + f" position_list: {self.position_list} sum(positions)={sum(self.position_list)}"
-            + f" LP_position: {bcolors.OKCYAN}{self.wallet['lp_in_wallet']}{bcolors.ENDC}"
-        )
