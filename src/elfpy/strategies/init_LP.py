@@ -1,5 +1,4 @@
 from elfpy.strategies.basic import BasicPolicy
-from elfpy.utils.bcolors import bcolors
 
 
 class Policy(BasicPolicy):
@@ -37,17 +36,6 @@ class Policy(BasicPolicy):
                     trade_amount=self.pt_to_short
                     )
                 )
-        return action_list
-
-    def liquidate(self):
-        """close up shop"""
-        self.status_update()
-        action_list = []
-        if self.has_LPd:
-            action_list.append(self.create_user_action(
-                    action_type="remove_liquidity",
-                    trade_amount=self.wallet.lp_in_wallet
-            ))
         return action_list
 
     def status_update(self):

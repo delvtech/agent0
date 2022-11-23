@@ -4,7 +4,7 @@ Implements abstract classes that control user behavior
 TODO: rewrite all functions to have typed inputs
 """
 from elfpy.utils.basic_dataclass import *
-import numpy as np
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
@@ -105,12 +105,13 @@ class User:
             )
 
     # user functions defined below
-    def create_user_action(self, action_type, trade_amount):
+    def create_user_action(self, action_type, trade_amount, mint_time=None):
         user_action = self.UserAction(
             action_type=action_type,
             trade_amount=trade_amount,
             wallet_address=self.wallet_address,
-            agent=self
+            agent=self,
+            mint_time=mint_time
         )
         return user_action
 
@@ -182,11 +183,15 @@ class User:
         return action_list
 
     def update_spend(self):
-        print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
+        # TODO: add back in with high level of logging, category = "spending"
+        # if self.verbose:
+            # print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.product_of_time_and_base += new_spend
         self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
-        print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
+        # TODO: add back in with high level of logging, category = "spending"
+        # if self.verbose:
+            # print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
@@ -197,24 +202,51 @@ class User:
             if wallet_value is None:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                if self.verbose and wallet_value != 0 and self.wallet[wallet_key] !=0:
-                    print(f"   pre-trade {wallet_key:14s} = {self.wallet[wallet_key]:,.0f}")
+                if self.verbose and wallet_value != 0 or self.wallet[wallet_key] !=0:
+                    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 self.wallet[wallet_key] += wallet_value
-                if self.verbose and wallet_value != 0 and self.wallet[wallet_key] !=0:
-                    print(f"  post-trade {wallet_key:14s} = {self.wallet[wallet_key]:,.0f}")
-                    print(f"              delta         = {wallet_value:,.0f}")
+                if self.verbose and wallet_value != 0 or self.wallet[wallet_key] !=0:
+                    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
+                    print(f"                              Δ = {wallet_value:+,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 if wallet_value: # dict is not empty
-                    if self.verbose:
-                        print(f"  pre-trade {wallet_key:14s} = ({' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])})")
-                    self.wallet[wallet_key].update(wallet_value)
-                    if self.verbose:
-                        print(f"  post-trade {wallet_key:14s} = ({' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])})")
+                    for mint_time, account_value in wallet_value.items():
+                        if self.wallet[wallet_key]:
+                            if self.verbose:
+                                print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                            self.wallet[wallet_key][mint_time] += account_value
+                            if self.verbose:
+                                print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                        else:
+                            self.wallet[wallet_key].update(wallet_value)
             elif wallet_key == "fees_paid":
                 pass
             else:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
+
+    def liquidate(self):
+        """close up shop"""
+        self.status_update()
+        is_LP = True if hasattr(self, "can_LP") else False
+        is_shorter = True if hasattr(self, "can_open_short") else False
+        action_list = []
+        if is_shorter:
+            if self.has_opened_short:
+                for mint_time, position in self.wallet.token_in_protocol.items():
+                    if position < 0:
+                        action_list.append(self.create_user_action(
+                                action_type="close_short",
+                                trade_amount= -position,
+                                mint_time=mint_time,
+                        ))
+        if is_LP:
+            if self.has_LPd:
+                action_list.append(self.create_user_action(
+                        action_type="remove_liquidity",
+                        trade_amount=self.wallet.lp_in_wallet
+                ))
+        return action_list
 
     def status_report(self):
         output_string = f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
@@ -243,11 +275,16 @@ class User:
         spend = self.weighted_average_spend
         holding_period_rate = PnL / spend if spend != 0 else 0
         annual_percentage_rate = holding_period_rate / self.market.time
-        print(
-            f" 🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"\
-            + f" net worth = ₡{bcolors.FAIL}{worth}{bcolors.ENDC}"\
-            + f" from {base} base and {tokens} tokens at p={price}\n"
-            + f"  made {holding_period_rate:,.2%} in {self.market.time*365:,.2f} days"
-            + f" over {self.market.time} years that\'s an APR of {bcolors.OKGREEN}"
-            + f"{annual_percentage_rate:,.2%}{bcolors.ENDC} on ₡{spend} weighted average spend"
-        )
+        output_string = f" 🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        if PnL < 0:
+            output_string += f" lost {bcolors.FAIL}"
+        else:
+            output_string += f" made {bcolors.OKGREEN}"
+        output_string += f"{fmt(PnL)}{bcolors.ENDC}"
+        output_string += f" on ₡{bcolors.OKCYAN}{fmt(spend)}{bcolors.ENDC} spent, APR = "
+        output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
+        output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
+        output_string += f" ({holding_period_rate:,.2%} in {fmt(self.market.time,precision=2)} years)"
+        output_string += f", net worth = ₡{bcolors.FAIL}{fmt(worth)}{bcolors.ENDC}"
+        output_string += f" from {base} base and {tokens} tokens at p={price}\n"
+        print(output_string)

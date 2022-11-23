@@ -4,14 +4,8 @@ for experiment tracking and execution
 
 TODO: rewrite all functions to have typed inputs
 """
-
-
 from importlib import import_module
-
-
-import numpy as np
-
-
+from elfpy.utils.fmt import *
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
@@ -202,7 +196,6 @@ class YieldSimulator:
             self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
         init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
-        print(f"init_base_asset_reserves = {init_base_asset_reserves} init_token_asset_reserves = {init_token_asset_reserves}")
         self.market = Market(
             fee_percent=self.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
@@ -214,17 +207,16 @@ class YieldSimulator:
         )
         if self.config.simulator.verbose:
             print(
-                f"\n-----\ninitial market values:"
-                f"\nshare_reserves = {self.market.share_reserves}"
-                f"\nbond_reserves = {self.market.bond_reserves}"
-                f"\ntarget_liquidity = {self.target_liquidity}"
-                f"\ntotal market liquidity = {self.market.share_reserves + self.market.bond_reserves}"
-                f"\nfee_percent = {self.market.fee_percent}"
-                f"\nshare_price = {self.market.share_price}"
-                f"\ninit_share_price = {self.market.init_share_price}"
-                f"\ninit_time_stretch = {self.market.time_stretch_constant}"
-                "\n-----\n"
+                f"initial market values:"
+                f"\n target_liquidity = {self.target_liquidity:,.0f}"
+                f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
+                f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
+                f"\n fee_percent = {self.market.fee_percent}"
+                f"\n share_price = {self.market.share_price}"
+                f"\n init_share_price = {self.market.init_share_price}"
+                f"\n init_time_stretch = {self.market.time_stretch_constant}"
             )
+            print(f"{self.market.get_market_step_string()}")
         initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
             market=self.market,
             rng=self.rng,

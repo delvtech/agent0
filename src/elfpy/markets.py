@@ -118,18 +118,18 @@ class Market:
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == "open_long":  # buy to open long
             agent_action.direction = "out"  # calcOutGivenIn
-            agent_action.token_out = "pt"  # buy unknown PT with known base
+            agent_action.token_out = "pt"  # sell known base for unknown PT 
             market_deltas, agent_deltas = self._open_long(agent_action)
         elif agent_action.action_type == "close_long":  # sell to close long
             agent_action.direction = "out"  # calcOutGivenIn
-            agent_action.token_out = "base"  # sell known PT for unkonwn base
+            agent_action.token_out = "base"  # sell known PT for unknown base
             market_deltas, agent_deltas = self._close_long(agent_action)
         elif agent_action.action_type == "open_short":  # sell PT to open short
             agent_action.direction = "in"  # calcOutGivenIn
             agent_action.token_out = "pt"  # sell known PT for unknown base
             market_deltas, agent_deltas = self._open_short(agent_action)
         elif agent_action.action_type == "close_short":  # buy PT to close short
-            agent_action.direction = "in"  # calcInGivenOut
+            agent_action.direction = "in"  # calcOutGivenIn
             agent_action.token_in = "pt"  # buy known PT for unknown base
             market_deltas, agent_deltas = self._close_short(agent_action)
         elif agent_action.action_type == "add_liquidity":
@@ -151,9 +151,8 @@ class Market:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action["action_type"]}".')
         # update market state
         self.update_market(market_deltas)
-        print(f"PRE-TRADE:  {self.get_market_step_string()}")
         self.update_spot_price_and_rate()
-        print(f"POST-TRADE: {self.get_market_step_string()}")
+        print(f"{self.get_market_step_string()}")
         # TODO: self.update_LP_pool(agent_deltas["fees"])
         agent_action.agent.update_wallet(agent_deltas)  # update user state since market doesn't know about users
         if self.verbose:
@@ -320,10 +319,10 @@ class Market:
         """
         without_fee_or_slippage, output_with_fee, output_without_fee, fee = self.swap(trade_details)
         
-        market_deltas = MarketDeltas(
-            # write out explicit signs, so it's clear what's happening
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
             d_base_asset            = - output_with_fee,
             d_token_asset           = + trade_details.trade_amount,
+            d_bond_buffer           = + trade_details.trade_amount,
             d_base_asset_slippage   = + abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_fee        = + fee,
             d_base_asset_orders     = + 1,
@@ -331,9 +330,8 @@ class Market:
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details.trade_amount - output_with_fee
-        wallet_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
-            base_in_wallet              = -1 * max_loss,
+        wallet_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
+            base_in_wallet              = - max_loss,
             base_in_protocol            = {trade_details.mint_time: + max_loss},
             token_in_protocol           = {trade_details.mint_time: - trade_details.trade_amount},
             fees_paid                   = + fee
@@ -350,7 +348,7 @@ class Market:
             trade_details.trade_amount,
             trade_details.share_reserves,
             trade_details.bond_reserves,
-            trade_details.token_in,  # to be calculated, in base units
+            trade_details.token_in,
             trade_details.fee_percent,
             trade_details.stretched_time_remaining,
             trade_details.init_share_price,
@@ -363,22 +361,22 @@ class Market:
             fee,
         ) = trade_results
         
-        market_deltas = MarketDeltas(
-            d_base_asset=output_with_fee,
-            d_token_asset=-trade_details.trade_amount,
-            d_base_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_fee=fee,
-            d_base_asset_orders=1,
-            d_base_asset_volume=output_with_fee,
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
+            d_base_asset            = + output_with_fee,
+            d_token_asset           = - trade_details.trade_amount,
+            d_bond_buffer           = - trade_details.trade_amount,
+            d_base_asset_slippage   = + abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_fee        = + fee,
+            d_base_asset_orders     = + 1,
+            d_base_asset_volume     = + output_with_fee,
         )
         # TODO: Add logic:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
-        agent_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
-            base_in_wallet              = + trade_details.token_in_protocol - output_with_fee,
-            base_in_protocol            = {trade_details.mint_time: - trade_details.base_in_protocol},
+        agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
+            base_in_wallet              = + output_with_fee,
+            base_in_protocol            = {trade_details.mint_time: - output_with_fee},
             token_in_protocol           = {trade_details.mint_time: + trade_details.trade_amount},
             fees_paid                   = + fee
         )
@@ -410,16 +408,16 @@ class Market:
             fee,
         ) = trade_results
 
-        market_deltas = MarketDeltas(
-            d_base_asset=trade_details.trade_amount,
-            d_token_asset=-output_with_fee,
-            d_token_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
-            d_token_asset_fee=fee,
-            d_token_asset_orders=1,
-            d_token_asset_volume=output_with_fee,
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
+            d_base_asset                = + trade_details.trade_amount,
+            d_token_asset               = - output_with_fee,
+            d_share_buffer              = + output_with_fee / trade_details.share_price,
+            d_token_asset_slippage      = + abs(without_fee_or_slippage - output_without_fee),
+            d_token_asset_fee           = + fee,
+            d_token_asset_orders        = + 1,
+            d_token_asset_volume        = + output_with_fee,
         )
-        agent_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
+        agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
             base_in_wallet              = - trade_details.trade_amount,
             token_in_protocol           = {trade_details.mint_time: + output_with_fee},
             fees_paid                   = + fee
@@ -448,18 +446,18 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        market_deltas = MarketDeltas(
-            d_base_asset=-output_with_fee,
-            d_token_asset=trade_details.trade_amount,
-            d_base_asset_slippage=abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_fee=fee,
-            d_base_asset_orders=1,
-            d_base_asset_volume=output_with_fee,
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
+            d_base_asset                = - output_with_fee,
+            d_token_asset               = + trade_details.trade_amount,
+            d_share_buffer              = - trade_details.trade_amount / trade_details.share_price,
+            d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_fee            = + fee,
+            d_base_asset_orders         = + 1,
+            d_base_asset_volume         = + output_with_fee,
         )
-        agent_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
+        agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
             base_in_wallet              = + output_with_fee,
-            token_in_wallet             = {trade_details.mint_time: -1 * trade_details.trade_amount},
+            token_in_wallet             = {trade_details.mint_time: - trade_details.trade_amount},
             fees_paid                   = + fee
         )
         return market_deltas, agent_deltas
@@ -480,15 +478,13 @@ class Market:
             time_remaining = trade_details.time_remaining,
             stretched_time_remaining = trade_details.stretched_time_remaining
         )
-
-        market_deltas = MarketDeltas(
-            d_base_asset=d_base_reserves,
-            d_token_asset=d_token_reserves,
-            d_liquidity_pool=lp_out,
-            d_liquidity_pool_history=[trade_details.mint_time, trade_details.trade_amount]
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
+            d_base_asset                = + d_base_reserves,
+            d_token_asset               = + d_token_reserves,
+            d_liquidity_pool            = + lp_out,
+            d_liquidity_pool_history    = [trade_details.mint_time, trade_details.trade_amount]
         )
-        agent_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
+        agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
             base_in_wallet              = - d_base_reserves,
             lp_in_wallet                = + lp_out,
         )
@@ -527,8 +523,12 @@ class Market:
     def get_market_step_string(self):
         """Returns a string that describes the current market step"""
         return f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"\
-            + f" reserves=[x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"\
-            + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"\
-            + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}]"\
+            + f" reserves=["\
+                + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"\
+                + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"\
+                + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"\
+                + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"\
+                + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"\
+            + f"]"\
             + f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"\
             + f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"
