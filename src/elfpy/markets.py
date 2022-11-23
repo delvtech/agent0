@@ -32,6 +32,7 @@ class Market:
         fee_percent,
         token_duration,
         pricing_model,
+        time_stretch_constant=1,
         init_share_price=1,
         share_price=1,
         verbose=False,
@@ -42,6 +43,7 @@ class Market:
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
         self.fee_percent = fee_percent  # g
+        self.time_stretch_constant = time_stretch_constant
         self.init_share_price = init_share_price  # u normalizing constant
         self.share_price = share_price  # c
         self.token_duration = token_duration  # how long does a token last before expiry
@@ -205,14 +207,14 @@ class Market:
         """Increments the time member variable"""
         self.time += delta_time
 
-    def update_spot_price(self, time_stretch_constant):
+    def update_spot_price(self):
         """Update the spot price"""
         self.spot_price = self.pricing_model.calc_spot_price_from_reserves(
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
-            time_remaining=time_utils.stretch_time(self.token_duration, time_stretch_constant),
+            time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
         )
 
     def _open_short(self, trade_details):
