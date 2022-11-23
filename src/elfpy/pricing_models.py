@@ -899,6 +899,10 @@ class HyperdrivePricingModel(PricingModel):
             # This can also be expressed as:
             #
             # fee = ((1 / p) - 1) * φ * c * d_z
+            print(f"fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
+                +f"((1 / {spot_price}) - 1) * {fee_percent} * {share_price} * {d_shares}"
+                +f"{((1 / spot_price) - 1) * fee_percent * share_price * d_shares}"
+            )
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(

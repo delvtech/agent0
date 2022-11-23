@@ -114,6 +114,7 @@ class User:
             agent=self,
             mint_time=mint_time
         )
+        user_action.update_market_variables(self.market)
         return user_action
 
     def action(self):
@@ -200,28 +201,32 @@ class User:
     def update_wallet(self, agent_deltas):
         """Update the user's wallet"""
         self.update_spend()
-        for wallet_key, wallet_value in agent_deltas.items():
-            if wallet_value is None:
+        for wallet_key, wallet in agent_deltas.items():
+            if wallet is None:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                if self.verbose and wallet_value != 0 or self.wallet[wallet_key] !=0:
+                if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                     print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
-                self.wallet[wallet_key] += wallet_value
-                if self.verbose and wallet_value != 0 or self.wallet[wallet_key] !=0:
+                self.wallet[wallet_key] += wallet
+                if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                     print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
-                    print(f"                              Δ = {wallet_value:+,.0f}")
+                    print(f"                              Δ = {wallet:+,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
-                if wallet_value: # dict is not empty
-                    for mint_time, account_value in wallet_value.items():
-                        if self.wallet[wallet_key]:
-                            if self.verbose:
-                                print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-                            self.wallet[wallet_key][mint_time] += account_value
-                            if self.verbose:
-                                print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-                        else:
-                            self.wallet[wallet_key].update(wallet_value)
+                for mint_time, account in wallet.items():
+                    # print(f"  updating wallet {wallet_key} mint_time={mint_time} account={account}")
+                    if self.verbose:
+                        print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    if mint_time in self.wallet[wallet_key]: #  entry already exists for this mint_time, so add to it
+                        # print(f"updating index {self.wallet[wallet_key]} at mint_time={mint_time} adding={account}")
+                        self.wallet[wallet_key][mint_time] += account
+                    else:
+                        # print(f"updating dict {wallet_key} mint_time={mint_time} account={account}")
+                        # print(f"taking {self.wallet[wallet_key]}")
+                        # print(f"and updating {{mint_time: account}}")
+                        self.wallet[wallet_key].update({mint_time: account})
+                    if self.verbose:
+                        print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif wallet_key == "fees_paid":
                 pass
             else:
@@ -236,12 +241,14 @@ class User:
         if is_shorter:
             if self.has_opened_short:
                 for mint_time, position in self.wallet.token_in_protocol.items():
+                    print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
                     if position < 0:
                         action_list.append(self.create_user_action(
                                 action_type="close_short",
                                 trade_amount= -position,
                                 mint_time=mint_time,
                         ))
+        print("liquidate: short action_list=", action_list)
         if is_LP:
             if self.has_LPd:
                 action_list.append(self.create_user_action(

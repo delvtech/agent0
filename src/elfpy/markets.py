@@ -29,8 +29,10 @@ class MarketDeltas(BasicDataclass):
     d_liquidity_pool_history: list = field(default_factory=list)
     d_base_asset_slippage: float = 0
     d_token_asset_slippage: float = 0
-    d_base_asset_fee: float = 0
-    d_token_asset_fee: float = 0
+    d_share_fee: float = 0
+    d_share_fee_history: list = field(default_factory=list)
+    d_token_fee: float = 0
+    d_token_fee_history: list = field(default_factory=list)
     d_base_asset_orders: int = 0
     d_token_asset_orders: int = 0
     d_base_asset_volume: float = 0
@@ -93,8 +95,10 @@ class Market:
         self.token_asset_volume = 0
         self.cum_token_asset_slippage = 0
         self.cum_base_asset_slippage = 0
-        self.cum_token_asset_fees = 0
-        self.cum_base_asset_fees = 0
+        self.share_fees = 0
+        self.share_fee_history = []
+        self.token_fees = 0
+        self.token_fee_history = []
         self.spot_price = None
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
@@ -166,25 +170,27 @@ class Market:
         """
         for field in market_deltas.__dataclass_fields__:
             value = getattr(market_deltas, field)
-            if field == "d_liquidity_pool_history":
+            if field in ["d_liquidity_pool_history","d_share_fee_history","d_token_fee_history"]:
                 assert isinstance(value, list), f"markets.update_market: Error:"\
                 + f" d_liquidity_pool_history has value={value} should be a list"
             else:
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {field} is not finite."
-        self.share_reserves += market_deltas.d_base_asset/self.share_price
-        self.bond_reserves += market_deltas.d_token_asset
-        self.share_buffer += market_deltas.d_share_buffer
-        self.bond_buffer += market_deltas.d_bond_buffer
-        self.liquidity_pool += market_deltas.d_liquidity_pool
+        self.share_reserves             += market_deltas.d_base_asset/self.share_price
+        self.bond_reserves              += market_deltas.d_token_asset
+        self.share_buffer               += market_deltas.d_share_buffer
+        self.bond_buffer                += market_deltas.d_bond_buffer
+        self.liquidity_pool             += market_deltas.d_liquidity_pool
         self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
-        self.cum_base_asset_slippage += market_deltas.d_base_asset_slippage
-        self.cum_token_asset_slippage += market_deltas.d_token_asset_slippage
-        self.cum_base_asset_fees += market_deltas.d_base_asset_fee
-        self.cum_token_asset_fees += market_deltas.d_token_asset_fee
-        self.base_asset_orders += market_deltas.d_base_asset_orders
-        self.token_asset_orders += market_deltas.d_token_asset_orders
-        self.base_asset_volume += market_deltas.d_base_asset_volume
-        self.token_asset_volume += market_deltas.d_token_asset_volume
+        self.share_fees                 += market_deltas.d_share_fee
+        self.share_fee_history.append(market_deltas.d_share_fee_history)
+        self.token_fees                 += market_deltas.d_token_fee
+        self.token_fee_history.append(market_deltas.d_token_fee_history)
+        self.cum_base_asset_slippage    += market_deltas.d_base_asset_slippage
+        self.cum_token_asset_slippage   += market_deltas.d_token_asset_slippage
+        self.base_asset_orders          += market_deltas.d_base_asset_orders
+        self.token_asset_orders         += market_deltas.d_token_asset_orders
+        self.base_asset_volume          += market_deltas.d_base_asset_volume
+        self.token_asset_volume         += market_deltas.d_token_asset_volume
 
     def get_market_state_string(self):
         """Returns a formatted string containing all of the Market class member variables"""
@@ -278,14 +284,14 @@ class Market:
     def swap(self, trade_details):
         if trade_details.direction == "in":
             trade_results = self.pricing_model.calc_out_given_in(
-                in_                 = trade_details.trade_amount,
-                share_reserves      = trade_details.share_reserves,
-                bond_reserves       = trade_details.bond_reserves,
-                token_out           = trade_details.token_out,
-                fee_percent         = trade_details.fee_percent,
-                time_remaining      = trade_details.stretched_time_remaining,
-                init_share_price    = trade_details.init_share_price,
-                share_price         = trade_details.share_price,
+                in_                     = trade_details.trade_amount,
+                share_reserves          = trade_details.share_reserves,
+                bond_reserves           = trade_details.bond_reserves,
+                token_out               = trade_details.token_out,
+                fee_percent             = trade_details.fee_percent,
+                time_remaining          = trade_details.stretched_time_remaining,
+                init_share_price        = trade_details.init_share_price,
+                share_price             = trade_details.share_price,
             )
             (
                 without_fee_or_slippage,
@@ -295,14 +301,14 @@ class Market:
             ) = trade_results
         else:
             trade_results = self.pricing_model.calc_in_given_out(
-                out                 = trade_details.trade_amount,
-                share_reserves      = trade_details.share_reserves,
-                bond_reserves       = trade_details.bond_reserves,
-                token_in            = trade_details.token_in,
-                fee_percent         = trade_details.fee_percent,
-                time_remaining      = trade_details.stretched_time_remaining,
-                init_share_price    = trade_details.init_share_price,
-                share_price         = trade_details.share_price,
+                out                     = trade_details.trade_amount,
+                share_reserves          = trade_details.share_reserves,
+                bond_reserves           = trade_details.bond_reserves,
+                token_in                = trade_details.token_in,
+                fee_percent             = trade_details.fee_percent,
+                time_remaining          = trade_details.stretched_time_remaining,
+                init_share_price        = trade_details.init_share_price,
+                share_price             = trade_details.share_price,
             )
             (
                 without_fee_or_slippage,
@@ -319,15 +325,16 @@ class Market:
             will be conditional on the pricing model
         """
         without_fee_or_slippage, output_with_fee, output_without_fee, fee = self.swap(trade_details)
-        
+        print(f"opening short: {without_fee_or_slippage, output_with_fee, output_without_fee, fee}")
         market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
-            d_base_asset            = - output_with_fee,
-            d_token_asset           = + trade_details.trade_amount,
-            d_bond_buffer           = + trade_details.trade_amount,
-            d_base_asset_slippage   = + abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_fee        = + fee,
-            d_base_asset_orders     = + 1,
-            d_base_asset_volume     = + output_with_fee,
+            d_base_asset                = - output_with_fee,
+            d_token_asset               = + trade_details.trade_amount,
+            d_bond_buffer               = + trade_details.trade_amount,
+            d_share_fee                 = + fee / trade_details.share_price,
+            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
+            d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_orders         = + 1,
+            d_base_asset_volume         = + output_with_fee,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details.trade_amount - output_with_fee
@@ -361,15 +368,15 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        
         market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
-            d_base_asset            = + output_with_fee,
-            d_token_asset           = - trade_details.trade_amount,
-            d_bond_buffer           = - trade_details.trade_amount,
-            d_base_asset_slippage   = + abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_fee        = + fee,
-            d_base_asset_orders     = + 1,
-            d_base_asset_volume     = + output_with_fee,
+            d_base_asset                = + output_with_fee,
+            d_token_asset               = - trade_details.trade_amount,
+            d_bond_buffer               = - trade_details.trade_amount,
+            d_share_fee                 = + fee / trade_details.share_price,
+            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
+            d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
+            d_base_asset_orders         = + 1,
+            d_base_asset_volume         = + output_with_fee,
         )
         # TODO: Add logic:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
@@ -413,8 +420,9 @@ class Market:
             d_base_asset                = + trade_details.trade_amount,
             d_token_asset               = - output_with_fee,
             d_share_buffer              = + output_with_fee / trade_details.share_price,
+            d_token_fee                 = + fee,
+            d_token_fee_history         = [trade_details.mint_time, fee],
             d_token_asset_slippage      = + abs(without_fee_or_slippage - output_without_fee),
-            d_token_asset_fee           = + fee,
             d_token_asset_orders        = + 1,
             d_token_asset_volume        = + output_with_fee,
         )
@@ -451,8 +459,9 @@ class Market:
             d_base_asset                = - output_with_fee,
             d_token_asset               = + trade_details.trade_amount,
             d_share_buffer              = - trade_details.trade_amount / trade_details.share_price,
+            d_share_fee                 = + fee / trade_details.share_price,
+            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
             d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
-            d_base_asset_fee            = + fee,
             d_base_asset_orders         = + 1,
             d_base_asset_volume         = + output_with_fee,
         )
@@ -523,13 +532,18 @@ class Market:
 
     def get_market_step_string(self):
         """Returns a string that describes the current market step"""
-        return f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"\
-            + f" reserves=["\
+        output_string = f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"
+        output_string += f" reserves=["\
                 + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"\
                 + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"\
                 + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"\
                 + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"\
                 + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"\
-            + f"]"\
-            + f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"\
-            + f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"
+            + f"]"
+        if self.verbose:
+            output_string += f" fees=["\
+                + f"x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"\
+                + f",y:{bcolors.OKBLUE}{self.token_fees}{bcolors.ENDC}"
+        output_string += f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"
+        output_string += f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"
+        return output_string

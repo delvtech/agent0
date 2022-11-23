@@ -222,8 +222,9 @@ class YieldSimulator:
             rng=self.rng,
             wallet_address=0,
             budget = init_base_asset_reserves*100,
-            amount_to_LP = init_base_asset_reserves*10,
-            pt_to_short = init_token_asset_reserves,
+            amount_to_LP = init_base_asset_reserves,
+            pt_to_short = init_token_asset_reserves/10,
+            short_until_apr = self.init_pool_apy,
             verbose=self.config.simulator.verbose
         )
         self.block_number = 0
