@@ -43,6 +43,7 @@ class Market:
         self.share_reserves = share_reserves  # z
         self.bond_reserves = bond_reserves  # y
         self.fee_percent = fee_percent  # g
+        self.time_stretch_constant = time_stretch_constant
         self.init_share_price = init_share_price  # u normalizing constant
         self.share_price = share_price  # c
         self.token_duration = token_duration  # how long does a token last before expiry
@@ -60,7 +61,6 @@ class Market:
             raise AssertionError(
                 f'markets.__init__: ERROR: self.pricing.model_name() should be "Element" or "Hyperdrive", not {pricing_model_name}!'
             )
-        self.time_stretch_constant = time_stretch_constant
         self.base_asset_orders = 0
         self.token_asset_orders = 0
         self.base_asset_volume = 0
