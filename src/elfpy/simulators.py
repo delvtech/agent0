@@ -55,24 +55,11 @@ class YieldSimulator:
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time = None
-        self.expected_proportion = 0
         self.init_share_price = None
-        self.time_stretch = None
         self.pricing_model = None
         self.market = None
         self.user_list = None
-        self.trade_amount = None
-        self.trade_amount_usd = None
-        self.token_in = None
-        self.token_out = None
-        self.without_fee_or_slippage = None
-        self.with_fee = None
-        self.without_fee = None
-        self.fee = None
         self.random_variables_set = False
-        self.apy_distance_in_target_range = None
-        self.apy_distance_from_mid_when_in_range = None
-        self.actual_convergence_strength = None
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
             "run_number",  # integer, simulation index
@@ -99,20 +86,8 @@ class YieldSimulator:
             "base_asset_reserves",
             "token_asset_reserves",
             "total_supply",
-            "token_in",
-            "token_out",
-            "trade_amount",
-            "trade_amount_usd",
             "share_price",  # c in YieldSpace with Yield Bearing Vaults
             "init_share_price",  # u in YieldSpace with Yield Bearing Vaults
-            "out_without_fee_slippage",
-            "out_with_fee",
-            "out_without_fee",
-            "apy_distance_in_target_range",
-            "apy_distance_from_mid_when_in_range",
-            "actual_convergence_strength",
-            "fee",  # percentage of the slippage we take as a fee (expressed as a decimal)
-            "slippage",
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
@@ -213,7 +188,7 @@ class YieldSimulator:
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
         # TODO: redo this to initialize an empty market and add liquidity from an LP user
-        time_stretch_constant = time_utils.calc_time_stretch(self.init_pool_apy)
+        time_stretch_constant = self.pricing_model.calc_time_stretch(self.init_pool_apy)
         init_reserves = price_utils.calc_liquidity(
             self.target_liquidity,
             self.config.market.base_asset_price,
@@ -269,7 +244,7 @@ class YieldSimulator:
         This is the primary function of the YieldSimulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
-        up to `self.num_trading_days` days.
+        up to `self.config.simulator.num_trading_days` days.
 
         Arguments
         ---------
@@ -407,27 +382,5 @@ class YieldSimulator:
         self.analysis_dict["token_asset_reserves"].append(self.market.bond_reserves)
         self.analysis_dict["total_supply"].append(self.market.total_supply)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
-        self.analysis_dict["token_in"].append(self.token_in)
-        self.analysis_dict["token_out"].append(self.token_out)
-        self.analysis_dict["trade_amount"].append(self.trade_amount)
-        self.analysis_dict["trade_amount_usd"].append(self.trade_amount_usd)
         self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["apy_distance_in_target_range"].append(self.apy_distance_in_target_range)
-        self.analysis_dict["apy_distance_from_mid_when_in_range"].append(self.apy_distance_from_mid_when_in_range)
-        self.analysis_dict["actual_convergence_strength"].append(self.actual_convergence_strength)
-        if self.fee is None:
-            self.analysis_dict["out_without_fee_slippage"].append(None)
-            self.analysis_dict["out_with_fee"].append(None)
-            self.analysis_dict["out_without_fee"].append(None)
-            self.analysis_dict["fee"].append(None)
-            self.analysis_dict["slippage"].append(None)
-        else:
-            self.analysis_dict["out_without_fee_slippage"].append(
-                self.without_fee_or_slippage * self.config.market.base_asset_price
-            )
-            self.analysis_dict["out_with_fee"].append(self.with_fee * self.config.market.base_asset_price)
-            self.analysis_dict["out_without_fee"].append(self.without_fee * self.config.market.base_asset_price)
-            self.analysis_dict["fee"].append(self.fee * self.config.market.base_asset_price)
-            slippage = (self.without_fee_or_slippage - self.without_fee) * self.config.market.base_asset_price
-            self.analysis_dict["slippage"].append(slippage)
         self.analysis_dict["spot_price"].append(self.market.spot_price)
