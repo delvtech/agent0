@@ -29,10 +29,7 @@ LPbase = test_lpers.BaseLPTest()
 # run a test
 override_dict = {
     # "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
-    "num_blocks_per_day": 1,  # 1 block a day keeps the MEV away!
     "verbose": True,
-    "vault_apy": 0.05,
-    "init_pool_apy": 0.05,
 }
 
 # # %time based.run_base_trade_test(policy="single_long", additional_overrides=override_dict)

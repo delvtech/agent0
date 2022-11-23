@@ -7,7 +7,7 @@ Testing for the ElfPy package modules
 # pylint: disable=attribute-defined-outside-init
 
 import unittest
-from elfpy.utils.fmt import *
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 from elfpy.simulators import YieldSimulator
 
 
@@ -20,8 +20,9 @@ class BaseLPTest(unittest.TestCase):
         simulator.set_random_variables()
         override_dict = {
             "target_liquidity": 10e6,
-            "fee_percent": 0.1,  # a fraction which represents a percentage!
+            "fee_percent": 0.1,
             "init_pool_apy": 0.05,
+            "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
             "user_policies": user_policies,  # list of user policies by name
         }

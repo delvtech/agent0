@@ -103,6 +103,7 @@ class YieldSimulator:
         )  # vault apy over time as a decimal
         self.random_variables_set = True
 
+
     def print_random_variables(self):
         """Prints all variables that are set in set_random_variables()"""
         print(
@@ -165,6 +166,7 @@ class YieldSimulator:
                             + f"{self.config.simulator.num_trading_days},"
                             + f" not {len(value)}"
                         )
+                print(f" overridding {key} = {getattr(self, key) if hasattr(self,key) else ''} with {value}")
         # override the init_share_price if it is in the override_dict
         if override_dict is not None and "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
@@ -212,6 +214,8 @@ class YieldSimulator:
                 f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
                 f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
                 f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
+                f"\n init_pool_apy = {self.config.simulator.init_pool_apy:.2%}"
+                f"\n vault_apy = {self.config.simulator.vault_apy[0]:.2%}"
                 f"\n fee_percent = {self.market.fee_percent}"
                 f"\n share_price = {self.market.share_price}"
                 f"\n init_share_price = {self.market.init_share_price}"
@@ -238,6 +242,7 @@ class YieldSimulator:
                 market=self.market,
                 rng=self.rng,
                 wallet_address=policy_number + 1,
+                verbose=self.config.simulator.verbose
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())

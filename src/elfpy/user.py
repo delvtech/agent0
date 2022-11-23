@@ -241,14 +241,17 @@ class User:
         if is_shorter:
             if self.has_opened_short:
                 for mint_time, position in self.wallet.token_in_protocol.items():
-                    print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
+                    if self.verbose:
+                        print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
                     if position < 0:
                         action_list.append(self.create_user_action(
                                 action_type="close_short",
                                 trade_amount= -position,
                                 mint_time=mint_time,
                         ))
-        print("liquidate: short action_list=", action_list)
+        # if self.verbose:
+            # action_list_string = '\n action = '.join([f' {x}' for x in action_list])
+            # print(f"liquidate: short action_list:\n action:{action_list_string}")
         if is_LP:
             if self.has_LPd:
                 action_list.append(self.create_user_action(
