@@ -180,11 +180,14 @@ class Market:
         self.share_buffer               += market_deltas.d_share_buffer
         self.bond_buffer                += market_deltas.d_bond_buffer
         self.liquidity_pool             += market_deltas.d_liquidity_pool
-        self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
+        if market_deltas.d_liquidity_pool_history != []:
+            self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
         self.share_fees                 += market_deltas.d_share_fee
-        self.share_fee_history.append(market_deltas.d_share_fee_history)
+        if market_deltas.d_share_fee_history != []:
+            self.share_fee_history.append(market_deltas.d_share_fee_history)
         self.token_fees                 += market_deltas.d_token_fee
-        self.token_fee_history.append(market_deltas.d_token_fee_history)
+        if market_deltas.d_token_fee_history != []:
+            self.token_fee_history.append(market_deltas.d_token_fee_history)
         self.cum_base_asset_slippage    += market_deltas.d_base_asset_slippage
         self.cum_token_asset_slippage   += market_deltas.d_token_asset_slippage
         self.base_asset_orders          += market_deltas.d_base_asset_orders
@@ -477,22 +480,26 @@ class Market:
         Computes new deltas for bond & share reserves after liquidity is added
         """
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
-            base_asset_in = trade_details.trade_amount,
-            share_reserves = trade_details.share_reserves,
-            bond_reserves = trade_details.bond_reserves,
-            share_buffer = trade_details.share_buffer,
-            init_share_price = trade_details.init_share_price,
-            share_price = trade_details.share_price,
-            liquidity_pool = trade_details.liquidity_pool,
-            rate = trade_details.rate,
-            time_remaining = trade_details.time_remaining,
-            stretched_time_remaining = trade_details.stretched_time_remaining
+            base_asset_in               = trade_details.trade_amount,
+            share_reserves              = trade_details.share_reserves,
+            bond_reserves               = trade_details.bond_reserves,
+            share_buffer                = trade_details.share_buffer,
+            init_share_price            = trade_details.init_share_price,
+            share_price                 = trade_details.share_price,
+            liquidity_pool              = trade_details.liquidity_pool,
+            rate                        = trade_details.rate,
+            time_remaining              = trade_details.time_remaining,
+            stretched_time_remaining    = trade_details.stretched_time_remaining
         )
         market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
             d_base_asset                = + d_base_reserves,
             d_token_asset               = + d_token_reserves,
             d_liquidity_pool            = + lp_out,
-            d_liquidity_pool_history    = [trade_details.mint_time, trade_details.trade_amount]
+            d_liquidity_pool_history    = [
+                trade_details.mint_time,
+                trade_details.wallet_address,
+                + trade_details.trade_amount
+                ]
         )
         agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
             base_in_wallet              = - d_base_reserves,
@@ -506,25 +513,28 @@ class Market:
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in = trade_details.trade_amount,
-            share_reserves = trade_details.share_reserves,
-            bond_reserves = trade_details.bond_reserves,
-            share_buffer = trade_details.share_buffer,
-            init_share_price = trade_details.init_share_price,
-            share_price = trade_details.share_price,
-            liquidity_pool = trade_details.liquidity_pool,
-            rate = trade_details.rate,
-            time_remaining = trade_details.time_remaining,
-            stretched_time_remaining = trade_details.stretched_time_remaining
+            share_reserves              = trade_details.share_reserves,
+            bond_reserves               = trade_details.bond_reserves,
+            share_buffer                = trade_details.share_buffer,
+            init_share_price            = trade_details.init_share_price,
+            share_price                 = trade_details.share_price,
+            liquidity_pool              = trade_details.liquidity_pool,
+            rate                        = trade_details.rate,
+            time_remaining              = trade_details.time_remaining,
+            stretched_time_remaining    = trade_details.stretched_time_remaining
         )
 
-        market_deltas = MarketDeltas(
-            d_base_asset=-d_base_reserves,
-            d_token_asset=-d_token_reserves,
-            d_liquidity_pool=-lp_in,
-            d_liquidity_pool_history=[trade_details.mint_time, trade_details.trade_amount]
+        market_deltas = MarketDeltas( # write out explicit signs, so it's clear what's happening
+            d_base_asset                = - d_base_reserves,
+            d_token_asset               = - d_token_reserves,
+            d_liquidity_pool            = - lp_in,
+            d_liquidity_pool_history    = [
+                trade_details.mint_time,
+                trade_details.wallet_address,
+                - trade_details.trade_amount
+                ]
         )
-        agent_deltas = AgentWallet(
-            # write out explicit signs, so it's clear what's happening
+        agent_deltas = AgentWallet( # write out explicit signs, so it's clear what's happening
             base_in_wallet              = + d_base_reserves,
             lp_in_wallet                = - lp_in,
         )
@@ -540,6 +550,9 @@ class Market:
                 + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"\
                 + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"\
             + f"]"
+        output_string += f"\n liquidity_pool_history={self.liquidity_pool_history}"
+        output_string += f"\n share_fee_history={self.share_fee_history}"
+        output_string += f"\n token_fee_history={self.token_fee_history}"
         if self.verbose:
             output_string += f" fees=["\
                 + f"x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"\
