@@ -20,6 +20,7 @@ if os.scandir("config"):
     config_file = os.path.join(os.pardir, os.getcwd(), "config", "hyperdrive_config.toml")
 else:
     config_file = os.path.join(os.pardir, os.getcwd(), "hyperdrive_config.toml")
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 
 # create object
 # based = test_trade.BaseTradeTest()
@@ -36,4 +37,4 @@ override_dict = {
 start = time.time()
 LPbase.run_base_lp_test(user_policies=["simple_LP"], config_file=config_file, additional_overrides=override_dict)
 dur = time.time() - start
-print(f"test took ", end=f"{dur:,.1f} seconds" if dur>1 else f"{dur*1000:,.0f} milliseconds")
+print(f"test took ", end=f"{fmt(dur,precision=2)} seconds" if dur>1 else f"{fmt(dur*1000,precision=2)} milliseconds")

@@ -298,6 +298,7 @@ class YieldSimulator:
         # simulation has ended
         for user in self.user_list:
             user.final_report()
+        self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
         for user in self.user_list:

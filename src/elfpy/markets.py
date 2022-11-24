@@ -4,12 +4,12 @@ Market simulators store state information when interfacing AMM pricing models wi
 TODO: rewrite all functions to have typed inputs
 """
 
-from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 import elfpy.utils.time as time_utils
 from elfpy.user import AgentWallet
 from elfpy.utils.bcolors import bcolors
 from elfpy.utils.basic_dataclass import *
 import elfpy.utils.price as price_utils
+import time
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -30,9 +30,9 @@ class MarketDeltas(BasicDataclass):
     d_base_asset_slippage: float = 0
     d_token_asset_slippage: float = 0
     d_share_fee: float = 0
-    d_share_fee_history: list = field(default_factory=list)
+    d_share_fee_history: dict = field(default_factory=dict)
     d_token_fee: float = 0
-    d_token_fee_history: list = field(default_factory=list)
+    d_token_fee_history: dict = field(default_factory=dict)
     d_base_asset_orders: int = 0
     d_token_asset_orders: int = 0
     d_base_asset_volume: float = 0
@@ -96,9 +96,9 @@ class Market:
         self.cum_token_asset_slippage = 0
         self.cum_base_asset_slippage = 0
         self.share_fees = 0
-        self.share_fee_history = []
+        self.share_fee_history = {}
         self.token_fees = 0
-        self.token_fee_history = []
+        self.token_fee_history = {}
         self.spot_price = None
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
@@ -170,11 +170,15 @@ class Market:
         """
         for field in market_deltas.__dataclass_fields__:
             value = getattr(market_deltas, field)
-            if field in ["d_liquidity_pool_history","d_share_fee_history","d_token_fee_history"]:
-                assert isinstance(value, list), f"markets.update_market: Error:"\
-                + f" d_liquidity_pool_history has value={value} should be a list"
-            else:
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {field} is not finite."
+            if value: # check that it's instantiated
+                if field == "d_liquidity_pool_history":
+                    assert isinstance(value, list), f"markets.update_market: Error:"\
+                    + f" {field} has value={value} should be a dict"
+                elif field in ["d_share_fee_history","d_token_fee_history"]:
+                    assert isinstance(value, dict), f"markets.update_market: Error:"\
+                    + f" {field} has value={value} should be a dict"
+                else:
+                    assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {field} is not finite."
         self.share_reserves             += market_deltas.d_base_asset/self.share_price
         self.bond_reserves              += market_deltas.d_token_asset
         self.share_buffer               += market_deltas.d_share_buffer
@@ -183,11 +187,19 @@ class Market:
         if market_deltas.d_liquidity_pool_history != []:
             self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
         self.share_fees                 += market_deltas.d_share_fee
-        if market_deltas.d_share_fee_history != []:
-            self.share_fee_history.append(market_deltas.d_share_fee_history)
+        if market_deltas.d_share_fee_history != {}:
+            for key, value in market_deltas.d_share_fee_history.items():
+                if key not in self.share_fee_history:
+                    self.share_fee_history.update(market_deltas.d_share_fee_history)
+                else:
+                    self.share_fee_history[key] += value
         self.token_fees                 += market_deltas.d_token_fee
-        if market_deltas.d_token_fee_history != []:
-            self.token_fee_history.append(market_deltas.d_token_fee_history)
+        if market_deltas.d_token_fee_history != {}:
+            for key, value in market_deltas.d_token_fee_history.items():
+                if key not in self.token_fee_history:
+                    self.token_fee_history.update(market_deltas.d_token_fee_history)
+                else:
+                    self.token_fee_history[key] += value
         self.cum_base_asset_slippage    += market_deltas.d_base_asset_slippage
         self.cum_token_asset_slippage   += market_deltas.d_token_asset_slippage
         self.base_asset_orders          += market_deltas.d_base_asset_orders
@@ -334,7 +346,7 @@ class Market:
             d_token_asset               = + trade_details.trade_amount,
             d_bond_buffer               = + trade_details.trade_amount,
             d_share_fee                 = + fee / trade_details.share_price,
-            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
+            d_share_fee_history         = {trade_details.mint_time: fee / trade_details.share_price},
             d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders         = + 1,
             d_base_asset_volume         = + output_with_fee,
@@ -376,7 +388,7 @@ class Market:
             d_token_asset               = - trade_details.trade_amount,
             d_bond_buffer               = - trade_details.trade_amount,
             d_share_fee                 = + fee / trade_details.share_price,
-            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
+            d_share_fee_history         = {trade_details.mint_time: fee / trade_details.share_price},
             d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders         = + 1,
             d_base_asset_volume         = + output_with_fee,
@@ -424,7 +436,7 @@ class Market:
             d_token_asset               = - output_with_fee,
             d_share_buffer              = + output_with_fee / trade_details.share_price,
             d_token_fee                 = + fee,
-            d_token_fee_history         = [trade_details.mint_time, fee],
+            d_token_fee_history         = {trade_details.mint_time: fee},
             d_token_asset_slippage      = + abs(without_fee_or_slippage - output_without_fee),
             d_token_asset_orders        = + 1,
             d_token_asset_volume        = + output_with_fee,
@@ -463,7 +475,7 @@ class Market:
             d_token_asset               = + trade_details.trade_amount,
             d_share_buffer              = - trade_details.trade_amount / trade_details.share_price,
             d_share_fee                 = + fee / trade_details.share_price,
-            d_share_fee_history         = [trade_details.mint_time, fee / trade_details.share_price],
+            d_share_fee_history         = {trade_details.mint_time: fee / trade_details.share_price},
             d_base_asset_slippage       = + abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders         = + 1,
             d_base_asset_volume         = + output_with_fee,
@@ -539,6 +551,49 @@ class Market:
             lp_in_wallet                = - lp_in,
         )
         return market_deltas, agent_deltas
+
+    def calc_fees_owed(self, return_agent=None):
+        """
+        Returns the fees owed to the agent
+        """
+        start_time = time.time()
+        cum_liq, prev_time, prev_share_fees, prev_token_fees = 0,0,0,0
+        cum_liq_by_agent, contribution, token_owed,share_owed = {},{},{},{}
+        for [current_time, acting_agent, new_liq] in self.liquidity_pool_history:
+            # calculate what happened since the last update, we use marginal values for everything
+            share_fees_till_now = sum([v for k,v in self.share_fee_history.items() if k <= current_time])
+            token_fees_till_now = sum([v for k,v in self.token_fee_history.items() if k <= current_time])
+            delta_share_fees = share_fees_till_now - prev_share_fees
+            delta_token_fees = token_fees_till_now - prev_token_fees
+            delta_time = current_time - prev_time
+            # initialize agent if this is the first time we see them
+            if acting_agent not in cum_liq_by_agent:
+                contribution[acting_agent], token_owed[acting_agent], share_owed[acting_agent],cum_liq_by_agent[acting_agent] = 0,0,0,0
+            if current_time != 0:  # only do a marginal update after first timestep where deltas are zero
+                for update_agent in cum_liq_by_agent:  # for each agent
+                    # update their marginal share of cumulative liquidity, give them credit for it (contribution)
+                    contribution[update_agent] += cum_liq_by_agent[update_agent] / cum_liq
+                    # update their owed fees
+                    share_owed[update_agent] = (share_owed[update_agent]*prev_time + contribution[update_agent]*delta_share_fees*delta_time)/current_time
+                    token_owed[update_agent] = (token_owed[update_agent]*prev_time + contribution[update_agent]*delta_token_fees*delta_time)/current_time
+            # update values used for next iteration
+            cum_liq += new_liq
+            cum_liq_by_agent[acting_agent] += new_liq
+            prev_time = current_time
+            prev_share_fees, prev_token_fees = share_fees_till_now, token_fees_till_now
+        if self.verbose:
+            print(f"cum_liq_by_agent = {cum_liq_by_agent}")
+            print(f"      share_owed = {share_owed} calculated sum = {sum(share_owed.values())}"
+                + f"\n                                           vs. direct = {self.share_fees} it's a "
+                + f"match 😁" if sum(share_owed.values()) == self.share_fees else f"mismatch 😢")
+            print(f"      token_owed = {token_owed} calculated sum = {sum(token_owed.values())}"
+                + f"\n                                           vs. direct = {self.token_fees} it's a "
+                + f"match 😁" if sum(token_owed.values()) == self.token_fees else f"mismatch 😢")
+        dur = time.time() - start_time
+        print(f"calc_fees took ", end=f"{fmt(dur,precision=2)} seconds"\
+            if dur>1 else f"{fmt(dur*1000,precision=2)} milliseconds\n")
+        if return_agent is not None:
+            return share_owed[return_agent], token_owed[return_agent]
 
     def get_market_step_string(self):
         """Returns a string that describes the current market step"""
