@@ -9,9 +9,9 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, wallet_address, budget=1000, amount_to_LP=100, verbose=False):
         """call basic policy init then add custom stuff"""
-        self.amount_to_LP = amount_to_LP
-        self.time_to_withdraw = rng.uniform(0.5, 1.5)
         super().__init__(market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose)
+        self.amount_to_LP = amount_to_LP
+        self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
 
     def action(self):
         """

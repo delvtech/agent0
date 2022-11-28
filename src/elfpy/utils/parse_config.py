@@ -57,19 +57,12 @@ class SimulatorConfig:
 
 
 @dataclass
-class PricingModelConfig:
-    """config parameters specific to the pricing model"""
-    verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
-
-
-@dataclass
 class Config:
     """Data object for storing user simulation config parameters"""
 
     market: MarketConfig
     amm: AMMConfig
     simulator: SimulatorConfig
-    pricing_model: PricingModelConfig
 
 
 def parse_simulation_config(config_file):

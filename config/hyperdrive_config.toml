@@ -24,7 +24,6 @@ floor_fee = 0  # minimum fee percentage (bps)
 
 [simulator]
 # fixed variables
-pool_duration = 180  # in days
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
 token_duration = 0.24657534246575342465753424657534  # 90 / 365 = time lapse between token mint and expiry as a yearfrac
@@ -33,6 +32,3 @@ pricing_model_name = "HyperDrive" # specify a pricing model
 user_policies = ["single_long"] # specify a list of trading strategies by name
 random_seed = 123 # to be passed to a rng
 verbose = false # toggle verbose output level
-
-[pricing_model]
-verbose = false

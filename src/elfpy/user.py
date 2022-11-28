@@ -3,14 +3,17 @@ Implements abstract classes that control user behavior
 
 TODO: rewrite all functions to have typed inputs
 """
-from elfpy.utils.basic_dataclass import *
-from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
+
+from dataclasses import dataclass, field
+
+import numpy as np
+
+from elfpy.utils.float_to_string import float_to_string
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
-
-@dataclass
-class AgentWallet(BasicDataclass):
+@dataclass(frozen=False)
+class AgentWallet():
     """stores what's in the agent's wallet"""
 
     # fungible
@@ -21,6 +24,28 @@ class AgentWallet(BasicDataclass):
     token_in_wallet: dict = field(default_factory=dict)
     base_in_protocol: dict = field(default_factory=dict)
     token_in_protocol: dict = field(default_factory=dict)
+
+    def __getitem__(self, key):
+        getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __str__(self):
+        output_string = ""
+        for key, value in vars(self).items():
+            if value: #  check if object exists
+                if value != 0:
+                    output_string += f" {key}: "
+                    if isinstance(value, float):
+                        output_string += f"{float_to_string(value)}"
+                    elif isinstance(value, list):
+                        output_string += '['+', '.join([float_to_string(x) for x in value])+']'
+                    elif isinstance(value, dict):
+                        output_string += '{'+', '.join([f"{k}: {float_to_string(v)}" for k,v in value.items()])+'}'
+                    else:
+                        output_string += f"{value}"
+        return output_string
 
 
 class User:
@@ -172,9 +197,6 @@ class User:
             if action.action_type == "close_short":
                 action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
                 action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]
-            if action.action_type == "close_short":
-                action.token_in_protocol = self.wallet.token_in_protocol[action.mint_time]
-                action.base_in_protocol = self.wallet.base_in_protocol[action.mint_time]
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # if len(trade_action) > 0: # there is a trade
@@ -201,32 +223,31 @@ class User:
     def update_wallet(self, agent_deltas):
         """Update the user's wallet"""
         self.update_spend()
-        for wallet_key, wallet in agent_deltas.items():
+        for wallet_key, wallet in agent_deltas.__dict__.items():
             if wallet is None:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
-                    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
+                # TODO: add back in with high level of logging, category = "spending"
+                #if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
+                #    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 self.wallet[wallet_key] += wallet
-                if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
-                    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
-                    print(f"                              Δ = {wallet:+,.0f}")
+                # TODO: add back in with high level of logging, category = "spending"
+                #if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
+                #    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
+                #    print(f"                              Δ = {wallet:+,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, account in wallet.items():
-                    # print(f"  updating wallet {wallet_key} mint_time={mint_time} account={account}")
-                    if self.verbose:
-                        print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    # TODO: add back in with high level of logging, category = "spending"
+                    #if self.verbose:
+                    #    print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
                     if mint_time in self.wallet[wallet_key]: #  entry already exists for this mint_time, so add to it
-                        # print(f"updating index {self.wallet[wallet_key]} at mint_time={mint_time} adding={account}")
                         self.wallet[wallet_key][mint_time] += account
                     else:
-                        # print(f"updating dict {wallet_key} mint_time={mint_time} account={account}")
-                        # print(f"taking {self.wallet[wallet_key]}")
-                        # print(f"and updating {{mint_time: account}}")
                         self.wallet[wallet_key].update({mint_time: account})
-                    if self.verbose:
-                        print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    # TODO: add back in with high level of logging, category = "spending"
+                    #if self.verbose:
+                    #    print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif wallet_key == "fees_paid":
                 pass
             else:
@@ -304,11 +325,11 @@ class User:
             output_string += f" lost {bcolors.FAIL}"
         else:
             output_string += f" made {bcolors.OKGREEN}"
-        output_string += f"{fmt(PnL)}{bcolors.ENDC}"
-        output_string += f" on ₡{bcolors.OKCYAN}{fmt(spend)}{bcolors.ENDC} spent, APR = "
+        output_string += f"{float_to_string(PnL)}{bcolors.ENDC}"
+        output_string += f" on ₡{bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
         output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
         output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
-        output_string += f" ({holding_period_rate:,.2%} in {fmt(self.market.time,precision=2)} years)"
-        output_string += f", net worth = ₡{bcolors.FAIL}{fmt(worth)}{bcolors.ENDC}"
-        output_string += f" from {fmt(base)} base and {fmt(tokens)} tokens at p={price}\n"
+        output_string += f" ({holding_period_rate:,.2%} in {float_to_string(self.market.time,precision=2)} years)"
+        output_string += f", net worth = ₡{bcolors.FAIL}{float_to_string(worth)}{bcolors.ENDC}"
+        output_string += f" from {float_to_string(base)} base and {float_to_string(tokens)} tokens at p={price}\n"
         print(output_string)

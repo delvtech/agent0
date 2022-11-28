@@ -5,7 +5,7 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 from importlib import import_module
-from elfpy.utils.fmt import *  # float→str formatter, also imports numpy as np
+import numpy as np
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
@@ -140,12 +140,12 @@ class YieldSimulator:
         """Assign a PricingModel object to the pricing_model attribute"""
         if self.config.simulator.verbose:
             print(
-                f"{'#'*20} {model_name} {'#'*20}\n verbose=(simulator:{self.config.simulator.verbose},pricing_model:{self.config.pricing_model.verbose})"
+                f"{'#'*20} {model_name} {'#'*20}\n verbose=(simulator:{self.config.simulator.verbose},pricing_model:{self.config.amm.verbose})"
             )
         if model_name.lower() == "hyperdrive":
-            self.pricing_model = HyperdrivePricingModel(self.config.pricing_model.verbose)
+            self.pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
         elif model_name.lower() == "element":
-            self.pricing_model = ElementPricingModel(self.config.pricing_model.verbose)
+            self.pricing_model = ElementPricingModel(self.config.amm.verbose)
         else:
             raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
@@ -166,7 +166,8 @@ class YieldSimulator:
                             + f"{self.config.simulator.num_trading_days},"
                             + f" not {len(value)}"
                         )
-                print(f" overridding {key} = {getattr(self, key) if hasattr(self,key) else ''} with {value}")
+                if self.config.simulator.verbose:
+                    print(f" overridding {key} = {getattr(self, key) if hasattr(self,key) else ''} with {value}")
         # override the init_share_price if it is in the override_dict
         if override_dict is not None and "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
@@ -302,7 +303,10 @@ class YieldSimulator:
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
         for user in self.user_list:
-            action_list = user.get_trade() if not last_block_in_sim else user.liquidate()
+            if not last_block_in_sim:
+                action_list = user.get_trade()
+            else:
+                user.liquidate()
             for user_action in action_list:
                 self.market.trade_and_update(user_action)
                 self.update_analysis_dict()

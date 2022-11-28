@@ -7,7 +7,6 @@ Testing for the ElfPy package modules
 # pylint: disable=attribute-defined-outside-init
 
 import unittest
-from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 from elfpy.simulators import YieldSimulator
 
 
@@ -39,4 +38,4 @@ class LPTests(BaseLPTest):
         self.run_base_lp_test(user_policies=["simple_LP"],config_file="config/hyperdrive_config.toml")
 
     # def test_complicated_LPs(self):
-        """Tests complicated LP setups"""
+        """Tests complicated LP setups"""\
