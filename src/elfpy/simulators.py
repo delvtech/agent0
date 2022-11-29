@@ -45,7 +45,7 @@ class YieldSimulator:
         self.init_share_price = None
         self.pricing_model = None
         self.market = None
-        self.user_list = None
+        self.agent_list = None
         self.random_variables_set = False
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
@@ -171,7 +171,7 @@ class YieldSimulator:
                 self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
 
     def setup_simulated_entities(self, override_dict=None):
-        """Constructs the user list, pricing model, and market member variables"""
+        """Constructs the agent list, pricing model, and market member variables"""
         # update parameters if the user provided new ones
         assert (
             self.random_variables_set
@@ -215,7 +215,6 @@ class YieldSimulator:
             )
             print(f"{self.market.get_market_step_string()}")
         # fill market pools with an initial LP
-        self.block_number = 0
         if self.config.simulator.init_LP:
             initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
                 market=self.market,
@@ -227,22 +226,22 @@ class YieldSimulator:
                 short_until_apr=self.config.simulator.init_pool_apy,
                 verbose=self.config.simulator.verbose,
             )
-            self.user_list = [initial_lp]
+            self.agent_list = [initial_lp]
             # execute one special block just for the initial_lp
             self.collect_and_execute_trades()
-        else:
-            self.user_list = []
+        else: # manual market configuration
+            self.agent_list = []
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
-                wallet_address=policy_number + 1,
+                wallet_address=policy_number + 1, # first policy goes to initial_lp
                 verbose=self.config.simulator.verbose,
             )
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
-            self.user_list.append(user_with_policy)
+            self.agent_list.append(user_with_policy)
 
     def step_size(self):
         """Returns minimum time increment"""
@@ -267,8 +266,8 @@ class YieldSimulator:
         -------
         There are no returns, but the function does update the analysis_dict member variable
         """
-        self.start_time = time_utils.current_datetime()
         self.setup_simulated_entities(override_dict)
+        self.start_time = time_utils.current_datetime()
         last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
@@ -281,12 +280,14 @@ class YieldSimulator:
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
-                last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
-                    daily_block_number == self.config.simulator.num_blocks_per_day - 1
-                )
                 self.daily_block_number = daily_block_number
+                last_block_in_sim = (
+                    (self.day == self.config.simulator.num_trading_days - 1) 
+                    and 
+                    (self.daily_block_number == self.config.simulator.num_blocks_per_day - 1)
+                )
                 if self.config.simulator.shuffle_users:
-                    self.rng.shuffle(self.user_list)  # shuffle the user action order each block
+                    self.rng.shuffle(self.agent_list)  # shuffle the agent order each block
                 self.collect_and_execute_trades(last_block_in_sim)
                 # if verbose:
                 #     print(f"{self.market.get_market_step_string()}")
@@ -294,24 +295,26 @@ class YieldSimulator:
                     self.market.tick(self.step_size())
                     self.block_number += 1
         # simulation has ended
-        for user in self.user_list:
-            user.final_report()
+        for agent in self.agent_list:
+            agent.final_report()
         self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
-        for agent in self.user_list:
+        trade_list = []
+        for agent in self.agent_list:
             if not last_block_in_sim:
-                # get all of a user's trades and execute them right away
-                for action in agent.get_trade_list():
-                    agent_deltas = self.market.trade_and_update(action)
-                    agent.update_wallet(agent_deltas)  # update agent state since market doesn't know about agents
-                    if self.config.simulator.verbose:
-                        print(f" agent Δs ={agent_deltas}")
-                        print(f" post-trade {agent.status_report()}")
-                    self.update_analysis_dict()
-                    self.run_trade_number += 1
+                # get all of a agent's trades and execute them right away
+                trade_list.append(agent.get_trade_list())
             else:
-                agent.liquidate()
+                trade_list.append(agent.get_liquidation_trades())
+        for agent_trade in agent.get_trade_list():
+            wallet_deltas = self.market.trade_and_update(agent_trade)
+            agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
+            if self.config.simulator.verbose:
+                print(f"agent wallet deltas = {wallet_deltas}")
+                print(f"post-trade {agent.status_report()}")
+            self.update_analysis_dict()
+            self.run_trade_number += 1
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

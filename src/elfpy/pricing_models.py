@@ -105,9 +105,6 @@ class PricingModel:
         )
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves
-        # if share_reserves == 0:
-        #     return np.inf
-        # else:
         return 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
 
     def calc_apr_from_reserves(

@@ -146,6 +146,41 @@ class Market:
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
+    def check_actions(self, action_type):
+        """Ensure that the user action is an allowed action for this market
+        Arguments
+        ---------
+        action_type : str
+            must be either "element" or "hyperdrive"
+        """
+        pricing_model_name = self.pricing_model.model_name()
+        if  pricing_model_name.lower() == "element":
+            allowed_actions = [
+                "open_long",
+                "close_long",
+                "add_liquidity",
+                "remove_liquidity"
+            ]
+        elif pricing_model_name.lower() == "hyperdrive":
+            allowed_actions = [
+                "open_long",
+                "close_long",
+                "open_short",
+                "close_short",
+                "add_liquidity",
+                "remove_liquidity",
+            ]
+        else:
+            raise ValueError(
+                "market.check_actions: ERROR: pricing model name should "
+                f'be in ["element", "hyperdrive"], not {pricing_model_name}'
+            )
+        if not action_type in allowed_actions:
+            raise AssertionError(
+                "markets.trade_and_update: ERROR: agent_action.action_type should be an allowed action for the"
+                f" model={self.pricing_model.model_name()}, not {action_type}!"
+            )
+
     def trade_and_update(self, agent_action):
         """
         Execute a trade in the simulated market.
@@ -166,24 +201,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
-        # ensure that the user action is an allowed action for this market
-        allowed_actions = []
-        if self.pricing_model.model_name() == "Element":
-            allowed_actions = ["open_long", "close_long", "add_liquidity", "remove_liquidity"]
-        elif self.pricing_model.model_name() == "Hyperdrive":
-            allowed_actions = [
-                "open_long",
-                "close_long",
-                "open_short",
-                "close_short",
-                "add_liquidity",
-                "remove_liquidity",
-            ]
-        if not agent_action.action_type in allowed_actions:
-            raise AssertionError(
-                "markets.trade_and_update: ERROR: agent_action.action_type should be an allowed action for the"
-                f" model={self.pricing_model.model_name()}, not {agent_action.action_type}!"
-            )
+        self.check_actions(agent_action.action_type)
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
         agent_action.time_remaining = time_utils.get_yearfrac_remaining(
@@ -227,9 +245,8 @@ class Market:
         """
         Increments member variables to reflect current market conditions
         """
-        for field in market_deltas.__dataclass_fields__:
-            value = getattr(market_deltas, field)
-            if value:  # check that it's instantiated
+        for field, value in market_deltas.__dict__.items():
+            if value:  # check that it's instantiated and non-empty
                 if field == "d_lp_reserves_history":
                     assert isinstance(value, list), (
                         f"markets.update_market: Error:" + f" {field} has value={value} should be a dict"
@@ -362,13 +379,13 @@ class Market:
         """
         trade_results = self.pricing_model.calc_out_given_in(
             in_=trade_details.trade_amount,
-            share_reserves=trade_details.share_reserves,
-            bond_reserves=trade_details.bond_reserves,
+            share_reserves=self.share_reserves,
+            bond_reserves=self.bond_reserves,
             token_out=trade_details.token_out,
-            fee_percent=trade_details.fee_percent,
+            fee_percent=self.fee_percent,
             time_remaining=trade_details.stretched_time_remaining,
-            init_share_price=trade_details.init_share_price,
-            share_price=trade_details.share_price,
+            init_share_price=self.init_share_price,
+            share_price=self.share_price,
         )
         (
             without_fee_or_slippage,
@@ -382,8 +399,8 @@ class Market:
             d_base_asset=-output_with_fee,
             d_token_asset=+trade_details.trade_amount,
             d_bond_buffer=+trade_details.trade_amount,
-            d_share_fee=+fee / trade_details.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / trade_details.share_price},
+            d_share_fee=+fee / self.share_price,
+            d_share_fee_history={trade_details.mint_time: fee / self.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
@@ -406,13 +423,13 @@ class Market:
         """
         trade_results = self.pricing_model.calc_in_given_out(
             trade_details.trade_amount,
-            trade_details.share_reserves,
-            trade_details.bond_reserves,
+            self.share_reserves,
+            self.bond_reserves,
             trade_details.token_in,
-            trade_details.fee_percent,
+            self.fee_percent,
             trade_details.stretched_time_remaining,
-            trade_details.init_share_price,
-            trade_details.share_price,
+            self.init_share_price,
+            self.share_price,
         )
         (
             without_fee_or_slippage,

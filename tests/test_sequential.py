@@ -18,7 +18,7 @@ lp_base = BaseLPTest()
 # run a test
 override_dict = {
     # "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
-    "verbose": True,
+    # "verbose": True,
     "shuffle_users": False,
     "init_LP": False,
 }

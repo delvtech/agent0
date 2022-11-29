@@ -21,6 +21,7 @@ min_pool_apy = 0.02  # as a decimal
 max_pool_apy = 0.9  # as a decimal
 # fixed variables
 floor_fee = 0  # minimum fee percentage (bps)
+verbose = false # toggle verbose output level
 
 [simulator]
 # fixed variables
@@ -33,4 +34,4 @@ user_policies = ["single_long"] # specify a list of trading strategies by name
 shuffle_users = true # shuffle order of action (as if random gas paid)
 init_LP = true # use initial LP to seed pool
 random_seed = 123 # to be passed to a rng
-verbose = false # toggle verbose output level
+verbose = true # toggle verbose output level

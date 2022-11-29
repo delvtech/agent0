@@ -11,16 +11,17 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_LP=100):
         """call basic policy init then add custom stuff"""
-        self.amount_to_LP = amount_to_LP  # initialize this before super() call to set is_LP
+        self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
+        self.amount_to_LP = amount_to_LP
+        self.is_LP = True
+        self.is_shorter = False
         super().__init__(
             market=market,
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
             verbose=verbose,
-            amount_to_LP=amount_to_LP,
         )
-        self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
 
     def action(self):
         """

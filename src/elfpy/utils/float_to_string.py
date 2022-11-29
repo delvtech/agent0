@@ -2,7 +2,10 @@ import numpy as np
 
 
 def float_to_string(value, precision=3, min_digits=0, debug=False):
-    """Format a float to a string with a given precision"""
+    """
+    Format a float to a string with a given precision
+    this follows the significant figure behavior, irrepective of number size
+    """
     if debug:
         print(f"value: {value}, type: {type(value)}, precision: {precision}, min_digits: {min_digits}")
     if np.isinf(value):
@@ -20,11 +23,12 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
                 f" min_digits={min_digits}"
             )
         return str(value)
+    #decimals = np.clip(precision - digits, 0, precision)
     decimals = min(max(precision - digits, min_digits), precision)  #  calculate desired decimals
     if debug:
         print(f"value: {value}, type: {type(value)} calculated digits: {digits}, decimals: {decimals}")
     if abs(value) > 0.1:
         string = f"{value:,.{decimals}f}"
-    else:
+    else:  # add an additional sigfig if the value is really small
         string = f"{value:0.{precision-1}e}"
     return string

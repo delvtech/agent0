@@ -12,12 +12,13 @@ import numpy as np
 from elfpy.utils.float_to_string import float_to_string
 from elfpy.utils.bcolors import bcolors
 
+
 @dataclass(frozen=False)
 class AgentWallet:
     """stores what's in the agent's wallet"""
 
     # fungible
-    base_in_wallet: float = 0
+    base_in_wallet: float
     lp_in_wallet: float = 0  # they're fungible!
     fees_paid: float = 0
     # non-fungible (identified by mint_time, stored as dict)
@@ -34,7 +35,7 @@ class AgentWallet:
             self.effective_price = total_tokens / self.base_in_wallet
 
     def __getitem__(self, key):
-        getattr(self, key)
+        return getattr(self, key)
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
@@ -63,7 +64,7 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, wallet_address, budget, verbose, **kwargs):
+    def __init__(self, market, rng, wallet_address, budget, verbose):
         """
         Set up initial conditions
         """
@@ -76,8 +77,6 @@ class User:
         self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
         self.position_list = []
-        for key, value in kwargs.items():
-            setattr(self, key, value)
         self.wallet = AgentWallet(base_in_wallet=budget)
         self.status_update()
 
@@ -210,7 +209,7 @@ class User:
             else:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
 
-    def liquidate(self):
+    def get_liquidation_trades(self):
         """close up shop"""
         self.status_update()
         action_list = []
@@ -218,7 +217,10 @@ class User:
             if self.has_opened_short:
                 for mint_time, position in self.wallet.token_in_protocol.items():
                     if self.verbose:
-                        print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
+                        print(
+                            "  get_liquidation_trades() evaluating closing short:"
+                            f" mint_time={mint_time} position={position}"
+                        )
                     if position < 0:
                         action_list.append(
                             self.create_agent_action(
@@ -235,16 +237,14 @@ class User:
         return action_list
 
     def status_update(self):
-        self.is_LP = bool(hasattr(self, "amount_to_LP"))
-        self.is_shorter = bool(hasattr(self, "pt_to_short"))
         if self.is_LP:
             self.has_LPd = self.wallet.lp_in_wallet > 0
-            self.can_LP = self.wallet.base_in_wallet >= getattr(self, "amount_to_LP", default=np.inf)
+            self.can_LP = self.wallet.base_in_wallet >= getattr(self, "amount_to_LP", np.inf)
         self.position_list = list(self.wallet.token_in_protocol.values())
         self.mint_times = list(self.wallet.token_in_protocol.keys())
         if self.is_shorter:
             self.has_opened_short = bool(any([x < -1 for x in self.position_list]))
-            self.can_open_short = self.get_max_pt_short(self.market.time) >= getattr(self, "pt_to_short", default=np.inf)
+            self.can_open_short = self.get_max_pt_short(self.market.time) >= getattr(self, "pt_to_short", np.inf)
 
     def status_report(self):
         self.status_update()

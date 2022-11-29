@@ -21,14 +21,16 @@ class Policy(BasicPolicy):
         short_until_apr=np.inf,
     ):
         """call basic policy init then add custom stuff"""
+        self.pt_to_short = pt_to_short
+        self.short_until_apr = short_until_apr
+        self.is_shorter = True
+        self.is_LP = False
         super().__init__(
             market=market,
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
             verbose=verbose,
-            pt_to_short=pt_to_short,
-            short_until_apr=short_until_apr,
         )
 
     def action(self):
