@@ -19,7 +19,7 @@ class BaseTradeTest(unittest.TestCase):
     def run_base_trade_test(self, policy, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         # load default config
-        config_file = "./config/simulation_config.toml"
+        config_file = "./config/example_config.toml"
         simulator = YieldSimulator(config_file)
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)

@@ -266,8 +266,8 @@ class YieldSimulator:
         -------
         There are no returns, but the function does update the analysis_dict member variable
         """
-        self.setup_simulated_entities(override_dict)
         self.start_time = time_utils.current_datetime()
+        self.setup_simulated_entities(override_dict)
         last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day

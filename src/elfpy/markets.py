@@ -488,7 +488,7 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=+trade_details.trade_amount,
             d_token_asset=-output_with_fee,
-            d_share_buffer=+output_with_fee / trade_details.share_price,
+            d_share_buffer=+output_with_fee / self.share_price,
             d_token_fee=+fee,
             d_token_fee_history={trade_details.mint_time: fee},
             d_token_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
