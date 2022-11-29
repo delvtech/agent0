@@ -37,6 +37,7 @@ class AMMConfig:
     min_pool_apy: float = field(default=0.02, metadata={"hint": "as a decimal"})
     max_pool_apy: float = field(default=0.9, metadata={"hint": "as a decimal"})
     floor_fee: float = field(default=0, metadata={"hint": "minimum fee percentage (bps)"})
+    verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
 
 
 @dataclass
@@ -77,5 +78,4 @@ def parse_simulation_config(config_file):
         market=MarketConfig(**toml_config["market"]),
         amm=AMMConfig(**toml_config["amm"]),
         simulator=SimulatorConfig(**toml_config["simulator"]),
-        pricing_model=PricingModelConfig(**toml_config["pricing_model"]),
     )

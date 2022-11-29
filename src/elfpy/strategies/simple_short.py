@@ -15,8 +15,8 @@ class Policy(BasicPolicy):
         market,
         rng,
         wallet_address,
-        verbose=None,
         budget=1000,
+        verbose=None,
         pt_to_short=100,
         short_until_apr=np.inf,
     ):
@@ -25,8 +25,8 @@ class Policy(BasicPolicy):
             market=market,
             rng=rng,
             wallet_address=wallet_address,
-            verbose=verbose,
             budget=budget,
+            verbose=verbose,
             pt_to_short=pt_to_short,
             short_until_apr=short_until_apr,
         )

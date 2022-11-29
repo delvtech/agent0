@@ -15,18 +15,18 @@ class Policy(BasicPolicy):
         rng,
         wallet_address,
         budget=1000,
+        verbose=None,
         amount_to_LP=100,
         pt_to_short=100,
         short_until_apr=0.05,
-        verbose=None,
     ):
         """call basic policy init then add custom stuff"""
         super().__init__(
             market=market,
             rng=rng,
             wallet_address=wallet_address,
-            verbose=verbose,
             budget=budget,
+            verbose=verbose,
             amount_to_LP=amount_to_LP,
             pt_to_short=pt_to_short,
             short_until_apr=short_until_apr,

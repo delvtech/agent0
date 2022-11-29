@@ -14,12 +14,12 @@ class Policy(BasicPolicy):
         market,
         rng,
         wallet_address,
-        verbose=None,
         budget=100,
+        verbose=None,
         pt_to_short=100,
     ):
         """call basic policy init then add custom stuff"""
-        super.__init__(market, rng, wallet_address, verbose=verbose, budget=budget, pt_to_short=pt_to_short)
+        super().__init__(market, rng, wallet_address, budget=budget, verbose=verbose, pt_to_short=pt_to_short)
 
     def action(self):
         """

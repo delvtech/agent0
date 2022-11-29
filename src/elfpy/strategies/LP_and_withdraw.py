@@ -9,15 +9,15 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, verbose=None, budget=1000, amount_to_LP=100):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_LP=100):
         """call basic policy init then add custom stuff"""
         self.amount_to_LP = amount_to_LP  # initialize this before super() call to set is_LP
         super().__init__(
             market=market,
             rng=rng,
             wallet_address=wallet_address,
-            verbose=verbose,
             budget=budget,
+            verbose=verbose,
             amount_to_LP=amount_to_LP,
         )
         self.time_to_withdraw = self.rng.uniform(0.5, 1.5)

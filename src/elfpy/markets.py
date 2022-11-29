@@ -30,8 +30,8 @@ class MarketDeltas:
     d_token_asset: float = 0
     d_share_buffer: float = 0
     d_bond_buffer: float = 0
-    d_liquidity_pool: float = 0
-    d_liquidity_pool_history: list = field(default_factory=list)
+    d_lp_reserves: float = 0
+    d_lp_reserves_history: list = field(default_factory=list)
     d_base_asset_slippage: float = 0
     d_token_asset_slippage: float = 0
     d_share_fee: float = 0
@@ -84,7 +84,7 @@ class Market:
         pricing_model,
         share_reserves=0,
         bond_reserves=0,
-        liquidity_pool=0,
+        lp_reserves=0,
         time_stretch_constant=1,
         init_share_price=1,
         share_price=1,
@@ -95,8 +95,8 @@ class Market:
         self.bond_reserves = bond_reserves  # y
         self.share_buffer = 0
         self.bond_buffer = 0
-        self.liquidity_pool = liquidity_pool
-        self.liquidity_pool_history = []  # list trades by user and time, initialize as empty list to allow appending
+        self.lp_reserves = lp_reserves
+        self.lp_reserves_history = []  # list trades by user and time, initialize as empty list to allow appending
         self.fee_percent = fee_percent  # g
         self.time_stretch_constant = time_stretch_constant
         self.init_share_price = init_share_price  # u normalizing constant
@@ -141,8 +141,8 @@ class Market:
         self.share_fee_history = {}
         self.token_fees = 0
         self.token_fee_history = {}
-        self.spot_price = None
-        self.rate = None
+        self.spot_price = 0
+        self.rate = 0
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
@@ -187,10 +187,10 @@ class Market:
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
         agent_action.time_remaining = time_utils.get_yearfrac_remaining(
-            agent_action.market.time, self.mint_time, agent_action.market.token_duration
+            self.time, agent_action.mint_time, self.token_duration
         )
         agent_action.stretched_time_remaining = time_utils.stretch_time(
-            self.time_remaining, agent_action.market.time_stretch_constant
+            agent_action.time_remaining, self.time_stretch_constant
         )
         agent_action.print_description_string()
 
@@ -220,11 +220,8 @@ class Market:
         # update market state
         self.update_market(market_deltas)
         if self.verbose:
-            print(f"{self.get_market_step_string()}")
-        agent_action.agent.update_wallet(agent_deltas)  # update user state since market doesn't know about users
-        if self.verbose:
-            print(f" agent Δs ={agent_deltas}\n market Δs ={market_deltas}")
-            print(f" post-trade {agent_action.agent.status_report()}") if self.verbose else None
+            print(f"market Δs ={market_deltas}")
+        return agent_deltas
 
     def update_market(self, market_deltas):
         """
@@ -233,7 +230,7 @@ class Market:
         for field in market_deltas.__dataclass_fields__:
             value = getattr(market_deltas, field)
             if value:  # check that it's instantiated
-                if field == "d_liquidity_pool_history":
+                if field == "d_lp_reserves_history":
                     assert isinstance(value, list), (
                         f"markets.update_market: Error:" + f" {field} has value={value} should be a dict"
                     )
@@ -247,9 +244,9 @@ class Market:
         self.bond_reserves += market_deltas.d_token_asset
         self.share_buffer += market_deltas.d_share_buffer
         self.bond_buffer += market_deltas.d_bond_buffer
-        self.liquidity_pool += market_deltas.d_liquidity_pool
-        if market_deltas.d_liquidity_pool_history:  # not empty
-            self.liquidity_pool_history.append(market_deltas.d_liquidity_pool_history)
+        self.lp_reserves += market_deltas.d_lp_reserves
+        if market_deltas.d_lp_reserves_history:  # not empty
+            self.lp_reserves_history.append(market_deltas.d_lp_reserves_history)
         self.share_fees += market_deltas.d_share_fee
         if market_deltas.d_share_fee_history:  # not empty
             for key, value in market_deltas.d_share_fee_history.items():
@@ -456,13 +453,13 @@ class Market:
         #        use current mint time because this is a fresh
         trade_results = self.pricing_model.calc_out_given_in(
             trade_details.trade_amount,
-            trade_details.market.share_reserves,
-            trade_details.market.bond_reserves,
+            self.share_reserves,
+            self.bond_reserves,
             trade_details.token_out,
-            trade_details.market.fee_percent,
+            self.fee_percent,
             trade_details.stretched_time_remaining,
-            trade_details.market.init_share_price,
-            trade_details.market.share_price,
+            self.init_share_price,
+            self.share_price,
         )
         (
             without_fee_or_slippage,
@@ -496,13 +493,13 @@ class Market:
         """
         trade_results = self.pricing_model.calc_out_given_in(
             trade_details.trade_amount,
-            trade_details.market.share_reserves,
-            trade_details.market.bond_reserves,
+            self.share_reserves,
+            self.bond_reserves,
             trade_details.token_out,
-            trade_details.market.fee_percent,
+            self.fee_percent,
             trade_details.stretched_time_remaining,
-            trade_details.market.init_share_price,
-            trade_details.market.share_price,
+            self.init_share_price,
+            self.share_price,
         )
         (
             without_fee_or_slippage,
@@ -513,9 +510,9 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=-output_with_fee,
             d_token_asset=+trade_details.trade_amount,
-            d_share_buffer=-trade_details.trade_amount / trade_details.market.share_price,
-            d_share_fee=+fee / trade_details.market.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / trade_details.market.share_price},
+            d_share_buffer=-trade_details.trade_amount / self.share_price,
+            d_share_fee=+fee / self.share_price,
+            d_share_fee_history={trade_details.mint_time: fee / self.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
@@ -532,22 +529,22 @@ class Market:
         Computes new deltas for bond & share reserves after liquidity is added
         """
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
-            base_asset_in=trade_details.trade_amount,
-            share_reserves=trade_details.share_reserves,
-            bond_reserves=trade_details.bond_reserves,
-            share_buffer=trade_details.share_buffer,
-            init_share_price=trade_details.init_share_price,
-            share_price=trade_details.share_price,
-            liquidity_pool=trade_details.liquidity_pool,
-            rate=trade_details.rate,
+            d_base=trade_details.trade_amount,
+            share_reserves=self.share_reserves,
+            bond_reserves=self.bond_reserves,
+            share_buffer=self.share_buffer,
+            init_share_price=self.init_share_price,
+            share_price=self.share_price,
+            lp_reserves=self.lp_reserves,
+            rate=self.rate,
             time_remaining=trade_details.time_remaining,
             stretched_time_remaining=trade_details.stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
             d_base_asset=+d_base_reserves,
             d_token_asset=+d_token_reserves,
-            d_liquidity_pool=+lp_out,
-            d_liquidity_pool_history=[
+            d_lp_reserves=+lp_out,
+            d_lp_reserves_history=[
                 trade_details.mint_time,
                 trade_details.wallet_address,
                 +trade_details.trade_amount,
@@ -565,13 +562,13 @@ class Market:
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_details.trade_amount,
-            share_reserves=trade_details.market.share_reserves,
-            bond_reserves=trade_details.market.bond_reserves,
-            share_buffer=trade_details.market.share_buffer,
-            init_share_price=trade_details.market.init_share_price,
-            share_price=trade_details.market.share_price,
-            liquidity_pool=trade_details.market.liquidity_pool,
-            rate=trade_details.market.rate,
+            share_reserves=self.share_reserves,
+            bond_reserves=self.bond_reserves,
+            share_buffer=self.share_buffer,
+            init_share_price=self.init_share_price,
+            share_price=self.share_price,
+            lp_reserves=self.lp_reserves,
+            rate=self.rate,
             time_remaining=trade_details.time_remaining,
             stretched_time_remaining=trade_details.stretched_time_remaining,
         )
@@ -579,8 +576,8 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=-d_base_reserves,
             d_token_asset=-d_token_reserves,
-            d_liquidity_pool=-lp_in,
-            d_liquidity_pool_history=[
+            d_lp_reserves=-lp_in,
+            d_lp_reserves_history=[
                 trade_details.mint_time,
                 trade_details.wallet_address,
                 -trade_details.trade_amount,
@@ -599,7 +596,7 @@ class Market:
         start_time = time.time()
         cum_liq, prev_time, prev_share_fees, prev_token_fees = 0, 0, 0, 0
         cum_liq_by_agent, contribution, token_owed, share_owed = {}, {}, {}, {}
-        for [current_time, acting_agent, new_liq] in self.liquidity_pool_history:
+        for [current_time, acting_agent, new_liq] in self.lp_reserves_history:
             # calculate what happened since the last update, we use marginal values for everything
             share_fees_till_now = sum([v for k, v in self.share_fee_history.items() if k <= current_time])
             token_fees_till_now = sum([v for k, v in self.token_fee_history.items() if k <= current_time])
@@ -636,14 +633,14 @@ class Market:
             print(f"cum_liq_by_agent = {cum_liq_by_agent}")
             print(
                 f"      share_owed = {share_owed} calculated sum = {sum(share_owed.values())}"
-                + f"\n                                           vs. direct = {self.share_fees} it's a "
+                + f"\n           vs. direct = {self.share_fees} it's a "
                 + f"match "
                 if sum(share_owed.values()) == self.share_fees
                 else f"mismatch "
             )
             print(
                 f"      token_owed = {token_owed} calculated sum = {sum(token_owed.values())}"
-                + f"\n                                           vs. direct = {self.token_fees} it's a "
+                + f"\n           vs. direct = {self.token_fees} it's a "
                 + f"match "
                 if sum(token_owed.values()) == self.token_fees
                 else f"mismatch "
@@ -666,7 +663,7 @@ class Market:
         output_string += f" reserves=["\
                 + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"\
                 + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"\
-                + f",lp:{bcolors.OKBLUE}{self.liquidity_pool}{bcolors.ENDC}"\
+                + f",lp:{bcolors.OKBLUE}{self.lp_reserves}{bcolors.ENDC}"\
                 + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"\
                 + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"\
                 + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"

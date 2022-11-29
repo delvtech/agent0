@@ -65,47 +65,39 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, wallet_address, verbose, **kwargs):
+    def __init__(self, market, rng, wallet_address, budget, verbose, **kwargs):
         """
         Set up initial conditions
         """
         self.market = market
         self.rng = rng
         self.wallet_address = wallet_address
-        self.verbose = verbose
+        self.budget = budget
+        self.verbose = False if verbose is None else verbose
         self.last_update_spend = 0
         self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
         self.position_list = []
         for key, value in kwargs.items():
             setattr(self, key, value)
-        self.wallet = AgentWallet()
+        self.wallet = AgentWallet(base_in_wallet=budget)
         self.status_update()
 
     @dataclass
-    class UserAction:
+    class AgentAction:
         """user action specification"""
 
+        # these two variables are required to be set by the strategy
         action_type: str
         trade_amount: float
+        # wallet_address is always set automatically by the basic user class
         wallet_address: int
-        agent: object
-        mint_time: float = None
-        fee_percent: float = field(init=False)
-        init_share_price: float = field(init=False)
-        share_price: float = field(init=False)
-        share_reserves: float = field(init=False)
-        bond_reserves: float = field(init=False)
-        share_buffer: float = field(init=False)
-        bond_buffer: float = field(init=False)
-        liquidity_pool: float = field(init=False)
-        rate: float = field(init=False)
-        time_remaining: float = field(init=False)
-        stretched_time_remaining: float = field(init=False)
+        # mint time is set only for trades that act on existing positions (close long or close short)
+        mint_time: float | None = None
 
         def print_description_string(self):
             output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
-            for key, value in self.items():
+            for key, value in self.__dict__.items():
                 if key == "action_type":
                     output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
                 elif key in ["trade_amount", "mint_time"]:
@@ -116,20 +108,13 @@ class User:
 
     # user functions defined below
     def create_agent_action(self, action_type, trade_amount, mint_time=None):
-        agent_action = self.UserAction(
+        agent_action = self.AgentAction(
+            # these two variables are required to be set by the strategy
             action_type=action_type,
             trade_amount=trade_amount,
+            # next two variables are set automatically by the basic user class
             wallet_address=self.wallet_address,
-            agent=self,
             mint_time=mint_time,
-        )
-        if agent_action.mint_time is None:
-            agent_action.mint_time = agent_action.market.time
-        agent_action.time_remaining = time_utils.get_yearfrac_remaining(
-            agent_action.market.time, self.mint_time, agent_action.market.token_duration
-        )
-        agent_action.stretched_time_remaining = time_utils.stretch_time(
-            self.time_remaining, agent_action.market.time_stretch_constant
         )
         return agent_action
 
@@ -168,7 +153,7 @@ class User:
         max_pt_short = self.market.share_reserves * self.market.share_price / self.market.spot_price
         return max_pt_short
 
-    def get_trade(self):
+    def get_trade_list(self):
         """
         Helper function for computing a user trade
         direction is chosen based on this logic:
@@ -270,12 +255,12 @@ class User:
         self.is_shorter = bool(hasattr(self, "pt_to_short"))
         if self.is_LP:
             self.has_LPd = self.wallet.lp_in_wallet > 0
-            self.can_LP = self.wallet.base_in_wallet >= self.amount_to_LP
+            self.can_LP = self.wallet.base_in_wallet >= getattr(self, "amount_to_LP", default=np.inf)
         self.position_list = list(self.wallet.token_in_protocol.values())
         self.mint_times = list(self.wallet.token_in_protocol.keys())
         if self.is_shorter:
             self.has_opened_short = bool(any([x < -1 for x in self.position_list]))
-            self.can_open_short = self.get_max_pt_short(self.market.time) >= self.pt_to_short
+            self.can_open_short = self.get_max_pt_short(self.market.time) >= getattr(self, "pt_to_short", default=np.inf)
 
     def status_report(self):
         self.status_update()
@@ -303,8 +288,8 @@ class User:
     def final_report(self):
         self.status_update()
         price = self.market.spot_price
-        base = self.wallet["base_in_wallet"]
-        tokens = sum(self.position_list)
+        base = self.wallet.base_in_wallet
+        tokens = sum(self.position_list) if len(self.position_list) > 0 else 0
         worth = base + tokens * price
         PnL = worth - self.budget
         spend = self.weighted_average_spend

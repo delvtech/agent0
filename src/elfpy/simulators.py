@@ -34,7 +34,7 @@ class YieldSimulator:
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
         self.run_number = 0
-        self.day = 0
+        self.day = 0    
         self.block_number = 0
         self.daily_block_number = 0
         seconds_in_a_day = 86400
@@ -116,6 +116,7 @@ class YieldSimulator:
             f"fee_percent = {self.config.simulator.fee_percent}\n"
             f"init_vault_age = {self.config.simulator.init_vault_age}\n"
             f"init_vault_apy = {self.config.simulator.vault_apy[0]}\n"
+            f"init_LP = {self.config.simulator.init_LP}\n"
         )
 
     def get_simulation_state_string(self):
@@ -226,6 +227,7 @@ class YieldSimulator:
             )
             print(f"{self.market.get_market_step_string()}")
         self.block_number = 0
+        print(f" should I initialize the market with a user? init_LP = {self.config.simulator.init_LP}")
         if self.config.simulator.init_LP:
             initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
                 market=self.market,
@@ -300,6 +302,8 @@ class YieldSimulator:
                 if self.config.simulator.shuffle_users:
                     self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 self.collect_and_execute_trades(last_block_in_sim)
+                # if verbose:
+                #     print(f"{self.market.get_market_step_string()}")
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())
                     self.block_number += 1
@@ -309,15 +313,19 @@ class YieldSimulator:
         self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
-        for user in self.user_list:
+        for agent in self.user_list:
             if not last_block_in_sim:
-                action_list = user.get_trade()
+                # get all of a user's trades and execute them right away
+                for action in agent.get_trade_list():
+                    agent_deltas = self.market.trade_and_update(action)
+                    agent.update_wallet(agent_deltas)  # update agent state since market doesn't know about agents
+                    if self.config.simulator.verbose:
+                        print(f" agent Δs ={agent_deltas}")
+                        print(f" post-trade {agent.status_report()}")
+                    self.update_analysis_dict()
+                    self.run_trade_number += 1
             else:
-                user.liquidate()
-            for user_action in action_list:
-                self.market.trade_and_update(user_action)
-                self.update_analysis_dict()
-                self.run_trade_number += 1
+                agent.liquidate()
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
