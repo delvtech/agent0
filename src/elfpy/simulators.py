@@ -225,20 +225,23 @@ class YieldSimulator:
                 f"\n init_time_stretch = {self.market.time_stretch_constant}"
             )
             print(f"{self.market.get_market_step_string()}")
-        initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
-            market=self.market,
-            rng=self.rng,
-            wallet_address=0,
-            budget=init_base_asset_reserves * 100,
-            amount_to_LP=init_base_asset_reserves,
-            pt_to_short=init_token_asset_reserves / 10,
-            short_until_apr=self.config.simulator.init_pool_apy,
-            verbose=self.config.simulator.verbose,
-        )
         self.block_number = 0
-        self.user_list = [initial_lp]
-        # execute one special block just for the initial_lp
-        self.collect_and_execute_trades()
+        if self.config.simulator.init_LP:
+            initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
+                market=self.market,
+                rng=self.rng,
+                wallet_address=0,
+                budget=init_base_asset_reserves * 100,
+                amount_to_LP=init_base_asset_reserves,
+                pt_to_short=init_token_asset_reserves / 10,
+                short_until_apr=self.config.simulator.init_pool_apy,
+                verbose=self.config.simulator.verbose,
+            )
+            self.user_list = [initial_lp]
+            # execute one special block just for the initial_lp
+            self.collect_and_execute_trades()
+        else:
+            self.user_list = []
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
@@ -294,7 +297,8 @@ class YieldSimulator:
                     (daily_block_number == self.config.simulator.num_blocks_per_day - 1)
                 )
                 self.daily_block_number = daily_block_number
-                self.rng.shuffle(self.user_list)  # shuffle the user action order each block
+                if self.config.simulator.shuffle_users:
+                    self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 self.collect_and_execute_trades(last_block_in_sim)
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())

@@ -1,10 +1,11 @@
 from elfpy.strategies.basic import BasicPolicy
 import numpy as np
 
+
 class Policy(BasicPolicy):
     """
     simple short
-    only has one long open at a time
+    short until a certain APR is reached
     """
 
     def __init__(
@@ -13,18 +14,27 @@ class Policy(BasicPolicy):
         rng,
         wallet_address,
         verbose=None,
-        budget=100,
+        budget=1000,
         pt_to_short=100,
+        short_until_apr=np.inf,
     ):
         """call basic policy init then add custom stuff"""
-        super.__init__(market, rng, wallet_address, verbose=verbose, budget=budget, pt_to_short=pt_to_short)
+        super().__init__(
+            market=market,
+            rng=rng,
+            wallet_address=wallet_address,
+            verbose=verbose,
+            budget=budget,
+            pt_to_short=pt_to_short,
+            short_until_apr=short_until_apr,
+        )
 
     def action(self):
         """
         implement user strategy
-        short if you can, only once
+        short if you can, up to a certain APR (can be infinite)
         """
         action_list = []
-        if self.can_open_short and not self.has_opened_short:
+        if self.market.rate < self.short_until_apr and self.can_open_short:
             action_list.append(self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short))
         return action_list

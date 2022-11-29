@@ -43,6 +43,7 @@ class AMMConfig:
 class SimulatorConfig:
     """config parameters specific to the simulator"""
 
+    log_at_least_every_n_years: float = field(default=0.5, metadata={"hint": "basic logging every n years"})
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
@@ -52,6 +53,8 @@ class SimulatorConfig:
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
     pricing_model_name: str = field(default="Element", metadata={"hint": 'Must be "Element" or "Hyperdrive"'})
     user_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
+    shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
+    init_LP: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
 

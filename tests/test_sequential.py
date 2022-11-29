@@ -20,7 +20,7 @@ if os.scandir("config"):
     config_file = os.path.join(os.pardir, os.getcwd(), "config", "hyperdrive_config.toml")
 else:
     config_file = os.path.join(os.pardir, os.getcwd(), "hyperdrive_config.toml")
-from elfpy.utils.float_to_string import float_to_string   # float→str formatter, also imports numpy as np
+from elfpy.utils.fmt import *   # float→str formatter, also imports numpy as np
 
 # create object
 # based = test_trade.BaseTradeTest()
@@ -31,10 +31,13 @@ LPbase = test_lpers.BaseLPTest()
 override_dict = {
     # "num_blocks_per_day": int(24 * 60 * 60 / 12),  # 12 second block time
     "verbose": True,
+    "shuffle_users": False,
+    "init_LP": False
 }
 
 # # %time based.run_base_trade_test(policy="single_long", additional_overrides=override_dict)
 start = time.time()
-LPbase.run_base_lp_test(user_policies=["single_LP"], config_file=config_file, additional_overrides=override_dict)
+LPbase.run_base_lp_test(user_policies=["single_LP","single_short"],
+    config_file=config_file, additional_overrides=override_dict)
 dur = time.time() - start
-print(f"test took ", end=f"{float_to_string(dur,precision=2)} seconds" if dur>1 else f"{float_to_string(dur*1000,precision=2)} milliseconds")
+print(f"test took ", end=f"{fmt(dur,precision=2)} seconds" if dur>1 else f"{fmt(dur*1000,precision=2)} milliseconds")

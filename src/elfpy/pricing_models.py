@@ -809,11 +809,11 @@ class HyperdrivePricingModel(PricingModel):
         """
         assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"

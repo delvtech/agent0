@@ -26,6 +26,14 @@ class AgentWallet:
     token_in_wallet: dict = field(default_factory=dict)
     base_in_protocol: dict = field(default_factory=dict)
     token_in_protocol: dict = field(default_factory=dict)
+    effective_price: float = field(init=False)  # calculated after init, only for transactions
+
+    def __post_init__(self):
+        """post initialization function"""
+        # check if this represents a trade (one side will be negative)
+        total_tokens = sum([x for x in self.token_in_wallet.values()])
+        if self.base_in_wallet < 0 or total_tokens < 0:
+            self.effective_price = total_tokens / self.base_in_wallet
 
     def __getitem__(self, key):
         getattr(self, key)
@@ -100,14 +108,10 @@ class User:
             for key, value in self.items():
                 if key == "action_type":
                     output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
-                elif key not in ["wallet_address", "agent"]:
-                    output_string += f" {key}: "
-                    if value < 2:
-                        output_string += f"{value:.5f}"
-                    elif value < 100:
-                        output_string += f"{value:.2f}"
-                    else:
-                        output_string += f"{value:,.0f}"
+                elif key in ["trade_amount","mint_time"]:
+                    output_string += f" {key}: {float_to_string(value)}"
+                elif key not in ["wallet_address","agent"]
+                    output_string += f" {key}: {float_to_string(value)}"
             print(output_string)
 
     # user functions defined below
@@ -230,7 +234,7 @@ class User:
                     # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
                     #    print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-            elif wallet_key == "fees_paid":
+            elif wallet_key in ["fees_paid", "effective_price"]:
                 pass
             else:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
