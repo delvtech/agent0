@@ -242,7 +242,7 @@ class ElementPricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
+        # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         # Solve for the amount that must be paid to receive the specified amount
         # of the output.
@@ -433,7 +433,7 @@ class ElementPricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = x**(1 - τ) + (2y + x)**(1 - τ)
+        # k = x**(1 - t) + (2y + x)**(1 - t)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         # Solve for the amount that received if the specified amount is paid.
         if token_out == "base":
@@ -840,7 +840,7 @@ class HyperdrivePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
+        # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_in == "base":
             in_reserves = share_reserves
@@ -899,12 +899,12 @@ class HyperdrivePricingModel(PricingModel):
             # the requested amount of base. We set up the invariant where the
             # user pays d_y' bonds and receives d_z shares:
             #
-            # (c / μ) * (μ * (z - d_z))**(1 - τ) + (2y + cz + d_y')**(1 - τ) = k
+            # (c / μ) * (μ * (z - d_z))**(1 - t) + (2y + cz + d_y')**(1 - t) = k
             #
             # Solving for d_y' gives us the amount of bonds the user must pay
             # without including fees:
             #
-            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - τ))**(1 / (1 - τ)) - (2y + cz)
+            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
             #
             # without_fee = d_y'
             without_fee = (
@@ -1110,12 +1110,12 @@ class HyperdrivePricingModel(PricingModel):
             # selling the specified amount of bonds. We set up the invariant
             # where the user pays d_y bonds and receives d_z' shares:
             #
-            # (c / μ) * (μ * (z - d_z'))**(1 - τ) + (2y + cz + d_y)**(1 - τ) = k
+            # (c / μ) * (μ * (z - d_z'))**(1 - t) + (2y + cz + d_y)**(1 - t) = k
             #
             # Solving for d_z' gives us the amount of shares the user receives
             # without fees:
             #
-            # d_z' = z - (1 / μ) * ((k - (2y + cz + d_y)**(1 - τ)) / (c / μ))**(1 / (1 - τ))
+            # d_z' = z - (1 / μ) * ((k - (2y + cz + d_y)**(1 - t)) / (c / μ))**(1 / (1 - t))
             #
             # We really want to know the value of d_x', the amount of base the
             # user receives without fees. This is given by d_x' = c * d_z'.
@@ -1147,12 +1147,12 @@ class HyperdrivePricingModel(PricingModel):
             # paying the specified amount of base. We set up the invariant where
             # the user pays d_z shares and receives d_y' bonds:
             #
-            # (c / μ) * (μ * (z + d_z))**(1 - τ) + (2y + cz - d_y')**(1 - τ) = k
+            # (c / μ) * (μ * (z + d_z))**(1 - t) + (2y + cz - d_y')**(1 - t) = k
             #
             # Solving for d_y' gives us the amount of bonds the user receives
             # without including fees:
             #
-            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - τ))**(1 / (1 - τ))
+            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
             without_fee = out_reserves - pow(
                 k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
             )

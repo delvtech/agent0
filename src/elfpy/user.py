@@ -31,7 +31,7 @@ class AgentWallet:
     def __post_init__(self):
         """post initialization function"""
         # check if this represents a trade (one side will be negative)
-        total_tokens = sum([x for x in self.token_in_wallet.values()])
+        total_tokens = sum(list(self.token_in_wallet.values()))
         if self.base_in_wallet < 0 or total_tokens < 0:
             self.effective_price = total_tokens / self.base_in_wallet
 
@@ -108,9 +108,9 @@ class User:
             for key, value in self.items():
                 if key == "action_type":
                     output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
-                elif key in ["trade_amount","mint_time"]:
+                elif key in ["trade_amount", "mint_time"]:
                     output_string += f" {key}: {float_to_string(value)}"
-                elif key not in ["wallet_address","agent"]
+                elif key not in ["wallet_address", "agent"]:
                     output_string += f" {key}: {float_to_string(value)}"
             print(output_string)
 
@@ -226,14 +226,16 @@ class User:
                 for mint_time, account in wallet.items():
                     # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
-                    #    print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    #    print(f"   pre-trade {wallet_key:17s} = \
+                    #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
                     if mint_time in self.wallet[wallet_key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[wallet_key][mint_time] += account
                     else:
                         self.wallet[wallet_key].update({mint_time: account})
                     # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
-                    #    print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    #    print(f"  post-trade {wallet_key:17s} = \
+                    #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif wallet_key in ["fees_paid", "effective_price"]:
                 pass
             else:
@@ -264,15 +266,15 @@ class User:
         return action_list
 
     def status_update(self):
-        self.is_LP = True if hasattr(self, "amount_to_LP") else False
-        self.is_shorter = True if hasattr(self, "pt_to_short") else False
+        self.is_LP = bool(hasattr(self, "amount_to_LP"))
+        self.is_shorter = bool(hasattr(self, "pt_to_short"))
         if self.is_LP:
             self.has_LPd = self.wallet.lp_in_wallet > 0
             self.can_LP = self.wallet.base_in_wallet >= self.amount_to_LP
         self.position_list = list(self.wallet.token_in_protocol.values())
         self.mint_times = list(self.wallet.token_in_protocol.keys())
         if self.is_shorter:
-            self.has_opened_short = True if any([x < -1 for x in self.position_list]) else False
+            self.has_opened_short = bool(any([x < -1 for x in self.position_list]))
             self.can_open_short = self.get_max_pt_short(self.market.time) >= self.pt_to_short
 
     def status_report(self):

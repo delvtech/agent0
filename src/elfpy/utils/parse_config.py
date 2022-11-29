@@ -43,7 +43,6 @@ class AMMConfig:
 class SimulatorConfig:
     """config parameters specific to the simulator"""
 
-    log_at_least_every_n_years: float = field(default=0.5, metadata={"hint": "basic logging every n years"})
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})

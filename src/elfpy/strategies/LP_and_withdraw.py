@@ -1,3 +1,5 @@
+# pylint: disable=duplicate-code
+
 from elfpy.strategies.basic import BasicPolicy
 
 

@@ -33,9 +33,6 @@ class BaseLPTest(unittest.TestCase):
 class LPTests(BaseLPTest):
     """Tests for the Simple LP policy"""
 
-    def test_base_LPs(self):
+    def test_base_lps(self):
         """Tests base LP setups"""
         self.run_base_lp_test(user_policies=["simple_LP"],config_file="config/hyperdrive_config.toml")
-
-    # def test_complicated_LPs(self):
-        """Tests complicated LP setups"""\
