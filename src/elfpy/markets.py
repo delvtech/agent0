@@ -107,30 +107,6 @@ class Market:
         #       For now, it makes sense to restrict the behavior at the market level since
         #       previous versions of Element didn't allow for shorting (despite the fact that
         #       their pricing models can support shorting).
-<<<<<<< HEAD
-        pricing_model_name = self.pricing_model.model_name()
-        if pricing_model_name == "Element":
-            self.allowed_actions = ["open_long",
-                "close_long", 
-                "add_liquidity",
-                "remove_liquidity"]
-        elif pricing_model_name == "Hyperdrive":
-            self.allowed_actions = [
-                "open_long",
-                "close_long",
-                "open_short",
-                "close_short",
-                "add_liquidity",
-                "remove_liquidity",
-            ]
-        else:
-            raise AssertionError(
-                'markets.__init__: ERROR: self.pricing.model_name() should be "Element" or "Hyperdrive", not'
-                f" {pricing_model_name}!"
-            )
-=======
-        self.time_stretch_constant = time_stretch_constant
->>>>>>> 4225993 (implement suggestions part two)
         self.base_asset_orders = 0
         self.token_asset_orders = 0
         self.base_asset_volume = 0

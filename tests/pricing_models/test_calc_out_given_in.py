@@ -8,7 +8,7 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=duplicate-code
 
-from typing import Union
+from typing import Optional
 
 from dataclasses import dataclass
 import unittest
@@ -57,13 +57,8 @@ class TestResultCalcOutGivenInSuccess:
 
     without_fee_or_slippage: float
     without_fee: float
-<<<<<<< HEAD
-    element_fee: Union[float, None]
-    element_with_fee: Union[float, None]
-=======
-    element_fee: float or None
-    element_with_fee: float or None
->>>>>>> 5ec855f (some linting)
+    element_fee: Optional[float]
+    element_with_fee: Optional[float]
     hyperdrive_fee: float
     hyperdrive_with_fee: float
 
@@ -1083,7 +1078,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     #def test_calc_out_given_in_failure(self):
     #    """Failure tests for calc_out_given_in
-    #    TODO: Change to check that an error occurs without requiring any specific error text
+    #    TODO: test that an error occurs without checking the precise message
     #    """
     #    pricing_models = [ElementPricingModel(False), HyperdrivePricingModel(False)]
 
