@@ -4,7 +4,8 @@ Implements abstract classes that control user behavior
 TODO: rewrite all functions to have typed inputs
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 
 import numpy as np
 
@@ -12,8 +13,9 @@ from elfpy.utils.float_to_string import float_to_string
 import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
 
+
 @dataclass(frozen=False)
-class AgentWallet():
+class AgentWallet:
     """stores what's in the agent's wallet"""
 
     # fungible
@@ -34,15 +36,15 @@ class AgentWallet():
     def __str__(self):
         output_string = ""
         for key, value in vars(self).items():
-            if value: #  check if object exists
+            if value:  #  check if object exists
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
                         output_string += f"{float_to_string(value)}"
                     elif isinstance(value, list):
-                        output_string += '['+', '.join([float_to_string(x) for x in value])+']'
+                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
                     elif isinstance(value, dict):
-                        output_string += '{'+', '.join([f"{k}: {float_to_string(v)}" for k,v in value.items()])+'}'
+                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string
@@ -55,14 +57,11 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market, rng, wallet_address, budget=0, verbose=False):
+    def __init__(self, market, rng, wallet_address, verbose, **kwargs):
         """
         Set up initial conditions
         """
         self.market = market
-        self.budget = budget
-        assert self.budget >= 0, f"ERROR: budget should be initialized (>=0), but is {self.budget}"
-        self.wallet = AgentWallet(base_in_wallet=self.budget)
         self.rng = rng
         self.wallet_address = wallet_address
         self.verbose = verbose
@@ -70,6 +69,9 @@ class User:
         self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
         self.position_list = []
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.wallet = AgentWallet()
         self.status_update()
 
     @dataclass
@@ -83,7 +85,7 @@ class User:
         mint_time: float = None
         fee_percent: float = field(init=False)
         init_share_price: float = field(init=False)
-        share_price: float = field(init=False)  
+        share_price: float = field(init=False)
         share_reserves: float = field(init=False)
         bond_reserves: float = field(init=False)
         share_buffer: float = field(init=False)
@@ -94,16 +96,15 @@ class User:
         stretched_time_remaining: float = field(init=False)
 
         def print_description_string(self):
-            output_string = f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
-            # for key, value in self.__dataclass_fields__.items():
-            for key, value in self.__dict__.items():
+            output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+            for key, value in self.items():
                 if key == "action_type":
                     output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
-                elif key not in ["wallet_address","agent"]:
+                elif key not in ["wallet_address", "agent"]:
                     output_string += f" {key}: "
-                    if value<2:
+                    if value < 2:
                         output_string += f"{value:.5f}"
-                    elif value<100:
+                    elif value < 100:
                         output_string += f"{value:.2f}"
                     else:
                         output_string += f"{value:,.0f}"
@@ -123,12 +124,8 @@ class User:
             self.rate = market.rate
             if wallet_address is not None:
                 self.wallet_address = wallet_address
-            self.time_remaining = time_utils.get_yearfrac_remaining(
-                market.time, self.mint_time, market.token_duration
-            )
-            self.stretched_time_remaining = time_utils.stretch_time(
-                self.time_remaining, market.time_stretch_constant
-            )
+            self.time_remaining = time_utils.get_yearfrac_remaining(market.time, self.mint_time, market.token_duration)
+            self.stretched_time_remaining = time_utils.stretch_time(self.time_remaining, market.time_stretch_constant)
 
     # user functions defined below
     def create_user_action(self, action_type, trade_amount, mint_time=None):
@@ -137,7 +134,7 @@ class User:
             trade_amount=trade_amount,
             wallet_address=self.wallet_address,
             agent=self,
-            mint_time=mint_time
+            mint_time=mint_time,
         )
         user_action.update_market_variables(self.market)
         return user_action
@@ -210,13 +207,13 @@ class User:
     def update_spend(self):
         # TODO: add back in with high level of logging, category = "spending"
         # if self.verbose:
-            # print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
+        # print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.product_of_time_and_base += new_spend
         self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
         # TODO: add back in with high level of logging, category = "spending"
         # if self.verbose:
-            # print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
+        # print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
@@ -228,25 +225,25 @@ class User:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
                 # TODO: add back in with high level of logging, category = "spending"
-                #if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
+                # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 self.wallet[wallet_key] += wallet
                 # TODO: add back in with high level of logging, category = "spending"
-                #if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
+                # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 #    print(f"                              Δ = {wallet:+,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, account in wallet.items():
                     # TODO: add back in with high level of logging, category = "spending"
-                    #if self.verbose:
+                    # if self.verbose:
                     #    print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-                    if mint_time in self.wallet[wallet_key]: #  entry already exists for this mint_time, so add to it
+                    if mint_time in self.wallet[wallet_key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[wallet_key][mint_time] += account
                     else:
                         self.wallet[wallet_key].update({mint_time: account})
                     # TODO: add back in with high level of logging, category = "spending"
-                    #if self.verbose:
+                    # if self.verbose:
                     #    print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif wallet_key == "fees_paid":
                 pass
@@ -265,20 +262,18 @@ class User:
                     if self.verbose:
                         print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
                     if position < 0:
-                        action_list.append(self.create_user_action(
+                        action_list.append(
+                            self.create_user_action(
                                 action_type="close_short",
-                                trade_amount= -position,
+                                trade_amount=-position,
                                 mint_time=mint_time,
-                        ))
-        # if self.verbose:
-            # action_list_string = '\n action = '.join([f' {x}' for x in action_list])
-            # print(f"liquidate: short action_list:\n action:{action_list_string}")
+                            )
+                        )
         if is_LP:
             if self.has_LPd:
-                action_list.append(self.create_user_action(
-                        action_type="remove_liquidity",
-                        trade_amount=self.wallet.lp_in_wallet
-                ))
+                action_list.append(
+                    self.create_user_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)
+                )
         return action_list
 
     def status_update(self):
@@ -295,32 +290,38 @@ class User:
 
     def status_report(self):
         self.status_update()
-        output_string = f"🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
+        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
         string_list = []
-        if self.is_LP:         # this agent can LP! he has the logic circuits to do so
+        if self.is_LP:  # this agent can LP! he has the logic circuits to do so
             string_list.append(f"has_LPd: {self.has_LPd}, can_LP: {self.can_LP}")
         if self.is_shorter:  # this agent can short! he has the logic circuits to do so
             string_list.append(f"has_opened_short: {self.has_opened_short}")
             string_list.append(f"can_open_short: {self.can_open_short}")
             string_list.append(f"max_short: {self.get_max_pt_short(self.market.time):,.0f}")
         string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
-        string_list.append(f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}") if self.position_list else None
-        string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}") if self.is_LP else None
-        string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}") if self.wallet.fees_paid > 0 else None
+        string_list.append(
+            f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}"
+        ) if self.position_list else None
+        string_list.append(
+            f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}"
+        ) if self.is_LP else None
+        string_list.append(
+            f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}"
+        ) if self.wallet.fees_paid > 0 else None
         output_string += ", ".join(string_list)
         return output_string
 
     def final_report(self):
         self.status_update()
         price = self.market.spot_price
-        base = self.wallet['base_in_wallet']
+        base = self.wallet["base_in_wallet"]
         tokens = sum(self.position_list)
         worth = base + tokens * price
         PnL = worth - self.budget
         spend = self.weighted_average_spend
         holding_period_rate = PnL / spend if spend != 0 else 0
         annual_percentage_rate = holding_period_rate / self.market.time
-        output_string = f" 🤖 {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        output_string = f" {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
         if PnL < 0:
             output_string += f" lost {bcolors.FAIL}"
         else:

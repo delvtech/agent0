@@ -5,7 +5,9 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 from importlib import import_module
+
 import numpy as np
+
 from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel
 from elfpy.pricing_models import HyperdrivePricingModel
@@ -273,7 +275,6 @@ class YieldSimulator:
         There are no returns, but the function does update the analysis_dict member variable
         """
         self.start_time = time_utils.current_datetime()
-        self.last_user_action_time = 0
         self.setup_simulated_entities(override_dict)
         last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
@@ -287,9 +288,11 @@ class YieldSimulator:
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
-                if self.day == self.config.simulator.num_trading_days - 1:
-                    if daily_block_number == self.config.simulator.num_blocks_per_day - 1:
-                        last_block_in_sim = True
+                last_block_in_sim = (
+                    (self.day == self.config.simulator.num_trading_days - 1)
+                    and
+                    (daily_block_number == self.config.simulator.num_blocks_per_day - 1)
+                )
                 self.daily_block_number = daily_block_number
                 self.rng.shuffle(self.user_list)  # shuffle the user action order each block
                 self.collect_and_execute_trades(last_block_in_sim)
@@ -311,13 +314,6 @@ class YieldSimulator:
                 self.market.trade_and_update(user_action)
                 self.update_analysis_dict()
                 self.run_trade_number += 1
-                self.last_user_action_time = self.market.time
-                # TODO: convert to proper logging
-        log_at_least_every_n_years = 0.1
-        if (self.market.time - self.last_user_action_time > log_at_least_every_n_years / 2) and (
-            self.market.time - self.last_user_action_time
-        ) % log_at_least_every_n_years <= 1 / 365 / self.config.simulator.num_blocks_per_day:
-            print(f"{self.market.get_market_step_string()} 😴" + f" {self.user_list[0].status_report()}")
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

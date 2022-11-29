@@ -11,7 +11,7 @@ class BasicDataclass():
     def __setitem__(self, key, value):
         setattr(self, key, value)
 
-    def str(self):
+    def __str__(self):
         output_string = ""
         for key, value in vars(self).items():
             if value: #  check if object exists
