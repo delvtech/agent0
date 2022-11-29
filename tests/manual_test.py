@@ -9,14 +9,15 @@ from test_lpers import BaseLPTest
 from elfpy.utils.float_to_string import float_to_string
 
 if os.scandir("config"):
-    config_file = os.path.join(os.pardir, os.getcwd(), "config", "hyperdrive_config.toml")
+    config_file = os.path.join(os.pardir, os.getcwd(), "config", "example_config.toml")
 else:
-    config_file = os.path.join(os.pardir, os.getcwd(), "hyperdrive_config.toml")
+    config_file = os.path.join(os.pardir, os.getcwd(), "example_config.toml")
 
 LPbase = BaseLPTest()
 
 # run a test
 override_dict = {
+    "pricing_model_name": "Hyperdrive",
     "verbose": True,
 }
 

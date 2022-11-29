@@ -18,6 +18,7 @@ class BaseLPTest(unittest.TestCase):
         simulator = YieldSimulator(config_file)
         simulator.set_random_variables()
         override_dict = {
+            "pricing_model_name": "Hyperdrive",
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "init_pool_apy": 0.05,
@@ -35,4 +36,4 @@ class LPTests(BaseLPTest):
 
     def test_base_lps(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(user_policies=["simple_LP"], config_file="config/hyperdrive_config.toml")
+        self.run_base_lp_test(user_policies=["simple_LP"], config_file="config/example_config.toml")
