@@ -185,7 +185,12 @@ class Market:
             )
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        agent_action.update_market_variables(market=self)
+        agent_action.time_remaining = time_utils.get_yearfrac_remaining(
+            agent_action.market.time, self.mint_time, agent_action.market.token_duration
+        )
+        agent_action.stretched_time_remaining = time_utils.stretch_time(
+            self.time_remaining, agent_action.market.time_stretch_constant
+        )
         agent_action.print_description_string()
 
         # for each position, specify how to forumulate trade and then execute
@@ -450,13 +455,13 @@ class Market:
         #        use current mint time because this is a fresh
         trade_results = self.pricing_model.calc_out_given_in(
             trade_details.trade_amount,
-            trade_details.share_reserves,
-            trade_details.bond_reserves,
+            trade_details.market.share_reserves,
+            trade_details.market.bond_reserves,
             trade_details.token_out,
-            trade_details.fee_percent,
+            trade_details.market.fee_percent,
             trade_details.stretched_time_remaining,
-            trade_details.init_share_price,
-            trade_details.share_price,
+            trade_details.market.init_share_price,
+            trade_details.market.share_price,
         )
         (
             without_fee_or_slippage,
@@ -490,13 +495,13 @@ class Market:
         """
         trade_results = self.pricing_model.calc_out_given_in(
             trade_details.trade_amount,
-            trade_details.share_reserves,
-            trade_details.bond_reserves,
+            trade_details.market.share_reserves,
+            trade_details.market.bond_reserves,
             trade_details.token_out,
-            trade_details.fee_percent,
+            trade_details.market.fee_percent,
             trade_details.stretched_time_remaining,
-            trade_details.init_share_price,
-            trade_details.share_price,
+            trade_details.market.init_share_price,
+            trade_details.market.share_price,
         )
         (
             without_fee_or_slippage,
@@ -507,9 +512,9 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=-output_with_fee,
             d_token_asset=+trade_details.trade_amount,
-            d_share_buffer=-trade_details.trade_amount / trade_details.share_price,
-            d_share_fee=+fee / trade_details.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / trade_details.share_price},
+            d_share_buffer=-trade_details.trade_amount / trade_details.market.share_price,
+            d_share_fee=+fee / trade_details.market.share_price,
+            d_share_fee_history={trade_details.mint_time: fee / trade_details.market.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
@@ -559,13 +564,13 @@ class Market:
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_details.trade_amount,
-            share_reserves=trade_details.share_reserves,
-            bond_reserves=trade_details.bond_reserves,
-            share_buffer=trade_details.share_buffer,
-            init_share_price=trade_details.init_share_price,
-            share_price=trade_details.share_price,
-            liquidity_pool=trade_details.liquidity_pool,
-            rate=trade_details.rate,
+            share_reserves=trade_details.market.share_reserves,
+            bond_reserves=trade_details.market.bond_reserves,
+            share_buffer=trade_details.market.share_buffer,
+            init_share_price=trade_details.market.init_share_price,
+            share_price=trade_details.market.share_price,
+            liquidity_pool=trade_details.market.liquidity_pool,
+            rate=trade_details.market.rate,
             time_remaining=trade_details.time_remaining,
             stretched_time_remaining=trade_details.stretched_time_remaining,
         )

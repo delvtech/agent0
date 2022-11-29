@@ -9,7 +9,6 @@ class Policy(BasicPolicy):
 
     def __init__(self, market, rng, wallet_address, verbose=False, budget=1000, amount_to_LP=100):
         """call basic policy init then add custom stuff"""
-        self.amount_to_LP = amount_to_LP  # initialize this before super() call to set is_LP
         super().__init__(
             market=market,
             rng=rng,
@@ -27,5 +26,5 @@ class Policy(BasicPolicy):
         """
         action_list = []
         if not self.has_LPd and self.can_LP:
-            action_list.append(self.create_user_action(action_type="add_liquidity", trade_amount=self.amount_to_LP))
+            action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_LP))
         return action_list

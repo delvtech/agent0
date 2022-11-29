@@ -14,9 +14,11 @@ class BasicPolicy(User):
     most basic policy setup
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=False):
+    def __init__(self, market, rng, wallet_address, verbose=False, **kwargs):
         """call basic policy init then add custom stuff"""
-        super().__init__(market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose)
+        super().__init__(
+            market=market, rng=rng, wallet_address=wallet_address, verbose=verbose, **kwargs
+        )
 
     def action(self):
         """specify action"""

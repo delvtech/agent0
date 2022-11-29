@@ -110,34 +110,24 @@ class User:
                         output_string += f"{value:,.0f}"
             print(output_string)
 
-        def update_market_variables(self, market, wallet_address=None):
-            if self.mint_time is None:
-                self.mint_time = market.time
-            self.fee_percent = market.fee_percent
-            self.init_share_price = market.init_share_price
-            self.share_price = market.share_price
-            self.share_reserves = market.share_reserves
-            self.bond_reserves = market.bond_reserves
-            self.share_buffer = market.share_buffer
-            self.bond_buffer = market.bond_buffer
-            self.liquidity_pool = market.liquidity_pool
-            self.rate = market.rate
-            if wallet_address is not None:
-                self.wallet_address = wallet_address
-            self.time_remaining = time_utils.get_yearfrac_remaining(market.time, self.mint_time, market.token_duration)
-            self.stretched_time_remaining = time_utils.stretch_time(self.time_remaining, market.time_stretch_constant)
-
     # user functions defined below
-    def create_user_action(self, action_type, trade_amount, mint_time=None):
-        user_action = self.UserAction(
+    def create_agent_action(self, action_type, trade_amount, mint_time=None):
+        agent_action = self.UserAction(
             action_type=action_type,
             trade_amount=trade_amount,
             wallet_address=self.wallet_address,
             agent=self,
             mint_time=mint_time,
         )
-        user_action.update_market_variables(self.market)
-        return user_action
+        if agent_action.mint_time is None:
+            agent_action.mint_time = agent_action.market.time
+        agent_action.time_remaining = time_utils.get_yearfrac_remaining(
+            agent_action.market.time, self.mint_time, agent_action.market.token_duration
+        )
+        agent_action.stretched_time_remaining = time_utils.stretch_time(
+            self.time_remaining, agent_action.market.time_stretch_constant
+        )
+        return agent_action
 
     def action(self):
         """Specify action from the policy"""
@@ -205,15 +195,10 @@ class User:
         return action_list
 
     def update_spend(self):
-        # TODO: add back in with high level of logging, category = "spending"
-        # if self.verbose:
-        # print(f"  time={self.market.time} last_update_spend={self.last_update_spend} budget={self.budget} base_in_wallet={self.wallet['base_in_wallet']}") if self.verbose else None
+        """Track over time the user's weighted average spend, for return calculation"""
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.product_of_time_and_base += new_spend
         self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
-        # TODO: add back in with high level of logging, category = "spending"
-        # if self.verbose:
-        # print(f"  weighted_average_spend={self.weighted_average_spend} added {new_spend} deltaT={self.market.time - self.last_update_spend} delta₡={self.budget - self.wallet['base_in_wallet']}") if self.verbose else None
         self.last_update_spend = self.market.time
         return self.weighted_average_spend
 
@@ -224,25 +209,25 @@ class User:
             if wallet is None:
                 pass
             elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                # TODO: add back in with high level of logging, category = "spending"
+                # TODO: add back in with high level of logging, category = "trade"
                 # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 self.wallet[wallet_key] += wallet
-                # TODO: add back in with high level of logging, category = "spending"
+                # TODO: add back in with high level of logging, category = "trade"
                 # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 #    print(f"                              Δ = {wallet:+,.0f}")
             # these wallets have mint_time attached, stored as dicts
             elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, account in wallet.items():
-                    # TODO: add back in with high level of logging, category = "spending"
+                    # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
                     #    print(f"   pre-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
                     if mint_time in self.wallet[wallet_key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[wallet_key][mint_time] += account
                     else:
                         self.wallet[wallet_key].update({mint_time: account})
-                    # TODO: add back in with high level of logging, category = "spending"
+                    # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
                     #    print(f"  post-trade {wallet_key:17s} = {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif wallet_key == "fees_paid":
@@ -253,26 +238,24 @@ class User:
     def liquidate(self):
         """close up shop"""
         self.status_update()
-        is_LP = True if hasattr(self, "can_LP") else False
-        is_shorter = True if hasattr(self, "can_open_short") else False
         action_list = []
-        if is_shorter:
+        if self.is_shorter:
             if self.has_opened_short:
                 for mint_time, position in self.wallet.token_in_protocol.items():
                     if self.verbose:
                         print(f"  liquidate() evaluating closing short: mint_time={mint_time} position={position}")
                     if position < 0:
                         action_list.append(
-                            self.create_user_action(
+                            self.create_agent_action(
                                 action_type="close_short",
                                 trade_amount=-position,
                                 mint_time=mint_time,
                             )
                         )
-        if is_LP:
+        if self.is_LP:
             if self.has_LPd:
                 action_list.append(
-                    self.create_user_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)
+                    self.create_agent_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)
                 )
         return action_list
 
