@@ -6,6 +6,7 @@ TODO: rewrite all functions to have typed inputs
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 import numpy as np
 
@@ -90,7 +91,7 @@ class User:
         # wallet_address is always set automatically by the basic user class
         wallet_address: int
         # mint time is set only for trades that act on existing positions (close long or close short)
-        mint_time: float | None = None
+        mint_time: Optional[float] = None
 
         def print_description_string(self):
             output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
