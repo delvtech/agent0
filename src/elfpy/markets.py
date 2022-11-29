@@ -660,17 +660,21 @@ class Market:
     def get_market_step_string(self):
         """Returns a string that describes the current market step"""
         output_string = f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"
-        output_string += f" reserves=["\
-                + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"\
-                + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"\
-                + f",lp:{bcolors.OKBLUE}{self.lp_reserves}{bcolors.ENDC}"\
-                + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"\
-                + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"\
-                + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"
+        output_string += (
+            f" reserves=["
+            + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"
+            + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"
+            + f",lp:{bcolors.OKBLUE}{self.lp_reserves}{bcolors.ENDC}"
+            + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"
+            + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"
+            + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"
+        )
         if self.verbose:
-            output_string += f""\
-                + f",fee_x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"\
+            output_string += (
+                f""
+                + f",fee_x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"
                 + f",fee_y:{bcolors.OKBLUE}{self.token_fees}{bcolors.ENDC}"
+            )
         output_string += f"]"
         output_string += f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"
         output_string += f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"

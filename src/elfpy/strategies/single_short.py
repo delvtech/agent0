@@ -3,6 +3,7 @@
 from elfpy.strategies.basic import BasicPolicy
 import numpy as np
 
+
 class Policy(BasicPolicy):
     """
     simple short

@@ -10,9 +10,7 @@ from dataclasses import field
 import numpy as np
 
 from elfpy.utils.float_to_string import float_to_string
-import elfpy.utils.time as time_utils
 from elfpy.utils.bcolors import bcolors
-
 
 @dataclass(frozen=False)
 class AgentWallet:
@@ -136,20 +134,6 @@ class User:
         """
         if self.market.share_reserves == 0:
             return 0
-        # time_remaining = time_utils.get_yearfrac_remaining(self.market.time, mint_time, self.market.token_duration)
-        # stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
-        # output_with_fee = self.market.pricing_model.calc_out_given_in(
-        #     self.wallet.base_in_wallet,
-        #     self.market.share_reserves,
-        #     self.market.bond_reserves,
-        #     "base",
-        #     self.market.fee_percent,
-        #     stretched_time_remaining,
-        #     self.market.init_share_price,
-        #     self.market.share_price,
-        # )[1]
-        # max_short = self.wallet.base_in_wallet + output_with_fee - eps
-        # save lower bound on max short, calculated as the most amount of base you can hope to extract from the market
         max_pt_short = self.market.share_reserves * self.market.share_price / self.market.spot_price
         return max_pt_short
 

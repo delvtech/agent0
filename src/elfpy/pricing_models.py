@@ -99,7 +99,10 @@ class PricingModel:
         float
             The spot price of principal tokens.
         """
-        assert(share_reserves > 0, f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {share_reserves}!")
+        assert (
+            share_reserves > 0,
+            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {share_reserves}!",
+        )
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves
         # if share_reserves == 0:
@@ -555,9 +558,7 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
-        assert (
-            d_base > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected d_base > 0, not {d_base}!"
+        assert d_base > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected d_base > 0, not {d_base}!"
         assert (
             share_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
@@ -570,9 +571,7 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
-        assert (
-            rate >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
@@ -633,9 +632,7 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
-        assert (
-            d_base > 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
+        assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
         assert (
             share_reserves > 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
@@ -648,18 +645,16 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
-        assert (
-            rate >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
+        assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
-            "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
-        )
+        assert (
+            share_price >= init_share_price >= 1
+        ), "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
         
@@ -688,9 +683,7 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
-        assert (
-            lp_in > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
+        assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
         assert (
             share_reserves > 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
@@ -703,18 +696,16 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
-        assert (
-            rate >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert (
             stretched_time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
-        )
+        assert (
+            share_price >= init_share_price >= 1
+        ), "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
         d_base = share_price * (share_reserves - share_buffer) * lp_in / lp_reserves
         d_shares = d_base / share_price
         d_bonds = (share_reserves - d_shares) / 2 * (
@@ -1089,7 +1080,7 @@ class HyperdrivePricingModel(PricingModel):
             bond_reserves=bond_reserves,
             init_share_price=init_share_price,
             share_price=share_price,
-            time_remaining=time_remaining
+            time_remaining=time_remaining,
         )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:

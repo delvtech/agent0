@@ -35,4 +35,4 @@ class LPTests(BaseLPTest):
 
     def test_base_lps(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(user_policies=["simple_LP"],config_file="config/hyperdrive_config.toml")
+        self.run_base_lp_test(user_policies=["simple_LP"], config_file="config/hyperdrive_config.toml")
