@@ -4,6 +4,7 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
 

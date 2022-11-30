@@ -2,6 +2,7 @@
 User strategy that adds liquidity and then removes it when enough time has passed
 """
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
 

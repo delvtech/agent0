@@ -2,6 +2,7 @@
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
 
@@ -47,6 +48,6 @@ class Policy(BasicPolicy):
         else:
             action_list = [
                 self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp),
-                self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short)
+                self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
             ]
         return action_list

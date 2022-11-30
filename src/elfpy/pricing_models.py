@@ -738,6 +738,8 @@ class HyperdrivePricingModel(PricingModel):
             )
         return lp_in, d_base, d_bonds
 
+    # TODO: Break this function up to use private class functions
+    # pylint: disable=too-many-locals
     def calc_in_given_out(
         self,
         out,
@@ -827,8 +829,6 @@ class HyperdrivePricingModel(PricingModel):
             f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
             f" and init_share_price={init_share_price}!"
         )
-        # TODO: Break this function up to use private class functions
-        # pylint: disable=too-many-locals
         time_elapsed = 1 - time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
@@ -992,6 +992,8 @@ class HyperdrivePricingModel(PricingModel):
     # TODO: The high slippage tests in tests/test_pricing_model.py should
     # arguably have much higher slippage. This is something we should
     # consider more when thinking about the use of a time stretch parameter.
+    # TODO: Break this function up to use private class functions
+    # pylint: disable=too-many-locals
     def calc_out_given_in(
         self,
         in_,
@@ -1080,8 +1082,6 @@ class HyperdrivePricingModel(PricingModel):
             f" share_price={share_price} and init_share_price={init_share_price}!"
         )
 
-        # TODO: Break this function up to use private class functions
-        # pylint: disable=too-many-locals
         scale = share_price / init_share_price
         time_elapsed = 1 - time_remaining
         total_reserves = share_price * share_reserves + bond_reserves

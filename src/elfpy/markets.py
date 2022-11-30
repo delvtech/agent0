@@ -184,7 +184,7 @@ class Market:
         agent_action.stretched_time_remaining = time_utils.stretch_time(
             agent_action.time_remaining, self.time_stretch_constant
         )
-        #if self.verbose:
+        # if self.verbose:
         agent_action.print_description_string()
         # for each position, specify how to forumulate trade and then execute
         update_price_and_rate = True

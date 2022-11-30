@@ -61,6 +61,9 @@ class AgentWallet:
         return output_string
 
 
+# TODO: The user class has too many instance attributes (8/7)
+#     we should move some, like budget and wallet_address, into the agent wallet and out of User
+# pylint: disable=too-many-instance-attributes
 class User:
     """
     Implements abstract classes that control user behavior
@@ -70,6 +73,7 @@ class User:
 
     # TODO: variables assigned by child classes are referenced by User -- need to fix up user inheritance
     # pylint: disable=no-member
+    # pylint: disable=too-many-arguments
 
     def __init__(self, market, rng, wallet_address, budget, verbose):
         """
@@ -79,9 +83,9 @@ class User:
         self.rng = rng
         self.wallet_address = wallet_address
         self.budget = budget
-        self.verbose = False if verbose is None else verbose
+        self.verbose = verbose
         self.last_update_spend = 0
-        self.weighted_average_spend = 0
+        self.product_of_time_and_base = 0
         self.wallet = AgentWallet(base_in_wallet=budget)
 
     @dataclass
@@ -128,6 +132,8 @@ class User:
         """Returns the amount of base that the user can spend."""
         return np.minimum(self.wallet.base_in_wallet, self.market.bond_reserves)
 
+    # TODO: Fix up this function
+    # pylint: disable=unused-argument
     def get_max_pt_short(self, mint_time, eps=1.0):
         """
         Returns an approximation of maximum amount of base that the user can short given current market conditions
@@ -173,8 +179,7 @@ class User:
     def update_spend(self):
         """Track over time the user's weighted average spend, for return calculation"""
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
-        product_of_time_and_base += new_spend
-        self.weighted_average_spend = product_of_time_and_base / self.market.time if self.market.time > 0 else 0
+        self.product_of_time_and_base += new_spend
         self.last_update_spend = self.market.time
 
     def update_wallet(self, agent_deltas):
@@ -218,8 +223,7 @@ class User:
         for mint_time, position in self.wallet.token_in_protocol.items():
             if self.verbose:
                 print(
-                    "  get_liquidation_trades() evaluating closing short:"
-                    f" mint_time={mint_time} position={position}"
+                    "  get_liquidation_trades() evaluating closing short:" f" mint_time={mint_time} position={position}"
                 )
             if position < 0:
                 action_list.append(
@@ -232,9 +236,7 @@ class User:
         if self.wallet.lp_in_wallet > 0:
             action_list.append(
                 self.create_agent_action(
-                    action_type="remove_liquidity",
-                    trade_amount=self.wallet.lp_in_wallet,
-                    mint_time=self.market.time
+                    action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet, mint_time=self.market.time
                 )
             )
         return action_list
@@ -257,7 +259,8 @@ class User:
         tokens = sum(block_position_list) if len(block_position_list) > 0 else 0
         worth = base + tokens * price
         profit_and_loss = worth - self.budget
-        spend = self.weighted_average_spend
+        weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
+        spend = weighted_average_spend
         holding_period_rate = profit_and_loss / spend if spend != 0 else 0
         annual_percentage_rate = holding_period_rate / self.market.time
         output_string = f" {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"

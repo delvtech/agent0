@@ -1,6 +1,7 @@
 """
 User strategy that opens a long position and then closes it after a certain amount of time has passed
 """
+# pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
 
@@ -24,10 +25,8 @@ class Policy(BasicPolicy):
 
     def action(self):
         """Specify action"""
-        can_open_long = (
-            (self.wallet.base_in_wallet >= self.amount_to_trade)
-            and
-            (self.market.share_reserves >= self.amount_to_trade)
+        can_open_long = (self.wallet.base_in_wallet >= self.amount_to_trade) and (
+            self.market.share_reserves >= self.amount_to_trade
         )
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_long = bool(any((x < 0 for x in block_position_list)))
