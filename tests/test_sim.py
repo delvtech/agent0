@@ -71,15 +71,15 @@ class TestSimulator(BaseTest):
         simulator.set_random_variables()
 
         for pricing_model in self.pricing_models:
-            override_dict = {
-                "pricing_model_name": pricing_model.model_name(),
-            }
-            simulator.run_simulation(override_dict)
+            simulator.run_simulation(
+                {
+                    "pricing_model_name": pricing_model.model_name(),
+                }
+            )
 
             analysis_df = pd.DataFrame.from_dict(simulator.analysis_dict)
             init_day_list = []
             end_day_list = []
-            print(analysis_df)
             for model in analysis_df.model_name.unique():
                 model_df = analysis_df.loc[analysis_df.model_name == model]
                 init_day = model_df.day.iloc[0]
