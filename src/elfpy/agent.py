@@ -1,7 +1,5 @@
 """
-Implements abstract classes that control user behavior
-
-TODO: rewrite all functions to have typed inputs
+Implements abstract classes that control agent behavior
 """
 
 from dataclasses import dataclass
@@ -14,16 +12,16 @@ from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
 
 
-# TODO: The user class has too many instance attributes (8/7)
+# TODO: The agent class has too many instance attributes (8/7)
 #     we should move some, like budget and wallet_address, into the agent wallet and out of User
 class Agent:
     """
     Implements abstract classes that control agent behavior
-    user has a budget that is a dict, keyed with a date
+    agent has a budget that is a dict, keyed with a date
     value is an inte with how many tokens they have for that date
     """
 
-    # TODO: variables assigned by child classes are referenced by User -- need to fix up user inheritance
+    # TODO: variables assigned by child classes are referenced by User -- need to fix up agent inheritance
     # pylint: disable=no-member
     # pylint: disable=too-many-arguments
 
@@ -43,12 +41,12 @@ class Agent:
 
     @dataclass
     class AgentAction:
-        """user action specification"""
+        """agent action specification"""
 
         # these two variables are required to be set by the strategy
         action_type: str
         trade_amount: float
-        # wallet_address is always set automatically by the basic user class
+        # wallet_address is always set automatically by the basic agent class
         wallet_address: int
         # mint time is set only for trades that act on existing positions (close long or close short)
         mint_time: Optional[float] = None
@@ -71,7 +69,7 @@ class Agent:
             # these two variables are required to be set by the strategy
             action_type=action_type,
             trade_amount=trade_amount,
-            # next two variables are set automatically by the basic user class
+            # next two variables are set automatically by the basic agent class
             wallet_address=self.wallet_address,
             mint_time=mint_time,
         )
@@ -82,14 +80,13 @@ class Agent:
         raise NotImplementedError
 
     def get_max_long(self):
-        """Returns the amount of base that the user can spend."""
+        """Returns the amount of base that the agent can spend."""
         return np.minimum(self.wallet.base_in_wallet, self.market.bond_reserves)
 
     # TODO: Fix up this function
-    # pylint: disable=unused-argument
-    def get_max_pt_short(self, mint_time, eps=1.0):
+    def get_max_pt_short(self):
         """
-        Returns an approximation of maximum amount of base that the user can short given current market conditions
+        Returns an approximation of maximum amount of base that the agent can short given current market conditions
 
         TODO: This currently is a first-order approximation.
         An alternative is to do this iteratively and find a max trade, but that is probably too slow.
@@ -102,7 +99,7 @@ class Agent:
 
     def get_trade_list(self):
         """
-        Helper function for computing a user trade
+        Helper function for computing a agent trade
         direction is chosen based on this logic:
         when entering a trade (open long or short),
         we use calcOutGivenIn because we know how much we want to spend,
@@ -124,51 +121,55 @@ class Agent:
         # if len(trade_action) > 0: # there is a trade
         #    token_in, token_out, trade_amount_usd = trade_action
         #    assert trade_amount_usd >= 0, (
-        #        f"user.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
+        #        f"agent.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
         #        f" token_in={token_in} token_out={token_out}"
         #    )
         return action_list
 
     def update_spend(self):
-        """Track over time the user's weighted average spend, for return calculation"""
+        """Track over time the agent's weighted average spend, for return calculation"""
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
         self.product_of_time_and_base += new_spend
         self.last_update_spend = self.market.time
 
-    def update_wallet(self, agent_deltas):
-        """Update the user's wallet"""
+    def update_wallet(self, wallet_deltas: Wallet):
+        """Update the agent's wallet"""
         self.update_spend()
-        for wallet_key, wallet in agent_deltas.__dict__.items():
-            if wallet is None:
+        for key, valueOrDict in wallet_deltas.__dict__.items():
+            if valueOrDict is None:
                 pass
-            elif wallet_key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
+
+            # handle update value case
+            if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
                 # TODO: add back in with high level of logging, category = "trade"
                 # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
-                self.wallet[wallet_key] += wallet
+                self.wallet[key] += valueOrDict
                 # TODO: add back in with high level of logging, category = "trade"
                 # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
                 #    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
                 #    print(f"                              Δ = {wallet:+,.0f}")
-            # these wallets have mint_time attached, stored as dicts
-            elif wallet_key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
-                for mint_time, account in wallet.items():
+
+            # handle updating a dict
+            # these values have mint_time attached, stored as dicts
+            elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
+                for mint_time, amount in valueOrDict.items():
                     # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
                     #    print(f"   pre-trade {wallet_key:17s} = \
                     #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-                    if mint_time in self.wallet[wallet_key]:  #  entry already exists for this mint_time, so add to it
-                        self.wallet[wallet_key][mint_time] += account
+                    if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
+                        self.wallet[key][mint_time] += amount
                     else:
-                        self.wallet[wallet_key].update({mint_time: account})
+                        self.wallet[key].update({mint_time: amount})
                     # TODO: add back in with high level of logging, category = "trade"
                     # if self.verbose:
                     #    print(f"  post-trade {wallet_key:17s} = \
                     #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
-            elif wallet_key in ["fees_paid", "effective_price"]:
+            elif key in ["fees_paid", "effective_price"]:
                 pass
             else:
-                raise ValueError(f"wallet_key={wallet_key} is not allowed.")
+                raise ValueError(f"wallet_key={key} is not allowed.")
 
     def get_liquidation_trades(self):
         """Get final trades for liquidating positions"""
@@ -195,7 +196,7 @@ class Agent:
         return action_list
 
     def status_report(self):
-        """Print user state"""
+        """Returns a status report for the agent"""
         output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
         string_list = []
         string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
@@ -205,7 +206,7 @@ class Agent:
         return output_string
 
     def final_report(self):
-        """Prints a report of the user's state"""
+        """Prints a report of the agent's state"""
         price = self.market.spot_price
         base = self.wallet.base_in_wallet
         block_position_list = list(self.wallet.token_in_protocol.values())
