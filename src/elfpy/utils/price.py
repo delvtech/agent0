@@ -28,8 +28,7 @@ def calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asse
 
 
 def calc_base_asset_reserves(
-    # FIXME: The fact that this is a decimal should be specified in the doc string.
-    apr_decimal,
+    apr,
     token_asset_reserves,
     days_remaining,
     time_stretch,
@@ -40,10 +39,25 @@ def calc_base_asset_reserves(
     normalized_days_remaining = time_utils.norm_days(days_remaining)
     time_stretch_exp = 1 / time_utils.stretch_time(normalized_days_remaining, time_stretch)
     numerator = 2 * share_price * token_asset_reserves  # 2*c*y
-    scaled_apy_decimal = apr_decimal * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
+    scaled_apy_decimal = apr * normalized_days_remaining + 1  # assuming price_apr = 1/(1+r*t)
     denominator = init_share_price * scaled_apy_decimal**time_stretch_exp - share_price
     result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
     return result
+
+
+def calc_bond_reserves(
+    apr,
+    share_reserves,
+    days_remaining,
+    time_stretch,
+    init_share_price,
+    share_price,
+):
+    normalized_days_remaining = time_utils.norm_days(days_remaining)
+    time_stretch_exp = 1 / time_utils.stretch_time(normalized_days_remaining, time_stretch)
+    return (share_reserves / 2) * (
+        init_share_price * (1 + apr * normalized_days_remaining) ** time_stretch_exp - share_price
+    )
 
 
 def calc_liquidity(
