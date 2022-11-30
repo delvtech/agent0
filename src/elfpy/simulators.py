@@ -248,7 +248,6 @@ class YieldSimulator:
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
             self.agent_list.append(user_with_policy)
-        # import IPython; IPython.embed(); raise SystemExit
 
     def run_simulation(self, override_dict=None):
         r"""
@@ -307,7 +306,6 @@ class YieldSimulator:
             else:
                 trade_list = agent.get_trade_list()
             for agent_trade in trade_list:  # execute trades
-                # import IPython; IPython.embed()
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
                 if self.config.simulator.verbose:
