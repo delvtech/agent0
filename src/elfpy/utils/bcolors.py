@@ -1,8 +1,11 @@
+"""specifies colors for terminal outputs"""
 from dataclasses import dataclass
 
 
 @dataclass
-class bcolors:
+class Bcolors:
+    """labeled terminal colors"""
+
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
     OKCYAN = "\033[96m"
