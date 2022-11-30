@@ -5,10 +5,10 @@ Policies inherit from Users (thus each policy is assigned to a user)
 subclasses of BasicPolicy will implement trade actions
 """
 
- import User
+from elfpy.agent import Agent
 
 
-class BasicPolicy(User):
+class BasicPolicy(Agent):
     """
     most basic policy setup
     """

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 import elfpy.utils.time as time_utils
- import AgentWallet
+from elfpy.agent import Wallet
 import elfpy.utils.price as price_utils
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
@@ -386,7 +386,7 @@ class Market:
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_details.trade_amount - output_with_fee
-        wallet_deltas = AgentWallet(
+        wallet_deltas = Wallet(
             base_in_wallet=-max_loss,
             base_in_protocol={trade_details.mint_time: +max_loss},
             token_in_protocol={trade_details.mint_time: -trade_details.trade_amount},
@@ -437,7 +437,7 @@ class Market:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
             base_in_wallet=+output_with_fee,
             base_in_protocol={trade_details.mint_time: -output_with_fee},
             token_in_protocol={trade_details.mint_time: +trade_details.trade_amount},
@@ -478,14 +478,14 @@ class Market:
                 d_token_asset_orders=+1,
                 d_token_asset_volume=+output_with_fee,
             )
-            agent_deltas = AgentWallet(
+            agent_deltas = Wallet(
                 base_in_wallet=-trade_details.trade_amount,
                 token_in_protocol={trade_details.mint_time: +output_with_fee},
                 fees_paid=+fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = AgentWallet(base_in_wallet=0)
+            agent_deltas = Wallet(base_in_wallet=0)
         return market_deltas, agent_deltas
 
     def _close_long(self, trade_details):
@@ -520,7 +520,7 @@ class Market:
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
             base_in_wallet=+output_with_fee,
             token_in_wallet={trade_details.mint_time: -trade_details.trade_amount},
             fees_paid=+fee,
@@ -553,7 +553,7 @@ class Market:
                 +trade_details.trade_amount,
             ],
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
             base_in_wallet=-d_base_reserves,
             lp_in_wallet=+lp_out,
         )
@@ -585,7 +585,7 @@ class Market:
                 -trade_details.trade_amount,
             ],
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
             base_in_wallet=+d_base_reserves,
             lp_in_wallet=-lp_in,
         )
