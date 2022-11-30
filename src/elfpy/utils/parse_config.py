@@ -54,7 +54,7 @@ class SimulatorConfig:
     pricing_model_name: str = field(default="Element", metadata={"hint": 'Must be "Element" or "Hyperdrive"'})
     user_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
-    init_LP: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
+    init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
 

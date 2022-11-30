@@ -1,3 +1,8 @@
+"""
+User strategy that adds base liquidity and doesn't remove until liquidation
+"""
+# TODO: the init calls are replicated across each strategy, which looks like duplicate code
+#     this should be resolved once we fix user inheritance
 # pylint: disable=duplicate-code
 
 from elfpy.strategies.basic import BasicPolicy
@@ -9,10 +14,10 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_LP=100):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_lp=100):
         """call basic policy init then add custom stuff"""
-        self.amount_to_LP = amount_to_LP
-        self.is_LP = True
+        self.amount_to_lp = amount_to_lp
+        self.is_lp = True
         self.is_shorter = False
         super().__init__(
             market=market,
@@ -28,7 +33,7 @@ class Policy(BasicPolicy):
         LP if you can, but only do it once
         """
         action_list = []
-        # print(f" evaluating whether to LP: {self.can_LP} and {self.has_LPd}")
-        if self.can_LP and not self.has_LPd:
-            action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_LP))
+        # print(f" evaluating whether to LP: {self.can_lp} and {self.has_lp}")
+        if self.can_lp and not self.has_lp:
+            action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp))
         return action_list

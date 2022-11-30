@@ -32,6 +32,6 @@ precision = 64 # 64 is max precision (and the default for numpy)
 pricing_model_name = "Element" # specify a pricing model
 user_policies = ["single_long"] # specify a list of trading strategies by name
 shuffle_users = true # shuffle order of action (as if random gas paid)
-init_LP = true # use initial LP to seed pool
+init_lp = true # use initial LP to seed pool
 random_seed = 123 # to be passed to a rng
 verbose = false # toggle verbose output level

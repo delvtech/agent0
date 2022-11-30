@@ -1,7 +1,10 @@
+"""
+User strategy that opens a single short and doesn't close until liquidation
+"""
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
-import numpy as np
 
 
 class Policy(BasicPolicy):
@@ -21,15 +24,9 @@ class Policy(BasicPolicy):
     ):
         """call basic policy init then add custom stuff"""
         self.pt_to_short = pt_to_short
-        self.is_LP = False
+        self.is_lp = False
         self.is_shorter = True
-        super().__init__(
-            market,
-            rng,
-            wallet_address,
-            budget=budget,
-            verbose=verbose
-        )
+        super().__init__(market, rng, wallet_address, budget=budget, verbose=verbose)
 
     def action(self):
         """

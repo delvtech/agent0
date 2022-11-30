@@ -1,5 +1,3 @@
-# pylint: disable=duplicate-code
-
 """
 Base policy class
 
@@ -8,7 +6,6 @@ subclasses of BasicPolicy will implement trade actions
 """
 
 from elfpy.user import User
-from elfpy.utils.float_to_string import float_to_string
 
 
 class BasicPolicy(User):
@@ -18,9 +15,7 @@ class BasicPolicy(User):
 
     def __init__(self, market, rng, wallet_address, budget, verbose=None):
         """call basic policy init then add custom stuff"""
-        super().__init__(
-            market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose
-        )
+        super().__init__(market=market, rng=rng, wallet_address=wallet_address, budget=budget, verbose=verbose)
 
     def action(self):
         """specify action"""

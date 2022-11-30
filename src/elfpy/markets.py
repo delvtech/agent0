@@ -4,16 +4,15 @@ Market simulators store state information when interfacing AMM pricing models wi
 TODO: rewrite all functions to have typed inputs
 """
 
-import time
 from dataclasses import dataclass, field
 
 import numpy as np
 
 import elfpy.utils.time as time_utils
 from elfpy.user import AgentWallet
-from elfpy.utils.bcolors import bcolors
 import elfpy.utils.price as price_utils
-from elfpy.utils.float_to_string import float_to_string
+from elfpy.utils.bcolors import Bcolors as bcolors
+from elfpy.utils.outputs import float_to_string
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -24,7 +23,11 @@ from elfpy.utils.float_to_string import float_to_string
 
 @dataclass(frozen=False)
 class MarketDeltas:
-    """specifies changes to values in the market"""
+    """Specifies changes to values in the market"""
+
+    # TODO: Create our own dataclass decorator that is always mutable and includes dict set/get syntax
+    # pylint: disable=duplicate-code
+    # pylint: disable=too-many-instance-attributes
 
     d_base_asset: float = 0
     d_token_asset: float = 0
@@ -130,13 +133,8 @@ class Market:
             must be either "element" or "hyperdrive"
         """
         pricing_model_name = self.pricing_model.model_name()
-        if  pricing_model_name.lower() == "element":
-            allowed_actions = [
-                "open_long",
-                "close_long",
-                "add_liquidity",
-                "remove_liquidity"
-            ]
+        if pricing_model_name.lower() == "element":
+            allowed_actions = ["open_long", "close_long", "add_liquidity", "remove_liquidity"]
         elif pricing_model_name.lower() == "hyperdrive":
             allowed_actions = [
                 "open_long",
@@ -221,18 +219,20 @@ class Market:
         """
         Increments member variables to reflect current market conditions
         """
-        for field, value in market_deltas.__dict__.items():
+        # TODO: The nexted branching inside for-loops is cumbersome and can slow down the execution
+        # pylint: disable=too-many-branches
+        for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
-                if field == "d_lp_reserves_history":
-                    assert isinstance(value, list), (
-                        f"markets.update_market: Error:" + f" {field} has value={value} should be a dict"
-                    )
-                elif field in ["d_share_fee_history", "d_token_fee_history"]:
-                    assert isinstance(value, dict), (
-                        f"markets.update_market: Error:" + f" {field} has value={value} should be a dict"
-                    )
+                if key == "d_lp_reserves_history":
+                    assert isinstance(
+                        value, list
+                    ), f"markets.update_market: Error: {key} has value={value} should be a dict"
+                elif key in ["d_share_fee_history", "d_token_fee_history"]:
+                    assert isinstance(
+                        value, dict
+                    ), f"markets.update_market: Error: {key} has value={value} should be a dict"
                 else:
-                    assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {field} is not finite."
+                    assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.share_reserves += market_deltas.d_base_asset / self.share_price
         self.bond_reserves += market_deltas.d_token_asset
         self.share_buffer += market_deltas.d_share_buffer
@@ -582,79 +582,78 @@ class Market:
         )
         return market_deltas, agent_deltas
 
-    def calc_fees_owed(self, return_agent=None):
-        """
-        Returns the fees owed to the agent
-        """
-        start_time = time.time()
-        cum_liq, prev_time, prev_share_fees, prev_token_fees = 0, 0, 0, 0
-        cum_liq_by_agent, contribution, token_owed, share_owed = {}, {}, {}, {}
-        for [current_time, acting_agent, new_liq] in self.lp_reserves_history:
-            # calculate what happened since the last update, we use marginal values for everything
-            share_fees_till_now = sum([v for k, v in self.share_fee_history.items() if k <= current_time])
-            token_fees_till_now = sum([v for k, v in self.token_fee_history.items() if k <= current_time])
-            delta_share_fees = share_fees_till_now - prev_share_fees
-            delta_token_fees = token_fees_till_now - prev_token_fees
-            delta_time = current_time - prev_time
-            # initialize agent if this is the first time we see them
-            if acting_agent not in cum_liq_by_agent:
-                (
-                    contribution[acting_agent],
-                    token_owed[acting_agent],
-                    share_owed[acting_agent],
-                    cum_liq_by_agent[acting_agent],
-                ) = (0, 0, 0, 0)
-            if current_time != 0:  # only do a marginal update after first timestep where deltas are zero
-                for update_agent in cum_liq_by_agent:  # for each agent
-                    # update their marginal share of cumulative liquidity, give them credit for it (contribution)
-                    contribution[update_agent] += cum_liq_by_agent[update_agent] / cum_liq
-                    # update their owed fees
-                    share_owed[update_agent] = (
-                        share_owed[update_agent] * prev_time
-                        + contribution[update_agent] * delta_share_fees * delta_time
-                    ) / current_time
-                    token_owed[update_agent] = (
-                        token_owed[update_agent] * prev_time
-                        + contribution[update_agent] * delta_token_fees * delta_time
-                    ) / current_time
-            # update values used for next iteration
-            cum_liq += new_liq
-            cum_liq_by_agent[acting_agent] += new_liq
-            prev_time = current_time
-            prev_share_fees, prev_token_fees = share_fees_till_now, token_fees_till_now
-        if self.verbose:
-            print(f"cum_liq_by_agent = {cum_liq_by_agent}")
-            print(
-                f"      share_owed = {share_owed} calculated sum = {sum(share_owed.values())}"
-                + f"\n           vs. direct = {self.share_fees} it's a "
-                + f"match "
-                if sum(share_owed.values()) == self.share_fees
-                else f"mismatch "
-            )
-            print(
-                f"      token_owed = {token_owed} calculated sum = {sum(token_owed.values())}"
-                + f"\n           vs. direct = {self.token_fees} it's a "
-                + f"match "
-                if sum(token_owed.values()) == self.token_fees
-                else f"mismatch "
-            )
-        dur = time.time() - start_time
-        # TODO: remove this once we're happy with the performance
-        if self.verbose:
-            print(
-                f"calc_fees took ",
-                end=f"{float_to_string(dur,precision=2)} seconds"
-                if dur > 1
-                else f"{float_to_string(dur*1000,precision=2)} milliseconds\n",
-            )
-        if return_agent is not None:
-            return share_owed[return_agent], token_owed[return_agent]
+    # TODO: This function is throwing linting errors (too many local variables)
+    # It also appears to be useless, besides for printing verbose statements.
+    # Need to clean it up and find a use for it OR delete it
+    # def calc_fees_owed(self, return_agent=None):
+    #    """
+    #    Returns the fees owed to the agent
+    #    """
+    #    # TODO: This function has too many local variables (21/15), and is tough to parse.
+    #    #       There might be an easy fix when setting up logging.
+    #    # pylint: disable=too-many-locals
+    #    cum_liq, prev_time, prev_share_fees, prev_token_fees = 0, 0, 0, 0
+    #    cum_liq_by_agent, contribution, token_owed, share_owed = {}, {}, {}, {}
+    #    for [current_time, acting_agent, new_liq] in self.lp_reserves_history:
+    #        # calculate what happened since the last update, we use marginal values for everything
+    #        share_fees_till_now = sum((v for k, v in self.share_fee_history.items() if k <= current_time))
+    #        token_fees_till_now = sum((v for k, v in self.token_fee_history.items() if k <= current_time))
+    #        delta_share_fees = share_fees_till_now - prev_share_fees
+    #        delta_token_fees = token_fees_till_now - prev_token_fees
+    #        delta_time = current_time - prev_time
+    #        # initialize agent if this is the first time we see them
+    #        if acting_agent not in cum_liq_by_agent:
+    #            (
+    #                contribution[acting_agent],
+    #                token_owed[acting_agent],
+    #                share_owed[acting_agent],
+    #                cum_liq_by_agent[acting_agent],
+    #            ) = (0, 0, 0, 0)
+    #        if current_time != 0:  # only do a marginal update after first timestep where deltas are zero
+    #            for update_agent_key, update_agent_value in cum_liq_by_agent.items():  # for each agent
+    #                # update their marginal share of cumulative liquidity, give them credit for it (contribution)
+    #                contribution[update_agent_key] += update_agent_value / cum_liq
+    #                # update their owed fees
+    #                share_owed[update_agent_key] = (
+    #                    share_owed[update_agent_key] * prev_time
+    #                    + contribution[update_agent_key] * delta_share_fees * delta_time
+    #                ) / current_time
+    #                token_owed[update_agent_key] = (
+    #                    token_owed[update_agent_key] * prev_time
+    #                    + contribution[update_agent_key] * delta_token_fees * delta_time
+    #                ) / current_time
+    #        # update values used for next iteration
+    #        cum_liq += new_liq
+    #        cum_liq_by_agent[acting_agent] += new_liq
+    #        prev_time = current_time
+    #        prev_share_fees, prev_token_fees = share_fees_till_now, token_fees_till_now
+    #    # TODO: Clean up these prints
+    #    if self.verbose:
+    #        print(f"cum_liq_by_agent = {cum_liq_by_agent}")
+    #        print(
+    #            f"      share_owed = {share_owed} calculated sum = {sum(share_owed.values())}"
+    #            f"\n           vs. direct = {self.share_fees} it's a "
+    #            "match "
+    #            if sum(share_owed.values()) == self.share_fees
+    #            else "mismatch "
+    #        )
+    #        print(
+    #            f"      token_owed = {token_owed} calculated sum = {sum(token_owed.values())}"
+    #            f"\n           vs. direct = {self.token_fees} it's a "
+    #            "match "
+    #            if sum(token_owed.values()) == self.token_fees
+    #            else "mismatch "
+    #        )
+    #    if return_agent is not None:
+    #        return share_owed[return_agent], token_owed[return_agent]
+    #    else:
+    #        return None
 
     def get_market_step_string(self):
         """Returns a string that describes the current market step"""
         output_string = f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"
         output_string += (
-            f" reserves=["
+            " reserves=["
             + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"
             + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"
             + f",lp:{bcolors.OKBLUE}{self.lp_reserves}{bcolors.ENDC}"
@@ -664,11 +663,10 @@ class Market:
         )
         if self.verbose:
             output_string += (
-                f""
-                + f",fee_x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"
-                + f",fee_y:{bcolors.OKBLUE}{self.token_fees}{bcolors.ENDC}"
+                f",fee_x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"
+                f",fee_y:{bcolors.OKBLUE}{self.token_fees}{bcolors.ENDC}"
             )
-        output_string += f"]"
+        output_string += "]"
         output_string += f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"
         output_string += f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"
         return output_string

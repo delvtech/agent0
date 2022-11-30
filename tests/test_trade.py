@@ -66,4 +66,4 @@ class SingleTradeTests(BaseTradeTest):
 
     def test_base_lps(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(user_policies=["single_LP"], config_file="config/example_config.toml")
+        self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")

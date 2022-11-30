@@ -9,11 +9,18 @@ import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
 
-# Currently many functions use >5 arguments.
+# TODO: Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
 #     reserves = (in_reserves, out_reserves)
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
+
+# TODO: This module is too big, we should break it up into pricing_models/{base.py, element.py, hyperdrive.py}
+# pylint: disable=too-many-lines
+
+# TODO: some functions have too many local variables (15 is recommended max),
+#     we should consider how to break them up or delete this TODO if it's not possible
+# pylint: disable=too-many-locals
 
 
 class PricingModel:
@@ -165,10 +172,11 @@ class ElementPricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            (\frac{k - (2y + x - \Delta y)^{1 - \tau}})^{\frac{1}{1 - \tau}} - x, &\text{ if } token\_in = \text{"base"} \\
+            (\frac{k - (2y + x - \Delta y)^{1 - \tau}})^{\frac{1}{1 - \tau}} -
+             x, &\text{ if } token\_in = \text{"base"} \\
             (k - (x - \Delta x)^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + x), &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (\Delta y - in') \cdot \phi, &\text{ if } token\_in = \text{"base"} \\
             (in' - \Delta x) \cdot \phi, &\text{ if } token\_in = \text{"pt"}
@@ -196,10 +204,10 @@ class ElementPricingModel(PricingModel):
         time_remaining : float
             The time remaining for the asset (incorporates time stretch).
         init_share_price : float
-            The share price when the pool was initialized. NOTE: For this 
+            The share price when the pool was initialized. NOTE: For this
             pricing model, the initial share price must always be one.
         share_price : float
-            The current share price. NOTE: For this pricing model, the share 
+            The current share price. NOTE: For this pricing model, the share
             price must always be one.
 
         Returns
@@ -231,9 +239,10 @@ class ElementPricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price == init_share_price == 1
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1, not share_price={share_price} and init_share_price={init_share_price}!"
+        assert share_price == init_share_price == 1, (
+            "pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1,"
+            f"not share_price={share_price} and init_share_price={init_share_price}!"
+        )
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + share_reserves
@@ -362,7 +371,7 @@ class ElementPricingModel(PricingModel):
             (x - (k - (2y + x + \Delta y)^{1 - \tau})^{\frac{1}{1 - \tau}}), &\text{ if } token\_out = \text{"base"} \\
             2y + x - (k - (x + \Delta x)^{1 - \tau})^{\frac{1}{1 - \tau}}, &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (\Delta y - out') \cdot \phi, &\text{ if } token\_out = \text{"base"} \\
             (out' - \Delta x) \cdot \phi, &\text{ if } token\_out = \text{"pt"}
@@ -388,10 +397,10 @@ class ElementPricingModel(PricingModel):
         time_remaining : float
             The time remaining for the asset (incorporates time stretch).
         init_share_price : float
-            The share price when the pool was initialized. NOTE: For this 
+            The share price when the pool was initialized. NOTE: For this
             pricing model, the initial share price must always be one.
         share_price : float
-            The current share price. NOTE: For this pricing model, the share 
+            The current share price. NOTE: For this pricing model, the share
             price must always be one.
 
         Returns
@@ -422,9 +431,10 @@ class ElementPricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            share_price == init_share_price == 1
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1, not share_price={share_price} and init_share_price={init_share_price}!"
+        assert share_price == init_share_price == 1, (
+            "pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1,"
+            f"not share_price={share_price} and init_share_price={init_share_price}!"
+        )
 
         time_elapsed = 1 - time_remaining
         bond_reserves_ = 2 * bond_reserves + share_reserves
@@ -554,6 +564,14 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
+        r"""
+        Computes the amount of LP tokens to be minted for a given amount of base asset
+
+        .. math::
+
+        y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+
+        """
         assert d_base > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected d_base > 0, not {d_base}!"
         assert (
             share_reserves >= 0
@@ -571,21 +589,14 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert stretched_time_remaining >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0,"
+            f"not {stretched_time_remaining}!"
+        )
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
             f" share_price={share_price} and init_share_price={init_share_price}!"
         )
-        r"""
-        Computes the amount of LP tokens to be minted for a given amount of base asset
-
-        .. math::
-
-        y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
-
-        """
         d_shares = d_base / share_price
         if share_reserves > 0:  # normal case where we have some share reserves
             lp_out = (d_shares * lp_reserves) / (share_reserves - share_buffer)
@@ -596,8 +607,10 @@ class HyperdrivePricingModel(PricingModel):
         ) - bond_reserves
         if self.verbose:
             print(
-                f"inputs: d_base={d_base}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
-                f"init_share_price={init_share_price}, share_price={share_price}, lp_reserves={lp_reserves}, rate={rate}, "
+                f"inputs: d_base={d_base}, share_reserves={share_reserves}, "
+                f"bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
+                f"init_share_price={init_share_price}, share_price={share_price}, "
+                f"lp_reserves={lp_reserves}, rate={rate}, "
                 f"time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}"
             )
             print(f"  d_shares={d_shares} (d_base / share_price = {d_base} / {share_price})")
@@ -628,6 +641,11 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
+        r"""
+        Computes the amount of LP tokens to be minted for a given amount of base asset
+        .. math::
+        y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+        """
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
         assert (
             share_reserves > 0
@@ -645,20 +663,13 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert stretched_time_remaining >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected stretched_time_remaining >= 0,"
+            f"not {stretched_time_remaining}!"
+        )
         assert (
             share_price >= init_share_price >= 1
         ), "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
-        r"""
-        Computes the amount of LP tokens to be minted for a given amount of base asset
-        
-        .. math::
-
-        y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
-
-        """
         d_shares = d_base / share_price
         lp_in = (d_shares * lp_reserves) / (share_reserves - share_buffer)
         d_bonds = (share_reserves - d_shares) / 2 * (
@@ -679,6 +690,7 @@ class HyperdrivePricingModel(PricingModel):
         time_remaining,
         stretched_time_remaining,
     ):
+        """Calculate how many tokens should be returned for a given lp addition"""
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
         assert (
             share_reserves > 0
@@ -696,12 +708,14 @@ class HyperdrivePricingModel(PricingModel):
         assert (
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert (
-            stretched_time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
-        assert (
-            share_price >= init_share_price >= 1
-        ), "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+        assert stretched_time_remaining >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, "
+            f"not {stretched_time_remaining}!"
+        )
+        assert share_price >= init_share_price >= 1, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
+            f" share_price={share_price}, and init_share_price={init_share_price}"
+        )
         d_base = share_price * (share_reserves - share_buffer) * lp_in / lp_reserves
         d_shares = d_base / share_price
         d_bonds = (share_reserves - d_shares) / 2 * (
@@ -709,7 +723,8 @@ class HyperdrivePricingModel(PricingModel):
         ) - bond_reserves
         if self.verbose:
             print(
-                f"inputs: lp_in={lp_in}, share_reserves={share_reserves}, bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
+                f"inputs: lp_in={lp_in}, share_reserves={share_reserves}, "
+                f"bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
                 f"init_share_price={init_share_price}, share_price={share_price}, lp_reserves={lp_reserves}, "
                 f"rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}"
             )
@@ -915,8 +930,7 @@ class HyperdrivePricingModel(PricingModel):
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                "pricing_models.calc_in_given_out: ERROR: "
-                f'expected token_in to be "base" or "pt", not {token_in}!'
+                "pricing_models.calc_in_given_out: ERROR: " f'expected token_in to be "base" or "pt", not {token_in}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -1003,7 +1017,7 @@ class HyperdrivePricingModel(PricingModel):
             2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}},
             &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
-            f = 
+            f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}

@@ -58,8 +58,8 @@ class YieldSimulator:
             "current_market_datetime",  # float, current market time as a datetime
             "current_market_yearfrac",  # float, current market time as a yearfrac
             "run_trade_number",  # integer, trade number in a given simulation
-            "step_size", # minimum time discretization for market time step
-            "model_name", # the name of the pricing model that is used in simulation
+            "step_size",  # minimum time discretization for market time step
+            "model_name",  # the name of the pricing model that is used in simulation
             "token_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
@@ -134,7 +134,8 @@ class YieldSimulator:
         """Assign a PricingModel object to the pricing_model attribute"""
         if self.config.simulator.verbose:
             print(
-                f"{'#'*20} {model_name} {'#'*20}\n verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
+                f"{'#'*20} {model_name} {'#'*20}\n"
+                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
             )
         if model_name.lower() == "hyperdrive":
             self.pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
@@ -143,27 +144,26 @@ class YieldSimulator:
         else:
             raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
 
-    def override_variables(self, override_dict=None):
+    def override_variables(self, override_dict):
         """Replace existing member & config variables with ones defined in override_dict"""
         # override the config variables, including random variables that were set
-        if override_dict is not None:
-            for key, value in override_dict.items():
-                for config_obj in [self.config.market, self.config.amm, self.config.simulator]:
-                    if hasattr(config_obj, key): # TODO: This is not safe -- we should assign each key individually
-                        setattr(config_obj, key, value)
-                        if key == "vault_apy":  # support for float or list[float] types
-                            if isinstance(value, float): # overwrite above setattr with the value replicated in a list
-                                self.config.simulator.vault_apy = [value] * self.config.simulator.num_trading_days
-                            else: # check that the length is correct; if so, then it is already set above
-                                assert len(value) == self.config.simulator.num_trading_days, (
-                                    "vault_apy must have len equal to num_trading_days = "
-                                    + f"{self.config.simulator.num_trading_days},"
-                                    + f" not {len(value)}"
-                                )
-                if self.config.simulator.verbose:
-                    print(f"Overridding {key} from {getattr(self, key) if hasattr(self, key) else 'None'} to {value}.")
+        for key, value in override_dict.items():
+            for config_obj in [self.config.market, self.config.amm, self.config.simulator]:
+                if hasattr(config_obj, key):  # TODO: This is not safe -- we should assign each key individually
+                    setattr(config_obj, key, value)
+                    if key == "vault_apy":  # support for float or list[float] types
+                        if isinstance(value, float):  # overwrite above setattr with the value replicated in a list
+                            self.config.simulator.vault_apy = [value] * self.config.simulator.num_trading_days
+                        else:  # check that the length is correct; if so, then it is already set above
+                            assert len(value) == self.config.simulator.num_trading_days, (
+                                "vault_apy must have len equal to num_trading_days = "
+                                + f"{self.config.simulator.num_trading_days},"
+                                + f" not {len(value)}"
+                            )
+            if self.config.simulator.verbose:
+                print(f"Overridding {key} from {getattr(self, key) if hasattr(self, key) else 'None'} to {value}.")
         # override the init_share_price if it is in the override_dict
-        if override_dict is not None and "init_share_price" in override_dict.keys():
+        if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
         else:
             self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
@@ -176,7 +176,8 @@ class YieldSimulator:
         assert (
             self.random_variables_set
         ), "ERROR: You must run simulator.set_random_variables() before constructing simulation entities"
-        self.override_variables(override_dict) # apply the override dict
+        if override_dict is not None:
+            self.override_variables(override_dict)  # apply the override dict
         self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
         # setup market
         time_stretch_constant = self.pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
@@ -202,7 +203,7 @@ class YieldSimulator:
         )
         if self.config.simulator.verbose:
             print(
-                f"initial market values:"
+                "initial market values:"
                 f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
                 f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
                 f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
@@ -215,13 +216,13 @@ class YieldSimulator:
             )
             print(f"{self.market.get_market_step_string()}")
         # fill market pools with an initial LP
-        if self.config.simulator.init_LP:
-            initial_lp = import_module(f"elfpy.strategies.init_LP").Policy(
+        if self.config.simulator.init_lp:
+            initial_lp = import_module("elfpy.strategies.init_lp").Policy(
                 market=self.market,
                 rng=self.rng,
                 wallet_address=0,
                 budget=init_base_asset_reserves * 100,
-                amount_to_LP=init_base_asset_reserves,
+                amount_to_lp=init_base_asset_reserves,
                 pt_to_short=init_token_asset_reserves / 10,
                 short_until_apr=self.config.simulator.init_pool_apy,
                 verbose=self.config.simulator.verbose,
@@ -229,14 +230,14 @@ class YieldSimulator:
             self.agent_list = [initial_lp]
             # execute one special block just for the initial_lp
             self.collect_and_execute_trades()
-        else: # manual market configuration
+        else:  # manual market configuration
             self.agent_list = []
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
-                wallet_address=policy_number + 1, # first policy goes to initial_lp
+                wallet_address=policy_number + 1,  # first policy goes to initial_lp
                 verbose=self.config.simulator.verbose,
             )
             if self.config.simulator.verbose:
@@ -281,10 +282,8 @@ class YieldSimulator:
                 )
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                last_block_in_sim = (
-                    (self.day == self.config.simulator.num_trading_days - 1) 
-                    and 
-                    (self.daily_block_number == self.config.simulator.num_blocks_per_day - 1)
+                last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
+                    self.daily_block_number == self.config.simulator.num_blocks_per_day - 1
                 )
                 if self.config.simulator.shuffle_users:
                     self.rng.shuffle(self.agent_list)  # shuffle the agent order each block
@@ -297,17 +296,18 @@ class YieldSimulator:
         # simulation has ended
         for agent in self.agent_list:
             agent.final_report()
-        self.market.calc_fees_owed()
+        # fees_owed = self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
+        """Get trades from the agent list, execute them, and update states"""
         trade_list = []
-        for agent in self.agent_list:
+        for agent in self.agent_list:  # trade is different on the last block
             if not last_block_in_sim:
                 # get all of a agent's trades and execute them right away
-                trade_list.append(agent.get_trade_list())
+                trade_list.append((agent, agent.get_trade_list()))
             else:
-                trade_list.append(agent.get_liquidation_trades())
-        for agent_trade in agent.get_trade_list():
+                trade_list.append((agent, agent.get_liquidation_trades()))
+        for agent, agent_trade in trade_list:
             wallet_deltas = self.market.trade_and_update(agent_trade)
             agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
             if self.config.simulator.verbose:

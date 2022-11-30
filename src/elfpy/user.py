@@ -10,13 +10,16 @@ from typing import Optional
 
 import numpy as np
 
-from elfpy.utils.float_to_string import float_to_string
-from elfpy.utils.bcolors import bcolors
+from elfpy.utils.outputs import float_to_string
+from elfpy.utils.bcolors import Bcolors as bcolors
 
 
 @dataclass(frozen=False)
 class AgentWallet:
-    """stores what's in the agent's wallet"""
+    """Stores what's in the agent's wallet"""
+
+    # TODO: Create our own dataclass decorator that is always mutable and includes dict set/get syntax
+    # pylint: disable=duplicate-code
 
     # fungible
     base_in_wallet: float
@@ -29,7 +32,7 @@ class AgentWallet:
     effective_price: float = field(init=False)  # calculated after init, only for transactions
 
     def __post_init__(self):
-        """post initialization function"""
+        """Post initialization function"""
         # check if this represents a trade (one side will be negative)
         total_tokens = sum(list(self.token_in_wallet.values()))
         if self.base_in_wallet < 0 or total_tokens < 0:
@@ -65,6 +68,9 @@ class User:
     value is an inte with how many tokens they have for that date
     """
 
+    # TODO: variables assigned by child classes are referenced by User -- need to fix up user inheritance
+    # pylint: disable=no-member
+
     def __init__(self, market, rng, wallet_address, budget, verbose):
         """
         Set up initial conditions
@@ -94,6 +100,7 @@ class User:
         mint_time: Optional[float] = None
 
         def print_description_string(self):
+            """Print a description of the Action"""
             output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
             for key, value in self.__dict__.items():
                 if key == "action_type":
@@ -104,8 +111,8 @@ class User:
                     output_string += f" {key}: {float_to_string(value)}"
             print(output_string)
 
-    # user functions defined below
     def create_agent_action(self, action_type, trade_amount, mint_time=None):
+        """Instantiate a agent action"""
         agent_action = self.AgentAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
@@ -230,62 +237,62 @@ class User:
                                 mint_time=mint_time,
                             )
                         )
-        if self.is_LP:
-            if self.has_LPd:
+        if self.is_lp:
+            if self.has_lp:
                 action_list.append(
                     self.create_agent_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)
                 )
         return action_list
 
     def status_update(self):
-        if self.is_LP:
-            self.has_LPd = self.wallet.lp_in_wallet > 0
-            self.can_LP = self.wallet.base_in_wallet >= getattr(self, "amount_to_LP", np.inf)
+        """Update user state"""
+        if self.is_lp:
+            self.has_lp = self.wallet.lp_in_wallet > 0
+            self.can_lp = self.wallet.base_in_wallet >= getattr(self, "amount_to_lp", np.inf)
         self.position_list = list(self.wallet.token_in_protocol.values())
         self.mint_times = list(self.wallet.token_in_protocol.keys())
         if self.is_shorter:
-            self.has_opened_short = bool(any([x < -1 for x in self.position_list]))
+            self.has_opened_short = bool(any((x < -1 for x in self.position_list)))
             self.can_open_short = self.get_max_pt_short(self.market.time) >= getattr(self, "pt_to_short", np.inf)
 
     def status_report(self):
+        """Print user state"""
         self.status_update()
         output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
         string_list = []
-        if self.is_LP:  # this agent can LP! he has the logic circuits to do so
-            string_list.append(f"has_LPd: {self.has_LPd}, can_LP: {self.can_LP}")
+        if self.is_lp:  # this agent can LP! he has the logic circuits to do so
+            string_list.append(f"has_lp: {self.has_lp}, can_lp: {self.can_lp}")
         if self.is_shorter:  # this agent can short! he has the logic circuits to do so
             string_list.append(f"has_opened_short: {self.has_opened_short}")
             string_list.append(f"can_open_short: {self.can_open_short}")
             string_list.append(f"max_short: {self.get_max_pt_short(self.market.time):,.0f}")
         string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
-        string_list.append(
-            f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}"
-        ) if self.position_list else None
-        string_list.append(
-            f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}"
-        ) if self.is_LP else None
-        string_list.append(
-            f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}"
-        ) if self.wallet.fees_paid > 0 else None
+        if self.position_list:
+            string_list.append(f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}")
+        if self.is_lp:
+            string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}")
+        if self.wallet.fees_paid:
+            string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}")
         output_string += ", ".join(string_list)
         return output_string
 
     def final_report(self):
+        """Prints a report of the user's state"""
         self.status_update()
         price = self.market.spot_price
         base = self.wallet.base_in_wallet
         tokens = sum(self.position_list) if len(self.position_list) > 0 else 0
         worth = base + tokens * price
-        PnL = worth - self.budget
+        profit_and_loss = worth - self.budget
         spend = self.weighted_average_spend
-        holding_period_rate = PnL / spend if spend != 0 else 0
+        holding_period_rate = profit_and_loss / spend if spend != 0 else 0
         annual_percentage_rate = holding_period_rate / self.market.time
         output_string = f" {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
-        if PnL < 0:
+        if profit_and_loss < 0:
             output_string += f" lost {bcolors.FAIL}"
         else:
             output_string += f" made {bcolors.OKGREEN}"
-        output_string += f"{float_to_string(PnL)}{bcolors.ENDC}"
+        output_string += f"{float_to_string(profit_and_loss)}{bcolors.ENDC}"
         output_string += f" on ₡{bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
         output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
         output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"

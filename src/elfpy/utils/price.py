@@ -1,3 +1,6 @@
+"""
+Utilities for price
+"""
 # TODO:
 #
 # 1. [ ] Remove any hanging FIXMEs
@@ -5,6 +8,13 @@
 # 3. [ ] Review the comments in this file to ensure that the documentation is
 #        clear about the intent.
 # 4. [ ] Use latex in the comments to typeset the derivations.
+
+# Currently many functions use >5 arguments.
+# These should be packaged up into shared variables, e.g.
+#     reserves = (in_reserves, out_reserves)
+#     share_prices = (init_share_price, share_price)
+# pylint: disable=too-many-arguments
+
 from . import time as time_utils
 
 ### Reserves ###
@@ -28,7 +38,7 @@ def calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asse
 
 
 def calc_base_asset_reserves(
-    # FIXME: The fact that this is a decimal should be specified in the doc string.
+    # TODO: The fact that this is a decimal should be specified in the doc string.
     apr_decimal,
     token_asset_reserves,
     days_remaining,
@@ -95,8 +105,8 @@ def calc_liquidity(
 def calc_apr_from_spot_price(price, normalized_days_remaining):
     """Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration"""
     assert price >= 0, (
-        f"pricing_models.calc_apr_from_spot_price: ERROR: calc_apr_from_spot_price:"
-        + f"Price argument should be greater or equal to zero, not {price}"
+        "pricing_models.calc_apr_from_spot_price: ERROR: calc_apr_from_spot_price:"
+        f"Price argument should be greater or equal to zero, not {price}"
     )
     assert (
         normalized_days_remaining > 0

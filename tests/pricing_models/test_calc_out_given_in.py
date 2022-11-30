@@ -1034,8 +1034,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     test_case.init_share_price,
                     test_case.share_price,
                 )
-                # FIXME:
-                print(f"model_name={model_name}\ntest_case={test_case}")
+                # TODO: log at appropriate times
+                # print(f"model_name={model_name}\ntest_case={test_case}")
                 np.testing.assert_almost_equal(
                     without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
@@ -1076,7 +1076,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 else:
                     raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}')
 
-    #def test_calc_out_given_in_failure(self):
+    # def test_calc_out_given_in_failure(self):
     #    """Failure tests for calc_out_given_in
     #    TODO: test that an error occurs without checking the precise message
     #    """

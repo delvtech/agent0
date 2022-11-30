@@ -834,7 +834,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 else:
                     raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}')
 
-    #def test_calc_in_given_out_failure(self):
+    # def test_calc_in_given_out_failure(self):
     #    """Failure tests for calc_in_given_out
     #    TODO: test that an error occurs without checking the precise message
     #    """

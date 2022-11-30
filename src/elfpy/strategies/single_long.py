@@ -1,4 +1,6 @@
-# pylint: disable=duplicate-code
+"""
+User strategy that opens a long position and then closes it after a certain amount of time has passed
+"""
 
 from elfpy.strategies.basic import BasicPolicy
 
@@ -12,8 +14,10 @@ class Policy(BasicPolicy):
     def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_trade=100):
         """call basic policy init then add custom stuff"""
         self.amount_to_trade = amount_to_trade
-        self.is_LP = False
+        self.is_lp = False
         self.is_shorter = True
+        self.can_open_long = True
+        self.has_opened_long = False
         super().__init__(
             market=market,
             rng=rng,
@@ -25,7 +29,7 @@ class Policy(BasicPolicy):
     def action(self):
         """Specify action"""
         self.can_open_long = self.wallet.base_in_wallet >= self.amount_to_trade
-        self.has_opened_long = bool(any([x < 0 for x in self.position_list]))
+        self.has_opened_long = bool(any((x < 0 for x in self.position_list)))
         action_list = []
         mint_times = list(self.wallet["token_in_wallet"].keys())
         if self.has_opened_long:
@@ -37,7 +41,6 @@ class Policy(BasicPolicy):
                         action_type="close_long",
                         trade_amount=sum(self.position_list) / (self.market.spot_price * 0.99),  # assume 1% slippage
                         mint_time=mint_time,
-                        market=self.market,
                     )
                 )
         elif (not self.has_opened_long) and self.can_open_long:

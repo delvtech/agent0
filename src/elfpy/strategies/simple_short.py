@@ -1,7 +1,14 @@
+"""
+User strategy that opens a short position and doesn't close it until liquiditaion
+"""
+# TODO: the init calls are replicated across each strategy, which looks like duplicate code
+#     this should be resolved once we fix user inheritance
 # pylint: disable=duplicate-code
 
-from elfpy.strategies.basic import BasicPolicy
+
 import numpy as np
+
+from elfpy.strategies.basic import BasicPolicy
 
 
 class Policy(BasicPolicy):
@@ -24,7 +31,7 @@ class Policy(BasicPolicy):
         self.pt_to_short = pt_to_short
         self.short_until_apr = short_until_apr
         self.is_shorter = True
-        self.is_LP = False
+        self.is_lp = False
         super().__init__(
             market=market,
             rng=rng,
