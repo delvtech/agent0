@@ -130,6 +130,11 @@ class YieldSimulator:
         ), f"rng type must be a random number generator, not {type(rng)}."
         self.rng = rng
 
+    def step_size(self):
+        """Returns minimum time increment"""
+        blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
+        return 1 / blocks_per_year
+
     def set_pricing_model(self, model_name):
         """Assign a PricingModel object to the pricing_model attribute"""
         if self.config.simulator.verbose:
@@ -243,11 +248,7 @@ class YieldSimulator:
             if self.config.simulator.verbose:
                 print(user_with_policy.status_report())
             self.agent_list.append(user_with_policy)
-
-    def step_size(self):
-        """Returns minimum time increment"""
-        blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
-        return 1 / blocks_per_year
+        #import IPython; IPython.embed(); raise SystemExit
 
     def run_simulation(self, override_dict=None):
         r"""
@@ -300,21 +301,20 @@ class YieldSimulator:
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
         """Get trades from the agent list, execute them, and update states"""
-        trade_list = []
         for agent in self.agent_list:  # trade is different on the last block
-            if not last_block_in_sim:
-                # get all of a agent's trades and execute them right away
-                trade_list.append((agent, agent.get_trade_list()))
+            if last_block_in_sim:  # get all of a agent's trades
+                trade_list = agent.get_liquidation_trades()
             else:
-                trade_list.append((agent, agent.get_liquidation_trades()))
-        for agent, agent_trade in trade_list:
-            wallet_deltas = self.market.trade_and_update(agent_trade)
-            agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
-            if self.config.simulator.verbose:
-                print(f"agent wallet deltas = {wallet_deltas}")
-                print(f"post-trade {agent.status_report()}")
-            self.update_analysis_dict()
-            self.run_trade_number += 1
+                trade_list = agent.get_trade_list()
+            for agent_trade in trade_list:  # execute trades
+                #import IPython; IPython.embed()
+                wallet_deltas = self.market.trade_and_update(agent_trade)
+                agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
+                if self.config.simulator.verbose:
+                    print(f"agent wallet deltas = {wallet_deltas}")
+                    print(f"post-trade {agent.status_report()}")
+                self.update_analysis_dict()
+                self.run_trade_number += 1
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

@@ -20,13 +20,10 @@ class Policy(BasicPolicy):
         wallet_address,
         budget=100,
         verbose=None,
-        pt_to_short=100,
     ):
         """call basic policy init then add custom stuff"""
-        self.pt_to_short = pt_to_short
-        self.is_lp = False
-        self.is_shorter = True
-        super().__init__(market, rng, wallet_address, budget=budget, verbose=verbose)
+        self.pt_to_short = 100
+        super().__init__(market, rng, wallet_address, budget, verbose)
 
     def action(self):
         """
@@ -34,6 +31,9 @@ class Policy(BasicPolicy):
         short if you can, only once
         """
         action_list = []
-        if self.can_open_short and not self.has_opened_short:
+        block_position_list = list(self.wallet.token_in_protocol.values())
+        has_opened_short = bool(any((x < -1 for x in block_position_list)))
+        can_open_short = self.get_max_pt_short(self.market.time) >= self.pt_to_short
+        if can_open_short and not has_opened_short:
             action_list.append(self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short))
         return action_list

@@ -11,13 +11,9 @@ class Policy(BasicPolicy):
     only has one long open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_trade=100):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
         """call basic policy init then add custom stuff"""
-        self.amount_to_trade = amount_to_trade
-        self.is_lp = False
-        self.is_shorter = True
-        self.can_open_long = True
-        self.has_opened_long = False
+        self.amount_to_trade = 100
         super().__init__(
             market=market,
             rng=rng,
@@ -28,21 +24,26 @@ class Policy(BasicPolicy):
 
     def action(self):
         """Specify action"""
-        self.can_open_long = self.wallet.base_in_wallet >= self.amount_to_trade
-        self.has_opened_long = bool(any((x < 0 for x in self.position_list)))
+        can_open_long = (
+            (self.wallet.base_in_wallet >= self.amount_to_trade)
+            and
+            (self.market.share_reserves >= self.amount_to_trade)
+        )
+        block_position_list = list(self.wallet.token_in_protocol.values())
+        has_opened_long = bool(any((x < 0 for x in block_position_list)))
         action_list = []
         mint_times = list(self.wallet["token_in_wallet"].keys())
-        if self.has_opened_long:
+        if has_opened_long:
             mint_time = mint_times[-1]
             enough_time_has_passed = self.market.time - mint_time > 0.25
             if enough_time_has_passed:
                 action_list.append(
                     self.create_agent_action(
                         action_type="close_long",
-                        trade_amount=sum(self.position_list) / (self.market.spot_price * 0.99),  # assume 1% slippage
+                        trade_amount=sum(block_position_list) / (self.market.spot_price * 0.99),  # assume 1% slippage
                         mint_time=mint_time,
                     )
                 )
-        elif (not self.has_opened_long) and self.can_open_long:
+        elif (not has_opened_long) and can_open_long:
             action_list.append(self.create_agent_action(action_type="open_long", trade_amount=self.amount_to_trade))
         return action_list

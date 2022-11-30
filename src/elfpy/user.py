@@ -81,11 +81,8 @@ class User:
         self.budget = budget
         self.verbose = False if verbose is None else verbose
         self.last_update_spend = 0
-        self.product_of_time_and_base = 0
         self.weighted_average_spend = 0
-        self.position_list = []
         self.wallet = AgentWallet(base_in_wallet=budget)
-        self.status_update()
 
     @dataclass
     class AgentAction:
@@ -156,7 +153,6 @@ class User:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        self.status_update()
         action_list = self.action()  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
@@ -177,10 +173,9 @@ class User:
     def update_spend(self):
         """Track over time the user's weighted average spend, for return calculation"""
         new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
-        self.product_of_time_and_base += new_spend
-        self.weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
+        product_of_time_and_base += new_spend
+        self.weighted_average_spend = product_of_time_and_base / self.market.time if self.market.time > 0 else 0
         self.last_update_spend = self.market.time
-        return self.weighted_average_spend
 
     def update_wallet(self, agent_deltas):
         """Update the user's wallet"""
@@ -218,59 +213,37 @@ class User:
                 raise ValueError(f"wallet_key={wallet_key} is not allowed.")
 
     def get_liquidation_trades(self):
-        """close up shop"""
-        self.status_update()
+        """Get final trades for liquidating positions"""
         action_list = []
-        if self.is_shorter:
-            if self.has_opened_short:
-                for mint_time, position in self.wallet.token_in_protocol.items():
-                    if self.verbose:
-                        print(
-                            "  get_liquidation_trades() evaluating closing short:"
-                            f" mint_time={mint_time} position={position}"
-                        )
-                    if position < 0:
-                        action_list.append(
-                            self.create_agent_action(
-                                action_type="close_short",
-                                trade_amount=-position,
-                                mint_time=mint_time,
-                            )
-                        )
-        if self.is_lp:
-            if self.has_lp:
-                action_list.append(
-                    self.create_agent_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)
+        for mint_time, position in self.wallet.token_in_protocol.items():
+            if self.verbose:
+                print(
+                    "  get_liquidation_trades() evaluating closing short:"
+                    f" mint_time={mint_time} position={position}"
                 )
+            if position < 0:
+                action_list.append(
+                    self.create_agent_action(
+                        action_type="close_short",
+                        trade_amount=-position,
+                        mint_time=mint_time,
+                    )
+                )
+        if self.wallet.lp_in_wallet > 0:
+            action_list.append(
+                self.create_agent_action(
+                    action_type="remove_liquidity",
+                    trade_amount=self.wallet.lp_in_wallet,
+                    mint_time=self.market.time
+                )
+            )
         return action_list
-
-    def status_update(self):
-        """Update user state"""
-        if self.is_lp:
-            self.has_lp = self.wallet.lp_in_wallet > 0
-            self.can_lp = self.wallet.base_in_wallet >= getattr(self, "amount_to_lp", np.inf)
-        self.position_list = list(self.wallet.token_in_protocol.values())
-        self.mint_times = list(self.wallet.token_in_protocol.keys())
-        if self.is_shorter:
-            self.has_opened_short = bool(any((x < -1 for x in self.position_list)))
-            self.can_open_short = self.get_max_pt_short(self.market.time) >= getattr(self, "pt_to_short", np.inf)
 
     def status_report(self):
         """Print user state"""
-        self.status_update()
         output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
         string_list = []
-        if self.is_lp:  # this agent can LP! he has the logic circuits to do so
-            string_list.append(f"has_lp: {self.has_lp}, can_lp: {self.can_lp}")
-        if self.is_shorter:  # this agent can short! he has the logic circuits to do so
-            string_list.append(f"has_opened_short: {self.has_opened_short}")
-            string_list.append(f"can_open_short: {self.can_open_short}")
-            string_list.append(f"max_short: {self.get_max_pt_short(self.market.time):,.0f}")
         string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
-        if self.position_list:
-            string_list.append(f"position_list: {self.position_list} sum(positions)={sum(self.position_list)}")
-        if self.is_lp:
-            string_list.append(f"LP_position: {bcolors.OKCYAN}{self.wallet.lp_in_wallet:,.0f}{bcolors.ENDC}")
         if self.wallet.fees_paid:
             string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}")
         output_string += ", ".join(string_list)
@@ -278,10 +251,10 @@ class User:
 
     def final_report(self):
         """Prints a report of the user's state"""
-        self.status_update()
         price = self.market.spot_price
         base = self.wallet.base_in_wallet
-        tokens = sum(self.position_list) if len(self.position_list) > 0 else 0
+        block_position_list = list(self.wallet.token_in_protocol.values())
+        tokens = sum(block_position_list) if len(block_position_list) > 0 else 0
         worth = base + tokens * price
         profit_and_loss = worth - self.budget
         spend = self.weighted_average_spend

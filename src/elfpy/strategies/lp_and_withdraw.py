@@ -12,12 +12,10 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_lp=100):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
         """call basic policy init then add custom stuff"""
         self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
-        self.amount_to_lp = amount_to_lp
-        self.is_lp = True
-        self.is_shorter = False
+        self.amount_to_lp = 100
         super().__init__(
             market=market,
             rng=rng,
@@ -32,9 +30,11 @@ class Policy(BasicPolicy):
         LP if you can, but only do it once
         """
         action_list = []
-        if not self.has_lp and self.can_lp:
+        has_lp = self.wallet.lp_in_wallet > 0
+        can_lp = self.wallet.base_in_wallet >= self.amount_to_lp
+        if not has_lp and can_lp:
             action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp))
-        elif self.has_lp:
+        elif has_lp:
             enough_time_has_passed = self.market.time > self.time_to_withdraw
             if enough_time_has_passed:
                 self.create_agent_action(action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet)

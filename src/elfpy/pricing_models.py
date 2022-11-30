@@ -4,7 +4,6 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
-
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
@@ -111,7 +110,8 @@ class PricingModel:
         )
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves
-        return 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
+        spot_price = 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
+        return spot_price
 
     def calc_apr_from_reserves(
         self,
@@ -228,11 +228,11 @@ class ElementPricingModel(PricingModel):
 
         assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
@@ -420,11 +420,11 @@ class ElementPricingModel(PricingModel):
         """
         assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
-            bond_reserves > 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not {bond_reserves}!"
+            bond_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
@@ -600,7 +600,7 @@ class HyperdrivePricingModel(PricingModel):
         d_shares = d_base / share_price
         if share_reserves > 0:  # normal case where we have some share reserves
             lp_out = (d_shares * lp_reserves) / (share_reserves - share_buffer)
-        else:  # initial case where we have 0 share reserves
+        else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         d_bonds = (share_reserves + d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
@@ -648,8 +648,8 @@ class HyperdrivePricingModel(PricingModel):
         """
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
             bond_reserves >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
@@ -693,8 +693,8 @@ class HyperdrivePricingModel(PricingModel):
         """Calculate how many tokens should be returned for a given lp addition"""
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
         assert (
-            share_reserves > 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves > 0, not {share_reserves}!"
+            share_reserves >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
         assert (
             bond_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"

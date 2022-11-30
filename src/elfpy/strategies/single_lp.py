@@ -14,11 +14,9 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None, amount_to_lp=100):
+    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
         """call basic policy init then add custom stuff"""
-        self.amount_to_lp = amount_to_lp
-        self.is_lp = True
-        self.is_shorter = False
+        self.amount_to_lp = 100
         super().__init__(
             market=market,
             rng=rng,
@@ -33,7 +31,8 @@ class Policy(BasicPolicy):
         LP if you can, but only do it once
         """
         action_list = []
-        # print(f" evaluating whether to LP: {self.can_lp} and {self.has_lp}")
-        if self.can_lp and not self.has_lp:
+        has_lp = self.wallet.lp_in_wallet > 0
+        can_lp = self.wallet.base_in_wallet >= self.amount_to_lp
+        if can_lp and not has_lp:
             action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp))
         return action_list

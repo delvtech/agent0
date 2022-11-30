@@ -27,8 +27,6 @@ class Policy(BasicPolicy):
         self.amount_to_lp = amount_to_lp
         self.pt_to_short = pt_to_short
         self.short_until_apr = short_until_apr
-        self.is_lp = True
-        self.is_shorter = True
         super().__init__(
             market=market,
             rng=rng,
@@ -43,9 +41,12 @@ class Policy(BasicPolicy):
         LP if you can, but only do it once
         short if you can, but only do it once
         """
-        action_list = []
-        if not self.has_lp and self.can_lp:
-            action_list.append(self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp))
-        if self.market.rate < self.short_until_apr and self.can_open_short:
-            action_list.append(self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short))
+        has_lp = self.wallet.lp_in_wallet > 0
+        if has_lp:
+            action_list = []
+        else:
+            action_list = [
+                self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp),
+                self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short)
+            ]
         return action_list
