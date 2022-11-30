@@ -64,7 +64,7 @@ class AgentWallet:
 # TODO: The user class has too many instance attributes (8/7)
 #     we should move some, like budget and wallet_address, into the agent wallet and out of User
 # pylint: disable=too-many-instance-attributes
-class User:
+class Agent:
     """
     Implements abstract classes that control user behavior
     user has a budget that is a dict, keyed with a date

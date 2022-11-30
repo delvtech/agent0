@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 import elfpy.utils.time as time_utils
-from elfpy.user import AgentWallet
+ import AgentWallet
 import elfpy.utils.price as price_utils
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
