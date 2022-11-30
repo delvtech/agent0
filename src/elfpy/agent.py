@@ -18,7 +18,7 @@ from elfpy.wallet import Wallet
 #     we should move some, like budget and wallet_address, into the agent wallet and out of User
 class Agent:
     """
-    Implements abstract classes that control user behavior
+    Implements abstract classes that control agent behavior
     user has a budget that is a dict, keyed with a date
     value is an inte with how many tokens they have for that date
     """
@@ -33,12 +33,13 @@ class Agent:
         """
         self.market = market
         self.rng = rng
+        # TODO: remove this, wallet_address is a property of wallet, not the agent
         self.wallet_address = wallet_address
         self.budget = budget
         self.verbose = verbose
         self.last_update_spend = 0
         self.product_of_time_and_base = 0
-        self.wallet = Wallet(base_in_wallet=budget)
+        self.wallet = Wallet(address=wallet_address, base_in_wallet=budget)
 
     @dataclass
     class AgentAction:
