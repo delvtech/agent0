@@ -3,7 +3,7 @@ Implements abstract classes that control agent behavior
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Literal
 
 import numpy as np
 
@@ -11,6 +11,8 @@ from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
 
+
+AGENT_ACTION_TYPE = Literal["close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"]
 
 # TODO: The agent class has too many instance attributes (8/7)
 #     we should move some, like budget and wallet_address, into the agent wallet and out of User
@@ -63,7 +65,7 @@ class Agent:
                     output_string += f" {key}: {float_to_string(value)}"
             print(output_string)
 
-    def create_agent_action(self, action_type, trade_amount, mint_time=None):
+    def create_agent_action(self, action_type: AGENT_ACTION_TYPE, trade_amount, mint_time=None):
         """Instantiate a agent action"""
         agent_action = self.AgentAction(
             # these two variables are required to be set by the strategy

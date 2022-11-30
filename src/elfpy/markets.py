@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 import elfpy.utils.time as time_utils
-from elfpy.agent import Wallet
+from elfpy.agent import AGENT_ACTION_TYPE, Wallet
 import elfpy.utils.price as price_utils
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
@@ -125,11 +125,11 @@ class Market:
         self.total_supply = self.share_reserves + self.bond_reserves
         self.verbose = verbose
 
-    def check_action_type(self, action_type):
-        """Ensure that the user action is an allowed action for this market
+    def check_action_type(self, action_type: AGENT_ACTION_TYPE):
+        """Ensure that the agent action is an allowed action for this market
         Arguments
         ---------
-        action_type : str
+        action_type :
             must be either "element" or "hyperdrive"
         """
         pricing_model_name = self.pricing_model.model_name()
@@ -155,7 +155,7 @@ class Market:
                 f" model={self.pricing_model.model_name()}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action):
+    def trade_and_update(self, agent_action: AGENT_ACTION_TYPE):
         """
         Execute a trade in the simulated market.
 
