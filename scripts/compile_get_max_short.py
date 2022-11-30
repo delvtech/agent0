@@ -1,7 +1,7 @@
 import numpy as np
 
-from src.elfpy.pricing_models import HyperdrivePricingModel
-import src.elfpy.utils.get_max_short as utils
+from elfpy.pricing_models import HyperdrivePricingModel
+import elfpy.utils.get_max_short as utils
 
 # NOTE: Some of these constants will need to be swept over.
 init_share_price = 1

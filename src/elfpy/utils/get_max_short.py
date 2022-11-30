@@ -27,15 +27,34 @@ def calc_max_loss_from_apr(
     days_remaining,
     time_stretch,
 ):
-    """Calculates the maximum loss on a short position of a specified percentage of the total bond reserves"""
+    """
+    Calculates the maximum loss on a short position of a specified percentage of the total bond reserves
+    """
     time_remaining = time_utils.stretch_time(time_utils.norm_days(days_remaining), time_stretch)
     bond_reserves = price_utils.calc_bond_reserves(
-        SHARE_RESERVES, apr, share_price, init_share_price, days_remaining, time_stretch
+        SHARE_RESERVES,
+        apr,
+        days_remaining,
+        time_stretch,
+        share_price,
+        init_share_price,
     )
     d_bonds = bond_reserves * bond_percentage
-    d_shares = pricing_model.calc_in_given_out(
-        d_bonds, SHARE_RESERVES, bond_reserves, "base", share_price, init_share_price, fee_percent, time_remaining
-    )
+    try:
+        d_shares = pricing_model.calc_in_given_out(
+            d_bonds,
+            SHARE_RESERVES,
+            bond_reserves,
+            "base",
+            fee_percent,
+            time_remaining,
+            share_price,
+            init_share_price,
+        )
+    except AssertionError as e:
+        if "ERROR: without_fee should be non-negative, not nan!" in f"{e}":
+            return np.NaN
+        raise e
     return d_bonds - d_shares
 
 
