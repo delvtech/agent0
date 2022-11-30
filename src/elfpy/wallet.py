@@ -1,7 +1,5 @@
 """
 Implements abstract classes that control user behavior
-
-TODO: rewrite all functions to have typed inputs
 """
 
 from dataclasses import dataclass
