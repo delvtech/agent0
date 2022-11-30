@@ -37,6 +37,7 @@ class AMMConfig:
     min_pool_apy: float = field(default=0.02, metadata={"hint": "as a decimal"})
     max_pool_apy: float = field(default=0.9, metadata={"hint": "as a decimal"})
     floor_fee: float = field(default=0, metadata={"hint": "minimum fee percentage (bps)"})
+    verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
 
 
 @dataclass
@@ -52,6 +53,8 @@ class SimulatorConfig:
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
     pricing_model_name: str = field(default="Element", metadata={"hint": 'Must be "Element" or "Hyperdrive"'})
     user_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
+    shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
+    init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
 
