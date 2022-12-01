@@ -95,7 +95,7 @@ class TestPriceUtils(unittest.TestCase):
             #   1 init share price; 1 share price
             # 
             {
-                "apr_decimal": 0.05, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "apr": 0.05, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 500000, # PT reserves; y = 500000
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
                 "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.02253584403
@@ -117,7 +117,7 @@ class TestPriceUtils(unittest.TestCase):
             #   22.186877016851916 t_stretch (targets 5% APR);
             #   1 init share price; 1 share price
             {
-                "apr_decimal": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "apr": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 200000, # PT reserves; y = 200000
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
                 "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.02253584403
@@ -139,7 +139,7 @@ class TestPriceUtils(unittest.TestCase):
             #   22.186877016851916 t_stretch (targets 5% APR);
             #   1 init share price; 1 share price
             {
-                "apr_decimal": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "apr": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 800000, # PT reserves; y = 800000
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
                 "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.02253584403
@@ -161,7 +161,7 @@ class TestPriceUtils(unittest.TestCase):
             #   36.97812836141986 t_stretch (targets 3% APR); 
             #   1.5 init share price; 2 share price
             {
-                "apr_decimal": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "apr": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
                 "token_asset_reserves": 500000, # PT reserves; y = 500000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
                 "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
@@ -183,7 +183,7 @@ class TestPriceUtils(unittest.TestCase):
             #   36.97812836141986 t_stretch (targets 3% APR); 
             #   1.5 init share price; 2 share price
             {
-                "apr_decimal": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
+                "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "token_asset_reserves": 200000, # PT reserves; y = 200000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
                 "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
@@ -205,7 +205,7 @@ class TestPriceUtils(unittest.TestCase):
             #   36.97812836141986 t_stretch (targets 3% APR); 
             #   1.5 init share price; 2 share price
             {
-                "apr_decimal": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
                 "token_asset_reserves": 800000, # PT reserves; y = 800000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
                 "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
@@ -227,7 +227,7 @@ class TestPriceUtils(unittest.TestCase):
 
         for test_case in test_cases:
             base_asset_reserves = price_utils.calc_base_asset_reserves(
-                test_case["apr_decimal"],
+                test_case["apr"],
                 test_case["token_asset_reserves"],
                 test_case["days_remaining"],
                 test_case["time_stretch"],
