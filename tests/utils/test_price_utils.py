@@ -366,21 +366,138 @@ class TestPriceUtils(unittest.TestCase):
     # ### Spot Price and APR ###
 
 
-    # def calc_apr_from_spot_price(price, normalized_days_remaining):
-    #     """Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration"""
-    #     assert price > 0, (
-    #         "pricing_models.calc_apr_from_spot_price: ERROR: calc_apr_from_spot_price:"
-    #         f"Price argument should be greater or equal to zero, not {price}"
-    #     )
-    #     assert (
-    #         normalized_days_remaining > 0
-    #     ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
-    #     return (1 - price) / price / normalized_days_remaining  # price = 1 / (1 + r * t)
+    def test_calc_apr_from_spot_price(self):
+        """Unit tests for the calc_apr_from_spot_price function"""
+
+        test_cases = [
+            # test 1: 0.95 price; 6mo remaining;
+            {
+                "price": 0.95,
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 0.95) / 0.95 / 0.5
+                #     = 0.1052631579
+                "expected_result": 0.1052631579 # just over 10% APR
+            },
+            # test 2: 0.99 price; 6mo remaining;
+            {
+                "price": 0.99,
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 0.99) / 0.99 / 0.5
+                #     = 0.0202020202
+                "expected_result": 0.0202020202 # just over 2% APR
+            },
+            # test 3: 1.00 price; 6mo remaining;
+            {
+                "price": 1.00, # 0% APR
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 1) / 1 / 0.5
+                #     = 0
+                "expected_result": 0 # 0% APR
+            },
+            # test 4: 0.95 price; 3mo remaining;
+            {
+                "price": 0.95,
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 0.95) / 0.95 / 0.25
+                #     = 0.2105263158
+                "expected_result": 0.2105263158 # just over 21% APR
+            },
+            # test 5: 0.95 price; 12mo remaining;
+            {
+                "price": 0.95,
+                "normalized_days_remaining": 1, # 1 months = 1 year
+                # APR = (1 - 0.95) / 0.95 / 1
+                #     = 0.05263157895
+                "expected_result": 0.05263157895 # just over 5% APR
+            },
+            # test 6: 0.10 price; 3mo remaining;
+            {
+                "price": 0.10, # 0% APR
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 0.10) / 0.10 / 0.25
+                #     = 0
+                "expected_result": 36 # 3600% APR
+            }
+        ]
+
+        for test_case in test_cases:
+            apr = price_utils.calc_apr_from_spot_price(
+                test_case["price"],
+                test_case["normalized_days_remaining"]
+            )
+
+            np.testing.assert_almost_equal(
+                apr,
+                test_case["expected_result"],
+                err_msg="unexpected apr"
+            )
 
 
-    # def calc_spot_price_from_apr(apr_decimal, normalized_days_remaining):
-    #     """Returns the current spot price based on the current APR (decimal) and the remaining pool duration"""
-    #     return 1 / (1 + apr_decimal * normalized_days_remaining)  # price = 1 / (1 + r * t)
+    def calc_spot_price_from_apr(self):
+        """Unit tests for the calc_spot_price_from_apr function"""
+
+        test_cases = [
+            # test 1: 10% apr; 6mo remaining;
+            {
+                "apr_decimal": 0.10,
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 0.95) / 0.95 / 0.5
+                #     = 0.1052631579
+                "expected_result": 0.1052631579 # just over 10% APR
+            },
+            # test 2: 0.99 price; 6mo remaining;
+            {
+                "price": 0.99,
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 0.99) / 0.99 / 0.5
+                #     = 0.0202020202
+                "expected_result": 0.0202020202 # just over 2% APR
+            },
+            # test 3: 1.00 price; 6mo remaining;
+            {
+                "price": 1.00, # 0% APR
+                "normalized_days_remaining": 0.5, # 6 months = 0.5 years
+                # APR = (1 - 1) / 1 / 0.5
+                #     = 0
+                "expected_result": 0 # 0% APR
+            },
+            # test 4: 0.95 price; 3mo remaining;
+            {
+                "price": 0.95,
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 0.95) / 0.95 / 0.25
+                #     = 0.2105263158
+                "expected_result": 0.2105263158 # just over 21% APR
+            },
+            # test 5: 0.95 price; 12mo remaining;
+            {
+                "price": 0.95,
+                "normalized_days_remaining": 1, # 1 months = 1 year
+                # APR = (1 - 0.95) / 0.95 / 1
+                #     = 0.05263157895
+                "expected_result": 0.05263157895 # just over 5% APR
+            },
+            # test 6: 0.10 price; 3mo remaining;
+            {
+                "price": 0.10, # 0% APR
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 0.10) / 0.10 / 0.25
+                #     = 0
+                "expected_result": 36 # 3600% APR
+            }
+        ]
+
+        for test_case in test_cases:
+            apr = price_utils.calc_apr_from_spot_price(
+                test_case["price"],
+                test_case["normalized_days_remaining"]
+            )
+
+            np.testing.assert_almost_equal(
+                apr,
+                test_case["expected_result"],
+                err_msg="unexpected apr"
+            )
 
 
     # ### YieldSpace ###
