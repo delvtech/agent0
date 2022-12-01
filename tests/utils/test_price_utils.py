@@ -120,7 +120,7 @@ class TestPriceUtils(unittest.TestCase):
                 "apr_decimal": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 200000, # PT reserves; y = 200000
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
-                "time_stretch": 22.186877016851916, # 30 years time_stretch; T = 0.02253584403
+                "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.02253584403
                 "init_share_price": 1, # original share price pool started; u = 1
                 "share_price": 1, # share price of the LP in the yield source; c = 1
                 # from the inputs, we have:
@@ -142,7 +142,7 @@ class TestPriceUtils(unittest.TestCase):
                 "apr_decimal": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 800000, # PT reserves; y = 800000
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
-                "time_stretch": 22.186877016851916, # 30 years time_stretch; T = 0.02253584403
+                "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.02253584403
                 "init_share_price": 1, # original share price pool started; u = 1
                 "share_price": 1, # share price of the LP in the yield source; c = 1
                 # from the inputs, we have:
@@ -164,7 +164,7 @@ class TestPriceUtils(unittest.TestCase):
                 "apr_decimal": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
                 "token_asset_reserves": 500000, # PT reserves; y = 500000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986, # 30 years time_stretch; T = 0.006760753209
+                "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
                 "init_share_price": 1.5, # original share price pool started; u = 1.5
                 "share_price": 2, # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -186,7 +186,7 @@ class TestPriceUtils(unittest.TestCase):
                 "apr_decimal": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "token_asset_reserves": 200000, # PT reserves; y = 200000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986, # 30 years time_stretch; T = 0.006760753209
+                "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
                 "init_share_price": 1.5, # original share price pool started; u = 1.5
                 "share_price": 2, # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -208,7 +208,7 @@ class TestPriceUtils(unittest.TestCase):
                 "apr_decimal": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
                 "token_asset_reserves": 800000, # PT reserves; y = 800000
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986, # 30 years time_stretch; T = 0.006760753209
+                "time_stretch": 36.97812836141986, # 36.97812836141986 time_stretch; T = 0.006760753209
                 "init_share_price": 1.5, # original share price pool started; u = 1.5
                 "share_price": 2, # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -226,7 +226,6 @@ class TestPriceUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            
             base_asset_reserves = price_utils.calc_base_asset_reserves(
                 test_case["apr_decimal"],
                 test_case["token_asset_reserves"],
@@ -243,47 +242,127 @@ class TestPriceUtils(unittest.TestCase):
             )
 
 
-    # def calc_liquidity(
-    #     target_liquidity_usd,
-    #     market_price,
-    #     apr,
-    #     days_remaining,
-    #     time_stretch,
-    #     init_share_price=1,
-    #     share_price=1,
-    # ):
-    #     """
-    #     Returns the reserve volumes and total supply
+    def test_calc_liquidity(self):
 
-    #     The scaling factor ensures token_asset_reserves and base_asset_reserves add
-    #     up to target_liquidity, while keeping their ratio constant (preserves apr).
+        test_cases = [
+            # test 1: 5M target_liquidity; 1k market price; 5% APR;
+            #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
+            #   1 init share price; 1 share price
+            {
+                "target_liquidity_usd": 5000000, # Targeting 5M USD liquidity
+                "market_price": 1000, # Market price of base asset
+                "apr": 0.05, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "days_remaining": 182.5, # 6 months remaining; t = 0.50
+                "time_stretch": 22.186877016851916,
+                "init_share_price": 1, # original share price pool started; u = 1
+                "share_price": 1, # share price of the LP in the yield source; c = 1
+                "expected_base_asset_reserves": 2536.3203786253266, # 
+                "expected_token_asset_reserves": 2525.2716119090405, # 
+                "expected_total_liquidity": 5000.0 # ~50:50 reserves ratio
+            },
+            # test 2: 5M target_liquidity; 1k market price; 2% APR;
+            #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
+            #   1 init share price; 1 share price
+            {
+                "target_liquidity_usd": 5000000, # Targeting 5M USD liquidity
+                "market_price": 1000, # Market price of base asset
+                "apr": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "days_remaining": 182.5, # 6 months remaining; t = 0.50
+                "time_stretch": 22.186877016851916,
+                "init_share_price": 1, # original share price pool started; u = 1
+                "share_price": 1, # share price of the LP in the yield source; c = 1
+                "expected_base_asset_reserves": 3922.192745298014, # 
+                "expected_token_asset_reserves": 1088.5853272490062, # 
+                "expected_total_liquidity": 5000.0 # base > token reserves
+            },
+            # test 3: 5M target_liquidity; 1k market price; 8% APR;
+            #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
+            #   1 init share price; 1 share price
+            {
+                "target_liquidity_usd": 5000000, # Targeting 5M USD liquidity
+                "market_price": 1000, # Market price of base asset
+                "apr": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "days_remaining": 182.5, # 6 months remaining; t = 0.50
+                "time_stretch": 22.186877016851916,
+                "init_share_price": 1, # original share price pool started; u = 1
+                "share_price": 1, # share price of the LP in the yield source; c = 1
+                "expected_base_asset_reserves": 1534.0469740383746, # 
+                "expected_token_asset_reserves": 3604.591147000091, # 
+                "expected_total_liquidity": 5000.0 # token > base reserves
+            },
+            # test 4: 10M target_liquidity; 500 market price; 3% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "expected_base_asset_reserves": 12287.029415142337, # 
+                "expected_token_asset_reserves": 7770.817864244096, # 
+                "expected_total_liquidity": 20000.0 # base > token reserves?
+            },
+            # test 5: 10M target_liquidity; 500 market price; 1% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "expected_base_asset_reserves": 19186.027487682495, # 
+                "expected_token_asset_reserves": 816.0074435982989, # 
+                "expected_total_liquidity": 20000.0 # base > token reserves?
+            },
+            # test 6: 10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "expected_base_asset_reserves": 5195.968749573127, # 
+                "expected_token_asset_reserves": 15026.091719183272, # 
+                "expected_total_liquidity": 20000.0 # base > token reserves?
+            }
+        ]
 
-    #     total_liquidity = in USD terms, used to target liquidity as passed in (in USD terms)
-    #     total_reserves  = in arbitrary units (AU), used for yieldspace math
-    #     """
-    #     # estimate reserve values with the information we have
-    #     spot_price = calc_spot_price_from_apr(apr, time_utils.norm_days(days_remaining))
-    #     token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price  # guesstimate
-    #     base_asset_reserves = calc_base_asset_reserves(
-    #         apr,
-    #         token_asset_reserves,
-    #         days_remaining,
-    #         time_stretch,
-    #         init_share_price,
-    #         share_price,
-    #     )  # ensures an accurate ratio of prices
-    #     total_liquidity = calc_total_liquidity_from_reserves_and_price(
-    #         base_asset_reserves, token_asset_reserves, spot_price
-    #     )
-    #     # compute scaling factor to adjust reserves so that they match the target liquidity
-    #     scaling_factor = (target_liquidity_usd / market_price) / total_liquidity  # both in token terms
-    #     # update variables by rescaling the original estimates
-    #     token_asset_reserves = token_asset_reserves * scaling_factor
-    #     base_asset_reserves = base_asset_reserves * scaling_factor
-    #     total_liquidity = calc_total_liquidity_from_reserves_and_price(
-    #         base_asset_reserves, token_asset_reserves, spot_price
-    #     )
-    #     return (base_asset_reserves, token_asset_reserves, total_liquidity)
+        for test_case in test_cases:
+            base_asset_reserves, token_asset_reserves, total_liquidity = price_utils.calc_liquidity(
+                test_case["target_liquidity_usd"],
+                test_case["market_price"],
+                test_case["apr"],
+                test_case["days_remaining"],
+                test_case["time_stretch"],
+                test_case["init_share_price"],
+                test_case["share_price"]
+            )
+
+            np.testing.assert_almost_equal(
+                base_asset_reserves,
+                test_case["expected_base_asset_reserves"],
+                err_msg="unexpected base_asset_reserves"
+            )
+            np.testing.assert_almost_equal(
+                token_asset_reserves,
+                test_case["expected_token_asset_reserves"],
+                err_msg="unexpected token_asset_reserves"
+            )
+            np.testing.assert_almost_equal(
+                total_liquidity,
+                test_case["expected_total_liquidity"],
+                err_msg="unexpected total_liquidity"
+            )
 
 
     # ### Spot Price and APR ###
