@@ -15,7 +15,7 @@ import unittest
 import numpy as np
 
 from elfpy.utils import time as time_utils
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, PricingModel
 
 
 @dataclass
@@ -1078,7 +1078,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models = [ElementPricingModel(False), HyperdrivePricingModel(False)]
+        pricing_models: list[PricingModel] = [ElementPricingModel(False), HyperdrivePricingModel(False)]
 
         # Failure test cases.
         test_cases = [
@@ -1230,12 +1230,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
             for pricing_model in pricing_models:
                 with self.assertRaises(AssertionError):
                     pricing_model.calc_out_given_in(
-                        test_case.in_,
-                        test_case.share_reserves,
-                        test_case.bond_reserves,
-                        test_case.token_out,
-                        test_case.fee_percent,
-                        test_case.time_remaining,
-                        test_case.init_share_price,
-                        test_case.share_price,
+                        in_=test_case.in_,
+                        share_reserves=test_case.share_reserves,
+                        bond_reserves=test_case.bond_reserves,
+                        token_out=test_case.token_out,
+                        fee_percent=test_case.fee_percent,
+                        time_remaining=test_case.time_remaining,
+                        init_share_price=test_case.init_share_price,
+                        share_price=test_case.share_price,
                     )
