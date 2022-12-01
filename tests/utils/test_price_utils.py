@@ -405,7 +405,7 @@ class TestPriceUtils(unittest.TestCase):
             # test 5: 0.95 price; 12mo remaining;
             {
                 "price": 0.95,
-                "normalized_days_remaining": 1, # 1 months = 1 year
+                "normalized_days_remaining": 1, # 12 months = 1 year
                 # APR = (1 - 0.95) / 0.95 / 1
                 #     = 0.05263157895
                 "expected_result": 0.05263157895 # just over 5% APR
@@ -433,68 +433,68 @@ class TestPriceUtils(unittest.TestCase):
             )
 
 
-    def calc_spot_price_from_apr(self):
+    def test_calc_spot_price_from_apr(self):
         """Unit tests for the calc_spot_price_from_apr function"""
 
         test_cases = [
             # test 1: 10% apr; 6mo remaining;
             {
-                "apr_decimal": 0.10,
+                "apr_decimal": 0.10, # 10% apr
                 "normalized_days_remaining": 0.5, # 6 months = 0.5 years
-                # APR = (1 - 0.95) / 0.95 / 0.5
+                # price = 1 / (1 + 0.10 * 0.5)
                 #     = 0.1052631579
-                "expected_result": 0.1052631579 # just over 10% APR
+                "expected_result": 0.9523809524 # just over 0.95
             },
-            # test 2: 0.99 price; 6mo remaining;
+            # test 2: 2% apr; 6mo remaining;
             {
-                "price": 0.99,
+                "apr_decimal": 0.02, # 2% apr
                 "normalized_days_remaining": 0.5, # 6 months = 0.5 years
-                # APR = (1 - 0.99) / 0.99 / 0.5
-                #     = 0.0202020202
-                "expected_result": 0.0202020202 # just over 2% APR
+                # price = 1 / (1 + 0.02 * 0.5)
+                #     = 0.9900990099
+                "expected_result": 0.9900990099 # just over 0.99
             },
-            # test 3: 1.00 price; 6mo remaining;
+            # test 3: 0% apr; 6mo remaining;
             {
-                "price": 1.00, # 0% APR
+                "apr_decimal": 0, # 0% apr
                 "normalized_days_remaining": 0.5, # 6 months = 0.5 years
-                # APR = (1 - 1) / 1 / 0.5
-                #     = 0
-                "expected_result": 0 # 0% APR
+                # price = 1 / (1 + 0 * 0.5)
+                #     = 1
+                "expected_result": 1
             },
-            # test 4: 0.95 price; 3mo remaining;
+            # test 4: 21% apr; 3mo remaining;
             {
-                "price": 0.95,
+                "apr_decimal": 0.21, # 21% apr
                 "normalized_days_remaining": 0.25, # 3 months = 0.25 years
-                # APR = (1 - 0.95) / 0.95 / 0.25
+                # price = 1 / (1 + 0.21 * 0.25)
                 #     = 0.2105263158
-                "expected_result": 0.2105263158 # just over 21% APR
+                "expected_result": 0.9501187648 # just over 0.95
             },
-            # test 5: 0.95 price; 12mo remaining;
+            # test 5: 5% apr; 12mo remaining;
             {
-                "price": 0.95,
-                "normalized_days_remaining": 1, # 1 months = 1 year
-                # APR = (1 - 0.95) / 0.95 / 1
+                "apr_decimal": 0.05, # 5% apr
+                "normalized_days_remaining": 1, # 12 months = 1 year
+                # price = 1 / (1 + 0.05 * 1)
                 #     = 0.05263157895
-                "expected_result": 0.05263157895 # just over 5% APR
+                "expected_result": 0.9523809524 # just over 0.95
             },
             # test 6: 0.10 price; 3mo remaining;
             {
-                "price": 0.10, # 0% APR
+                "apr_decimal": 36, # 3600% apr
                 "normalized_days_remaining": 0.25, # 3 months = 0.25 years
-                # APR = (1 - 0.10) / 0.10 / 0.25
+                # price = 1 / (1 + 0 * 0.5)
                 #     = 0
-                "expected_result": 36 # 3600% APR
+                "expected_result": 0.10
             }
         ]
 
         for test_case in test_cases:
-            apr = price_utils.calc_apr_from_spot_price(
-                test_case["price"],
+            spot_price = price_utils.calc_spot_price_from_apr(
+                test_case["apr_decimal"],
                 test_case["normalized_days_remaining"]
             )
 
             np.testing.assert_almost_equal(
-                apr,
+                spot_price,
                 test_case["expected_result"],
                 err_msg="unexpected apr"
             )
@@ -503,10 +503,38 @@ class TestPriceUtils(unittest.TestCase):
     # ### YieldSpace ###
 
 
-    # def calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
+    # def test_calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
     #     """Returns the 'k' constant variable for trade mathematics"""
     #     scale = share_price / init_share_price
     #     total_reserves = bond_reserves + share_price * share_reserves
-    #     return scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (
-    #         time_elapsed
-    #     )
+    #     scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (time_elapsed)
+
+    #     test_cases = [
+    #         # test 1: 500k share_reserves; 500k bond_reserves
+    #         #   1 share price; 1 init_share_price; 3mo elapsed
+    #         {
+    #             "share_reserves": 500000
+    #             "bond_reserves": 500000
+    #             "share_price": 1
+    #             "init_share_price": 1
+    #             "time_elapsed": 0.25
+    #             # APR = (1 - 0.95) / 0.95 / 0.5
+    #             #     = 0.1052631579
+    #             "expected_result": 0.1052631579 # just over 10% APR
+    #         }
+    #     ]
+
+    #     for test_case in test_cases:
+    #         k = price_utils.calc_k_const(
+    #             test_case["share_reserves"],
+    #             test_case["bond_reserves"],
+    #             test_case["share_price"],
+    #             test_case["init_share_price"],
+    #             test_case["time_elapsed"],
+    #         )
+
+    #         np.testing.assert_almost_equal(
+    #             k,
+    #             test_case["expected_result"],
+    #             err_msg="unexpected k"
+    #         )
