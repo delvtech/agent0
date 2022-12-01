@@ -3,7 +3,7 @@ Implements abstract classes that control agent behavior
 """
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypeAlias
 
 import numpy as np
 from numpy.random._generator import Generator
@@ -14,7 +14,9 @@ from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
 
 
-AgentActionType = Literal["close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"]
+AgentActionType: TypeAlias = Literal[
+    "close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"
+]
 TradeDirection = Literal["out", "in"]
 
 

@@ -197,17 +197,17 @@ class Market:
         # open/close_long/short functions so that this isn't necessary
         update_price_and_rate = True
         if agent_action.action_type == "open_long":  # buy to open long
-            market_deltas, agent_deltas = self._open_long(agent_action, "pt")
+            market_deltas, agent_deltas = self._open_long(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "close_long":  # sell to close long
-            market_deltas, agent_deltas = self._close_long(agent_action, "base")
+            market_deltas, agent_deltas = self._close_long(agent_action, "base", stretched_time_remaining)
         elif agent_action.action_type == "open_short":  # sell PT to open short
-            market_deltas, agent_deltas = self._open_short(agent_action, "pt")
+            market_deltas, agent_deltas = self._open_short(agent_action, "pt", time_remaining)
         elif agent_action.action_type == "close_short":  # buy PT to close short
-            market_deltas, agent_deltas = self._close_short(agent_action, "pt")
+            market_deltas, agent_deltas = self._close_short(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "add_liquidity":
-            market_deltas, agent_deltas = self._add_liquidity(agent_action)
+            market_deltas, agent_deltas = self._add_liquidity(agent_action, time_remaining, stretched_time_remaining)
         elif agent_action.action_type == "remove_liquidity":
-            market_deltas, agent_deltas = self._remove_liquidity(agent_action)
+            market_deltas, agent_deltas = self._remove_liquidity(agent_action, time_remaining, stretched_time_remaining)
             update_price_and_rate = False
         else:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
