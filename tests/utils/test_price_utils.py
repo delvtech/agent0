@@ -7,15 +7,10 @@ Testing for the parsing the Market, AMM and Simulator configs from a TOML file
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-from typing import Union
-
-from dataclasses import dataclass, fields, MISSING
 import unittest
 import numpy as np
 
-from elfpy.utils import price as price_utils, time as time_utils
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
-
+from elfpy.utils import price as price_utils
 
 
 class TestPriceUtils(unittest.TestCase):
@@ -84,7 +79,9 @@ class TestPriceUtils(unittest.TestCase):
                 test_case["token_asset_reserves"],
                 test_case["spot_price"]
             )
-            assert liquidity == test_case["expected_result"], f"Calculated liquidity doesn't match the expected amount for these inputs: {test_case}"
+            assert liquidity == test_case["expected_result"], \
+                f"Calculated liquidity doesn't match the expected amount for these inputs: {test_case}"
+
 
     def test_calc_base_asset_reserves(self):
         """Unit tests for the calc_base_asset_reserves function"""
@@ -93,7 +90,7 @@ class TestPriceUtils(unittest.TestCase):
             # test 1: 5% APR; 500k bond reserves; 6mo remaining;
             #   22.186877016851916 t_stretch (targets 5% APR);
             #   1 init share price; 1 share price
-            # 
+            #
             {
                 "apr": 0.05, # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 500000, # PT reserves; y = 500000
@@ -158,7 +155,7 @@ class TestPriceUtils(unittest.TestCase):
                 "expected_result": 340465.1260523857 # token > base reserves
             },
             # test 4: 3% APR; 500k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR); 
+            #   36.97812836141986 t_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
                 "apr": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
@@ -180,7 +177,7 @@ class TestPriceUtils(unittest.TestCase):
                 "expected_result": 790587.9168574204 # token > base reserves (too much? share_price sus)
             },
             # test 5: 1% APR; 200k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR); 
+            #   36.97812836141986 t_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
                 "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
@@ -202,7 +199,7 @@ class TestPriceUtils(unittest.TestCase):
                 "expected_result": 4702414.821874424 # base > token reserves (too much? share_price sus)
             },
             # test 6: 6% APR; 800k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR); 
+            #   36.97812836141986 t_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
                 "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
@@ -243,6 +240,7 @@ class TestPriceUtils(unittest.TestCase):
 
 
     def test_calc_liquidity(self):
+        """Unit tests for the calc_liquidity function"""
 
         test_cases = [
             # test 1: 5M target_liquidity; 1k market price; 5% APR;
@@ -256,8 +254,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 22.186877016851916,
                 "init_share_price": 1, # original share price pool started; u = 1
                 "share_price": 1, # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 2536.3203786253266, # 
-                "expected_token_asset_reserves": 2525.2716119090405, # 
+                "expected_base_asset_reserves": 2536.3203786253266, #
+                "expected_token_asset_reserves": 2525.2716119090405, #
                 "expected_total_liquidity": 5000.0 # ~50:50 reserves ratio
             },
             # test 2: 5M target_liquidity; 1k market price; 2% APR;
@@ -271,8 +269,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 22.186877016851916,
                 "init_share_price": 1, # original share price pool started; u = 1
                 "share_price": 1, # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 3922.192745298014, # 
-                "expected_token_asset_reserves": 1088.5853272490062, # 
+                "expected_base_asset_reserves": 3922.192745298014, #
+                "expected_token_asset_reserves": 1088.5853272490062, #
                 "expected_total_liquidity": 5000.0 # base > token reserves
             },
             # test 3: 5M target_liquidity; 1k market price; 8% APR;
@@ -286,8 +284,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 22.186877016851916,
                 "init_share_price": 1, # original share price pool started; u = 1
                 "share_price": 1, # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 1534.0469740383746, # 
-                "expected_token_asset_reserves": 3604.591147000091, # 
+                "expected_base_asset_reserves": 1534.0469740383746, #
+                "expected_token_asset_reserves": 3604.591147000091, #
                 "expected_total_liquidity": 5000.0 # token > base reserves
             },
             # test 4: 10M target_liquidity; 500 market price; 3% APR;
@@ -301,8 +299,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 36.97812836141986,
                 "init_share_price": 1.5, # original share price when pool started
                 "share_price": 2, # share price of the LP in the yield source
-                "expected_base_asset_reserves": 12287.029415142337, # 
-                "expected_token_asset_reserves": 7770.817864244096, # 
+                "expected_base_asset_reserves": 12287.029415142337, #
+                "expected_token_asset_reserves": 7770.817864244096, #
                 "expected_total_liquidity": 20000.0 # base > token reserves?
             },
             # test 5: 10M target_liquidity; 500 market price; 1% APR;
@@ -316,8 +314,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 36.97812836141986,
                 "init_share_price": 1.5, # original share price when pool started
                 "share_price": 2, # share price of the LP in the yield source
-                "expected_base_asset_reserves": 19186.027487682495, # 
-                "expected_token_asset_reserves": 816.0074435982989, # 
+                "expected_base_asset_reserves": 19186.027487682495, #
+                "expected_token_asset_reserves": 816.0074435982989, #
                 "expected_total_liquidity": 20000.0 # base > token reserves?
             },
             # test 6: 10M target_liquidity; 500 market price; 6% APR;
@@ -331,8 +329,8 @@ class TestPriceUtils(unittest.TestCase):
                 "time_stretch": 36.97812836141986,
                 "init_share_price": 1.5, # original share price when pool started
                 "share_price": 2, # share price of the LP in the yield source
-                "expected_base_asset_reserves": 5195.968749573127, # 
-                "expected_token_asset_reserves": 15026.091719183272, # 
+                "expected_base_asset_reserves": 5195.968749573127, #
+                "expected_token_asset_reserves": 15026.091719183272, #
                 "expected_total_liquidity": 20000.0 # base > token reserves?
             }
         ]

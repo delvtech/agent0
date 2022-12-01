@@ -7,14 +7,9 @@ Testing for the parsing of the Market, AMM and Simulator configs from a TOML fil
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-from typing import Union
-
-from dataclasses import dataclass, fields, MISSING
 import unittest
-import numpy as np
 
 from elfpy.utils import parse_config as config_utils
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 
 class TestParseSimulationConfig(unittest.TestCase):
     """Unit tests for the parse_simulation_config function"""
@@ -26,14 +21,14 @@ class TestParseSimulationConfig(unittest.TestCase):
 
         # manually set Market config to be the same as the TOML file
         market = config_utils.MarketConfig(
-            min_target_liquidity=1000000.0, 
-            max_target_liquidity=10000000.0, 
-            min_target_volume=0.001, 
-            max_target_volume=0.01, 
-            min_vault_age=0, 
-            max_vault_age=1, 
-            min_vault_apy=0.001, 
-            max_vault_apy=0.9, 
+            min_target_liquidity=1000000.0,
+            max_target_liquidity=10000000.0,
+            min_target_volume=0.001,
+            max_target_volume=0.01,
+            min_vault_age=0,
+            max_vault_age=1,
+            min_vault_apy=0.001,
+            max_vault_apy=0.9,
             base_asset_price=2500.0
             )
 
@@ -62,3 +57,4 @@ class TestParseSimulationConfig(unittest.TestCase):
         assert (market == config.market), "Loaded Market TOML data doesn't match the hardcoded data"
         assert (amm == config.amm), "Loaded AMM TOML data doesn't match the hardcoded data"
         assert (simulator == config.simulator), "Loaded Simulator TOML data doesn't match the hardcoded data"
+        
