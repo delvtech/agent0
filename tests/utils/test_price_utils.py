@@ -1,5 +1,5 @@
 """
-Testing for the parsing the Market, AMM and Simulator configs from a TOML file
+Testing for price utilities found in src/elfpy/utils/price.py
 """
 
 # pylint: disable=too-many-lines
@@ -14,7 +14,7 @@ from elfpy.utils import price as price_utils
 
 
 class TestPriceUtils(unittest.TestCase):
-    """Unit tests for the parse_simulation_config function"""
+    """Unit tests for price utilities"""
 
     def test_calc_total_liquidity_from_reserves_and_price(self):
         """
