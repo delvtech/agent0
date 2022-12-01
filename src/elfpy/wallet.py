@@ -16,7 +16,7 @@ class Wallet:
     # pylint: disable=duplicate-code
 
     # fungible
-    address: str
+    address: int
     base_in_wallet: float
     lp_in_wallet: float = 0  # they're fungible!
     fees_paid: float = 0
