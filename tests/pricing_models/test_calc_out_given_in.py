@@ -1076,286 +1076,166 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 else:
                     raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}')
 
-    # def test_calc_out_given_in_failure(self):
-    #    """Failure tests for calc_out_given_in
-    #    TODO: test that an error occurs without checking the precise message
-    #    """
-    #    pricing_models = [ElementPricingModel(False), HyperdrivePricingModel(False)]
+    def test_calc_out_given_in_failure(self):
+        """Failure tests for calc_out_given_in"""
+        pricing_models = [ElementPricingModel(False), HyperdrivePricingModel(False)]
 
-    #    # Failure test cases.
-    #    test_cases = [
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=-1,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not -1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not -1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=0,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not 0!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not 0!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=-1,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not -1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not -1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=0,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not 0!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected share_reserves > 0, not 0!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=-1,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not -1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not -1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=0,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not 0!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected bond_reserves > 0, not 0!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=-1,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not -1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not -1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=1.1,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not 1.1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not 1.1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=-1,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not -1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not -1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=1,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not 1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not 1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=1.1,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not 1.1!",
-    #            "pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not 1.1!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="fyt",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not fyt!',
-    #            'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not fyt!',
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=10_000_000,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="pt",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1,
-    #            ),
-    #            "pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not <class 'complex'>!",
-    #            "pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not <class 'complex'>!",
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=2,
-    #                init_share_price=0,
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1, not"
-    #                " share_price=2 and init_share_price=0!"
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
-    #                " share_price=2 and init_share_price=0!"
-    #            ),
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=1,
-    #                init_share_price=1.5,
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1, not"
-    #                " share_price=1 and init_share_price=1.5!"
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
-    #                " share_price=1 and init_share_price=1.5!"
-    #            ),
-    #        ),
-    #        (
-    #            TestCaseCalcOutGivenInFailure(
-    #                in_=100,
-    #                share_reserves=100_000,
-    #                bond_reserves=1_000_000,
-    #                token_out="base",
-    #                fee_percent=0.01,
-    #                time_remaining=0.25,
-    #                share_price=0,
-    #                init_share_price=1.5,
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1, not"
-    #                " share_price=0 and init_share_price=1.5!"
-    #            ),
-    #            (
-    #                "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
-    #                " share_price=0 and init_share_price=1.5!"
-    #            ),
-    #        ),
-    #    ]
+        # Failure test cases.
+        test_cases = [
+            TestCaseCalcOutGivenInFailure(
+                in_=-1,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=0,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=-1,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=-1,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=-1,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=1.1,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=-1,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=1,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=1.1,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="fyt",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=10_000_000,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="pt",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=2,
+                init_share_price=0,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=1,
+                init_share_price=1.5,
+            ),
+            TestCaseCalcOutGivenInFailure(
+                in_=100,
+                share_reserves=100_000,
+                bond_reserves=1_000_000,
+                token_out="base",
+                fee_percent=0.01,
+                time_remaining=0.25,
+                share_price=0,
+                init_share_price=1.5,
+            ),
+        ]
 
-    #    # Iterate over all of the test cases and verify that the pricing model
-    #    # raises the expected AssertionError for each test case.
-    #    for test_case, element_error_message, hyperdrive_error_message in test_cases:
-    #        for pricing_model in pricing_models:
-    #            model_name = pricing_model.model_name()
-    #            if model_name == "Element":
-    #                with self.assertRaisesRegex(AssertionError, element_error_message):
-    #                    pricing_model.calc_out_given_in(
-    #                        test_case.in_,
-    #                        test_case.share_reserves,
-    #                        test_case.bond_reserves,
-    #                        test_case.token_out,
-    #                        test_case.fee_percent,
-    #                        test_case.time_remaining,
-    #                        test_case.init_share_price,
-    #                        test_case.share_price,
-    #                    )
-    #            elif model_name == "Hyperdrive":
-    #                with self.assertRaisesRegex(AssertionError, hyperdrive_error_message):
-    #                    pricing_model.calc_out_given_in(
-    #                        test_case.in_,
-    #                        test_case.share_reserves,
-    #                        test_case.bond_reserves,
-    #                        test_case.token_out,
-    #                        test_case.fee_percent,
-    #                        test_case.time_remaining,
-    #                        test_case.init_share_price,
-    #                        test_case.share_price,
-    #                    )
-    #            else:
-    #                raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}!')
+        # Iterate over all of the test cases and verify that the pricing model
+        # raises an AssertionError for each test case.
+        for test_case in test_cases:
+            for pricing_model in pricing_models:
+                with self.assertRaises(AssertionError):
+                    pricing_model.calc_out_given_in(
+                        test_case.in_,
+                        test_case.share_reserves,
+                        test_case.bond_reserves,
+                        test_case.token_out,
+                        test_case.fee_percent,
+                        test_case.time_remaining,
+                        test_case.init_share_price,
+                        test_case.share_price,
+                    )
