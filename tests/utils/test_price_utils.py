@@ -503,38 +503,75 @@ class TestPriceUtils(unittest.TestCase):
     # ### YieldSpace ###
 
 
-    # def test_calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
-    #     """Returns the 'k' constant variable for trade mathematics"""
-    #     scale = share_price / init_share_price
-    #     total_reserves = bond_reserves + share_price * share_reserves
-    #     scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (time_elapsed)
+    def test_calc_k_const(self):
+        """Unit tests for calc_k_const function"""
 
-    #     test_cases = [
-    #         # test 1: 500k share_reserves; 500k bond_reserves
-    #         #   1 share price; 1 init_share_price; 3mo elapsed
-    #         {
-    #             "share_reserves": 500000
-    #             "bond_reserves": 500000
-    #             "share_price": 1
-    #             "init_share_price": 1
-    #             "time_elapsed": 0.25
-    #             # APR = (1 - 0.95) / 0.95 / 0.5
-    #             #     = 0.1052631579
-    #             "expected_result": 0.1052631579 # just over 10% APR
-    #         }
-    #     ]
+        test_cases = [
+            # test 1: 500k share_reserves; 500k bond_reserves
+            #   1 share price; 1 init_share_price; 3mo elapsed
+            {
+                "share_reserves": 500000, # x = 500000
+                "bond_reserves": 500000, # y = 500000
+                "share_price": 1, # c = 1
+                "init_share_price": 1, # u = 1
+                "time_elapsed": 0.25, # t = 0.25
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 1/1 * (1*500000)**0.25 + (2*500000+1*500000)**0.25
+                #     = 61.587834600530776
+                "expected_result": 61.587834600530776
+            },
+            # test 2: 500k share_reserves; 500k bond_reserves
+            #   1 share price; 1 init_share_price; 12mo elapsed
+            {
+                "share_reserves": 500000, # x = 500000
+                "bond_reserves": 500000, # y = 500000
+                "share_price": 1, # c = 1
+                "init_share_price": 1, # u = 1
+                "time_elapsed": 1, # t = 1
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 1/1 * (1*500000)**1 + (2*500000+1*500000)**1
+                #     = 2000000
+                "expected_result": 2000000
+            },
+            # test 3: 5M share_reserves; 5M bond_reserves
+            #   2 share price; 1.5 init_share_price; 6mo elapsed
+            {
+                "share_reserves": 5000000, # x = 5000000
+                "bond_reserves": 5000000, # y = 5000000
+                "share_price": 2, # c = 2
+                "init_share_price": 1.5, # u = 1.5
+                "time_elapsed": 0.50, # t = 0.50
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 1/1 * (1*5000000)**0.50 + (2*5000000+1*5000000)**0.50
+                #     = 61.587834600530776
+                "expected_result": 8123.619671700687
+            },
+            # test 1: 5M share_reserves; 5M bond_reserves
+            #   2 share price; 1.5 init_share_price; 3mo elapsed
+            {
+                "share_reserves": 5000000, # x = 5000000
+                "bond_reserves": 5000000, # y = 5000000
+                "share_price": 2, # c = 2
+                "init_share_price": 1.5, # u = 1.5
+                "time_elapsed": 0.25, # t = 0.25
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 2/1.5 * (1*5000000)**0.25 + (2*5000000+1*5000000)**0.25
+                #     = 61.587834600530776
+                "expected_result": 136.64970645711588
+            },
+        ]
 
-    #     for test_case in test_cases:
-    #         k = price_utils.calc_k_const(
-    #             test_case["share_reserves"],
-    #             test_case["bond_reserves"],
-    #             test_case["share_price"],
-    #             test_case["init_share_price"],
-    #             test_case["time_elapsed"],
-    #         )
+        for test_case in test_cases:
+            k = price_utils.calc_k_const(
+                test_case["share_reserves"],
+                test_case["bond_reserves"],
+                test_case["share_price"],
+                test_case["init_share_price"],
+                test_case["time_elapsed"],
+            )
 
-    #         np.testing.assert_almost_equal(
-    #             k,
-    #             test_case["expected_result"],
-    #             err_msg="unexpected k"
-    #         )
+            np.testing.assert_almost_equal(
+                k,
+                test_case["expected_result"],
+                err_msg="unexpected k"
+            )
