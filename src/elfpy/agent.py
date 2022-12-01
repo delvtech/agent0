@@ -17,6 +17,7 @@ from elfpy.wallet import Wallet
 AgentActionType = Literal["close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"]
 TradeDirection = Literal["out", "in"]
 
+
 # TODO: The agent class has too many instance attributes (8/7)
 #     we should move some, like budget and wallet_address, into the agent wallet and out of User
 class Agent:
@@ -71,7 +72,9 @@ class Agent:
                     output_string += f" {key}: {float_to_string(value)}"
             print(output_string)
 
-    def create_agent_action(self, action_type: AgentActionType, trade_amount: float, mint_time: float=0) -> AgentAction:
+    def create_agent_action(
+        self, action_type: AgentActionType, trade_amount: float, mint_time: float = 0
+    ) -> AgentAction:
         """Instantiate a agent action"""
         agent_action = self.AgentAction(
             # these two variables are required to be set by the strategy
