@@ -3,13 +3,13 @@ Market simulators store state information when interfacing AMM pricing models wi
 """
 
 from dataclasses import dataclass, field
+from typing import Literal, TypeAlias
 
 import numpy as np
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, TradeResult
 from elfpy.token import TokenType
 
 import elfpy.utils.time as time_utils
-from elfpy.agent import Agent, AgentActionType, TradeDirection
 import elfpy.utils.price as price_utils
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
@@ -20,6 +20,36 @@ from elfpy.wallet import Wallet
 #     reserves = (in_reserves, out_reserves)
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
+
+TradeDirection = Literal["out", "in"]
+MarketActionType: TypeAlias = Literal[
+    "close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"
+]
+
+
+@dataclass
+class MarketAction:
+    """market action specification"""
+
+    # these two variables are required to be set by the strategy
+    action_type: MarketActionType
+    trade_amount: float
+    # wallet_address is always set automatically by the basic agent class
+    wallet_address: int
+    # mint time is set only for trades that act on existing positions (close long or close short)
+    mint_time: float = 0
+
+    def print_description_string(self) -> None:
+        """Print a description of the Action"""
+        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        for key, value in self.__dict__.items():
+            if key == "action_type":
+                output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
+            elif key in ["trade_amount", "mint_time"]:
+                output_string += f" {key}: {float_to_string(value)}"
+            elif key not in ["wallet_address", "agent"]:
+                output_string += f" {key}: {float_to_string(value)}"
+        print(output_string)
 
 
 @dataclass(frozen=False)
@@ -134,7 +164,7 @@ class Market:
         self.total_supply: float = self.share_reserves + self.bond_reserves
         self.verbose: bool = verbose
 
-    def check_action_type(self, action_type: AgentActionType) -> None:
+    def check_action_type(self, action_type: MarketActionType) -> None:
         """Ensure that the agent action is an allowed action for this market
         Arguments
         ---------
@@ -164,7 +194,7 @@ class Market:
                 f" model={self.pricing_model.model_name()}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action: Agent.AgentAction) -> Wallet:
+    def trade_and_update(self, agent_action: MarketAction) -> Wallet:
         """
         Execute a trade in the simulated market.
 
@@ -351,7 +381,7 @@ class Market:
         self.time += delta_time
 
     def _open_short(
-        self, agent_action: Agent.AgentAction, token_out: TokenType, time_remaining: float
+        self, agent_action: MarketAction, token_out: TokenType, time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -398,7 +428,7 @@ class Market:
         return market_deltas, wallet_deltas
 
     def _close_short(
-        self, agent_action: Agent.AgentAction, token_in: TokenType, stretched_time_remaining: float
+        self, agent_action: MarketAction, token_in: TokenType, stretched_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -452,7 +482,7 @@ class Market:
         return market_deltas, agent_deltas
 
     def _open_long(
-        self, agent_action: Agent.AgentAction, token_out: TokenType, stretched_time_remaining: float
+        self, agent_action: MarketAction, token_out: TokenType, stretched_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -498,7 +528,7 @@ class Market:
         return market_deltas, agent_deltas
 
     def _close_long(
-        self, agent_action: Agent.AgentAction, token_out: TokenType, stretched_time_remaining: float
+        self, agent_action: MarketAction, token_out: TokenType, stretched_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -540,7 +570,7 @@ class Market:
         return market_deltas, agent_deltas
 
     def _add_liquidity(
-        self, agent_action: Agent.AgentAction, time_remaining: float, stretched_time_remaining: float
+        self, agent_action: MarketAction, time_remaining: float, stretched_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is added
@@ -575,7 +605,7 @@ class Market:
         return market_deltas, agent_deltas
 
     def _remove_liquidity(
-        self, agent_action: Agent.AgentAction, time_remaining: float, stretched_time_remaining: float
+        self, agent_action: MarketAction, time_remaining: float, stretched_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed

@@ -2,22 +2,14 @@
 Implements abstract classes that control agent behavior
 """
 
-from dataclasses import dataclass
-from typing import Literal, TypeAlias
 
 import numpy as np
 from numpy.random._generator import Generator
-from elfpy.markets import Market
+from elfpy.markets import Market, MarketAction, MarketActionType
 
 from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
-
-
-AgentActionType: TypeAlias = Literal[
-    "close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"
-]
-TradeDirection = Literal["out", "in"]
 
 
 # TODO: The agent class has too many instance attributes (8/7)
@@ -47,38 +39,11 @@ class Agent:
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
 
-    # TODO: this is really a MarketAction.  should refactor this to live under the Market.
-    # Agent's don't need to know about markets, remove this coupling!
-    @dataclass
-    class AgentAction:
-        """agent action specification"""
-
-        # these two variables are required to be set by the strategy
-        action_type: AgentActionType
-        trade_amount: float
-        # wallet_address is always set automatically by the basic agent class
-        wallet_address: int
-
-        # mint time is set only for trades that act on existing positions (close long or close short)
-        mint_time: float = 0
-
-        def print_description_string(self) -> None:
-            """Print a description of the Action"""
-            output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
-            for key, value in self.__dict__.items():
-                if key == "action_type":
-                    output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
-                elif key in ["trade_amount", "mint_time"]:
-                    output_string += f" {key}: {float_to_string(value)}"
-                elif key not in ["wallet_address", "agent"]:
-                    output_string += f" {key}: {float_to_string(value)}"
-            print(output_string)
-
     def create_agent_action(
-        self, action_type: AgentActionType, trade_amount: float, mint_time: float = 0
-    ) -> AgentAction:
+        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+    ) -> MarketAction:
         """Instantiate a agent action"""
-        agent_action = self.AgentAction(
+        agent_action = MarketAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
             trade_amount=trade_amount,
@@ -88,7 +53,7 @@ class Agent:
         )
         return agent_action
 
-    def action(self) -> list[AgentAction]:
+    def action(self) -> list[MarketAction]:
         """Specify action from the policy"""
         raise NotImplementedError
 
@@ -181,9 +146,9 @@ class Agent:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def get_liquidation_trades(self) -> list[AgentAction]:
+    def get_liquidation_trades(self) -> list[MarketAction]:
         """Get final trades for liquidating positions"""
-        action_list: list[Agent.AgentAction] = []
+        action_list: list[MarketAction] = []
         for mint_time, position in self.wallet.token_in_protocol.items():
             if self.verbose:
                 print(
