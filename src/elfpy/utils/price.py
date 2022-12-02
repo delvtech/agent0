@@ -218,7 +218,7 @@ def calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, t
         Original share price when the pool started
     time_elapsed : float
         Amount of time that has elapsed in the current market, in yearfracs
-    
+   
     Returns
     -------
     float
