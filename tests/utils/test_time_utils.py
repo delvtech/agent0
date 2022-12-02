@@ -7,8 +7,9 @@ Testing for time utilities found in src/elfpy/utils/time.py
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
+import datetime
 import unittest
-import numpy as np
+import pytz
 
 from elfpy.utils import time as time_utils
 
@@ -16,33 +17,53 @@ from elfpy.utils import time as time_utils
 class TestTimeUtils(unittest.TestCase):
     """Unit tests for the parse_simulation_config function"""
 
-    def test_current_datetime():
-        """
-        Test the current_datetime function
-        """
-        return datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
+    def test_current_datetime(self):
+        """Test the current_datetime function"""
+
+        now = datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
+        test_time = time_utils.current_datetime()
+
+        assert now < test_time < (now + datetime.timedelta(milliseconds=100)), \
+            'Returned date is different than datetime.datetime.now()'
 
 
-    # def block_number_to_datetime(start_time, block_number, time_between_blocks):
-    #     """
-    #     Converts the current block number to a datetime based on the start datetime of the simulation
+    def test_block_number_to_datetime(self):
+        """Test the block_number_to_datetime function"""
 
-    #     Arguments
-    #     ---------
-    #     start_time : datetime
-    #         Timestamp at which the simulation started
-    #     block_number : int
-    #         Number of blocks since the simulation started
-    #     time_between_blocks : float
-    #         Number of seconds between blocks
+        start_time = datetime.datetime.strptime('28/03/1990 05:30:42', '%d/%m/%Y %H:%M:%S')
 
-    #     Returns
-    #     -------
-    #     datetime
-    #         Timestamp at which the provided block number was (or will be) validated
-    #     """
-    #     delta_time = datetime.timedelta(seconds=block_number * time_between_blocks)
-    #     return start_time + delta_time
+        test_cases = [
+            # test 1: block number 0 (at start time)
+            {
+                "start_time": start_time, # arbitrarily chosen date
+                "block_number": 0, # first block, should be at start_time
+                "time_between_blocks": 12, # time in seconds
+                "expected_result": start_time
+            },
+            # test 2: block number 2628000 (1 year after start)
+            {
+                "start_time": start_time, # arbitrarily chosen date
+                "block_number": 365*24*60*60/12, # block after 1 year
+                "time_between_blocks": 12, # time in seconds
+                "expected_result": start_time + datetime.timedelta(days=365)
+            },
+            # test 3: block number 69420
+            {
+                "start_time": start_time, # arbitrarily chosen date
+                "block_number": 69420,
+                "time_between_blocks": 12, # time in seconds
+                "expected_result": start_time + datetime.timedelta(seconds=69420*12)
+            },
+        ]
+
+        for test_case in test_cases:
+            block_time = time_utils.block_number_to_datetime(
+                test_case["start_time"],
+                test_case["block_number"],
+                test_case["time_between_blocks"]
+            )
+
+        assert block_time == test_case["expected_result"], 'unexpected time value'
 
 
     # def yearfrac_as_datetime(start_time, yearfrac):
@@ -169,7 +190,7 @@ class TestTimeUtils(unittest.TestCase):
     # def days_to_time_remaining(days_remaining, time_stretch=1, normalizing_constant=365):
     #     """
     #     Converts remaining pool length in days to normalized and stretched time
-       
+
     #     Arguments
     #     ---------
     #     days_remaining : float
@@ -194,7 +215,7 @@ class TestTimeUtils(unittest.TestCase):
     # def time_to_days_remaining(time_remaining, time_stretch=1, normalizing_constant=365):
     #     """
     #     Converts normalized and stretched time remaining in pool to days
-       
+
     #     Arguments
     #     ---------
     #     time_remaining : float
