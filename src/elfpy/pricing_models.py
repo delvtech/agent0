@@ -4,6 +4,10 @@ Pricing models implement automated market makers (AMMs)
 TODO: rewrite all functions to have typed inputs
 """
 
+
+from abc import ABC, abstractmethod
+from typing import NamedTuple
+from elfpy.token import TokenType
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
@@ -22,7 +26,19 @@ import elfpy.utils.time as time_utils
 # pylint: disable=too-many-locals
 
 
-class PricingModel:
+class TradeResult(NamedTuple):
+    """
+    Result from a calc_out_given_in or calc_in_given_out.  The values are the amount of asset required
+    for the trade, either in or out.  Fee is the amount of fee collected, if any.
+    """
+
+    without_fee_or_slippage: float
+    with_fee: float
+    without_fee: float
+    fee: float
+
+
+class PricingModel(ABC):
     """
     Contains functions for calculating AMM variables
 
@@ -42,41 +58,102 @@ class PricingModel:
         """
         self.verbose = False if verbose is None else verbose
 
+    @abstractmethod
     def calc_in_given_out(
         self,
-        out,
-        share_reserves,
-        bond_reserves,
-        token_in,
-        fee_percent,
-        time_remaining,
-        init_share_price,
-        share_price,
-    ):
+        out: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_in: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price: float,
+        share_price: float,
+    ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
+    @abstractmethod
     def calc_out_given_in(
         self,
-        in_,
-        share_reserves,
-        bond_reserves,
-        token_out,
-        fee_percent,
-        time_remaining,
-        init_share_price,
-        share_price,
-    ):
+        in_: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_out: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price: float,
+        share_price: float,
+    ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
-    def model_name(self):
+    @abstractmethod
+    def calc_lp_out_given_tokens_in(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        """
+        Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def calc_lp_in_given_tokens_out(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        """
+        Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def calc_tokens_out_given_lp_in(
+        self,
+        lp_in: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        """Calculate how many tokens should be returned for a given lp addition"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def model_name(self) -> str:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
     def calc_spot_price_from_reserves(
-        self, share_reserves, bond_reserves, init_share_price, share_price, time_remaining
-    ):
+        self,
+        share_reserves: float,
+        bond_reserves: float,
+        init_share_price: float,
+        share_price: float,
+        time_remaining: float,
+    ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
 
@@ -115,13 +192,13 @@ class PricingModel:
 
     def calc_apr_from_reserves(
         self,
-        share_reserves,
-        bond_reserves,
-        time_remaining,
-        time_stretch,
-        init_share_price=1,
-        share_price=1,
-    ):
+        share_reserves: float,
+        bond_reserves: float,
+        time_remaining: float,
+        time_stretch: float,
+        init_share_price: float = 1,
+        share_price: float = 1,
+    ) -> float:
         # TODO: Update this comment so that it matches the style of the other comments.
         """
         Returns the apr given reserve amounts
@@ -149,20 +226,65 @@ class ElementPricingModel(PricingModel):
     Does not use the Yield Bearing Vault `init_share_price` (μ) and `share_price` (c) variables.
     """
 
-    def model_name(self):
+    def calc_lp_out_given_tokens_in(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def calc_lp_in_given_tokens_out(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def calc_tokens_out_given_lp_in(
+        self,
+        lp_in: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def model_name(self) -> str:
         return "Element"
 
     def calc_in_given_out(
         self,
-        out,
-        share_reserves,
-        bond_reserves,
-        token_in,
-        fee_percent,
-        time_remaining,
-        init_share_price=1,
-        share_price=1,
-    ):
+        out: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_in: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price=1.0,
+        share_price=1.0,
+    ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -346,19 +468,19 @@ class ElementPricingModel(PricingModel):
             without_fee >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
 
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
+        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_out_given_in(
         self,
-        in_,
-        share_reserves,
-        bond_reserves,
-        token_out,
-        fee_percent,
-        time_remaining,
-        init_share_price=1,
-        share_price=1,
-    ):
+        in_: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_out: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price: float = 1.0,
+        share_price: float = 1.0,
+    ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -537,7 +659,7 @@ class ElementPricingModel(PricingModel):
             with_fee >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
 
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
+        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
 
 class HyperdrivePricingModel(PricingModel):
@@ -548,22 +670,22 @@ class HyperdrivePricingModel(PricingModel):
     enable the base reserves to be deposited into yield bearing vaults
     """
 
-    def model_name(self):
+    def model_name(self) -> str:
         return "Hyperdrive"
 
     def calc_lp_out_given_tokens_in(
         self,
-        d_base,
-        share_reserves,
-        bond_reserves,
-        share_buffer,
-        init_share_price,
-        share_price,
-        lp_reserves,
-        rate,
-        time_remaining,
-        stretched_time_remaining,
-    ):
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -630,17 +752,17 @@ class HyperdrivePricingModel(PricingModel):
 
     def calc_lp_in_given_tokens_out(
         self,
-        d_base,
-        share_reserves,
-        bond_reserves,
-        share_buffer,
-        init_share_price,
-        share_price,
-        lp_reserves,
-        rate,
-        time_remaining,
-        stretched_time_remaining,
-    ):
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
         .. math::
@@ -679,17 +801,17 @@ class HyperdrivePricingModel(PricingModel):
 
     def calc_tokens_out_given_lp_in(
         self,
-        lp_in,
-        share_reserves,
-        bond_reserves,
-        share_buffer,
-        init_share_price,
-        share_price,
-        lp_reserves,
-        rate,
-        time_remaining,
-        stretched_time_remaining,
-    ):
+        lp_in: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
         assert (
@@ -742,15 +864,15 @@ class HyperdrivePricingModel(PricingModel):
     # pylint: disable=too-many-locals
     def calc_in_given_out(
         self,
-        out,
-        share_reserves,
-        bond_reserves,
-        token_in,
-        fee_percent,
-        time_remaining,
-        init_share_price,
-        share_price,
-    ):
+        out: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_in: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price: float,
+        share_price: float,
+    ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -987,7 +1109,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
 
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
+        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
     # TODO: The high slippage tests in tests/test_pricing_model.py should
     # arguably have much higher slippage. This is something we should
@@ -996,15 +1118,15 @@ class HyperdrivePricingModel(PricingModel):
     # pylint: disable=too-many-locals
     def calc_out_given_in(
         self,
-        in_,
-        share_reserves,
-        bond_reserves,
-        token_out,
-        fee_percent,
-        time_remaining,
-        init_share_price,
-        share_price,
-    ):
+        in_: float,
+        share_reserves: float,
+        bond_reserves: float,
+        token_out: TokenType,
+        fee_percent: float,
+        time_remaining: float,
+        init_share_price: float,
+        share_price: float,
+    ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -1212,4 +1334,4 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
 
-        return (without_fee_or_slippage, with_fee, without_fee, fee)
+        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)

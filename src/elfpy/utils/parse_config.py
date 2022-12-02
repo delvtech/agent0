@@ -4,18 +4,17 @@ Utilities for parsing & loading user config TOML files
 TODO: change floor_fee to be a decimal like min_fee and max_fee
 """
 
-# pylint: disable=too-many-instance-attributes
-
 
 from dataclasses import dataclass, field
-
-
 import tomli
 
 
 @dataclass
 class MarketConfig:
     """config parameters specific to the market"""
+
+    # pylint: disable=too-many-instance-attributes
+    # dataclasses can have many attributes
 
     min_target_liquidity: float = field(default=1e6, metadata={"hint": "shares"})
     max_target_liquidity: float = field(default=10e6, metadata={"hint": "shares"})
@@ -44,6 +43,9 @@ class AMMConfig:
 class SimulatorConfig:
     """config parameters specific to the simulator"""
 
+    # pylint: disable=too-many-instance-attributes
+    # dataclasses can have many attributes
+
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
@@ -57,6 +59,14 @@ class SimulatorConfig:
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
+    target_liquidity: float = field(default=0, metadata={"hint": ""})
+    target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
+    init_pool_apy: float = field(default=0, metadata={"hint": "initial pool apy"})
+    fee_percent: float = field(default=0, metadata={"hint": ""})
+    init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
+    vault_apy: list[float] = field(
+        default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
+    )
 
 
 @dataclass

@@ -1,24 +1,56 @@
 """
 Market simulators store state information when interfacing AMM pricing models with users
-
-TODO: rewrite all functions to have typed inputs
 """
 
+from __future__ import annotations
 from dataclasses import dataclass, field
+from typing import Literal, TypeAlias
 
 import numpy as np
+from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, TradeResult
+from elfpy.token import TokenType
 
 import elfpy.utils.time as time_utils
-from elfpy.user import AgentWallet
 import elfpy.utils.price as price_utils
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
+from elfpy.wallet import Wallet
 
 # Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
 #     reserves = (in_reserves, out_reserves)
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
+
+TradeDirection = Literal["out", "in"]
+MarketActionType: TypeAlias = Literal[
+    "close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"
+]
+
+
+@dataclass
+class MarketAction:
+    """market action specification"""
+
+    # these two variables are required to be set by the strategy
+    action_type: MarketActionType
+    trade_amount: float
+    # wallet_address is always set automatically by the basic agent class
+    wallet_address: int
+    # mint time is set only for trades that act on existing positions (close long or close short)
+    mint_time: float = 0
+
+    def __str__(self):
+        """Print a description of the Action"""
+        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        for key, value in self.__dict__.items():
+            if key == "action_type":
+                output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
+            elif key in ["trade_amount", "mint_time"]:
+                output_string += f" {key}: {float_to_string(value)}"
+            elif key not in ["wallet_address", "agent"]:
+                output_string += f" {key}: {float_to_string(value)}"
+        return output_string
 
 
 @dataclass(frozen=False)
@@ -34,13 +66,13 @@ class MarketDeltas:
     d_share_buffer: float = 0
     d_bond_buffer: float = 0
     d_lp_reserves: float = 0
-    d_lp_reserves_history: list = field(default_factory=list)
+    d_lp_reserves_history: list[float] = field(default_factory=list)
     d_base_asset_slippage: float = 0
     d_token_asset_slippage: float = 0
     d_share_fee: float = 0
-    d_share_fee_history: dict = field(default_factory=dict)
+    d_share_fee_history: dict[float, float] = field(default_factory=dict)
     d_token_fee: float = 0
-    d_token_fee_history: dict = field(default_factory=dict)
+    d_token_fee_history: dict[float, float] = field(default_factory=dict)
     d_base_asset_orders: int = 0
     d_token_asset_orders: int = 0
     d_base_asset_volume: float = 0
@@ -82,55 +114,62 @@ class Market:
 
     def __init__(
         self,
-        fee_percent,
-        token_duration,
-        pricing_model,
-        share_reserves=0,
-        bond_reserves=0,
-        lp_reserves=0,
-        time_stretch_constant=1,
-        init_share_price=1,
-        share_price=1,
-        verbose=False,
+        fee_percent: float = 0,
+        token_duration: float = 1,
+        # TODO: remove this, pass to methods instead
+        pricing_model: ElementPricingModel | HyperdrivePricingModel | None = None,
+        share_reserves: float = 0,
+        bond_reserves: float = 0,
+        lp_reserves: float = 0,
+        time_stretch_constant: float = 1,
+        init_share_price: float = 1,
+        share_price: float = 1,
+        verbose: bool = False,
     ):
-        self.time = 0  # time in year fractions
-        self.share_reserves = share_reserves  # z
-        self.bond_reserves = bond_reserves  # y
-        self.share_buffer = 0
-        self.bond_buffer = 0
-        self.lp_reserves = lp_reserves
-        self.lp_reserves_history = []  # list trades by user and time, initialize as empty list to allow appending
-        self.fee_percent = fee_percent  # g
-        self.time_stretch_constant = time_stretch_constant
-        self.init_share_price = init_share_price  # u normalizing constant
-        self.share_price = share_price  # c
-        self.token_duration = token_duration  # how long does a token last before expiry
-        self.pricing_model = pricing_model
+        self.time: float = 0  # time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.share_reserves: float = share_reserves  # z
+        self.bond_reserves: float = bond_reserves  # y
+        self.share_buffer: float = 0
+        self.bond_buffer: float = 0
+        self.lp_reserves: float = lp_reserves
+        # TODO: why is this a list when other histories are a dict?  we should make this one match the
+        # others. honestly we should make history dict type if this is a common pattern
+        self.lp_reserves_history: list[
+            float
+        ] = []  # list trades by user and time, initialize as empty list to allow appending
+        self.fee_percent: float = fee_percent  # g
+        self.time_stretch_constant: float = time_stretch_constant
+        self.init_share_price: float = init_share_price  # u normalizing constant
+        self.share_price: float = share_price  # c
+        self.token_duration: float = token_duration  # how long does a token last before expiry
+
         # TODO: It would be good to remove the tight coupling between pricing models and markets.
         #       For now, it makes sense to restrict the behavior at the market level since
         #       previous versions of Element didn't allow for shorting (despite the fact that
         #       their pricing models can support shorting).
-        self.base_asset_orders = 0
-        self.token_asset_orders = 0
-        self.base_asset_volume = 0
-        self.token_asset_volume = 0
-        self.cum_token_asset_slippage = 0
-        self.cum_base_asset_slippage = 0
-        self.share_fees = 0
-        self.share_fee_history = {}
-        self.token_fees = 0
-        self.token_fee_history = {}
-        self.spot_price = 0
-        self.rate = 0
-        self.total_supply = self.share_reserves + self.bond_reserves
-        self.verbose = verbose
+        self.pricing_model: ElementPricingModel | HyperdrivePricingModel = pricing_model
 
-    def check_action_type(self, action_type):
-        """Ensure that the user action is an allowed action for this market
+        self.base_asset_orders: int = 0
+        self.token_asset_orders: int = 0
+        self.base_asset_volume: float = 0
+        self.token_asset_volume: float = 0
+        self.cum_token_asset_slippage: float = 0
+        self.cum_base_asset_slippage: float = 0
+        self.share_fees: float = 0
+        self.share_fee_history: dict[float, float] = {}
+        self.token_fees: float = 0
+        self.token_fee_history: dict[float, float] = {}
+        self.spot_price: float = 0
+        self.rate: float = 0
+        # TODO: fix this? is this true? total_supply is usually the num of lp shares, which is not equal to this sum
+        self.total_supply: float = self.share_reserves + self.bond_reserves
+        self.verbose: bool = verbose
+
+    def check_action_type(self, action_type: MarketActionType) -> None:
+        """Ensure that the agent action is an allowed action for this market
         Arguments
         ---------
-        action_type : str
-            must be either "element" or "hyperdrive"
+        action_type: see MarketActionType for all acceptable actions that can be performed on this market
         """
         pricing_model_name = self.pricing_model.model_name()
         if pricing_model_name.lower() == "element":
@@ -149,13 +188,13 @@ class Market:
                 "market.check_action_type: ERROR: pricing model name should "
                 f'be in ["element", "hyperdrive"], not {pricing_model_name}'
             )
-        if not action_type in allowed_actions:
+        if action_type not in allowed_actions:
             raise AssertionError(
                 "markets.check_action_type: ERROR: agent_action.action_type should be an allowed action for the"
                 f" model={self.pricing_model.model_name()}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action):
+    def trade_and_update(self, agent_action: MarketAction) -> Wallet:
         """
         Execute a trade in the simulated market.
 
@@ -176,38 +215,29 @@ class Market:
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
         self.check_action_type(agent_action.action_type)
+
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        agent_action.time_remaining = time_utils.get_yearfrac_remaining(
-            self.time, agent_action.mint_time, self.token_duration
-        )
-        agent_action.stretched_time_remaining = time_utils.stretch_time(
-            agent_action.time_remaining, self.time_stretch_constant
-        )
+        time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)
+        stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         # if self.verbose:
-        agent_action.print_description_string()
+        print(agent_action)
         # for each position, specify how to forumulate trade and then execute
+        # TODO: we shouldn't set values on the object passed in, add parameters to
+        # open/close_long/short functions so that this isn't necessary
         update_price_and_rate = True
         if agent_action.action_type == "open_long":  # buy to open long
-            agent_action.direction = "out"  # calcOutGivenIn
-            agent_action.token_out = "pt"  # sell known base for unknown PT
-            market_deltas, agent_deltas = self._open_long(agent_action)
+            market_deltas, agent_deltas = self._open_long(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "close_long":  # sell to close long
-            agent_action.direction = "out"  # calcOutGivenIn
-            agent_action.token_out = "base"  # sell known PT for unknown base
-            market_deltas, agent_deltas = self._close_long(agent_action)
+            market_deltas, agent_deltas = self._close_long(agent_action, "base", stretched_time_remaining)
         elif agent_action.action_type == "open_short":  # sell PT to open short
-            agent_action.direction = "in"  # calcOutGivenIn
-            agent_action.token_out = "pt"  # sell known PT for unknown base
-            market_deltas, agent_deltas = self._open_short(agent_action)
+            market_deltas, agent_deltas = self._open_short(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "close_short":  # buy PT to close short
-            agent_action.direction = "in"  # calcOutGivenIn
-            agent_action.token_in = "pt"  # buy known PT for unknown base
-            market_deltas, agent_deltas = self._close_short(agent_action)
+            market_deltas, agent_deltas = self._close_short(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "add_liquidity":
-            market_deltas, agent_deltas = self._add_liquidity(agent_action)
+            market_deltas, agent_deltas = self._add_liquidity(agent_action, time_remaining, stretched_time_remaining)
         elif agent_action.action_type == "remove_liquidity":
-            market_deltas, agent_deltas = self._remove_liquidity(agent_action)
+            market_deltas, agent_deltas = self._remove_liquidity(agent_action, time_remaining, stretched_time_remaining)
             update_price_and_rate = False
         else:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
@@ -217,11 +247,11 @@ class Market:
             print(f"market Δs ={market_deltas}")
         return agent_deltas
 
-    def update_market(self, market_deltas, update_price_and_rate=True):
+    def update_market(self, market_deltas: MarketDeltas, update_price_and_rate=True) -> None:
         """
         Increments member variables to reflect current market conditions
         """
-        # TODO: The nexted branching inside for-loops is cumbersome and can slow down the execution
+        # TODO: The nested branching inside for-loops is cumbersome and can slow down the execution
         # pylint: disable=too-many-branches
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
@@ -241,7 +271,7 @@ class Market:
         self.bond_buffer += market_deltas.d_bond_buffer
         self.lp_reserves += market_deltas.d_lp_reserves
         if market_deltas.d_lp_reserves_history:  # not empty
-            self.lp_reserves_history.append(market_deltas.d_lp_reserves_history)
+            self.lp_reserves_history.extend(market_deltas.d_lp_reserves_history)
         self.share_fees += market_deltas.d_share_fee
         if market_deltas.d_share_fee_history:  # not empty
             for key, value in market_deltas.d_share_fee_history.items():
@@ -272,13 +302,13 @@ class Market:
             )
             self.rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.token_duration)
 
-    def get_market_state_string(self):
+    def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
         state_string = "\n".join(strings)
         return state_string
 
-    def get_target_reserves(self, token_in, trade_direction):
+    def get_target_reserves(self, token_in: TokenType, trade_direction: TradeDirection) -> float:
         """
         Determine which asset is the target based on token_in and trade_direction
         """
@@ -308,11 +338,11 @@ class Market:
 
     def check_fees(
         self,
-        amount,
-        tokens,
-        reserves,
-        trade_results,
-    ):
+        amount: float,
+        tokens: tuple[TokenType, TokenType],
+        reserves: tuple[float, float],
+        trade_results: TradeResult,
+    ) -> None:
         """Checks fee values for out of bounds and prints verbose outputs"""
         (token_in, token_out) = tokens
         (in_reserves, out_reserves) = reserves
@@ -346,23 +376,29 @@ class Market:
                 + state_string
             )
 
-    def tick(self, delta_time):
+    def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
 
-    def _open_short(self, trade_details):
+    # TODO: lets rename all these internal functions that take a stretch_time_remaining to
+    # time_remaining and explain what's expected of the parameter.  basically, the calc functions
+    # shouldn't care what kind of time var is passed in.  It should be up to the consumer to pass in
+    # properly formatted time.
+    def _open_short(
+        self, agent_action: MarketAction, token_out: TokenType, stretch_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
         will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            in_=trade_details.trade_amount,
+            in_=agent_action.trade_amount,
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
-            token_out=trade_details.token_out,
+            token_out=token_out,
             fee_percent=self.fee_percent,
-            time_remaining=trade_details.stretched_time_remaining,
+            time_remaining=stretch_time_remaining,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
         )
@@ -376,44 +412,47 @@ class Market:
             print(f"opening short: {without_fee_or_slippage, output_with_fee, output_without_fee, fee}")
         market_deltas = MarketDeltas(
             d_base_asset=-output_with_fee,
-            d_token_asset=+trade_details.trade_amount,
-            d_bond_buffer=+trade_details.trade_amount,
+            d_token_asset=+agent_action.trade_amount,
+            d_bond_buffer=+agent_action.trade_amount,
             d_share_fee=+fee / self.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / self.share_price},
+            d_share_fee_history={agent_action.mint_time: fee / self.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
-        max_loss = trade_details.trade_amount - output_with_fee
-        wallet_deltas = AgentWallet(
+        max_loss = agent_action.trade_amount - output_with_fee
+        wallet_deltas = Wallet(
+            address=0,
             base_in_wallet=-max_loss,
-            base_in_protocol={trade_details.mint_time: +max_loss},
-            token_in_protocol={trade_details.mint_time: -trade_details.trade_amount},
+            base_in_protocol={agent_action.mint_time: +max_loss},
+            token_in_protocol={agent_action.mint_time: -agent_action.trade_amount},
             fees_paid=+fee,
         )
         return market_deltas, wallet_deltas
 
-    def _close_short(self, trade_details):
+    def _close_short(
+        self, agent_action: MarketAction, token_in: TokenType, stretched_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
             will be conditional on the pricing model
         """
-        if trade_details.trade_amount > self.bond_reserves:
+        if agent_action.trade_amount > self.bond_reserves:
             print(
-                f"markets._close_short: WARNING: trade amount = {trade_details.trade_amount} "
+                f"markets._close_short: WARNING: trade amount = {agent_action.trade_amount} "
                 f"is greater than bond reserves = {self.bond_reserves}."
                 f"Adjusting to allowable amount."
             )
-            trade_details.trade_amount = self.bond_reserves
+            agent_action.trade_amount = self.bond_reserves
         trade_results = self.pricing_model.calc_in_given_out(
-            trade_details.trade_amount,
+            agent_action.trade_amount,
             self.share_reserves,
             self.bond_reserves,
-            trade_details.token_in,
+            token_in,
             self.fee_percent,
-            trade_details.stretched_time_remaining,
+            stretched_time_remaining,
             self.init_share_price,
             self.share_price,
         )
@@ -425,10 +464,10 @@ class Market:
         ) = trade_results
         market_deltas = MarketDeltas(
             d_base_asset=+output_with_fee,
-            d_token_asset=-trade_details.trade_amount,
-            d_bond_buffer=-trade_details.trade_amount,
+            d_token_asset=-agent_action.trade_amount,
+            d_bond_buffer=-agent_action.trade_amount,
             d_share_fee=+fee / self.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / self.share_price},
+            d_share_fee_history={agent_action.mint_time: fee / self.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
@@ -437,28 +476,31 @@ class Market:
         # If the user is not closing a full short (i.e. the mint_time balance is not zeroed out)
         # then the user does not get any money into their wallet
         # Right now the user has to close the full short
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
+            address=0,
             base_in_wallet=+output_with_fee,
-            base_in_protocol={trade_details.mint_time: -output_with_fee},
-            token_in_protocol={trade_details.mint_time: +trade_details.trade_amount},
+            base_in_protocol={agent_action.mint_time: -output_with_fee},
+            token_in_protocol={agent_action.mint_time: +agent_action.trade_amount},
             fees_paid=+fee,
         )
         return market_deltas, agent_deltas
 
-    def _open_long(self, trade_details):
+    def _open_long(
+        self, agent_action: MarketAction, token_out: TokenType, stretched_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
             will be conditional on the pricing model
         """
-        if trade_details.trade_amount <= self.bond_reserves:
+        if agent_action.trade_amount <= self.bond_reserves:
             trade_results = self.pricing_model.calc_out_given_in(
-                trade_details.trade_amount,
+                agent_action.trade_amount,
                 self.share_reserves,
                 self.bond_reserves,
-                trade_details.token_out,
+                token_out,
                 self.fee_percent,
-                trade_details.stretched_time_remaining,
+                stretched_time_remaining,
                 self.init_share_price,
                 self.share_price,
             )
@@ -469,38 +511,41 @@ class Market:
                 fee,
             ) = trade_results
             market_deltas = MarketDeltas(
-                d_base_asset=+trade_details.trade_amount,
+                d_base_asset=+agent_action.trade_amount,
                 d_token_asset=-output_with_fee,
                 d_share_buffer=+output_with_fee / self.share_price,
                 d_token_fee=+fee,
-                d_token_fee_history={trade_details.mint_time: fee},
+                d_token_fee_history={agent_action.mint_time: fee},
                 d_token_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
                 d_token_asset_orders=+1,
                 d_token_asset_volume=+output_with_fee,
             )
-            agent_deltas = AgentWallet(
-                base_in_wallet=-trade_details.trade_amount,
-                token_in_protocol={trade_details.mint_time: +output_with_fee},
+            agent_deltas = Wallet(
+                address=0,
+                base_in_wallet=-agent_action.trade_amount,
+                token_in_protocol={agent_action.mint_time: +output_with_fee},
                 fees_paid=+fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = AgentWallet(base_in_wallet=0)
+            agent_deltas = Wallet(address=0, base_in_wallet=0)
         return market_deltas, agent_deltas
 
-    def _close_long(self, trade_details):
+    def _close_long(
+        self, agent_action: MarketAction, token_out: TokenType, stretched_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
             will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            trade_details.trade_amount,
+            agent_action.trade_amount,
             self.share_reserves,
             self.bond_reserves,
-            trade_details.token_out,
+            token_out,
             self.fee_percent,
-            trade_details.stretched_time_remaining,
+            stretched_time_remaining,
             self.init_share_price,
             self.share_price,
         )
@@ -512,27 +557,30 @@ class Market:
         ) = trade_results
         market_deltas = MarketDeltas(
             d_base_asset=-output_with_fee,
-            d_token_asset=+trade_details.trade_amount,
-            d_share_buffer=-trade_details.trade_amount / self.share_price,
+            d_token_asset=+agent_action.trade_amount,
+            d_share_buffer=-agent_action.trade_amount / self.share_price,
             d_share_fee=+fee / self.share_price,
-            d_share_fee_history={trade_details.mint_time: fee / self.share_price},
+            d_share_fee_history={agent_action.mint_time: fee / self.share_price},
             d_base_asset_slippage=+abs(without_fee_or_slippage - output_without_fee),
             d_base_asset_orders=+1,
             d_base_asset_volume=+output_with_fee,
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
+            address=0,
             base_in_wallet=+output_with_fee,
-            token_in_wallet={trade_details.mint_time: -trade_details.trade_amount},
+            token_in_wallet={agent_action.mint_time: -agent_action.trade_amount},
             fees_paid=+fee,
         )
         return market_deltas, agent_deltas
 
-    def _add_liquidity(self, trade_details):
+    def _add_liquidity(
+        self, agent_action: MarketAction, time_remaining: float, stretched_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is added
         """
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
-            d_base=trade_details.trade_amount,
+            d_base=agent_action.trade_amount,
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             share_buffer=self.share_buffer,
@@ -540,31 +588,34 @@ class Market:
             share_price=self.share_price,
             lp_reserves=self.lp_reserves,
             rate=self.rate,
-            time_remaining=trade_details.time_remaining,
-            stretched_time_remaining=trade_details.stretched_time_remaining,
+            time_remaining=time_remaining,
+            stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
             d_base_asset=+d_base_reserves,
             d_token_asset=+d_token_reserves,
             d_lp_reserves=+lp_out,
             d_lp_reserves_history=[
-                trade_details.mint_time,
-                trade_details.wallet_address,
-                +trade_details.trade_amount,
+                agent_action.mint_time,
+                agent_action.wallet_address,
+                +agent_action.trade_amount,
             ],
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
+            address=0,
             base_in_wallet=-d_base_reserves,
             lp_in_wallet=+lp_out,
         )
         return market_deltas, agent_deltas
 
-    def _remove_liquidity(self, trade_details):
+    def _remove_liquidity(
+        self, agent_action: MarketAction, time_remaining: float, stretched_time_remaining: float
+    ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
-            lp_in=trade_details.trade_amount,
+            lp_in=agent_action.trade_amount,
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             share_buffer=self.share_buffer,
@@ -572,20 +623,21 @@ class Market:
             share_price=self.share_price,
             lp_reserves=self.lp_reserves,
             rate=self.rate,
-            time_remaining=trade_details.time_remaining,
-            stretched_time_remaining=trade_details.stretched_time_remaining,
+            time_remaining=time_remaining,
+            stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
             d_base_asset=-d_base_reserves,
             d_token_asset=-d_token_reserves,
             d_lp_reserves=-lp_in,
             d_lp_reserves_history=[
-                trade_details.mint_time,
-                trade_details.wallet_address,
-                -trade_details.trade_amount,
+                agent_action.mint_time,
+                agent_action.wallet_address,
+                -agent_action.trade_amount,
             ],
         )
-        agent_deltas = AgentWallet(
+        agent_deltas = Wallet(
+            address=0,
             base_in_wallet=+d_base_reserves,
             lp_in_wallet=-lp_in,
         )
@@ -658,7 +710,7 @@ class Market:
     #    else:
     #        return None
 
-    def get_market_step_string(self):
+    def get_market_step_string(self) -> str:
         """Returns a string that describes the current market step"""
         output_string = f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"
         output_string += (

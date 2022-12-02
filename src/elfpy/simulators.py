@@ -5,14 +5,17 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 
+from __future__ import annotations
+import datetime
 from importlib import import_module
 import json
 
 import numpy as np
-
+from elfpy.agent import Agent
 from elfpy.markets import Market
+
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
-from elfpy.utils.parse_config import parse_simulation_config
+from elfpy.utils.parse_config import Config, parse_simulation_config
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 
@@ -28,7 +31,7 @@ class YieldSimulator:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, config_file):
+    def __init__(self, config_file: Config):
         # pylint: disable=too-many-statements
         # User specified variables
         self.config = parse_simulation_config(config_file)
@@ -41,11 +44,10 @@ class YieldSimulator:
         seconds_in_a_day = 86400
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
-        self.start_time = None
-        self.init_share_price = None
-        self.pricing_model = None
+        self.start_time: datetime.datetime | None = None
+        self.init_share_price: float = 0
         self.market = None
-        self.agent_list = None
+        self.agent_list: list[Agent] = []
         self.random_variables_set = False
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
@@ -98,10 +100,12 @@ class YieldSimulator:
         self.config.simulator.init_vault_age = self.rng.uniform(
             low=self.config.market.min_vault_age, high=self.config.market.max_vault_age
         )  # in years
-        self.config.simulator.vault_apy = self.rng.uniform(
-            low=self.config.market.min_vault_apy,
-            high=self.config.market.max_vault_apy,
-            size=self.config.simulator.num_trading_days,
+        self.config.simulator.vault_apy = list(
+            self.rng.uniform(
+                low=self.config.market.min_vault_apy,
+                high=self.config.market.max_vault_apy,
+                size=self.config.simulator.num_trading_days,
+            )
         )  # vault apy over time as a decimal
         self.random_variables_set = True
 
@@ -135,20 +139,6 @@ class YieldSimulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def set_pricing_model(self, model_name):
-        """Assign a PricingModel object to the pricing_model attribute"""
-        if self.config.simulator.verbose:
-            print(
-                f"{'#'*20} {model_name} {'#'*20}\n"
-                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
-            )
-        if model_name.lower() == "hyperdrive":
-            self.pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
-        elif model_name.lower() == "element":
-            self.pricing_model = ElementPricingModel(self.config.amm.verbose)
-        else:
-            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
-
     def override_variables(self, override_dict):
         """Replace existing member & config variables with ones defined in override_dict"""
         # override the config variables, including random variables that were set
@@ -158,7 +148,7 @@ class YieldSimulator:
                     setattr(config_obj, key, value)
                     if key == "vault_apy":  # support for float or list[float] types
                         if isinstance(value, float):  # overwrite above setattr with the value replicated in a list
-                            self.config.simulator.vault_apy = [value] * self.config.simulator.num_trading_days
+                            self.config.simulator.vault_apy = [float(value)] * self.config.simulator.num_trading_days
                         else:  # check that the length is correct; if so, then it is already set above
                             assert len(value) == self.config.simulator.num_trading_days, (
                                 "vault_apy must have len equal to num_trading_days = "
@@ -173,19 +163,24 @@ class YieldSimulator:
         else:
             self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
             if self.config.simulator.precision is not None:
-                self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
+                self.init_share_price = float(np.around(self.init_share_price, self.config.simulator.precision))
 
     def setup_simulated_entities(self, override_dict=None):
         """Constructs the agent list, pricing model, and market member variables"""
-        # update parameters if the user provided new ones
+
         assert (
             self.random_variables_set
         ), "ERROR: You must run simulator.set_random_variables() before constructing simulation entities"
+
         if override_dict is not None:
             self.override_variables(override_dict)  # apply the override dict
-        self.set_pricing_model(self.config.simulator.pricing_model_name)  # construct pricing model object
+
+        pricing_model = self._get_pricing_model(
+            self.config.simulator.pricing_model_name
+        )  # construct pricing model object
+
         # setup market
-        time_stretch_constant = self.pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
+        time_stretch_constant = pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
         # calculate reserves needed to deposit to hit target liquidity and APY
         init_reserves = price_utils.calc_liquidity(
             self.config.simulator.target_liquidity,
@@ -200,7 +195,7 @@ class YieldSimulator:
         self.market = Market(
             fee_percent=self.config.simulator.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
-            pricing_model=self.pricing_model,
+            pricing_model=pricing_model,
             time_stretch_constant=time_stretch_constant,
             init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
@@ -249,6 +244,24 @@ class YieldSimulator:
                 print(user_with_policy.status_report())
             self.agent_list.append(user_with_policy)
 
+    def _get_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
+        """Get a PricingModel object from the config passed in"""
+        if self.config.simulator.verbose:
+            print(
+                f"{'#'*20} {model_name} {'#'*20}\n"
+                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
+            )
+
+        # TODO: make this exhaustive switch
+        if model_name.lower() == "hyperdrive":
+            pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
+        elif model_name.lower() == "element":
+            pricing_model = ElementPricingModel(self.config.amm.verbose)
+        else:
+            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
+
+        return pricing_model
+
     def run_simulation(self, override_dict=None):
         r"""
         Run the trade simulation and update the output state dictionary
@@ -269,6 +282,10 @@ class YieldSimulator:
         """
         self.start_time = time_utils.current_datetime()
         self.setup_simulated_entities(override_dict)
+
+        if not isinstance(self.market, Market):
+            raise ValueError("market not defined")
+
         last_block_in_sim = False
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
@@ -285,8 +302,8 @@ class YieldSimulator:
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
                     self.daily_block_number == self.config.simulator.num_blocks_per_day - 1
                 )
-                if self.config.simulator.shuffle_users:
-                    self.rng.shuffle(self.agent_list)  # shuffle the agent order each block
+                # if self.config.simulator.shuffle_users:
+                # self.rng.shuffle(np.asarray(self.agent_list))  # shuffle the agent order each block
                 self.collect_and_execute_trades(last_block_in_sim)
                 # if verbose:
                 #     print(f"{self.market.get_market_step_string()}")
@@ -300,6 +317,19 @@ class YieldSimulator:
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
         """Get trades from the agent list, execute them, and update states"""
+        if not isinstance(self.market, Market):
+            raise ValueError("market not defined")
+
+        # TODO: BIG HACK to make this PR pass.  There is a bug with removing liquidity that
+        # doesn't account for open shorts.  Someone can remove all liquidity while there are open
+        # shorts, then when another user goes to close a short, there are no reserves, so the calc
+        # functions error due to division by zero.  Need to fix the accounting of reserves to
+        # account for open short positions.
+        if last_block_in_sim:  # get all of a agent's trades
+            # we are reversing order here to make sure that agent 0's remove_liquidity transaction
+            # is last
+            self.agent_list = self.agent_list[::-1]
+
         for agent in self.agent_list:  # trade is different on the last block
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades()
@@ -316,6 +346,10 @@ class YieldSimulator:
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
+
+        if not isinstance(self.market, Market):
+            raise ValueError("market not defined")
+
         # pylint: disable=too-many-statements
         # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
@@ -340,11 +374,13 @@ class YieldSimulator:
         self.analysis_dict["block_number"].append(self.block_number)
         self.analysis_dict["block_timestamp"].append(
             time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            if self.start_time
+            else "None"
         )
         # Variables that change per trade
         self.analysis_dict["current_market_yearfrac"].append(self.market.time)
         self.analysis_dict["current_market_datetime"].append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time)
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
         )
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["share_reserves"].append(self.market.share_reserves)
