@@ -4,15 +4,17 @@ Utilities for parsing & loading user config TOML files
 TODO: change floor_fee to be a decimal like min_fee and max_fee
 """
 
-# pylint: disable=too-many-instance-attributes
 
-import tomli
 from dataclasses import dataclass, field
+import tomli
 
 
 @dataclass
 class MarketConfig:
     """config parameters specific to the market"""
+
+    # pylint: disable=too-many-instance-attributes
+    # dataclasses can have many attributes
 
     min_target_liquidity: float = field(default=1e6, metadata={"hint": "shares"})
     max_target_liquidity: float = field(default=10e6, metadata={"hint": "shares"})
@@ -40,6 +42,9 @@ class AMMConfig:
 @dataclass
 class SimulatorConfig:
     """config parameters specific to the simulator"""
+
+    # pylint: disable=too-many-instance-attributes
+    # dataclasses can have many attributes
 
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})

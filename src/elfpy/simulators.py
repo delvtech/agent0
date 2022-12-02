@@ -5,6 +5,7 @@ for experiment tracking and execution
 TODO: rewrite all functions to have typed inputs
 """
 
+from __future__ import annotations
 import datetime
 from importlib import import_module
 import json

@@ -2,6 +2,7 @@
 Market simulators store state information when interfacing AMM pricing models with users
 """
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, TypeAlias
 
@@ -168,8 +169,7 @@ class Market:
         """Ensure that the agent action is an allowed action for this market
         Arguments
         ---------
-        action_type :
-            must be either "element" or "hyperdrive"
+        action_type: see MarketActionType for all acceptable actions that can be performed on this market
         """
         pricing_model_name = self.pricing_model.model_name()
         if pricing_model_name.lower() == "element":

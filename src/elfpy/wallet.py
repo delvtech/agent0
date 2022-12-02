@@ -12,8 +12,8 @@ from elfpy.utils.outputs import float_to_string
 class Wallet:
     """Stores what's in the agent's wallet"""
 
-    # TODO: Create our own dataclass decorator that is always mutable and includes dict set/get syntax
-    # pylint: disable=duplicate-code
+    # pylint: disable=too-many-instance-attributes
+    # dataclasses can have many attributes
 
     # fungible
     address: int
