@@ -116,7 +116,9 @@ class YieldSimulator:
 
     def log_config_variables(self):
         """Prints all variables that are in config, including those set in set_random_variables()"""
-        logging.log(json.dumps(self.config, sort_keys=True, indent=2))
+        # Config is a nested dataclass, so the `default` arg tells it to cast sub-classes to dicts
+        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, default=lambda obj: obj.__dict__)
+        logging.info(config_string)
 
     def get_simulation_state_string(self):
         """Returns a formatted string containing all of the Simulation class member variables"""

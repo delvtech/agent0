@@ -429,6 +429,21 @@ class ElementPricingModel(PricingModel):
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
         with_fee = without_fee + fee
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check without_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, with_fee = without_fee + fee
+        # so it is a positive float if without_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            without_fee, float
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
+        assert (
+            without_fee >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
         logging.debug(
             (
                 "\n\tout = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
@@ -456,22 +471,6 @@ class ElementPricingModel(PricingModel):
             with_fee,
             fee,
         )
-        # TODO(jalextowle): With some analysis, it seems possible to show that
-        # we skip straight from non-negative reals to the complex plane without
-        # hitting negative reals.
-        #
-        # Ensure that the outputs are all non-negative floats. We only need to
-        # check without_fee since without_fee_or_slippage will always be a positive
-        # float due to the constraints on the inputs, with_fee = without_fee + fee
-        # so it is a positive float if without_fee and fee are positive floats, and
-        # fee is a positive float due to the constraints on the inputs.
-        assert isinstance(
-            without_fee, float
-        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
-        assert (
-            without_fee >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
-
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
     def calc_out_given_in(
@@ -635,6 +634,21 @@ class ElementPricingModel(PricingModel):
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
+        # TODO(jalextowle): With some analysis, it seems possible to show that
+        # we skip straight from non-negative reals to the complex plane without
+        # hitting negative reals.
+        #
+        # Ensure that the outputs are all non-negative floats. We only need to
+        # check with_fee since without_fee_or_slippage will always be a positive
+        # float due to the constraints on the inputs, without_fee = with_fee + fee
+        # so it is a positive float if with_fee and fee are positive floats, and
+        # fee is a positive float due to the constraints on the inputs.
+        assert isinstance(
+            with_fee, float
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
+        assert (
+            with_fee >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
         logging.debug(
             (
                 "\n\tin_ = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
@@ -662,22 +676,6 @@ class ElementPricingModel(PricingModel):
             with_fee,
             fee,
         )
-        # TODO(jalextowle): With some analysis, it seems possible to show that
-        # we skip straight from non-negative reals to the complex plane without
-        # hitting negative reals.
-        #
-        # Ensure that the outputs are all non-negative floats. We only need to
-        # check with_fee since without_fee_or_slippage will always be a positive
-        # float due to the constraints on the inputs, without_fee = with_fee + fee
-        # so it is a positive float if with_fee and fee are positive floats, and
-        # fee is a positive float due to the constraints on the inputs.
-        assert isinstance(
-            with_fee, float
-        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
-        assert (
-            with_fee >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
-
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
 

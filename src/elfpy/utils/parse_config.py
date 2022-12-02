@@ -4,10 +4,10 @@ Utilities for parsing & loading user config TOML files
 TODO: change floor_fee to be a decimal like min_fee and max_fee
 """
 
-
 from dataclasses import dataclass, field
-import tomli
 import logging
+
+import tomli
 
 
 @dataclass

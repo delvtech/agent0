@@ -9,7 +9,6 @@ from numpy.random._generator import Generator
 
 from elfpy.markets import Market, MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
-from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
 
 # TODO: this will get fixed soon when verbose is removed due to better logging, revisit this lint
