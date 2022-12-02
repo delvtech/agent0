@@ -2,7 +2,6 @@
 Market simulators store state information when interfacing AMM pricing models with users
 """
 
-from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, TypeAlias
 import logging
