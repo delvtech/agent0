@@ -5,14 +5,14 @@ Market simulators store state information when interfacing AMM pricing models wi
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, TypeAlias
+import logging
 
 import numpy as np
+
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, TradeResult
 from elfpy.token import TokenType
-
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
-from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
@@ -41,11 +41,11 @@ class MarketAction:
     mint_time: float = 0
 
     def __str__(self):
-        """Print a description of the Action"""
-        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
+        """Return a description of the Action"""
+        output_string = f"{self.wallet_address}"
         for key, value in self.__dict__.items():
             if key == "action_type":
-                output_string += f" execute {bcolors.FAIL}{value}(){bcolors.ENDC}"
+                output_string += f" execute {value}()"
             elif key in ["trade_amount", "mint_time"]:
                 output_string += f" {key}: {float_to_string(value)}"
             elif key not in ["wallet_address", "agent"]:
@@ -124,7 +124,6 @@ class Market:
         time_stretch_constant: float = 1,
         init_share_price: float = 1,
         share_price: float = 1,
-        verbose: bool = False,
     ):
         self.time: float = 0  # time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.share_reserves: float = share_reserves  # z
@@ -163,7 +162,6 @@ class Market:
         self.rate: float = 0
         # TODO: fix this? is this true? total_supply is usually the num of lp shares, which is not equal to this sum
         self.total_supply: float = self.share_reserves + self.bond_reserves
-        self.verbose: bool = verbose
 
     def check_action_type(self, action_type: MarketActionType) -> None:
         """Ensure that the agent action is an allowed action for this market
@@ -220,8 +218,7 @@ class Market:
         # update market variables which may have changed since the user action was created
         time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
-        # if self.verbose:
-        print(agent_action)
+        logging.debug(agent_action)
         # for each position, specify how to forumulate trade and then execute
         # TODO: we shouldn't set values on the object passed in, add parameters to
         # open/close_long/short functions so that this isn't necessary
@@ -243,8 +240,7 @@ class Market:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
         # update market state
         self.update_market(market_deltas, update_price_and_rate)
-        if self.verbose:
-            print(f"market Δs ={market_deltas}")
+        logging.debug("market deltas = %s", market_deltas)
         return agent_deltas
 
     def update_market(self, market_deltas: MarketDeltas, update_price_and_rate=True) -> None:
@@ -343,7 +339,7 @@ class Market:
         reserves: tuple[float, float],
         trade_results: TradeResult,
     ) -> None:
-        """Checks fee values for out of bounds and prints verbose outputs"""
+        """Checks fee values for out of bounds"""
         (token_in, token_out) = tokens
         (in_reserves, out_reserves) = reserves
         (
@@ -365,15 +361,15 @@ class Market:
             state_string = self.get_market_state_string()
             assert False, (
                 f"Market.check_fees: Error: fee={fee} should not be < 0 and the type should not be complex."
-                + f"\ntoken_in = {token_in}"
-                + f"\ntoken_out = {token_out}"
-                + f"\nin_reserves = {in_reserves}"
-                + f"\nout_reserves = {out_reserves}"
-                + f"\ntrade_amount = {amount}"
-                + f"\nwithout_fee_or_slippage = {without_fee_or_slippage}"
-                + f"\noutput_with_fee = {output_with_fee}"
-                + f"\noutput_without_fee = {output_without_fee}\n"
-                + state_string
+                f"\ntoken_in = {token_in}"
+                f"\ntoken_out = {token_out}"
+                f"\nin_reserves = {in_reserves}"
+                f"\nout_reserves = {out_reserves}"
+                f"\ntrade_amount = {amount}"
+                f"\nwithout_fee_or_slippage = {without_fee_or_slippage}"
+                f"\noutput_with_fee = {output_with_fee}"
+                f"\noutput_without_fee = {output_without_fee}\n"
+                f"{state_string}"
             )
 
     def tick(self, delta_time: float) -> None:
@@ -408,8 +404,13 @@ class Market:
             output_without_fee,
             fee,
         ) = trade_results
-        if self.verbose:
-            print(f"opening short: {without_fee_or_slippage, output_with_fee, output_without_fee, fee}")
+        logging.debug(
+            "opening short: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
+            without_fee_or_slippage,
+            output_with_fee,
+            output_without_fee,
+            fee,
+        )
         market_deltas = MarketDeltas(
             d_base_asset=-output_with_fee,
             d_token_asset=+agent_action.trade_amount,
@@ -440,10 +441,14 @@ class Market:
             will be conditional on the pricing model
         """
         if agent_action.trade_amount > self.bond_reserves:
-            print(
-                f"markets._close_short: WARNING: trade amount = {agent_action.trade_amount} "
-                f"is greater than bond reserves = {self.bond_reserves}."
-                f"Adjusting to allowable amount."
+            logging.warning(
+                (
+                    "markets._close_short: WARNING: trade amount = %g"
+                    "is greater than bond reserves = %g."
+                    "Adjusting to allowable amount."
+                ),
+                agent_action.trade_amount,
+                self.bond_reserves,
             )
             agent_action.trade_amount = self.bond_reserves
         trade_results = self.pricing_model.calc_in_given_out(
@@ -643,91 +648,31 @@ class Market:
         )
         return market_deltas, agent_deltas
 
-    # TODO: This function is throwing linting errors (too many local variables)
-    # It also appears to be useless, besides for printing verbose statements.
-    # Need to clean it up and find a use for it OR delete it
-    # def calc_fees_owed(self, return_agent=None):
-    #    """
-    #    Returns the fees owed to the agent
-    #    """
-    #    # TODO: This function has too many local variables (21/15), and is tough to parse.
-    #    #       There might be an easy fix when setting up logging.
-    #    # pylint: disable=too-many-locals
-    #    cum_liq, prev_time, prev_share_fees, prev_token_fees = 0, 0, 0, 0
-    #    cum_liq_by_agent, contribution, token_owed, share_owed = {}, {}, {}, {}
-    #    for [current_time, acting_agent, new_liq] in self.lp_reserves_history:
-    #        # calculate what happened since the last update, we use marginal values for everything
-    #        share_fees_till_now = sum((v for k, v in self.share_fee_history.items() if k <= current_time))
-    #        token_fees_till_now = sum((v for k, v in self.token_fee_history.items() if k <= current_time))
-    #        delta_share_fees = share_fees_till_now - prev_share_fees
-    #        delta_token_fees = token_fees_till_now - prev_token_fees
-    #        delta_time = current_time - prev_time
-    #        # initialize agent if this is the first time we see them
-    #        if acting_agent not in cum_liq_by_agent:
-    #            (
-    #                contribution[acting_agent],
-    #                token_owed[acting_agent],
-    #                share_owed[acting_agent],
-    #                cum_liq_by_agent[acting_agent],
-    #            ) = (0, 0, 0, 0)
-    #        if current_time != 0:  # only do a marginal update after first timestep where deltas are zero
-    #            for update_agent_key, update_agent_value in cum_liq_by_agent.items():  # for each agent
-    #                # update their marginal share of cumulative liquidity, give them credit for it (contribution)
-    #                contribution[update_agent_key] += update_agent_value / cum_liq
-    #                # update their owed fees
-    #                share_owed[update_agent_key] = (
-    #                    share_owed[update_agent_key] * prev_time
-    #                    + contribution[update_agent_key] * delta_share_fees * delta_time
-    #                ) / current_time
-    #                token_owed[update_agent_key] = (
-    #                    token_owed[update_agent_key] * prev_time
-    #                    + contribution[update_agent_key] * delta_token_fees * delta_time
-    #                ) / current_time
-    #        # update values used for next iteration
-    #        cum_liq += new_liq
-    #        cum_liq_by_agent[acting_agent] += new_liq
-    #        prev_time = current_time
-    #        prev_share_fees, prev_token_fees = share_fees_till_now, token_fees_till_now
-    #    # TODO: Clean up these prints
-    #    if self.verbose:
-    #        print(f"cum_liq_by_agent = {cum_liq_by_agent}")
-    #        print(
-    #            f"      share_owed = {share_owed} calculated sum = {sum(share_owed.values())}"
-    #            f"\n           vs. direct = {self.share_fees} it's a "
-    #            "match "
-    #            if sum(share_owed.values()) == self.share_fees
-    #            else "mismatch "
-    #        )
-    #        print(
-    #            f"      token_owed = {token_owed} calculated sum = {sum(token_owed.values())}"
-    #            f"\n           vs. direct = {self.token_fees} it's a "
-    #            "match "
-    #            if sum(token_owed.values()) == self.token_fees
-    #            else "mismatch "
-    #        )
-    #    if return_agent is not None:
-    #        return share_owed[return_agent], token_owed[return_agent]
-    #    else:
-    #        return None
-
-    def get_market_step_string(self) -> str:
+    def log_market_step_string(self) -> str:
         """Returns a string that describes the current market step"""
-        output_string = f"t={bcolors.HEADER}{self.time}{bcolors.ENDC}"
-        output_string += (
-            " reserves=["
-            + f"x:{bcolors.OKBLUE}{self.share_reserves*self.share_price}{bcolors.ENDC}"
-            + f",y:{bcolors.OKBLUE}{self.bond_reserves}{bcolors.ENDC}"
-            + f",lp:{bcolors.OKBLUE}{self.lp_reserves}{bcolors.ENDC}"
-            + f",z:{bcolors.OKBLUE}{self.share_reserves}{bcolors.ENDC}"
-            + f",z_b:{bcolors.OKBLUE}{self.share_buffer}{bcolors.ENDC}"
-            + f",y_b:{bcolors.OKBLUE}{self.bond_buffer}{bcolors.ENDC}"
+        logging.debug(
+            (
+                "\nt = %g"
+                "\nx = %g"
+                "\ny = %g"
+                "\nlp = %g"
+                "\nz = %g"
+                "\nz_b = %g"
+                "\ny_b = %g"
+                "\nfee_x = %g"
+                "\nfee_y = %g"
+                "\np = %g"
+                "\nrate = %g"
+            ),
+            self.time,
+            self.share_reserves * self.share_price,
+            self.bond_reserves,
+            self.lp_reserves,
+            self.share_reserves,
+            self.share_buffer,
+            self.bond_buffer,
+            self.share_fees,
+            self.token_fees,
+            self.spot_price,
+            self.rate,
         )
-        if self.verbose:
-            output_string += (
-                f",fee_x:{bcolors.OKBLUE}{self.share_fees}{bcolors.ENDC}"
-                f",fee_y:{bcolors.OKBLUE}{self.token_fees}{bcolors.ENDC}"
-            )
-        output_string += "]"
-        output_string += f" p={bcolors.FAIL}{self.spot_price}{bcolors.ENDC}"
-        output_string += f" rate={bcolors.FAIL}{self.rate}{bcolors.ENDC}"
-        return output_string

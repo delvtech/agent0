@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime
 from importlib import import_module
 import json
+import logging
 
 import numpy as np
 from elfpy.agent import Agent
@@ -35,6 +36,7 @@ class YieldSimulator:
         # pylint: disable=too-many-statements
         # User specified variables
         self.config = parse_simulation_config(config_file)
+        self.log_config_variables()
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
         self.run_number = 0
@@ -107,12 +109,14 @@ class YieldSimulator:
                 size=self.config.simulator.num_trading_days,
             )
         )  # vault apy over time as a decimal
+        self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
+        if self.config.simulator.precision is not None:
+            self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
         self.random_variables_set = True
 
-    def print_config_variables(self):
+    def log_config_variables(self):
         """Prints all variables that are in config, including those set in set_random_variables()"""
-        print_str = json.dumps(self.config, sort_keys=True, indent=2)
-        print(f"Config variables:\n{print_str}")
+        logging.log(json.dumps(self.config, sort_keys=True, indent=2))
 
     def get_simulation_state_string(self):
         """Returns a formatted string containing all of the Simulation class member variables"""
@@ -155,15 +159,13 @@ class YieldSimulator:
                                 + f"{self.config.simulator.num_trading_days},"
                                 + f" not {len(value)}"
                             )
-            if self.config.simulator.verbose:
-                print(f"Overridding {key} from {getattr(self, key) if hasattr(self, key) else 'None'} to {value}.")
+            if hasattr(self, key):
+                logging.debug("Overridding %s from %g to %s.", key, str(getattr(self, key)), str(value))
+            else:
+                logging.debug("Overridding %s from %s to %s.", key, "None", str(value))
         # override the init_share_price if it is in the override_dict
         if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
-        else:
-            self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
-            if self.config.simulator.precision is not None:
-                self.init_share_price = float(np.around(self.init_share_price, self.config.simulator.precision))
 
     def setup_simulated_entities(self, override_dict=None):
         """Constructs the agent list, pricing model, and market member variables"""
@@ -199,22 +201,31 @@ class YieldSimulator:
             time_stretch_constant=time_stretch_constant,
             init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            verbose=self.config.simulator.verbose,
         )
-        if self.config.simulator.verbose:
-            print(
-                "initial market values:"
-                f"\n target_liquidity = {self.config.simulator.target_liquidity:,.0f}"
-                f"\n init_base_asset_reserves = {init_base_asset_reserves:,.0f}"
-                f"\n init_token_asset_reserves = {init_token_asset_reserves:,.0f}"
-                f"\n init_pool_apy = {self.config.simulator.init_pool_apy:.2%}"
-                f"\n vault_apy = {self.config.simulator.vault_apy[0]:.2%}"
-                f"\n fee_percent = {self.market.fee_percent}"
-                f"\n share_price = {self.market.share_price}"
-                f"\n init_share_price = {self.market.init_share_price}"
-                f"\n init_time_stretch = {self.market.time_stretch_constant}"
-            )
-            print(f"{self.market.get_market_step_string()}")
+        logging.info(
+            (
+                "Initial market values:"
+                "\n target_liquidity = %1g"
+                "\n init_base_asset_reserves = %1g"
+                "\n init_token_asset_reserves = %1g"
+                "\n init_pool_apy = %2g"
+                "\n vault_apy = %2g"
+                "\n fee_percent = %g"
+                "\n share_price = %g"
+                "\n init_share_price = %g"
+                "\n init_time_stretch = %g"
+            ),
+            self.config.simulator.target_liquidity,
+            init_base_asset_reserves,
+            init_token_asset_reserves,
+            self.config.simulator.init_pool_apy,
+            self.config.simulator.vault_apy[0],
+            self.market.fee_percent,
+            self.market.share_price,
+            self.market.init_share_price,
+            self.market.time_stretch_constant,
+        )
+        self.market.log_market_step_string()
         # fill market pools with an initial LP
         if self.config.simulator.init_lp:
             initial_lp = import_module("elfpy.strategies.init_lp").Policy(
@@ -225,7 +236,6 @@ class YieldSimulator:
                 amount_to_lp=init_base_asset_reserves,
                 pt_to_short=init_token_asset_reserves / 10,
                 short_until_apr=self.config.simulator.init_pool_apy,
-                verbose=self.config.simulator.verbose,
             )
             self.agent_list = [initial_lp]
             # execute one special block just for the initial_lp
@@ -234,32 +244,23 @@ class YieldSimulator:
             self.agent_list = []
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
-            user_with_policy = import_module(f"elfpy.strategies.{policy_name}").Policy(
+            agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
                 wallet_address=policy_number + 1,  # first policy goes to initial_lp
-                verbose=self.config.simulator.verbose,
             )
-            if self.config.simulator.verbose:
-                print(user_with_policy.status_report())
-            self.agent_list.append(user_with_policy)
+            agent.log_status_report()
+            self.agent_list.append(agent)
 
     def _get_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
         """Get a PricingModel object from the config passed in"""
-        if self.config.simulator.verbose:
-            print(
-                f"{'#'*20} {model_name} {'#'*20}\n"
-                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
-            )
-
-        # TODO: make this exhaustive switch
+        logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
         if model_name.lower() == "hyperdrive":
-            pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
+            pricing_model = HyperdrivePricingModel()
         elif model_name.lower() == "element":
-            pricing_model = ElementPricingModel(self.config.amm.verbose)
+            pricing_model = ElementPricingModel()
         else:
             raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
-
         return pricing_model
 
     def run_simulation(self, override_dict=None):
@@ -305,14 +306,14 @@ class YieldSimulator:
                 # if self.config.simulator.shuffle_users:
                 # self.rng.shuffle(np.asarray(self.agent_list))  # shuffle the agent order each block
                 self.collect_and_execute_trades(last_block_in_sim)
-                # if verbose:
-                #     print(f"{self.market.get_market_step_string()}")
+                logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
+                self.market.log_market_step_string()
                 if not last_block_in_sim:
                     self.market.tick(self.step_size())
                     self.block_number += 1
         # simulation has ended
         for agent in self.agent_list:
-            agent.final_report()
+            agent.log_final_report()
         # fees_owed = self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):
@@ -338,9 +339,9 @@ class YieldSimulator:
             for agent_trade in trade_list:  # execute trades
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
-                if self.config.simulator.verbose:
-                    print(f"agent wallet deltas = {wallet_deltas}")
-                    print(f"post-trade {agent.status_report()}")
+                logging.debug("agent wallet deltas = %s", wallet_deltas.__dict__)
+                logging.debug("post-trade agent status = ")
+                agent.log_status_report()
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 

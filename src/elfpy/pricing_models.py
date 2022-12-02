@@ -1,16 +1,14 @@
 """
 Pricing models implement automated market makers (AMMs)
-
-TODO: rewrite all functions to have typed inputs
 """
-
 
 from abc import ABC, abstractmethod
 from typing import NamedTuple
+import logging
+
 from elfpy.token import TokenType
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
-
 
 # TODO: Currently many functions use >5 arguments.
 # These should be packaged up into shared variables, e.g.
@@ -48,15 +46,6 @@ class PricingModel(ABC):
     # TODO: Change argument defaults to be None & set inside of def to avoid accidental overwrite
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
-
-    def __init__(self, verbose=None):
-        """
-        Arguments
-        ---------
-        verbose : bool
-            if True, print verbose outputs
-        """
-        self.verbose = False if verbose is None else verbose
 
     @abstractmethod
     def calc_in_given_out(
@@ -440,18 +429,33 @@ class ElementPricingModel(PricingModel):
         # excluded fees. Adding the fees results in more tokens paid, which
         # indicates that the fees are working correctly.
         with_fee = without_fee + fee
-        if self.verbose:
-            print(
-                f"pricing_models.calc_in_given_out:"
-                f"\n\tout = {out}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"
-                f"\n\ttotal_reserves = {share_reserves + bond_reserves}\n\tinit_share_price = {init_share_price}"
-                f"\n\tshare_price = {share_price}\n\tfee_percent = {fee_percent}"
-                f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
-                f"\n\ttoken_in = {token_in}\n\tspot_price = {spot_price}"
-                f"\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
-                f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
-            )
-
+        logging.debug(
+            (
+                "\n\tout = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
+                "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
+                "\n\tshare_price = %d\n\tfee_percent = %g"
+                "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
+                "\n\ttoken_in = %s\n\tspot_price = %g"
+                "\n\tk = %g\n\twithout_fee_or_slippage = %g"
+                "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
+            ),
+            out,
+            share_reserves,
+            bond_reserves,
+            share_reserves + bond_reserves,
+            init_share_price,
+            share_price,
+            fee_percent,
+            time_remaining,
+            time_elapsed,
+            token_in,
+            spot_price,
+            k,
+            without_fee_or_slippage,
+            without_fee,
+            with_fee,
+            fee,
+        )
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
         # hitting negative reals.
@@ -631,18 +635,33 @@ class ElementPricingModel(PricingModel):
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
         with_fee = without_fee - fee
-        if self.verbose:
-            print(
-                f"pricing_models.calc_out_given_in:"
-                f"\n\tin_ = {in_}\n\tshare_reserves = {share_reserves}\n\tbond_reserves = {bond_reserves}"
-                f"\n\ttotal_reserves = {share_reserves + bond_reserves}\n\tinit_share_price = {init_share_price}"
-                f"\n\tshare_price = {share_price}\n\tfee_percent = {fee_percent}"
-                f"\n\ttime_remaining = {time_remaining}\n\ttime_elapsed = {time_elapsed}"
-                f"\n\ttoken_out = {token_out}\n\tspot_price = {spot_price}"
-                f"\n\tk = {k}\n\twithout_fee_or_slippage = {without_fee_or_slippage}"
-                f"\n\twithout_fee = {without_fee}\n\twith_fee = {with_fee}\n\tfee = {fee}"
-            )
-
+        logging.debug(
+            (
+                "\n\tin_ = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
+                "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
+                "\n\tshare_price = %g\n\tfee_percent = %g"
+                "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
+                "\n\ttoken_out = %s\n\tspot_price = %g"
+                "\n\tk = %g\n\twithout_fee_or_slippage = %g"
+                "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
+            ),
+            in_,
+            share_reserves,
+            bond_reserves,
+            share_reserves + bond_reserves,
+            init_share_price,
+            share_price,
+            fee_percent,
+            time_remaining,
+            time_elapsed,
+            token_out,
+            spot_price,
+            k,
+            without_fee_or_slippage,
+            without_fee,
+            with_fee,
+            fee,
+        )
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without
         # hitting negative reals.
@@ -727,27 +746,51 @@ class HyperdrivePricingModel(PricingModel):
         d_bonds = (share_reserves + d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
-        if self.verbose:
-            print(
-                f"inputs: d_base={d_base}, share_reserves={share_reserves}, "
-                f"bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
-                f"init_share_price={init_share_price}, share_price={share_price}, "
-                f"lp_reserves={lp_reserves}, rate={rate}, "
-                f"time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}"
-            )
-            print(f"  d_shares={d_shares} (d_base / share_price = {d_base} / {share_price})")
-            print(
-                f"  lp_out={lp_out}\n"
+        logging.debug(
+            (
+                "inputs: d_base=%g, share_reserves=%d, "
+                "bond_reserves=%d, share_buffer=%g, "
+                "init_share_price=%g, share_price=%g, "
+                "lp_reserves=%g, rate=%g, "
+                "time_remaining=%g, stretched_time_remaining=%g"
+                "d_shares=%g (d_base / share_price = %g / %g)"
+                "lp_out=%g\n"
                 "(d_share_reserves * lp_reserves / (share_reserves - share_buffer) = "
-                f"{d_shares} * {lp_reserves} / ({share_reserves} - {share_buffer}))"
-            )
-            print(
-                f"d_bonds={d_bonds}\n"
+                "%g * %g / (%g - %g))"
+                "d_bonds=%g\n"
                 "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** "
                 "(1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                f"({share_reserves} + {d_shares}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) ** "
-                f"(1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})"
-            )
+                "(%g + %g) / 2 * (%g * (1 + %g * %g) ** "
+                "(1 / %g) - %g) - %g)"
+            ),
+            d_base,
+            share_reserves,
+            bond_reserves,
+            share_buffer,
+            init_share_price,
+            share_price,
+            lp_reserves,
+            rate,
+            time_remaining,
+            stretched_time_remaining,
+            d_shares,
+            d_base,
+            share_price,
+            lp_out,
+            d_shares,
+            lp_reserves,
+            share_reserves,
+            share_buffer,
+            d_bonds,
+            share_reserves,
+            d_shares,
+            init_share_price,
+            rate,
+            time_remaining,
+            stretched_time_remaining,
+            share_price,
+            bond_reserves,
+        )
         return lp_out, d_base, d_bonds
 
     def calc_lp_in_given_tokens_out(
@@ -843,21 +886,42 @@ class HyperdrivePricingModel(PricingModel):
         d_bonds = (share_reserves - d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
-        if self.verbose:
-            print(
-                f"inputs: lp_in={lp_in}, share_reserves={share_reserves}, "
-                f"bond_reserves={bond_reserves}, share_buffer={share_buffer}, "
-                f"init_share_price={init_share_price}, share_price={share_price}, lp_reserves={lp_reserves}, "
-                f"rate={rate}, time_remaining={time_remaining}, stretched_time_remaining={stretched_time_remaining}"
-            )
-            print(f"  d_shares={d_shares} (d_base / share_price = {d_base} / {share_price})")
-            print(
-                f"  d_bonds={d_bonds}\n"
+        logging.debug(
+            (
+                "inputs: lp_in=%g, share_reserves=%d, "
+                "bond_reserves=%d, share_buffer=%g, "
+                "init_share_price=%g, share_price=%g, lp_reserves=%g, "
+                "rate=%g, time_remaining=%g, stretched_time_remaining=%g"
+                "  d_shares=%g (d_base / share_price = %g / %g)"
+                "  d_bonds=%g\n"
                 "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) "
                 "** (1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                f"({share_reserves} + {d_shares}) / 2 * ({init_share_price} * (1 + {rate} * {time_remaining}) "
-                f"** (1 / {stretched_time_remaining}) - {share_price}) - {bond_reserves})"
-            )
+                "(%g + %g) / 2 * (%g * (1 + %g * %g) "
+                "** (1 / %g) - %g) - %g)"
+            ),
+            lp_in,
+            share_reserves,
+            bond_reserves,
+            share_buffer,
+            init_share_price,
+            share_price,
+            lp_reserves,
+            rate,
+            time_remaining,
+            stretched_time_remaining,
+            d_shares,
+            d_base,
+            share_price,
+            d_bonds,
+            share_reserves,
+            d_shares,
+            init_share_price,
+            rate,
+            time_remaining,
+            stretched_time_remaining,
+            share_price,
+            bond_reserves,
+        )
         return lp_in, d_base, d_bonds
 
     # TODO: Break this function up to use private class functions
@@ -1043,12 +1107,17 @@ class HyperdrivePricingModel(PricingModel):
             # This can also be expressed as:
             #
             # fee = ((1 / p) - 1) * φ * c * d_z
-            if self.verbose:
-                print(
-                    f"fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
-                    f"((1 / {spot_price}) - 1) * {fee_percent} * {share_price} * {d_shares}"
-                    f"{((1 / spot_price) - 1) * fee_percent * share_price * d_shares}"
-                )
+            logging.debug(
+                (
+                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
+                    "((1 / %g) - 1) * %g * %g * %g = %g"
+                ),
+                spot_price,
+                fee_percent,
+                share_price,
+                d_shares,
+                ((1 / spot_price) - 1) * fee_percent * share_price * d_shares,
+            )
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(

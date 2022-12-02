@@ -14,15 +14,7 @@ class Policy(BasicPolicy):
     """
 
     def __init__(
-        self,
-        market,
-        rng,
-        wallet_address,
-        budget=1000,
-        verbose=None,
-        amount_to_lp=100,
-        pt_to_short=100,
-        short_until_apr=0.05,
+        self, market, rng, wallet_address, budget=1000, amount_to_lp=100, pt_to_short=100, short_until_apr=0.05
     ):
         """call basic policy init then add custom stuff"""
         self.amount_to_lp = amount_to_lp
@@ -33,7 +25,6 @@ class Policy(BasicPolicy):
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
-            verbose=verbose,
         )
 
     def action(self):

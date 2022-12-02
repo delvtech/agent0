@@ -2,11 +2,12 @@
 Implements abstract classes that control agent behavior
 """
 
+import logging
 
 import numpy as np
 from numpy.random._generator import Generator
-from elfpy.markets import Market, MarketAction, MarketActionType
 
+from elfpy.markets import Market, MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
@@ -20,7 +21,7 @@ class Agent:
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float, verbose: bool):
+    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float):
         """
         Set up initial conditions
         """
@@ -29,7 +30,6 @@ class Agent:
         # TODO: remove this, wallet_address is a property of wallet, not the agent
         self.wallet_address: int = wallet_address
         self.budget: float = budget
-        self.verbose: bool = verbose
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
@@ -108,34 +108,23 @@ class Agent:
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 pass
-
-            # handle update value case
+            # handle updating a value
             if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
-                # TODO: add back in with high level of logging, category = "trade"
-                # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
-                #    print(f"   pre-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
+                if value_or_dict != 0 or self.wallet[key] != 0:
+                    logging.debug("pre-trade %17s = %.0g", key, self.wallet[key])
                 self.wallet[key] += value_or_dict
-                # TODO: add back in with high level of logging, category = "trade"
-                # if self.verbose and wallet != 0 or self.wallet[wallet_key] !=0:
-                #    print(f"  post-trade {wallet_key:17s} = {self.wallet[wallet_key]:,.0f}")
-                #    print(f"                              Δ = {wallet:+,.0f}")
-
-            # handle updating a dict
-            # these values have mint_time attached, stored as dicts
+                if value_or_dict != 0 or self.wallet[key] != 0:
+                    logging.debug("post-trade %17s = %1g", key, self.wallet[key])
+                    logging.debug("delta = %1g", value_or_dict)
+            # handle updating a dict, which have mint_time attached
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, amount in value_or_dict.items():
-                    # TODO: add back in with high level of logging, category = "trade"
-                    # if self.verbose:
-                    #    print(f"   pre-trade {wallet_key:17s} = \
-                    #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    logging.debug("pre-trade %17s = %s", key, self.wallet[key])
                     if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-                    # TODO: add back in with high level of logging, category = "trade"
-                    # if self.verbose:
-                    #    print(f"  post-trade {wallet_key:17s} = \
-                    #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
+                    logging.debug("post-trade %17s = %s", key, self.wallet[key])
             elif key in ["fees_paid", "effective_price"]:
                 pass
             elif key in ["address"]:
@@ -147,10 +136,7 @@ class Agent:
         """Get final trades for liquidating positions"""
         action_list: list[MarketAction] = []
         for mint_time, position in self.wallet.token_in_protocol.items():
-            if self.verbose:
-                print(
-                    "  get_liquidation_trades() evaluating closing short:" f" mint_time={mint_time} position={position}"
-                )
+            logging.debug("evaluating closing short: mint_time=%g, position=%d", mint_time, position)
             if position < 0:
                 action_list.append(
                     self.create_agent_action(
@@ -167,21 +153,17 @@ class Agent:
             )
         return action_list
 
-    # TODO: should be called get_status_report
-    def status_report(self) -> str:
-        """Returns a status report for the agent"""
-        output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC} "
-        string_list = []
-        string_list.append(f"base_in_wallet: {bcolors.OKBLUE}{self.wallet.base_in_wallet:,.0f}{bcolors.ENDC}")
-        if self.wallet.fees_paid:
-            string_list.append(f"fees_paid: {bcolors.OKCYAN}{self.wallet.fees_paid:,.0f}{bcolors.ENDC}")
-        output_string += ", ".join(string_list)
-        return output_string
+    def log_status_report(self) -> str:
+        """Return user state"""
+        logging.debug(
+            "%g base_in_wallet = %1g and fees_paid = %1g",
+            self.wallet_address,
+            self.wallet.base_in_wallet,
+            self.wallet.fees_paid if self.wallet.fees_paid else 0,
+        )
 
-    # TODO: should be called print_final_report.  better yet, make get_final_report that returns a
-    # string, caller can print
-    def final_report(self) -> None:
-        """Prints a report of the agent's state"""
+    def log_final_report(self) -> None:
+        """Logs a report of the agent's state"""
         price = self.market.spot_price
         base = self.wallet.base_in_wallet
         block_position_list = list(self.wallet.token_in_protocol.values())
@@ -191,17 +173,26 @@ class Agent:
         weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
         spend = weighted_average_spend
         holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-        annual_percentage_rate = holding_period_rate / self.market.time
-        output_string = f" {bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
-        if profit_and_loss < 0:
-            output_string += f" lost {bcolors.FAIL}"
+        if self.market.time > 0:
+            annual_percentage_rate = holding_period_rate / self.market.time
         else:
-            output_string += f" made {bcolors.OKGREEN}"
-        output_string += f"{float_to_string(profit_and_loss)}{bcolors.ENDC}"
-        output_string += f" on ₡{bcolors.OKCYAN}{float_to_string(spend)}{bcolors.ENDC} spent, APR = "
-        output_string += f"{bcolors.OKGREEN}" if annual_percentage_rate > 0 else f"{bcolors.FAIL}"
-        output_string += f"{annual_percentage_rate:,.2%}{bcolors.ENDC}"
-        output_string += f" ({holding_period_rate:,.2%} in {float_to_string(self.market.time,precision=2)} years)"
-        output_string += f", net worth = ₡{bcolors.FAIL}{float_to_string(worth)}{bcolors.ENDC}"
-        output_string += f" from {float_to_string(base)} base and {float_to_string(tokens)} tokens at p={price}\n"
-        print(output_string)
+            annual_percentage_rate = np.nan
+        lost_or_made = "lost" if profit_and_loss < 0 else "made"
+        logging.info(
+            (
+                "%g %s %s on $%s spent, APR = %g"
+                " (%.2g in %s years), net worth = $%s"
+                " from %s base and %s tokens at p = %g\n"
+            ),
+            self.wallet_address,
+            lost_or_made,
+            float_to_string(profit_and_loss),
+            float_to_string(spend),
+            annual_percentage_rate,
+            holding_period_rate,
+            float_to_string(self.market.time, precision=2),
+            float_to_string(worth),
+            float_to_string(base),
+            float_to_string(tokens),
+            price,
+        )

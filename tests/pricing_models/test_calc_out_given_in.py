@@ -70,7 +70,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models = [ElementPricingModel(False), HyperdrivePricingModel(False)]
+        pricing_models = [ElementPricingModel(), HyperdrivePricingModel()]
 
         # Test cases where token_out = "pt" indicating that bonds are being
         # purchased for base.
@@ -1078,7 +1078,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [ElementPricingModel(False), HyperdrivePricingModel(False)]
+        pricing_models: list[PricingModel] = [ElementPricingModel(), HyperdrivePricingModel()]
 
         # Failure test cases.
         test_cases = [
