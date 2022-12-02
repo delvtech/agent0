@@ -11,15 +11,13 @@ from elfpy.markets import Market, MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
-# TODO: this will get fixed soon when verbose is removed due to better logging, revisit this lint
-# pylint: disable=too-many-instance-attributes
+
 class Agent:
     """
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
     date value is an inte with how many tokens they have for that date
     """
 
-    # pylint: disable=too-many-arguments
     def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float):
         """
         Set up initial conditions
@@ -66,7 +64,7 @@ class Agent:
         """
         if self.market.share_reserves == 0:
             return 0
-        max_pt_short = self.market.share_reserves * self.market.share_price / self.market.spot_price
+        max_pt_short = self.market.share_reserves * self.market.share_price / self.market.get_spot_price()
         return max_pt_short
 
     def get_trade_list(self):
@@ -163,7 +161,7 @@ class Agent:
 
     def log_final_report(self) -> None:
         """Logs a report of the agent's state"""
-        price = self.market.spot_price
+        price = self.market.get_spot_price()
         base = self.wallet.base_in_wallet
         block_position_list = list(self.wallet.token_in_protocol.values())
         tokens = sum(block_position_list) if len(block_position_list) > 0 else 0

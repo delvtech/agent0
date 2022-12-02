@@ -370,7 +370,6 @@ class YieldSimulator:
         self.analysis_dict["init_share_price"].append(self.market.init_share_price)
         self.analysis_dict["simulation_start_time"].append(self.start_time)
         # Variables that change per day
-        self.analysis_dict["num_orders"].append(self.market.base_asset_orders + self.market.token_asset_orders)
         self.analysis_dict["vault_apy"].append(self.config.simulator.vault_apy[self.day])
         self.analysis_dict["day"].append(self.day)
         self.analysis_dict["daily_block_number"].append(self.daily_block_number)
@@ -388,7 +387,7 @@ class YieldSimulator:
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["share_reserves"].append(self.market.share_reserves)
         self.analysis_dict["bond_reserves"].append(self.market.bond_reserves)
-        self.analysis_dict["total_supply"].append(self.market.total_supply)
+        self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["spot_price"].append(self.market.spot_price)
+        self.analysis_dict["spot_price"].append(self.market.get_spot_price())
