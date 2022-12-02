@@ -43,9 +43,8 @@ class YieldSimulator:
         seconds_in_a_day = 86400
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
-        self.start_time: datetime.datetime = datetime.datetime.now()
+        self.start_time: datetime.datetime | None = None
         self.init_share_price: float = 0
-        self.pricing_model = None
         self.market = None
         self.agent_list: list[Agent] = []
         self.random_variables_set = False
@@ -139,22 +138,6 @@ class YieldSimulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def set_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
-        """Assign a PricingModel object to the pricing_model attribute"""
-        if self.config.simulator.verbose:
-            print(
-                f"{'#'*20} {model_name} {'#'*20}\n"
-                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
-            )
-        if model_name.lower() == "hyperdrive":
-            self.pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
-        elif model_name.lower() == "element":
-            self.pricing_model = ElementPricingModel(self.config.amm.verbose)
-        else:
-            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
-
-        return self.pricing_model
-
     def override_variables(self, override_dict):
         """Replace existing member & config variables with ones defined in override_dict"""
         # override the config variables, including random variables that were set
@@ -191,7 +174,7 @@ class YieldSimulator:
         if override_dict is not None:
             self.override_variables(override_dict)  # apply the override dict
 
-        pricing_model = self.set_pricing_model(
+        pricing_model = self._get_pricing_model(
             self.config.simulator.pricing_model_name
         )  # construct pricing model object
 
@@ -260,6 +243,24 @@ class YieldSimulator:
                 print(user_with_policy.status_report())
             self.agent_list.append(user_with_policy)
 
+    def _get_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
+        """Get a PricingModel object from the config passed in"""
+        if self.config.simulator.verbose:
+            print(
+                f"{'#'*20} {model_name} {'#'*20}\n"
+                f"verbose=(simulator:{self.config.simulator.verbose}, pricing_model:{self.config.amm.verbose})"
+            )
+
+        # TODO: make this exhaustive switch
+        if model_name.lower() == "hyperdrive":
+            pricing_model = HyperdrivePricingModel(self.config.amm.verbose)
+        elif model_name.lower() == "element":
+            pricing_model = ElementPricingModel(self.config.amm.verbose)
+        else:
+            raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
+
+        return pricing_model
+
     def run_simulation(self, override_dict=None):
         r"""
         Run the trade simulation and update the output state dictionary
@@ -324,7 +325,10 @@ class YieldSimulator:
         # functions error due to division by zero.  Need to fix the accounting of reserves to
         # account for open short positions.
         if last_block_in_sim:  # get all of a agent's trades
+            # we are reversing order here to make sure that agent 0's remove_liquidity transaction
+            # is last
             self.agent_list = self.agent_list[::-1]
+
         for agent in self.agent_list:  # trade is different on the last block
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades()
@@ -369,11 +373,13 @@ class YieldSimulator:
         self.analysis_dict["block_number"].append(self.block_number)
         self.analysis_dict["block_timestamp"].append(
             time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            if self.start_time
+            else "None"
         )
         # Variables that change per trade
         self.analysis_dict["current_market_yearfrac"].append(self.market.time)
         self.analysis_dict["current_market_datetime"].append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time)
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
         )
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["share_reserves"].append(self.market.share_reserves)

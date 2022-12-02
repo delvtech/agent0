@@ -11,20 +11,15 @@ from elfpy.utils.outputs import float_to_string
 from elfpy.utils.bcolors import Bcolors as bcolors
 from elfpy.wallet import Wallet
 
-
-# TODO: The agent class has too many instance attributes (8/7)
-#     we should move some, like budget and wallet_address, into the agent wallet and out of User
+# TODO: this will get fixed soon when verbose is removed due to better logging, revisit this lint
+# pylint: disable=too-many-instance-attributes
 class Agent:
     """
-    Implements abstract classes that control agent behavior
-    agent has a budget that is a dict, keyed with a date
-    value is an inte with how many tokens they have for that date
+    Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
+    date value is an inte with how many tokens they have for that date
     """
 
-    # TODO: variables assigned by child classes are referenced by User -- need to fix up agent inheritance
-    # pylint: disable=no-member
     # pylint: disable=too-many-arguments
-
     def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float, verbose: bool):
         """
         Set up initial conditions

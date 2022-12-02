@@ -39,7 +39,7 @@ class MarketAction:
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: float = 0
 
-    def print_description_string(self) -> None:
+    def __str__(self):
         """Print a description of the Action"""
         output_string = f"{bcolors.FAIL}{self.wallet_address}{bcolors.ENDC}"
         for key, value in self.__dict__.items():
@@ -49,7 +49,7 @@ class MarketAction:
                 output_string += f" {key}: {float_to_string(value)}"
             elif key not in ["wallet_address", "agent"]:
                 output_string += f" {key}: {float_to_string(value)}"
-        print(output_string)
+        return output_string
 
 
 @dataclass(frozen=False)
@@ -221,7 +221,7 @@ class Market:
         time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         # if self.verbose:
-        agent_action.print_description_string()
+        print(agent_action)
         # for each position, specify how to forumulate trade and then execute
         # TODO: we shouldn't set values on the object passed in, add parameters to
         # open/close_long/short functions so that this isn't necessary
@@ -231,7 +231,7 @@ class Market:
         elif agent_action.action_type == "close_long":  # sell to close long
             market_deltas, agent_deltas = self._close_long(agent_action, "base", stretched_time_remaining)
         elif agent_action.action_type == "open_short":  # sell PT to open short
-            market_deltas, agent_deltas = self._open_short(agent_action, "pt", time_remaining)
+            market_deltas, agent_deltas = self._open_short(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "close_short":  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "add_liquidity":
@@ -380,8 +380,12 @@ class Market:
         """Increments the time member variable"""
         self.time += delta_time
 
+    # TODO: lets rename all these internal functions that take a stretch_time_remaining to
+    # time_remaining and explain what's expected of the parameter.  basically, the calc functions
+    # shouldn't care what kind of time var is passed in.  It should be up to the consumer to pass in
+    # properly formatted time.
     def _open_short(
-        self, agent_action: MarketAction, token_out: TokenType, time_remaining: float
+        self, agent_action: MarketAction, token_out: TokenType, stretch_time_remaining: float
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -394,7 +398,7 @@ class Market:
             bond_reserves=self.bond_reserves,
             token_out=token_out,
             fee_percent=self.fee_percent,
-            time_remaining=time_remaining,
+            time_remaining=stretch_time_remaining,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
         )
