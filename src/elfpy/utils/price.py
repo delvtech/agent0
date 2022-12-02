@@ -54,8 +54,8 @@ def calc_liquidity(
     apr,
     days_remaining,
     time_stretch,
-    init_share_price=1,
-    share_price=1,
+    init_share_price: float = 1,
+    share_price: float = 1,
 ):
     """
     Returns the reserve volumes and total supply

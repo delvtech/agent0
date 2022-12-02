@@ -14,13 +14,13 @@ def current_datetime() -> datetime:
     return datetime.now(pytz.timezone("Etc/GMT-0"))
 
 
-def block_number_to_datetime(start_time: timedelta, block_number: float, time_between_blocks: float) -> timedelta:
+def block_number_to_datetime(start_time: datetime, block_number: float, time_between_blocks: float) -> datetime:
     """Converts the current block number to a datetime based on the start datetime of the simulation"""
     delta_time = timedelta(seconds=block_number * time_between_blocks)
     return start_time + delta_time
 
 
-def yearfrac_as_datetime(start_time: timedelta, yearfrac: float) -> timedelta:
+def yearfrac_as_datetime(start_time: datetime, yearfrac: float) -> datetime:
     """Returns a yearfrac (e.g. the current market time) in datetime format"""
     dayfrac = yearfrac * 365
     delta_time = timedelta(days=dayfrac)

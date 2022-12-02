@@ -143,6 +143,8 @@ class Agent:
                     #       {{{' '.join([f'{k}: {v:,.0f}' for k, v in self.wallet[wallet_key].items()])}}}")
             elif key in ["fees_paid", "effective_price"]:
                 pass
+            elif key in ["address"]:
+                pass
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 

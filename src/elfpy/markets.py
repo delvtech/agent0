@@ -113,13 +113,13 @@ class Market:
 
     def __init__(
         self,
-        fee_percent: float,
-        token_duration: float,
+        fee_percent: float = 0,
+        token_duration: float = 1,
         # TODO: remove this, pass to methods instead
-        pricing_model: ElementPricingModel | HyperdrivePricingModel,
-        share_reserves: float,
-        bond_reserves: float,
-        lp_reserves: float,
+        pricing_model: ElementPricingModel | HyperdrivePricingModel | None = None,
+        share_reserves: float = 0,
+        bond_reserves: float = 0,
+        lp_reserves: float = 0,
         time_stretch_constant: float = 1,
         init_share_price: float = 1,
         share_price: float = 1,

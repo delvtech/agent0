@@ -25,6 +25,7 @@ import elfpy.utils.time as time_utils
 #     we should consider how to break them up or delete this TODO if it's not possible
 # pylint: disable=too-many-locals
 
+
 class TradeResult(NamedTuple):
     """
     Result from a calc_out_given_in or calc_in_given_out.  The values are the amount of asset required
@@ -140,14 +141,18 @@ class PricingModel(ABC):
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
 
-
     @abstractmethod
     def model_name(self) -> str:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
     def calc_spot_price_from_reserves(
-        self, share_reserves: float, bond_reserves: float, init_share_price: float, share_price: float, time_remaining: float
+        self,
+        share_reserves: float,
+        bond_reserves: float,
+        init_share_price: float,
+        share_price: float,
+        time_remaining: float,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -191,8 +196,8 @@ class PricingModel(ABC):
         bond_reserves: float,
         time_remaining: float,
         time_stretch: float,
-        init_share_price: float=1,
-        share_price: float=1,
+        init_share_price: float = 1,
+        share_price: float = 1,
     ) -> float:
         # TODO: Update this comment so that it matches the style of the other comments.
         """
@@ -220,6 +225,51 @@ class ElementPricingModel(PricingModel):
     Element v1 pricing model
     Does not use the Yield Bearing Vault `init_share_price` (μ) and `share_price` (c) variables.
     """
+
+    def calc_lp_out_given_tokens_in(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def calc_lp_in_given_tokens_out(
+        self,
+        d_base: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def calc_tokens_out_given_lp_in(
+        self,
+        lp_in: float,
+        share_reserves: float,
+        bond_reserves: float,
+        share_buffer: float,
+        init_share_price: float,
+        share_price: float,
+        lp_reserves: float,
+        rate: float,
+        time_remaining: float,
+        stretched_time_remaining: float,
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
 
     def model_name(self) -> str:
         return "Element"
@@ -428,8 +478,8 @@ class ElementPricingModel(PricingModel):
         token_out: TokenType,
         fee_percent: float,
         time_remaining: float,
-        init_share_price: float=1.0,
-        share_price: float=1.0,
+        init_share_price: float = 1.0,
+        share_price: float = 1.0,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
