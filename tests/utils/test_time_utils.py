@@ -10,6 +10,7 @@ Testing for time utilities found in src/elfpy/utils/time.py
 import datetime
 import unittest
 import pytz
+import numpy as np
 
 from elfpy.utils import time as time_utils
 
@@ -24,7 +25,7 @@ class TestTimeUtils(unittest.TestCase):
         test_time = time_utils.current_datetime()
 
         assert now < test_time < (now + datetime.timedelta(milliseconds=100)), \
-            'Returned date is different than datetime.datetime.now()'
+            f'Unexpected time value {test_time} should be close to {now}'
 
 
     def test_block_number_to_datetime(self):
@@ -63,174 +64,301 @@ class TestTimeUtils(unittest.TestCase):
                 test_case["time_between_blocks"]
             )
 
-        assert block_time == test_case["expected_result"], 'unexpected time value'
+        assert block_time == test_case["expected_result"], f'unexpected time value {block_time}'
 
 
-    # def yearfrac_as_datetime(start_time, yearfrac):
-    #     """
-    #     Returns a yearfrac (e.g. the current market time) in datetime format
+    def test_yearfrac_as_datetime(self):
+        """Unit tests for the yearfrac_as_datetime function"""
 
-    #     Arguments
-    #     ---------
-    #     start_time : datetime
-    #         Timestamp at which the simulation started
-    #     yearfrac : float
-    #         Fraction of a year since start_time to convert into datetime
+        # Choose an arbitrary date as start_time
+        start_time = datetime.datetime.strptime('28/03/1990 05:30:42', '%d/%m/%Y %H:%M:%S')
 
-    #     Returns
-    #     -------
-    #     datetime
-    #         Timestamp for the provided start_time plus the provided yearfrac
-    #     """
-    #     dayfrac = yearfrac * 365
-    #     delta_time = datetime.timedelta(days=dayfrac)
-    #     return start_time + delta_time
+        test_cases = [
+            # test 1: yearfrac = 6 months
+            {
+                "start_time": start_time, # arbitrarily chosen date
+                "yearfrac": 0.50, # 6 months
+                "expected_result": '26/09/1990 17:30:42'
+            }
+        ]
 
+        for test_case in test_cases:
+            yearfrac_time = time_utils.yearfrac_as_datetime(
+                test_case["start_time"],
+                test_case["yearfrac"]
+            )
 
-    # def get_yearfrac_remaining(market_time, mint_time, token_duration):
-    #     """
-    #     Get the year fraction remaining on a token
-
-    #     Arguments
-    #     ---------
-    #     market_time : datetime
-    #         Time that has elapsed in the given market
-    #     mint_time : datetime
-    #         Time at which the token in question was minted
-    #     token_duration : float
-    #         Total duration of the token's term, in fractions of a year
-
-    #     Returns
-    #     -------
-    #     float
-    #         Time left until token maturity, in fractions of a year
-    #     """
-    #     yearfrac_elapsed = market_time - mint_time
-    #     time_remaining = np.maximum(token_duration - yearfrac_elapsed, 0)
-    #     return time_remaining
+            assert datetime.datetime.strftime(yearfrac_time, '%d/%m/%Y %H:%M:%S') ==  \
+                test_case["expected_result"], f'unexpected time value {yearfrac_time}'
 
 
-    # def norm_days(days, normalizing_constant=365):
-    #     """
-    #     Returns days normalized between 0 and 1, with a default assumption of a year-long scale
+    def test_get_yearfrac_remaining(self):
+        """Unit tests for the get_yearfrac_remaining function"""
 
-    #     Arguments
-    #     ---------
-    #     days : float
-    #         Amount of days to normalize
-    #     normalizing_constant : float
-    #         Amount of days to use as a normalization factor. Defaults to 365
+        test_cases = [
+            # test 1: 6mo duration, minted at term start
+            {
+                "market_time": 0, # same time as market initialization
+                "mint_time": 0, # minted at time of market initialization
+                "token_duration": 0.50, # 6 months duration
+                "expected_result": 0.50 # the entire duration remaining
+            },
+            # test 2: 6mo duration, 3mo elapsed since mint
+            {
+                "market_time": 0.50, # 0.50 years = 6 months elapsed since market initialization
+                "mint_time": 0.25, # minted at 0.25 years = 3 months after market initialization
+                "token_duration": 0.50, # 6 months duration
+                "expected_result": 0.25 # 3 months remaining
+            },
+            # test 3: 6mo duration, 9mo elapsed since mint
+            {
+                "market_time": 0.75, # 0.75 years = 9 months elapsed since market initialization
+                "mint_time": 0, # minted at time of market initialization
+                "token_duration": 0.50, # 6 months duration
+                "expected_result": 0 # bond has matured. No time remaining (not negative)
+            }
+        ]
 
-    #     Returns
-    #     -------
-    #         Amount of days provided, converted to fractions of a year
-    #     """
-    #     return days / normalizing_constant
+        for test_case in test_cases:
+            time_remaining = time_utils.get_yearfrac_remaining(
+                test_case["market_time"],
+                test_case["mint_time"],
+                test_case["token_duration"]
+            )
 
-
-    # def stretch_time(time, time_stretch=1):
-    #     """
-    #     Returns stretched time values
-
-    #     Arguments
-    #     ---------
-    #     time : float
-    #         Time that needs to be stretched for calculations, in terms of the normalizing constant
-    #     time_stretch : float
-    #         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-    #         Defaults to 1
-
-    #     Returns
-    #     -------
-    #     float
-    #         Stretched time, using the provided parameters
-    #     """
-    #     return time / time_stretch
-
-
-    # def unnorm_days(normed_days, normalizing_constant=365):
-    #     """
-    #     Returns days from a value between 0 and 1
-
-    #     Arguments
-    #     ---------
-    #     normed_days : float
-    #         Normalized amount of days, according to a normalizing constant
-    #     normalizing_constant : float
-    #         Amount of days to use as a normalization factor. Defaults to 365
-
-    #     Returns
-    #     -------
-    #     float
-    #         Amount of days, calculated from the provided parameters
-    #     """
-    #     return normed_days * normalizing_constant
+            np.testing.assert_almost_equal(
+                time_remaining,
+                test_case["expected_result"],
+                err_msg=f"unexpected time remaining {time_remaining}"
+            )
 
 
-    # def unstretch_time(stretched_time, time_stretch=1):
-    #     """
-    #     Returns unstretched time value, which should be between 0 and 1
+    def test_norm_days(self):
+        """Unit tests for the norm_days function"""
 
-    #     Arguments
-    #     ---------
-    #     stretched_time : float
-    #         Time that has been stretched using the time_stretch factor
-    #     time_stretch : float
-    #         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-    #         Defaults to 1
+        test_cases = [
+            # test 1
+            {
+                "days": 0,
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 0
+            },
+            # test 2
+            {
+                "days": 182.5, # 6 months
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 0.5
+            },
+            # test 3
+            {
+                "days": 360, # twice the scale
+                "normalizing_constant": 180, # arbitrary scale
+                "expected_result": 2
+            }
+        ]
 
-    #     Returns
-    #     -------
-    #     float
-    #         Time that was provided, unstretched but still based on the normalization factor
-    #     """
-    #     return stretched_time * time_stretch
+        for test_case in test_cases:
+            norm_days = time_utils.norm_days(
+                test_case["days"],
+                test_case["normalizing_constant"]
+            )
 
-
-    # def days_to_time_remaining(days_remaining, time_stretch=1, normalizing_constant=365):
-    #     """
-    #     Converts remaining pool length in days to normalized and stretched time
-
-    #     Arguments
-    #     ---------
-    #     days_remaining : float
-    #         Time left until term maturity, in days
-    #     time_stretch : float
-    #         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-    #         Defaults to 1
-    #     normalizing_constant : float
-    #         Amount of days to use as a normalization factor. Defaults to 365
-
-    #     Returns
-    #     -------
-    #     float
-    #         Time remaining until term maturity, in normalized and stretched time
-
-    #     """
-    #     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    #     time_remaining = stretch_time(normed_days_remaining, time_stretch)
-    #     return time_remaining
+            np.testing.assert_almost_equal(
+                norm_days,
+                test_case["expected_result"],
+                err_msg=f"unexpected normalized days {norm_days}"
+            )
 
 
-    # def time_to_days_remaining(time_remaining, time_stretch=1, normalizing_constant=365):
-    #     """
-    #     Converts normalized and stretched time remaining in pool to days
+    def test_stretch_time(self):
+        """Unit tests for the stretch_time function"""
 
-    #     Arguments
-    #     ---------
-    #     time_remaining : float
-    #         Time left until term maturity, in normalized and stretched time
-    #     time_stretch : float
-    #         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-    #         Defaults to 1
-    #     normalizing_constant : float
-    #         Amount of days to use as a normalization factor. Defaults to 365
+        test_cases = [
+            # test 1
+            {
+                "time": 0, # no time
+                "time_stretch": 20, # 20 years stretch
+                "expected_result": 0
+            },
+            # test 2
+            {
+                "time": 0.5, # 6 months
+                "time_stretch": 20, # 20 years stretch
+                "expected_result": 0.025
+            },
+            # test 3
+            {
+                "time": 1, # one year
+                "time_stretch": 2, # 2 years stretch
+                "expected_result": 0.5
+            }
+        ]
 
-    #     Returns
-    #     -------
-    #     float
-    #         Time remaining until term maturity, in days
-    #     """
-    #     normed_days_remaining = unstretch_time(time_remaining, time_stretch)
-    #     days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
-    #     return days_remaining
+        for test_case in test_cases:
+            stretched_time = time_utils.stretch_time(
+                test_case["time"],
+                test_case["time_stretch"]
+            )
+
+            np.testing.assert_almost_equal(
+                stretched_time,
+                test_case["expected_result"],
+                err_msg=f"unexpected stretched time {stretched_time}"
+            )
+
+
+    def test_unnorm_days(self):
+        """Unit tests for the unnorm_days function"""
+
+        test_cases = [
+            # test 1
+            {
+                "normed_days": 0,
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 0
+            },
+            # test 2
+            {
+                "normed_days": 0.5, # half the scale
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 182.5
+            },
+            # test 3
+            {
+                "normed_days": 2, # twice the scale
+                "normalizing_constant": 180, # arbitrary scale
+                "expected_result": 360
+            }
+        ]
+
+        for test_case in test_cases:
+            unnormed_days = time_utils.unnorm_days(
+                test_case["normed_days"],
+                test_case["normalizing_constant"]
+            )
+
+            np.testing.assert_almost_equal(
+                unnormed_days,
+                test_case["expected_result"],
+                err_msg=f"unexpected amount of days {unnormed_days}"
+            )
+
+
+    def unstretch_time(self):
+        """Unit tests for the unstretch_time function"""
+
+        test_cases = [
+            # test 1
+            {
+                "stretched_time": 0, # no time
+                "time_stretch": 20, # 20 years stretch
+                "expected_result": 0
+            },
+            # test 2
+            {
+                "stretched_time": 0.05,
+                "time_stretch": 20, # 20 years stretch
+                "expected_result": 1 # 1 year
+            },
+            # test 3
+            {
+                "stretched_time": 0.10,
+                "time_stretch": 5, # 3 years stretch
+                "expected_result": 0.50 # 6 months
+            }
+        ]
+
+        for test_case in test_cases:
+            unstretched_time = time_utils.unstretch_time(
+                test_case["stretched_time"],
+                test_case["time_stretch"]
+            )
+
+            np.testing.assert_almost_equal(
+                unstretched_time,
+                test_case["expected_result"],
+                err_msg=f"unexpected unstretched time {unstretched_time}"
+            )
+
+
+    def test_days_to_time_remaining(self):
+        """Unit tests for the days_to_time_remaining function"""
+
+        test_cases = [
+            # test 1: 6mo remaining; 1 year scale; stretched to 20 years
+            {
+                "days_remaining": 182.5, # 6 months remaining
+                "time_stretch": 20, # 20 years stretch
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 0.025 #
+            },
+            # test 2: 9mo remaining; 1 year scale; stretched to 20 years
+            {
+                "days_remaining": 273.75, # 9 months remaining
+                "time_stretch": 20, # 20 years stretch
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 0.0375 #
+            },
+            # test 3: 3mo remaining; 180-day scale; stretched to 5 years
+            {
+                "days_remaining": 91.25, # 3 months remaining
+                "time_stretch": 5, # 5 years stretch
+                "normalizing_constant": 180, # 1 year scale
+                "expected_result": 0.1013888889 #
+            }
+        ]
+
+        for test_case in test_cases:
+            time_remaining = time_utils.days_to_time_remaining(
+                test_case["days_remaining"],
+                test_case["time_stretch"],
+                test_case["normalizing_constant"]
+            )
+
+            np.testing.assert_almost_equal(
+                time_remaining,
+                test_case["expected_result"],
+                err_msg=f"unexpected time remaining {time_remaining}"
+            )
+
+
+
+    def test_time_to_days_remaining(self):
+        """Unit tests for the time_to_days_remaining function"""
+
+        test_cases = [
+            # test 1: 0.025 stretched time remaining; 1 year scale; stretched to 20 years
+            {
+                "time_remaining": 0.025,
+                "time_stretch": 20, # 20 years stretch
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 182.5 #
+            },
+            # test 2: 0.0375 stretched time remaining; 1 year scale; stretched to 20 years
+            {
+                "time_remaining": 0.0375,
+                "time_stretch": 20, # 20 years stretch
+                "normalizing_constant": 365, # 1 year scale
+                "expected_result": 273.75 # 9 months remaining
+            },
+            # test 3: 0.10 stretched time remaining; 180-day scale; stretched to 5 years
+            {
+                "time_remaining": 0.10, # 3 months remaining
+                "time_stretch": 5, # 5 years stretch
+                "normalizing_constant": 180, # 1 year scale
+                "expected_result": 90 #
+            }
+        ]
+
+        for test_case in test_cases:
+            days_remaining = time_utils.time_to_days_remaining(
+                test_case["time_remaining"],
+                test_case["time_stretch"],
+                test_case["normalizing_constant"]
+            )
+
+            np.testing.assert_almost_equal(
+                days_remaining,
+                test_case["expected_result"],
+                err_msg=f"unexpected time remaining {days_remaining}"
+            )

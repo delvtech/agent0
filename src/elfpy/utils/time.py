@@ -71,10 +71,11 @@ def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration:
 
     Arguments
     ---------
-    market_time : datetime
-        Time that has elapsed in the given market
-    mint_time : datetime
-        Time at which the token in question was minted
+    market_time : float
+        Time that has elapsed in the given market, in fractions of a year
+    mint_time : float
+        Time at which the token in question was minted, relative to market_time,
+        in fractions of a year
     token_duration : float
         Total duration of the token's term, in fractions of a year
 
@@ -91,7 +92,7 @@ def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration:
 
 def norm_days(days: float, normalizing_constant: float = 365) -> float:
     """
-    Returns days normalized between 0 and 1, with a default assumption of a year-long scale
+    Returns days normalized, with a default assumption of a year-long scale
 
     Arguments
     ---------
