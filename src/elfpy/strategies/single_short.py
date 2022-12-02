@@ -13,17 +13,10 @@ class Policy(BasicPolicy):
     only has one long open at a time
     """
 
-    def __init__(
-        self,
-        market,
-        rng,
-        wallet_address,
-        budget=100,
-        verbose=None,
-    ):
+    def __init__(self, market, rng, wallet_address, budget=100):
         """call basic policy init then add custom stuff"""
         self.pt_to_short = 100
-        super().__init__(market, rng, wallet_address, budget, verbose)
+        super().__init__(market, rng, wallet_address, budget)
 
     def action(self):
         """

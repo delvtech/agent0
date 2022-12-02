@@ -4,8 +4,9 @@ Utilities for parsing & loading user config TOML files
 TODO: change floor_fee to be a decimal like min_fee and max_fee
 """
 
-
 from dataclasses import dataclass, field
+import logging
+
 import tomli
 
 
@@ -67,6 +68,7 @@ class SimulatorConfig:
     vault_apy: list[float] = field(
         default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
     )
+    logging_level: str = field(default="warning", metadata={"hint": "Logging level, as defined by stdlib logging"})
 
 
 @dataclass
@@ -84,8 +86,21 @@ def parse_simulation_config(config_file):
     """
     with open(config_file, mode="rb") as file:
         toml_config = tomli.load(file)
-    return Config(
+    simulation_config = Config(
         market=MarketConfig(**toml_config["market"]),
         amm=AMMConfig(**toml_config["amm"]),
         simulator=SimulatorConfig(**toml_config["simulator"]),
     )
+    match simulation_config.simulator.logging_level.lower():
+        case "debug":
+            level = logging.DEBUG
+        case "info":
+            level = logging.INFO
+        case "warning":
+            level = logging.WARNING
+        case "error":
+            level = logging.ERROR
+        case "critical":
+            level = logging.CRITICAL
+    simulation_config.simulator.logging_level = level
+    return simulation_config

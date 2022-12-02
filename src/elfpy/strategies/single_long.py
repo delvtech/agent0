@@ -12,7 +12,7 @@ class Policy(BasicPolicy):
     only has one long open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
+    def __init__(self, market, rng, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""
         self.amount_to_trade = 100
         super().__init__(
@@ -20,7 +20,6 @@ class Policy(BasicPolicy):
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
-            verbose=verbose,
         )
 
     def action(self):

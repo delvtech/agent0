@@ -13,7 +13,7 @@ class Policy(BasicPolicy):
     only has one LP open at a time
     """
 
-    def __init__(self, market, rng, wallet_address, budget=1000, verbose=None):
+    def __init__(self, market, rng, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""
         self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
         self.amount_to_lp = 100
@@ -22,7 +22,6 @@ class Policy(BasicPolicy):
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
-            verbose=verbose,
         )
 
     def action(self):
