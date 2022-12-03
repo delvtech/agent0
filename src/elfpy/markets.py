@@ -189,8 +189,6 @@ class Market:
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         logging.debug(agent_action)
         # for each position, specify how to forumulate trade and then execute
-        # TODO: we shouldn't set values on the object passed in, add parameters to
-        # open/close_long/short functions so that this isn't necessary
         if agent_action.action_type == "open_long":  # buy to open long
             market_deltas, agent_deltas = self._open_long(agent_action, "pt", stretched_time_remaining)
         elif agent_action.action_type == "close_long":  # sell to close long
@@ -225,18 +223,24 @@ class Market:
 
     def get_rate(self):
         """Returns the current market apr"""
-        rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.token_duration)
+        if self.share_reserves == 0:  # market is empty
+            rate = np.nan
+        else:
+            rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.token_duration)
         return rate
 
     def get_spot_price(self):
         """Returns the current market price of the share reserves"""
-        spot_price = self.pricing_model.calc_spot_price_from_reserves(
-            share_reserves=self.share_reserves,
-            bond_reserves=self.bond_reserves,
-            init_share_price=self.init_share_price,
-            share_price=self.share_price,
-            time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
-        )
+        if self.share_reserves == 0:  # market is empty
+            spot_price = np.nan
+        else:
+            spot_price = self.pricing_model.calc_spot_price_from_reserves(
+                share_reserves=self.share_reserves,
+                bond_reserves=self.bond_reserves,
+                init_share_price=self.init_share_price,
+                share_price=self.share_price,
+                time_remaining=time_utils.stretch_time(self.token_duration, self.time_stretch_constant),
+            )
         return spot_price
 
     def get_market_state_string(self) -> str:
@@ -526,6 +530,11 @@ class Market:
         """
         Computes new deltas for bond & share reserves after liquidity is added
         """
+        # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
+        if self.share_reserves == 0 and self.bond_reserves == 0:  # pool has not been initialized
+            rate = 0
+        else:
+            rate = self.get_rate()
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=agent_action.trade_amount,
             share_reserves=self.share_reserves,
@@ -534,7 +543,7 @@ class Market:
             init_share_price=self.init_share_price,
             share_price=self.share_price,
             lp_reserves=self.lp_reserves,
-            rate=self.get_rate(),
+            rate=rate,
             time_remaining=time_remaining,
             stretched_time_remaining=stretched_time_remaining,
         )

@@ -97,12 +97,13 @@ def calc_liquidity(
 def calc_apr_from_spot_price(price, normalized_days_remaining):
     """Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration"""
     assert price > 0, (
-        "pricing_models.calc_apr_from_spot_price: ERROR: calc_apr_from_spot_price:"
+        "utils.price.calc_apr_from_spot_price: ERROR: "
         f"Price argument should be greater or equal to zero, not {price}"
     )
-    assert (
-        normalized_days_remaining > 0
-    ), f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
+    assert normalized_days_remaining > 0, (
+        "utils.price.calc_apr_from_spot_price: ERROR: "
+        f"normalized_days_remaining argument should be greater than zero, not {normalized_days_remaining}"
+    )
     return (1 - price) / price / normalized_days_remaining  # price = 1 / (1 + r * t)
 
 

@@ -227,7 +227,6 @@ class YieldSimulator:
             self.market.init_share_price,
             self.market.time_stretch_constant,
         )
-        self.market.log_market_step_string()
         # fill market pools with an initial LP
         if self.config.simulator.init_lp:
             initial_lp = import_module("elfpy.strategies.init_lp").Policy(
@@ -244,6 +243,7 @@ class YieldSimulator:
             self.collect_and_execute_trades()
         else:  # manual market configuration
             self.agent_list = []
+        self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
@@ -342,8 +342,7 @@ class YieldSimulator:
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
                 logging.debug("agent wallet deltas = %s", wallet_deltas.__dict__)
-                logging.debug("post-trade agent status = ")
-                agent.log_status_report()
+                logging.debug("post-trade agent status = %s", agent.log_status_report())
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 

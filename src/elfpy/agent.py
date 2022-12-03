@@ -108,20 +108,20 @@ class Agent:
             # handle updating a value
             if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug("pre-trade %17s = %.0g", key, self.wallet[key])
+                    logging.debug("pre-trade %s = %.0g", key, self.wallet[key])
                 self.wallet[key] += value_or_dict
                 if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug("post-trade %17s = %1g", key, self.wallet[key])
+                    logging.debug("post-trade %s = %1g", key, self.wallet[key])
                     logging.debug("delta = %1g", value_or_dict)
             # handle updating a dict, which have mint_time attached
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, amount in value_or_dict.items():
-                    logging.debug("pre-trade %17s = %s", key, self.wallet[key])
+                    logging.debug("pre-trade %s = %s", key, self.wallet[key])
                     if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-                    logging.debug("post-trade %17s = %s", key, self.wallet[key])
+                    logging.debug("post-trade %s = %s", key, self.wallet[key])
             elif key in ["fees_paid", "effective_price"]:
                 pass
             elif key in ["address"]:
