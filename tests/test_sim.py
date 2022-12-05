@@ -27,13 +27,8 @@ class BaseTest(unittest.TestCase):
         """Assigns member variables that are useful for many tests"""
         random_seed = 123
         simulator_rng = np.random.default_rng(random_seed)
-        self.config = Config(market=MarketConfig(), amm=AMMConfig(), simulator=SimulatorConfig())
-        self.pricing_models = [
-            # ElementPricingModel(verbose=self.config.simulator.verbose),
-            HyperdrivePricingModel(verbose=self.config.simulator.verbose),
-        ]
         num_vals_per_variable = 4
-        self.test_rng = np.random.default_rng(random_seed)
+        self.test_rng = np.random.default_rng(simulator_rng)
         self.target_liquidity_vals = self.test_rng.uniform(low=1e5, high=1e6, size=num_vals_per_variable)
         self.base_asset_price_vals = self.test_rng.uniform(low=2e3, high=3e3, size=num_vals_per_variable)
         self.init_share_price_vals = self.test_rng.uniform(low=1.0, high=2.0, size=num_vals_per_variable)
@@ -45,6 +40,14 @@ class BaseTest(unittest.TestCase):
         self.pool_apy_vals = np.maximum(1e-5, self.test_rng.normal(loc=0.2, scale=0.1, size=num_vals_per_variable))
         self.fee_percent_vals = self.test_rng.normal(loc=0.1, scale=0.01, size=num_vals_per_variable)
 
+        self.config = Config(
+            market=MarketConfig(), amm=AMMConfig(verbose=True), simulator=SimulatorConfig(user_policies=[])
+        )
+        self.pricing_models = [
+            # ElementPricingModel(),
+            HyperdrivePricingModel(),
+        ]
+
 
 class TestSimulator(BaseTest):
     """Simulator test class"""
@@ -54,8 +57,8 @@ class TestSimulator(BaseTest):
         self.setup_test_vars()
         simulator = YieldSimulator(self.config)
 
-        for rng_index in range(1, 15):
-            simulator.reset_rng(np.random.default_rng(rng_index))
+        for rng_index in range(1, 2):
+            simulator.reset_rng(np.random.default_rng())
             simulator.set_random_variables()
             for pricing_model in self.pricing_models:
                 simulator.run_simulation(
