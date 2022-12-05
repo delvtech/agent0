@@ -240,7 +240,7 @@ class TestPriceUtils(unittest.TestCase):
                 #   = 276637.1374102353
                 "expected_result": 276637.1374102353 # token > base reserves (is it enough? share_price sus)
             },
-            # test 7: DIVISION BY ZERO ERROR
+            # test 7: ERROR CASE: 0 TIME STRETCH -> ZeroDivisionError
             #   5% APR; 500k bond reserves; 6mo remaining;
             #   22.186877016851916 t_stretch (targets 5% APR);
             #   1 init share price; 1.25 share price
@@ -295,7 +295,7 @@ class TestPriceUtils(unittest.TestCase):
         for test_case in test_cases:
 
             # Check if this test case is supposed to fail
-            if 'is_error_case' in test_case:
+            if 'is_error_case' in test_case and test_case["is_error_case"]:
 
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case['expected_result']):
@@ -345,7 +345,7 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 1, # share price of the LP in the yield source; c = 1
                 "expected_base_asset_reserves": 2536.3203786253266, #
                 "expected_token_asset_reserves": 2525.2716119090405, #
-                "expected_total_liquidity": 5000.0 # ~50:50 reserves ratio
+                "expected_total_liquidity": 5000 # ~50:50 reserves ratio
             },
             # test 2: 5M target_liquidity; 1k market price; 2% APR;
             #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
@@ -360,7 +360,7 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 1, # share price of the LP in the yield source; c = 1
                 "expected_base_asset_reserves": 3922.192745298014, #
                 "expected_token_asset_reserves": 1088.5853272490062, #
-                "expected_total_liquidity": 5000.0 # base > token reserves
+                "expected_total_liquidity": 5000 # base > token reserves
             },
             # test 3: 5M target_liquidity; 1k market price; 8% APR;
             #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
@@ -375,13 +375,13 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 1, # share price of the LP in the yield source; c = 1
                 "expected_base_asset_reserves": 1534.0469740383746, #
                 "expected_token_asset_reserves": 3604.591147000091, #
-                "expected_total_liquidity": 5000.0 # token > base reserves
+                "expected_total_liquidity": 5000 # token > base reserves
             },
             # test 4: 10M target_liquidity; 500 market price; 3% APR;
             #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
-                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
                 "market_price": 500, # Market price of base asset
                 "apr": 0.03, # fixed rate APR you'd get from purchasing bonds; r = 0.03
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
@@ -390,13 +390,13 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2, # share price of the LP in the yield source
                 "expected_base_asset_reserves": 12287.029415142337, #
                 "expected_token_asset_reserves": 7770.817864244096, #
-                "expected_total_liquidity": 20000.0 # base > token reserves?
+                "expected_total_liquidity": 20000 # base > token reserves?
             },
             # test 5: 10M target_liquidity; 500 market price; 1% APR;
             #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
-                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
                 "market_price": 500, # Market price of base asset
                 "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
@@ -405,13 +405,13 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2, # share price of the LP in the yield source
                 "expected_base_asset_reserves": 19186.027487682495, #
                 "expected_token_asset_reserves": 816.0074435982989, #
-                "expected_total_liquidity": 20000.0 # base > token reserves?
+                "expected_total_liquidity": 20000 # base > token reserves?
             },
             # test 6: 10M target_liquidity; 500 market price; 6% APR;
             #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
             #   1.5 init share price; 2 share price
             {
-                "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
                 "market_price": 500, # Market price of base asset
                 "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
@@ -420,36 +420,198 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2, # share price of the LP in the yield source
                 "expected_base_asset_reserves": 5195.968749573127, #
                 "expected_token_asset_reserves": 15026.091719183272, #
-                "expected_total_liquidity": 20000.0 # base > token reserves?
+                "expected_total_liquidity": 20000 # base > token reserves?
+            },
+            # test 7: ERROR CASE: 0 TARGET LIQUIDITY -> ZeroDivisionError
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 0, # ERROR CASE; Targeting 0 USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError,
+                "expected_base_asset_reserves": ZeroDivisionError, #
+                "expected_token_asset_reserves": ZeroDivisionError, #
+                "expected_total_liquidity": ZeroDivisionError #
+            },
+            # test 8: ERROR CASE: 0 MARKET PRICE -> ZeroDivisionError
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 0, # ERROR CASE; Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError,
+                "expected_base_asset_reserves": ZeroDivisionError, #
+                "expected_token_asset_reserves": ZeroDivisionError, #
+                "expected_total_liquidity": ZeroDivisionError #
+            },
+            # test 9: STRANGE CASE: 0 APR -> NEGATIVE BASE LIQUIDITY?
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 1000000, # Targeting 5M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.00, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "is_error_case": False, #
+                "expected_base_asset_reserves": 2285.714285714286, #
+                "expected_token_asset_reserves": -285.7142857142857, # NEGATIVE?
+                "expected_total_liquidity": 2000 # base > token reserves?
+            },
+            # test 10: ERROR CASE: 0 MARKET PRICE -> ZeroDivisionError
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 0, # ERROR CASE; 0 days remaining; t = 0
+                "time_stretch": 36.97812836141986,
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError,
+                "expected_base_asset_reserves": ZeroDivisionError, #
+                "expected_token_asset_reserves": ZeroDivisionError, #
+                "expected_total_liquidity": ZeroDivisionError #
+            },
+            # test 10: ERROR CASE: 0 TIME STRETCH -> ZeroDivisionError
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 0 time_stretch (targets 3% APR);
+            #   1.5 init share price; 2 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 0, # ERROR CASE
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 2, # share price of the LP in the yield source
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError,
+                "expected_base_asset_reserves": ZeroDivisionError, #
+                "expected_token_asset_reserves": ZeroDivisionError, #
+                "expected_total_liquidity": ZeroDivisionError #
+            },
+            # test 11: CURRENT SHARE PRICE < INIT SHARE PRICE
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   1.5 init share price; 1 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986, # Targets 3% APR
+                "init_share_price": 1.5, # original share price when pool started
+                "share_price": 1.0, # ERROR CASE; share_price below init_share_price
+                "is_error_case": False, #
+                "expected_result": 0,
+                "expected_base_asset_reserves": 2781.2982274103742, #
+                "expected_token_asset_reserves": 17476.982299178464, #
+                "expected_total_liquidity": 20000 #
+            },
+            # test 12: INIT SHARE PRICE = 0; CURRENT SHARE PRICE < INIT SHARE PRICE
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   0 init share price; 0.5 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986, # Targets 3% APR
+                "init_share_price": 0, # ERROR CASE; original share price when pool started
+                "share_price": 0.5, # share_price below init_share_price
+                "is_error_case": False, #
+                "expected_result": 0,
+                "expected_base_asset_reserves": 39417.47572815535, #
+                "expected_token_asset_reserves": -19708.737864077673, # NEGATIVE?
+                "expected_total_liquidity": 20000 #
+            },
+            # test 13: ERROR CASE; BOTH INIT AND CURRENT SHARE PRICE = 0
+            #   10M target_liquidity; 500 market price; 6% APR;
+            #   3mo remaining; 36.97812836141986 time_stretch (targets 3% APR);
+            #   0 init share price; 0 share price
+            {
+                "target_liquidity_usd": 10000000, # Targeting 10M USD liquidity
+                "market_price": 500, # Market price of base asset
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 36.97812836141986, # Targets 3% APR
+                "init_share_price": 0, # ERROR CASE; original share price when pool started
+                "share_price": 0, # share_price below init_share_price
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError,
+                "expected_base_asset_reserves": ZeroDivisionError, #
+                "expected_token_asset_reserves": ZeroDivisionError, #
+                "expected_total_liquidity": ZeroDivisionError #
             }
+
         ]
 
         for test_case in test_cases:
-            base_asset_reserves, token_asset_reserves, total_liquidity = price_utils.calc_liquidity(
-                test_case["target_liquidity_usd"],
-                test_case["market_price"],
-                test_case["apr"],
-                test_case["days_remaining"],
-                test_case["time_stretch"],
-                test_case["init_share_price"],
-                test_case["share_price"]
-            )
 
-            np.testing.assert_almost_equal(
-                base_asset_reserves,
-                test_case["expected_base_asset_reserves"],
-                err_msg="unexpected base_asset_reserves"
-            )
-            np.testing.assert_almost_equal(
-                token_asset_reserves,
-                test_case["expected_token_asset_reserves"],
-                err_msg="unexpected token_asset_reserves"
-            )
-            np.testing.assert_almost_equal(
-                total_liquidity,
-                test_case["expected_total_liquidity"],
-                err_msg="unexpected total_liquidity"
-            )
+            # Check if this test case is supposed to fail
+            if 'is_error_case' in test_case and test_case["is_error_case"]:
+
+                # Check that test case throws the expected error
+                with self.assertRaises(test_case['expected_result']):
+                    base_asset_reserves, token_asset_reserves, total_liquidity = price_utils.calc_liquidity(
+                        test_case["target_liquidity_usd"],
+                        test_case["market_price"],
+                        test_case["apr"],
+                        test_case["days_remaining"],
+                        test_case["time_stretch"],
+                        test_case["init_share_price"],
+                        test_case["share_price"]
+                    )
+
+            # If test was not supposed to fail, continue normal execution
+            else:
+                base_asset_reserves, token_asset_reserves, total_liquidity = price_utils.calc_liquidity(
+                    test_case["target_liquidity_usd"],
+                    test_case["market_price"],
+                    test_case["apr"],
+                    test_case["days_remaining"],
+                    test_case["time_stretch"],
+                    test_case["init_share_price"],
+                    test_case["share_price"]
+                )
+
+                np.testing.assert_almost_equal(
+                    base_asset_reserves,
+                    test_case["expected_base_asset_reserves"],
+                    err_msg="unexpected base_asset_reserves"
+                )
+                np.testing.assert_almost_equal(
+                    token_asset_reserves,
+                    test_case["expected_token_asset_reserves"],
+                    err_msg="unexpected token_asset_reserves"
+                )
+                np.testing.assert_almost_equal(
+                    total_liquidity,
+                    test_case["expected_total_liquidity"],
+                    err_msg="unexpected total_liquidity"
+                )
 
 
     # ### Spot Price and APR ###
@@ -545,7 +707,7 @@ class TestPriceUtils(unittest.TestCase):
         for test_case in test_cases:
 
             # Check if this test case is supposed to fail
-            if 'is_error_case' in test_case:
+            if 'is_error_case' in test_case and test_case["is_error_case"]:
 
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case['expected_result']):
@@ -612,13 +774,29 @@ class TestPriceUtils(unittest.TestCase):
                 #     = 0.05263157895
                 "expected_result": 0.9523809524 # just over 0.95
             },
-            # test 6: 0.10 price; 3mo remaining;
+            # test 6: 3600% apr; 3mo remaining;
             {
                 "apr_decimal": 36, # 3600% apr
                 "normalized_days_remaining": 0.25, # 3 months = 0.25 years
                 # price = 1 / (1 + 0 * 0.5)
                 #     = 0
                 "expected_result": 0.10
+            },
+            # test 7: 0% apr; 3mo remaining;
+            {
+                "apr_decimal": 0, # 0% apr
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # price = 1 / (1 + 0 * 0.5)
+                #     = 0
+                "expected_result": 1.00
+            },
+            # test 8: 5% apr; no time remaining;
+            {
+                "apr_decimal": 5, # 0% apr
+                "normalized_days_remaining": 0, # 3 months = 0.25 years
+                # price = 1 / (1 + 0 * 0.5)
+                #     = 0
+                "expected_result": 1.00
             }
         ]
 
@@ -681,10 +859,10 @@ class TestPriceUtils(unittest.TestCase):
                 #     = 61.587834600530776
                 "expected_result": 8123.619671700687
             },
-            # test 1: 5M share_reserves; 5M bond_reserves
+            # test 4: 0M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
-                "share_reserves": 5000000, # x = 5000000
+                "share_reserves": 0, # x = 5000000
                 "bond_reserves": 5000000, # y = 5000000
                 "share_price": 2, # c = 2
                 "init_share_price": 1.5, # u = 1.5
@@ -692,21 +870,66 @@ class TestPriceUtils(unittest.TestCase):
                 # k = c/u * (u*y)**t + (2y+c*x)**t
                 #     = 2/1.5 * (1*5000000)**0.25 + (2*5000000+1*5000000)**0.25
                 #     = 61.587834600530776
-                "expected_result": 136.64970645711588
+                "expected_result": 56.23413251903491
+            },
+            # test 5: 0 share_reserves; 0 bond_reserves
+            #   2 share price; 1.5 init_share_price; 3mo elapsed
+            {
+                "share_reserves": 0, # x = 5000000
+                "bond_reserves": 0, # y = 5000000
+                "share_price": 2, # c = 2
+                "init_share_price": 1.5, # u = 1.5
+                "time_elapsed": 0.25, # t = 0.25
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 2/1.5 * (1*5000000)**0.25 + (2*5000000+1*5000000)**0.25
+                #     = 61.587834600530776
+                "expected_result": 0
+            },
+            # test 6: ERROR CASE; 0 INIT SHARE PRICE
+            #   5M share_reserves; 5M bond_reserves
+            #   2 share price; 1.5 init_share_price; 6mo elapsed
+            {
+                "share_reserves": 5000000, # x = 5000000
+                "bond_reserves": 5000000, # y = 5000000
+                "share_price": 2, # c = 2
+                "init_share_price": 0, # ERROR CASE; u = 0
+                "time_elapsed": 0.50, # t = 0.50
+                # k = c/u * (u*y)**t + (2y+c*x)**t
+                #     = 1/1 * (1*5000000)**0.50 + (2*5000000+1*5000000)**0.50
+                #     = 61.587834600530776
+                "is_error_case": True, # failure case
+                "expected_result": ZeroDivisionError
             },
         ]
 
         for test_case in test_cases:
-            k = price_utils.calc_k_const(
-                test_case["share_reserves"],
-                test_case["bond_reserves"],
-                test_case["share_price"],
-                test_case["init_share_price"],
-                test_case["time_elapsed"],
-            )
 
-            np.testing.assert_almost_equal(
-                k,
-                test_case["expected_result"],
-                err_msg="unexpected k"
-            )
+            # Check if this test case is supposed to fail
+            if 'is_error_case' in test_case and test_case["is_error_case"]:
+
+                # Check that test case throws the expected error
+                with self.assertRaises(test_case['expected_result']):
+                    k = price_utils.calc_k_const(
+                    test_case["share_reserves"],
+                    test_case["bond_reserves"],
+                    test_case["share_price"],
+                    test_case["init_share_price"],
+                    test_case["time_elapsed"],
+                )
+
+            # If test was not supposed to fail, continue normal execution
+            else:
+
+                k = price_utils.calc_k_const(
+                    test_case["share_reserves"],
+                    test_case["bond_reserves"],
+                    test_case["share_price"],
+                    test_case["init_share_price"],
+                    test_case["time_elapsed"],
+                )
+
+                np.testing.assert_almost_equal(
+                    k,
+                    test_case["expected_result"],
+                    err_msg="unexpected k"
+                )
