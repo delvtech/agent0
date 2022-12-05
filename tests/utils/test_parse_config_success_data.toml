@@ -24,9 +24,10 @@ floor_fee = 0  # minimum fee percentage (bps)
 
 [simulator]
 # fixed variables
-token_duration = 180  # in days
+pool_duration = 180
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
+token_duration = 180  # in days
 precision = 64 # 64 is max precision (and the default for numpy)
 pricing_model_name = "Element" # specify a pricing model
 user_policies = ["single_long"] # specify a list of trading strategies by name

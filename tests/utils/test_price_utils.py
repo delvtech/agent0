@@ -33,7 +33,13 @@ class TestPriceUtils(unittest.TestCase):
         # 4. 1M base asset, 0 pts, p = 1.00
             # liquidity = 1000000 + 0 * 1.00 = 1000000
         # 5. 0 base asset, 1M pts, p = 0.90
-            # Liquidity = 0 + 1000000 * 0.90 = 900000
+            # liquidity = 0 + 1000000 * 0.90 = 900000
+        # 6. 500k base asset, 500k pts, p = 1.50
+            # liquidity = 500000 + 500000 * 1.50 = 1250000
+            # The AMM math wouldn't allow p > 1
+        # 7. 999999 base asset, 1 pt, p = 0
+            # liquidity = 950000 + 50000 * 0 = 950000
+            # The AMM math wouldn't allow p = 0. In fact, for this ratio p should be almost 1.00
 
         test_cases = [
             # test 1
@@ -70,6 +76,20 @@ class TestPriceUtils(unittest.TestCase):
                 "token_asset_reserves": 1000000,
                 "spot_price": 0.90,
                 "expected_result": 900000
+            },
+            # test 6. Price > 1.00. The AMM math wouldn't allow this though but the function doesn't check for it
+            {
+                "base_asset_reserves": 500000,
+                "token_asset_reserves": 500000,
+                "spot_price": 1.50,
+                "expected_result": 1250000
+            },
+            # test 7. 999999 base asset, 1 pt, p = 0
+            {
+                "base_asset_reserves": 999999,
+                "token_asset_reserves": 1,
+                "spot_price": 0,
+                "expected_result": 999999
             }
         ]
 
@@ -219,24 +239,93 @@ class TestPriceUtils(unittest.TestCase):
                 #   = 2*2*800000/(1.5*(0.06*0.25 + 1)**(1/0.006760753209) - 1)
                 #   = 276637.1374102353
                 "expected_result": 276637.1374102353 # token > base reserves (is it enough? share_price sus)
+            },
+            # test 7: DIVISION BY ZERO ERROR
+            #   5% APR; 500k bond reserves; 6mo remaining;
+            #   22.186877016851916 t_stretch (targets 5% APR);
+            #   1 init share price; 1.25 share price
+            {
+                "apr": 0.05, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "token_asset_reserves": 500000, # PT reserves; y = 500000
+                "days_remaining": 182.5, # 6 months remaining; t = 0.50
+                "time_stretch": 0, # 0 time_stretch; T = infinite (division by zero)
+                "init_share_price": 1, # original share price pool started; u = 1
+                "share_price": 1.25, # share price of the LP in the yield source; c = 1.25
+                # from the inputs, we have:
+                # c = 1.25
+                # y = 500000
+                # u = 1
+                # r = 0.05
+                # t = 0.50
+                # T = infinite
+                # x = ZeroDivisionError
+                "is_error_case": True, # this test is supposed to fail
+                "expected_result": ZeroDivisionError # negative result? Error!
+            },
+            # test 8: STRANGE RESULTS CASE
+            #   0.01% APR; 1000 bond reserves; 3mo remaining;
+            #   22.186877016851916 t_stretch (targets 5% APR);
+            #   1 init share price; 1.03 share price
+            #
+            #   This case is low fixed APR on a pool whose yield source has performed very well
+            #   (share price increased a lot) which could happen, for example, if the source of
+            #   the high yield dries up during the term. The result is negative base_asset_reserves
+            #   which shouldn't happen
+            {
+                "apr": 0.0001, # fixed rate APR you'd get from purchasing bonds; r = 0.01
+                "token_asset_reserves": 1000, # PT reserves; y = 1000
+                "days_remaining": 91.25, # 3 months remaining; t = 0.25
+                "time_stretch": 22.186877016851916, # 22.186877016851916 time_stretch; T = 0.01126792202
+                "init_share_price": 1, # original share price pool started; u = 1
+                "share_price": 1.01, # share price of the LP in the yield source; c = 1.25
+                # from the inputs, we have:
+                # c = 1.03
+                # y = 1000
+                # u = 1
+                # r = 0.0001
+                # t = 0.25
+                # T = 0.01126792202
+                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
+                #   = 2*1.01*1000/(1*(0.0001*0.25 + 1)**(1/0.01126792202) - 1.01)
+                #   = -74157.0654965635 (negative)
+                "expected_result": -259677.58637922065 # negative result? Strange, check math!
             }
         ]
 
         for test_case in test_cases:
-            base_asset_reserves = price_utils.calc_base_asset_reserves(
-                test_case["apr"],
-                test_case["token_asset_reserves"],
-                test_case["days_remaining"],
-                test_case["time_stretch"],
-                test_case["init_share_price"],
-                test_case["share_price"]
-            )
 
-            np.testing.assert_almost_equal(
-                base_asset_reserves,
-                test_case["expected_result"],
-                err_msg="unexpected base_asset_reserves",
-            )
+            # Check if this test case is supposed to fail
+            if 'is_error_case' in test_case:
+
+                # Check that test case throws the expected error
+                with self.assertRaises(test_case['expected_result']):
+                    base_asset_reserves = price_utils.calc_base_asset_reserves(
+                        test_case["apr"],
+                        test_case["token_asset_reserves"],
+                        test_case["days_remaining"],
+                        test_case["time_stretch"],
+                        test_case["init_share_price"],
+                        test_case["share_price"]
+                    )
+
+            # If test was not supposed to fail, continue normal execution
+            else:
+                base_asset_reserves = price_utils.calc_base_asset_reserves(
+                    test_case["apr"],
+                    test_case["token_asset_reserves"],
+                    test_case["days_remaining"],
+                    test_case["time_stretch"],
+                    test_case["init_share_price"],
+                    test_case["share_price"]
+                )
+                # assert base_asset_reserves >= 0, \
+                #     f'the provided parameters resulted in negative base_asset_reserves {base_asset_reserves}'
+
+                np.testing.assert_almost_equal(
+                    base_asset_reserves,
+                    test_case["expected_result"],
+                    err_msg="unexpected base_asset_reserves",
+                )
 
 
     def test_calc_liquidity(self):
@@ -264,7 +353,7 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "target_liquidity_usd": 5000000, # Targeting 5M USD liquidity
                 "market_price": 1000, # Market price of base asset
-                "apr": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "apr": 0.02, # fixed rate APR you'd get from purchasing bonds; r = 0.02
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
                 "time_stretch": 22.186877016851916,
                 "init_share_price": 1, # original share price pool started; u = 1
@@ -279,7 +368,7 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "target_liquidity_usd": 5000000, # Targeting 5M USD liquidity
                 "market_price": 1000, # Market price of base asset
-                "apr": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.05
+                "apr": 0.08, # fixed rate APR you'd get from purchasing bonds; r = 0.08
                 "days_remaining": 182.5, # 6 months remaining; t = 0.50
                 "time_stretch": 22.186877016851916,
                 "init_share_price": 1, # original share price pool started; u = 1
@@ -309,7 +398,7 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
                 "market_price": 500, # Market price of base asset
-                "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "apr": 0.01, # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
                 "time_stretch": 36.97812836141986,
                 "init_share_price": 1.5, # original share price when pool started
@@ -324,7 +413,7 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "target_liquidity_usd": 10000000, # Targeting 5M USD liquidity
                 "market_price": 500, # Market price of base asset
-                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "apr": 0.06, # fixed rate APR you'd get from purchasing bonds; r = 0.06
                 "days_remaining": 91.25, # 3 months remaining; t = 0.25
                 "time_stretch": 36.97812836141986,
                 "init_share_price": 1.5, # original share price when pool started
@@ -417,20 +506,66 @@ class TestPriceUtils(unittest.TestCase):
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
                 "expected_result": 36 # 3600% APR
+            },
+            # test 7: ERROR CASE
+            #   -0.50 (negative) price; 3mo remaining;
+            #   the function asserts that price > 0, so this case should raise an AssertionError
+            {
+                "price": -0.50, # 0% APR
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 0.10) / 0.10 / 0.25
+                #     = 0
+                "is_error_case": True, # failure case
+                "expected_result": AssertionError
+            },
+            # test 8: ERROR CASE
+            #   0.95 price; -3mo remaining (negative);
+            #   the function asserts that normalized_days_remaining > 0, so this case \
+            #   should raise an AssertionError
+            {
+                "price": 0.95, # 0% APR
+                "normalized_days_remaining": -0.25, # -3 months = -0.25 years
+                # APR = (1 - 0.10) / 0.10 / 0.25
+                #     = 0
+                "is_error_case": True, # failure case
+                "expected_result": AssertionError
+            },
+            # test 9: STRANGE RESULT CASE
+            #   1.50 price (>1.00); 3mo remaining;
+            #   the AMM math shouldn't let price be greater than 1
+            {
+                "price": 1.50, # 0% APR
+                "normalized_days_remaining": 0.25, # 3 months = 0.25 years
+                # APR = (1 - 1.50) / 1.50 / 0.25
+                #     = -1.333333333
+                "expected_result": -1.3333333333333333, # strange result
             }
         ]
 
         for test_case in test_cases:
-            apr = price_utils.calc_apr_from_spot_price(
-                test_case["price"],
-                test_case["normalized_days_remaining"]
-            )
 
-            np.testing.assert_almost_equal(
-                apr,
-                test_case["expected_result"],
-                err_msg="unexpected apr"
-            )
+            # Check if this test case is supposed to fail
+            if 'is_error_case' in test_case:
+
+                # Check that test case throws the expected error
+                with self.assertRaises(test_case['expected_result']):
+                    apr = price_utils.calc_apr_from_spot_price(
+                    test_case["price"],
+                    test_case["normalized_days_remaining"]
+                )
+
+            # If test was not supposed to fail, continue normal execution
+            else:
+                apr = price_utils.calc_apr_from_spot_price(
+                    test_case["price"],
+                    test_case["normalized_days_remaining"]
+                )
+
+                np.testing.assert_almost_equal(
+                    apr,
+                    test_case["expected_result"],
+                    err_msg="unexpected apr"
+                )
 
 
     def test_calc_spot_price_from_apr(self):
