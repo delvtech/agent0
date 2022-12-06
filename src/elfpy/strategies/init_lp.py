@@ -17,7 +17,6 @@ class Policy(BasicPolicy):
     def __init__(
         self,
         market,
-        pricing_model_name,
         rng,
         wallet_address,
         budget=1000,
@@ -31,7 +30,6 @@ class Policy(BasicPolicy):
         self.short_until_apr = short_until_apr
         super().__init__(
             market=market,
-            pricing_model_name=pricing_model_name,
             rng=rng,
             wallet_address=wallet_address,
             budget=budget,
@@ -47,7 +45,7 @@ class Policy(BasicPolicy):
         if has_lp:
             action_list = []
         else:
-            if self.pricing_model_name == ElementPricingModel().model_name():
+            if self.market.pricing_model.model_name == ElementPricingModel().model_name():
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp),
                 ]

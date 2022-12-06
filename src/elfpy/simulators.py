@@ -241,7 +241,6 @@ class YieldSimulator:
         if self.config.simulator.init_lp:
             initial_lp = import_module("elfpy.strategies.init_lp").Policy(
                 market=self.market,
-                pricing_model_name=self.config.simulator.pricing_model_name,
                 rng=self.rng,
                 wallet_address=0,
                 budget=init_base_asset_reserves * 100,
