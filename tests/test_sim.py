@@ -44,8 +44,8 @@ class TestSimulator(BaseTest):
                 )
             )
         )
-        for rng_index in range(1, 15):
-            simulator.reset_rng(np.random.default_rng(rng_index))
+        for rng_seed in range(1, 15):
+            simulator.reset_rng(np.random.default_rng(rng_seed))
             simulator.set_random_variables()
             simulator.setup_simulated_entities()
             simulator.run_simulation()
@@ -62,8 +62,8 @@ class TestSimulator(BaseTest):
     #             )
     #         )
     #     )
-    #     for rng_index in range(1, 15):
-    #         simulator.reset_rng(np.random.default_rng(rng_index))
+    #     for rng_seed in range(1, 15):
+    #         simulator.reset_rng(np.random.default_rng(rng_seed))
     #         simulator.set_random_variables()
     #         simulator.setup_simulated_entities()
     #         simulator.run_simulation()
