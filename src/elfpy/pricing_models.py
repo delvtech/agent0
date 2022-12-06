@@ -678,58 +678,6 @@ class ElementPricingModel(PricingModel):
         )
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
-    def calc_lp_out_given_tokens_in(
-        self,
-        d_base,
-        share_reserves,
-        bond_reserves,
-        share_buffer,
-        init_share_price,
-        share_price,
-        lp_reserves,
-        rate,
-        time_remaining,
-        stretched_time_remaining,
-    ):
-        return HyperdrivePricingModel().calc_lp_out_given_tokens_in(
-            d_base,
-            share_reserves,
-            bond_reserves,
-            share_buffer,
-            init_share_price,
-            share_price,
-            lp_reserves,
-            rate,
-            time_remaining,
-            stretched_time_remaining,
-        )
-
-    def calc_tokens_out_given_lp_in(
-        self,
-        lp_in,
-        share_reserves,
-        bond_reserves,
-        share_buffer,
-        init_share_price,
-        share_price,
-        lp_reserves,
-        rate,
-        time_remaining,
-        stretched_time_remaining,
-    ):
-        return HyperdrivePricingModel().calc_tokens_out_given_lp_in(
-            lp_in,
-            share_reserves,
-            bond_reserves,
-            share_buffer,
-            init_share_price,
-            share_price,
-            lp_reserves,
-            rate,
-            time_remaining,
-            stretched_time_remaining,
-        )
-
 
 class HyperdrivePricingModel(PricingModel):
     """
