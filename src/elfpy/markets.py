@@ -224,7 +224,7 @@ class Market:
     def get_rate(self):
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves is zero
-        if self.share_reserves == 0:  # market is empty
+        if self.share_reserves <= 0:  # market is empty
             rate = np.nan
         else:
             rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.token_duration)
