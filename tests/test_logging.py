@@ -55,7 +55,8 @@ class LoggingTest(unittest.TestCase):
                 "pricing_model_name": "Hyperdrive",
                 "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
             }
-            simulator.run_simulation(override_dict)
+            simulator.setup_simulated_entities(override_dict)
+            simulator.run_simulation()
             self.assertLogs(level=level)
             # comment this to view the generated log files
             if handler_type == "file":
