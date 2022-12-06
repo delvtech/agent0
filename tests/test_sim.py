@@ -6,25 +6,30 @@ Testing for the ElfPy package modules
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
-from logging import DEBUG
 import logging
 import unittest
-import itertools
 import numpy as np
-import pandas as pd
 import os, sys
 
-# sys.path.insert(1, os.path.join(os.getcwd(), "src"))
+sys.path.insert(1, os.path.join(os.getcwd(), "src"))
 
 from elfpy.simulators import YieldSimulator
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
-from elfpy.markets import Market
 from elfpy.utils.config import apply_config_logging
 from elfpy.utils.parse_config import AMMConfig, Config, MarketConfig, SimulatorConfig
 
 
 class BaseTest(unittest.TestCase):
     """Generic test class"""
+
+    logging_level = logging.INFO
+    handler = logging.StreamHandler(sys.stdout)
+    logging.getLogger().setLevel(logging_level)  # events of this level and above will be tracked
+    handler.setFormatter(
+        logging.Formatter("\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S")
+    )
+    logging.getLogger().handlers = [
+        handler,
+    ]
 
 
 class TestSimulator(BaseTest):
@@ -37,18 +42,15 @@ class TestSimulator(BaseTest):
                 Config(
                     market=MarketConfig(),
                     amm=AMMConfig(),
-                    simulator=SimulatorConfig(logging_level="debug"),
+                    simulator=SimulatorConfig(pricing_model_name="Hyperdrive"),
                 )
             )
         )
         for rng_index in range(1, 15):
             simulator.reset_rng(np.random.default_rng(rng_index))
             simulator.set_random_variables()
-            simulator.run_simulation(
-                {
-                    "pricing_model_name": HyperdrivePricingModel().model_name(),
-                }
-            )
+            simulator.setup_simulated_entities()
+            simulator.run_simulation()
 
     def test_element_sim(self):
         """Tests the simulator output to verify that indices are correct"""
@@ -57,15 +59,12 @@ class TestSimulator(BaseTest):
                 Config(
                     market=MarketConfig(),
                     amm=AMMConfig(verbose=True),
-                    simulator=SimulatorConfig(logging_level="debug"),
+                    simulator=SimulatorConfig(pricing_model_name="Element"),
                 )
             )
         )
         for rng_index in range(1, 15):
             simulator.reset_rng(np.random.default_rng(rng_index))
             simulator.set_random_variables()
-            simulator.run_simulation(
-                {
-                    "pricing_model_name": ElementPricingModel().model_name(),
-                }
-            )
+            simulator.setup_simulated_entities()
+            simulator.run_simulation()

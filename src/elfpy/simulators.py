@@ -16,7 +16,8 @@ from elfpy.agent import Agent
 from elfpy.markets import Market
 
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
-from elfpy.utils.parse_config import Config
+from elfpy.utils.config import Config
+from elfpy.utils.parse_config import load_and_parse_config_file
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 
@@ -32,10 +33,10 @@ class YieldSimulator:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, config):
+    def __init__(self, config: Config | str):
         # pylint: disable=too-many-statements
         # User specified variables
-        self.config = parse_simulation_config(config) if (isinstance(config, str)) else config
+        self.config = load_and_parse_config_file(config) if (isinstance(config, str)) else config
         self.log_config_variables()
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables

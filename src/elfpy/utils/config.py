@@ -64,7 +64,7 @@ class SimulatorConfig:
     vault_apy: list[float] = field(
         default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
     )
-    logging_level: str = field(default="warning", metadata={"hint": "Logging level, as defined by stdlib logging"})
+    logging_level: str = field(default="info", metadata={"hint": "Logging level, as defined by stdlib logging"})
 
 
 @dataclass
