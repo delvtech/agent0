@@ -78,14 +78,14 @@ class SingleTradeTests(BaseTradeTest):
         """Tests base LP setups"""
         self.run_base_lp_test(user_policies=[], config_file="config/example_config.toml")
 
-    # def test_single_long(self):
-    #    """Tests the BaseUser class"""
-    #    self.run_base_trade_test(user_policies=["single_long"], config_file="config/example_config.toml")
+    def test_single_long(self):
+        """Tests the BaseUser class"""
+        self.run_base_trade_test(user_policies=["single_long"], config_file="config/example_config.toml")
 
-    # def test_single_short(self):
-    #    """Tests the BaseUser class"""
-    #    self.run_base_trade_test(user_policies=["single_short"], config_file="config/example_config.toml")
+    def test_single_short(self):
+        """Tests the BaseUser class"""
+        self.run_base_trade_test(user_policies=["single_short"], config_file="config/example_config.toml")
 
-    # def test_base_lps(self):
-    #    """Tests base LP setups"""
-    #    self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")
+    def test_base_lps(self):
+        """Tests base LP setups"""
+        self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")
