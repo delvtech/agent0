@@ -10,6 +10,7 @@ import sys
 
 import numpy as np
 
+from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import YieldSimulator
 
 
@@ -48,7 +49,8 @@ class LoggingTest(unittest.TestCase):
             ]
 
             config_file = "config/example_config.toml"
-            simulator = YieldSimulator(config_file)
+            config = load_and_parse_config_file(config_file)
+            simulator = YieldSimulator(config)
             simulator.reset_rng(np.random.default_rng(simulator.config.simulator.random_seed))
             simulator.set_random_variables()
             override_dict = {
