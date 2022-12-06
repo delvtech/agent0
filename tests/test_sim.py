@@ -19,6 +19,7 @@ import os, sys
 from elfpy.simulators import YieldSimulator
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 from elfpy.markets import Market
+from elfpy.utils.config import apply_config_logging
 from elfpy.utils.parse_config import AMMConfig, Config, MarketConfig, SimulatorConfig
 
 
@@ -32,10 +33,12 @@ class TestSimulator(BaseTest):
     def test_hyperdrive_sim(self):
         """Tests the simulator output to verify that indices are correct"""
         simulator = YieldSimulator(
-            Config(
-                market=MarketConfig(),
-                amm=AMMConfig(),
-                simulator=SimulatorConfig(),
+            apply_config_logging(
+                Config(
+                    market=MarketConfig(),
+                    amm=AMMConfig(),
+                    simulator=SimulatorConfig(logging_level="debug"),
+                )
             )
         )
         for rng_index in range(1, 15):
@@ -50,10 +53,12 @@ class TestSimulator(BaseTest):
     def test_element_sim(self):
         """Tests the simulator output to verify that indices are correct"""
         simulator = YieldSimulator(
-            Config(
-                market=MarketConfig(),
-                amm=AMMConfig(verbose=True),
-                simulator=SimulatorConfig(),
+            apply_config_logging(
+                Config(
+                    market=MarketConfig(),
+                    amm=AMMConfig(verbose=True),
+                    simulator=SimulatorConfig(logging_level="debug"),
+                )
             )
         )
         for rng_index in range(1, 15):

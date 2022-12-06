@@ -32,10 +32,10 @@ class YieldSimulator:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, config: Config):
+    def __init__(self, config):
         # pylint: disable=too-many-statements
         # User specified variables
-        self.config = config  # parse_simulation_config(config_file)
+        self.config = parse_simulation_config(config) if (isinstance(config, str)) else config
         self.log_config_variables()
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
