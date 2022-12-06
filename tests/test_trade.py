@@ -46,7 +46,8 @@ class BaseTradeTest(unittest.TestCase):
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
-        simulator.run_simulation(override_dict)
+        simulator.setup_simulated_entities(override_dict)
+        simulator.run_simulation()
 
     def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
@@ -63,7 +64,8 @@ class BaseTradeTest(unittest.TestCase):
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
-        simulator.run_simulation(override_dict)
+        simulator.setup_simulated_entities(override_dict)
+        simulator.run_simulation()
 
 
 class SingleTradeTests(BaseTradeTest):

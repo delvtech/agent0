@@ -86,7 +86,8 @@ Testing for the ElfPy package modules
 # }
 # simulator = YieldSimulator(**self.config)
 # simulator.set_random_variables()
-# simulator.run_simulation(override_dict)
+# simulator.setup_simulated_entities(override_dict)
+# simulator.run_simulation()
 
 # class TestDefaultConfig(BaseTest):
 # """Test default config save and load"""
@@ -118,7 +119,8 @@ Testing for the ElfPy package modules
 # "pricing_model_name": pricing_model.model_name(),
 # }
 ## Running the simulation will include asserts that can fail
-# simulator.run_simulation(override_dict)
+# simulator.setup_simulated_entities(override_dict)
+# simulator.run_simulation()
 
 # def test_get_days_remaining(self):
 # """Tests the simulator function for getting the number of days remaining in a pool"""
@@ -143,7 +145,8 @@ Testing for the ElfPy package modules
 # override_dict = {
 # "pricing_model_name": pricing_model.model_name(),
 # }
-# simulator.run_simulation(override_dict)
+# simulator.setup_simulated_entities(override_dict)
+# simulator.run_simulation()
 # analysis_df = pd.DataFrame.from_dict(simulator.analysis_dict)
 # init_day_list = []
 # end_day_list = []
