@@ -12,6 +12,7 @@ import logging
 
 import numpy as np
 
+from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import YieldSimulator
 
 
@@ -31,7 +32,8 @@ class BaseTradeTest(unittest.TestCase):
     def run_base_trade_test(self, user_policies, config_file, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         # load default config
-        simulator = YieldSimulator(config_file)
+        config = load_and_parse_config_file(config_file)
+        simulator = YieldSimulator(config)
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)
         simulator.set_random_variables()
@@ -51,7 +53,8 @@ class BaseTradeTest(unittest.TestCase):
 
     def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
-        simulator = YieldSimulator(config_file)
+        config = load_and_parse_config_file(config_file)
+        simulator = YieldSimulator(config)
         simulator.set_random_variables()
         override_dict = {
             "pricing_model_name": "Hyperdrive",

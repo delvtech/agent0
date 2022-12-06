@@ -15,6 +15,7 @@ Testing for the ElfPy package modules
 # sys.path.insert(1, os.path.join(os.getcwd(), "src"))
 
 # from elfpy.simulators import YieldSimulator
+# from elfpy.utils.parse_config import load_and_parse_config_file
 # from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 # from elfpy.markets import Market
 
@@ -84,7 +85,8 @@ Testing for the ElfPy package modules
 # override_dict = {
 # "user_type": user_type,
 # }
-# simulator = YieldSimulator(**self.config)
+# config = load_and_parse_config_file(config_file)
+# simulator = YieldSimulator(config)
 # simulator.set_random_variables()
 # simulator.setup_simulated_entities(override_dict)
 # simulator.run_simulation()
@@ -110,7 +112,8 @@ Testing for the ElfPy package modules
 # def test_simulator(self):
 # """Tests the simulator output to verify that indices are correct"""
 # self.setup_test_vars()
-# simulator = YieldSimulator(**self.config)
+# config = load_and_parse_config_file(config_file)
+# simulator = YieldSimulator(config)
 # for rng_index in range(1, 15):
 # simulator.reset_rng(np.random.default_rng(rng_index))  # reset random inits
 # simulator.set_random_variables()
@@ -125,7 +128,8 @@ Testing for the ElfPy package modules
 # def test_get_days_remaining(self):
 # """Tests the simulator function for getting the number of days remaining in a pool"""
 # self.setup_test_vars()
-# simulator = YieldSimulator(**self.config)
+# config = load_and_parse_config_file(config_file)
+# simulator = YieldSimulator(config)
 # simulator.set_random_variables()
 # for num_trading_days in self.num_trading_days_vals:
 # override_dict = {"num_trading_days": num_trading_days}
@@ -139,7 +143,8 @@ Testing for the ElfPy package modules
 # def test_simulator_indexing(self):
 # """Tests the simulator output to verify that indices are correct"""
 # self.setup_test_vars()
-# simulator = YieldSimulator(**self.config)
+# config = load_and_parse_config_file(config_file)
+# simulator = YieldSimulator(config)
 # simulator.set_random_variables()
 # for pricing_model in self.pricing_models:
 # override_dict = {
