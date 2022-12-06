@@ -16,7 +16,8 @@ from elfpy.agent import Agent
 from elfpy.markets import Market
 
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
-from elfpy.utils.parse_config import Config
+from elfpy.utils.config import Config
+from elfpy.utils.parse_config import load_and_parse_config_file
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 
@@ -32,10 +33,10 @@ class YieldSimulator:
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config | str):
         # pylint: disable=too-many-statements
         # User specified variables
-        self.config = config
+        self.config = load_and_parse_config_file(config) if (isinstance(config, str)) else config
         self.log_config_variables()
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
@@ -389,4 +390,9 @@ class YieldSimulator:
         self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["spot_price"].append(self.market.get_spot_price())
+        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
+        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
+        if self.market.share_reserves > 0:  # there is money in the market
+            self.analysis_dict["spot_price"].append(self.market.get_spot_price())
+        else:
+            self.analysis_dict["spot_price"].append(str(np.nan))
