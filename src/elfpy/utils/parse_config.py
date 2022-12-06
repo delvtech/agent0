@@ -116,7 +116,7 @@ def load_config_file(config_file):
     return config_dict
 
 
-def parse_simulation_config(toml_config):
+def parse_simulation_config(config_dict):
     """
     Parse the TOML config file and return a config object
     Arguments
@@ -130,9 +130,9 @@ def parse_simulation_config(toml_config):
         Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig
     """
     simulation_config = Config(
-        market=MarketConfig(**toml_config["market"]),
-        amm=AMMConfig(**toml_config["amm"]),
-        simulator=SimulatorConfig(**toml_config["simulator"]),
+        market=MarketConfig(**config_dict["market"]),
+        amm=AMMConfig(**config_dict["amm"]),
+        simulator=SimulatorConfig(**config_dict["simulator"]),
     )
     match simulation_config.simulator.logging_level.lower():
         case "debug":
