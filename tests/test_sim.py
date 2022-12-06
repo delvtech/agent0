@@ -53,6 +53,8 @@ class TestSimulator(unittest.TestCase):
                 simulator.set_random_variables()
                 simulator.setup_simulated_entities()
                 simulator.run_simulation()
+
+            # pylint: disable=broad-except
             except Exception as exc:
                 assert False, f"test failed at seed {rng_seed} with exception {exc}"
         # comment this to view the generated log files
