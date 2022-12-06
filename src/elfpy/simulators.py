@@ -390,4 +390,9 @@ class YieldSimulator:
         self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["spot_price"].append(self.market.get_spot_price())
+        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
+        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
+        if self.market.share_reserves > 0:  # there is money in the market
+            self.analysis_dict["spot_price"].append(self.market.get_spot_price())
+        else:
+            self.analysis_dict["spot_price"].append(str(np.nan))

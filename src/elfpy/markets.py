@@ -593,6 +593,14 @@ class Market:
 
     def log_market_step_string(self) -> str:
         """Returns a string that describes the current market step"""
+        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
+        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
+        if self.share_reserves <= 0:
+            spot_price = str(np.nan)
+            rate = str(np.nan)
+        else:
+            spot_price = self.get_spot_price()
+            rate = self.get_rate()
         logging.debug(
             (
                 "\nt = %g"
@@ -612,6 +620,6 @@ class Market:
             self.share_reserves,
             self.share_buffer,
             self.bond_buffer,
-            self.get_spot_price(),
-            self.get_rate(),
+            spot_price,
+            rate,
         )

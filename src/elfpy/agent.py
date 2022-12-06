@@ -161,7 +161,12 @@ class Agent:
 
     def log_final_report(self) -> None:
         """Logs a report of the agent's state"""
-        price = self.market.get_spot_price()
+        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
+        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
+        if self.market.share_reserves > 0:
+            price = self.market.get_spot_price()
+        else:
+            price = 0
         base = self.wallet.base_in_wallet
         block_position_list = list(self.wallet.token_in_protocol.values())
         tokens = sum(block_position_list) if len(block_position_list) > 0 else 0
