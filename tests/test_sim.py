@@ -53,8 +53,8 @@ class TestSimulator(unittest.TestCase):
                 simulator.set_random_variables()
                 simulator.setup_simulated_entities()
                 simulator.run_simulation()
-            except Exception as e:
-                assert False, f"test failed at seed {rng_seed} with exception {e}"
+            except Exception as exc:
+                assert False, f"test failed at seed {rng_seed} with exception {exc}"
         # comment this to view the generated log files
         file_loc = logging.getLogger().handlers[0].baseFilename
         os.remove(file_loc)
