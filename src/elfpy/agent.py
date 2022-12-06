@@ -108,20 +108,30 @@ class Agent:
             # handle updating a value
             if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug("pre-trade %s = %.0g", key, self.wallet[key])
+                    logging.debug(
+                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        self.wallet_address,
+                        key,
+                        self.wallet[key],
+                        self.wallet[key] + value_or_dict,
+                        value_or_dict,
+                    )
                 self.wallet[key] += value_or_dict
-                if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug("post-trade %s = %1g", key, self.wallet[key])
-                    logging.debug("delta = %1g", value_or_dict)
             # handle updating a dict, which have mint_time attached
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, amount in value_or_dict.items():
-                    logging.debug("pre-trade %s = %s", key, self.wallet[key])
+                    logging.debug(
+                        "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                        self.wallet_address,
+                        key,
+                        mint_time,
+                        self.wallet[key],
+                        amount,
+                    )
                     if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-                    logging.debug("post-trade %s = %s", key, self.wallet[key])
             elif key in ["fees_paid", "effective_price"]:
                 pass
             elif key in ["address"]:
@@ -153,7 +163,7 @@ class Agent:
     def log_status_report(self) -> str:
         """Return user state"""
         logging.debug(
-            "%g base_in_wallet = %1g and fees_paid = %1g",
+            "agent %g base_in_wallet = %1g and fees_paid = %1g",
             self.wallet_address,
             self.wallet.base_in_wallet,
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
@@ -182,7 +192,7 @@ class Agent:
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
             (
-                "%g %s %s on $%s spent, APR = %g"
+                "agent #%g %s %s on $%s spent, APR = %g"
                 " (%.2g in %s years), net worth = $%s"
                 " from %s base and %s tokens at p = %g\n"
             ),

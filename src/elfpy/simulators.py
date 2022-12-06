@@ -54,6 +54,7 @@ class YieldSimulator:
         self.random_variables_set = False
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
+            "model_name",  # the name of the pricing model that is used in simulation
             "run_number",  # integer, simulation index
             "simulation_start_time",  # start datetime for a given simulation
             "day",  # integer, day index in a given simulation
@@ -64,7 +65,6 @@ class YieldSimulator:
             "current_market_yearfrac",  # float, current market time as a yearfrac
             "run_trade_number",  # integer, trade number in a given simulation
             "step_size",  # minimum time discretization for market time step
-            "model_name",  # the name of the pricing model that is used in simulation
             "token_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
@@ -74,6 +74,7 @@ class YieldSimulator:
             "init_vault_age",
             "base_asset_price",
             "vault_apy",
+            "pool_apy",
             "share_reserves",
             "bond_reserves",
             "total_supply",
@@ -82,7 +83,6 @@ class YieldSimulator:
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
-            "num_orders",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
@@ -212,9 +212,10 @@ class YieldSimulator:
             init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
+        self.market.vault_apy = self.config.simulator.vault_apy[0]
         logging.info(
             (
-                "Initial market values:"
+                "Initial (pre LP) market values:"
                 "\n target_liquidity = %1g"
                 "\n init_base_asset_reserves = %1g"
                 "\n init_token_asset_reserves = %1g"
@@ -299,6 +300,7 @@ class YieldSimulator:
                     * self.market.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
+                self.market.vault_apy = self.config.simulator.vault_apy[self.day]
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
@@ -336,8 +338,12 @@ class YieldSimulator:
             for agent_trade in trade_list:  # execute trades
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
-                logging.debug("agent wallet deltas = %s", wallet_deltas.__dict__)
-                logging.debug("post-trade agent status = %s", agent.log_status_report())
+                logging.debug(
+                    "agent #%g wallet deltas = \n%s",
+                    agent.wallet_address,
+                    wallet_deltas.__dict__,
+                )
+                agent.log_status_report(),
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 
@@ -347,43 +353,42 @@ class YieldSimulator:
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
 
-        # pylint: disable=too-many-statements
-        # Variables that are constant across runs
+            # pylint: disable=too-many-statements
+            # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
+        self.analysis_dict["simulation_start_time"].append(self.start_time)
+        self.analysis_dict["day"].append(self.day)
+        self.analysis_dict["block_number"].append(self.block_number)
+        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
+        self.analysis_dict["block_timestamp"].append(
+            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            if self.start_time
+            else "None"
+        )
+        self.analysis_dict["current_market_datetime"].append(
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
+        )
+        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
+        self.analysis_dict["run_trade_number"].append(self.run_trade_number)
+        self.analysis_dict["step_size"].append(self.step_size())
+        self.analysis_dict["token_duration"].append(self.market.token_duration)
         self.analysis_dict["time_stretch_constant"].append(self.market.time_stretch_constant)
         self.analysis_dict["target_liquidity"].append(self.config.simulator.target_liquidity)
         self.analysis_dict["target_daily_volume"].append(self.config.simulator.target_daily_volume)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.config.simulator.init_vault_age)
-        self.analysis_dict["token_duration"].append(self.market.token_duration)
-        self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
-        self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
-        self.analysis_dict["step_size"].append(self.step_size())
-        self.analysis_dict["init_share_price"].append(self.market.init_share_price)
-        self.analysis_dict["simulation_start_time"].append(self.start_time)
-        # Variables that change per day
-        self.analysis_dict["vault_apy"].append(self.config.simulator.vault_apy[self.day])
-        self.analysis_dict["day"].append(self.day)
-        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
-        self.analysis_dict["block_number"].append(self.block_number)
-        self.analysis_dict["block_timestamp"].append(
-            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
-            if self.start_time
-            else "None"
-        )
-        # Variables that change per trade
-        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
-        self.analysis_dict["current_market_datetime"].append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
-        )
-        self.analysis_dict["run_trade_number"].append(self.run_trade_number)
+        self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
+        self.analysis_dict["vault_apy"].append(self.market.vault_apy)
+        self.analysis_dict["pool_apy"].append(self.market.get_rate())
         self.analysis_dict["share_reserves"].append(self.market.share_reserves)
         self.analysis_dict["bond_reserves"].append(self.market.bond_reserves)
         self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
-        self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["share_price"].append(self.market.share_price)
+        self.analysis_dict["init_share_price"].append(self.market.init_share_price)
+        self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
+        self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.share_reserves > 0:  # there is money in the market
