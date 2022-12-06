@@ -9,13 +9,10 @@ Testing for the ElfPy package modules
 import logging
 import unittest
 import numpy as np
-import os, sys
-
-sys.path.insert(1, os.path.join(os.getcwd(), "src"))
+import sys
 
 from elfpy.simulators import YieldSimulator
-from elfpy.utils.config import apply_config_logging
-from elfpy.utils.parse_config import AMMConfig, Config, MarketConfig, SimulatorConfig
+from elfpy.utils.parse_config import AMMConfig, Config, MarketConfig, SimulatorConfig, apply_config_logging
 
 
 class BaseTest(unittest.TestCase):

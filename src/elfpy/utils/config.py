@@ -3,7 +3,6 @@ Config structure
 """
 
 from dataclasses import dataclass, field
-import logging
 
 
 @dataclass
@@ -74,22 +73,3 @@ class Config:
     market: MarketConfig
     amm: AMMConfig
     simulator: SimulatorConfig
-
-
-def apply_config_logging(raw_config: Config):
-    """
-    Applies config logging from config settings
-    """
-    match raw_config.simulator.logging_level.lower():
-        case "debug":
-            level = logging.DEBUG
-        case "info":
-            level = logging.INFO
-        case "warning":
-            level = logging.WARNING
-        case "error":
-            level = logging.ERROR
-        case "critical":
-            level = logging.CRITICAL
-    raw_config.simulator.logging_level = level
-    return raw_config

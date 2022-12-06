@@ -4,8 +4,9 @@ Utilities for parsing & loading user config TOML files
 """
 
 import tomli
+import logging
 
-from elfpy.utils.config import AMMConfig, Config, MarketConfig, SimulatorConfig, apply_config_logging
+from elfpy.utils.config import AMMConfig, Config, MarketConfig, SimulatorConfig
 
 
 def load_and_parse_config_file(config_file):
@@ -63,3 +64,22 @@ def parse_simulation_config(config_dict):
         simulator=SimulatorConfig(**config_dict["simulator"]),
     )
     return apply_config_logging(simulation_config)
+
+
+def apply_config_logging(raw_config: Config):
+    """
+    Applies config logging from config settings
+    """
+    match raw_config.simulator.logging_level.lower():
+        case "debug":
+            level = logging.DEBUG
+        case "info":
+            level = logging.INFO
+        case "warning":
+            level = logging.WARNING
+        case "error":
+            level = logging.ERROR
+        case "critical":
+            level = logging.CRITICAL
+    raw_config.simulator.logging_level = level
+    return raw_config
