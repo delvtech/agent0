@@ -6,6 +6,8 @@ Testing for the ElfPy package modules
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
 
+from logging import DEBUG
+import logging
 import unittest
 import itertools
 import numpy as np
@@ -32,7 +34,7 @@ class TestSimulator(BaseTest):
         simulator = YieldSimulator(
             Config(
                 market=MarketConfig(),
-                amm=AMMConfig(verbose=True),
+                amm=AMMConfig(),
                 simulator=SimulatorConfig(),
             )
         )

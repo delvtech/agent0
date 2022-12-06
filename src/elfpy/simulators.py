@@ -35,7 +35,7 @@ class YieldSimulator:
     def __init__(self, config: Config):
         # pylint: disable=too-many-statements
         # User specified variables
-        self.config = config
+        self.config = config  # parse_simulation_config(config_file)
         self.log_config_variables()
         self.reset_rng(np.random.default_rng(self.config.simulator.random_seed))
         # Simulation variables
@@ -240,6 +240,7 @@ class YieldSimulator:
         if self.config.simulator.init_lp:
             initial_lp = import_module("elfpy.strategies.init_lp").Policy(
                 market=self.market,
+                pricing_model_name=self.config.simulator.pricing_model_name,
                 rng=self.rng,
                 wallet_address=0,
                 budget=init_base_asset_reserves * 100,

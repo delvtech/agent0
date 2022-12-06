@@ -18,11 +18,12 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float):
+    def __init__(self, market: Market, pricing_model_name: str, rng: Generator, wallet_address: int, budget: float):
         """
         Set up initial conditions
         """
         self.market: Market = market
+        self.pricing_model_name: str = pricing_model_name
         self.rng: Generator = rng
         # TODO: remove this, wallet_address is a property of wallet, not the agent
         self.wallet_address: int = wallet_address
