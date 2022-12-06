@@ -50,6 +50,7 @@ class TestSimulator(BaseTest):
             simulator.setup_simulated_entities()
             simulator.run_simulation()
 
+    # TODO Update element pricing model to include lp calcs
     # def test_element_sim(self):
     #     """Tests the simulator output to verify that indices are correct"""
     #     simulator = YieldSimulator(
