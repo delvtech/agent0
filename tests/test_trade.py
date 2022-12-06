@@ -53,7 +53,10 @@ class BaseTradeTest(unittest.TestCase):
         simulator.run_simulation()
 
     def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
-        """Assigns member variables that are useful for many tests"""
+        """
+        Assigns member variables that are useful for many tests
+        TODO: Check that the market values match the desired amounts
+        """
         config = load_and_parse_config_file(config_file)
         simulator = YieldSimulator(config)
         simulator.set_random_variables()
