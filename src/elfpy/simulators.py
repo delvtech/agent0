@@ -50,7 +50,7 @@ class YieldSimulator:
         self.start_time: datetime.datetime | None = None
         self.init_share_price: float = 0
         self.market = None
-        self.agent_list: list[Agent] = []
+        self.agents: dict[int, Agent] = {}
         self.random_variables_set = False
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
@@ -182,7 +182,7 @@ class YieldSimulator:
 
         Returns
         -------
-        There are no returns, but the function instantiates self.market and self.agent_list
+        There are no returns, but the function instantiates self.market and self.agents
         """
 
         assert (
@@ -246,11 +246,11 @@ class YieldSimulator:
                 pt_to_short=init_token_asset_reserves / 10,
                 short_until_apr=self.config.simulator.init_pool_apy,
             )
-            self.agent_list = [initial_lp]
+            self.agents = {initial_lp.wallet_address: initial_lp}
             # execute one special block just for the initial_lp
             self.collect_and_execute_trades()
         else:  # manual market configuration
-            self.agent_list = []
+            self.agents = {}
         self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
@@ -260,7 +260,7 @@ class YieldSimulator:
                 wallet_address=policy_number + 1,  # first policy goes to initial_lp
             )
             agent.log_status_report()
-            self.agent_list.append(agent)
+            self.agents.update({agent.wallet_address: agent})
 
     def _get_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
         """Get a PricingModel object from the config passed in"""
@@ -304,8 +304,6 @@ class YieldSimulator:
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
                     self.daily_block_number == self.config.simulator.num_blocks_per_day - 1
                 )
-                # if self.config.simulator.shuffle_users:
-                # self.rng.shuffle(np.asarray(self.agent_list))  # shuffle the agent order each block
                 self.collect_and_execute_trades(last_block_in_sim)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
@@ -313,7 +311,7 @@ class YieldSimulator:
                     self.market.tick(self.step_size())
                     self.block_number += 1
         # simulation has ended
-        for agent in self.agent_list:
+        for agent in self.agents.values():
             agent.log_final_report()
         # fees_owed = self.market.calc_fees_owed()
 
@@ -321,18 +319,16 @@ class YieldSimulator:
         """Get trades from the agent list, execute them, and update states"""
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
-
-        # TODO: BIG HACK to make this PR pass.  There is a bug with removing liquidity that
-        # doesn't account for open shorts.  Someone can remove all liquidity while there are open
-        # shorts, then when another user goes to close a short, there are no reserves, so the calc
-        # functions error due to division by zero.  Need to fix the accounting of reserves to
-        # account for open short positions.
-        if last_block_in_sim:  # get all of a agent's trades
-            # we are reversing order here to make sure that agent 0's remove_liquidity transaction
-            # is last
-            self.agent_list = self.agent_list[::-1]
-
-        for agent in self.agent_list:  # trade is different on the last block
+        # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
+        # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
+        # But right now, if the LPer removes liquidity while shorts are open,
+        # then closing the shorts results in an error (share_reserves == 0).
+        wallet_ids = [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
+        if self.config.simulator.shuffle_users:
+            wallet_ids = self.rng.permutation(wallet_ids)
+        wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+        for agent_id in wallet_ids:  # trade is different on the last block
+            agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades()
             else:
