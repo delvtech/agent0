@@ -5,6 +5,7 @@ Testing for the ElfPy package modules
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-locals
 # pylint: disable=attribute-defined-outside-init
+# pylint: disable=duplicate-code
 
 import unittest
 import sys

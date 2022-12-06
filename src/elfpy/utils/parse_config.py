@@ -3,8 +3,8 @@ Utilities for parsing & loading user config TOML files
 
 """
 
-import tomli
 import logging
+import tomli
 
 from elfpy.utils.config import AMMConfig, Config, MarketConfig, SimulatorConfig
 
