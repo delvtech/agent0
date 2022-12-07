@@ -4,9 +4,9 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.pricing_models import ElementPricingModel
 from elfpy.strategies.basic import BasicPolicy
-from elfpy.utils.price import calc_liquidity
+
+# from elfpy.pricing_models import ElementPricingModel
 
 
 class Policy(BasicPolicy):

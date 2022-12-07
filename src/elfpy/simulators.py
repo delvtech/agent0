@@ -220,7 +220,10 @@ class YieldSimulator:
             amount_to_short=init_bond_reserves,
         )
         logging.info(
-            "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; budget = %g; amount_to_lp = %g; amount_to_short = %g",
+            (
+                "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
+                "budget = %g; amount_to_lp = %g; amount_to_short = %g"
+            ),
             initial_lp.wallet_address,
             self.config.simulator.init_pool_apy,
             self.config.simulator.target_liquidity,
@@ -361,7 +364,7 @@ class YieldSimulator:
                     agent.wallet_address,
                     wallet_deltas.__dict__,
                 )
-                agent.log_status_report(),
+                agent.log_status_report()
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 

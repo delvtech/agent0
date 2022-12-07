@@ -22,6 +22,7 @@ class BaseTradeTest(unittest.TestCase):
 
     @staticmethod
     def setup_logging():
+        """Setup test logging levels and handlers"""
         logging_level = logging.DEBUG
         log_dir = ".logging"
         if not os.path.exists(log_dir):
