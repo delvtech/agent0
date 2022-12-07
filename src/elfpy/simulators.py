@@ -370,12 +370,10 @@ class YieldSimulator:
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
-
+        # Variables that are constant across runs
+        # pylint: disable=too-many-statements
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
-
-            # pylint: disable=too-many-statements
-            # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["simulation_start_time"].append(self.start_time)

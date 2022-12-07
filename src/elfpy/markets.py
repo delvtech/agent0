@@ -126,7 +126,7 @@ class Market:
         self.bond_buffer: float = 0
         self.lp_reserves: float = lp_reserves
         self.time_stretch_constant: float = time_stretch_constant
-        self.vault_apy: float | None = None
+        self.vault_apy: float | None = None  # TODO: This is a HACK; market should ask for this in function signatures
         # TODO: It would be good to remove the tight coupling between pricing models and markets.
         #       For now, it makes sense to restrict the behavior at the market level since
         #       previous versions of Element didn't allow for shorting (despite the fact that

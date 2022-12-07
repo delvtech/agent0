@@ -6,8 +6,6 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple
 import logging
 
-import numpy as np
-
 from elfpy.token import TokenType
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
@@ -1346,8 +1344,8 @@ class HyperdrivePricingModel(PricingModel):
             # without including fees:
             #
             # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
-            without_fee = out_reserves - np.power(
-                k - scale * np.power(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
+            without_fee = out_reserves - pow(
+                k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
             )
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
