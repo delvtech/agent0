@@ -1,6 +1,9 @@
 """
 Config structure
 """
+# dataclasses can have many attributes
+# pylint: disable=too-many-instance-attributes
+
 
 from dataclasses import dataclass, field
 
@@ -8,9 +11,6 @@ from dataclasses import dataclass, field
 @dataclass
 class MarketConfig:
     """config parameters specific to the market"""
-
-    # pylint: disable=too-many-instance-attributes
-    # dataclasses can have many attributes
 
     min_target_liquidity: float = field(default=1e6, metadata={"hint": "shares"})
     max_target_liquidity: float = field(default=10e6, metadata={"hint": "shares"})
@@ -27,6 +27,7 @@ class MarketConfig:
 class AMMConfig:
     """config parameters specific to the amm"""
 
+    pricing_model_name: str = field(default="Element", metadata={"hint": 'Must be "Element" or "Hyperdrive"'})
     min_fee: float = field(default=0.1, metadata={"hint": "decimal that assignes fee_percent"})
     max_fee: float = field(default=0.5, metadata={"hint": "decimal that assignes fee_percent"})
     min_pool_apy: float = field(default=0.02, metadata={"hint": "as a decimal"})
@@ -39,9 +40,6 @@ class AMMConfig:
 class SimulatorConfig:
     """config parameters specific to the simulator"""
 
-    # pylint: disable=too-many-instance-attributes
-    # dataclasses can have many attributes
-
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
@@ -49,7 +47,6 @@ class SimulatorConfig:
         default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
     )
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
-    pricing_model_name: str = field(default="Element", metadata={"hint": 'Must be "Element" or "Hyperdrive"'})
     user_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})

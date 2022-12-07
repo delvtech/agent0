@@ -1,6 +1,5 @@
 """
 Utilities for parsing & loading user config TOML files
-
 """
 
 import logging
@@ -12,7 +11,6 @@ from elfpy.utils.config import AMMConfig, Config, MarketConfig, SimulatorConfig
 def load_and_parse_config_file(config_file):
     """
     Wrapper function for loading a toml config file and parsing it.
-
     Arguments
     ---------
     config_file : str
@@ -29,7 +27,6 @@ def load_and_parse_config_file(config_file):
 def load_config_file(config_file):
     """
     Load a config file as a dictionary
-
     Arguments
     ---------
     config_file : str
@@ -63,14 +60,25 @@ def parse_simulation_config(config_dict):
         amm=AMMConfig(**config_dict["amm"]),
         simulator=SimulatorConfig(**config_dict["simulator"]),
     )
-    return apply_config_logging(simulation_config)
+    simulation_config.simulator.logging_level = text_to_logging_level(simulation_config.simulator.logging_level)
+    return simulation_config
 
 
-def apply_config_logging(raw_config: Config):
+def text_to_logging_level(logging_text: str) -> int:
     """
-    Applies config logging from config settings
+    Converts logging level description to an integer
+
+    Arguments
+    ---------
+    logging_text : str
+        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
+
+    Returns
+    -------
+    int
+        Logging level integer corresponding to the string input
     """
-    match raw_config.simulator.logging_level.lower():
+    match logging_text.lower():
         case "debug":
             level = logging.DEBUG
         case "info":
@@ -81,5 +89,6 @@ def apply_config_logging(raw_config: Config):
             level = logging.ERROR
         case "critical":
             level = logging.CRITICAL
-    raw_config.simulator.logging_level = level
-    return raw_config
+        case _:
+            raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
+    return level

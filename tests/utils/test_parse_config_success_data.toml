@@ -11,10 +11,10 @@ max_vault_age = 1  # fraction of a year
 min_vault_apy = 0.001  # as a decimal
 max_vault_apy = 0.9  # as a decimal
 # fixed variables
-base_asset_price = 1  # aka market price
+base_asset_price = 2.5e3  # aka market price
 
 [amm]
-pricing_model_name = "Hyperdrive" # specify a pricing model
+pricing_model_name = "Element" # specify a pricing model
 # random variables
 min_fee = 0.1  # decimal that assigns fee_percent
 max_fee = 0.5  # decimal that assigns fee_percent
@@ -22,16 +22,23 @@ min_pool_apy = 0.02  # as a decimal
 max_pool_apy = 0.9  # as a decimal
 # fixed variables
 floor_fee = 0  # minimum fee percentage (bps)
-verbose = false # toggle verbose output level
 
 [simulator]
 # fixed variables
+pool_duration = 180
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
-token_duration = 0.24657534246575342465753424657534  # 90 / 365 = time lapse between token mint and expiry as a yearfrac
+token_duration = 180  # in days
 precision = 64 # 64 is max precision (and the default for numpy)
 user_policies = ["single_long"] # specify a list of trading strategies by name
-shuffle_users = true # shuffle order of action (as if random gas paid)
-init_lp = true # use initial LP to seed pool
 random_seed = 123 # to be passed to a rng
-logging_level = "info" # must be one of [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+verbose = false # toggle verbose output level
+shuffle_users = true
+init_lp = true
+target_liquidity = 10000000
+target_daily_volume = 1000
+init_pool_apy = 0.05
+fee_percent = 0.10
+init_vault_age = 0
+vault_apy = [0.05]
+logging_level = "warning"
