@@ -209,26 +209,26 @@ class YieldSimulator:
             init_share_price=self.market.init_share_price,
             share_price=self.market.init_share_price,
         )[1]
-        amount_to_lp = init_share_reserves + output_with_fee
-        budget = amount_to_lp + init_bond_reserves
+        base_to_lp = init_share_reserves + output_with_fee
+        budget = base_to_lp + init_bond_reserves
         initial_lp = import_module("elfpy.strategies.init_lp").Policy(
             market=self.market,
             rng=self.rng,
             wallet_address=0,
             budget=budget,
-            amount_to_lp=amount_to_lp,
-            amount_to_short=init_bond_reserves,
+            base_to_lp=base_to_lp,
+            pt_to_short=init_bond_reserves,
         )
         logging.info(
             (
                 "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
-                "budget = %g; amount_to_lp = %g; amount_to_short = %g"
+                "budget = %g; base_to_lp = %g; pt_to_short = %g"
             ),
             initial_lp.wallet_address,
             self.config.simulator.init_pool_apy,
             self.config.simulator.target_liquidity,
             budget,
-            amount_to_lp,
+            base_to_lp,
             init_bond_reserves,
         )
         return initial_lp
@@ -370,7 +370,6 @@ class YieldSimulator:
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
-        # Variables that are constant across runs
         # pylint: disable=too-many-statements
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
