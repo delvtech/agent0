@@ -280,11 +280,20 @@ class YieldSimulator:
             self.agents = {}
         self.market.log_market_step_string()
         # continue adding other users
-        for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
+        for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
+            try:
+                policy_name, policy_args = policy_instruction.split(":")
+                policy_args = re.split(r",|=", policy_args)
+                kwargs = {key: float(value) for key, value in zip(policy_args[::2], policy_args[1::2])}
+            except ValueError:
+                policy_name = policy_instruction
+                kwargs = {}
+            logging.info(f"creating agent {policy_number+1:03.0f} with policy {policy_name} and args {kwargs}")
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
                 wallet_address=policy_number + 1,  # first policy goes to init_lp_agent
+                **kwargs,
             )
             agent.log_status_report()
             self.agents.update({agent.wallet_address: agent})
@@ -347,18 +356,25 @@ class YieldSimulator:
         """Get trades from the agent list, execute them, and update states"""
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
+        number_of_executed_trades = 0
         # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
         # then closing the shorts results in an error (share_reserves == 0).
+        wallet_ids = [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
         if self.config.simulator.shuffle_users:
             if last_block_in_sim:
                 wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 )
                 wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
-            else:
+            else:  # include init_lp only on the last block, to let it unwind
                 wallet_ids = self.rng.permutation(list(self.agents))
+        else:  # we are in a deterministic mode
+            # reverse the list excluding 0 (init_lp)
+            wallet_ids = [key for key in self.agents if key > 0][::-1]
+            if last_block_in_sim:  # prepend init_lp to the list
+                wallet_ids = np.append(wallet_ids, 0)
         for agent_id in wallet_ids:  # trade is different on the last block
             agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
@@ -376,10 +392,16 @@ class YieldSimulator:
                 agent.log_status_report()
                 self.update_analysis_dict()
                 self.run_trade_number += 1
+                number_of_executed_trades += 1
+        if number_of_executed_trades > 0:
+            logging.debug(
+                f"executed {number_of_executed_trades} trades at {self.market.get_market_state_string()}"
+            )
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
         # pylint: disable=too-many-statements
+
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
