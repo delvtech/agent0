@@ -110,12 +110,14 @@ class Market:
         self.check_action_type(agent_action.action_type, pricing_model.model_name())
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
+        logging.debug("evaluating time_remaining for agent_action %s at time %s", agent_action, self.time)
+        # set mint time to current time if not specified
+        action_mint_time = agent_action.mint_time if agent_action.mint_time is not None else self.time
+        time_remaining = time_utils.get_yearfrac_remaining(self.time, action_mint_time, self.token_duration)
+        stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         time_remaining = StretchedTime(
-            # TODO: We should improve the StretchedTime API so that it accepts yearfracs in
-            # the place of days remaining.
-            days=time_utils.get_yearfrac_remaining(
-                self.time, agent_action.mint_time, self.position_duration.normalized_days
-            )
+            # TODO: We should improve the StretchedTime API so that it accepts yearfracs in the place of days remaining.
+            days=time_utils.get_yearfrac_remaining(self.time, action_mint_time, self.position_duration.normalized_days)
             * 365,
             time_stretch=self.position_duration.time_stretch,
         )

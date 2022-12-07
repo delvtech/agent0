@@ -161,3 +161,63 @@ class SingleTradeTests(BaseTradeTest):
     def test_base_lps(self):
         """Tests base LP setups"""
         self.run_base_lp_test(agent_policies=["single_lp"], config_file="config/example_config.toml")
+
+    def run_custom_parameters_test(self, user_policies, agent_params_to_check):
+        """Test custom parameters passed to agent creation"""
+        simulator = self.run_base_trade_test(user_policies=user_policies, config_file="config/example_config.toml")
+        for agent, agent_param in enumerate(agent_params_to_check):
+            for key, value in agent_param.items():
+                np.testing.assert_almost_equal(
+                    getattr(simulator.agents[agent + 1], key),
+                    value,
+                    err_msg=f"{key} does not equal {value}",
+                )
+
+    def test_custom_parameters(self):
+        """Tests passing custom parameters"""
+        list_of_user_policies_that_pass = [["single_lp:base_to_lp=200", "single_short:pt_to_short=500"]]
+        list_of_user_policies_that_fail = [
+            ["single_lp:base_to_lp=200", "single_short:pt_to_short=499"],
+            ["single_lp:base_to_lp=200", "single_short:pt_to_short=501"],
+            ["single_lp:base_to_lp=199", "single_short:pt_to_short=500"],
+            ["single_lp:base_to_lp=201", "single_short:pt_to_short=500"],
+        ]
+        agent_params_to_check = (
+            {"base_to_lp": 200},  # agent 1
+            {"pt_to_short": 500},  # agent 2
+        )
+        for user_policies in list_of_user_policies_that_pass:
+            self.run_custom_parameters_test(user_policies, agent_params_to_check)
+        for user_policies in list_of_user_policies_that_fail:
+            with self.assertRaises(AssertionError):
+                self.run_custom_parameters_test(user_policies, agent_params_to_check)
+
+    def run_custom_parameters_test(self, user_policies, agent_params_to_check):
+        """Test custom parameters passed to agent creation"""
+        simulator = self.run_base_trade_test(user_policies=user_policies, config_file="config/example_config.toml")
+        for agent, agent_param in enumerate(agent_params_to_check):
+            for key, value in agent_param.items():
+                np.testing.assert_almost_equal(
+                    getattr(simulator.agents[agent + 1], key),
+                    value,
+                    err_msg=f"{key} does not equal {value}",
+                )
+
+    def test_custom_parameters(self):
+        """Tests passing custom parameters"""
+        list_of_user_policies_that_pass = [["single_lp:base_to_lp=200", "single_short:pt_to_short=500"]]
+        list_of_user_policies_that_fail = [
+            ["single_lp:base_to_lp=200", "single_short:pt_to_short=499"],
+            ["single_lp:base_to_lp=200", "single_short:pt_to_short=501"],
+            ["single_lp:base_to_lp=199", "single_short:pt_to_short=500"],
+            ["single_lp:base_to_lp=201", "single_short:pt_to_short=500"],
+        ]
+        agent_params_to_check = (
+            {"base_to_lp": 200},  # agent 1
+            {"pt_to_short": 500},  # agent 2
+        )
+        for user_policies in list_of_user_policies_that_pass:
+            self.run_custom_parameters_test(user_policies, agent_params_to_check)
+        for user_policies in list_of_user_policies_that_fail:
+            with self.assertRaises(AssertionError):
+                self.run_custom_parameters_test(user_policies, agent_params_to_check)

@@ -3,13 +3,12 @@ Implements abstract classes that control agent behavior
 """
 
 import logging
-
 import numpy as np
 
+import elfpy.utils.time as time_utils
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketAction, MarketActionType
-from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
 
@@ -19,7 +18,7 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, wallet_address: int, budget: float):
+    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, **kwargs):
         """
         Set up initial conditions
         """
@@ -29,9 +28,13 @@ class Agent:
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
+        for key, value in kwargs.items():
+            if value and hasattr(self, key):
+                logging.info("setting agent's %s to %s", key, str(value))
+                setattr(self, key, value)
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+        self, action_type: MarketActionType, trade_amount: float, mint_time: float = None
     ) -> MarketAction:
         """Instantiate a agent action"""
         agent_action = MarketAction(
@@ -59,10 +62,20 @@ class Agent:
         """
         if market.market_state.share_reserves == 0:
             return 0
-        max_pt_short = (
-            market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price(pricing_model)
+        time_remaining = time_utils.get_yearfrac_remaining(market.time, market.time, market.token_duration)
+        stretched_time_remaining = time_utils.stretch_time(time_remaining, market.time_stretch_constant)
+        trade_results = pricing_model.calc_in_given_out(
+            market.share_reserves,
+            market.share_reserves,
+            market.bond_reserves,
+            "pt",
+            market.fee_percent,
+            stretched_time_remaining,
+            market.init_share_price,
+            market.share_price,
         )
-        return max_pt_short
+        output_with_fee = trade_results[1]
+        return output_with_fee
 
     def get_trade_list(self, market: Market, pricing_model: PricingModel) -> list:
         """
@@ -77,11 +90,18 @@ class Agent:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action(market, pricing_model)  # get the action list from the policy
+        # TODO: is this the right place to modify an action's mint_time? why not in __post_init__?
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
+        # if len(trade_action) > 0: # there is a trade
+        #    token_in, token_out, trade_amount_usd = trade_action
+        #    assert trade_amount_usd >= 0, (
+        #        f"agent.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
+        #        f" token_in={token_in} token_out={token_out}"
+        #    )
         return action_list
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
@@ -94,10 +114,10 @@ class Agent:
             if value_or_dict is None:
                 pass
             # handle updating a value
-            if key in ["base", "lp_tokens", "fees_paid"]:
+            if key in ["base", "lp_tokens"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    logging.info(
+                        "agent #%03.0f %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                         self.wallet_address,
                         key,
                         self.wallet[key],
@@ -108,8 +128,8 @@ class Agent:
             # handle updating a dict, which have mint_time attached
             elif key in ["margin", "longs", "shorts"]:
                 for mint_time, amount in value_or_dict.items():
-                    logging.debug(
-                        "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    logging.info(
+                        "agent #%03.0f trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
                         self.wallet_address,
                         key,
                         mint_time,
@@ -120,8 +140,6 @@ class Agent:
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-            elif key in ["fees_paid", "effective_price"]:
-                pass
             elif key in ["address"]:
                 pass
             else:
@@ -152,11 +170,10 @@ class Agent:
 
     def log_status_report(self) -> None:
         """Logs the current user state"""
-        logging.debug(
-            "agent %g base = %1g and fees_paid = %1g",
+        logging.info(
+            "agent #%03.0f base = %s",
             self.wallet_address,
             self.wallet.base,
-            self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
     def log_final_report(self, market: Market, pricing_model: PricingModel) -> None:
@@ -182,19 +199,18 @@ class Agent:
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
             (
-                "agent #%g %s %s on $%s spent, APR = %g"
-                " (%.2g in %s years), net worth = $%s"
-                " from %s base and %s tokens at p = %g\n"
+                "agent #%03.0f %s %s on $%s spent, APR = %g (%.2g in %s years), "
+                "net worth = $%s from %s base and %s tokens at p = %g\n"
             ),
             self.wallet_address,
             lost_or_made,
-            float_to_string(profit_and_loss),
-            float_to_string(spend),
+            profit_and_loss,
+            spend,
             annual_percentage_rate,
             holding_period_rate,
-            float_to_string(market.time, precision=2),
-            float_to_string(worth),
-            float_to_string(base),
-            float_to_string(tokens),
+            market.time,
+            worth,
+            base,
+            tokens,
             price,
         )

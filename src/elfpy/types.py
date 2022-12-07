@@ -86,18 +86,18 @@ class MarketAction:
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: float = 0
+    mint_time: float = None
 
     def __str__(self):
         """Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet_address}"
+        output_string = f"AGENT ACTION:\nagent #{self.wallet_address:03.0f}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"
             elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
             elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
         return output_string
 
 
@@ -131,11 +131,11 @@ class MarketDeltas:
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join([x for x in value]) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string

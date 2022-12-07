@@ -71,11 +71,10 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
                 f" min_digits={min_digits}, \n error={err}"
             )
         return str(value)
-    # decimals = np.clip(precision - digits, 0, precision)
-    decimals = min(max(precision - digits, min_digits), precision)  #  calculate desired decimals
+    decimals = np.clip(precision - digits, min_digits, precision)  # sigfigs to the right of the decimal
     if debug:
         print(f"value: {value}, type: {type(value)} calculated digits: {digits}, decimals: {decimals}")
-    if abs(value) > 0.1:
+    if abs(value) > 0.01:
         string = f"{value:,.{decimals}f}"
     else:  # add an additional sigfig if the value is really small
         string = f"{value:0.{precision-1}e}"

@@ -67,14 +67,14 @@ class Wallet:
         output_string = ""
         for key, value in vars(self).items():
             if value:  #  check if object exists
-                if value != 0:
+                if value != 0 and value is not None:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join(list(value)) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string
