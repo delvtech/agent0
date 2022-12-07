@@ -183,9 +183,10 @@ class YieldSimulator:
 
         Returns
         -------
-        initial_lp : Agent
+        init_lp_agent : Agent
             Agent class that will perform the lp initialization action
         """
+        # get the reserve amounts for the target liquidity and pool APR
         init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
             target_liquidity=self.config.simulator.target_liquidity,
             market_price=self.config.market.base_asset_price,
@@ -195,10 +196,11 @@ class YieldSimulator:
             init_share_price=self.market.init_share_price,
             share_price=self.market.init_share_price,
         )[:2]
-        normalized_days_until_maturity = self.config.simulator.token_duration  # `t`; full duration
+        normalized_days_until_maturity = self.config.simulator.token_duration  # `t(d)`; full duration
         stretch_time_remaining = time_utils.stretch_time(
             normalized_days_until_maturity, self.market.time_stretch_constant
-        )
+        )  # tau(d)
+        # mock the short to assess what the delta market conditions will be
         output_with_fee = self.market.pricing_model.calc_out_given_in(
             in_=init_bond_reserves,
             share_reserves=init_share_reserves,
@@ -209,9 +211,12 @@ class YieldSimulator:
             init_share_price=self.market.init_share_price,
             share_price=self.market.init_share_price,
         )[1]
+        # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
         base_to_lp = init_share_reserves + output_with_fee
+        # budget is the full amount for LP & short
         budget = base_to_lp + init_bond_reserves
-        initial_lp = import_module("elfpy.strategies.init_lp").Policy(
+        # construct the init_lp agent with desired budget, lp, and short amounts
+        init_lp_agent = import_module("elfpy.strategies.init_lp").Policy(
             market=self.market,
             rng=self.rng,
             wallet_address=0,
@@ -224,14 +229,14 @@ class YieldSimulator:
                 "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
                 "budget = %g; base_to_lp = %g; pt_to_short = %g"
             ),
-            initial_lp.wallet_address,
+            init_lp_agent.wallet_address,
             self.config.simulator.init_pool_apy,
             self.config.simulator.target_liquidity,
             budget,
             base_to_lp,
             init_bond_reserves,
         )
-        return initial_lp
+        return init_lp_agent
 
     def setup_simulated_entities(self, override_dict=None):
         """
@@ -267,9 +272,9 @@ class YieldSimulator:
         self.market.vault_apy = self.config.simulator.vault_apy[0]
         # fill market pools
         if self.config.simulator.init_lp:
-            initial_lp = self.setup_init_lp_agent()  # calculate lp amounts & instantiate lp agent
-            self.agents = {initial_lp.wallet_address: initial_lp}
-            # execute one special block just for the initial_lp
+            init_lp_agent = self.setup_init_lp_agent()  # calculate lp amounts & instantiate lp agent
+            self.agents = {init_lp_agent.wallet_address: init_lp_agent}
+            # execute one special block just for the init_lp_agent
             self.collect_and_execute_trades()
         else:  # manual market configuration
             self.agents = {}
@@ -279,7 +284,7 @@ class YieldSimulator:
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
-                wallet_address=policy_number + 1,  # first policy goes to initial_lp
+                wallet_address=policy_number + 1,  # first policy goes to init_lp_agent
             )
             agent.log_status_report()
             self.agents.update({agent.wallet_address: agent})
@@ -346,10 +351,14 @@ class YieldSimulator:
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
         # then closing the shorts results in an error (share_reserves == 0).
-        wallet_ids = [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
         if self.config.simulator.shuffle_users:
-            wallet_ids = self.rng.permutation(wallet_ids)
-        wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+            if last_block_in_sim:
+                wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
+                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
+                )
+                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+            else:
+                wallet_ids = self.rng.permutation(wallet_ids)
         for agent_id in wallet_ids:  # trade is different on the last block
             agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades

@@ -231,8 +231,9 @@ class Market:
 
     def get_rate(self):
         """Returns the current market apr"""
-        # calc_apr_from_spot_price will throw an error if share_reserves is zero
-        if self.share_reserves <= 0:  # market is empty
+        # calc_apr_from_spot_price will throw an error if share_reserves <= zero
+        # TODO: negative values should never happen, but do because of rounding errors. Write checks to remedy this in the market.
+        if self.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
             rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.token_duration)
