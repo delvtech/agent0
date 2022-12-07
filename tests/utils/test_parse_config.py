@@ -8,6 +8,7 @@ Testing for the parsing of the Market, AMM and Simulator configs from a TOML fil
 # pylint: disable=attribute-defined-outside-init
 
 import unittest
+import logging
 
 from elfpy.utils import parse_config as config_utils
 
@@ -51,8 +52,20 @@ class TestParseSimulationConfig(unittest.TestCase):
             pricing_model_name='Element',
             user_policies=['single_long'],
             random_seed=123,
-            verbose=False
-            )
+            verbose=False,
+            shuffle_users=True,
+            init_lp=True,
+            target_liquidity=10000000,
+            target_daily_volume=1000,
+            init_pool_apy=0.05,
+            fee_percent=0.10,
+            init_vault_age=0,
+            vault_apy=[0.05],
+            logging_level=logging.WARNING
+        )
+
+        print(simulator)
+        print(config.simulator)
 
         assert (market == config.market), "Loaded Market TOML data doesn't match the hardcoded data"
         assert (amm == config.amm), "Loaded AMM TOML data doesn't match the hardcoded data"
