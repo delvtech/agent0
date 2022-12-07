@@ -202,7 +202,7 @@ class Market:
             )
         elif agent_action.action_type == "close_short":  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
-                agent_action=agent_action, token_in="pt", stretched_time_remaining=stretched_time_remaining
+                agent_action=agent_action, token_in="base", stretched_time_remaining=stretched_time_remaining
             )
         elif agent_action.action_type == "add_liquidity":
             market_deltas, agent_deltas = self._add_liquidity(agent_action, time_remaining, stretched_time_remaining)

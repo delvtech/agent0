@@ -19,9 +19,10 @@ from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorC
 class TestSimulator(unittest.TestCase):
     """Simulator test class"""
 
-    def test_hyperdrive_sim(self):
-        """Tests the simulator output to verify that indices are correct"""
-        logging_level = logging.INFO
+    @staticmethod
+    def setup_logging():
+        """Setup logging and handlers for the test"""
+        logging_level = logging.DEBUG
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -36,12 +37,17 @@ class TestSimulator(unittest.TestCase):
         logging.getLogger().handlers = [
             handler,
         ]
+
+    def test_hyperdrive_sim(self):
+        """Tests the simulator output to verify that indices are correct"""
+        self.setup_logging()
         simulator = YieldSimulator(
             Config(
                 market=MarketConfig(),
                 amm=AMMConfig(pricing_model_name="Hyperdrive"),
                 simulator=SimulatorConfig(
                     num_trading_days=10,
+                    user_policies=[],
                     num_blocks_per_day=10,
                     logging_level=logging.INFO,
                 ),
@@ -56,7 +62,7 @@ class TestSimulator(unittest.TestCase):
 
             # pylint: disable=broad-except
             except Exception as exc:
-                assert False, f"test failed at seed {rng_seed} with exception {exc}"
+                assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
         # comment this to view the generated log files
         file_loc = logging.getLogger().handlers[0].baseFilename
         os.remove(file_loc)
