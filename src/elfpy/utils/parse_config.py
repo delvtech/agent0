@@ -60,7 +60,22 @@ def parse_simulation_config(config_dict):
         amm=AMMConfig(**config_dict["amm"]),
         simulator=SimulatorConfig(**config_dict["simulator"]),
     )
+<<<<<<< HEAD
     simulation_config.simulator.logging_level = text_to_logging_level(simulation_config.simulator.logging_level)
+=======
+    match simulation_config.simulator.logging_level.lower():
+        case "debug":
+            level = logging.DEBUG
+        case "info":
+            level = logging.INFO
+        case "warning":
+            level = logging.WARNING
+        case "error":
+            level = logging.ERROR
+        case "critical":
+            level = logging.CRITICAL
+    simulation_config.simulator.logging_level = level
+>>>>>>> 3566d22 (updates minor linting errors & resolves remaining comments)
     return simulation_config
 
 

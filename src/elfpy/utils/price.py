@@ -89,7 +89,7 @@ def calc_base_asset_reserves(
 def calc_liquidity(
     target_liquidity_usd,
     market_price,
-    apr, # decimal APR
+    apr,  # decimal APR
     days_remaining,
     time_stretch,
     init_share_price: float = 1,
@@ -218,7 +218,7 @@ def calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, t
         Original share price when the pool started
     time_elapsed : float
         Amount of time that has elapsed in the current market, in yearfracs
-   
+
     Returns
     -------
     float

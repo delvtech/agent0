@@ -12,6 +12,7 @@ import logging
 
 from elfpy.utils import parse_config as config_utils
 
+
 class TestParseSimulationConfig(unittest.TestCase):
     """Unit tests for the parse_simulation_config function"""
 
@@ -30,17 +31,11 @@ class TestParseSimulationConfig(unittest.TestCase):
             max_vault_age=1,
             min_vault_apy=0.001,
             max_vault_apy=0.9,
-            base_asset_price=2500.0
-            )
+            base_asset_price=2500.0,
+        )
 
         # manually set AMM config to be the same as the TOML file
-        amm = config_utils.AMMConfig(
-            min_fee=0.1,
-            max_fee=0.5,
-            min_pool_apy=0.02,
-            max_pool_apy=0.9,
-            floor_fee=0
-            )
+        amm = config_utils.AMMConfig(min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0)
 
         # manually set Simulator config to be the same as the TOML file
         simulator = config_utils.SimulatorConfig(
@@ -49,8 +44,8 @@ class TestParseSimulationConfig(unittest.TestCase):
             num_blocks_per_day=7200,
             token_duration=180,
             precision=64,
-            pricing_model_name='Element',
-            user_policies=['single_long'],
+            pricing_model_name="Element",
+            user_policies=["single_long"],
             random_seed=123,
             verbose=False,
             shuffle_users=True,
@@ -61,13 +56,12 @@ class TestParseSimulationConfig(unittest.TestCase):
             fee_percent=0.10,
             init_vault_age=0,
             vault_apy=[0.05],
-            logging_level=logging.WARNING
+            logging_level=logging.WARNING,
         )
 
         print(simulator)
         print(config.simulator)
 
-        assert (market == config.market), "Loaded Market TOML data doesn't match the hardcoded data"
-        assert (amm == config.amm), "Loaded AMM TOML data doesn't match the hardcoded data"
-        assert (simulator == config.simulator), "Loaded Simulator TOML data doesn't match the hardcoded data"
-        
+        assert market == config.market, "Loaded Market TOML data doesn't match the hardcoded data"
+        assert amm == config.amm, "Loaded AMM TOML data doesn't match the hardcoded data"
+        assert simulator == config.simulator, "Loaded Simulator TOML data doesn't match the hardcoded data"

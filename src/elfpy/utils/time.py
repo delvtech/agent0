@@ -75,7 +75,7 @@ def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration:
         Time that has elapsed in the given market, in fractions of a year
     mint_time : float
         Time at which the token in question was minted, relative to market_time,
-        in fractions of a year
+        in fractions of a year. Should be less than market_time.
     token_duration : float
         Total duration of the token's term, in fractions of a year
 
@@ -84,7 +84,10 @@ def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration:
     float
         Time left until token maturity, in fractions of a year
     """
-
+    if mint_time > market_time:
+        raise ValueError(
+            f"elfpy.utils.time.get_yearfrac_remaining: ERROR: {mint_time=} must be less than {market_time=}."
+        )
     yearfrac_elapsed = market_time - mint_time
     time_remaining = np.maximum(token_duration - yearfrac_elapsed, 0)
     return time_remaining
@@ -171,7 +174,7 @@ def unstretch_time(stretched_time: float, time_stretch: float = 1) -> float:
 def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     """
     Converts remaining pool length in days to normalized and stretched time
-   
+
     Arguments
     ---------
     days_remaining : float
@@ -196,7 +199,7 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     """
     Converts normalized and stretched time remaining in pool to days
-   
+
     Arguments
     ---------
     time_remaining : float
@@ -212,7 +215,7 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     float
         Time remaining until term maturity, in days
     """
-    
+
     normed_days_remaining = unstretch_time(time_remaining, time_stretch)
     days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
     return days_remaining
