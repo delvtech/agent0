@@ -87,7 +87,7 @@ def calc_base_asset_reserves(
 
 
 def calc_liquidity(
-    target_liquidity_usd,
+    target_liquidity,
     market_price,
     apr,  # decimal APR
     days_remaining,
@@ -101,7 +101,7 @@ def calc_liquidity(
     The scaling factor ensures token_asset_reserves and base_asset_reserves add
     up to target_liquidity, while keeping their ratio constant (preserves apr).
 
-    total_liquidity = in USD terms, used to target liquidity as passed in (in USD terms)
+    total_liquidity = in base terms, used to target liquidity as passed in
     total_reserves  = in arbitrary units (AU), used for yieldspace math
 
     Arguments
@@ -129,7 +129,7 @@ def calc_liquidity(
     """
     # estimate reserve values with the information we have
     spot_price = calc_spot_price_from_apr(apr, time_utils.norm_days(days_remaining))
-    token_asset_reserves = target_liquidity_usd / market_price / 2 / spot_price  # guesstimate
+    token_asset_reserves = target_liquidity / 2 / spot_price  # guesstimate, in base units still
     base_asset_reserves = calc_base_asset_reserves(
         apr,
         token_asset_reserves,
@@ -140,9 +140,9 @@ def calc_liquidity(
     )  # ensures an accurate ratio of prices
     total_liquidity = calc_total_liquidity_from_reserves_and_price(
         base_asset_reserves, token_asset_reserves, spot_price
-    )
+    )  # in base asset units
     # compute scaling factor to adjust reserves so that they match the target liquidity
-    scaling_factor = (target_liquidity_usd / market_price) / total_liquidity  # both in token terms
+    scaling_factor = (target_liquidity / market_price) / total_liquidity  # both in token units
     # update variables by rescaling the original estimates
     token_asset_reserves = token_asset_reserves * scaling_factor
     base_asset_reserves = base_asset_reserves * scaling_factor

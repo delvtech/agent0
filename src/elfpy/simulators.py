@@ -48,12 +48,13 @@ class YieldSimulator:
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
-        self.init_share_price: float = 0
+        self.init_share_price: float = 1
         self.market = None
-        self.agent_list: list[Agent] = []
+        self.agents: dict[int, Agent] = {}
         self.random_variables_set = False
         # Output keys, used for logging on a trade-by-trade basis
         analysis_keys = [
+            "model_name",  # the name of the pricing model that is used in simulation
             "run_number",  # integer, simulation index
             "simulation_start_time",  # start datetime for a given simulation
             "day",  # integer, day index in a given simulation
@@ -64,16 +65,16 @@ class YieldSimulator:
             "current_market_yearfrac",  # float, current market time as a yearfrac
             "run_trade_number",  # integer, trade number in a given simulation
             "step_size",  # minimum time discretization for market time step
-            "model_name",  # the name of the pricing model that is used in simulation
             "token_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
-            "target_daily_volume",
+            "target_daily_volume",  # TODO: REMOVE; Not used anymore. It would have to be specified in the user policy
             "fee_percent",
             "floor_fee",  # minimum fee we take
             "init_vault_age",
             "base_asset_price",
             "vault_apy",
+            "pool_apy",
             "share_reserves",
             "bond_reserves",
             "total_supply",
@@ -82,7 +83,6 @@ class YieldSimulator:
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
-            "num_orders",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
@@ -110,7 +110,10 @@ class YieldSimulator:
                 size=self.config.simulator.num_trading_days,
             )
         )  # vault apy over time as a decimal
-        self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
+        if self.config.amm.pricing_model_name.lower() == "element":
+            self.init_share_price = 1.0
+        else:
+            self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
         if self.config.simulator.precision is not None:
             self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
         self.random_variables_set = True
@@ -170,6 +173,71 @@ class YieldSimulator:
         if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
 
+    def setup_init_lp_agent(self):
+        """
+        Calculate the required deposit amounts and instantiate the LP agent
+
+        Arguments
+        ---------
+        None
+
+        Returns
+        -------
+        init_lp_agent : Agent
+            Agent class that will perform the lp initialization action
+        """
+        # get the reserve amounts for the target liquidity and pool APR
+        init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
+            target_liquidity=self.config.simulator.target_liquidity,
+            market_price=self.config.market.base_asset_price,
+            apr=self.config.simulator.init_pool_apy,
+            days_remaining=self.config.simulator.token_duration,
+            time_stretch=self.market.time_stretch_constant,
+            init_share_price=self.market.init_share_price,
+            share_price=self.market.init_share_price,
+        )[:2]
+        normalized_days_until_maturity = self.config.simulator.token_duration  # `t(d)`; full duration
+        stretch_time_remaining = time_utils.stretch_time(
+            normalized_days_until_maturity, self.market.time_stretch_constant
+        )  # tau(d)
+        # mock the short to assess what the delta market conditions will be
+        output_with_fee = self.market.pricing_model.calc_out_given_in(
+            in_=init_bond_reserves,
+            share_reserves=init_share_reserves,
+            bond_reserves=0,
+            token_out="pt",
+            fee_percent=self.config.simulator.fee_percent,
+            time_remaining=stretch_time_remaining,
+            init_share_price=self.market.init_share_price,
+            share_price=self.market.init_share_price,
+        )[1]
+        # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
+        base_to_lp = init_share_reserves + output_with_fee
+        # budget is the full amount for LP & short
+        budget = base_to_lp + init_bond_reserves
+        # construct the init_lp agent with desired budget, lp, and short amounts
+        init_lp_agent = import_module("elfpy.strategies.init_lp").Policy(
+            market=self.market,
+            rng=self.rng,
+            wallet_address=0,
+            budget=budget,
+            base_to_lp=base_to_lp,
+            pt_to_short=init_bond_reserves,
+        )
+        logging.info(
+            (
+                "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
+                "budget = %g; base_to_lp = %g; pt_to_short = %g"
+            ),
+            init_lp_agent.wallet_address,
+            self.config.simulator.init_pool_apy,
+            self.config.simulator.target_liquidity,
+            budget,
+            base_to_lp,
+            init_bond_reserves,
+        )
+        return init_lp_agent
+
     def setup_simulated_entities(self, override_dict=None):
         """
         Constructs the agent list, pricing model, and market member variables
@@ -182,7 +250,7 @@ class YieldSimulator:
 
         Returns
         -------
-        There are no returns, but the function instantiates self.market and self.agent_list
+        There are no returns, but the function instantiates self.market and self.agents
         """
 
         assert (
@@ -193,17 +261,6 @@ class YieldSimulator:
         pricing_model = self._get_pricing_model(self.config.amm.pricing_model_name)  # construct pricing model object
         # setup market
         time_stretch_constant = pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
-        # calculate reserves needed to deposit to hit target liquidity and APY
-        init_reserves = price_utils.calc_liquidity(
-            self.config.simulator.target_liquidity,
-            self.config.market.base_asset_price,
-            self.config.simulator.init_pool_apy,
-            self.config.simulator.token_duration,
-            time_stretch_constant,
-            self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-        )
-        init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
             fee_percent=self.config.simulator.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
@@ -212,55 +269,25 @@ class YieldSimulator:
             init_share_price=self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
-        logging.info(
-            (
-                "Initial market values:"
-                "\n target_liquidity = %1g"
-                "\n init_base_asset_reserves = %1g"
-                "\n init_token_asset_reserves = %1g"
-                "\n init_pool_apy = %2g"
-                "\n vault_apy = %2g"
-                "\n fee_percent = %g"
-                "\n share_price = %g"
-                "\n init_share_price = %g"
-                "\n init_time_stretch = %g"
-            ),
-            self.config.simulator.target_liquidity,
-            init_base_asset_reserves,
-            init_token_asset_reserves,
-            self.config.simulator.init_pool_apy,
-            self.config.simulator.vault_apy[0],
-            self.market.fee_percent,
-            self.market.share_price,
-            self.market.init_share_price,
-            self.market.time_stretch_constant,
-        )
-        # fill market pools with an initial LP
+        self.market.vault_apy = self.config.simulator.vault_apy[0]
+        # fill market pools
         if self.config.simulator.init_lp:
-            initial_lp = import_module("elfpy.strategies.init_lp").Policy(
-                market=self.market,
-                rng=self.rng,
-                wallet_address=0,
-                budget=init_base_asset_reserves * 100,
-                amount_to_lp=init_base_asset_reserves,
-                pt_to_short=init_token_asset_reserves / 10,
-                short_until_apr=self.config.simulator.init_pool_apy,
-            )
-            self.agent_list = [initial_lp]
-            # execute one special block just for the initial_lp
+            init_lp_agent = self.setup_init_lp_agent()  # calculate lp amounts & instantiate lp agent
+            self.agents = {init_lp_agent.wallet_address: init_lp_agent}
+            # execute one special block just for the init_lp_agent
             self.collect_and_execute_trades()
         else:  # manual market configuration
-            self.agent_list = []
+            self.agents = {}
         self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
-                wallet_address=policy_number + 1,  # first policy goes to initial_lp
+                wallet_address=policy_number + 1,  # first policy goes to init_lp_agent
             )
             agent.log_status_report()
-            self.agent_list.append(agent)
+            self.agents.update({agent.wallet_address: agent})
 
     def _get_pricing_model(self, model_name) -> ElementPricingModel | HyperdrivePricingModel:
         """Get a PricingModel object from the config passed in"""
@@ -299,13 +326,12 @@ class YieldSimulator:
                     * self.market.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
+                self.market.vault_apy = self.config.simulator.vault_apy[self.day]
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
                     self.daily_block_number == self.config.simulator.num_blocks_per_day - 1
                 )
-                # if self.config.simulator.shuffle_users:
-                # self.rng.shuffle(np.asarray(self.agent_list))  # shuffle the agent order each block
                 self.collect_and_execute_trades(last_block_in_sim)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
@@ -313,7 +339,7 @@ class YieldSimulator:
                     self.market.tick(self.step_size())
                     self.block_number += 1
         # simulation has ended
-        for agent in self.agent_list:
+        for agent in self.agents.values():
             agent.log_final_report()
         # fees_owed = self.market.calc_fees_owed()
 
@@ -321,18 +347,20 @@ class YieldSimulator:
         """Get trades from the agent list, execute them, and update states"""
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
-
-        # TODO: BIG HACK to make this PR pass.  There is a bug with removing liquidity that
-        # doesn't account for open shorts.  Someone can remove all liquidity while there are open
-        # shorts, then when another user goes to close a short, there are no reserves, so the calc
-        # functions error due to division by zero.  Need to fix the accounting of reserves to
-        # account for open short positions.
-        if last_block_in_sim:  # get all of a agent's trades
-            # we are reversing order here to make sure that agent 0's remove_liquidity transaction
-            # is last
-            self.agent_list = self.agent_list[::-1]
-
-        for agent in self.agent_list:  # trade is different on the last block
+        # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
+        # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
+        # But right now, if the LPer removes liquidity while shorts are open,
+        # then closing the shorts results in an error (share_reserves == 0).
+        if self.config.simulator.shuffle_users:
+            if last_block_in_sim:
+                wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
+                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
+                )
+                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+            else:
+                wallet_ids = self.rng.permutation(list(self.agents))
+        for agent_id in wallet_ids:  # trade is different on the last block
+            agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades()
             else:
@@ -340,54 +368,54 @@ class YieldSimulator:
             for agent_trade in trade_list:  # execute trades
                 wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas)  # update agent state since market doesn't know about agents
-                logging.debug("agent wallet deltas = %s", wallet_deltas.__dict__)
-                logging.debug("post-trade agent status = %s", agent.log_status_report())
+                logging.debug(
+                    "agent #%g wallet deltas = \n%s",
+                    agent.wallet_address,
+                    wallet_deltas.__dict__,
+                )
+                agent.log_status_report()
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
-
+        # pylint: disable=too-many-statements
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
-
-        # pylint: disable=too-many-statements
-        # Variables that are constant across runs
         self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
+        self.analysis_dict["simulation_start_time"].append(self.start_time)
+        self.analysis_dict["day"].append(self.day)
+        self.analysis_dict["block_number"].append(self.block_number)
+        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
+        self.analysis_dict["block_timestamp"].append(
+            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            if self.start_time
+            else "None"
+        )
+        self.analysis_dict["current_market_datetime"].append(
+            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
+        )
+        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
+        self.analysis_dict["run_trade_number"].append(self.run_trade_number)
+        self.analysis_dict["step_size"].append(self.step_size())
+        self.analysis_dict["token_duration"].append(self.market.token_duration)
         self.analysis_dict["time_stretch_constant"].append(self.market.time_stretch_constant)
         self.analysis_dict["target_liquidity"].append(self.config.simulator.target_liquidity)
         self.analysis_dict["target_daily_volume"].append(self.config.simulator.target_daily_volume)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.config.simulator.init_vault_age)
-        self.analysis_dict["token_duration"].append(self.market.token_duration)
-        self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
-        self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
-        self.analysis_dict["step_size"].append(self.step_size())
-        self.analysis_dict["init_share_price"].append(self.market.init_share_price)
-        self.analysis_dict["simulation_start_time"].append(self.start_time)
-        # Variables that change per day
-        self.analysis_dict["vault_apy"].append(self.config.simulator.vault_apy[self.day])
-        self.analysis_dict["day"].append(self.day)
-        self.analysis_dict["daily_block_number"].append(self.daily_block_number)
-        self.analysis_dict["block_number"].append(self.block_number)
-        self.analysis_dict["block_timestamp"].append(
-            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
-            if self.start_time
-            else "None"
-        )
-        # Variables that change per trade
-        self.analysis_dict["current_market_yearfrac"].append(self.market.time)
-        self.analysis_dict["current_market_datetime"].append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
-        )
-        self.analysis_dict["run_trade_number"].append(self.run_trade_number)
+        self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
+        self.analysis_dict["vault_apy"].append(self.market.vault_apy)
+        self.analysis_dict["pool_apy"].append(self.market.get_rate())
         self.analysis_dict["share_reserves"].append(self.market.share_reserves)
         self.analysis_dict["bond_reserves"].append(self.market.bond_reserves)
         self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
-        self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["share_price"].append(self.market.share_price)
+        self.analysis_dict["init_share_price"].append(self.market.init_share_price)
+        self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
+        self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.share_reserves > 0:  # there is money in the market

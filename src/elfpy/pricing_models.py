@@ -1284,6 +1284,7 @@ class HyperdrivePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
+        # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_out == "base":
             d_bonds = in_
@@ -1370,35 +1371,16 @@ class HyperdrivePricingModel(PricingModel):
         # float due to the constraints on the inputs, without_fee = with_fee + fee
         # so it is a positive float if with_fee and fee are positive floats, and
         # fee is a positive float due to the constraints on the inputs.
-        assert fee >= 0, (
-            f"pricing_models.calc_out_given_in: ERROR: Fee should not be negative!"
-            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
-            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
-            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
+        assert_bool = fee >= 0 and isinstance(with_fee, float) and with_fee >= 0
+        assert assert_bool, (
+            f"pricing_models.calc_out_given_in: ERROR: Fee & with_fee should be non-negative floats!"
+            f"\n\t{in_=}\n\t{share_reserves=}\n\t{bond_reserves=}"
+            f"\n\t{total_reserves=}\n\t{init_share_price=}"
+            f"\n\t{share_price=}\n\t{scale=}\n\t{fee_percent=}"
+            f"\n\t{time_remaining=}\n\t{time_elapsed=}"
+            f"\n\t{in_reserves=}\n\t{out_reserves=}\n\t{token_out=}"
+            f"\n\t{spot_price=}\n\t{k=}\n\t{without_fee_or_slippage=}"
+            f"\n\t{without_fee=}\n\t{type(without_fee)=}\n\t{fee=}\n\t{type(fee)=}"
+            f"\n\t{with_fee=}\n\t{type(with_fee)=}"
         )
-        assert isinstance(with_fee, float), (
-            f"pricing_models.calc_out_given_in: ERROR: with_fee should be a float, not {type(with_fee)}!"
-            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
-            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
-            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
-        )
-        assert with_fee >= 0, (
-            f"pricing_models.calc_out_given_in: ERROR: with_fee should be non-negative, not {with_fee}!"
-            f"\n\tin_={in_}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_out={token_out}"
-            f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
-            f"\n\twithout_fee={without_fee}\n\tfee={fee}"
-        )
-
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)

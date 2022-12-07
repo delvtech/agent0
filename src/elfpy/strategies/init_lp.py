@@ -4,8 +4,8 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.pricing_models import ElementPricingModel
 from elfpy.strategies.basic import BasicPolicy
+from elfpy.pricing_models import ElementPricingModel
 
 
 class Policy(BasicPolicy):
@@ -20,14 +20,12 @@ class Policy(BasicPolicy):
         rng,
         wallet_address,
         budget=1000,
-        amount_to_lp=100,
+        base_to_lp=100,
         pt_to_short=100,
-        short_until_apr=0.05,
     ):
         """call basic policy init then add custom stuff"""
-        self.amount_to_lp = amount_to_lp
+        self.base_to_lp = base_to_lp
         self.pt_to_short = pt_to_short
-        self.short_until_apr = short_until_apr
         super().__init__(
             market=market,
             rng=rng,
@@ -46,12 +44,13 @@ class Policy(BasicPolicy):
             action_list = []
         else:
             if self.market.pricing_model.model_name == ElementPricingModel().model_name():
+                # TODO: This doesn't work correctly -- need to add PT
                 action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                 ]
             else:
                 action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
                 ]
         return action_list
