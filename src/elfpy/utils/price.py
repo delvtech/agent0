@@ -171,7 +171,7 @@ def calc_apr_from_spot_price(price, normalized_days_remaining):
     float
         APR (decimal) calculated from the provided parameters
     """
-    assert price > 0, (
+    assert price >= 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"Price argument should be greater or equal to zero, not {price}"
     )

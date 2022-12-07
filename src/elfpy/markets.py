@@ -37,7 +37,7 @@ class MarketAction:
 
     def __str__(self):
         """Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet_address}"
+        output_string = f"AGENT ACTION:\nagent #{self.wallet_address:03.0f}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"
@@ -381,6 +381,7 @@ class Market:
             base_in_protocol={agent_action.mint_time: +output_with_fee + max_loss},
             token_in_protocol={agent_action.mint_time: -agent_action.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=agent_action.stretched_time_remaining,
         )
         return market_deltas, wallet_deltas
 
@@ -433,10 +434,11 @@ class Market:
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+output_with_fee,
+            base_in_wallet=+agent_action.trade_amount - output_with_fee,
             base_in_protocol={agent_action.mint_time: agent_action.trade_amount - output_with_fee},
             token_in_protocol={agent_action.mint_time: +agent_action.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=agent_action.stretched_time_remaining,
         )
         return market_deltas, agent_deltas
 
@@ -482,6 +484,7 @@ class Market:
                 base_in_wallet=-agent_action.trade_amount,
                 token_in_protocol={agent_action.mint_time: +output_with_fee},
                 fees_paid=+fee,
+                stretched_time_remaining=agent_action.stretched_time_remaining,
             )
         else:
             market_deltas = MarketDeltas()

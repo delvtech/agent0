@@ -56,6 +56,7 @@ class BaseTradeTest(unittest.TestCase):
             "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
             "user_policies": user_policies,
+            "simulator.verbose": True,
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
@@ -122,3 +123,7 @@ class SingleTradeTests(BaseTradeTest):
     def test_base_lps(self):
         """Tests base LP setups"""
         self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")
+
+if __name__ == "__main__":
+    test = SingleTradeTests()
+    test.test_init_only()
