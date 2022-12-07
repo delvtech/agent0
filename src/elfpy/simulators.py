@@ -394,9 +394,7 @@ class YieldSimulator:
                 self.run_trade_number += 1
                 number_of_executed_trades += 1
         if number_of_executed_trades > 0:
-            logging.debug(
-                f"executed {number_of_executed_trades} trades at {self.market.get_market_state_string()}"
-            )
+            logging.debug(f"executed {number_of_executed_trades} trades at {self.market.get_market_state_string()}")
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

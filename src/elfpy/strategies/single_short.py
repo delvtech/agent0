@@ -9,6 +9,7 @@ from elfpy.strategies.basic import BasicPolicy
 
 class Policy(BasicPolicy):
     """single short: only has one long open at a time"""
+
     pt_to_short = 100
 
     def action(self):

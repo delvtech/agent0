@@ -20,7 +20,9 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, verbose: bool = None, **kwargs):
+    def __init__(
+        self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, verbose: bool = None, **kwargs
+    ):
         """
         Set up initial conditions
         """
