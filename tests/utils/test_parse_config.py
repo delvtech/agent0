@@ -19,7 +19,7 @@ class TestParseSimulationConfig(unittest.TestCase):
     def test_parse_simulation_config(self):
         """Test for parse_simulation_config"""
 
-        config = config_utils.parse_simulation_config("./tests/utils/test_parse_config_success_data.toml")
+        config = config_utils.load_and_parse_config_file("./tests/utils/test_parse_config_success_data.toml")
 
         # manually set Market config to be the same as the TOML file
         market = config_utils.MarketConfig(
@@ -35,7 +35,9 @@ class TestParseSimulationConfig(unittest.TestCase):
         )
 
         # manually set AMM config to be the same as the TOML file
-        amm = config_utils.AMMConfig(min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0)
+        amm = config_utils.AMMConfig(
+            pricing_model_name="Element", min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0
+        )
 
         # manually set Simulator config to be the same as the TOML file
         simulator = config_utils.SimulatorConfig(
@@ -44,7 +46,6 @@ class TestParseSimulationConfig(unittest.TestCase):
             num_blocks_per_day=7200,
             token_duration=180,
             precision=64,
-            pricing_model_name="Element",
             user_policies=["single_long"],
             random_seed=123,
             verbose=False,

@@ -190,9 +190,7 @@ class YieldSimulator:
         ), "ERROR: You must run simulator.set_random_variables() before constructing simulation entities"
         if override_dict is not None:
             self.override_variables(override_dict)  # apply the override dict
-        pricing_model = self._get_pricing_model(
-            self.config.simulator.pricing_model_name
-        )  # construct pricing model object
+        pricing_model = self._get_pricing_model(self.config.amm.pricing_model_name)  # construct pricing model object
         # setup market
         time_stretch_constant = pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
         # calculate reserves needed to deposit to hit target liquidity and APY

@@ -13,7 +13,7 @@ import os
 import numpy as np
 
 from elfpy.simulators import YieldSimulator
-from elfpy.utils.parse_config import AMMConfig, Config, MarketConfig, SimulatorConfig, apply_config_logging
+from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorConfig
 
 
 class TestSimulator(unittest.TestCase):
@@ -37,14 +37,14 @@ class TestSimulator(unittest.TestCase):
             handler,
         ]
         simulator = YieldSimulator(
-            apply_config_logging(
-                Config(
-                    market=MarketConfig(),
-                    amm=AMMConfig(),
-                    simulator=SimulatorConfig(
-                        pricing_model_name="Hyperdrive", num_trading_days=10, num_blocks_per_day=10
-                    ),
-                )
+            Config(
+                market=MarketConfig(),
+                amm=AMMConfig(pricing_model_name="Hyperdrive"),
+                simulator=SimulatorConfig(
+                    num_trading_days=10,
+                    num_blocks_per_day=10,
+                    logging_level=logging.INFO,
+                ),
             )
         )
         for rng_seed in range(1, 10):
@@ -65,13 +65,13 @@ class TestSimulator(unittest.TestCase):
     # def test_element_sim(self):
     #     """Tests the simulator output to verify that indices are correct"""
     #     simulator = YieldSimulator(
-    #         apply_config_logging(
-    #             Config(
-    #                 market=MarketConfig(),
-    #                 amm=AMMConfig(verbose=True),
-    #                 simulator=SimulatorConfig(pricing_model_name="Element"),
-    #             )
-    #         )
+    #        Config(
+    #            market=MarketConfig(),
+    #            amm=AMMConfig(pricing_model_name="Element"),
+    #            simulator=SimulatorConfig(
+    #                logging_level=logging.INFO,
+    #            )
+    #        )
     #     )
     #     for rng_seed in range(1, 15):
     #         simulator.reset_rng(np.random.default_rng(rng_seed))
