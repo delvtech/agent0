@@ -606,8 +606,8 @@ class Market:
                 "\nz = %g"
                 "\nz_b = %g"
                 "\ny_b = %g"
-                "\np = %g"
-                "\npool apr = %g"
+                "\np = %s"
+                "\npool apr = %s"
                 "\nvault apr = %g"
             ),
             self.time,
@@ -617,6 +617,7 @@ class Market:
             self.share_reserves,
             self.share_buffer,
             self.bond_buffer,
-            spot_price,
-            rate,
+            str(spot_price),
+            str(rate),
+            self.vault_apy,
         )

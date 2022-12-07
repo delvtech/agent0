@@ -48,7 +48,7 @@ class YieldSimulator:
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
-        self.init_share_price: float = 0
+        self.init_share_price: float = 1
         self.market = None
         self.agents: dict[int, Agent] = {}
         self.random_variables_set = False
@@ -68,7 +68,7 @@ class YieldSimulator:
             "token_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
-            "target_daily_volume",
+            "target_daily_volume",  # TODO: REMOVE; Not used anymore. It would have to be specified in the user policy
             "fee_percent",
             "floor_fee",  # minimum fee we take
             "init_vault_age",
@@ -110,7 +110,10 @@ class YieldSimulator:
                 size=self.config.simulator.num_trading_days,
             )
         )  # vault apy over time as a decimal
-        self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
+        if self.config.amm.pricing_model_name.lower() == "element":
+            self.init_share_price = 1.0
+        else:
+            self.init_share_price = (1 + self.config.simulator.vault_apy[0]) ** self.config.simulator.init_vault_age
         if self.config.simulator.precision is not None:
             self.init_share_price = np.around(self.init_share_price, self.config.simulator.precision)
         self.random_variables_set = True
@@ -170,6 +173,63 @@ class YieldSimulator:
         if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
 
+    def setup_init_lp_agent(self):
+        """
+        Calculate the required deposit amounts and instantiate the LP agent
+
+        Arguments
+        ---------
+        None
+
+        Returns
+        -------
+        initial_lp : Agent
+            Agent class that will perform the lp initialization action
+        """
+        init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
+            target_liquidity=self.config.simulator.target_liquidity,
+            market_price=self.config.market.base_asset_price,
+            apr=self.config.simulator.init_pool_apy,
+            days_remaining=self.config.simulator.token_duration,
+            time_stretch=self.market.time_stretch_constant,
+            init_share_price=self.market.init_share_price,
+            share_price=self.market.init_share_price,
+        )[:2]
+        normalized_days_until_maturity = self.config.simulator.token_duration  # `t`; full duration
+        stretch_time_remaining = time_utils.stretch_time(
+            normalized_days_until_maturity, self.market.time_stretch_constant
+        )
+        output_with_fee = self.market.pricing_model.calc_out_given_in(
+            in_=init_bond_reserves,
+            share_reserves=init_share_reserves,
+            bond_reserves=0,
+            token_out="pt",
+            fee_percent=self.config.simulator.fee_percent,
+            time_remaining=stretch_time_remaining,
+            init_share_price=self.market.init_share_price,
+            share_price=self.market.init_share_price,
+        )[1]
+        amount_to_lp = init_share_reserves + output_with_fee
+        budget = amount_to_lp + init_bond_reserves
+        initial_lp = import_module("elfpy.strategies.init_lp").Policy(
+            market=self.market,
+            rng=self.rng,
+            wallet_address=0,
+            budget=budget,
+            amount_to_lp=amount_to_lp,
+            amount_to_short=init_bond_reserves,
+        )
+        logging.info(
+            "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; budget = %g; amount_to_lp = %g; amount_to_short = %g",
+            initial_lp.wallet_address,
+            self.config.simulator.init_pool_apy,
+            self.config.simulator.target_liquidity,
+            budget,
+            amount_to_lp,
+            init_bond_reserves,
+        )
+        return initial_lp
+
     def setup_simulated_entities(self, override_dict=None):
         """
         Constructs the agent list, pricing model, and market member variables
@@ -193,17 +253,6 @@ class YieldSimulator:
         pricing_model = self._get_pricing_model(self.config.amm.pricing_model_name)  # construct pricing model object
         # setup market
         time_stretch_constant = pricing_model.calc_time_stretch(self.config.simulator.init_pool_apy)
-        # calculate reserves needed to deposit to hit target liquidity and APY
-        init_reserves = price_utils.calc_liquidity(
-            self.config.simulator.target_liquidity,
-            self.config.market.base_asset_price,
-            self.config.simulator.init_pool_apy,
-            self.config.simulator.token_duration,
-            time_stretch_constant,
-            self.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-        )
-        init_base_asset_reserves, init_token_asset_reserves = init_reserves[:2]
         self.market = Market(
             fee_percent=self.config.simulator.fee_percent,  # g
             token_duration=self.config.simulator.token_duration,
@@ -213,40 +262,9 @@ class YieldSimulator:
             share_price=self.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
         )
         self.market.vault_apy = self.config.simulator.vault_apy[0]
-        logging.info(
-            (
-                "Initial (pre LP) market values:"
-                "\n target_liquidity = %1g"
-                "\n init_base_asset_reserves = %1g"
-                "\n init_token_asset_reserves = %1g"
-                "\n init_pool_apy = %2g"
-                "\n vault_apy = %2g"
-                "\n fee_percent = %g"
-                "\n share_price = %g"
-                "\n init_share_price = %g"
-                "\n init_time_stretch = %g"
-            ),
-            self.config.simulator.target_liquidity,
-            init_base_asset_reserves,
-            init_token_asset_reserves,
-            self.config.simulator.init_pool_apy,
-            self.config.simulator.vault_apy[0],
-            self.market.fee_percent,
-            self.market.share_price,
-            self.market.init_share_price,
-            self.market.time_stretch_constant,
-        )
-        # fill market pools with an initial LP
+        # fill market pools
         if self.config.simulator.init_lp:
-            initial_lp = import_module("elfpy.strategies.init_lp").Policy(
-                market=self.market,
-                rng=self.rng,
-                wallet_address=0,
-                budget=init_base_asset_reserves * 100,
-                amount_to_lp=init_base_asset_reserves,
-                pt_to_short=init_token_asset_reserves / 10,
-                short_until_apr=self.config.simulator.init_pool_apy,
-            )
+            initial_lp = self.setup_init_lp_agent()  # calculate lp amounts & instantiate lp agent
             self.agents = {initial_lp.wallet_address: initial_lp}
             # execute one special block just for the initial_lp
             self.collect_and_execute_trades()
