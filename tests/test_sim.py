@@ -47,7 +47,6 @@ class TestSimulator(unittest.TestCase):
                 amm=AMMConfig(pricing_model_name="Hyperdrive"),
                 simulator=SimulatorConfig(
                     num_trading_days=10,
-                    user_policies=[],
                     num_blocks_per_day=10,
                     logging_level=logging.INFO,
                 ),
