@@ -358,7 +358,7 @@ class YieldSimulator:
                 )
                 wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
             else:
-                wallet_ids = self.rng.permutation(wallet_ids)
+                wallet_ids = self.rng.permutation(list(self.agents))
         for agent_id in wallet_ids:  # trade is different on the last block
             agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
