@@ -119,7 +119,7 @@ class TestTimeUtils(unittest.TestCase):
                 "market_time": 0.50,  # 0.50 years = 6 months elapsed since market initialization
                 "mint_time": 0.75,  # minted at 0.75 = 9 months elapsed since market initialization
                 "token_duration": 1.00,  # 1 year duration
-                "expected_result": ValueError,  # bond has matured. No time remaining (not negative)
+                "expected_result": ValueError,  # bond was minted in the future
                 "is_error_case": True,
             },
         ]
