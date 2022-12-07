@@ -5,8 +5,7 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=too-many-arguments
 
 from elfpy.strategies.basic import BasicPolicy
-
-# from elfpy.pricing_models import ElementPricingModel
+from elfpy.pricing_models import ElementPricingModel
 
 
 class Policy(BasicPolicy):
@@ -44,13 +43,14 @@ class Policy(BasicPolicy):
         if has_lp:
             action_list = []
         else:
-            # if self.market.pricing_model.model_name == ElementPricingModel().model_name():
-            #    action_list = [
-            #        self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
-            #    ]
-            # else:
-            action_list = [
-                self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
-                self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
-            ]
+            if self.market.pricing_model.model_name == ElementPricingModel().model_name():
+                # TODO: This doesn't work correctly -- need to add PT
+                action_list = [
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                ]
+            else:
+                action_list = [
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                    self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
+                ]
         return action_list
