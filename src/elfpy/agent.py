@@ -36,16 +36,6 @@ class Agent:
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
-        self.action_list: list[MarketAction] = []
-        self.base_to_lp: float = None
-        self.pt_to_short: float = None
-        for key, value in kwargs.items():
-            print(f" checking if agent has attribute {key}: {hasattr(self, key)}")
-            if hasattr(self, key):
-                print(f"setting agent's {key} to {value}")
-                setattr(self, key, value)
-            else:
-                raise ValueError(f"ERROR: Attempted to manually override non-existent Agent attribute {key}")
 
     def create_agent_action(
         self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0

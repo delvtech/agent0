@@ -14,10 +14,11 @@ class Policy(BasicPolicy):
     base_to_lp = 100
 
     def action(self):
+        action_list = []
         has_lp = self.wallet.lp_in_wallet > 0
         can_lp = self.wallet.base_in_wallet >= self.base_to_lp
         if can_lp and not has_lp:
-            self.action_list.append(
+            action_list.append(
                 self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp)
             )
-        return self.action_list
+        return action_list
