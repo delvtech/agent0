@@ -3,6 +3,7 @@ Implements abstract classes that control agent behavior
 """
 
 import logging
+
 import numpy as np
 from numpy.random._generator import Generator
 
@@ -22,7 +23,7 @@ class Agent:
     # pylint: disable=too-many-arguments
 
     def __init__(
-        self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, verbose: bool = None, **kwargs
+        self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, **kwargs
     ):
         """
         Set up initial conditions
@@ -32,7 +33,6 @@ class Agent:
         # TODO: remove this, wallet_address is a property of wallet, not the agent
         self.wallet_address: int = wallet_address
         self.budget: float = budget
-        self.verbose: bool = False if verbose is None else verbose
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
@@ -84,6 +84,7 @@ class Agent:
             self.market.time, self.market.time, self.market.token_duration
         )
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
+        logging.info(f"evaluating max short, share_reserves:{self.market.share_reserves}")
         trade_results = self.market.pricing_model.calc_in_given_out(
             self.market.share_reserves,
             self.market.share_reserves,
