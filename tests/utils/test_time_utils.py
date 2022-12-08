@@ -23,10 +23,13 @@ class TestTimeUtils(unittest.TestCase):
 
         now = datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
         test_time = time_utils.current_datetime()
+        time_delta = datetime.timedelta(milliseconds=100)
+        before = now - time_delta
+        after = now + time_delta
 
         assert (
-            now < test_time < (now + datetime.timedelta(milliseconds=100))
-        ), f"Unexpected time value {test_time} should be close to {now}"
+            before < test_time < after
+        ), f"Unexpected time value {test_time} should be between {before} and {after}"
 
     def test_block_number_to_datetime(self):
         """Test the block_number_to_datetime function"""
