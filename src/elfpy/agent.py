@@ -127,7 +127,7 @@ class Agent:
             if value_or_dict is None:
                 pass
             # handle updating a value
-            if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
+            if key in ["base_in_wallet", "lp_in_wallet"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
                     logging.debug(
                         "agent %03.0f %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
@@ -153,7 +153,7 @@ class Agent:
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-            elif key in ["fees_paid", "address"]:
+            elif key in ["address"]:
                 pass
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
@@ -182,10 +182,9 @@ class Agent:
     def log_status_report(self) -> str:
         """Return user state"""
         logging.debug(
-            "agent %03.0f base_in_wallet = %s and fees_paid = %1g",
+            "agent %03.0f base_in_wallet = %s",
             self.wallet_address,
             float_to_string(self.wallet.base_in_wallet),
-            self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
     def log_final_report(self) -> None:
