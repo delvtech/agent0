@@ -100,8 +100,8 @@ class Agent:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        self.action_list = self.action()  # get the action list from the policy
-        for action in self.action_list:  # edit each action in place
+        action_list = self.action()  # get the action list from the policy
+        for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time
         # TODO: Add safety checks
@@ -112,7 +112,7 @@ class Agent:
         #        f"agent.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
         #        f" token_in={token_in} token_out={token_out}"
         #    )
-        return self.action_list
+        return action_list
 
     def update_spend(self) -> None:
         """Track over time the agent's weighted average spend, for return calculation"""
