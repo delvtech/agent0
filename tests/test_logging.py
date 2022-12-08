@@ -60,6 +60,7 @@ class LoggingTest(unittest.TestCase):
             simulator.setup_simulated_entities(override_dict)
             simulator.run_simulation()
             self.assertLogs(level=level)
+            handler.close()
             # comment this to view the generated log files
             if handler_type == "file":
                 file_loc = logging.getLogger().handlers[0].baseFilename

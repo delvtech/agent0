@@ -381,7 +381,7 @@ class Market:
             base_in_protocol={agent_action.mint_time: +output_with_fee + max_loss},
             token_in_protocol={agent_action.mint_time: -agent_action.trade_amount},
             fees_paid=+fee,
-            stretched_time_remaining=agent_action.stretched_time_remaining,
+            stretched_time_remaining=stretched_time_remaining,
         )
         return market_deltas, wallet_deltas
 
@@ -438,7 +438,7 @@ class Market:
             base_in_protocol={agent_action.mint_time: agent_action.trade_amount - output_with_fee},
             token_in_protocol={agent_action.mint_time: +agent_action.trade_amount},
             fees_paid=+fee,
-            stretched_time_remaining=agent_action.stretched_time_remaining,
+            stretched_time_remaining=stretched_time_remaining,
         )
         return market_deltas, agent_deltas
 
@@ -484,7 +484,7 @@ class Market:
                 base_in_wallet=-agent_action.trade_amount,
                 token_in_protocol={agent_action.mint_time: +output_with_fee},
                 fees_paid=+fee,
-                stretched_time_remaining=agent_action.stretched_time_remaining,
+                stretched_time_remaining=stretched_time_remaining,
             )
         else:
             market_deltas = MarketDeltas()
@@ -532,6 +532,7 @@ class Market:
             base_in_wallet=+output_with_fee,
             token_in_wallet={agent_action.mint_time: -agent_action.trade_amount},
             fees_paid=+fee,
+            stretched_time_remaining=stretched_time_remaining,
         )
         return market_deltas, agent_deltas
 
