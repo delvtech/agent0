@@ -4,6 +4,8 @@ User strategy that opens a single short and doesn't close until liquidation
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+import logging
+
 from elfpy.strategies.basic import BasicPolicy
 
 
@@ -18,6 +20,7 @@ class Policy(BasicPolicy):
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         max_pt_short = self.get_max_pt_short()
         if not has_opened_short and max_pt_short > 0:
+            logging.debug(f" evaluating short, base_in_wallet: {self.wallet.base_in_wallet}, max_pt_short: {max_pt_short}")
             action_list.append(
                 self.create_agent_action(
                     action_type="open_short", trade_amount=min(max_pt_short, self.pt_to_short)

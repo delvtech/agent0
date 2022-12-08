@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from dataclasses import field
 
 from elfpy.utils.price import calc_apr_from_spot_price
-from elfpy.utils.outputs import float_to_string
 
 
 @dataclass(frozen=False)
@@ -38,11 +37,11 @@ class Wallet:
                 if value != 0 and value is not None:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value, precision=precision)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join([x for x in value]) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string

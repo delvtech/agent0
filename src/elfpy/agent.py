@@ -9,7 +9,6 @@ from numpy.random._generator import Generator
 
 import elfpy.utils.time as time_utils
 from elfpy.markets import Market, MarketAction, MarketActionType
-from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
 
@@ -184,7 +183,7 @@ class Agent:
         logging.debug(
             "agent %03.0f base_in_wallet = %s",
             self.wallet_address,
-            float_to_string(self.wallet.base_in_wallet),
+            self.wallet.base_in_wallet,
         )
 
     def log_final_report(self) -> None:
@@ -216,13 +215,13 @@ class Agent:
             ),
             self.wallet_address,
             lost_or_made,
-            float_to_string(profit_and_loss),
-            float_to_string(spend),
+            profit_and_loss,
+            spend,
             annual_percentage_rate,
             holding_period_rate,
-            float_to_string(self.market.time, precision=2),
-            float_to_string(worth),
-            float_to_string(base),
-            float_to_string(tokens),
+            selfmarket.time,
+            worth,
+            base,
+            tokens,
             price,
         )

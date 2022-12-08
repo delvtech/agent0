@@ -13,7 +13,6 @@ from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, Tr
 from elfpy.token import TokenType
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
-from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
 
@@ -42,9 +41,9 @@ class MarketAction:
             if key == "action_type":
                 output_string += f" execute {value}()"
             elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
             elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
         return output_string
 
 
@@ -75,11 +74,11 @@ class MarketDeltas:
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join([x for x in value]) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string
