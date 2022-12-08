@@ -171,8 +171,8 @@ class PricingModel(ABC):
         float
             The spot price of principal tokens.
         """
-        assert share_reserves >= 0, (
-            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves >= 0, not {share_reserves}!",
+        assert share_reserves > 0, (
+            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {share_reserves}!",
         )
         total_reserves = share_price * share_reserves + bond_reserves
         bond_reserves_ = bond_reserves + total_reserves

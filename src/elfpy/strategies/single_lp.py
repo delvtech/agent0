@@ -11,13 +11,13 @@ from elfpy.strategies.basic import BasicPolicy
 
 class Policy(BasicPolicy):
     "single LP: only has one LP open at a time"
-    amount_to_lp = 100
+    base_to_lp = 100
 
     def action(self):
         has_lp = self.wallet.lp_in_wallet > 0
-        can_lp = self.wallet.base_in_wallet >= self.amount_to_lp
+        can_lp = self.wallet.base_in_wallet >= self.base_to_lp
         if can_lp and not has_lp:
-            self.action_list.update(
-                self.create_agent_action(action_type="add_liquidity", trade_amount=self.amount_to_lp)
+            self.action_list.append(
+                self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp)
             )
         return self.action_list

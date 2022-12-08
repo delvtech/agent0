@@ -91,14 +91,15 @@ class BaseTradeTest(unittest.TestCase):
         simulator.setup_simulated_entities(override_dict)
         total_liquidity = simulator.market.bond_reserves + simulator.market.share_reserves
         market_apr = simulator.market.get_rate()
-        # check that apr is within a 0.1% of the target
-        assert np.allclose(
-            market_apr, target_pool_apr, atol=0.001
-        ), f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
-        # check that the liquidity is within 5% of the target
-        assert np.allclose(
-            total_liquidity, target_liquidity, atol=target_liquidity * 0.05
-        ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
+        if config.simulator.init_lp:
+            # check that apr is within a 0.1% of the target
+            assert np.allclose(
+                market_apr, target_pool_apr, atol=0.001
+            ), f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
+            # check that the liquidity is within 5% of the target
+            assert np.allclose(
+                total_liquidity, target_liquidity, atol=target_liquidity * 0.05
+            ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
         simulator.run_simulation()
         # comment this to view the generated log files
         file_loc = logging.getLogger().handlers[0].baseFilename
