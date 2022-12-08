@@ -19,7 +19,7 @@ class Policy(BasicPolicy):
         if not has_opened_short:
             self.action_list.update(
                 self.create_agent_action(
-                    action_type="open_short", trade_amount=min(max_pt_short, pt_to_short=self.pt_to_short)
+                    action_type="open_short", trade_amount=min(max_pt_short, self.pt_to_short)
                 )
             )
         return self.action_list
