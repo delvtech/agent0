@@ -3,12 +3,10 @@ Implements abstract classes that control agent behavior
 """
 
 import logging
-
-import elfpy.utils.time as time_utils
-from elfpy.utils.price import calc_apr_from_spot_price
 import numpy as np
 from numpy.random._generator import Generator
 
+import elfpy.utils.time as time_utils
 from elfpy.markets import Market, MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
@@ -19,6 +17,9 @@ class Agent:
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
     date value is an inte with how many tokens they have for that date
     """
+
+    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-arguments
 
     def __init__(
         self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, verbose: bool = None, **kwargs
@@ -35,6 +36,7 @@ class Agent:
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
+        self.action_list = {}
         for key, value in kwargs.items():
             print(f"setting agent's {key} to {value}")
             setattr(self, key, value)
@@ -86,12 +88,7 @@ class Agent:
             self.market.init_share_price,
             self.market.share_price,
         )
-        (
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        ) = trade_results
+        output_with_fee = trade_results[1]
         return output_with_fee
 
     def get_trade_list(self):
@@ -107,7 +104,7 @@ class Agent:
         we spend what we have to spend, and get what we get.
         """
         self.action_list = self.action()  # get the action list from the policy
-        for action in action_list:  # edit each action in place
+        for action in self.action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time
         # TODO: Add safety checks

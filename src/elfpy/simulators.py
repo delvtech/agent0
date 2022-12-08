@@ -10,6 +10,7 @@ import datetime
 from importlib import import_module
 import json
 import logging
+import re
 
 import numpy as np
 from elfpy.agent import Agent
@@ -288,7 +289,12 @@ class YieldSimulator:
             except ValueError:
                 policy_name = policy_instruction
                 kwargs = {}
-            logging.info(f"creating agent {policy_number+1:03.0f} with policy {policy_name} and args {kwargs}")
+            logging.info(
+                "creating agent %03.0f with policy %s and args %s",
+                policy_number + 1,
+                policy_name,
+                kwargs,
+            )
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
@@ -394,7 +400,7 @@ class YieldSimulator:
                 self.run_trade_number += 1
                 number_of_executed_trades += 1
         if number_of_executed_trades > 0:
-            logging.debug(f"executed {number_of_executed_trades} trades at {self.market.get_market_state_string()}")
+            logging.debug("executed %f trades at %s", number_of_executed_trades, self.market.get_market_state_string())
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

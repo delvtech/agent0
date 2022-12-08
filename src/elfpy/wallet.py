@@ -5,6 +5,7 @@ Implements abstract classes that control user behavior
 from dataclasses import dataclass
 from dataclasses import field
 
+from elfpy.utils.price import calc_apr_from_spot_price
 from elfpy.utils.outputs import float_to_string
 
 
