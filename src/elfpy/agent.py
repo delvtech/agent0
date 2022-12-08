@@ -153,9 +153,7 @@ class Agent:
                         self.wallet[key][mint_time] += amount
                     else:
                         self.wallet[key].update({mint_time: amount})
-            elif key in ["fees_paid", "effective_price", "effective_rate", "stretched_time_remaining"]:
-                pass
-            elif key in ["address"]:
+            elif key in ["fees_paid", "address"]:
                 pass
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
