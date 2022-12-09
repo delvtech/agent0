@@ -5,8 +5,6 @@ Implements abstract classes that control user behavior
 from dataclasses import dataclass
 from dataclasses import field
 
-from elfpy.utils.price import calc_apr_from_spot_price
-
 
 @dataclass(frozen=False)
 class Wallet:
