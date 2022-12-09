@@ -10,7 +10,6 @@ import datetime
 from importlib import import_module
 import json
 import logging
-import re
 
 import numpy as np
 from elfpy.agent import Agent
@@ -282,11 +281,11 @@ class YieldSimulator:
         self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
-            try:
+            if ":" in policy_args:  # we have custom parameters
                 policy_name, policy_args = policy_instruction.split(":")
-                policy_args = re.split(r",|=", policy_args)
+                kwargs = {key: float(value) for key, value in [arg.split("=") for arg in policy_args.split(",")]}
                 kwargs = {key: float(value) for key, value in zip(policy_args[::2], policy_args[1::2])}
-            except ValueError:
+            else:  # we don't havev custom parameters
                 policy_name = policy_instruction
                 kwargs = {}
             logging.info(
