@@ -6,6 +6,8 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+import logging
+
 from elfpy.strategies.basic import BasicPolicy
 
 
@@ -17,6 +19,14 @@ class Policy(BasicPolicy):
         action_list = []
         has_lp = self.wallet.lp_in_wallet > 0
         can_lp = self.wallet.base_in_wallet >= self.base_to_lp
+        logging.info(
+            (
+                "evaluating LP, base_in_wallet: %g, can_lp: %g, has_lp: %g"
+            ),
+            self.wallet.base_in_wallet,
+            can_lp,
+            has_lp,
+        )
         if can_lp and not has_lp:
             action_list.append(
                 self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp)

@@ -931,7 +931,7 @@ class HyperdrivePricingModel(PricingModel):
         bond_reserves: float,
         token_in: TokenType,
         fee_percent: float,
-        time_remaining: float,
+        stretched_time_remaining: float,
         init_share_price: float,
         share_price: float,
     ) -> TradeResult:
@@ -973,7 +973,7 @@ class HyperdrivePricingModel(PricingModel):
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.
-        time_remaining : float
+        stretched_time_remaining : float
             The time remaining for the asset (incorporates time stretch).
         init_share_price : float
             The share price when the pool was initialized.
@@ -1006,14 +1006,14 @@ class HyperdrivePricingModel(PricingModel):
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
+            1 > stretched_time_remaining >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         assert share_price >= init_share_price >= 1, (
             f"pricing_models.calc_in_given_out: ERROR:"
             f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
             f" and init_share_price={init_share_price}!"
         )
-        time_elapsed = 1 - time_remaining
+        time_elapsed = 1 - stretched_time_remaining
         scale = share_price / init_share_price
         total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self.calc_spot_price_from_reserves(
@@ -1021,7 +1021,7 @@ class HyperdrivePricingModel(PricingModel):
             bond_reserves=bond_reserves,
             init_share_price=init_share_price,
             share_price=share_price,
-            time_remaining=time_remaining,
+            time_remaining=stretched_time_remaining,
         )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
@@ -1029,9 +1029,9 @@ class HyperdrivePricingModel(PricingModel):
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
         if token_in == "base":
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
-            d_bonds = out
+            in_reserves = share_reserves  # in is in units of shares
+            out_reserves = bond_reserves + total_reserves  # out is in units of pt, here we add virtual liquiqidity
+            d_bonds = out  # out is in units of pt
             # The amount the user pays without fees or slippage is simply
             # the amount of bonds the user would receive times the spot price of
             # base in terms of bonds. If we let p be the conventional spot price,
@@ -1069,9 +1069,10 @@ class HyperdrivePricingModel(PricingModel):
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
         elif token_in == "pt":
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
-            d_shares = out / share_price
+            in_reserves = bond_reserves + total_reserves  # in is in units of pt, here we add virtual liquidity
+            out_reserves = share_reserves  # out is in units of base
+            d_shares = out / share_price  # out is in units of base, so we convert it to shares (x = c * z => z = x / c)
+            assert d_shares <= share_reserves, f"pricing_models.calc_in_given_out: ERROR: expected d_shares <= share_reserves, got {d_shares} > {share_reserves}!"
             # The amount the user pays without fees or slippage is simply the
             # amount of base the user would receive times the inverse of the
             # spot price of base in terms of bonds. The amount of base the user
@@ -1107,8 +1108,8 @@ class HyperdrivePricingModel(PricingModel):
             # fee = ((1 / p) - 1) * φ * c * d_z
             logging.debug(
                 (
-                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
-                    "((1 / %g) - 1) * %g * %g * %g = %g"
+                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares\n\t"
+                    "%g = ((1 / %g) - 1) * %g * %g * %g"
                 ),
                 spot_price,
                 fee_percent,
@@ -1130,7 +1131,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
             f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
             f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tstretched_time_remaining={stretched_time_remaining}\n\ttime_elapsed={time_elapsed}"
             f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
@@ -1150,7 +1151,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
             f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
             f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tstretched_time_remaining={stretched_time_remaining}\n\ttime_elapsed={time_elapsed}"
             f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
@@ -1160,7 +1161,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
             f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
             f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tstretched_time_remaining={stretched_time_remaining}\n\ttime_elapsed={time_elapsed}"
             f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
@@ -1170,7 +1171,7 @@ class HyperdrivePricingModel(PricingModel):
             f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
             f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
             f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
-            f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
+            f"\n\tstretched_time_remaining={stretched_time_remaining}\n\ttime_elapsed={time_elapsed}"
             f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
@@ -1322,7 +1323,16 @@ class HyperdrivePricingModel(PricingModel):
             #
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
+
+            # To get the amount paid with fees, subtract the fee from the
+            # calculation that excluded fees. Subtracting the fees results in less
+            # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
+
+            # convert from shares to base
+            with_fee = with_fee * share_price
+            without_fee = without_fee * share_price
+            without_fee_or_slippage = without_fee_or_slippage * share_price
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
@@ -1353,14 +1363,26 @@ class HyperdrivePricingModel(PricingModel):
             #
             # ((1 / p) - 1) * φ * c * d_z
             fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
+            logging.debug(
+                (
+                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares\n\t",
+                    "%g = ((1 / %g) - 1) * %g * %g * %g"
+                ),
+                fee,
+                spot_price,
+                fee_percent,
+                share_price,
+                d_shares,
+            )
+
+            # To get the amount paid with fees, subtract the fee from the
+            # calculation that excluded fees. Subtracting the fees results in less
+            # tokens received, which indicates that the fees are working correctly.
+            with_fee = without_fee - fee
         else:
             raise AssertionError(
                 f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
             )
-        # To get the amount paid with fees, subtract the fee from the
-        # calculation that excluded fees. Subtracting the fees results in less
-        # tokens received, which indicates that the fees are working correctly.
-        with_fee = without_fee - fee
 
         # TODO(jalextowle): With some analysis, it seems possible to show that
         # we skip straight from non-negative reals to the complex plane without

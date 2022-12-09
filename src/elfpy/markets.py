@@ -36,7 +36,7 @@ class MarketAction:
 
     def __str__(self):
         """Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet_address:03.0f}"
+        output_string = f"AGENT ACTION:\nagent {self.wallet_address:03.0f}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"

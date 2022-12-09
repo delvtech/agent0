@@ -62,9 +62,10 @@ class BaseTradeTest(unittest.TestCase):
             override_dict.update(additional_overrides)
         simulator.setup_simulated_entities(override_dict)
         simulator.run_simulation()
+        os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
         # comment this to view the generated log files
-        file_loc = logging.getLogger().handlers[0].baseFilename
-        os.remove(file_loc)
+        # file_loc = logging.getLogger().handlers[0].baseFilename
+        # os.remove(file_loc)  # delete the log file
 
     def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
         """
@@ -101,9 +102,10 @@ class BaseTradeTest(unittest.TestCase):
                 total_liquidity, target_liquidity, atol=target_liquidity * 0.05
             ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
         simulator.run_simulation()
+        os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
         # comment this to view the generated log files
-        file_loc = logging.getLogger().handlers[0].baseFilename
-        os.remove(file_loc)
+        # file_loc = logging.getLogger().handlers[0].baseFilename
+        # os.remove(file_loc)  # delete the log file
 
 
 class SingleTradeTests(BaseTradeTest):

@@ -75,14 +75,14 @@ class Agent:
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
         logging.info(f"evaluating max short, share_reserves:{self.market.share_reserves}")
         trade_results = self.market.pricing_model.calc_in_given_out(
-            self.market.share_reserves,
-            self.market.share_reserves,
-            self.market.bond_reserves,
-            "pt",
-            self.market.fee_percent,
-            stretched_time_remaining,
-            self.market.init_share_price,
-            self.market.share_price,
+            out=self.market.share_reserves*self.market.share_price,  # out is in units of base
+            share_reserves=self.market.share_reserves,
+            bond_reserves=self.market.bond_reserves,
+            token_in="pt",  # in is in units of pt
+            fee_percent=self.market.fee_percent,
+            stretched_time_remaining=stretched_time_remaining,
+            init_share_price=self.market.init_share_price,
+            share_price=self.market.share_price,
         )
         output_with_fee = trade_results[1]
         return output_with_fee
@@ -219,7 +219,7 @@ class Agent:
             spend,
             annual_percentage_rate,
             holding_period_rate,
-            selfmarket.time,
+            self.market.time,
             worth,
             base,
             tokens,
