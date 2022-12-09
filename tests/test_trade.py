@@ -39,7 +39,7 @@ class BaseTradeTest(unittest.TestCase):
             handler,
         ]
 
-    def run_base_trade_test(self, user_policies, config_file, additional_overrides=None):
+    def run_base_trade_test(self, user_policies, config_file, delete_log_file=True, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         self.setup_logging()
         # load default config
@@ -63,11 +63,12 @@ class BaseTradeTest(unittest.TestCase):
         simulator.setup_simulated_entities(override_dict)
         simulator.run_simulation()
         os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
-        # comment this to view the generated log files
-        # file_loc = logging.getLogger().handlers[0].baseFilename
-        # os.remove(file_loc)  # delete the log file
+        # comment this or pass in delete_log_file=False to view the generated log files
+        if delete_log_file:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)  # delete the log file
 
-    def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
+    def run_base_lp_test(self, user_policies, config_file, delete_log_file=True, additional_overrides=None):
         """
         Assigns member variables that are useful for many tests
         TODO: Check that the market values match the desired amounts
@@ -103,9 +104,10 @@ class BaseTradeTest(unittest.TestCase):
             ), f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=}"
         simulator.run_simulation()
         os.close(logging.getLogger().handlers[0].stream.fileno())  # close the log file
-        # comment this to view the generated log files
-        # file_loc = logging.getLogger().handlers[0].baseFilename
-        # os.remove(file_loc)  # delete the log file
+        # comment this or pass in delete_log_file=False to view the generated log files
+        if delete_log_file:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)  # delete the log file
 
 
 class SingleTradeTests(BaseTradeTest):

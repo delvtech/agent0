@@ -73,7 +73,7 @@ class Agent:
             self.market.time, self.market.time, self.market.token_duration
         )
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.market.time_stretch_constant)
-        logging.info(f"evaluating max short, share_reserves:{self.market.share_reserves}")
+        logging.debug(f"evaluating max short, share_reserves:{self.market.share_reserves}")
         trade_results = self.market.pricing_model.calc_in_given_out(
             out=self.market.share_reserves*self.market.share_price,  # out is in units of base
             share_reserves=self.market.share_reserves,

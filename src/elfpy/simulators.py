@@ -281,10 +281,11 @@ class YieldSimulator:
         self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_instruction in enumerate(self.config.simulator.user_policies):
-            if ":" in policy_args:  # we have custom parameters
+            if ":" in policy_instruction:  # we have custom parameters
                 policy_name, policy_args = policy_instruction.split(":")
-                kwargs = {key: float(value) for key, value in [arg.split("=") for arg in policy_args.split(",")]}
-                kwargs = {key: float(value) for key, value in zip(policy_args[::2], policy_args[1::2])}
+                policy_args = policy_args.split(",")
+                policy_args = [arg.split("=") for arg in policy_args]
+                kwargs = {key: float(value) for key, value in policy_args}
             else:  # we don't havev custom parameters
                 policy_name = policy_instruction
                 kwargs = {}
