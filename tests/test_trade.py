@@ -56,7 +56,6 @@ class BaseTradeTest(unittest.TestCase):
             "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
             "user_policies": user_policies,
-            "simulator.verbose": True,
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
