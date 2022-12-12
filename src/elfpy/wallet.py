@@ -2,8 +2,7 @@
 Implements abstract classes that control user behavior
 """
 
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 
 from elfpy.utils.outputs import float_to_string
 
