@@ -37,7 +37,7 @@ class CustomShorter(BasicPolicy):
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apy = self.market.share_price * 365 / market.init_share_price
+        vault_apy = market.share_price * 365 / market.init_share_price
         action_list = []
         if can_open_short:
             if vault_apy > market.get_rate(pricing_model):
@@ -66,10 +66,16 @@ def setup_logging(filename, max_bytes, log_level):
     ]
 
 
-def get_example_agents(num_agents: int) -> dict[int, BasicPolicy]:
+def get_example_agents(
+    num_additional_agents: int,
+    agents: dict[int, BasicPolicy] = None,
+) -> dict[int, BasicPolicy]:
     """Instantiate a set of custom agents"""
-    agents = {}
-    for wallet_address in range(1, num_agents + 1):  # save wallet_address=0 for init_lp_agent
+    if agents is None:
+        agents = {}
+    for wallet_address in range(
+        len(agents), num_additional_agents + len(agents)
+    ):  # save wallet_address=0 for init_lp_agent
         agent = CustomShorter(wallet_address)
         agent.log_status_report()
         agents.update({agent.wallet_address: agent})
@@ -137,22 +143,27 @@ if __name__ == "__main__":
         random_sim_vars.init_share_price,
     )
     # instantiate the init_lp agent
-    init_lp_agent = sim_utils.get_init_lp_agent(
-        config,
-        market,
-        pricing_model,
-        random_sim_vars.target_liquidity,
-        random_sim_vars.init_pool_apy,
-        random_sim_vars.fee_percent,
-    )
-    # get trading agent list
-    agents = get_example_agents(args.num_agents)
-    # set up simulator
+    init_agents = {
+        0: sim_utils.get_init_lp_agent(
+            config,
+            market,
+            pricing_model,
+            random_sim_vars.target_liquidity,
+            random_sim_vars.init_pool_apy,
+            random_sim_vars.fee_percent,
+        )
+    }
+    # set up simulator with only the init_lp_agent
     simulator = Simulator(
         config=config,
         pricing_model=pricing_model,
         market=market,
-        agents=agents,
+        agents=init_agents,
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )
+    # initialize the market using the LP agent
+    simulator.collect_and_execute_trades()
+    # get trading agent list
+    simulator.agents = get_example_agents(num_additional_agents=args.num_agents, agents=init_agents)
+    simulator.run_simulation()

@@ -39,12 +39,12 @@ class Policy(BasicPolicy):
         if has_lp:
             action_list = []
         else:
-            if pricing_model.model_name == ElementPricingModel().model_name():
+            if pricing_model.model_name() == ElementPricingModel().model_name():
                 # TODO: This doesn't work correctly -- need to add PT
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                 ]
-            elif pricing_model.model_name == HyperdrivePricingModel().model_name():
+            elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),

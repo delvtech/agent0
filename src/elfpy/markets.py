@@ -178,7 +178,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
-        self.check_action_type(agent_action.action_type)
+        self.check_action_type(agent_action.action_type, pricing_model.model_name())
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
         time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)

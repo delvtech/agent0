@@ -167,11 +167,11 @@ class Simulator:
         if self.config.simulator.init_lp:
             init_lp_agent = sim_utils.get_init_lp_agent(
                 self.config,
+                self.market,
+                self.pricing_model,
                 self.random_variables.target_liquidity,
                 self.random_variables.init_pool_apy,
                 self.random_variables.fee_percent,
-                self.market,
-                self.market.pricing_model,
             )
             self.agents = {init_lp_agent.wallet_address: init_lp_agent}
             # execute one special block just for the init_lp_agent
@@ -272,7 +272,7 @@ class Simulator:
         # pylint: disable=too-many-statements
         if not isinstance(self.market, Market):
             raise ValueError("market not defined")
-        self.analysis_dict["model_name"].append(self.market.pricing_model.model_name())
+        self.analysis_dict["model_name"].append(self.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["simulation_start_time"].append(self.start_time)
         self.analysis_dict["day"].append(self.day)
