@@ -280,7 +280,7 @@ class Simulator:
             self.agents = {}
         self.market.log_market_step_string()
         # continue adding other users
-        for policy_number, policy_name in enumerate(self.config.simulator.user_policies):
+        for policy_number, policy_name in enumerate(self.config.simulator.agent_policies):
             agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,

@@ -46,7 +46,7 @@ class TestParseSimulationConfig(unittest.TestCase):
             num_blocks_per_day=7200,
             token_duration=180,
             precision=64,
-            user_policies=["single_long"],
+            agent_policies=["single_long"],
             random_seed=123,
             verbose=False,
             shuffle_users=True,

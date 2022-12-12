@@ -39,7 +39,7 @@ class BaseTradeTest(unittest.TestCase):
             handler,
         ]
 
-    def run_base_trade_test(self, user_policies, config_file, additional_overrides=None):
+    def run_base_trade_test(self, agent_policies, config_file, additional_overrides=None):
         """Assigns member variables that are useful for many tests"""
         self.setup_logging()
         # load default config
@@ -55,7 +55,7 @@ class BaseTradeTest(unittest.TestCase):
             "init_pool_apy": 0.05,
             "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
-            "user_policies": user_policies,
+            "agent_policies": agent_policies,
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
@@ -65,7 +65,7 @@ class BaseTradeTest(unittest.TestCase):
         file_loc = logging.getLogger().handlers[0].baseFilename
         os.remove(file_loc)
 
-    def run_base_lp_test(self, user_policies, config_file, additional_overrides=None):
+    def run_base_lp_test(self, agent_policies, config_file, additional_overrides=None):
         """
         Assigns member variables that are useful for many tests
         TODO: Check that the market values match the desired amounts
@@ -83,7 +83,7 @@ class BaseTradeTest(unittest.TestCase):
             "vault_apy": 0.05,
             "fee_percent": 0.1,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
-            "user_policies": user_policies,  # list of user policies by name
+            "agent_policies": agent_policies,  # list of user policies by name
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
@@ -109,16 +109,16 @@ class SingleTradeTests(BaseTradeTest):
 
     def test_init_only(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(user_policies=[], config_file="config/example_config.toml")
+        self.run_base_lp_test(agent_policies=[], config_file="config/example_config.toml")
 
     def test_single_long(self):
         """Tests the BaseUser class"""
-        self.run_base_trade_test(user_policies=["single_long"], config_file="config/example_config.toml")
+        self.run_base_trade_test(agent_policies=["single_long"], config_file="config/example_config.toml")
 
     def test_single_short(self):
         """Tests the BaseUser class"""
-        self.run_base_trade_test(user_policies=["single_short"], config_file="config/example_config.toml")
+        self.run_base_trade_test(agent_policies=["single_short"], config_file="config/example_config.toml")
 
     def test_base_lps(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(user_policies=["single_lp"], config_file="config/example_config.toml")
+        self.run_base_lp_test(agent_policies=["single_lp"], config_file="config/example_config.toml")
