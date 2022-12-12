@@ -47,7 +47,7 @@ class SimulatorConfig:
         default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
     )
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
-    agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
+    agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})

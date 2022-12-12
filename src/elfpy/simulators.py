@@ -216,7 +216,7 @@ class Simulator:
         # budget is the full amount for LP & short
         budget = base_to_lp + init_bond_reserves
         # construct the init_lp agent with desired budget, lp, and short amounts
-        init_lp_agent = import_module("elfpy.strategies.init_lp").Policy(
+        init_lp_agent = import_module("elfpy.policies.init_lp").Policy(
             market=self.market,
             rng=self.rng,
             wallet_address=0,
@@ -281,7 +281,7 @@ class Simulator:
         self.market.log_market_step_string()
         # continue adding other users
         for policy_number, policy_name in enumerate(self.config.simulator.agent_policies):
-            agent = import_module(f"elfpy.strategies.{policy_name}").Policy(
+            agent = import_module(f"elfpy.policies.{policy_name}").Policy(
                 market=self.market,
                 rng=self.rng,
                 wallet_address=policy_number + 1,  # first policy goes to init_lp_agent

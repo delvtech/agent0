@@ -4,7 +4,7 @@ User strategy that opens a single short and doesn't close until liquidation
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.strategies.basic import BasicPolicy
+from elfpy.policies.basic import BasicPolicy
 
 
 class Policy(BasicPolicy):

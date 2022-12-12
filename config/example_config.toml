@@ -30,7 +30,7 @@ num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
 token_duration = 0.24657534246575342465753424657534  # 90 / 365 = time lapse between token mint and expiry as a yearfrac
 precision = 64 # 64 is max precision (and the default for numpy)
-agent_policies = ["single_long"] # specify a list of trading strategies by name
+agent_policies = ["single_long"] # specify a list of trading policies by name
 shuffle_users = true # shuffle order of action (as if random gas paid)
 init_lp = true # use initial LP to seed pool
 random_seed = 123 # to be passed to a rng
