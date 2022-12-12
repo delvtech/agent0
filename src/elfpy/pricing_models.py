@@ -1101,23 +1101,35 @@ class HyperdrivePricingModel(PricingModel):
                 )
                 - in_reserves
             )
+            logging.debug(
+                (
+                    "k - scale * pow((init_share_price * (out_reserves - d_shares)), time_elapsed)\n"
+                    "%f - %f * pow((%f * (%f - %f)), %f)"
+                ),
+                k,
+                scale,
+                init_share_price,
+                out_reserves,
+                d_shares,
+                time_elapsed,
+            )
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
             #
-            # fee = ((1 / p) - 1) * φ * c * d_z
+            # fee = ((1 / p) - 1) * φ * d_z
             logging.debug(
                 (
-                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares\n\t"
+                    "fee = ((1 / spot_price) - 1) * fee_percent * d_shares\n\t"
                     "%g = ((1 / %g) - 1) * %g * %g * %g"
                 ),
                 spot_price,
                 fee_percent,
                 share_price,
                 d_shares,
-                ((1 / spot_price) - 1) * fee_percent * share_price * d_shares,
+                ((1 / spot_price) - 1) * fee_percent * d_shares,
             )
-            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
+            fee = ((1 / spot_price) - 1) * fee_percent * d_shares
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: " f'expected token_in to be "base" or "pt", not {token_in}!'
@@ -1321,18 +1333,13 @@ class HyperdrivePricingModel(PricingModel):
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
             #
-            # fee = (1 - p) * φ * d_y
-            fee = (1 - spot_price) * fee_percent * d_bonds
+            # fee = (1 - p) * φ * d_y * c
+            fee = (1 - spot_price) * fee_percent * d_bonds * share_price
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
-
-            # convert from shares to base
-            with_fee = with_fee * share_price
-            without_fee = without_fee * share_price
-            without_fee_or_slippage = without_fee_or_slippage * share_price
         elif token_out == "pt":
             d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
@@ -1342,8 +1349,8 @@ class HyperdrivePricingModel(PricingModel):
             # of base in terms of bonds. If we let p be the conventional spot
             # price, then we can write this as:
             #
-            # (1 / p) * c * d_z
-            without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
+            # (1 / p) * d_z
+            without_fee_or_slippage = (1 / spot_price) * d_shares
             # We solve the YieldSpace invariant for the bonds received from
             # paying the specified amount of base. We set up the invariant where
             # the user pays d_z shares and receives d_y' bonds:
@@ -1355,14 +1362,34 @@ class HyperdrivePricingModel(PricingModel):
             #
             # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
             without_fee = out_reserves - pow(
-                k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
+                k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed),
+                1 / time_elapsed
+            )
+            logging.debug(
+                (
+                    "without_fee = out_reserves - pow("
+                    "k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed"
+                    ")\n"
+                    "%f = %f - pow("
+                    "%f - %f * pow(%f * (%f + %f), %f), 1 / %f"
+                    ")"
+                ),
+                without_fee,
+                out_reserves,
+                k,
+                scale,
+                init_share_price,
+                in_reserves,
+                d_shares,
+                time_elapsed,
+                time_elapsed,
             )
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
             #
-            # ((1 / p) - 1) * φ * c * d_z
-            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
+            # ((1 / p) - 1) * φ * d_z
+            fee = ((1 / spot_price) - 1) * fee_percent * d_shares
             logging.debug(
                 (
                     "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares\n\t",
@@ -1397,12 +1424,17 @@ class HyperdrivePricingModel(PricingModel):
         assert assert_bool, (
             f"pricing_models.calc_out_given_in: ERROR: Fee & with_fee should be non-negative floats!"
             f"\n\t{in_=}\n\t{share_reserves=}\n\t{bond_reserves=}"
-            f"\n\t{total_reserves=}\n\t{init_share_price=}"
+            f"\n\t{total_reserves=}"
+            f"\n\t{share_reserves*init_share_price=}"
+            f"\n\t{init_share_price=}"
             f"\n\t{share_price=}\n\t{scale=}\n\t{fee_percent=}"
             f"\n\t{time_remaining=}\n\t{time_elapsed=}"
             f"\n\t{in_reserves=}\n\t{out_reserves=}\n\t{token_out=}"
             f"\n\t{spot_price=}\n\t{k=}\n\t{without_fee_or_slippage=}"
             f"\n\t{without_fee=}\n\t{type(without_fee)=}\n\t{fee=}\n\t{type(fee)=}"
             f"\n\t{with_fee=}\n\t{type(with_fee)=}"
+        )
+        assert not isinstance(without_fee, complex), (
+            f"pricing_models.calc_out_given_in: ERROR: without_fee should not be complex!"
         )
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
