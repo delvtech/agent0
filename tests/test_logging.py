@@ -51,7 +51,7 @@ class LoggingTest(unittest.TestCase):
             config_file = "config/example_config.toml"
             config = load_and_parse_config_file(config_file)
             simulator = Simulator(config)
-            simulator.reset_rng(np.random.default_rng(simulator.config.simulator.random_seed))
+            simulator.set_rng(np.random.default_rng(simulator.config.simulator.random_seed))
             simulator.set_random_variables()
             override_dict = {
                 "pricing_model_name": "Hyperdrive",

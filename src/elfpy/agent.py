@@ -8,6 +8,7 @@ import numpy as np
 from numpy.random._generator import Generator
 
 from elfpy.markets import Market, MarketAction, MarketActionType
+from elfpy.pricing_models import PricingModel
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
@@ -18,12 +19,10 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    def __init__(self, market: Market, rng: Generator, wallet_address: int, budget: float):
+    def __init__(self, wallet_address: int, budget: float):
         """
         Set up initial conditions
         """
-        self.market: Market = market
-        self.rng: Generator = rng
         # TODO: remove this, wallet_address is a property of wallet, not the agent
         self.wallet_address: int = wallet_address
         self.budget: float = budget
@@ -49,12 +48,8 @@ class Agent:
         """Specify action from the policy"""
         raise NotImplementedError
 
-    def get_max_long(self) -> float:
-        """Returns the amount of base that the agent can spend."""
-        return np.minimum(self.wallet.base_in_wallet, self.market.bond_reserves)
-
     # TODO: Fix up this function
-    def get_max_pt_short(self) -> float:
+    def get_max_pt_short(self, market: Market, pricing_model: PricingModel) -> float:
         """
         Returns an approximation of maximum amount of base that the agent can short given current market conditions
 
@@ -62,12 +57,12 @@ class Agent:
         An alternative is to do this iteratively and find a max trade, but that is probably too slow.
         Maybe we could add an optional flag to iteratively solve it, like num_iters.
         """
-        if self.market.share_reserves == 0:
+        if market.share_reserves == 0:
             return 0
-        max_pt_short = self.market.share_reserves * self.market.share_price / self.market.get_spot_price()
+        max_pt_short = market.share_reserves * market.share_price / market.get_spot_price(pricing_model)
         return max_pt_short
 
-    def get_trade_list(self):
+    def get_trade_list(self, market: Market, pricing_model: PricingModel) -> list:
         """
         Helper function for computing a agent trade
         direction is chosen based on this logic:
@@ -79,10 +74,10 @@ class Agent:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        action_list = self.action()  # get the action list from the policy
+        action_list = self.action(market, pricing_model)  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
-                action.mint_time = self.market.time
+                action.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # if len(trade_action) > 0: # there is a trade
@@ -93,15 +88,12 @@ class Agent:
         #    )
         return action_list
 
-    def update_spend(self) -> None:
-        """Track over time the agent's weighted average spend, for return calculation"""
-        new_spend = (self.market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
-        self.product_of_time_and_base += new_spend
-        self.last_update_spend = self.market.time
-
-    def update_wallet(self, wallet_deltas: Wallet) -> None:
+    def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
         """Update the agent's wallet"""
-        self.update_spend()
+        # track over time the agent's weighted average spend, for return calculation
+        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        self.product_of_time_and_base += new_spend
+        self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 pass
@@ -139,7 +131,7 @@ class Agent:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def get_liquidation_trades(self) -> list[MarketAction]:
+    def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """Get final trades for liquidating positions"""
         action_list: list[MarketAction] = []
         for mint_time, position in self.wallet.token_in_protocol.items():
@@ -155,7 +147,7 @@ class Agent:
         if self.wallet.lp_in_wallet > 0:
             action_list.append(
                 self.create_agent_action(
-                    action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet, mint_time=self.market.time
+                    action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet, mint_time=market.time
                 )
             )
         return action_list
@@ -169,12 +161,12 @@ class Agent:
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
-    def log_final_report(self) -> None:
+    def log_final_report(self, market: Market) -> None:
         """Logs a report of the agent's state"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if self.market.share_reserves > 0:
-            price = self.market.get_spot_price()
+        if market.share_reserves > 0:
+            price = market.get_spot_price()
         else:
             price = 0
         base = self.wallet.base_in_wallet
@@ -182,11 +174,11 @@ class Agent:
         tokens = sum(block_position_list) if len(block_position_list) > 0 else 0
         worth = base + tokens * price
         profit_and_loss = worth - self.budget
-        weighted_average_spend = self.product_of_time_and_base / self.market.time if self.market.time > 0 else 0
+        weighted_average_spend = self.product_of_time_and_base / market.time if market.time > 0 else 0
         spend = weighted_average_spend
         holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-        if self.market.time > 0:
-            annual_percentage_rate = holding_period_rate / self.market.time
+        if market.time > 0:
+            annual_percentage_rate = holding_period_rate / market.time
         else:
             annual_percentage_rate = np.nan
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
@@ -202,7 +194,7 @@ class Agent:
             float_to_string(spend),
             annual_percentage_rate,
             holding_period_rate,
-            float_to_string(self.market.time, precision=2),
+            float_to_string(market.time, precision=2),
             float_to_string(worth),
             float_to_string(base),
             float_to_string(tokens),
