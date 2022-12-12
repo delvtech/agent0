@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 import argparse
 
 import numpy as np
@@ -23,10 +24,10 @@ class CustomShorter(BasicPolicy):
     Agent that is trying to optimize on a rising vault APR via shorts
     """
 
-    def __init__(self, market, rng, wallet_address, budget=10_000):
+    def __init__(self, wallet_address, budget=10_000):
         """call basic policy init then add custom stuff"""
         self.pt_to_short = 1_000
-        super().__init__(market, rng, wallet_address, budget)
+        super().__init__(wallet_address, budget)
 
     def action(self, market, pricing_model):
         """
@@ -36,7 +37,7 @@ class CustomShorter(BasicPolicy):
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apy = self.market.share_price * 365 / self.market.init_share_price
+        vault_apy = self.market.share_price * 365 / market.init_share_price
         action_list = []
         if can_open_short:
             if vault_apy > market.get_rate(pricing_model):
@@ -57,19 +58,22 @@ def setup_logging(filename, max_bytes, log_level):
         log_dir = os.path.dirname(filename)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        handler = logging.handlers.RotatingFileHandler(filename, mode="w", maxBytes=max_bytes)
-    logging.getLogger().setLevel(text_to_logging_level(log_level))  # events of this level and above will be tracked
+        handler = RotatingFileHandler(filename, mode="w", maxBytes=max_bytes)
+    logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
     logging.getLogger().handlers = [
         handler,
     ]
 
 
-def get_example_agent(num_agents):
+def get_example_agents(num_agents: int) -> dict[int, BasicPolicy]:
     """Instantiate a set of custom agents"""
-    return [
-        CustomShorter(),
-    ] * num_agents
+    agents = {}
+    for wallet_address in range(1, num_agents + 1):  # save wallet_address=0 for init_lp_agent
+        agent = CustomShorter(wallet_address)
+        agent.log_status_report()
+        agents.update({agent.wallet_address: agent})
+    return agents
 
 
 def get_market(init_pool_apy, fee_percent, token_duration, init_share_price):
@@ -115,7 +119,7 @@ if __name__ == "__main__":
     # get config & logging level
     config = load_and_parse_config_file(args.config)
     if args.log_level is None:
-        log_level = config.simulator.log_level
+        log_level = config.simulator.logging_level
     else:
         log_level = args.log_level
     rng = np.random.default_rng(config.simulator.random_seed)
@@ -134,18 +138,21 @@ if __name__ == "__main__":
     )
     # instantiate the init_lp agent
     init_lp_agent = sim_utils.get_init_lp_agent(
+        config,
+        market,
+        pricing_model,
         random_sim_vars.target_liquidity,
         random_sim_vars.init_pool_apy,
         random_sim_vars.fee_percent,
     )
     # get trading agent list
-    agent_list = get_example_agent(num_agents=args.num_agents)
+    agents = get_example_agents(args.num_agents)
     # set up simulator
     simulator = Simulator(
         config=config,
         pricing_model=pricing_model,
         market=market,
-        agent_list=agent_list,
+        agents=agents,
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )

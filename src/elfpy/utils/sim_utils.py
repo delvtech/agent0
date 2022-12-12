@@ -2,12 +2,22 @@ from importlib import import_module
 from dataclasses import dataclass, field
 import logging
 
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
+from elfpy.markets import Market
+from elfpy.agent import Agent
+from elfpy.utils.config import Config
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
 
-def get_init_lp_agent(target_liquidity, init_pool_apy, fee_percent, market, pricing_model):
+def get_init_lp_agent(
+    config: Config,
+    market: Market,
+    pricing_model: PricingModel,
+    target_liquidity: float,
+    init_pool_apy: float,
+    fee_percent: float,
+) -> Agent:
     """
     Calculate the required deposit amounts and instantiate the LP agent
 
@@ -23,7 +33,7 @@ def get_init_lp_agent(target_liquidity, init_pool_apy, fee_percent, market, pric
     # get the reserve amounts for the target liquidity and pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
         target_liquidity=target_liquidity,
-        market_price=market.base_asset_price,
+        market_price=config.market.base_asset_price,
         apr=init_pool_apy,
         days_remaining=market.token_duration,
         time_stretch=market.time_stretch_constant,
@@ -104,7 +114,7 @@ def get_random_variables(config, rng):
 
     """
 
-    @dataclass(frozen=True)
+    @dataclass()
     class RandomSimulationVariables:
         # dataclasses can have many attributes
         # pylint: disable=too-many-instance-attributes
@@ -113,10 +123,11 @@ def get_random_variables(config, rng):
         fee_percent: float = field(metadata="percent to charge for LPer fees")
         vault_apy: list[float] = field(metadata="vault apy values")
         init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
-        init_share_price: float = field(init=False, metadata="initial market share price for the vault asset")
+        init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
 
         def __post_init__(self):
-            self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
+            if self.init_share_price is None:
+                self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
 
     random_vars = RandomSimulationVariables(
         target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),

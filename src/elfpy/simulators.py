@@ -40,7 +40,7 @@ class Simulator:
         config: Config | str,
         pricing_model: ElementPricingModel | HyperdrivePricingModel,
         market: Market,
-        agent_list: list[Agent],
+        agents: dict[int, Agent],
         rng: Generator,
         random_simulation_variables: list | None,
     ):
@@ -50,7 +50,7 @@ class Simulator:
         self.log_config_variables()
         self.pricing_model = pricing_model
         self.market = market
-        self.agents = agent_list
+        self.agents = agents
         self.set_rng(rng)
         if random_simulation_variables is None:
             self.random_variables = random_simulation_variables
@@ -166,6 +166,7 @@ class Simulator:
         # fill market pools
         if self.config.simulator.init_lp:
             init_lp_agent = sim_utils.get_init_lp_agent(
+                self.config,
                 self.random_variables.target_liquidity,
                 self.random_variables.init_pool_apy,
                 self.random_variables.fee_percent,
