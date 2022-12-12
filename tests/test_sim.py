@@ -12,7 +12,7 @@ import unittest
 import os
 import numpy as np
 
-from elfpy.simulators import YieldSimulator
+from elfpy.simulators import Simulator
 from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorConfig
 
 
@@ -41,7 +41,7 @@ class TestSimulator(unittest.TestCase):
     def test_hyperdrive_sim(self):
         """Tests the simulator output to verify that indices are correct"""
         self.setup_logging()
-        simulator = YieldSimulator(
+        simulator = Simulator(
             Config(
                 market=MarketConfig(),
                 amm=AMMConfig(pricing_model_name="Hyperdrive"),
@@ -69,7 +69,7 @@ class TestSimulator(unittest.TestCase):
     # TODO Update element pricing model to include lp calcs
     # def test_element_sim(self):
     #     """Tests the simulator output to verify that indices are correct"""
-    #     simulator = YieldSimulator(
+    #     simulator = Simulator(
     #        Config(
     #            market=MarketConfig(),
     #            amm=AMMConfig(pricing_model_name="Element"),

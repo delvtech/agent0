@@ -22,7 +22,7 @@ import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 
 
-class YieldSimulator:
+class Simulator:
     """
     Stores environment variables & market simulation outputs for AMM experimentation
 
@@ -246,7 +246,7 @@ class YieldSimulator:
         ---------
         override_dict : dict
             Override member variables.
-            Keys in this dictionary must match member variables of the YieldSimulator class.
+            Keys in this dictionary must match member variables of the Simulator class.
 
         Returns
         -------
@@ -303,7 +303,7 @@ class YieldSimulator:
     def run_simulation(self):
         r"""
         Run the trade simulation and update the output state dictionary
-        This is the primary function of the YieldSimulator class.
+        This is the primary function of the Simulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
         up to `self.config.simulator.num_trading_days` days.

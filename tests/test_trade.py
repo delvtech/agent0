@@ -14,7 +14,7 @@ import logging
 import numpy as np
 
 from elfpy.utils.parse_config import load_and_parse_config_file
-from elfpy.simulators import YieldSimulator
+from elfpy.simulators import Simulator
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -44,7 +44,7 @@ class BaseTradeTest(unittest.TestCase):
         self.setup_logging()
         # load default config
         config = load_and_parse_config_file(config_file)
-        simulator = YieldSimulator(config)
+        simulator = Simulator(config)
         simulator_rng = np.random.default_rng(simulator.config.simulator.random_seed)
         simulator.reset_rng(simulator_rng)
         simulator.set_random_variables()
@@ -72,7 +72,7 @@ class BaseTradeTest(unittest.TestCase):
         """
         self.setup_logging()
         config = load_and_parse_config_file(config_file)
-        simulator = YieldSimulator(config)
+        simulator = Simulator(config)
         simulator.set_random_variables()
         target_liquidity = 10e6
         target_pool_apr = 0.05
