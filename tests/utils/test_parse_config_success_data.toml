@@ -4,8 +4,6 @@ title = "example simulation config"
 # random variables
 min_target_liquidity = 1e6  # in shares
 max_target_liquidity = 10e6  # in shares
-min_target_volume = 0.001  # fraction of pool liquidity
-max_target_volume = 0.01  # fration of pool liquidity
 min_vault_age = 0  # fraction of a year
 max_vault_age = 1  # fraction of a year
 min_vault_apy = 0.001  # as a decimal

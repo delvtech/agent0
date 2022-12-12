@@ -25,8 +25,6 @@ class TestParseSimulationConfig(unittest.TestCase):
         market = config_utils.MarketConfig(
             min_target_liquidity=1000000.0,
             max_target_liquidity=10000000.0,
-            min_target_volume=0.001,
-            max_target_volume=0.01,
             min_vault_age=0,
             max_vault_age=1,
             min_vault_apy=0.001,
@@ -52,7 +50,6 @@ class TestParseSimulationConfig(unittest.TestCase):
             shuffle_users=True,
             init_lp=True,
             target_liquidity=10000000,
-            target_daily_volume=1000,
             init_pool_apy=0.05,
             fee_percent=0.10,
             init_vault_age=0,
