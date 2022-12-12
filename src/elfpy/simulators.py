@@ -166,9 +166,9 @@ class YieldSimulator:
                                 + f" not {len(value)}"
                             )
             if hasattr(self, key):
-                logging.debug("Overridding %s from %g to %s.", key, str(getattr(self, key)), str(value))
+                logging.info("Overriding %s from %s to %s.", key, str(getattr(self, key)), str(value))
             else:
-                logging.debug("Overridding %s from %s to %s.", key, "None", str(value))
+                logging.info("Overriding %s from %s to %s.", key, "None", str(value))
         # override the init_share_price if it is in the override_dict
         if "init_share_price" in override_dict.keys():
             self.init_share_price = override_dict["init_share_price"]  # \mu variable
@@ -400,7 +400,7 @@ class YieldSimulator:
                 self.run_trade_number += 1
                 number_of_executed_trades += 1
         if number_of_executed_trades > 0:
-            logging.debug("executed %f trades at %s", number_of_executed_trades, self.market.get_market_state_string())
+            logging.info("executed %f trades at %s", number_of_executed_trades, self.market.get_market_state_string())
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""

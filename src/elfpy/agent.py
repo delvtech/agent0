@@ -18,9 +18,6 @@ class Agent:
     date value is an inte with how many tokens they have for that date
     """
 
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-many-arguments
-
     def __init__(
         self, market: Market, rng: Generator, wallet_address: int, budget: float = 1000, **kwargs
     ):
@@ -35,9 +32,13 @@ class Agent:
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
+        for key, value in kwargs.items():
+            if value and hasattr(self, key):
+                logging.info("setting agent's %s to %s", key, str(value))
+                setattr(self, key, value)
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+        self, action_type: MarketActionType, trade_amount: float, mint_time: float = None
     ) -> MarketAction:
         """Instantiate a agent action"""
         agent_action = MarketAction(
@@ -84,6 +85,18 @@ class Agent:
             init_share_price=self.market.init_share_price,
             share_price=self.market.share_price,
         )
+        logging.debug(f"running calc_in_given_out, inputs:"
+                f" out={self.market.share_reserves*self.market.share_price}"
+                f" share_reserves={self.market.share_reserves}"
+                f" bond_reserves={self.market.bond_reserves}"
+                f" token_in=pt"
+                f" fee_percent={self.market.fee_percent}"
+                f" stretched_time_remaining={stretched_time_remaining}"
+                f" init_share_price={self.market.init_share_price}"
+                f" share_price={self.market.share_price}"
+                f" trade_results={trade_results}"
+        )
+        logging.debug(f"evaluating max short, trade_results={trade_results}")
         output_with_fee = trade_results[1]
         return output_with_fee
 
@@ -100,6 +113,7 @@ class Agent:
         we spend what we have to spend, and get what we get.
         """
         action_list = self.action()  # get the action list from the policy
+        #TODO: is this the right place to modify an action's mint_time? why not in __post_init__?
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = self.market.time
@@ -128,7 +142,7 @@ class Agent:
             # handle updating a value
             if key in ["base_in_wallet", "lp_in_wallet"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug(
+                    logging.info(
                         "agent %03.0f %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                         self.wallet_address,
                         key,
@@ -140,7 +154,7 @@ class Agent:
             # handle updating a dict, which have mint_time attached
             elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
                 for mint_time, amount in value_or_dict.items():
-                    logging.debug(
+                    logging.info(
                         "agent %03.0f trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
                         self.wallet_address,
                         key,
@@ -180,7 +194,7 @@ class Agent:
 
     def log_status_report(self) -> str:
         """Return user state"""
-        logging.debug(
+        logging.info(
             "agent %03.0f base_in_wallet = %s",
             self.wallet_address,
             self.wallet.base_in_wallet,

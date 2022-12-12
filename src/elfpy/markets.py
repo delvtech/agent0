@@ -32,11 +32,11 @@ class MarketAction:
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: float = 0
+    mint_time: float = None
 
     def __str__(self):
         """Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent {self.wallet_address:03.0f}"
+        output_string = f"MarketAction(agent {self.wallet_address:03.0f}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"
@@ -44,6 +44,7 @@ class MarketAction:
                 output_string += f" {key}: {value}"
             elif key not in ["wallet_address", "agent"]:
                 output_string += f" {key}: {value}"
+        output_string += ")"
         return output_string
 
 
@@ -76,7 +77,7 @@ class MarketDeltas:
                     if isinstance(value, float):
                         output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([x for x in value]) + "]"
+                        output_string += "[" + ", ".join(value) + "]"
                     elif isinstance(value, dict):
                         output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
@@ -184,7 +185,9 @@ class Market:
         self.check_action_type(agent_action.action_type)
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
-        time_remaining = time_utils.get_yearfrac_remaining(self.time, agent_action.mint_time, self.token_duration)
+        logging.debug(f"evaluating time_remaining for agent_action {agent_action} at time {self.time}")
+        action_mint_time = agent_action.mint_time if agent_action.mint_time is not None else self.time
+        time_remaining = time_utils.get_yearfrac_remaining(self.time, action_mint_time, self.token_duration)
         stretched_time_remaining = time_utils.stretch_time(time_remaining, self.time_stretch_constant)
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == "open_long":  # buy to open long
@@ -197,7 +200,7 @@ class Market:
             )
         elif agent_action.action_type == "open_short":  # sell PT to open short
             market_deltas, agent_deltas = self._open_short(
-                agent_action=agent_action, token_out="pt", stretched_time_remaining=stretched_time_remaining
+                agent_action=agent_action, token_out="base", stretched_time_remaining=stretched_time_remaining
             )
         elif agent_action.action_type == "close_short":  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
@@ -345,23 +348,25 @@ class Market:
         will be conditional on the pricing model
         """
         trade_results = self.pricing_model.calc_out_given_in(
-            in_=agent_action.trade_amount,
+            in_=agent_action.trade_amount,  # in units of pt (selling into amm)
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
-            token_out=token_out,
+            token_out=token_out,  # in units of base (trading out of amm)
             fee_percent=self.fee_percent,
             time_remaining=stretched_time_remaining,
             init_share_price=self.init_share_price,
             share_price=self.share_price,
-        )
+            )
         (
             without_fee_or_slippage,
             output_with_fee,
             output_without_fee,
             fee,
-        ) = trade_results
-        logging.debug(
-            "opening short: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
+         ) = trade_results
+        logging.info(
+            (
+                "opening short: without_fee_or_slippage = %g base, output_with_fee = %g base, output_without_fee = %g base, fee = %g base"
+            ),
             without_fee_or_slippage,
             output_with_fee,
             output_without_fee,
@@ -602,7 +607,7 @@ class Market:
         else:
             spot_price = self.get_spot_price()
             rate = self.get_rate()
-        logging.debug(
+        logging.info(
             (
                 "t = %g"
                 "\nx = %g"
