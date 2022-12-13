@@ -820,7 +820,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                         with_fee,
                         err_msg="unexpected element with_fee",
                     )
-                elif model_name == "Hyperdrive":
+                elif model_name == "YieldSpace":
                     np.testing.assert_almost_equal(
                         expected_result.hyperdrive_fee,
                         fee,
@@ -832,7 +832,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                         err_msg="unexpected hyperdrive with_fee",
                     )
                 else:
-                    raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}')
+                    raise AssertionError(f'Expected model_name to be "Element" or "YieldSpace", not {model_name}')
 
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
