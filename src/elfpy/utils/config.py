@@ -47,14 +47,13 @@ class SimulatorConfig:
         default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
     )
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
-    user_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user strategies"})
+    agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
     target_liquidity: float = field(default=0, metadata={"hint": ""})
     target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
-    init_pool_apy: float = field(default=0, metadata={"hint": "initial pool apy"})
     fee_percent: float = field(default=0, metadata={"hint": ""})
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
     vault_apy: list[float] = field(

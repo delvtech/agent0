@@ -213,6 +213,7 @@ class ElementPricingModel(PricingModel):
     """
     Element v1 pricing model
     Does not use the Yield Bearing Vault `init_share_price` (μ) and `share_price` (c) variables.
+    TODO: Update element pricing model to include lp calcs
     """
 
     def calc_lp_out_given_tokens_in(

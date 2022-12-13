@@ -4,8 +4,9 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.strategies.basic import BasicPolicy
-from elfpy.pricing_models import ElementPricingModel
+from elfpy.policies.basic import BasicPolicy
+from elfpy.markets import Market
+from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
 
 
 class Policy(BasicPolicy):
@@ -16,8 +17,6 @@ class Policy(BasicPolicy):
 
     def __init__(
         self,
-        market,
-        rng,
         wallet_address,
         budget=1000,
         base_to_lp=100,
@@ -26,14 +25,9 @@ class Policy(BasicPolicy):
         """call basic policy init then add custom stuff"""
         self.base_to_lp = base_to_lp
         self.pt_to_short = pt_to_short
-        super().__init__(
-            market=market,
-            rng=rng,
-            wallet_address=wallet_address,
-            budget=budget,
-        )
+        super().__init__(wallet_address, budget)
 
-    def action(self):
+    def action(self, market: Market, pricing_model: PricingModel):
         """
         implement user strategy
         LP if you can, but only do it once
@@ -43,14 +37,16 @@ class Policy(BasicPolicy):
         if has_lp:
             action_list = []
         else:
-            if self.market.pricing_model.model_name == ElementPricingModel().model_name():
+            if pricing_model.model_name() == ElementPricingModel().model_name():
                 # TODO: This doesn't work correctly -- need to add PT
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                 ]
-            else:
+            elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
                 ]
+            else:
+                raise ValueError(f"Pricing model = {pricing_model.model_name} is not supported.")
         return action_list
