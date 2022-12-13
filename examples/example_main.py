@@ -76,10 +76,9 @@ def get_example_agents(
     """Instantiate a set of custom agents"""
     if agents is None:
         agents = {}
-    num_existing_agents = len(agents)
-    for wallet_address in range(
-        num_existing_agents, num_new_agents + num_existing_agents
-    ):  # save wallet_address=0 for init_lp_agent
+    loop_start = len(agents)  # number of existing agents
+    loop_end = loop_start + num_new_agents
+    for wallet_address in range(loop_start, loop_end):
         agent = CustomShorter(wallet_address)
         agent.log_status_report()
         agents.update({agent.wallet_address: agent})
