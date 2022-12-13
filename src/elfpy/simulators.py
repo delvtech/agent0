@@ -128,6 +128,43 @@ class Simulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
+    def collect_and_execute_trades(self, last_block_in_sim=False):
+        """Get trades from the agent list, execute them, and update states"""
+        if not isinstance(self.market, Market):
+            raise ValueError("market not defined")
+        # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
+        # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
+        # But right now, if the LPer removes liquidity while shorts are open,
+        # then closing the shorts results in an error (share_reserves == 0).
+        if self.config.simulator.shuffle_users:
+            if last_block_in_sim:
+                wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
+                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
+                )
+                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+            else:
+                wallet_ids = self.rng.permutation(list(self.agents))
+        for agent_id in wallet_ids:  # trade is different on the last block
+            agent = self.agents[agent_id]
+            if last_block_in_sim:  # get all of a agent's trades
+                trade_list = agent.get_liquidation_trades(self.market)
+            else:
+                trade_list = agent.get_trade_list(self.market, self.pricing_model)
+            for agent_trade in trade_list:  # execute trades
+                wallet_deltas = self.market.trade_and_update(agent_trade, self.pricing_model)
+                agent.update_wallet(
+                    wallet_deltas, self.market
+                )  # update agent state since market doesn't know about agents
+                logging.debug(
+                    "agent #%g wallet deltas = \n%s",
+                    agent.wallet_address,
+                    wallet_deltas.__dict__,
+                )
+                agent.log_status_report()
+                # TODO: Get simulator, market, pricing model, agent state strings and log
+                self.update_analysis_dict()
+                self.run_trade_number += 1
+
     def run_simulation(self):
         r"""
         Run the trade simulation and update the output state dictionary
@@ -168,43 +205,6 @@ class Simulator:
         # simulation has ended
         for agent in self.agents.values():
             agent.log_final_report(self.market, self.pricing_model)
-        # fees_owed = self.market.calc_fees_owed()
-
-    def collect_and_execute_trades(self, last_block_in_sim=False):
-        """Get trades from the agent list, execute them, and update states"""
-        if not isinstance(self.market, Market):
-            raise ValueError("market not defined")
-        # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
-        # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
-        # But right now, if the LPer removes liquidity while shorts are open,
-        # then closing the shorts results in an error (share_reserves == 0).
-        if self.config.simulator.shuffle_users:
-            if last_block_in_sim:
-                wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
-                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
-                )
-                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
-            else:
-                wallet_ids = self.rng.permutation(list(self.agents))
-        for agent_id in wallet_ids:  # trade is different on the last block
-            agent = self.agents[agent_id]
-            if last_block_in_sim:  # get all of a agent's trades
-                trade_list = agent.get_liquidation_trades(self.market)
-            else:
-                trade_list = agent.get_trade_list(self.market, self.pricing_model)
-            for agent_trade in trade_list:  # execute trades
-                wallet_deltas = self.market.trade_and_update(agent_trade, self.pricing_model)
-                agent.update_wallet(
-                    wallet_deltas, self.market
-                )  # update agent state since market doesn't know about agents
-                logging.debug(
-                    "agent #%g wallet deltas = \n%s",
-                    agent.wallet_address,
-                    wallet_deltas.__dict__,
-                )
-                agent.log_status_report()
-                self.update_analysis_dict()
-                self.run_trade_number += 1
 
     def update_analysis_dict(self):
         """Increment the list for each key in the analysis_dict output variable"""
