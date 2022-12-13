@@ -6,16 +6,13 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel
-from elfpy.policies.basic import BasicPolicy
 
 
-class Policy(BasicPolicy):
-    """
-    simple LP
-    only has one LP open at a time
-    """
+class Policy(Agent):
+    """simple LP that only has one LP open at a time"""
 
     def __init__(self, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""

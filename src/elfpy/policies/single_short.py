@@ -4,16 +4,13 @@ User strategy that opens a single short and doesn't close until liquidation
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel
-from elfpy.policies.basic import BasicPolicy
 
 
-class Policy(BasicPolicy):
-    """
-    simple short
-    only has one long open at a time
-    """
+class Policy(Agent):
+    """simple short thatonly has one long open at a time"""
 
     def __init__(self, wallet_address, budget=100):
         """call basic policy init then add custom stuff"""
