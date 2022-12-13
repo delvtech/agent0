@@ -18,6 +18,7 @@ from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 from elfpy.utils.config import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
+from elfpy.utils.outputs import CustomEncoder
 import elfpy.utils.time as time_utils
 
 
@@ -126,8 +127,11 @@ class Simulator:
 
     def log_config_variables(self) -> None:
         """Prints all variables that are in config"""
-        # Config is a nested dataclass, so the `default` arg tells it to cast sub-classes to dicts
-        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, default=lambda obj: obj.__dict__)
+        # Config is a nested dataclass, so the `default` arg tells it to cast sub-classes to dict
+        config_string = json.dumps(
+            self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder
+        )  # , default=lambda obj: obj.__dict__
+        # )
         logging.info(config_string)
 
     def get_simulation_state_string(self) -> str:

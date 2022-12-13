@@ -1,6 +1,7 @@
 """
 Helper functions for post-processing simulation outputs
 """
+import json
 
 import numpy as np
 
@@ -72,3 +73,19 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
     else:  # add an additional sigfig if the value is really small
         string = f"{value:0.{precision-1}e}"
     return string
+
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        match obj:
+            case np.integer():
+                return int(obj)
+            case np.floating():
+                return float(obj)
+            case np.ndarray():
+                return obj.tolist()
+            case _:
+                try:
+                    return obj.__dict__
+                except AttributeError as e:
+                    raise AttributeError(e)
