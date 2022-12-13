@@ -19,9 +19,8 @@ from elfpy.markets import Market
 from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
 from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
-import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
+from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
-import elfpy.utils.price as price_utils
 
 
 class Simulator:
@@ -129,66 +128,6 @@ class Simulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def override_variables(self, override_dict):
-        """Replace existing member & config variables with ones defined in override_dict"""
-        # override the config variables, including random variables that were set
-        for key, value in override_dict.items():
-            for config_obj in [self.config.market, self.config.amm, self.config.simulator, self.random_variables]:
-                if hasattr(config_obj, key):  # TODO: This is not safe -- we should assign each key individually
-                    logging.debug("Overridding %s from %g to %s.", key, str(getattr(config_obj, key)), str(value))
-                    setattr(config_obj, key, value)
-                    if key == "vault_apy":  # support for float or list[float] types
-                        if isinstance(value, float):  # overwrite above setattr with the value replicated in a list
-                            self.random_variables.vault_apy = [float(value)] * self.config.simulator.num_trading_days
-                        else:  # check that the length is correct; if so, then it is already set above
-                            assert len(value) == self.config.simulator.num_trading_days, (
-                                "vault_apy must have len equal to num_trading_days = "
-                                + f"{self.config.simulator.num_trading_days},"
-                                + f" not {len(value)}"
-                            )
-
-    def setup_simulated_entities(self, override_dict=None):
-        """
-        Constructs the agent list, pricing model, and market member variables
-
-        Arguments
-        ---------
-        override_dict : dict
-            Override member variables.
-            Keys in this dictionary must match member variables of the Simulator class.
-
-        Returns
-        -------
-        There are no returns, but the function instantiates self.market and self.agents
-        """
-        if override_dict is not None:
-            self.override_variables(override_dict)  # apply the override dict
-        # fill market pools
-        if self.config.simulator.init_lp:
-            init_lp_agent = sim_utils.get_init_lp_agent(
-                self.config,
-                self.market,
-                self.pricing_model,
-                self.random_variables.target_liquidity,
-                self.random_variables.init_pool_apy,
-                self.random_variables.fee_percent,
-            )
-            self.agents = {init_lp_agent.wallet_address: init_lp_agent}
-            # execute one special block just for the init_lp_agent
-            self.collect_and_execute_trades()
-        else:  # manual market configuration
-            self.agents = {}
-        self.market.log_market_step_string(self.pricing_model)
-        # continue adding other users
-        for policy_number, policy_name in enumerate(self.config.simulator.agent_policies):
-            agent = import_module(f"elfpy.policies.{policy_name}").Policy(
-                market=self.market,
-                rng=self.rng,
-                wallet_address=policy_number + 1,  # first policy goes to init_lp_agent
-            )
-            agent.log_status_report()
-            self.agents.update({agent.wallet_address: agent})
-
     def run_simulation(self):
         r"""
         Run the trade simulation and update the output state dictionary
@@ -228,7 +167,7 @@ class Simulator:
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
-            agent.log_final_report(self.market)
+            agent.log_final_report(self.market, self.pricing_model)
         # fees_owed = self.market.calc_fees_owed()
 
     def collect_and_execute_trades(self, last_block_in_sim=False):

@@ -34,7 +34,6 @@ verbose = false # toggle verbose output level
 shuffle_users = true
 init_lp = true
 target_liquidity = 10000000
-target_daily_volume = 1000
 init_pool_apy = 0.05
 fee_percent = 0.10
 init_vault_age = 0

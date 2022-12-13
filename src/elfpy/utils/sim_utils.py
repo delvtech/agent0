@@ -1,6 +1,7 @@
 from importlib import import_module
 from dataclasses import dataclass, field
 import logging
+from typing import Any
 
 from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
 from elfpy.markets import Market
@@ -8,6 +9,22 @@ from elfpy.agent import Agent
 from elfpy.utils.config import Config
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
+
+
+@dataclass()
+class RandomSimulationVariables:
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
+    target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
+    init_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
+    fee_percent: float = field(metadata="percent to charge for LPer fees")
+    vault_apy: list[float] = field(metadata="vault apy values")
+    init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
+    init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
+
+    def __post_init__(self):
+        if self.init_share_price is None:
+            self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
 
 
 def get_init_lp_agent(
@@ -81,9 +98,35 @@ def get_init_lp_agent(
     return init_lp_agent
 
 
-def get_pricing_model(model_name) -> ElementPricingModel | HyperdrivePricingModel:
+def get_market(
+    pricing_model: PricingModel,
+    init_pool_apy: float,
+    fee_percent: float,
+    token_duration: float,
+    init_share_price: float,
+) -> Market:
+    """Setup market
+
+    Arguments
+    ---------
+
+    Returns
+    -------
+
     """
-    Get a PricingModel object from the config passed in
+    time_stretch_constant = pricing_model.calc_time_stretch(init_pool_apy)
+    market = Market(
+        fee_percent=fee_percent,  # g
+        token_duration=token_duration,
+        time_stretch_constant=time_stretch_constant,
+        init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+        share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
+    )
+    return market
+
+
+def get_pricing_model(model_name) -> ElementPricingModel | HyperdrivePricingModel:
+    """Get a PricingModel object from the config passed in
 
     Arguments
     ---------
@@ -103,8 +146,7 @@ def get_pricing_model(model_name) -> ElementPricingModel | HyperdrivePricingMode
 
 
 def get_random_variables(config, rng):
-    """
-    Use random number generator to assign initial simulation parameter values
+    """Use random number generator to assign initial simulation parameter values
 
     Arguments
     ---------
@@ -113,21 +155,6 @@ def get_random_variables(config, rng):
     -------
 
     """
-
-    @dataclass()
-    class RandomSimulationVariables:
-        # dataclasses can have many attributes
-        # pylint: disable=too-many-instance-attributes
-        target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
-        init_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
-        fee_percent: float = field(metadata="percent to charge for LPer fees")
-        vault_apy: list[float] = field(metadata="vault apy values")
-        init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
-        init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
-
-        def __post_init__(self):
-            if self.init_share_price is None:
-                self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
 
     random_vars = RandomSimulationVariables(
         target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),
@@ -145,3 +172,37 @@ def get_random_variables(config, rng):
         init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
     )
     return random_vars
+
+
+def override_random_variables(
+    random_variables: RandomSimulationVariables,
+    override_dict: dict[str, Any],
+) -> RandomSimulationVariables:
+    """Override the random simulation variables with targeted values, as specified by the keys
+
+    Arguments
+    ---------
+
+    Returns
+    -------
+
+    """
+    for key, value in override_dict.items():
+        if hasattr(
+            random_variables, key
+        ):  # TODO: This is a non safe HACK -- we should assign & type each key/value individually
+            setattr(random_variables, key, value)
+    return random_variables
+
+
+def override_config_variables(config, override_dict):
+    """Replace existing member & config variables with ones defined in override_dict"""
+    # override the config variables, including random variables that were set
+    for key, value in override_dict.items():
+        for variable_object in [config.market, config.amm, config.simulator]:
+            if hasattr(
+                variable_object, key
+            ):  # TODO: This is a non safe HACK -- we should assign & type each key/value individually
+                logging.debug("Overridding %s from %s to %s.", key, str(getattr(variable_object, key)), str(value))
+                setattr(variable_object, key, value)
+    return config

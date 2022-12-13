@@ -7,15 +7,63 @@ import logging
 import itertools
 import os
 import sys
+from typing import Any
 
 import numpy as np
 
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
+import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 
 
 class LoggingTest(unittest.TestCase):
     """Generic test class"""
+
+    @staticmethod
+    def setup_and_run_simulator(config_file, override_dict: dict[str, Any]):
+        """Construct and run the simulator"""
+        # instantiate config object
+        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
+        # instantiate random number generator
+        rng = np.random.default_rng(config.simulator.random_seed)
+        # run random number generators to get random simulation arguments
+        random_sim_vars = sim_utils.override_random_variables(
+            sim_utils.get_random_variables(config, rng), override_dict
+        )
+        # instantiate the pricing model
+        pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
+        # instantiate the market
+        market = sim_utils.get_market(
+            pricing_model,
+            random_sim_vars.init_pool_apy,
+            random_sim_vars.fee_percent,
+            config.simulator.token_duration,
+            random_sim_vars.init_share_price,
+        )
+        # instantiate the init_lp agent
+        init_agents = {
+            0: sim_utils.get_init_lp_agent(
+                config,
+                market,
+                pricing_model,
+                random_sim_vars.target_liquidity,
+                random_sim_vars.init_pool_apy,
+                random_sim_vars.fee_percent,
+            )
+        }
+        # set up simulator with only the init_lp_agent
+        simulator = Simulator(
+            config=config,
+            pricing_model=pricing_model,
+            market=market,
+            agents=init_agents,
+            rng=rng,
+            random_simulation_variables=random_sim_vars,
+        )
+        # initialize the market using the LP agent
+        simulator.collect_and_execute_trades()
+        # get trading agent list
+        simulator.run_simulation()
 
     def test_logging(self):
         """
@@ -49,16 +97,12 @@ class LoggingTest(unittest.TestCase):
             ]
 
             config_file = "config/example_config.toml"
-            config = load_and_parse_config_file(config_file)
-            simulator = Simulator(config)
-            simulator.set_rng(np.random.default_rng(simulator.config.simulator.random_seed))
-            simulator.set_random_variables()
             override_dict = {
                 "pricing_model_name": "Hyperdrive",
-                "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
+                "num_trading_days": 10,
+                "num_blocks_per_day": 3,  # 1 block a day, keep it fast for testing
             }
-            simulator.setup_simulated_entities(override_dict)
-            simulator.run_simulation()
+            self.setup_and_run_simulator(config_file, override_dict)
             self.assertLogs(level=level)
             # comment this to view the generated log files
             if handler_type == "file":

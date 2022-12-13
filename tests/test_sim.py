@@ -13,11 +13,59 @@ import os
 import numpy as np
 
 from elfpy.simulators import Simulator
-from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorConfig
+from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorConfig, load_and_parse_config_file
+import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 
 
 class TestSimulator(unittest.TestCase):
     """Simulator test class"""
+
+    @staticmethod
+    def setup_and_run_simulator(config_file, override_dict):
+        """Construct and run the simulator"""
+        # instantiate config object
+        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
+        # instantiate random number generator
+        rng = np.random.default_rng(config.simulator.random_seed)
+        # run random number generators to get random simulation arguments
+        random_sim_vars = sim_utils.override_random_variables(
+            sim_utils.get_random_variables(config, rng), override_dict
+        )
+        # instantiate the pricing model
+        pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
+        # instantiate the market
+        market = sim_utils.get_market(
+            pricing_model,
+            random_sim_vars.init_pool_apy,
+            random_sim_vars.fee_percent,
+            config.simulator.token_duration,
+            random_sim_vars.init_share_price,
+        )
+        # instantiate the init_lp agent
+        init_agents = {
+            0: sim_utils.get_init_lp_agent(
+                config,
+                market,
+                pricing_model,
+                random_sim_vars.target_liquidity,
+                random_sim_vars.init_pool_apy,
+                random_sim_vars.fee_percent,
+            )
+        }
+        # set up simulator with only the init_lp_agent
+        simulator = Simulator(
+            config=config,
+            pricing_model=pricing_model,
+            market=market,
+            agents=init_agents,
+            rng=rng,
+            random_simulation_variables=random_sim_vars,
+        )
+        # initialize the market using the LP agent
+        simulator.collect_and_execute_trades()
+        # run the simulation
+        simulator.run_simulation()
+        return (market, pricing_model)
 
     @staticmethod
     def setup_logging():
@@ -41,45 +89,19 @@ class TestSimulator(unittest.TestCase):
     def test_hyperdrive_sim(self):
         """Tests the simulator output to verify that indices are correct"""
         self.setup_logging()
-        simulator = Simulator(
-            Config(
-                market=MarketConfig(),
-                amm=AMMConfig(pricing_model_name="Hyperdrive"),
-                simulator=SimulatorConfig(
-                    num_trading_days=10,
-                    num_blocks_per_day=10,
-                    logging_level=logging.INFO,
-                ),
-            )
-        )
+        config_file = "config/example_config.toml"
         for rng_seed in range(1, 10):
             try:
-                simulator.set_rng(np.random.default_rng(rng_seed))
-                simulator.set_random_variables()
-                simulator.setup_simulated_entities()
-                simulator.run_simulation()
-
+                # simulator.setup_simulated_entities()
+                override_dict = {"num_trading_days": 5, "num_blocks_per_day": 3}
+                self.setup_and_run_simulator(config_file, override_dict)
             # pylint: disable=broad-except
             except Exception as exc:
                 assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
+
         # comment this to view the generated log files
         file_loc = logging.getLogger().handlers[0].baseFilename
         os.remove(file_loc)
 
     # TODO Update element pricing model to include lp calcs
     # def test_element_sim(self):
-    #     """Tests the simulator output to verify that indices are correct"""
-    #     simulator = Simulator(
-    #        Config(
-    #            market=MarketConfig(),
-    #            amm=AMMConfig(pricing_model_name="Element"),
-    #            simulator=SimulatorConfig(
-    #                logging_level=logging.INFO,
-    #            )
-    #        )
-    #     )
-    #     for rng_seed in range(1, 15):
-    #         simulator.set_rng(np.random.default_rng(rng_seed))
-    #         simulator.set_random_variables()
-    #         simulator.setup_simulated_entities()
-    #         simulator.run_simulation()

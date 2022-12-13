@@ -15,8 +15,8 @@ from elfpy.simulators import Simulator  # simulator
 from elfpy.markets import Market  # market
 
 # utils
-import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
-from elfpy.utils.parse_config import text_to_logging_level, load_and_parse_config_file
+from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.utils.parse_config as config_utils
 
 
 class CustomShorter(BasicPolicy):
@@ -82,19 +82,6 @@ def get_example_agents(
     return agents
 
 
-def get_market(init_pool_apy, fee_percent, token_duration, init_share_price):
-    """setup market"""
-    time_stretch_constant = pricing_model.calc_time_stretch(init_pool_apy)
-    market = Market(
-        fee_percent=fee_percent,  # g
-        token_duration=token_duration,
-        time_stretch_constant=time_stretch_constant,
-        init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-        share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-    )
-    return market
-
-
 if __name__ == "__main__":
     # define & parse script args
     parser = argparse.ArgumentParser(
@@ -123,20 +110,22 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     # get config & logging level
-    config = load_and_parse_config_file(args.config)
+    config = config_utils.load_and_parse_config_file(args.config)
     if args.log_level is None:
         log_level = config.simulator.logging_level
     else:
-        log_level = args.log_level
-    rng = np.random.default_rng(config.simulator.random_seed)
+        log_level = config_utils.text_to_logging_level(args.log_level)
     # define root logging parameters
     setup_logging(filename=args.output, max_bytes=args.max_bytes, log_level=log_level)
+    # instantiate random number generator
+    rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
     random_sim_vars = sim_utils.get_random_variables(config, rng)
     # instantiate the pricing model
     pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     # instantiate the market
-    market = get_market(
+    market = sim_utils.get_market(
+        pricing_model,
         random_sim_vars.init_pool_apy,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,

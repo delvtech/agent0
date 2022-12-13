@@ -660,7 +660,6 @@ class Market:
                 "\ny_b = %g"
                 "\np = %s"
                 "\npool apr = %s"
-                "\nvault apr = %g"
             ),
             self.time,
             self.share_reserves * self.share_price,
