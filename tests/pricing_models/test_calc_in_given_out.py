@@ -15,7 +15,7 @@ import unittest
 import numpy as np
 
 from elfpy.utils import time as time_utils
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, PricingModel
+from elfpy.pricing_models import ElementPricingModel, YieldSpacePricingModel, PricingModel
 
 
 @dataclass
@@ -72,7 +72,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
-        pricing_models = [ElementPricingModel(), HyperdrivePricingModel()]
+        pricing_models = [ElementPricingModel(), YieldSpacePricingModel()]
 
         # Test cases where token_in = "base" indicating that bonds are being
         # purchased for base.
@@ -836,7 +836,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        pricing_models: list[PricingModel] = [ElementPricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
 
         # Failure test cases.
         test_cases = [

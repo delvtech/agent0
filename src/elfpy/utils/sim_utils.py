@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any
 
-from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models import PricingModel, ElementPricingModel, YieldSpacePricingModel
 from elfpy.markets import Market
 from elfpy.agent import Agent
 from elfpy.utils.config import Config
@@ -173,7 +173,7 @@ def get_pricing_model(model_name: str) -> PricingModel:
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
     if model_name.lower() == "hyperdrive":
-        pricing_model = HyperdrivePricingModel()
+        pricing_model = YieldSpacePricingModel()
     elif model_name.lower() == "element":
         pricing_model = ElementPricingModel()
     else:

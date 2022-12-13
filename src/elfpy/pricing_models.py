@@ -680,9 +680,9 @@ class ElementPricingModel(PricingModel):
         return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
 
 
-class HyperdrivePricingModel(PricingModel):
+class YieldSpacePricingModel(PricingModel):
     """
-    Hyperdrive Pricing Model
+    YieldSpace Pricing Model
 
     This pricing model uses the YieldSpace invariant with modifications to
     enable the base reserves to be deposited into yield bearing vaults
@@ -742,6 +742,7 @@ class HyperdrivePricingModel(PricingModel):
             lp_out = (d_shares * lp_reserves) / (share_reserves - share_buffer)
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
+        # TODO: Move this calculation to a helper function.
         d_bonds = (share_reserves + d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
@@ -836,6 +837,7 @@ class HyperdrivePricingModel(PricingModel):
         ), "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
         d_shares = d_base / share_price
         lp_in = (d_shares * lp_reserves) / (share_reserves - share_buffer)
+        # TODO: Move this calculation to a helper function.
         d_bonds = (share_reserves - d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
@@ -882,6 +884,7 @@ class HyperdrivePricingModel(PricingModel):
         )
         d_base = share_price * (share_reserves - share_buffer) * lp_in / lp_reserves
         d_shares = d_base / share_price
+        # TODO: Move this calculation to a helper function.
         d_bonds = (share_reserves - d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
         ) - bond_reserves
@@ -923,8 +926,6 @@ class HyperdrivePricingModel(PricingModel):
         )
         return lp_in, d_base, d_bonds
 
-    # TODO: Break this function up to use private class functions
-    # pylint: disable=too-many-locals
     def calc_in_given_out(
         self,
         out: float,
@@ -1182,8 +1183,6 @@ class HyperdrivePricingModel(PricingModel):
     # TODO: The high slippage tests in tests/test_pricing_model.py should
     # arguably have much higher slippage. This is something we should
     # consider more when thinking about the use of a time stretch parameter.
-    # TODO: Break this function up to use private class functions
-    # pylint: disable=too-many-locals
     def calc_out_given_in(
         self,
         in_: float,

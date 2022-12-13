@@ -15,7 +15,7 @@ from numpy.random._generator import Generator
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models import ElementPricingModel, YieldSpacePricingModel
 from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
@@ -36,7 +36,7 @@ class Simulator:
     def __init__(
         self,
         config: Config | str,
-        pricing_model: ElementPricingModel | HyperdrivePricingModel,
+        pricing_model: ElementPricingModel | YieldSpacePricingModel,
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
