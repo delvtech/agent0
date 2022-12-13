@@ -116,15 +116,15 @@ class MarketState:
     """The state of an AMM"""
 
     # trading reserves
-    share_reserves: float
-    bond_reserves: float
+    share_reserves: float = 0.0
+    bond_reserves: float = 0.0
 
     # trading buffers
-    share_buffer: float  # TODO: This shouldn't be a share buffer. It needs to be a base buffer.
-    bond_buffer: float
+    share_buffer: float = 0.0  # TODO: This shouldn't be a share buffer. It needs to be a base buffer.
+    bond_buffer: float = 0.0
 
     # lp reserves
-    lp_reserves: float
+    lp_reserves: float = 0.0
 
     # share price
     share_price: float = 1.0

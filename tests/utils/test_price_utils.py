@@ -10,6 +10,7 @@ Testing for price utilities found in src/elfpy/utils/price.py
 import unittest
 import numpy as np
 
+from elfpy.types import StretchedTime
 from elfpy.utils import price as price_utils
 
 
@@ -97,8 +98,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 500000,  # PT reserves; y = 500000
-                "days_remaining": 182.5,  # 6 months remaining; t = 0.50
-                "time_stretch": 22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                "time_remaining": StretchedTime(
+                    days=182.5,  # 6 months remaining; t = 0.50
+                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
                 # from the inputs, we have:
@@ -119,8 +122,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.02,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 200000,  # PT reserves; y = 200000
-                "days_remaining": 182.5,  # 6 months remaining; t = 0.50
-                "time_stretch": 22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                "time_remaining": StretchedTime(
+                    days=182.5,  # 6 months remaining; t = 0.50
+                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
                 # from the inputs, we have:
@@ -141,8 +146,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.08,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 800000,  # PT reserves; y = 800000
-                "days_remaining": 182.5,  # 6 months remaining; t = 0.50
-                "time_stretch": 22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                "time_remaining": StretchedTime(
+                    days=182.5,  # 6 months remaining; t = 0.50
+                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
+                ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
                 # from the inputs, we have:
@@ -163,8 +170,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
                 "token_asset_reserves": 500000,  # PT reserves; y = 500000
-                "days_remaining": 91.25,  # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                "time_remaining": StretchedTime(
+                    days=91.25,  # 3 months remaining; t = 0.25
+                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                ),
                 "init_share_price": 1.5,  # original share price pool started; u = 1.5
                 "share_price": 2,  # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -185,8 +194,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.01,  # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "token_asset_reserves": 200000,  # PT reserves; y = 200000
-                "days_remaining": 91.25,  # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                "time_remaining": StretchedTime(
+                    days=91.25,  # 3 months remaining; t = 0.25
+                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                ),
                 "init_share_price": 1.5,  # original share price pool started; u = 1.5
                 "share_price": 2,  # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -207,8 +218,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.06,  # fixed rate APR you'd get from purchasing bonds; r = 0.06
                 "token_asset_reserves": 800000,  # PT reserves; y = 800000
-                "days_remaining": 91.25,  # 3 months remaining; t = 0.25
-                "time_stretch": 36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                "time_remaining": StretchedTime(
+                    days=91.25,  # 3 months remaining; t = 0.25
+                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
+                ),
                 "init_share_price": 1.5,  # original share price pool started; u = 1.5
                 "share_price": 2,  # share price of the LP in the yield source; c = 2
                 # from the inputs, we have:
@@ -230,8 +243,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
                 "token_asset_reserves": 500000,  # PT reserves; y = 500000
-                "days_remaining": 182.5,  # 6 months remaining; t = 0.50
-                "time_stretch": 0,  # 0 time_stretch; T = infinite (division by zero)
+                "time_remaining": StretchedTime(
+                    days=182.5,  # 6 months remaining; t = 0.50
+                    time_stretch=0,  # 0 time_stretch; T = infinite (division by zero)
+                ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1.25,  # share price of the LP in the yield source; c = 1.25
                 # from the inputs, we have:
@@ -257,8 +272,10 @@ class TestPriceUtils(unittest.TestCase):
             {
                 "apr": 0.0001,  # fixed rate APR you'd get from purchasing bonds; r = 0.01
                 "token_asset_reserves": 1000,  # PT reserves; y = 1000
-                "days_remaining": 91.25,  # 3 months remaining; t = 0.25
-                "time_stretch": 22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.01126792202
+                "time_remaining": StretchedTime(
+                    days=91.25,  # 3 months remaining; t = 0.25
+                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.01126792202
+                ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1.01,  # share price of the LP in the yield source; c = 1.25
                 # from the inputs, we have:
@@ -285,8 +302,7 @@ class TestPriceUtils(unittest.TestCase):
                     base_asset_reserves = price_utils.calc_base_asset_reserves(
                         test_case["apr"],
                         test_case["token_asset_reserves"],
-                        test_case["days_remaining"],
-                        test_case["time_stretch"],
+                        test_case["time_remaining"],
                         test_case["init_share_price"],
                         test_case["share_price"],
                     )
@@ -296,8 +312,7 @@ class TestPriceUtils(unittest.TestCase):
                 base_asset_reserves = price_utils.calc_base_asset_reserves(
                     test_case["apr"],
                     test_case["token_asset_reserves"],
-                    test_case["days_remaining"],
-                    test_case["time_stretch"],
+                    test_case["time_remaining"],
                     test_case["init_share_price"],
                     test_case["share_price"],
                 )
