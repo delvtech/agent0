@@ -30,15 +30,12 @@ class CustomShorter(BasicPolicy):
     """
 
     def __init__(self, wallet_address: int, budget: int = 10_000) -> None:
-        """call basic policy init then add custom stuff"""
+        """Add custom stuff then call basic policy init"""
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
     def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
-        """
-        implement user strategy
-        short if you can, only once
-        """
+        """Implement a custom user strategy"""
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short

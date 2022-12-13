@@ -17,7 +17,7 @@ from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
-class TestSimulator(unittest.TestCase):
+class BaseTraderTest(unittest.TestCase):
     """Simulator test class"""
 
     @staticmethod
@@ -86,7 +86,7 @@ class TestSimulator(unittest.TestCase):
             handler,
         ]
 
-    def test_hyperdrive_sim(self):
+    def run_hyperdrive_test(self, delete_logs=True):
         """Tests the simulator output to verify that indices are correct"""
         self.setup_logging()
         config_file = "config/example_config.toml"
@@ -98,10 +98,14 @@ class TestSimulator(unittest.TestCase):
             # pylint: disable=broad-except
             except Exception as exc:
                 assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
+        if delete_logs:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)
 
-        # comment this to view the generated log files
-        file_loc = logging.getLogger().handlers[0].baseFilename
-        os.remove(file_loc)
 
-    # TODO Update element pricing model to include lp calcs
-    # def test_element_sim(self):
+class TestSimulator(BaseTraderTest):
+    def test_hyperdrive_sim(self):
+        """Tests hyperdrive setup"""
+        self.run_hyperdrive_test()
+
+    # TODO: add similar test for a sim using the element pricing model

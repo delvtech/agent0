@@ -110,8 +110,7 @@ class BaseTradeTest(unittest.TestCase):
             "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
         }
-        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
-        simulator = self.setup_simulation_entities(config, override_dict, agent_policies)[0]
+        simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)[0]
         simulator.run_simulation()
         if delete_logs:
             file_loc = logging.getLogger().handlers[0].baseFilename
@@ -160,14 +159,14 @@ class SingleTradeTests(BaseTradeTest):
         """Tests base LP setups"""
         self.run_base_lp_test(agent_policies=[], config_file="config/example_config.toml")
 
-    # def test_single_long(self):
-    #    """Tests the BaseUser class"""
-    #    self.run_base_trade_test(agent_policies=["single_long"], config_file="config/example_config.toml")
+    def test_single_long(self):
+        """Tests the BaseUser class"""
+        self.run_base_trade_test(agent_policies=["single_long"], config_file="config/example_config.toml")
 
-    # def test_single_short(self):
-    #    """Tests the BaseUser class"""
-    #    self.run_base_trade_test(agent_policies=["single_short"], config_file="config/example_config.toml")
+    def test_single_short(self):
+        """Tests the BaseUser class"""
+        self.run_base_trade_test(agent_policies=["single_short"], config_file="config/example_config.toml")
 
-    # def test_base_lps(self):
-    #    """Tests base LP setups"""
-    #    self.run_base_lp_test(agent_policies=["single_lp"], config_file="config/example_config.toml")
+    def test_base_lps(self):
+        """Tests base LP setups"""
+        self.run_base_lp_test(agent_policies=["single_lp"], config_file="config/example_config.toml")
