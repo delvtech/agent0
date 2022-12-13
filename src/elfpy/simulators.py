@@ -284,4 +284,4 @@ class Simulator:
         if self.market.share_reserves > 0:  # there is money in the market
             self.analysis_dict["spot_price"].append(self.market.get_spot_price(self.pricing_model))
         else:
-            self.analysis_dict["spot_price"].append(str(np.nan))
+            self.analysis_dict["spot_price"].append(np.nan)
