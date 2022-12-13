@@ -8,7 +8,8 @@ import elfpy.utils.time as time_utils
 TokenType = Literal["pt", "base"]
 
 
-class Quantity(NamedTuple):
+@dataclass
+class Quantity:
     """An amount with a unit"""
 
     amount: float

@@ -10,7 +10,7 @@ import logging
 import numpy as np
 
 from elfpy.pricing_models import PricingModel, TradeResult
-from elfpy.token import TokenType
+from elfpy.types import TokenType
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 from elfpy.utils.outputs import float_to_string
