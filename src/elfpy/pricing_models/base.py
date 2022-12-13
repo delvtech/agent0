@@ -161,7 +161,7 @@ class PricingModel(ABC):
             market_state,
             time_remaining,
         )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining.normalized_days_remaining)
+        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining.normalized_days)
         return apr
 
     def calc_time_stretch(self, apr):

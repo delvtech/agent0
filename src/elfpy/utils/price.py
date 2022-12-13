@@ -8,7 +8,7 @@ Utilities for price
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
 
-from elfpy.pricing_models import MarketState
+from elfpy.types import MarketState
 from . import time as time_utils
 
 ### Reserves ###

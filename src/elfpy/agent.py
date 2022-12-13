@@ -6,8 +6,9 @@ import logging
 
 import numpy as np
 
-from elfpy.markets import Market, MarketAction, MarketActionType
-from elfpy.pricing_models import PricingModel
+from elfpy.markets import Market
+from elfpy.pricing_models.base import PricingModel
+from elfpy.types import MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 

@@ -86,7 +86,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             out=Quantity(amount=d_out, unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
-            time_remaining=StretchedTime(days_remaining=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
         # FIXME: We need to return trade result, but we also need to return
@@ -176,7 +176,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             in_=Quantity(amount=d_in, unit=in_.unit),
             market_state=market_state,
             fee_percent=fee_percent,
-            time_remaining=StretchedTime(days_remaining=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
         flat = in_.amount * (1 - time_remaining.stretched_time)
