@@ -8,6 +8,7 @@ Utilities for price
 #     share_prices = (init_share_price, share_price)
 # pylint: disable=too-many-arguments
 
+from elfpy.pricing_models import MarketState
 from . import time as time_utils
 
 ### Reserves ###
@@ -204,18 +205,14 @@ def calc_spot_price_from_apr(apr_decimal, normalized_days_remaining):
 ### YieldSpace ###
 
 
-def calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed):
+def calc_k_const(market_state: MarketState, time_elapsed):
     """
     Returns the 'k' constant variable for trade mathematics
 
     Arguments
     ---------
-    share_reserves : float
-    bond_reserves : float
-    share_price : float
-        Current share price
-    init_share_price : float
-        Original share price when the pool started
+    market_state : MarketState
+        The state of the AMM
     time_elapsed : float
         Amount of time that has elapsed in the current market, in yearfracs
 
@@ -224,8 +221,8 @@ def calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, t
     float
         'k' constant used for trade mathematics, calculated from the provided parameters
     """
-    scale = share_price / init_share_price
-    total_reserves = bond_reserves + share_price * share_reserves
-    return scale * (init_share_price * share_reserves) ** (time_elapsed) + (bond_reserves + total_reserves) ** (
-        time_elapsed
-    )
+    scale = market_state.share_price / market_state.init_share_price
+    total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
+    return scale * (market_state.init_share_price * market_state.share_reserves) ** (time_elapsed) + (
+        market_state.bond_reserves + total_reserves
+    ) ** (time_elapsed)

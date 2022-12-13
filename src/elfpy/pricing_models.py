@@ -3,11 +3,9 @@ Pricing models implement automated market makers (AMMs)
 """
 
 from abc import ABC, abstractmethod
-from typing import NamedTuple
 import logging
-import numpy as np
 
-from elfpy.token import TokenType
+from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 
@@ -25,18 +23,6 @@ import elfpy.utils.time as time_utils
 # pylint: disable=too-many-locals
 
 
-class TradeResult(NamedTuple):
-    """
-    Result from a calc_out_given_in or calc_in_given_out.  The values are the amount of asset required
-    for the trade, either in or out.  Fee is the amount of fee collected, if any.
-    """
-
-    without_fee_or_slippage: float
-    with_fee: float
-    without_fee: float
-    fee: float
-
-
 class PricingModel(ABC):
     """
     Contains functions for calculating AMM variables
@@ -44,21 +30,16 @@ class PricingModel(ABC):
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
 
-    # TODO: Change argument defaults to be None & set inside of def to avoid accidental overwrite
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
     @abstractmethod
     def calc_in_given_out(
         self,
-        out: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_in: TokenType,
+        out: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -66,18 +47,15 @@ class PricingModel(ABC):
     @abstractmethod
     def calc_out_given_in(
         self,
-        in_: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_out: TokenType,
+        in_: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
+    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_out_given_tokens_in(
         self,
@@ -89,13 +67,14 @@ class PricingModel(ABC):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """
         Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
 
+    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_in_given_tokens_out(
         self,
@@ -107,13 +86,14 @@ class PricingModel(ABC):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """
         Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
 
+    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_tokens_out_given_lp_in(
         self,
@@ -125,8 +105,8 @@ class PricingModel(ABC):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -138,11 +118,8 @@ class PricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        share_reserves: float,
-        bond_reserves: float,
-        init_share_price: float,
-        share_price: float,
-        time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -156,15 +133,9 @@ class PricingModel(ABC):
 
         Arguments
         ---------
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds in the pool.
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
-        time_remaining : float
+        market_state: MarketState
+            The reserves and share prices of the pool.
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns
@@ -172,36 +143,31 @@ class PricingModel(ABC):
         float
             The spot price of principal tokens.
         """
-        assert share_reserves > 0, (
-            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {share_reserves}!",
+        assert market_state.share_reserves > 0, (
+            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-        total_reserves = share_price * share_reserves + bond_reserves
-        bond_reserves_ = bond_reserves + total_reserves
-        spot_price = 1 / (((bond_reserves_) / (init_share_price * share_reserves)) ** time_remaining)
+        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
+        bond_reserves_ = market_state.bond_reserves + total_reserves
+        spot_price = 1 / (
+            ((bond_reserves_) / (market_state.init_share_price * market_state.share_reserves))
+            ** time_remaining.stretched_time
+        )
         return spot_price
 
     def calc_apr_from_reserves(
         self,
-        share_reserves: float,
-        bond_reserves: float,
-        time_remaining: float,
-        time_stretch: float,
-        init_share_price: float = 1,
-        share_price: float = 1,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> float:
         # TODO: Update this comment so that it matches the style of the other comments.
         """
         Returns the apr given reserve amounts
         """
         spot_price = self.calc_spot_price_from_reserves(
-            share_reserves,
-            bond_reserves,
-            init_share_price,
-            share_price,
+            market_state,
             time_remaining,
         )
-        days_remaining = time_utils.time_to_days_remaining(time_remaining, time_stretch)
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_utils.norm_days(days_remaining))
+        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining.normalized_days_remaining)
         return apr
 
     def calc_time_stretch(self, apr):
@@ -227,8 +193,8 @@ class ElementPricingModel(PricingModel):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         raise NotImplementedError
 
@@ -242,8 +208,8 @@ class ElementPricingModel(PricingModel):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         raise NotImplementedError
 
@@ -257,8 +223,8 @@ class ElementPricingModel(PricingModel):
         share_price: float,
         lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
+        stretched_time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         raise NotImplementedError
 
@@ -267,14 +233,10 @@ class ElementPricingModel(PricingModel):
 
     def calc_in_given_out(
         self,
-        out: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_in: TokenType,
+        out: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price=1.0,
-        share_price=1.0,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -298,30 +260,17 @@ class ElementPricingModel(PricingModel):
 
         Arguments
         ---------
-        out : float
-            The amount of tokens that the user wants to receive. When the user
-            wants to pay in bonds, this value should be an amount of base tokens
-            rather than an amount of shares.
-        share_reserves : float
-            The reserves of shares in the pool. NOTE: Element V1 didn't have a
-            concept of shares and instead used base.
-        bond_reserves : float
-            The reserves of bonds in the pool.
-        token_in : str
-            The token that the user pays. The only valid values are "base" and
-            "pt".
+        out : Quantity
+            The quantity of tokens that the user wants to receive (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.
-        time_remaining : float
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized. NOTE: For this
-            pricing model, the initial share price must always be one.
-        share_price : float
-            The current share price. NOTE: For this pricing model, the share
-            price must always be one.
 
         Returns
         -------
@@ -339,36 +288,66 @@ class ElementPricingModel(PricingModel):
             base.
         """
 
-        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert out.amount > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price == init_share_price == 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price == market_state.init_share_price == 1, (
             "pricing_models.calc_in_given_out: ERROR: expected share_price == init_share_price == 1,"
-            f"not share_price={share_price} and init_share_price={init_share_price}!"
+            f"not share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
         )
 
-        time_elapsed = 1 - time_remaining
-        bond_reserves_ = 2 * bond_reserves + share_reserves
-        spot_price = self.calc_spot_price_from_reserves(share_reserves, bond_reserves, 1, 1, time_remaining)
+        time_elapsed = 1 - time_remaining.stretched_time
+        bond_reserves_ = 2 * market_state.bond_reserves + market_state.share_reserves
+        spot_price = self.calc_spot_price_from_reserves(market_state, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        k = price_utils.calc_k_const(market_state, time_elapsed)
         # Solve for the amount that must be paid to receive the specified amount
         # of the output.
-        if token_in == "base":
-            d_bonds = out
+        if out.unit == "base":
+            d_base = out.amount
+            # The amount the user pays without fees or slippage is the amount of
+            # bonds the user receives times the inverse of the spot price
+            # of base in terms of bonds. If we let p be the conventional spot
+            # price, then we can write this as:
+            #
+            # without_fee_or_slippage = (1 / p) * d_x
+            without_fee_or_slippage = (1 / spot_price) * d_base
+            # We solve the YieldSpace invariant for the bonds required to
+            # purchase the requested amount of base. We set up the invariant
+            # where the user pays d_y bonds and receives d_x base:
+            #
+            # (x - d_x)**(1 - t) + (2y + x + d_y')**(1 - t) = k
+            #
+            # Solving for d_y' gives us the amount of bonds the user must pay
+            # without including fees:
+            #
+            # d_y' = (k - (x - d_x)**(1 - t))**(1 / (1 - t)) - (2y + x)
+            #
+            # without_fee = d_y'
+            without_fee = (k - (market_state.share_reserves - d_base) ** time_elapsed) ** (
+                1 / time_elapsed
+            ) - bond_reserves_
+            # The fees are calculated as the difference between the bonds
+            # paid without fees and the base received times the fee percentage.
+            # This can also be expressed as:
+            #
+            # fee = phi * (d_y' - d_x)
+            fee = fee_percent * (without_fee - d_base)
+        elif out.unit == "pt":
+            d_bonds = out.amount
             # The amount the user pays without fees or slippage is the amount of
             # bonds the user receives times the spot price of base in terms
             # of bonds. If we let p be the conventional spot price, then we can
@@ -388,44 +367,18 @@ class ElementPricingModel(PricingModel):
             # d_x' = (k - (2y + x - d_y)**(1 - t))**(1 / (1 - t)) - x
             #
             # without_fee = d_x'
-            without_fee = (k - (bond_reserves_ - d_bonds) ** time_elapsed) ** (1 / time_elapsed) - share_reserves
+            without_fee = (k - (bond_reserves_ - d_bonds) ** time_elapsed) ** (
+                1 / time_elapsed
+            ) - market_state.share_reserves
             # The fees are calculated as the difference between the bonds
             # received and the base paid without fees times the fee percentage.
             # This can also be expressed as:
             #
             # fee = phi * (d_y - d_x')
             fee = fee_percent * (d_bonds - without_fee)
-        elif token_in == "pt":
-            d_base = out
-            # The amount the user pays without fees or slippage is the amount of
-            # bonds the user receives times the inverse of the spot price
-            # of base in terms of bonds. If we let p be the conventional spot
-            # price, then we can write this as:
-            #
-            # without_fee_or_slippage = (1 / p) * d_x
-            without_fee_or_slippage = (1 / spot_price) * out
-            # We solve the YieldSpace invariant for the bonds required to
-            # purchase the requested amount of base. We set up the invariant
-            # where the user pays d_y bonds and receives d_x base:
-            #
-            # (x - d_x)**(1 - t) + (2y + x + d_y')**(1 - t) = k
-            #
-            # Solving for d_y' gives us the amount of bonds the user must pay
-            # without including fees:
-            #
-            # d_y' = (k - (x - d_x)**(1 - t))**(1 / (1 - t)) - (2y + x)
-            #
-            # without_fee = d_y'
-            without_fee = (k - (share_reserves - d_base) ** time_elapsed) ** (1 / time_elapsed) - bond_reserves_
-            # The fees are calculated as the difference between the bonds
-            # paid without fees and the base received times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = phi * (d_y' - d_x)
-            fee = fee_percent * (without_fee - d_base)
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {token_in}!'
+                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {out.unit}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -452,20 +405,18 @@ class ElementPricingModel(PricingModel):
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %d\n\tfee_percent = %g"
                 "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
-                "\n\ttoken_in = %s\n\tspot_price = %g"
-                "\n\tk = %g\n\twithout_fee_or_slippage = %g"
+                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
                 "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
             ),
             out,
-            share_reserves,
-            bond_reserves,
-            share_reserves + bond_reserves,
-            init_share_price,
-            share_price,
+            market_state.share_reserves,
+            market_state.bond_reserves,
+            market_state.share_reserves + market_state.bond_reserves,
+            market_state.init_share_price,
+            market_state.share_price,
             fee_percent,
             time_remaining,
             time_elapsed,
-            token_in,
             spot_price,
             k,
             without_fee_or_slippage,
@@ -477,14 +428,10 @@ class ElementPricingModel(PricingModel):
 
     def calc_out_given_in(
         self,
-        in_: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_out: TokenType,
+        in_: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float = 1.0,
-        share_price: float = 1.0,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -506,29 +453,17 @@ class ElementPricingModel(PricingModel):
             out = out' + f
 
         Arguments
-        ---------
-        in_ : float
-            The amount of tokens that the user pays. When users receive bonds,
-            this value reflects the base paid.
-        share_reserves : float
-            The reserves of base in the pool.
-        bond_reserves : float
-            The reserves of bonds (PT) in the pool.
-        token_out : str
-            The token that the user receives. The only valid values are "base"
-            and "pt".
+        in_ : Quantity
+            The quantity of tokens that the user wants to pay (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
-            The percentage of the difference between the amount paid and the
-            amount received without slippage that will be debited from the
-            output as a fee.
-        time_remaining : float
+            The percentage of the difference between the amount paid without
+            slippage and the amount received that will be added to the input
+            as a fee.
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized. NOTE: For this
-            pricing model, the initial share price must always be one.
-        share_price : float
-            The current share price. NOTE: For this pricing model, the share
-            price must always be one.
 
         Returns
         -------
@@ -545,63 +480,35 @@ class ElementPricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
-        assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
+        assert in_.amount > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price == init_share_price == 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price == market_state.init_share_price == 1, (
             "pricing_models.calc_out_given_in: ERROR: expected share_price == init_share_price == 1,"
-            f"not share_price={share_price} and init_share_price={init_share_price}!"
+            f"not share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
         )
 
-        time_elapsed = 1 - time_remaining
-        bond_reserves_ = 2 * bond_reserves + share_reserves
-        spot_price = self.calc_spot_price_from_reserves(share_reserves, bond_reserves, 1, 1, time_remaining)
+        time_elapsed = 1 - time_remaining.stretched_time
+        bond_reserves_ = 2 * market_state.bond_reserves + market_state.share_reserves
+        spot_price = self.calc_spot_price_from_reserves(market_state, time_remaining)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
         # k = x**(1 - t) + (2y + x)**(1 - t)
-        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
+        k = price_utils.calc_k_const(market_state, time_elapsed)
         # Solve for the amount that received if the specified amount is paid.
-        if token_out == "base":
-            d_bonds = in_
-            # The amount the user pays without fees or slippage is the amount of
-            # bonds the user pays times the spot price of base in terms of bonds.
-            # If we let p be the conventional spot price, then we can write this
-            # as:
-            #
-            # without_fee_or_slippage = p * d_y
-            without_fee_or_slippage = spot_price * d_bonds
-            # We solve the YieldSpace invariant for the base received from
-            # paying the specified amount of bonds. We set up the invariant
-            # where the user pays d_y bonds and receives d_x' base:
-            #
-            # (x - d_x')**(1 - t) + (2y + x + d_y)**(1 - t) = k
-            #
-            # Solving for d_x' gives us the amount of base the user must pay
-            # without including fees:
-            #
-            # d_x' = x - (k - (2y + x + d_y)**(1 - t))**(1 / (1 - t))
-            #
-            # without_fee = d_x'
-            without_fee = share_reserves - (k - (bond_reserves_ + d_bonds) ** time_elapsed) ** (1 / time_elapsed)
-            # The fees are calculated as the difference between the bonds paid
-            # and the base received without fees times the fee percentage. This
-            # can also be expressed as:
-            #
-            # fee = phi * (d_y - d_x')
-            fee = fee_percent * (d_bonds - without_fee)
-        elif token_out == "pt":
-            d_base = in_
+        if in_.unit == "base":
+            d_base = in_.amount
             # The amount the user pays without fees or slippage is the amount of
             # base the user pays times the inverse of the spot price of base in
             # terms of bonds. If we let p be the conventional spot price, then
@@ -621,16 +528,48 @@ class ElementPricingModel(PricingModel):
             # d_y' = 2y + x - (k - (x + d_x)**(1 - t))**(1 / (1 - t))
             #
             # without_fee = d_x'
-            without_fee = bond_reserves_ - (k - (share_reserves + d_base) ** time_elapsed) ** (1 / time_elapsed)
+            without_fee = bond_reserves_ - (k - (market_state.share_reserves + d_base) ** time_elapsed) ** (
+                1 / time_elapsed
+            )
             # The fees are calculated as the difference between the bonds paid
             # and the base received without fees times the fee percentage. This
             # can also be expressed as:
             #
             # fee = phi * (d_y' - d_x)
             fee = fee_percent * (without_fee - d_base)
+        elif in_.unit == "pt":
+            d_bonds = in_.amount
+            # The amount the user pays without fees or slippage is the amount of
+            # bonds the user pays times the spot price of base in terms of bonds.
+            # If we let p be the conventional spot price, then we can write this
+            # as:
+            #
+            # without_fee_or_slippage = p * d_y
+            without_fee_or_slippage = spot_price * d_bonds
+            # We solve the YieldSpace invariant for the base received from
+            # paying the specified amount of bonds. We set up the invariant
+            # where the user pays d_y bonds and receives d_x' base:
+            #
+            # (x - d_x')**(1 - t) + (2y + x + d_y)**(1 - t) = k
+            #
+            # Solving for d_x' gives us the amount of base the user must pay
+            # without including fees:
+            #
+            # d_x' = x - (k - (2y + x + d_y)**(1 - t))**(1 / (1 - t))
+            #
+            # without_fee = d_x'
+            without_fee = market_state.share_reserves - (k - (bond_reserves_ + d_bonds) ** time_elapsed) ** (
+                1 / time_elapsed
+            )
+            # The fees are calculated as the difference between the bonds paid
+            # and the base received without fees times the fee percentage. This
+            # can also be expressed as:
+            #
+            # fee = phi * (d_y - d_x')
+            fee = fee_percent * (d_bonds - without_fee)
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
             )
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
@@ -657,20 +596,18 @@ class ElementPricingModel(PricingModel):
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %g\n\tfee_percent = %g"
                 "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
-                "\n\ttoken_out = %s\n\tspot_price = %g"
-                "\n\tk = %g\n\twithout_fee_or_slippage = %g"
+                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
                 "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
             ),
             in_,
-            share_reserves,
-            bond_reserves,
-            share_reserves + bond_reserves,
-            init_share_price,
-            share_price,
+            market_state.share_reserves,
+            market_state.bond_reserves,
+            market_state.share_reserves + market_state.bond_reserves,
+            market_state.init_share_price,
+            market_state.share_price,
             fee_percent,
             time_remaining,
             time_elapsed,
-            token_out,
             spot_price,
             k,
             without_fee_or_slippage,
@@ -929,14 +866,10 @@ class YieldSpacePricingModel(PricingModel):
 
     def calc_in_given_out(
         self,
-        out: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_in: TokenType,
+        out: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -961,27 +894,17 @@ class YieldSpacePricingModel(PricingModel):
 
         Arguments
         ---------
-        out : float
-            The amount of tokens that the user wants to receive. When the user
-            wants to pay in bonds, this value should be an amount of base tokens
-            rather than an amount of shares.
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds in the pool.
-        token_in : str
-            The token that the user pays. The only valid values are "base" and
-            "pt".
+        out : Quantity
+            The quantity of tokens that the user wants to receive (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.
-        time_remaining : float
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
 
         Returns
         -------
@@ -998,43 +921,89 @@ class YieldSpacePricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
-        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert out.amount > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             f"pricing_models.calc_in_given_out: ERROR:"
-            f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
-            f" and init_share_price={init_share_price}!"
+            f" expected share_price >= init_share_price >= 1, not share_price={market_state.share_price}"
+            f" and init_share_price={market_state.init_share_price}!"
         )
-        time_elapsed = 1 - time_remaining
-        scale = share_price / init_share_price
-        total_reserves = share_price * share_reserves + bond_reserves
+        time_elapsed = 1 - time_remaining.stretched_time
+        scale = market_state.share_price / market_state.init_share_price
+        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
         spot_price = self.calc_spot_price_from_reserves(
-            share_reserves=share_reserves,
-            bond_reserves=bond_reserves,
-            init_share_price=init_share_price,
-            share_price=share_price,
-            time_remaining=time_remaining,
+            market_state,
+            time_remaining,
         )
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
-        if token_in == "base":
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
-            d_bonds = out
+        k = price_utils.calc_k_const(market_state, time_elapsed)
+        if out.unit == "base":
+            in_reserves = market_state.bond_reserves + total_reserves
+            out_reserves = market_state.share_reserves
+            d_shares = out.amount / market_state.share_price
+            # The amount the user pays without fees or slippage is simply the
+            # amount of base the user would receive times the inverse of the
+            # spot price of base in terms of bonds. The amount of base the user
+            # receives is given by c * d_z where d_z is the number of shares the
+            # pool will need to unwrap to give the user their base. If we let p
+            # be the conventional spot price, then we can write this as:
+            #
+            # without_fee_or_slippage = (1 / p) * c * d_z
+            without_fee_or_slippage = (1 / spot_price) * market_state.share_price * d_shares
+            # We solve the YieldSpace invariant for the bonds paid to receive
+            # the requested amount of base. We set up the invariant where the
+            # user pays d_y' bonds and receives d_z shares:
+            #
+            # (c / μ) * (μ * (z - d_z))**(1 - t) + (2y + cz + d_y')**(1 - t) = k
+            #
+            # Solving for d_y' gives us the amount of bonds the user must pay
+            # without including fees:
+            #
+            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
+            #
+            # without_fee = d_y'
+            without_fee = (
+                pow(
+                    k - scale * pow((market_state.init_share_price * (out_reserves - d_shares)), time_elapsed),
+                    1 / time_elapsed,
+                )
+                - in_reserves
+            )
+            # The fees are calculated as the difference between the bonds paid
+            # without slippage and the base received times the fee percentage.
+            # This can also be expressed as:
+            #
+            # fee = ((1 / p) - 1) * φ * c * d_z
+            logging.debug(
+                (
+                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
+                    "((1 / %g) - 1) * %g * %g * %g = %g"
+                ),
+                spot_price,
+                fee_percent,
+                market_state.share_price,
+                d_shares,
+                ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares,
+            )
+            fee = ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares
+        elif out.unit == "pt":
+            in_reserves = market_state.share_reserves
+            out_reserves = market_state.bond_reserves + total_reserves
+            d_bonds = out.amount
             # The amount the user pays without fees or slippage is simply
             # the amount of bonds the user would receive times the spot price of
             # base in terms of bonds. If we let p be the conventional spot price,
@@ -1058,71 +1027,30 @@ class YieldSpacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             without_fee = (
-                (1 / init_share_price)
+                (1 / market_state.init_share_price)
                 * pow(
                     (k - pow(out_reserves - d_bonds, time_elapsed)) / scale,
                     1 / time_elapsed,
                 )
                 - in_reserves
-            ) * share_price
+            ) * market_state.share_price
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
             #
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
-        elif token_in == "pt":
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
-            d_shares = out / share_price
-            # The amount the user pays without fees or slippage is simply the
-            # amount of base the user would receive times the inverse of the
-            # spot price of base in terms of bonds. The amount of base the user
-            # receives is given by c * d_z where d_z is the number of shares the
-            # pool will need to unwrap to give the user their base. If we let p
-            # be the conventional spot price, then we can write this as:
-            #
-            # without_fee_or_slippage = (1 / p) * c * d_z
-            without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
-            # We solve the YieldSpace invariant for the bonds paid to receive
-            # the requested amount of base. We set up the invariant where the
-            # user pays d_y' bonds and receives d_z shares:
-            #
-            # (c / μ) * (μ * (z - d_z))**(1 - t) + (2y + cz + d_y')**(1 - t) = k
-            #
-            # Solving for d_y' gives us the amount of bonds the user must pay
-            # without including fees:
-            #
-            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
-            #
-            # without_fee = d_y'
-            without_fee = (
-                pow(
-                    k - scale * pow((init_share_price * (out_reserves - d_shares)), time_elapsed),
-                    1 / time_elapsed,
-                )
-                - in_reserves
-            )
-            # The fees are calculated as the difference between the bonds paid
-            # without slippage and the base received times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = ((1 / p) - 1) * φ * c * d_z
             logging.debug(
-                (
-                    "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
-                    "((1 / %g) - 1) * %g * %g * %g = %g"
-                ),
+                ("fee = (1 - spot_price) * fee_percent * d_bonds = " "(1 - %g) * %g * %g = %g"),
                 spot_price,
                 fee_percent,
-                share_price,
-                d_shares,
-                ((1 / spot_price) - 1) * fee_percent * share_price * d_shares,
+                market_state.share_price,
+                d_bonds,
+                (1 - spot_price) * fee_percent * d_bonds,
             )
-            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                "pricing_models.calc_in_given_out: ERROR: " f'expected token_in to be "base" or "pt", not {token_in}!'
+                "pricing_models.calc_in_given_out: ERROR: " f'expected token_in to be "base" or "pt", not {out.unit}!'
             )
         # To get the amount paid with fees, add the fee to the calculation that
         # excluded fees. Adding the fees results in more tokens paid, which
@@ -1130,11 +1058,11 @@ class YieldSpacePricingModel(PricingModel):
         with_fee = without_fee + fee
         assert fee >= 0, (
             "pricing_models.calc_in_given_out: ERROR: Fee should not be negative!"
-            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\tout={out}\n\tshare_reserves={market_state.share_reserves}\n\tbond_reserves={market_state.bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={market_state.init_share_price}"
+            f"\n\tshare_price={market_state.share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
             f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
@@ -1150,31 +1078,31 @@ class YieldSpacePricingModel(PricingModel):
         # fee is a positive float due to the constraints on the inputs.
         assert fee >= 0, (
             f"pricing_models.calc_in_given_out: ERROR: Fee should not be negative!"
-            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\tout={out}\n\tshare_reserves={market_state.share_reserves}\n\tbond_reserves={market_state.bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={market_state.init_share_price}"
+            f"\n\tshare_price={market_state.share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
             f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
         assert isinstance(without_fee, float), (
             f"pricing_models.calc_in_given_out: ERROR: without_fee should be a float, not {type(without_fee)}!"
-            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\tout={out}\n\tshare_reserves={market_state.share_reserves}\n\tbond_reserves={market_state.bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={market_state.init_share_price}"
+            f"\n\tshare_price={market_state.share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
             f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
         assert without_fee >= 0, (
             f"pricing_models.calc_in_given_out: ERROR: without_fee should be non-negative, not {without_fee}!"
-            f"\n\tout={out}\n\tshare_reserves={share_reserves}\n\tbond_reserves={bond_reserves}"
-            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={init_share_price}"
-            f"\n\tshare_price={share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
+            f"\n\tout={out}\n\tshare_reserves={market_state.share_reserves}\n\tbond_reserves={market_state.bond_reserves}"
+            f"\n\ttotal_reserves={total_reserves}\n\tinit_share_price={market_state.init_share_price}"
+            f"\n\tshare_price={market_state.share_price}\n\tscale={scale}\n\tfee_percent={fee_percent}"
             f"\n\ttime_remaining={time_remaining}\n\ttime_elapsed={time_elapsed}"
-            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}\n\ttoken_in={token_in}"
+            f"\n\tin_reserves={in_reserves}\n\tout_reserves={out_reserves}"
             f"\n\tspot_price={spot_price}\n\tk={k}\n\twithout_fee_or_slippage={without_fee_or_slippage}"
             f"\n\twithout_fee={without_fee}\n\tfee={fee}"
         )
@@ -1186,14 +1114,10 @@ class YieldSpacePricingModel(PricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_out: TokenType,
+        in_: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -1218,26 +1142,17 @@ class YieldSpacePricingModel(PricingModel):
 
         Arguments
         ---------
-        in_ : float
-            The amount of tokens that the user pays. When users receive bonds,
-            this value reflects the base paid.
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds (PT) in the pool.
-        token_out : str
-            The token that the user receives. The only valid values are "base"
-            and "pt".
+        in_ : Quantity
+            The quantity of tokens that the user wants to pay (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
-            The percentage of the difference between the amount paid and the
-            amount received without slippage that will be debited from the
-            output as a fee.
-        time_remaining : float
+            The percentage of the difference between the amount paid without
+            slippage and the amount received that will be added to the input
+            as a fee.
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
 
         Returns
         -------
@@ -1254,43 +1169,75 @@ class YieldSpacePricingModel(PricingModel):
             The fee the user pays. The units are always in terms of bonds or
             base.
         """
-        assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
+
+        # FIXME: Comment this.
+        assert in_.amount > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
-            f" share_price={share_price} and init_share_price={init_share_price}!"
+            f" share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
         )
 
-        scale = share_price / init_share_price
-        time_elapsed = 1 - time_remaining
-        total_reserves = share_price * share_reserves + bond_reserves
+        # FIXME: Comment this.
+        scale = market_state.share_price / market_state.init_share_price
+        time_elapsed = 1 - time_remaining.stretched_time
+        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
         spot_price = self.calc_spot_price_from_reserves(
-            share_reserves=share_reserves,
-            bond_reserves=bond_reserves,
-            init_share_price=init_share_price,
-            share_price=share_price,
-            time_remaining=time_remaining,
+            market_state,
+            time_remaining,
         )
+
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(share_reserves, bond_reserves, share_price, init_share_price, time_elapsed)
-        if token_out == "base":
-            d_bonds = in_
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
+        k = price_utils.calc_k_const(market_state, time_elapsed)
+        if in_.unit == "base":
+            d_shares = in_.amount / market_state.share_price  # convert from base_asset to z (x=cz)
+            in_reserves = market_state.share_reserves
+            out_reserves = market_state.bond_reserves + total_reserves
+            # The amount the user would receive without fees or slippage is
+            # the amount of base the user pays times inverse of the spot price
+            # of base in terms of bonds. If we let p be the conventional spot
+            # price, then we can write this as:
+            #
+            # (1 / p) * c * d_z
+            without_fee_or_slippage = (1 / spot_price) * market_state.share_price * d_shares
+            # We solve the YieldSpace invariant for the bonds received from
+            # paying the specified amount of base. We set up the invariant where
+            # the user pays d_z shares and receives d_y' bonds:
+            #
+            # (c / μ) * (μ * (z + d_z))**(1 - t) + (2y + cz - d_y')**(1 - t) = k
+            #
+            # Solving for d_y' gives us the amount of bonds the user receives
+            # without including fees:
+            #
+            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
+            without_fee = out_reserves - pow(
+                k - scale * pow(market_state.init_share_price * (in_reserves + d_shares), time_elapsed),
+                1 / time_elapsed,
+            )
+            # The fees are calculated as the difference between the bonds
+            # received without slippage and the base paid times the fee
+            # percentage. This can also be expressed as:
+            #
+            # ((1 / p) - 1) * φ * c * d_z
+            fee = ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares
+        elif in_.unit == "pt":
+            d_bonds = in_.amount
+            in_reserves = market_state.bond_reserves + total_reserves
+            out_reserves = market_state.share_reserves
             # The amount the user would receive without fees or slippage is the
             # amount of bonds the user pays times the spot price of base in
             # terms of bonds. If we let p be the conventional spot price, then
@@ -1314,9 +1261,10 @@ class YieldSpacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             without_fee = (
-                share_reserves
-                - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
-            ) * share_price
+                market_state.share_reserves
+                - (1 / market_state.init_share_price)
+                * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
+            ) * market_state.share_price
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
@@ -1324,40 +1272,11 @@ class YieldSpacePricingModel(PricingModel):
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
             with_fee = without_fee - fee
-        elif token_out == "pt":
-            d_shares = in_ / share_price  # convert from base_asset to z (x=cz)
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
-            # The amount the user would receive without fees or slippage is
-            # the amount of base the user pays times inverse of the spot price
-            # of base in terms of bonds. If we let p be the conventional spot
-            # price, then we can write this as:
-            #
-            # (1 / p) * c * d_z
-            without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
-            # We solve the YieldSpace invariant for the bonds received from
-            # paying the specified amount of base. We set up the invariant where
-            # the user pays d_z shares and receives d_y' bonds:
-            #
-            # (c / μ) * (μ * (z + d_z))**(1 - t) + (2y + cz - d_y')**(1 - t) = k
-            #
-            # Solving for d_y' gives us the amount of bonds the user receives
-            # without including fees:
-            #
-            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
-            without_fee = out_reserves - pow(
-                k - scale * pow(init_share_price * (in_reserves + d_shares), time_elapsed), 1 / time_elapsed
-            )
-            # The fees are calculated as the difference between the bonds
-            # received without slippage and the base paid times the fee
-            # percentage. This can also be expressed as:
-            #
-            # ((1 / p) - 1) * φ * c * d_z
-            fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {token_out}!'
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
             )
+
         # To get the amount paid with fees, subtract the fee from the
         # calculation that excluded fees. Subtracting the fees results in less
         # tokens received, which indicates that the fees are working correctly.
@@ -1375,11 +1294,11 @@ class YieldSpacePricingModel(PricingModel):
         assert_bool = fee >= 0 and isinstance(with_fee, float) and with_fee >= 0
         assert assert_bool, (
             f"pricing_models.calc_out_given_in: ERROR: Fee & with_fee should be non-negative floats!"
-            f"\n\t{in_=}\n\t{share_reserves=}\n\t{bond_reserves=}"
-            f"\n\t{total_reserves=}\n\t{init_share_price=}"
-            f"\n\t{share_price=}\n\t{scale=}\n\t{fee_percent=}"
+            f"\n\t{in_=}\n\t{market_state.share_reserves=}\n\t{market_state.bond_reserves=}"
+            f"\n\t{total_reserves=}\n\t{market_state.init_share_price=}"
+            f"\n\t{market_state.share_price=}\n\t{scale=}\n\t{fee_percent=}"
             f"\n\t{time_remaining=}\n\t{time_elapsed=}"
-            f"\n\t{in_reserves=}\n\t{out_reserves=}\n\t{token_out=}"
+            f"\n\t{in_reserves=}\n\t{out_reserves=}"
             f"\n\t{spot_price=}\n\t{k=}\n\t{without_fee_or_slippage=}"
             f"\n\t{without_fee=}\n\t{type(without_fee)=}\n\t{fee=}\n\t{type(fee)=}"
             f"\n\t{with_fee=}\n\t{type(with_fee)=}"
@@ -1404,14 +1323,10 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     # FIXME: Clean this function up and improve the comments.
     def calc_in_given_out(
         self,
-        out: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_in: TokenType,
+        out: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         # FIXME: Update the math in the comments.
         r"""
@@ -1437,27 +1352,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         Arguments
         ---------
-        out : float
-            The amount of tokens that the user wants to receive. When the user
-            wants to pay in bonds, this value should be an amount of base tokens
-            rather than an amount of shares.
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds in the pool.
-        token_in : str
-            The token that the user pays. The only valid values are "base" and
-            "pt".
+        out : Quantity
+            The quantity of tokens that the user wants to receive (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.
-        time_remaining : float
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
 
         Returns
         -------
@@ -1476,72 +1381,61 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         """
 
         # FIXME: Avoid duplicating these assertions in the subclassed pricing model.
-        assert out > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out}!"
+        assert out.amount > 0, f"pricing_models.calc_in_given_out: ERROR: expected out > 0, not {out.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             f"pricing_models.calc_in_given_out: ERROR:"
-            f" expected share_price >= init_share_price >= 1, not share_price={share_price}"
-            f" and init_share_price={init_share_price}!"
+            f" expected share_price >= init_share_price >= 1, not share_price={market_state.share_price}"
+            f" and init_share_price={market_state.init_share_price}!"
         )
 
-        if token_in == "base":
-            share_reserves += out * (1 - time_remaining) / share_price
-            bond_reserves -= out * (1 - time_remaining)
-        elif token_in == "pt":
-            share_reserves -= out * (1 - time_remaining) / share_price
-            bond_reserves += out * (1 - time_remaining)
+        if out.unit == "base":
+            market_state.share_reserves -= out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
+            market_state.bond_reserves += out.amount * (1 - time_remaining.stretched_time)
+        elif out.unit == "pt":
+            market_state.share_reserves += out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
+            market_state.bond_reserves -= out.amount * (1 - time_remaining.stretched_time)
 
-        d_out = out * time_remaining
-        curve_result = super().calc_in_given_out(
-            out=d_out,
-            token_in=token_in,
-            share_reserves=share_reserves,
-            bond_reserves=bond_reserves,
-            share_price=share_price,
-            init_share_price=init_share_price,
+        d_out = out.amount * time_remaining.stretched_time
+        curve = super().calc_in_given_out(
+            out=Quantity(amount=d_out, unit=out.unit),
+            market_state=market_state,
             fee_percent=fee_percent,
-            # FIXME: This needs to be 1 / t_stretch
-            time_remaining=time_remaining,
+            time_remaining=StretchedTime(days_remaining=365, time_stretch=time_remaining.time_stretch),
         )
 
         # FIXME: We need to return trade result, but we also need to return
         # information about the amount of input that should be applied as part
         # of the trade.
         # return (np.where(in_ < 0, 0, in_), np.where(d_out < 0, 0, d_out))
-        flat_in = out * (1 - time_remaining)
+        flat = out.amount * (1 - time_remaining.stretched_time)
         return TradeResult(
-            without_fee_or_slippage=curve_result.without_fee_or_slippage + flat_in,
-            without_fee=curve_result.without_fee + flat_in,
-            fee=curve_result.fee,
-            with_fee=curve_result.with_fee + flat_in,
+            without_fee_or_slippage=curve.without_fee_or_slippage + flat,
+            without_fee=curve.without_fee + flat,
+            fee=curve.fee,
+            with_fee=curve.with_fee + flat,
         )
 
-    # FIXME: Update this.
-    #
     # TODO: The high slippage tests in tests/test_pricing_model.py should
     # arguably have much higher slippage. This is something we should
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: float,
-        share_reserves: float,
-        bond_reserves: float,
-        token_out: TokenType,
+        in_: Quantity,
+        market_state: MarketState,
         fee_percent: float,
-        time_remaining: float,
-        init_share_price: float,
-        share_price: float,
+        time_remaining: StretchedTime,
     ) -> TradeResult:
         # FIXME: This math needs to be updated.
         r"""
@@ -1567,26 +1461,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         Arguments
         ---------
-        in_ : float
-            The amount of tokens that the user pays. When users receive bonds,
-            this value reflects the base paid.
-        share_reserves : float
-            The reserves of shares in the pool.
-        bond_reserves : float
-            The reserves of bonds (PT) in the pool.
-        token_out : str
-            The token that the user receives. The only valid values are "base"
-            and "pt".
+        in_ : Quantity
+            The quantity of tokens that the user wants to pay (the amount 
+            and the unit of the tokens).
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
         fee_percent : float
-            The percentage of the difference between the amount paid and the
-            amount received without slippage that will be debited from the
-            output as a fee.
-        time_remaining : float
+            The percentage of the difference between the amount paid without
+            slippage and the amount received that will be added to the input
+            as a fee.
+        time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
-        init_share_price : float
-            The share price when the pool was initialized.
-        share_price : float
-            The current share price.
 
         Returns
         -------
@@ -1604,46 +1489,42 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             base.
         """
 
+        # FIXME: These assertions could be wrapped up in the type.
         # FIXME: Avoid duplicating these assertions in the subclassed pricing model.
-        assert in_ > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_}!"
+        assert in_.amount > 0, f"pricing_models.calc_out_given_in: ERROR: expected in_ > 0, not {in_.amount}!"
         assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
+            market_state.share_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
+            market_state.bond_reserves >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         assert (
             1 >= fee_percent >= 0
         ), f"pricing_models.calc_out_given_in: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert share_price >= init_share_price >= 1, (
+            1 > time_remaining.stretched_time >= 0
+        ), f"pricing_models.calc_out_given_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             "pricing_models.calc_out_given_in: ERROR: expected share_price >= init_share_price >= 1, not"
-            f" share_price={share_price} and init_share_price={init_share_price}!"
+            f" share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
         )
 
-        if token_out == "base":
-            share_reserves -= (in_ * (1 - time_remaining)) / share_price
-            bond_reserves += in_ * (1 - time_remaining)
-        elif token_out == "pt":
-            share_reserves += (in_ * (1 - time_remaining)) / share_price
-            bond_reserves -= in_ * (1 - time_remaining)
+        if in_.unit == "base":
+            market_state.share_reserves += (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
+            market_state.bond_reserves -= in_.amount * (1 - time_remaining.stretched_time)
+        elif in_.unit == "pt":
+            market_state.share_reserves -= (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
+            market_state.bond_reserves += in_.amount * (1 - time_remaining.stretched_time)
 
-        d_in = in_ * time_remaining
+        d_in = in_.amount * time_remaining.stretched_time
         curve = super().calc_out_given_in(
-            in_=d_in,
-            token_out=token_out,
-            share_reserves=share_reserves,
-            bond_reserves=bond_reserves,
-            share_price=share_price,
-            init_share_price=init_share_price,
+            in_=Quantity(amount=d_in, unit=in_.unit),
+            market_state=market_state,
             fee_percent=fee_percent,
-            # FIXME: This should be 1 / t_stretch.
-            time_remaining=time_remaining,
+            time_remaining=StretchedTime(days_remaining=365, time_stretch=time_remaining.time_stretch),
         )
 
-        flat = in_ * (1 - time_remaining)
+        flat = in_.amount * (1 - time_remaining.stretched_time)
         # FIXME: We need to return trade result, but we also need to return
         # information about the amount of input that should be applied as part
         # of the trade.
