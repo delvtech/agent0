@@ -18,7 +18,7 @@ from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
 class BaseTraderTest(unittest.TestCase):
-    """Simulator test class"""
+    """Simulator base test class"""
 
     @staticmethod
     def setup_and_run_simulator(config_file, override_dict):
@@ -104,6 +104,8 @@ class BaseTraderTest(unittest.TestCase):
 
 
 class TestSimulator(BaseTraderTest):
+    """Test running a simulation using each pricing model type"""
+
     def test_hyperdrive_sim(self):
         """Tests hyperdrive setup"""
         self.run_hyperdrive_test()
