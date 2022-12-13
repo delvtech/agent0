@@ -13,8 +13,8 @@ import os
 import numpy as np
 
 from elfpy.simulators import Simulator
-from elfpy.utils.parse_config import Config, AMMConfig, MarketConfig, SimulatorConfig, load_and_parse_config_file
-import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
+from elfpy.utils.parse_config import load_and_parse_config_file
+from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
 class TestSimulator(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestSimulator(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.init_pool_apy,
+            random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
             random_sim_vars.init_share_price,
@@ -48,7 +48,7 @@ class TestSimulator(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.init_pool_apy,
+                random_sim_vars.target_pool_apy,
                 random_sim_vars.fee_percent,
             )
         }

@@ -50,7 +50,6 @@ class TestParseSimulationConfig(unittest.TestCase):
             shuffle_users=True,
             init_lp=True,
             target_liquidity=10000000,
-            init_pool_apy=0.05,
             fee_percent=0.10,
             init_vault_age=0,
             vault_apy=[0.05],

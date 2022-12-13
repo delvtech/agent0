@@ -1,20 +1,25 @@
+"""Example main.py file for illustrating a simulator workflow"""
+# stdlib
 import sys
 import os
-import logging
-from logging.handlers import RotatingFileHandler
 import argparse
+import logging
+from typing import Any
+from logging.handlers import RotatingFileHandler
 
+# external imports
 import numpy as np
 
-# core repo
+# elfpy core repo
 import elfpy
 
-# core classes
+# elfpy core classes
 from elfpy.policies.basic import BasicPolicy  # agents
-from elfpy.simulators import Simulator  # simulator
-from elfpy.markets import Market  # market
+from elfpy.simulators import Simulator
+from elfpy.markets import Market
+from elfpy.pricing_models import PricingModel
 
-# utils
+# elfpy utils
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
 
@@ -24,12 +29,12 @@ class CustomShorter(BasicPolicy):
     Agent that is trying to optimize on a rising vault APR via shorts
     """
 
-    def __init__(self, wallet_address, budget=10_000):
+    def __init__(self, wallet_address: int, budget: int = 10_000) -> None:
         """call basic policy init then add custom stuff"""
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market, pricing_model):
+    def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
         """
         implement user strategy
         short if you can, only once
@@ -50,7 +55,7 @@ class CustomShorter(BasicPolicy):
         return action_list
 
 
-def setup_logging(filename, max_bytes, log_level):
+def setup_logging(filename: str, max_bytes: int, log_level: int) -> None:
     """Setup logging"""
     if filename is None:
         handler = logging.StreamHandler(sys.stdout)
@@ -111,22 +116,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # get config & logging level
     config = config_utils.load_and_parse_config_file(args.config)
-    if args.log_level is None:
-        log_level = config.simulator.logging_level
-    else:
-        log_level = config_utils.text_to_logging_level(args.log_level)
+    if args.log_level is not None:
+        config.simulator.logging_level = config_utils.text_to_logging_level(args.log_level)
     # define root logging parameters
-    setup_logging(filename=args.output, max_bytes=args.max_bytes, log_level=log_level)
+    setup_logging(filename=args.output, max_bytes=args.max_bytes, log_level=config.simulator.logging_level)
     # instantiate random number generator
     rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
     random_sim_vars = sim_utils.get_random_variables(config, rng)
     # instantiate the pricing model
-    pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
+    sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     # instantiate the market
-    market = sim_utils.get_market(
-        pricing_model,
-        random_sim_vars.init_pool_apy,
+    sim_market = sim_utils.get_market(
+        sim_pricing_model,
+        random_sim_vars.target_pool_apy,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,
         random_sim_vars.init_share_price,
@@ -135,18 +138,18 @@ if __name__ == "__main__":
     init_agents = {
         0: sim_utils.get_init_lp_agent(
             config,
-            market,
-            pricing_model,
+            sim_market,
+            sim_pricing_model,
             random_sim_vars.target_liquidity,
-            random_sim_vars.init_pool_apy,
+            random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
         )
     }
     # set up simulator with only the init_lp_agent
     simulator = Simulator(
         config=config,
-        pricing_model=pricing_model,
-        market=market,
+        pricing_model=sim_pricing_model,
+        market=sim_market,
         agents=init_agents,
         rng=rng,
         random_simulation_variables=random_sim_vars,

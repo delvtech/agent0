@@ -17,7 +17,7 @@ class Policy(BasicPolicy):
 
     def __init__(self, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""
-        self.time_to_withdraw = self.rng.uniform(0.5, 1.5)
+        self.time_to_withdraw = 1.0
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
@@ -26,6 +26,7 @@ class Policy(BasicPolicy):
         implement user strategy
         LP if you can, but only do it once
         """
+        # pylint disable=unused-argument
         action_list = []
         has_lp = self.wallet.lp_in_wallet > 0
         can_lp = self.wallet.base_in_wallet >= self.amount_to_lp

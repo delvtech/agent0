@@ -2,6 +2,8 @@
 Testing for logging in the ElfPy package modules
 """
 
+# pylint: disable=duplicate-code
+
 import unittest
 import logging
 import itertools
@@ -13,7 +15,7 @@ import numpy as np
 
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
-import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
+from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
 class LoggingTest(unittest.TestCase):
@@ -35,7 +37,7 @@ class LoggingTest(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.init_pool_apy,
+            random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
             random_sim_vars.init_share_price,
@@ -47,7 +49,7 @@ class LoggingTest(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.init_pool_apy,
+                random_sim_vars.target_pool_apy,
                 random_sim_vars.fee_percent,
             )
         }

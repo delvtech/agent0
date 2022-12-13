@@ -38,7 +38,7 @@ class BaseTradeTest(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.init_pool_apy,
+            random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
             random_sim_vars.init_share_price,
@@ -50,7 +50,7 @@ class BaseTradeTest(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.init_pool_apy,
+                random_sim_vars.target_pool_apy,
                 random_sim_vars.fee_percent,
             )
         }
@@ -66,7 +66,7 @@ class BaseTradeTest(unittest.TestCase):
         # initialize the market using the LP agent
         simulator.collect_and_execute_trades()
         print(random_sim_vars.target_liquidity)
-        print(random_sim_vars.init_pool_apy)
+        print(random_sim_vars.target_pool_apy)
         print(simulator.market.get_rate(pricing_model))
         print(agent_policies)
         # get trading agent list
@@ -106,7 +106,7 @@ class BaseTradeTest(unittest.TestCase):
             "pricing_model_name": "HyperDrive",
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
-            "init_pool_apy": 0.05,
+            "target_pool_apy": 0.05,
             "vault_apy": 0.05,
             "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
         }
@@ -128,7 +128,7 @@ class BaseTradeTest(unittest.TestCase):
         override_dict = {
             "pricing_model_name": "Hyperdrive",
             "target_liquidity": target_liquidity,
-            "init_pool_apy": target_pool_apr,
+            "target_pool_apy": target_pool_apr,
             "vault_apy": 0.05,
             "fee_percent": 0.1,
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing

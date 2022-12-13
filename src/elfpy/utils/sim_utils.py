@@ -1,3 +1,4 @@
+"""Implements helper functions for setting up a simulation"""
 from importlib import import_module
 from dataclasses import dataclass, field
 import logging
@@ -13,16 +14,19 @@ import elfpy.utils.time as time_utils
 
 @dataclass()
 class RandomSimulationVariables:
+    """Random variables to be used during simulation setup & execution"""
+
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
-    init_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
+    target_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
     fee_percent: float = field(metadata="percent to charge for LPer fees")
     vault_apy: list[float] = field(metadata="vault apy values")
     init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
     init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
 
     def __post_init__(self):
+        """init_share_price is a function of other random variables"""
         if self.init_share_price is None:
             self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
 
@@ -32,7 +36,7 @@ def get_init_lp_agent(
     market: Market,
     pricing_model: PricingModel,
     target_liquidity: float,
-    init_pool_apy: float,
+    target_pool_apy: float,
     fee_percent: float,
 ) -> Agent:
     """
@@ -40,18 +44,32 @@ def get_init_lp_agent(
 
     Arguments
     ---------
-    None
+    config : Config
+        config object, as defined in elfpy.utils.config
+    market : Market
+        empty market object
+    pricing_model : PricingModel
+        desired pricing model
+    target_liquidity : float
+        target total liquidity for LPer to provide (bonds+shares)
+        the result will be within 7% of the target
+    target_pool_apy : float
+        target pool apy for the market
+        the result will be within 0.001 of the target
+    fee_percent : float
 
     Returns
     -------
     init_lp_agent : Agent
         Agent class that will perform the lp initialization action
     """
+    # Wrapper functions are expected to have a lot of arguments
+    # pylint: disable=too-many-arguments
     # get the reserve amounts for the target liquidity and pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
         target_liquidity=target_liquidity,
         market_price=config.market.base_asset_price,
-        apr=init_pool_apy,
+        apr=target_pool_apy,
         days_remaining=market.token_duration,
         time_stretch=market.time_stretch_constant,
         init_share_price=market.init_share_price,
@@ -89,7 +107,7 @@ def get_init_lp_agent(
             "budget = %g; base_to_lp = %g; pt_to_short = %g"
         ),
         init_lp_agent.wallet_address,
-        init_pool_apy,
+        target_pool_apy,
         target_liquidity,
         budget,
         base_to_lp,
@@ -100,7 +118,7 @@ def get_init_lp_agent(
 
 def get_market(
     pricing_model: PricingModel,
-    init_pool_apy: float,
+    target_pool_apy: float,
     fee_percent: float,
     token_duration: float,
     init_share_price: float,
@@ -109,12 +127,27 @@ def get_market(
 
     Arguments
     ---------
+    pricing_model : PricingModel
+        instantiated pricing model
+    target_pool_apy : float
+        target apy, used for calculating the time stretch
+        NOTE: the market apy will not have this target value until the init_lp agent trades,
+        or the share & bond reserves are explicitly set
+    fee_percent : float
+        portion of outputs to be collected as fees for LPers, expressed as a decimal
+        TODO: Rename this variable so that it doesn't use "percent"
+    token_duration : float
+        how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
+    init_share_price : float
+        the initial price of the yield bearing vault shares
 
     Returns
     -------
+    Market
+        instantiated market without any liquidity (i.e. no shares or bonds)
 
     """
-    time_stretch_constant = pricing_model.calc_time_stretch(init_pool_apy)
+    time_stretch_constant = pricing_model.calc_time_stretch(target_pool_apy)
     market = Market(
         fee_percent=fee_percent,  # g
         token_duration=token_duration,
@@ -125,15 +158,18 @@ def get_market(
     return market
 
 
-def get_pricing_model(model_name) -> ElementPricingModel | HyperdrivePricingModel:
+def get_pricing_model(model_name: str) -> PricingModel:
     """Get a PricingModel object from the config passed in
 
     Arguments
     ---------
+    model_name : str
+        name of the desired pricing_model; can be either "element" or "hyperdrive"
 
     Returns
     -------
-
+    PricingModel
+        instantiated pricing model matching the input argument
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
     if model_name.lower() == "hyperdrive":
@@ -150,15 +186,21 @@ def get_random_variables(config, rng):
 
     Arguments
     ---------
+    config : Config
+        config object, as defined in elfpy.utils.config
+    rng : Generator
+        random number generator; output of np.random.default_rng(seed)
+
 
     Returns
     -------
-
+    RandomSimulationVariables
+        dataclass that contains variables for initiating and running simulations
     """
 
     random_vars = RandomSimulationVariables(
         target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),
-        init_pool_apy=rng.uniform(
+        target_pool_apy=rng.uniform(
             low=config.amm.min_pool_apy, high=config.amm.max_pool_apy
         ),  # starting fixed apy as a decimal
         fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
@@ -182,10 +224,15 @@ def override_random_variables(
 
     Arguments
     ---------
+    random_variables : RandomSimulationVariables
+        dataclass that contains variables for initiating and running simulations
+    override_dict : dict
+        dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
 
     Returns
     -------
-
+    RandomSimulationVariables
+        same dataclass as the random_variables input, but with fields specified by override_dict changed
     """
     for key, value in override_dict.items():
         if hasattr(
@@ -196,7 +243,20 @@ def override_random_variables(
 
 
 def override_config_variables(config, override_dict):
-    """Replace existing member & config variables with ones defined in override_dict"""
+    """Replace existing member & config variables with ones defined in override_dict
+
+    Arguments
+    ---------
+    config : Config
+        config object, as defined in elfpy.utils.config
+    override_dict : dict
+        dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
+
+    Returns
+    -------
+    Config
+        same dataclass as the config input, but with fields specified by override_dict changed
+    """
     # override the config variables, including random variables that were set
     for key, value in override_dict.items():
         for variable_object in [config.market, config.amm, config.simulator]:

@@ -7,7 +7,6 @@ TODO: rewrite all functions to have typed inputs
 
 from __future__ import annotations
 import datetime
-from importlib import import_module
 import json
 import logging
 
@@ -31,7 +30,7 @@ class Simulator:
     To be used in conjunction with the Market and PricingModel classes
     """
 
-    # TODO: set up member object that owns attributes instead of so many individual instance attributes
+    # TODO: set up member (dataclass?) object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
 
     def __init__(
@@ -43,6 +42,7 @@ class Simulator:
         rng: Generator,
         random_simulation_variables: list | None,
     ):
+        # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
         # User specified variables
         self.config = load_and_parse_config_file(config) if (isinstance(config, str)) else config

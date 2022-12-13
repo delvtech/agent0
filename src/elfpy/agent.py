@@ -5,7 +5,6 @@ Implements abstract classes that control agent behavior
 import logging
 
 import numpy as np
-from numpy.random._generator import Generator
 
 from elfpy.markets import Market, MarketAction, MarketActionType
 from elfpy.pricing_models import PricingModel
@@ -44,7 +43,7 @@ class Agent:
         )
         return agent_action
 
-    def action(self) -> list[MarketAction]:
+    def action(self, market: Market, pricing_model: PricingModel) -> list[MarketAction]:
         """Specify action from the policy"""
         raise NotImplementedError
 
@@ -80,12 +79,6 @@ class Agent:
                 action.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
-        # if len(trade_action) > 0: # there is a trade
-        #    token_in, token_out, trade_amount_usd = trade_action
-        #    assert trade_amount_usd >= 0, (
-        #        f"agent.py: ERROR: Trade amount should not be negative, but is {trade_amount_usd}"
-        #        f" token_in={token_in} token_out={token_out}"
-        #    )
         return action_list
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:

@@ -54,7 +54,6 @@ class SimulatorConfig:
     verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
     target_liquidity: float = field(default=0, metadata={"hint": ""})
     target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
-    init_pool_apy: float = field(default=0, metadata={"hint": "initial pool apy"})
     fee_percent: float = field(default=0, metadata={"hint": ""})
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
     vault_apy: list[float] = field(

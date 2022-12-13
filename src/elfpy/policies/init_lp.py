@@ -4,10 +4,8 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
-
 from elfpy.policies.basic import BasicPolicy
+from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
 
 
