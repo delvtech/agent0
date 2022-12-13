@@ -10,7 +10,7 @@ from elfpy.pricing_models import PricingModel
 from elfpy.agent import Agent
 
 
-class BasicPolicy(Agent):
+class NoAction(Agent):
     """
     Most basic policy setup, which implements a noop agent that performs no action
     """

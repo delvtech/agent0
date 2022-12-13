@@ -4,12 +4,12 @@ Special reserved user strategy that is used to initialize a market with a desire
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
-from elfpy.policies.basic import BasicPolicy
+from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
 
 
-class Policy(BasicPolicy):
+class Policy(Agent):
     """
     simple LP
     only has one LP open at a time

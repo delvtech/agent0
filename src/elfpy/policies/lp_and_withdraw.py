@@ -4,12 +4,12 @@ User strategy that adds liquidity and then removes it when enough time has passe
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-arguments
 
+from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel
-from elfpy.policies.basic import BasicPolicy
 
 
-class Policy(BasicPolicy):
+class Policy(Agent):
     """
     simple LP
     only has one LP open at a time

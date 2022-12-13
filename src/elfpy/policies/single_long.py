@@ -3,12 +3,12 @@ User strategy that opens a long position and then closes it after a certain amou
 """
 # pylint: disable=too-many-arguments
 
+from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel
-from elfpy.policies.basic import BasicPolicy
 
 
-class Policy(BasicPolicy):
+class Policy(Agent):
     """
     simple long
     only has one long open at a time

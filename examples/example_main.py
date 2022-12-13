@@ -14,7 +14,7 @@ import numpy as np
 import elfpy
 
 # elfpy core classes
-from elfpy.policies.basic import BasicPolicy  # agents
+from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.pricing_models import PricingModel
@@ -24,7 +24,7 @@ from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
 
 
-class CustomShorter(BasicPolicy):
+class CustomShorter(Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts
     """
@@ -70,8 +70,8 @@ def setup_logging(filename: str, max_bytes: int, log_level: int) -> None:
 
 def get_example_agents(
     num_additional_agents: int,
-    agents: dict[int, BasicPolicy] = None,
-) -> dict[int, BasicPolicy]:
+    agents: dict[int, Agent] = None,
+) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
     if agents is None:
         agents = {}
