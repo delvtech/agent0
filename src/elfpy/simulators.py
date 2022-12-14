@@ -56,6 +56,7 @@ class Simulator:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
         else:
             self.random_variables = random_simulation_variables
+        self.check_vault_apy_type()
         # Simulation variables
         self.run_number = 0
         self.day = 0
