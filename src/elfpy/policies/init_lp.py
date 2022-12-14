@@ -6,7 +6,10 @@ Special reserved user strategy that is used to initialize a market with a desire
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel, ElementPricingModel, YieldSpacePricingModel
+from elfpy.pricing_models.base import PricingModel
+from elfpy.pricing_models.element import ElementPricingModel
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 class Policy(Agent):
@@ -42,11 +45,16 @@ class Policy(Agent):
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                 ]
+            elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
+                action_list = [
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                    self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
+                ]
             elif pricing_model.model_name() == YieldSpacePricingModel().model_name():
                 action_list = [
                     self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
                 ]
             else:
-                raise ValueError(f"Pricing model = {pricing_model.model_name} is not supported.")
+                raise ValueError(f"Pricing model = {pricing_model.model_name()} is not supported.")
         return action_list

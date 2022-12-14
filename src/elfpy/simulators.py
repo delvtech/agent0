@@ -15,8 +15,7 @@ from numpy.random._generator import Generator
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models.element import ElementPricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.base import PricingModel
 from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
@@ -37,7 +36,7 @@ class Simulator:
     def __init__(
         self,
         config: Config | str,
-        pricing_model: ElementPricingModel | YieldSpacePricingModel,
+        pricing_model: PricingModel,
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
@@ -78,7 +77,7 @@ class Simulator:
             "current_market_yearfrac",  # float, current market time as a yearfrac
             "run_trade_number",  # integer, trade number in a given simulation
             "market_step_size",  # minimum time discretization for market time step
-            "token_duration",  # time lapse between token mint and expiry as a yearfrac
+            "position_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
             "fee_percent",
@@ -87,11 +86,7 @@ class Simulator:
             "base_asset_price",
             "vault_apy",
             "pool_apy",
-            "share_reserves",
-            "bond_reserves",
-            "total_supply",
-            "share_price",  # c in YieldSpace with Yield Bearing Vaults
-            "init_share_price",  # u in YieldSpace with Yield Bearing Vaults
+            "market_state",  # the full state of the market
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",

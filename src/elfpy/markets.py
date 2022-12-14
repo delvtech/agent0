@@ -192,9 +192,7 @@ class Market:
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
-            rate = price_utils.calc_apr_from_spot_price(
-                self.get_spot_price(pricing_model), self.position_duration.normalized_days
-            )
+            rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(pricing_model), self.position_duration)
         return rate
 
     def get_spot_price(self, pricing_model: PricingModel):
