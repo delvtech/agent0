@@ -143,6 +143,7 @@ class BaseSimTest(unittest.TestCase):
             os.remove(file_loc)
 
     def run_random_variables_test(self, delete_logs=True):
+        """Test random variable creation & overriding"""
         self.setup_logging()
         config_file = "config/example_config.toml"
         override_list = [
