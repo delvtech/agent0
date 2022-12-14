@@ -201,6 +201,9 @@ class PricingModel(ABC):
         self,
         trade_result: TradeResult,
     ):
+        assert isinstance(
+            trade_result.fee, float
+        ), f"pricing_models.check_output_assertions: ERROR: fee should be a float, not {type(trade_result.fee)}!"
         assert trade_result.fee >= 0, f"pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
         assert isinstance(
             trade_result.without_fee, float
