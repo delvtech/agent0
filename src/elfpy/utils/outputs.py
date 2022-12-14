@@ -1,9 +1,14 @@
 """
 Helper functions for post-processing simulation outputs
 """
+import os
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 
 import numpy as np
+
+import elfpy
 
 
 def format_axis(
@@ -73,6 +78,18 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
     else:  # add an additional sigfig if the value is really small
         string = f"{value:0.{precision-1}e}"
     return string
+
+
+def setup_logging(log_dir: str, log_name: str) -> None:
+    """Setup logging and handlers with default settings"""
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=elfpy.DEFAULT_LOG_MAXBYTES)
+    logging.getLogger().setLevel(elfpy.DEFAULT_LOG_LEVEL)  # events of this level and above will be tracked
+    handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
+    logging.getLogger().handlers = [
+        handler,
+    ]
 
 
 class CustomEncoder(json.JSONEncoder):
