@@ -11,18 +11,20 @@ import logging
 import unittest
 import os
 import numpy as np
+from numpy.random import RandomState
 
 from elfpy.simulators import Simulator
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
-class BaseTraderTest(unittest.TestCase):
+class BaseSimTest(unittest.TestCase):
     """Simulator base test class"""
 
-    @staticmethod
-    def setup_and_run_simulator(config_file, override_dict):
-        """Construct and run the simulator"""
+    def setup_simulator(self, config_file, override_dict=None):
+        """Instantiate the simulator & other objects"""
+        if override_dict is None:
+            override_dict = {}  # empty dict means nothing is overridden
         # instantiate config object
         config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
         # instantiate random number generator
@@ -63,14 +65,17 @@ class BaseTraderTest(unittest.TestCase):
         )
         # initialize the market using the LP agent
         simulator.collect_and_execute_trades()
+        return simulator
+
+    def setup_and_run_simulator(self, config_file, override_dict):
+        """Construct and run the simulator"""
+        simulator = self.setup_simulator(config_file, override_dict)
         # run the simulation
         simulator.run_simulation()
-        return (market, pricing_model)
 
     @staticmethod
-    def setup_logging():
+    def setup_logging(logging_level=logging.DEBUG):
         """Setup logging and handlers for the test"""
-        logging_level = logging.DEBUG
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -102,12 +107,39 @@ class BaseTraderTest(unittest.TestCase):
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
 
+    def run_log_config_variables_test(self, delete_logs=True):
+        """Verfies that the config variables are successfully logged"""
+        self.setup_logging(logging_level=logging.INFO)
+        config_file = "config/example_config.toml"
+        simulator = self.setup_simulator(config_file)
+        simulator.log_config_variables()
+        self.assertLogs(level=logging.INFO)
+        if delete_logs:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)
 
-class TestSimulator(BaseTraderTest):
+
+class TestSimulator(BaseSimTest):
     """Test running a simulation using each pricing model type"""
 
+    # TODO: add similar test for a sim using the element pricing model
     def test_hyperdrive_sim(self):
         """Tests hyperdrive setup"""
         self.run_hyperdrive_test()
 
-    # TODO: add similar test for a sim using the element pricing model
+    def test_log_config_variables(self):
+        """Tests the log_config_variables function"""
+        self.run_log_config_variables_test(delete_logs=True)
+
+    def test_set_rng(self):
+        """Verifies that the rng gets set properly & fails properly"""
+        self.setup_logging()
+        config_file = "config/example_config.toml"
+        override_dict = {"num_trading_days": 5, "num_blocks_per_day": 3}
+        simulator = self.setup_simulator(config_file, override_dict)
+        new_rng = np.random.default_rng(1234)
+        simulator.set_rng(new_rng)
+        assert simulator.rng == new_rng
+        for bad_input in ([1234, "1234", RandomState(1234)],):
+            with self.assertRaises(TypeError):
+                simulator.set_rng(bad_input)
