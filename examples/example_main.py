@@ -94,8 +94,8 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--output", help="Optional output filename for logging", default=None, type=str)
     parser.add_argument(
         "--max_bytes",
-        help="Maximum log file output size, in bytes. Default is 2e6 bytes (2MB). More than 100 files (200MB) will cause overwrites.",
-        default=2e6,
+        help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes. More than 100 files will cause overwrites.",
+        default=elfpy.DEFAULT_LOG_MAXBYTES,
         type=int,
     )
     parser.add_argument(
