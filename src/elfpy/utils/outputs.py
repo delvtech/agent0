@@ -2,7 +2,9 @@
 Helper functions for post-processing simulation outputs
 """
 import os
+import sys
 import json
+from typing import Optional
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -80,12 +82,20 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
     return string
 
 
-def setup_logging(log_dir: str, log_name: str) -> None:
+def setup_logging(
+    log_filename: Optional[str] = None,
+    max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
+    log_level: int = elfpy.DEFAULT_LOG_LEVEL,
+) -> None:
     """Setup logging and handlers with default settings"""
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=elfpy.DEFAULT_LOG_MAXBYTES)
-    logging.getLogger().setLevel(elfpy.DEFAULT_LOG_LEVEL)  # events of this level and above will be tracked
+    if log_filename is None:
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        log_dir, log_name = os.path.split(log_filename)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
+    logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
     logging.getLogger().handlers = [
         handler,
@@ -93,16 +103,19 @@ def setup_logging(log_dir: str, log_name: str) -> None:
 
 
 class CustomEncoder(json.JSONEncoder):
-    def default(self, obj):
-        match obj:
+    """Custom encoder for JSON string dumps"""
+
+    def default(self, o):
+        """Override default behavior"""
+        match o:
             case np.integer():
-                return int(obj)
+                return int(o)
             case np.floating():
-                return float(obj)
+                return float(o)
             case np.ndarray():
-                return obj.tolist()
+                return o.tolist()
             case _:
                 try:
-                    return obj.__dict__
-                except AttributeError as e:
-                    raise AttributeError(e)
+                    return o.__dict__
+                except AttributeError as err:
+                    raise AttributeError("Object does not have __dict__ attribute") from err

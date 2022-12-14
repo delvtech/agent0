@@ -51,7 +51,8 @@ def analysis_dict_to_dataframe(analysis_dict: dict) -> pd.DataFrame:
     return trades
 
 
-def aggregate_trade_data(trades):
+def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate trades dataframe by computing means"""
     ### STATS AGGREGATED BY SIM AND DAY ###
     # aggregates by two dimensions:
     # 1. model_name (directly output from pricing_model class)

@@ -17,6 +17,7 @@ import numpy as np
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
+from elfpy.utils import outputs as output_utils  # utilities for file outputs
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -65,10 +66,6 @@ class BaseTradeTest(unittest.TestCase):
         )
         # initialize the market using the LP agent
         simulator.collect_and_execute_trades()
-        print(random_sim_vars.target_liquidity)
-        print(random_sim_vars.target_pool_apy)
-        print(simulator.market.get_rate(pricing_model))
-        print(agent_policies)
         # get trading agent list
         for agent_id, policy_name in enumerate(agent_policies):
             wallet_address = len(init_agents) + agent_id
@@ -82,21 +79,9 @@ class BaseTradeTest(unittest.TestCase):
     @staticmethod
     def setup_logging():
         """Setup test logging levels and handlers"""
-        logging_level = logging.DEBUG
-        log_dir = ".logging"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        name = "test_trades.log"
-        handler = logging.FileHandler(os.path.join(log_dir, name), "w")
-        logging.getLogger().setLevel(logging_level)  # events of this level and above will be tracked
-        handler.setFormatter(
-            logging.Formatter(
-                "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S"
-            )
-        )
-        logging.getLogger().handlers = [
-            handler,
-        ]
+        log_filename = ".logging/test_trades.log"
+        log_level = logging.DEBUG
+        output_utils.setup_logging(log_filename, log_level=log_level)
 
     def run_base_trade_test(self, agent_policies, config_file, delete_logs=True):
         """Assigns member variables that are useful for many tests"""

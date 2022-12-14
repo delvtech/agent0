@@ -1,11 +1,7 @@
 """Example main.py file for illustrating a simulator workflow"""
 # stdlib
-import sys
-import os
 import argparse
-import logging
 from typing import Any
-from logging.handlers import RotatingFileHandler
 
 # external imports
 import numpy as np
@@ -22,7 +18,7 @@ from elfpy.pricing_models import PricingModel
 # elfpy utils
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
-from elfpy.utils.data import format_trades
+from elfpy.utils import outputs as output_utils  # utilities for file outputs
 
 
 class CustomShorter(Agent):
@@ -53,22 +49,6 @@ class CustomShorter(Agent):
         return action_list
 
 
-def setup_logging(filename: str, max_bytes: int, log_level: int) -> None:
-    """Setup logging"""
-    if filename is None:
-        handler = logging.StreamHandler(sys.stdout)
-    else:
-        log_dir = os.path.dirname(filename)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        handler = RotatingFileHandler(filename, mode="a", maxBytes=max_bytes, backupCount=100)
-    logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
-    handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().handlers = [
-        handler,
-    ]
-
-
 def get_example_agents(
     num_new_agents: int,
     agents: dict[int, Agent] = None,
@@ -86,6 +66,7 @@ def get_example_agents(
 
 
 def get_argparser() -> argparse.ArgumentParser:
+    """Define & parse arguments from stdin"""
     parser = argparse.ArgumentParser(
         prog="ElfMain",
         description="Example execution script for running simulations using Elfpy",
@@ -94,7 +75,10 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--output", help="Optional output filename for logging", default=None, type=str)
     parser.add_argument(
         "--max_bytes",
-        help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes. More than 100 files will cause overwrites.",
+        help=(
+            f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes.",
+            "More than 100 files will cause overwrites.",
+        ),
         default=elfpy.DEFAULT_LOG_MAXBYTES,
         type=int,
     )
@@ -132,7 +116,9 @@ if __name__ == "__main__":
     if args.log_level is not None:
         config.simulator.logging_level = config_utils.text_to_logging_level(args.log_level)
     # define root logging parameters
-    setup_logging(filename=args.output, max_bytes=args.max_bytes, log_level=config.simulator.logging_level)
+    output_utils.setup_logging(
+        log_filename=args.output, max_bytes=args.max_bytes, log_level=config.simulator.logging_level
+    )
     # instantiate random number generator
     rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
