@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+from typing import Optional
 
 import numpy as np
 from numpy.random._generator import Generator
@@ -40,7 +41,7 @@ class Simulator:
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
-        random_simulation_variables: list | None,
+        random_simulation_variables: Optional[list] = None,
     ):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
@@ -55,7 +56,6 @@ class Simulator:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
         else:
             self.random_variables = random_simulation_variables
-        self.check_vault_apy_type()
         # Simulation variables
         self.run_number = 0
         self.day = 0
