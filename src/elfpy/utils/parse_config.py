@@ -79,6 +79,8 @@ def text_to_logging_level(logging_text: str) -> int:
         Logging level integer corresponding to the string input
     """
     match logging_text.lower():
+        case "notset":
+            level = logging.NOTSET
         case "debug":
             level = logging.DEBUG
         case "info":

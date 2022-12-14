@@ -204,13 +204,11 @@ def get_random_variables(config, rng):
             low=config.amm.min_pool_apy, high=config.amm.max_pool_apy
         ),  # starting fixed apy as a decimal
         fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        vault_apy=list(
-            rng.uniform(
-                low=config.market.min_vault_apy,
-                high=config.market.max_vault_apy,
-                size=config.simulator.num_trading_days,
-            )
-        ),  # vault apy over time as a decimal
+        vault_apy=rng.uniform(
+            low=config.market.min_vault_apy,
+            high=config.market.max_vault_apy,
+            size=config.simulator.num_trading_days,
+        ).tolist(),  # vault apy over time as a decimal
         init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
     )
     return random_vars
@@ -233,12 +231,21 @@ def override_random_variables(
     -------
     RandomSimulationVariables
         same dataclass as the random_variables input, but with fields specified by override_dict changed
+
+    vault_apy: list[float] = field(metadata="vault apy values")
     """
+    allowed_keys = [
+        "target_liquidity",
+        "target_pool_apy",
+        "fee_percent",
+        "init_vault_age",
+        "init_share_price",
+        "vault_apy",
+    ]
     for key, value in override_dict.items():
-        if hasattr(
-            random_variables, key
-        ):  # TODO: This is a non safe HACK -- we should assign & type each key/value individually
-            setattr(random_variables, key, value)
+        if hasattr(random_variables, key):
+            if key in allowed_keys:
+                setattr(random_variables, key, value)
     return random_variables
 
 

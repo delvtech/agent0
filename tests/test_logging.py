@@ -18,7 +18,7 @@ from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 
 
-class LoggingTest(unittest.TestCase):
+class BaseLogTest(unittest.TestCase):
     """Generic test class"""
 
     @staticmethod
@@ -67,7 +67,7 @@ class LoggingTest(unittest.TestCase):
         # get trading agent list
         simulator.run_simulation()
 
-    def test_logging(self):
+    def run_logging_test(self, delete_logs=True):
         """
         For each logging level, run the simulator and check the logs
         """
@@ -106,7 +106,14 @@ class LoggingTest(unittest.TestCase):
             }
             self.setup_and_run_simulator(config_file, override_dict)
             self.assertLogs(level=level)
-            # comment this to view the generated log files
-            if handler_type == "file":
+            if delete_logs and handler_type == "file":
                 file_loc = logging.getLogger().handlers[0].baseFilename
                 os.remove(file_loc)
+
+
+class TestLogging(BaseLogTest):
+    """Run the logging tests"""
+
+    def test_logging(self):
+        """Tests logging"""
+        self.run_logging_test(delete_logs=True)
