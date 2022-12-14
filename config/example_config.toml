@@ -20,7 +20,6 @@ min_pool_apy = 0.02  # as a decimal
 max_pool_apy = 0.9  # as a decimal
 # fixed variables
 floor_fee = 0  # minimum fee percentage (bps)
-verbose = false # toggle verbose output level
 
 [simulator]
 # fixed variables

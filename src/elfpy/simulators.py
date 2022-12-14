@@ -51,9 +51,10 @@ class Simulator:
         self.agents = agents
         self.set_rng(rng)
         if random_simulation_variables is None:
-            self.random_variables = random_simulation_variables
-        else:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
+        else:
+            self.random_variables = random_simulation_variables
+        self.check_vault_apy_type()
         # Simulation variables
         self.run_number = 0
         self.day = 0
@@ -95,6 +96,20 @@ class Simulator:
             "spot_price",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
+
+    def check_vault_apy_type(self) -> None:
+        """Recast the vault apy into a list of floats if a float was given on init"""
+        if isinstance(self.random_variables.vault_apy, float):
+            self.random_variables.vault_apy = [
+                float(self.random_variables.vault_apy)
+            ] * self.config.simulator.num_trading_days
+        else:  # check that the length is correct
+            if not len(self.random_variables.vault_apy) == self.config.simulator.num_trading_days:
+                raise ValueError(
+                    "vault_apy must have len equal to num_trading_days = "
+                    + f"{self.config.simulator.num_trading_days},"
+                    + f" not {len(self.random_variables.vault_apy)}"
+                )
 
     def set_rng(self, rng: Generator) -> None:
         """Assign the internal random number generator to a new instantiation
