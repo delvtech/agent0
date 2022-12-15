@@ -85,6 +85,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             base.
         """
 
+        # TODO: Verify that this is needed.
+        market_state = copy.copy(market_state)
+
         # TODO: This is somewhat strange since these updates never actually hit
         #       the reserves.
         #
@@ -189,6 +192,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             The result of performing the trade.
         """
 
+        # TODO: Verify that this is needed.
         market_state = copy.copy(market_state)
 
         # TODO: This is somewhat strange since these updates never actually hit
