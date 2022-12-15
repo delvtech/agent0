@@ -6,7 +6,7 @@ User strategy that opens a single short and doesn't close until liquidation
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 
 
 class Policy(Agent):

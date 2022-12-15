@@ -118,7 +118,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected in_.unit to be "base" or "pt", not {out.unit}!'
+                f'pricing_models.calc_in_given_out: ERROR: expected in_.unit to be "base" or "pt", not {out.unit}!'
             )
 
         return TradeResult(

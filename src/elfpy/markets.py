@@ -129,28 +129,24 @@ class Market:
             market_deltas, agent_deltas = self._open_long(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                token_out="pt",
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == "close_long":  # sell to close long
             market_deltas, agent_deltas = self._close_long(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                token_out="base",
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == "open_short":  # sell PT to open short
             market_deltas, agent_deltas = self._open_short(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                token_out="pt",
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == "close_short":  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                token_in="base",
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == "add_liquidity":
@@ -249,7 +245,6 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        token_out: TokenType,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -260,7 +255,7 @@ class Market:
         # TODO: `token_out` should be phased out in favor of using the unit property of Quantity.
         #
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="base" if token_out == "pt" else "pt")
+        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
         pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -276,7 +271,7 @@ class Market:
         pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
-        logging.debug("opening short: trade_result = %g", trade_result)
+        logging.debug("opening short: trade_result = %s", trade_result)
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
@@ -302,7 +297,6 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        token_in: TokenType,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -327,7 +321,7 @@ class Market:
         # TODO: `token_in` should be phased out. See above.
         #
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="base" if token_in == "pt" else "pt")
+        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
         pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -344,7 +338,7 @@ class Market:
 
         # Log the trade result.
         logging.debug(
-            "closing short: trade_result = %g",
+            "closing short: trade_result = %s",
             trade_result,
         )
 
@@ -371,7 +365,6 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        token_out: TokenType,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -385,7 +378,7 @@ class Market:
             # TODO: Phase out `token_out`. See above.
             #
             # Perform the trade.
-            trade_quantity = Quantity(amount=agent_action.trade_amount, unit="base" if token_out == "pt" else "pt")
+            trade_quantity = Quantity(amount=agent_action.trade_amount, unit="base")
             pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -402,7 +395,7 @@ class Market:
 
             # Log the trade result.
             logging.debug(
-                "opening long: trade_result %g",
+                "opening long: trade_result %s",
                 trade_result,
             )
 
@@ -430,7 +423,6 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        token_out: TokenType,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -441,7 +433,7 @@ class Market:
 
         # TODO: Phase out `token_out`. See above.
         # Perform the trade.
-        quantity = Quantity(amount=agent_action.trade_amount, unit="base" if token_out == "pt" else "pt")
+        quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
         pricing_model.check_input_assertions(
             quantity=quantity,
             market_state=self.market_state,
@@ -457,7 +449,7 @@ class Market:
         pricing_model.check_output_assertions(trade_result)
 
         # Log the trade result.
-        logging.debug("closing long: trade_result = %g", trade_result)
+        logging.debug("closing long: trade_result = %s", trade_result)
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(

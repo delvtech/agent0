@@ -134,7 +134,7 @@ class BaseTradeTest(unittest.TestCase):
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
         simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
-        total_liquidity = market.bond_reserves + market.share_reserves
+        total_liquidity = market.market_state.bond_reserves + market.market_state.share_reserves
         market_apr = market.get_rate(pricing_model)
         # check that apr is within a 0.1% of the target
         assert np.allclose(

@@ -242,8 +242,8 @@ class ElementPricingModel(PricingModel):
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %d\n\tfee_percent = %g"
                 "\n\ttime_remaining = %s\n\ttime_elapsed = %g"
-                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
-                "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
+                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %s"
+                "\n\twithout_fee = %s\n\twith_fee = %s\n\tfee = %s"
             ),
             out,
             market_state.share_reserves,
@@ -444,8 +444,8 @@ class ElementPricingModel(PricingModel):
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %g\n\tfee_percent = %g"
                 "\n\ttime_remaining = %s\n\ttime_elapsed = %g"
-                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
-                "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
+                "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %s"
+                "\n\twithout_fee = %s\n\twith_fee = %s\n\tfee = %s"
             ),
             in_,
             market_state.share_reserves,
