@@ -16,28 +16,17 @@ from numpy.random import RandomState
 from elfpy.simulators import Simulator
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.utils.outputs as output_utils
 
 
 class BaseSimTest(unittest.TestCase):
     """Simulator base test class"""
 
     @staticmethod
-    def setup_logging(logging_level=logging.DEBUG):
+    def setup_logging(log_level=logging.DEBUG):
         """Setup logging and handlers for the test"""
-        log_dir = ".logging"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        name = "test_sim.log"
-        handler = logging.FileHandler(os.path.join(log_dir, name), "w")
-        logging.getLogger().setLevel(logging_level)  # events of this level and above will be tracked
-        handler.setFormatter(
-            logging.Formatter(
-                "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S"
-            )
-        )
-        logging.getLogger().handlers = [
-            handler,
-        ]
+        log_filename = ".logging/test_sim.log"
+        output_utils.setup_logging(log_filename, log_level=log_level)
 
     @staticmethod
     def setup_simulator_inputs(config_file, override_dict=None):
@@ -110,7 +99,7 @@ class BaseSimTest(unittest.TestCase):
                 self.setup_and_run_simulator(config_file, override_dict)
             # pylint: disable=broad-except
             except Exception as exc:
-                assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
+                raise AssertionError(f"ERROR: Test failed at seed {rng_seed}") from exc
         if delete_logs:
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
@@ -133,7 +122,7 @@ class BaseSimTest(unittest.TestCase):
 
     def run_log_config_variables_test(self, delete_logs=True):
         """Verfies that the config variables are successfully logged"""
-        self.setup_logging(logging_level=logging.INFO)
+        self.setup_logging(log_level=logging.INFO)
         config_file = "config/example_config.toml"
         simulator = self.setup_simulator(config_file)
         simulator.log_config_variables()
@@ -202,7 +191,7 @@ class BaseSimTest(unittest.TestCase):
 class TestSimulator(BaseSimTest):
     """Test running a simulation using each pricing model type"""
 
-    # TODO: add similar test for a sim using the element pricing model
+    # TODO: add similar test for a sim using the other PMs
     def test_hyperdrive_sim(self):
         """Tests hyperdrive setup"""
         self.run_hyperdrive_test()
