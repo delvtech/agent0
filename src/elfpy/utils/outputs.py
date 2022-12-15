@@ -3,6 +3,7 @@ Helper functions for post-processing simulation outputs
 """
 import os
 import sys
+import json
 from typing import Optional
 import logging
 from logging.handlers import RotatingFileHandler
@@ -99,3 +100,22 @@ def setup_logging(
     logging.getLogger().handlers = [
         handler,
     ]
+
+
+class CustomEncoder(json.JSONEncoder):
+    """Custom encoder for JSON string dumps"""
+
+    def default(self, o):
+        """Override default behavior"""
+        match o:
+            case np.integer():
+                return int(o)
+            case np.floating():
+                return float(o)
+            case np.ndarray():
+                return o.tolist()
+            case _:
+                try:
+                    return o.__dict__
+                except AttributeError as err:
+                    raise AttributeError("Object does not have __dict__ attribute") from err
