@@ -1,7 +1,15 @@
 import logging
 from elfpy.pricing_models.base import PricingModel
 
-from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
+from elfpy.types import (
+    MarketTradeResult,
+    Quantity,
+    MarketState,
+    StretchedTime,
+    TradeBreakdown,
+    TradeResult,
+    UserTradeResult,
+)
 import elfpy.utils.price as price_utils
 
 
@@ -129,6 +137,7 @@ class ElementPricingModel(PricingModel):
         # of the output.
         if out.unit == "base":
             d_base = out.amount
+
             # The amount the user pays without fees or slippage is the amount of
             # bonds the user receives times the inverse of the spot price
             # of base in terms of bonds. If we let p be the conventional spot
@@ -136,6 +145,7 @@ class ElementPricingModel(PricingModel):
             #
             # without_fee_or_slippage = (1 / p) * d_x
             without_fee_or_slippage = (1 / spot_price) * d_base
+
             # We solve the YieldSpace invariant for the bonds required to
             # purchase the requested amount of base. We set up the invariant
             # where the user pays d_y bonds and receives d_x base:
@@ -151,14 +161,31 @@ class ElementPricingModel(PricingModel):
             without_fee = (k - (market_state.share_reserves - d_base) ** time_elapsed) ** (
                 1 / time_elapsed
             ) - bond_reserves_
+
             # The fees are calculated as the difference between the bonds
             # paid without fees and the base received times the fee percentage.
             # This can also be expressed as:
             #
             # fee = phi * (d_y' - d_x)
             fee = fee_percent * (without_fee - d_base)
+
+            # To get the amount paid with fees, add the fee to the calculation that
+            # excluded fees. Adding the fees results in more tokens paid, which
+            # indicates that the fees are working correctly.
+            with_fee = without_fee + fee
+
+            # Create the user and market trade results.
+            user_result = UserTradeResult(
+                d_base=out.amount,
+                d_bonds=-with_fee,
+            )
+            market_result = MarketTradeResult(
+                d_base=-out.amount,
+                d_bonds=with_fee,
+            )
         elif out.unit == "pt":
             d_bonds = out.amount
+
             # The amount the user pays without fees or slippage is the amount of
             # bonds the user receives times the spot price of base in terms
             # of bonds. If we let p be the conventional spot price, then we can
@@ -166,6 +193,7 @@ class ElementPricingModel(PricingModel):
             #
             # without_fee_or_slippage = p * d_y
             without_fee_or_slippage = spot_price * d_bonds
+
             # We solve the YieldSpace invariant for the base required to
             # purchase the requested amount of bonds. We set up the invariant
             # where the user pays d_x' base and receives d_y bonds:
@@ -181,20 +209,32 @@ class ElementPricingModel(PricingModel):
             without_fee = (k - (bond_reserves_ - d_bonds) ** time_elapsed) ** (
                 1 / time_elapsed
             ) - market_state.share_reserves
+
             # The fees are calculated as the difference between the bonds
             # received and the base paid without fees times the fee percentage.
             # This can also be expressed as:
             #
             # fee = phi * (d_y - d_x')
             fee = fee_percent * (d_bonds - without_fee)
+
+            # To get the amount paid with fees, add the fee to the calculation that
+            # excluded fees. Adding the fees results in more tokens paid, which
+            # indicates that the fees are working correctly.
+            with_fee = without_fee + fee
+
+            # Create the user and market trade results.
+            user_result = UserTradeResult(
+                d_base=-with_fee,
+                d_bonds=out.amount,
+            )
+            market_result = MarketTradeResult(
+                d_base=with_fee,
+                d_bonds=-out.amount,
+            )
         else:
             raise AssertionError(
                 f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {out.unit}!'
             )
-        # To get the amount paid with fees, add the fee to the calculation that
-        # excluded fees. Adding the fees results in more tokens paid, which
-        # indicates that the fees are working correctly.
-        with_fee = without_fee + fee
 
         logging.debug(
             (
@@ -221,7 +261,17 @@ class ElementPricingModel(PricingModel):
             with_fee,
             fee,
         )
-        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
+
+        return TradeResult(
+            user_result=user_result,
+            market_result=market_result,
+            breakdown=TradeBreakdown(
+                without_fee_or_slippage=without_fee_or_slippage,
+                with_fee=with_fee,
+                without_fee=without_fee,
+                fee=fee,
+            ),
+        )
 
     def calc_out_given_in(
         self,
@@ -289,6 +339,7 @@ class ElementPricingModel(PricingModel):
         # Solve for the amount that received if the specified amount is paid.
         if in_.unit == "base":
             d_base = in_.amount
+
             # The amount the user pays without fees or slippage is the amount of
             # base the user pays times the inverse of the spot price of base in
             # terms of bonds. If we let p be the conventional spot price, then
@@ -296,6 +347,7 @@ class ElementPricingModel(PricingModel):
             #
             # without_fee_or_slippage = (1 / p) * d_x
             without_fee_or_slippage = (1 / spot_price) * d_base
+
             # We solve the YieldSpace invariant for the bonds received from
             # paying the specified amount of base. We set up the invariant
             # where the user pays d_x base and receives d_y' bonds:
@@ -311,14 +363,31 @@ class ElementPricingModel(PricingModel):
             without_fee = bond_reserves_ - (k - (market_state.share_reserves + d_base) ** time_elapsed) ** (
                 1 / time_elapsed
             )
+
             # The fees are calculated as the difference between the bonds paid
             # and the base received without fees times the fee percentage. This
             # can also be expressed as:
             #
             # fee = phi * (d_y' - d_x)
             fee = fee_percent * (without_fee - d_base)
+
+            # To get the amount paid with fees, subtract the fee from the
+            # calculation that excluded fees. Subtracting the fees results in less
+            # tokens received, which indicates that the fees are working correctly.
+            with_fee = without_fee - fee
+
+            # Create the user and market trade results.
+            user_result = UserTradeResult(
+                d_base=-in_.amount,
+                d_bonds=with_fee,
+            )
+            market_result = MarketTradeResult(
+                d_base=in_.amount,
+                d_bonds=-with_fee,
+            )
         elif in_.unit == "pt":
             d_bonds = in_.amount
+
             # The amount the user pays without fees or slippage is the amount of
             # bonds the user pays times the spot price of base in terms of bonds.
             # If we let p be the conventional spot price, then we can write this
@@ -326,6 +395,7 @@ class ElementPricingModel(PricingModel):
             #
             # without_fee_or_slippage = p * d_y
             without_fee_or_slippage = spot_price * d_bonds
+
             # We solve the YieldSpace invariant for the base received from
             # paying the specified amount of bonds. We set up the invariant
             # where the user pays d_y bonds and receives d_x' base:
@@ -341,20 +411,32 @@ class ElementPricingModel(PricingModel):
             without_fee = market_state.share_reserves - (k - (bond_reserves_ + d_bonds) ** time_elapsed) ** (
                 1 / time_elapsed
             )
+
             # The fees are calculated as the difference between the bonds paid
             # and the base received without fees times the fee percentage. This
             # can also be expressed as:
             #
             # fee = phi * (d_y - d_x')
             fee = fee_percent * (d_bonds - without_fee)
+
+            # To get the amount paid with fees, subtract the fee from the
+            # calculation that excluded fees. Subtracting the fees results in less
+            # tokens received, which indicates that the fees are working correctly.
+            with_fee = without_fee - fee
+
+            # Create the user and market trade results.
+            user_result = UserTradeResult(
+                d_base=with_fee,
+                d_bonds=-in_.amount,
+            )
+            market_result = MarketTradeResult(
+                d_base=-with_fee,
+                d_bonds=in_.amount,
+            )
         else:
             raise AssertionError(
                 f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
             )
-        # To get the amount paid with fees, subtract the fee from the
-        # calculation that excluded fees. Subtracting the fees results in less
-        # tokens received, which indicates that the fees are working correctly.
-        with_fee = without_fee - fee
 
         logging.debug(
             (
@@ -381,7 +463,17 @@ class ElementPricingModel(PricingModel):
             with_fee,
             fee,
         )
-        return TradeResult(without_fee_or_slippage, with_fee, without_fee, fee)
+
+        return TradeResult(
+            user_result=user_result,
+            market_result=market_result,
+            breakdown=TradeBreakdown(
+                without_fee_or_slippage=without_fee_or_slippage,
+                with_fee=with_fee,
+                without_fee=without_fee,
+                fee=fee,
+            ),
+        )
 
     def check_input_assertions(
         self,
