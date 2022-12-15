@@ -1,5 +1,12 @@
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
+from elfpy.types import (
+    Quantity,
+    MarketState,
+    StretchedTime,
+    TradeBreakdown,
+    TradeResult,
+    UserTradeResult,
+)
 
 
 class HyperdrivePricingModel(YieldSpacePricingModel):
@@ -74,31 +81,55 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # TODO: This is somewhat strange since these updates never actually hit
         #       the reserves.
+        #
+        # Redeem the matured bonds 1:1 and simulate these updates hitting the
+        # reserves.
         if out.unit == "base":
             market_state.share_reserves -= out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
             market_state.bond_reserves += out.amount * (1 - time_remaining.stretched_time)
         elif out.unit == "pt":
             market_state.share_reserves += out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
             market_state.bond_reserves -= out.amount * (1 - time_remaining.stretched_time)
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_in_given_out: ERROR: expected out.unit to be "base" or "pt", not {out.unit}!'
+            )
 
-        d_out = out.amount * time_remaining.stretched_time
+        # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=Quantity(amount=d_out, unit=out.unit),
+            out=Quantity(amount=out.amount * time_remaining.stretched_time, unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
-        # FIXME: We need to return trade result, but we also need to return
-        # information about the amount of input that should be applied as part
-        # of the trade.
-        # return (np.where(in_ < 0, 0, in_), np.where(d_out < 0, 0, d_out))
+        # Compute the user's trade result including both the flat and the curve
+        # parts of the trade.
         flat = out.amount * (1 - time_remaining.stretched_time)
+        if out.unit == "base":
+            user_result = UserTradeResult(
+                d_base=-out.amount,
+                d_bonds=flat + curve.user_result.d_bonds,
+            )
+        elif out.unit == "pt":
+            user_result = UserTradeResult(
+                d_base=flat + curve.user_result.d_base,
+                d_bonds=-out.amount,
+            )
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_out_given_in: ERROR: expected in_.unit to be "base" or "pt", not {out.unit}!'
+            )
+
         return TradeResult(
-            without_fee_or_slippage=curve.without_fee_or_slippage + flat,
-            without_fee=curve.without_fee + flat,
-            fee=curve.fee,
-            with_fee=curve.with_fee + flat,
+            user_result=user_result,
+            market_result=curve.market_result,
+            breakdown=TradeBreakdown(
+                without_fee_or_slippage=flat + curve.breakdown.without_fee_or_slippage,
+                without_fee=flat + curve.breakdown.without_fee,
+                fee=curve.breakdown.fee,
+                with_fee=flat + curve.breakdown.with_fee,
+            ),
         )
 
     # TODO: The high slippage tests in tests/test_pricing_model.py should
@@ -148,45 +179,59 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         Returns
         -------
-        float
-            The amount the user receives without fees or slippage. The units
-            are always in terms of bonds or base.
-        float
-            The amount the user receives with fees and slippage. The units are
-            always in terms of bonds or base.
-        float
-            The amount the user receives with slippage and no fees. The units are
-            always in terms of bonds or base.
-        float
-            The fee the user pays. The units are always in terms of bonds or
-            base.
+        TradeResult
+            The result of performing the trade.
         """
 
         # TODO: This is somewhat strange since these updates never actually hit
         #       the reserves.
+        #
+        # Redeem the matured bonds 1:1 and simulate these updates hitting the
+        # reserves.
         if in_.unit == "base":
             market_state.share_reserves += (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
             market_state.bond_reserves -= in_.amount * (1 - time_remaining.stretched_time)
         elif in_.unit == "pt":
             market_state.share_reserves -= (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
             market_state.bond_reserves += in_.amount * (1 - time_remaining.stretched_time)
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
+            )
 
-        d_in = in_.amount * time_remaining.stretched_time
+        # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=Quantity(amount=d_in, unit=in_.unit),
+            in_=Quantity(amount=in_.amount * time_remaining.stretched_time, unit=in_.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
+        # Compute the user's trade result including both the flat and the curve
+        # parts of the trade.
         flat = in_.amount * (1 - time_remaining.stretched_time)
-        # FIXME: We need to return trade result, but we also need to return
-        # information about the amount of input that should be applied as part
-        # of the trade.
-        # return (np.where(d_in < 0, 0, d_in), np.where(out < 0, 0, out))
+        if in_.unit == "base":
+            user_result = UserTradeResult(
+                d_base=-in_.amount,
+                d_bonds=flat + curve.user_result.d_bonds,
+            )
+        elif in_.unit == "pt":
+            user_result = UserTradeResult(
+                d_base=flat + curve.user_result.d_base,
+                d_bonds=-in_.amount,
+            )
+        else:
+            raise AssertionError(
+                f'pricing_models.calc_out_given_in: ERROR: expected in_.unit to be "base" or "pt", not {in_.unit}!'
+            )
+
         return TradeResult(
-            without_fee_or_slippage=curve.without_fee_or_slippage + flat,
-            without_fee=curve.without_fee + flat,
-            fee=curve.fee,
-            with_fee=curve.with_fee + flat,
+            user_result=user_result,
+            market_result=curve.market_result,
+            breakdown=TradeBreakdown(
+                without_fee_or_slippage=flat + curve.breakdown.without_fee_or_slippage,
+                without_fee=flat + curve.breakdown.without_fee,
+                fee=curve.breakdown.fee,
+                with_fee=flat + curve.breakdown.with_fee,
+            ),
         )

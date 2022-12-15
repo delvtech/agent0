@@ -143,13 +143,35 @@ class MarketState:
         self.lp_reserves += delta.d_lp_reserves
 
 
-class TradeResult(NamedTuple):
-    """
-    Result from a calc_out_given_in or calc_in_given_out.  The values are the amount of asset required
-    for the trade, either in or out.  Fee is the amount of fee collected, if any.
-    """
+@dataclass
+class UserTradeResult:
+    d_base: float
+    d_bonds: float
 
+
+@dataclass
+class MarketTradeResult:
+    d_base: float
+    d_bonds: float
+
+
+@dataclass
+class TradeBreakdown:
     without_fee_or_slippage: float
     with_fee: float
     without_fee: float
     fee: float
+
+
+@dataclass
+class TradeResult:
+    """
+    The result of performing a trade. This includes granular information about
+    the trade details including the amount of fees collected and the total
+    delta. Additionally, breakdowns for the updates that should be applied to
+    the user and the market are computed.
+    """
+
+    user_result: UserTradeResult
+    market_result: MarketTradeResult
+    breakdown: TradeBreakdown
