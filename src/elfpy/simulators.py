@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+from typing import Optional
 
 import numpy as np
 from numpy.random._generator import Generator
@@ -19,6 +20,7 @@ from elfpy.pricing_models.base import PricingModel
 from elfpy.utils.config import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
+from elfpy.utils.outputs import CustomEncoder
 
 
 class Simulator:
@@ -39,7 +41,7 @@ class Simulator:
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
-        random_simulation_variables: list | None,
+        random_simulation_variables: Optional[list] = None,
     ):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
@@ -122,8 +124,8 @@ class Simulator:
 
     def log_config_variables(self) -> None:
         """Prints all variables that are in config"""
-        # Config is a nested dataclass, so the `default` arg tells it to cast sub-classes to dicts
-        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, default=lambda obj: obj.__dict__)
+        # cls arg tells json how to handle numpy objects and nested dataclasses
+        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
         logging.info(config_string)
 
     def get_simulation_state_string(self) -> str:
@@ -274,4 +276,4 @@ class Simulator:
         if self.market.market_state.share_reserves > 0:  # there is money in the market
             self.analysis_dict["spot_price"].append(self.market.get_spot_price(self.pricing_model))
         else:
-            self.analysis_dict["spot_price"].append(str(np.nan))
+            self.analysis_dict["spot_price"].append(np.nan)
