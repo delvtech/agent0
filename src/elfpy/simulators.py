@@ -17,7 +17,6 @@ from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.utils.config import Config
-from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
 
@@ -35,7 +34,7 @@ class Simulator:
 
     def __init__(
         self,
-        config: Config | str,
+        config: Config,
         pricing_model: PricingModel,
         market: Market,
         agents: dict[int, Agent],
@@ -45,16 +44,17 @@ class Simulator:
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
         # User specified variables
-        self.config = load_and_parse_config_file(config) if (isinstance(config, str)) else config
+        self.config = config
         self.log_config_variables()
         self.pricing_model = pricing_model
         self.market = market
         self.agents = agents
         self.set_rng(rng)
         if random_simulation_variables is None:
-            self.random_variables = random_simulation_variables
-        else:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
+        else:
+            self.random_variables = random_simulation_variables
+        self.check_vault_apy_type()
         # Simulation variables
         self.run_number = 0
         self.day = 0
@@ -93,25 +93,47 @@ class Simulator:
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
-    def set_rng(self, rng):
-        """
-        Assign the internal random number generator to a new instantiation
+    def check_vault_apy_type(self) -> None:
+        """Recast the vault apy into a list of floats if a float was given on init"""
+        if isinstance(self.random_variables.vault_apy, float):
+            self.random_variables.vault_apy = [
+                float(self.random_variables.vault_apy)
+            ] * self.config.simulator.num_trading_days
+        else:  # check that the length is correct
+            if not len(self.random_variables.vault_apy) == self.config.simulator.num_trading_days:
+                raise ValueError(
+                    "vault_apy must have len equal to num_trading_days = "
+                    + f"{self.config.simulator.num_trading_days},"
+                    + f" not {len(self.random_variables.vault_apy)}"
+                )
 
+    def set_rng(self, rng: Generator) -> None:
+        """Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
+
+        Arguments
+        ---------
+        rng : Generator
+            Random number generator, constructed using np.random.default_rng(seed)
         """
-        assert isinstance(
-            rng, type(np.random.default_rng())
-        ), f"rng type must be a random number generator, not {type(rng)}."
+        if not isinstance(rng, Generator):
+            raise TypeError(f"rng type must be a random number generator, not {type(rng)}.")
         self.rng = rng
 
-    def log_config_variables(self):
+    def log_config_variables(self) -> None:
         """Prints all variables that are in config"""
         # Config is a nested dataclass, so the `default` arg tells it to cast sub-classes to dicts
         config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, default=lambda obj: obj.__dict__)
         logging.info(config_string)
 
-    def get_simulation_state_string(self):
-        """Returns a formatted string containing all of the Simulation class member variables"""
+    def get_simulation_state_string(self) -> str:
+        """Returns a formatted string containing all of the Simulation class member variables
+
+        Returns
+        ---------
+        state_string : str
+            Simulator class member variables (keys & values in self.__dict__) cast to a string, separated by a new line
+        """
         strings = []
         for attribute, value in self.__dict__.items():
             if attribute not in ("analysis_dict", "rng"):
@@ -119,15 +141,27 @@ class Simulator:
         state_string = "\n".join(strings)
         return state_string
 
-    def market_step_size(self):
-        """Returns minimum time increment"""
+    def market_step_size(self) -> float:
+        """Returns minimum time increment
+
+        Returns
+        ---------
+        float
+            time between blocks, which is computed as 1 / blocks_per_year
+        """
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def collect_and_execute_trades(self, last_block_in_sim=False):
-        """Get trades from the agent list, execute them, and update states"""
+    def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
+        """Get trades from the agent list, execute them, and update states
+
+        Arguments
+        ---------
+        last_block_in_sim : bool
+            If True, indicates if the current set of trades are occuring on the final block in the simulation
+        """
         if not isinstance(self.market, Market):
-            raise ValueError("market not defined")
+            raise ValueError("Market not defined")
         # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
@@ -161,7 +195,7 @@ class Simulator:
                 self.update_analysis_dict()
                 self.run_trade_number += 1
 
-    def run_simulation(self):
+    def run_simulation(self) -> None:
         r"""
         Run the trade simulation and update the output state dictionary
         This is the primary function of the Simulator class.
@@ -174,7 +208,7 @@ class Simulator:
         There are no returns, but the function does update the analysis_dict member variable
         """
         if not isinstance(self.market, Market):
-            raise ValueError("market not defined")
+            raise ValueError("Market not defined")
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
         for day in range(0, self.config.simulator.num_trading_days):
@@ -202,11 +236,11 @@ class Simulator:
         for agent in self.agents.values():
             agent.log_final_report(self.market, self.pricing_model)
 
-    def update_analysis_dict(self):
+    def update_analysis_dict(self) -> None:
         """Increment the list for each key in the analysis_dict output variable"""
         # pylint: disable=too-many-statements
         if not isinstance(self.market, Market):
-            raise ValueError("market not defined")
+            raise ValueError("Market not defined")
         self.analysis_dict["model_name"].append(self.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["simulation_start_time"].append(self.start_time)

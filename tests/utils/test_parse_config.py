@@ -46,7 +46,6 @@ class TestParseSimulationConfig(unittest.TestCase):
             precision=64,
             agent_policies=["single_long"],
             random_seed=123,
-            verbose=False,
             shuffle_users=True,
             init_lp=True,
             target_liquidity=10000000,
@@ -62,3 +61,59 @@ class TestParseSimulationConfig(unittest.TestCase):
         assert market == config.market, "Loaded Market TOML data doesn't match the hardcoded data"
         assert amm == config.amm, "Loaded AMM TOML data doesn't match the hardcoded data"
         assert simulator == config.simulator, "Loaded Simulator TOML data doesn't match the hardcoded data"
+
+    def test_load_config(self):
+        """Verify that config loading returns a proper dictionary, and that both can be loaded"""
+        config_file = "./tests/utils/test_parse_config_success_data.toml"
+        config_dict = {
+            "title": "example simulation config",
+            "market": {
+                "min_target_liquidity": 1000000.0,
+                "max_target_liquidity": 10000000.0,
+                "min_vault_age": 0,
+                "max_vault_age": 1,
+                "min_vault_apy": 0.001,
+                "max_vault_apy": 0.9,
+                "base_asset_price": 2500.0,
+            },
+            "amm": {
+                "pricing_model_name": "Element",
+                "min_fee": 0.1,
+                "max_fee": 0.5,
+                "min_pool_apy": 0.02,
+                "max_pool_apy": 0.9,
+                "floor_fee": 0,
+            },
+            "simulator": {
+                "pool_duration": 180,
+                "num_trading_days": 180,
+                "num_blocks_per_day": 7200,
+                "token_duration": 180,
+                "precision": 64,
+                "agent_policies": ["single_long"],
+                "random_seed": 123,
+                "shuffle_users": True,
+                "init_lp": True,
+                "target_liquidity": 10000000,
+                "fee_percent": 0.1,
+                "init_vault_age": 0,
+                "vault_apy": [0.05],
+                "logging_level": "warning",
+            },
+        }
+        # check that the loaded config looks like the dictionary
+        loaded_config = config_utils.load_config_file(config_file)
+        assert loaded_config == config_dict
+        # check that parsing a file or a dictionary results in the same config
+        config_from_file = config_utils.load_and_parse_config_file(config_file)
+        config_from_dict = config_utils.parse_simulation_config(config_dict)
+        assert config_from_file == config_from_dict
+
+    def test_text_to_logging_level(self):
+        """Test that logging level strings result in the correct integera amounts"""
+        # change up case to test .lower()
+        logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
+        logging_constants = [0, 10, 20, 30, 40, 50]
+        for level_str, level_int in zip(logging_levels, logging_constants):
+            func_level = config_utils.text_to_logging_level(level_str)
+            assert level_int == func_level

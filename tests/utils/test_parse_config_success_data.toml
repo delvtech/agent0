@@ -30,7 +30,6 @@ token_duration = 180  # in days
 precision = 64 # 64 is max precision (and the default for numpy)
 agent_policies = ["single_long"] # specify a list of trading policies by name
 random_seed = 123 # to be passed to a rng
-verbose = false # toggle verbose output level
 shuffle_users = true
 init_lp = true
 target_liquidity = 10000000
