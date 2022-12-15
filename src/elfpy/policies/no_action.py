@@ -6,7 +6,7 @@ subclasses of BasicPolicy will implement trade actions
 """
 
 from elfpy.markets import Market, MarketAction
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 from elfpy.agent import Agent
 
 

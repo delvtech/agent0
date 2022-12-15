@@ -8,7 +8,7 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 
 
 class Policy(Agent):

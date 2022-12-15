@@ -5,7 +5,7 @@ User strategy that opens a long position and then closes it after a certain amou
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 
 
 class Policy(Agent):
@@ -22,7 +22,7 @@ class Policy(Agent):
     def action(self, market: Market, pricing_model: PricingModel):
         """Specify action"""
         can_open_long = (self.wallet.base_in_wallet >= self.amount_to_trade) and (
-            market.share_reserves >= self.amount_to_trade
+            market.market_state.share_reserves >= self.amount_to_trade
         )
         block_position_list = list(self.wallet.token_in_protocol.values())
         has_opened_long = bool(any((x < 0 for x in block_position_list)))

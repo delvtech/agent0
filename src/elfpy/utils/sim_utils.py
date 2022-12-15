@@ -4,12 +4,15 @@ from dataclasses import dataclass, field
 import logging
 from typing import Any
 
-from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models.base import PricingModel
+from elfpy.pricing_models.element import ElementPricingModel
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.markets import Market
 from elfpy.agent import Agent
+from elfpy.types import MarketState, Quantity, StretchedTime
 from elfpy.utils.config import Config
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
 
 
 @dataclass()
@@ -38,6 +41,7 @@ def get_init_lp_agent(
     target_liquidity: float,
     target_pool_apy: float,
     fee_percent: float,
+    init_liquidity: float = 1,
 ) -> Agent:
     """
     Calculate the required deposit amounts and instantiate the LP agent
@@ -57,6 +61,9 @@ def get_init_lp_agent(
         target pool apy for the market
         the result will be within 0.001 of the target
     fee_percent : float
+        how much the LPer will collect in fees
+    init_liquidity : float
+        initial (small) liquidity amount for setting the market APR
 
     Returns
     -------
@@ -65,53 +72,55 @@ def get_init_lp_agent(
     """
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments
-    # get the reserve amounts for the target liquidity and pool APR
+    # get the reserve amounts for a small target liquidity to achieve a target pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
-        target_liquidity=target_liquidity,
+        target_liquidity=init_liquidity,
         market_price=config.market.base_asset_price,
         apr=target_pool_apy,
-        days_remaining=market.token_duration,
-        time_stretch=market.time_stretch_constant,
-        init_share_price=market.init_share_price,
-        share_price=market.init_share_price,
+        time_remaining=market.position_duration,
+        init_share_price=market.market_state.init_share_price,
+        share_price=market.market_state.init_share_price,
     )[:2]
-    normalized_days_until_maturity = market.token_duration  # `t(d)`; full duration
-    stretch_time_remaining = time_utils.stretch_time(
-        normalized_days_until_maturity, market.time_stretch_constant
-    )  # tau(d)
     # mock the short to assess what the delta market conditions will be
     output_with_fee = pricing_model.calc_out_given_in(
-        in_=init_bond_reserves,
-        share_reserves=init_share_reserves,
-        bond_reserves=0,
-        token_out="pt",
+        in_=Quantity(amount=init_bond_reserves, unit="base"),
+        market_state=MarketState(
+            share_reserves=init_share_reserves,
+            bond_reserves=0,
+            share_price=market.market_state.init_share_price,
+            init_share_price=market.market_state.init_share_price,
+        ),
         fee_percent=fee_percent,
-        time_remaining=stretch_time_remaining,
-        init_share_price=market.init_share_price,
-        share_price=market.init_share_price,
-    )[1]
+        time_remaining=market.position_duration,
+    ).breakdown.with_fee
     # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
-    base_to_lp = init_share_reserves + output_with_fee
+    first_base_to_lp = init_share_reserves + output_with_fee
+    short_amount = init_bond_reserves
+    second_base_to_lp = target_liquidity - init_share_reserves
     # budget is the full amount for LP & short
-    budget = base_to_lp + init_bond_reserves
+    budget = first_base_to_lp + short_amount + second_base_to_lp
     # construct the init_lp agent with desired budget, lp, and short amounts
     init_lp_agent = import_module("elfpy.policies.init_lp").Policy(
         wallet_address=0,
         budget=budget,
-        base_to_lp=base_to_lp,
+        first_base_to_lp=first_base_to_lp,
         pt_to_short=init_bond_reserves,
+        second_base_to_lp=second_base_to_lp,
     )
     logging.info(
         (
-            "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
-            "budget = %g; base_to_lp = %g; pt_to_short = %g"
+            "Init LP agent #%g statistics:\n\t"
+            "target_apy = %g\n\ttarget_liquidity = %g\n\t"
+            "budget = %g\n\tfirst_base_to_lp = %g\n\t"
+            "pt_to_short = %g\n\tsecond_base_to_lp = %g"
         ),
         init_lp_agent.wallet_address,
         target_pool_apy,
         target_liquidity,
         budget,
-        base_to_lp,
+        first_base_to_lp,
         init_bond_reserves,
+        second_base_to_lp,
     )
     return init_lp_agent
 
@@ -120,7 +129,7 @@ def get_market(
     pricing_model: PricingModel,
     target_pool_apy: float,
     fee_percent: float,
-    token_duration: float,
+    position_duration: float,
     init_share_price: float,
 ) -> Market:
     """Setup market
@@ -147,13 +156,15 @@ def get_market(
         instantiated market without any liquidity (i.e. no shares or bonds)
 
     """
-    time_stretch_constant = pricing_model.calc_time_stretch(target_pool_apy)
     market = Market(
+        market_state=MarketState(
+            init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+            share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
+        ),
+        position_duration=StretchedTime(
+            days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apy)
+        ),
         fee_percent=fee_percent,  # g
-        token_duration=token_duration,
-        time_stretch_constant=time_stretch_constant,
-        init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-        share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
     )
     return market
 
@@ -164,7 +175,7 @@ def get_pricing_model(model_name: str) -> PricingModel:
     Arguments
     ---------
     model_name : str
-        name of the desired pricing_model; can be either "element" or "hyperdrive"
+        name of the desired pricing_model; can be "element", "hyperdrive", or "yieldspace"
 
     Returns
     -------
@@ -172,12 +183,14 @@ def get_pricing_model(model_name: str) -> PricingModel:
         instantiated pricing model matching the input argument
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
-    if model_name.lower() == "hyperdrive":
-        pricing_model = HyperdrivePricingModel()
-    elif model_name.lower() == "element":
+    if model_name.lower() == "element":
         pricing_model = ElementPricingModel()
+    elif model_name.lower() == "hyperdrive":
+        pricing_model = HyperdrivePricingModel()
+    elif model_name.lower() == "yieldspace":
+        pricing_model = YieldSpacePricingModel()
     else:
-        raise ValueError(f'pricing_model_name must be "HyperDrive" or "Element", not {model_name}')
+        raise ValueError(f'pricing_model_name must be "Element", "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model
 
 

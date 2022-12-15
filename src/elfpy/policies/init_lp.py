@@ -6,7 +6,10 @@ Special reserved user strategy that is used to initialize a market with a desire
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel, ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models.base import PricingModel
+from elfpy.pricing_models.element import ElementPricingModel
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 class Policy(Agent):
@@ -19,12 +22,14 @@ class Policy(Agent):
         self,
         wallet_address,
         budget=1000,
-        base_to_lp=100,
+        first_base_to_lp=1,
         pt_to_short=100,
+        second_base_to_lp=100,
     ):
         """call basic policy init then add custom stuff"""
-        self.base_to_lp = base_to_lp
+        self.first_base_to_lp = first_base_to_lp
         self.pt_to_short = pt_to_short
+        self.second_base_to_lp = second_base_to_lp
         super().__init__(wallet_address, budget)
 
     def action(self, market: Market, pricing_model: PricingModel):
@@ -40,13 +45,21 @@ class Policy(Agent):
             if pricing_model.model_name() == ElementPricingModel().model_name():
                 # TODO: This doesn't work correctly -- need to add PT
                 action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.second_base_to_lp),
                 ]
             elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
+                # TODO: This PM fails the tests
                 action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.first_base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.second_base_to_lp),
+                ]
+            elif pricing_model.model_name() == YieldSpacePricingModel().model_name():
+                action_list = [
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.first_base_to_lp),
+                    self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.second_base_to_lp),
                 ]
             else:
-                raise ValueError(f"Pricing model = {pricing_model.model_name} is not supported.")
+                raise ValueError(f"Pricing model = {pricing_model.model_name()} is not supported.")
         return action_list

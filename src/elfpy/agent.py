@@ -6,8 +6,9 @@ import logging
 
 import numpy as np
 
-from elfpy.markets import Market, MarketAction, MarketActionType
-from elfpy.pricing_models import PricingModel
+from elfpy.markets import Market
+from elfpy.pricing_models.base import PricingModel
+from elfpy.types import MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
 
@@ -56,9 +57,11 @@ class Agent:
         An alternative is to do this iteratively and find a max trade, but that is probably too slow.
         Maybe we could add an optional flag to iteratively solve it, like num_iters.
         """
-        if market.share_reserves == 0:
+        if market.market_state.share_reserves == 0:
             return 0
-        max_pt_short = market.share_reserves * market.share_price / market.get_spot_price(pricing_model)
+        max_pt_short = (
+            market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price(pricing_model)
+        )
         return max_pt_short
 
     def get_trade_list(self, market: Market, pricing_model: PricingModel) -> list:
@@ -145,7 +148,7 @@ class Agent:
             )
         return action_list
 
-    def log_status_report(self) -> str:
+    def log_status_report(self):
         """Return user state"""
         logging.debug(
             "agent %g base_in_wallet = %1g and fees_paid = %1g",
@@ -158,7 +161,7 @@ class Agent:
         """Logs a report of the agent's state"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if market.share_reserves > 0:
+        if market.market_state.share_reserves > 0:
             price = market.get_spot_price(pricing_model)
         else:
             price = 0

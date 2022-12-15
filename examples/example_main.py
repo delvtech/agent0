@@ -17,7 +17,7 @@ import elfpy
 from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 
 # elfpy utils
 from elfpy.utils import sim_utils  # utilities for setting up a simulation

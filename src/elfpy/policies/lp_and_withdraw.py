@@ -6,7 +6,7 @@ User strategy that adds liquidity and then removes it when enough time has passe
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import PricingModel
+from elfpy.pricing_models.base import PricingModel
 
 
 class Policy(Agent):

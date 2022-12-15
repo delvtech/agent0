@@ -65,10 +65,6 @@ class BaseTradeTest(unittest.TestCase):
         )
         # initialize the market using the LP agent
         simulator.collect_and_execute_trades()
-        print(random_sim_vars.target_liquidity)
-        print(random_sim_vars.target_pool_apy)
-        print(simulator.market.get_rate(pricing_model))
-        print(agent_policies)
         # get trading agent list
         for agent_id, policy_name in enumerate(agent_policies):
             wallet_address = len(init_agents) + agent_id
@@ -103,12 +99,13 @@ class BaseTradeTest(unittest.TestCase):
         self.setup_logging()
         # load default config
         override_dict = {
-            "pricing_model_name": "HyperDrive",
+            "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "target_pool_apy": 0.05,
             "vault_apy": 0.05,
-            "num_blocks_per_day": 1,  # 1 block a day, keep it fast for testing
+            "num_trading_days": 3,  # sim 3 days to keep it fast for testing
+            "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
         }
         simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)[0]
         simulator.run_simulation()
@@ -125,7 +122,7 @@ class BaseTradeTest(unittest.TestCase):
         target_liquidity = 10e6
         target_pool_apr = 0.05
         override_dict = {
-            "pricing_model_name": "Hyperdrive",
+            "pricing_model_name": "Yieldspace",
             "target_liquidity": target_liquidity,
             "target_pool_apy": target_pool_apr,
             "vault_apy": 0.05,
@@ -134,14 +131,15 @@ class BaseTradeTest(unittest.TestCase):
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
         simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
-        total_liquidity = market.bond_reserves + market.share_reserves
+        # check that apr is within 0.001 of the target
         market_apr = market.get_rate(pricing_model)
-        # check that apr is within a 0.1% of the target
         assert np.allclose(
             market_apr, target_pool_apr, atol=0.001
         ), f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
-        # check that the liquidity is within 7% of the target
-        assert np.allclose(total_liquidity, target_liquidity, atol=target_liquidity * 0.07), (
+        # check that the liquidity is within 0.001 of the target
+        # TODO: This will not work with Element PM; also add Hyperdrive PM
+        total_liquidity = market.market_state.share_reserves * market.market_state.share_price
+        assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
             f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
             f"with error rate {(np.abs(total_liquidity-target_liquidity)/target_liquidity)=}."
         )
@@ -153,7 +151,10 @@ class BaseTradeTest(unittest.TestCase):
 
 
 class SingleTradeTests(BaseTradeTest):
-    """Tests for the SingeLong policy"""
+    """
+    Tests for the SingeLong policy
+    TODO: In a followup PR, loop over pricing model types & rerun tests
+    """
 
     def test_init_only(self):
         """Tests base LP setups"""

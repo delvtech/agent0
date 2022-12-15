@@ -15,7 +15,7 @@ from numpy.random._generator import Generator
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel
+from elfpy.pricing_models.base import PricingModel
 from elfpy.utils.config import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
@@ -35,7 +35,7 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        pricing_model: ElementPricingModel | HyperdrivePricingModel,
+        pricing_model: PricingModel,
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
@@ -77,7 +77,7 @@ class Simulator:
             "current_market_yearfrac",  # float, current market time as a yearfrac
             "run_trade_number",  # integer, trade number in a given simulation
             "market_step_size",  # minimum time discretization for market time step
-            "token_duration",  # time lapse between token mint and expiry as a yearfrac
+            "position_duration",  # time lapse between token mint and expiry as a yearfrac
             "time_stretch_constant",
             "target_liquidity",
             "fee_percent",
@@ -86,11 +86,7 @@ class Simulator:
             "base_asset_price",
             "vault_apy",
             "pool_apy",
-            "share_reserves",
-            "bond_reserves",
-            "total_supply",
-            "share_price",  # c in YieldSpace with Yield Bearing Vaults
-            "init_share_price",  # u in YieldSpace with Yield Bearing Vaults
+            "market_state",  # the full state of the market
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
@@ -145,7 +141,7 @@ class Simulator:
         state_string = "\n".join(strings)
         return state_string
 
-    def market_step_size(self) -> None:
+    def market_step_size(self) -> float:
         """Returns minimum time increment
 
         Returns
@@ -219,10 +215,10 @@ class Simulator:
             self.day = day
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                self.market.share_price += (
+                self.market.market_state.share_price += (
                     self.random_variables.vault_apy[self.day]  # current day's apy
                     / 365  # convert annual yield to daily
-                    * self.market.init_share_price  # APR, apply return to starting price (no compounding)
+                    * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
                 )
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
@@ -262,8 +258,7 @@ class Simulator:
         self.analysis_dict["current_market_yearfrac"].append(self.market.time)
         self.analysis_dict["run_trade_number"].append(self.run_trade_number)
         self.analysis_dict["market_step_size"].append(self.market_step_size())
-        self.analysis_dict["token_duration"].append(self.market.token_duration)
-        self.analysis_dict["time_stretch_constant"].append(self.market.time_stretch_constant)
+        self.analysis_dict["position_duration"].append(self.market.position_duration)
         self.analysis_dict["target_liquidity"].append(self.random_variables.target_liquidity)
         self.analysis_dict["fee_percent"].append(self.market.fee_percent)
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
@@ -271,16 +266,12 @@ class Simulator:
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["vault_apy"].append(self.random_variables.vault_apy[self.day])
         self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
-        self.analysis_dict["share_reserves"].append(self.market.share_reserves)
-        self.analysis_dict["bond_reserves"].append(self.market.bond_reserves)
-        self.analysis_dict["total_supply"].append(self.market.share_reserves + self.market.bond_reserves)
-        self.analysis_dict["share_price"].append(self.market.share_price)
-        self.analysis_dict["init_share_price"].append(self.market.init_share_price)
+        self.analysis_dict["market_state"].append(self.market.market_state)
         self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
         self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if self.market.share_reserves > 0:  # there is money in the market
+        if self.market.market_state.share_reserves > 0:  # there is money in the market
             self.analysis_dict["spot_price"].append(self.market.get_spot_price(self.pricing_model))
         else:
             self.analysis_dict["spot_price"].append(str(np.nan))

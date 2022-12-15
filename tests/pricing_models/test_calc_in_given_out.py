@@ -13,24 +13,22 @@ from typing import Optional
 from dataclasses import dataclass
 import unittest
 import numpy as np
+from elfpy.types import MarketState, Quantity, StretchedTime
 
-from elfpy.utils import time as time_utils
-from elfpy.pricing_models import ElementPricingModel, HyperdrivePricingModel, PricingModel
+from elfpy.pricing_models.base import PricingModel
+from elfpy.pricing_models.element import ElementPricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 @dataclass
 class TestCaseCalcInGivenOutSuccess:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: float
-    share_reserves: float
-    bond_reserves: float
-    token_in: str
+    out: Quantity
+    market_state: MarketState
     fee_percent: float
     days_remaining: float
     time_stretch_apy: float
-    share_price: float
-    init_share_price: float
 
     __test__ = False  # pytest: don't test this class
 
@@ -53,14 +51,10 @@ class TestResultCalcInGivenOutSuccess:
 class TestCaseCalcInGivenOutFailure:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: float
-    share_reserves: float
-    bond_reserves: float
-    token_in: str
+    out: Quantity
+    market_state: MarketState
     fee_percent: float
-    time_remaining: float
-    share_price: float
-    init_share_price: float
+    time_remaining: StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -70,9 +64,12 @@ class TestCalcInGivenOut(unittest.TestCase):
 
     # pylint: disable=line-too-long
 
+    # TODO: Add tests for the Hyperdrive pricing model.
+    #
+    # TODO: Add tests for the full TradeResult object.
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
-        pricing_models = [ElementPricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
 
         # Test cases where token_in = "base" indicating that bonds are being
         # purchased for base.
@@ -104,15 +101,16 @@ class TestCalcInGivenOut(unittest.TestCase):
         base_in_test_cases = [
             (  ## test one, basic starting point
                 TestCaseCalcInGivenOutSuccess(
-                    out=100,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=100, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -147,15 +145,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test one
             (  ## test two, double the fee
                 TestCaseCalcInGivenOutSuccess(
-                    out=100,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=100, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.2,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -190,15 +189,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test two
             (  ## test three, 10k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=10_000,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=10_000, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -234,15 +234,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test three
             (  ## test four, 80k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=80_000,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=80_000, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -278,15 +279,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test four
             (  ## test five, change share price
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -317,15 +319,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -356,15 +359,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test six
             (  ## test seven, halve the days remaining
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=91.25,  # 3 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -395,15 +399,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test seven
             (  ## test eight, halve the APY
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="base",  # what token you're putting in
+                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=91.25,  # 3 months remaining
                     time_stretch_apy=0.025,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 3.09396 / 0.02789 / 2.5 = 44.37375403370383
@@ -436,15 +441,16 @@ class TestCalcInGivenOut(unittest.TestCase):
         pt_in_test_cases = [
             (  ## test one, basic starting point
                 TestCaseCalcInGivenOutSuccess(
-                    out=100,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=100, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -480,15 +486,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test one
             (  ## test two, double the fee
                 TestCaseCalcInGivenOutSuccess(
-                    out=100,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=100, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.2,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -524,15 +531,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test two
             (  ## test three, 10k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=10_000,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=10_000, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -568,15 +576,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test three
             (  ## test four, 80k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=80_000,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=80_000, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=1,  # share price of the LP in the yield source
+                        init_share_price=1,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=1,  # share price of the LP in the yield source
-                    init_share_price=1,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -612,15 +621,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test four
             (  ## test five, change share price
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=100_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=100_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -651,15 +661,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=182.5,  # 6 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -690,15 +701,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test six
             (  ## test seven, halve the days remaining
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=91.25,  # 3 months remaining
                     time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 22.1868770168519182502689135891
@@ -729,15 +741,16 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test seven
             (  ## test eight, halve the APY
                 TestCaseCalcInGivenOutSuccess(
-                    out=200,  # how many tokens you expect to get
-                    share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
-                    bond_reserves=1_000_000,  # PT reserves
-                    token_in="pt",  # what token you're putting in
+                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    market_state=MarketState(
+                        share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
+                        bond_reserves=1_000_000,  # PT reserves
+                        share_price=2,  # share price of the LP in the yield source
+                        init_share_price=1.5,  # original share price pool started
+                    ),
                     fee_percent=0.1,  # fee percent (normally 10%)
                     days_remaining=91.25,  # 3 months remaining
                     time_stretch_apy=0.025,  # APY of 5% used to calculate time_stretch
-                    share_price=2,  # share price of the LP in the yield source
-                    init_share_price=1.5,  # original share price pool started
                 ),
                 # From the input, we have the following values:
                 # T = 3.09396 / 0.02789 / 2.5 = 44.37375403370383
@@ -780,28 +793,22 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ):
                     continue
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-                time_remaining = time_utils.stretch_time(
-                    time_utils.days_to_time_remaining(test_case.days_remaining), time_stretch
-                )
+                time_remaining = StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch)
 
                 # Ensure we get the expected results from the pricing model.
-                (without_fee_or_slippage, with_fee, without_fee, fee) = pricing_model.calc_in_given_out(
-                    test_case.out,
-                    test_case.share_reserves,
-                    test_case.bond_reserves,
-                    test_case.token_in,
-                    test_case.fee_percent,
-                    time_remaining,
-                    test_case.init_share_price,
-                    test_case.share_price,
+                trade_result = pricing_model.calc_in_given_out(
+                    out=test_case.out,
+                    market_state=test_case.market_state,
+                    fee_percent=test_case.fee_percent,
+                    time_remaining=time_remaining,
                 )
                 np.testing.assert_almost_equal(
-                    without_fee_or_slippage,
+                    trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
                     err_msg="unexpected without_fee_or_slippage",
                 )
                 np.testing.assert_almost_equal(
-                    without_fee,
+                    trade_result.breakdown.without_fee,
                     expected_result.without_fee,
                     err_msg="unexpected without_fee",
                 )
@@ -811,184 +818,189 @@ class TestCalcInGivenOut(unittest.TestCase):
                     and not expected_result.element_with_fee is None
                 ):
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.fee,
                         expected_result.element_fee,
-                        fee,
                         err_msg="unexpected element fee",
                     )
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.with_fee,
                         expected_result.element_with_fee,
-                        with_fee,
                         err_msg="unexpected element with_fee",
                     )
-                elif model_name == "Hyperdrive":
+                elif model_name == "YieldSpace":
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.fee,
                         expected_result.hyperdrive_fee,
-                        fee,
                         err_msg="unexpected hyperdrive fee",
                     )
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.with_fee,
                         expected_result.hyperdrive_with_fee,
-                        with_fee,
                         err_msg="unexpected hyperdrive with_fee",
                     )
                 else:
-                    raise AssertionError(f'Expected model_name to be "Element" or "Hyperdrive", not {model_name}')
+                    raise AssertionError(f'Expected model_name to be "Element" or "YieldSpace", not {model_name}')
 
+    # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        pricing_models: list[PricingModel] = [ElementPricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
 
         # Failure test cases.
         test_cases = [
             TestCaseCalcInGivenOutFailure(
-                out=-1,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=-1, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=0,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=0, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=-1,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=-1,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=0,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=-1,
-                token_in="base",
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=-1,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=-1,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
                 fee_percent=1.1,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=-1,
-                share_price=1,
-                init_share_price=1,
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=1.1,
+                time_remaining=StretchedTime(days=-91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=1,
-                share_price=1,
-                init_share_price=1,
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=365, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=1.1,
-                share_price=1,
-                init_share_price=1,
+                out=Quantity(amount=100, unit="pt"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=500, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="fyt",
-                fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                out=Quantity(amount=10_000_000, unit="base"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=92.5, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=10_000_000,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="pt",
-                fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1,
+                out=Quantity(amount=100, unit="base"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=2,
+                    init_share_price=0,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=2,
-                init_share_price=0,
+                out=Quantity(amount=100, unit="base"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=1,
-                init_share_price=1.5,
-            ),
-            TestCaseCalcInGivenOutFailure(
-                out=100,
-                share_reserves=100_000,
-                bond_reserves=1_000_000,
-                token_in="base",
-                fee_percent=0.01,
-                time_remaining=0.25,
-                share_price=0,
-                init_share_price=1.5,
+                out=Quantity(amount=100, unit="base"),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
         ]
 
@@ -997,13 +1009,18 @@ class TestCalcInGivenOut(unittest.TestCase):
         for test_case in test_cases:
             for pricing_model in pricing_models:
                 with self.assertRaises(AssertionError):
-                    pricing_model.calc_in_given_out(
-                        out=test_case.out,
-                        share_reserves=test_case.share_reserves,
-                        bond_reserves=test_case.bond_reserves,
-                        token_in=test_case.token_in,
+                    pricing_model.check_input_assertions(
+                        quantity=test_case.out,
+                        market_state=test_case.market_state,
                         fee_percent=test_case.fee_percent,
                         time_remaining=test_case.time_remaining,
-                        init_share_price=test_case.init_share_price,
-                        share_price=test_case.share_price,
+                    )
+                    trade_result = pricing_model.calc_in_given_out(
+                        out=test_case.out,
+                        market_state=test_case.market_state,
+                        fee_percent=test_case.fee_percent,
+                        time_remaining=test_case.time_remaining,
+                    )
+                    pricing_model.check_output_assertions(
+                        trade_result=trade_result,
                     )
