@@ -264,6 +264,7 @@ class ElementPricingModel(PricingModel):
     def model_name(self) -> str:
         return "Element"
 
+    # TODO: FIXME: This should take in the market state as an argument and then use it differently per PM
     def calc_total_liquidity_from_reserves_and_price(self, base_asset_reserves, token_asset_reserves, spot_price):
         """
         Returns the total liquidity in the pool in terms of base
@@ -723,6 +724,7 @@ class HyperdrivePricingModel(PricingModel):
     def model_name(self) -> str:
         return "Hyperdrive"
 
+    # TODO: FIXME: use market state (noted in the element fixme)
     def calc_total_liquidity_from_reserves_and_price(self, share_reserves, share_price):
         """
         Returns the total liquidity in the pool in terms of base
@@ -740,6 +742,7 @@ class HyperdrivePricingModel(PricingModel):
         """
         return share_reserves * share_price
 
+    # TODO: FIXME: add back to base class & use market state
     def calc_liquidity(
         self,
         target_liquidity,

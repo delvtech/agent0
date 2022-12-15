@@ -34,6 +34,7 @@ class Policy(Agent):
         implement user strategy
         LP if you can, but only do it once
         short if you can, but only do it once
+        TODO: FIXME: actions should receive market_state, pricing_model, and world_state
         """
         has_lp = self.wallet.lp_in_wallet > 0
         if has_lp:

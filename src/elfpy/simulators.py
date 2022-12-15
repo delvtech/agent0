@@ -147,7 +147,7 @@ class Simulator:
         state_string = "\n".join(strings)
         return state_string
 
-    def market_step_size(self) -> None:
+    def market_step_size(self) -> float:
         """Returns minimum time increment
 
         Returns
@@ -219,8 +219,10 @@ class Simulator:
         self.start_time = time_utils.current_datetime()
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
+            self.market.vault_apy = self.random_variables.vault_apy[
+                self.day
+            ]  # TODO: FIXME: set up a simulator "world state" that gets passed to agent actions
             # Vault return can vary per day, which sets the current price per share
-            self.market.vault_apy = self.random_variables.vault_apy[self.day]
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 self.market.share_price += (
                     self.random_variables.vault_apy[self.day]  # current day's apy

@@ -108,7 +108,7 @@ class BaseTradeTest(unittest.TestCase):
         TODO: Check that the market values match the desired amounts
         """
         self.setup_logging()
-        target_liquidity = 1e3
+        target_liquidity = 1e6
         target_pool_apr = 0.05
         override_dict = {
             "pricing_model_name": "Hyperdrive",
