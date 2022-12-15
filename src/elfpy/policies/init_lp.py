@@ -19,12 +19,14 @@ class Policy(Agent):
         self,
         wallet_address,
         budget=1000,
-        base_to_lp=100,
+        first_base_to_lp=1,
         pt_to_short=100,
+        second_base_to_lp=100,
     ):
         """call basic policy init then add custom stuff"""
-        self.base_to_lp = base_to_lp
+        self.first_base_to_lp = first_base_to_lp
         self.pt_to_short = pt_to_short
+        self.second_base_to_lp = second_base_to_lp
         super().__init__(wallet_address, budget)
 
     def action(self, market: Market, pricing_model: PricingModel):
@@ -37,15 +39,11 @@ class Policy(Agent):
         if has_lp:
             action_list = []
         else:
-            if pricing_model.model_name() == ElementPricingModel().model_name():
-                # TODO: This doesn't work correctly -- need to add PT
+            if pricing_model.model_name() == HyperdrivePricingModel().model_name():
                 action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
-                ]
-            elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
-                action_list = [
-                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.base_to_lp),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.first_base_to_lp),
                     self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short),
+                    self.create_agent_action(action_type="add_liquidity", trade_amount=self.second_base_to_lp),
                 ]
             else:
                 raise ValueError(f"Pricing model = {pricing_model.model_name} is not supported.")

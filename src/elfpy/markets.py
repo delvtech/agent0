@@ -125,6 +125,7 @@ class Market:
         self.bond_buffer: float = 0
         self.lp_reserves: float = lp_reserves
         self.time_stretch_constant: float = time_stretch_constant
+        self.vault_apy = 0
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         """Ensure that the agent action is an allowed action for this market

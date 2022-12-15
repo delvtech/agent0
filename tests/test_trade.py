@@ -18,6 +18,7 @@ from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
 from elfpy.utils import outputs as output_utils  # utilities for file outputs
+import elfpy.utils.price as price_utils
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -107,7 +108,7 @@ class BaseTradeTest(unittest.TestCase):
         TODO: Check that the market values match the desired amounts
         """
         self.setup_logging()
-        target_liquidity = 10e6
+        target_liquidity = 1e3
         target_pool_apr = 0.05
         override_dict = {
             "pricing_model_name": "Hyperdrive",
@@ -119,17 +120,25 @@ class BaseTradeTest(unittest.TestCase):
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
         simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
-        total_liquidity = market.bond_reserves + market.share_reserves
+
+        # check that apr is within a 0.001 of the target
         market_apr = market.get_rate(pricing_model)
-        # check that apr is within a 0.1% of the target
-        assert np.allclose(
-            market_apr, target_pool_apr, atol=0.001
-        ), f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
-        # check that the liquidity is within 7% of the target
-        assert np.allclose(total_liquidity, target_liquidity, atol=target_liquidity * 0.07), (
-            f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
-            f"with error rate {(np.abs(total_liquidity-target_liquidity)/target_liquidity)=}."
+        assert np.allclose(market_apr, target_pool_apr, atol=0.001), (
+            f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
+            f"with error of{(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
         )
+
+        # check that the liquidity is within 0.001 of the target
+        total_liquidity = pricing_model.calc_total_liquidity_from_reserves_and_price(
+            market.share_reserves, market.share_price
+        )
+
+        # total_liquidity = market.bond_reserves + market.share_reserves
+        assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
+            f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
+            f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
+        )
+
         # run the simulation
         simulator.run_simulation()
         if delete_logs:
@@ -142,7 +151,7 @@ class SingleTradeTests(BaseTradeTest):
 
     def test_init_only(self):
         """Tests base LP setups"""
-        self.run_base_lp_test(agent_policies=[], config_file="config/example_config.toml")
+        self.run_base_lp_test(agent_policies=[], config_file="config/example_config.toml", delete_logs=True)
 
     def test_single_long(self):
         """Tests the BaseUser class"""

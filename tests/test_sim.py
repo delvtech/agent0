@@ -99,7 +99,7 @@ class BaseSimTest(unittest.TestCase):
                 self.setup_and_run_simulator(config_file, override_dict)
             # pylint: disable=broad-except
             except Exception as exc:
-                assert False, f"ERROR: Test failed at seed {rng_seed} with exception\n{exc}"
+                raise AssertionError(f"ERROR: Test failed at seed {rng_seed}") from exc
         if delete_logs:
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)

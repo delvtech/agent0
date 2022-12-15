@@ -264,6 +264,38 @@ class ElementPricingModel(PricingModel):
     def model_name(self) -> str:
         return "Element"
 
+    def calc_total_liquidity_from_reserves_and_price(self, base_asset_reserves, token_asset_reserves, spot_price):
+        """
+        Returns the total liquidity in the pool in terms of base
+
+        We are using spot_price when calculating total_liquidity to convert the two tokens into the same units.
+        Otherwise we're comparing apples(base_asset_reserves in ETH) and oranges (token_asset_reserves in ptETH)
+            ptEth = 1.0 ETH at maturity ONLY
+            ptEth = 0.95 ETH ahead of time
+        Discount factor from the time value of money
+            Present Value = Future Value / (1 + r)^n
+            Future Value = Present Value * (1 + r)^n
+        The equation converts from future value to present value at the appropriate discount rate,
+        which measures the opportunity cost of getting a dollar tomorrow instead of today.
+        discount rate = (1 + r)^n
+        spot price APR = 1 / (1 + r)^n
+
+        Arguments
+        ---------
+        base_asset_reserves : float
+            Base reserves in the pool
+        token_asset_reserves : float
+            Bond (pt) reserves in the pool
+        spot_price : float
+            Price of bonds (pts) in terms of base
+
+        Returns
+        -------
+        float
+            Total liquidity in the pool in terms of base, calculated from the provided parameters
+        """
+        return base_asset_reserves + token_asset_reserves * spot_price
+
     def calc_in_given_out(
         self,
         out: float,
@@ -690,6 +722,87 @@ class HyperdrivePricingModel(PricingModel):
 
     def model_name(self) -> str:
         return "Hyperdrive"
+
+    def calc_total_liquidity_from_reserves_and_price(self, share_reserves, share_price):
+        """
+        Returns the total liquidity in the pool in terms of base
+        Arguments
+        ---------
+        share_reserves : float
+            Share reserves in the pool
+        share_price : float
+            Price of underlying vault shares (accumulated interest)
+
+        Returns
+        -------
+        float
+            Total liquidity in the pool in terms of base
+        """
+        return share_reserves * share_price
+
+    def calc_liquidity(
+        self,
+        target_liquidity,
+        market_price,
+        apr,  # decimal APR
+        days_remaining,
+        time_stretch,
+        init_share_price: float = 1,
+        share_price: float = 1,
+    ):
+        """
+        Returns the reserve volumes and total supply
+
+        The scaling factor ensures token_asset_reserves and base_asset_reserves add
+        up to target_liquidity, while keeping their ratio constant (preserves apr).
+
+        total_liquidity = in base terms, used to target liquidity as passed in
+        total_reserves  = in arbitrary units (AU), used for yieldspace math
+
+        Arguments
+        ---------
+        target_liquidity_usd : float
+            Amount of liquidity, denominated in USD, that the simulation is trying to achieve in a given market
+        market_price : float
+            Price of the base asset, denominated in USD
+        apr : float
+            Fixed APR that the bonds should provide, in decimal form (for example, 5% APR is 0.05)
+        days_remaining : float
+            Amount of days left until bond maturity
+        time_stretch : float
+            Time stretch parameter, in years
+        init_share_price : float
+            Original share price when the pool started. Defaults to 1
+        share_price : float
+            Current share price. Defaults to 1
+
+        Returns
+        -------
+        (float, float, float)
+            Tuple that contains (base_asset_reserves, token_asset_reserves, total_liquidity)
+            calculated from the provided parameters
+        """
+        # estimate reserve values with the information we have
+        spot_price = price_utils.calc_spot_price_from_apr(apr, time_utils.norm_days(days_remaining))
+        token_asset_reserves = target_liquidity / 2 / spot_price  # guesstimate, in base units still
+        base_asset_reserves = price_utils.calc_base_asset_reserves(
+            apr,
+            token_asset_reserves,
+            days_remaining,
+            time_stretch,
+            init_share_price,
+            share_price,
+        )  # ensures an accurate ratio of prices
+        total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
+            base_asset_reserves, share_price
+        )  # in base asset units
+        # compute scaling factor to adjust reserves so that they match the target liquidity
+        scaling_factor = (target_liquidity / market_price) / total_liquidity  # both in token units
+        # update variables by rescaling the original estimates
+        token_asset_reserves = token_asset_reserves * scaling_factor
+        base_asset_reserves = base_asset_reserves * scaling_factor
+        total_liquidity = self.calc_total_liquidity_from_reserves_and_price(base_asset_reserves, share_price)
+        return (base_asset_reserves, token_asset_reserves, total_liquidity)
 
     def calc_lp_out_given_tokens_in(
         self,
