@@ -1,5 +1,7 @@
 """The Hyperdrive pricing model."""
 
+import copy
+
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import (
     Quantity,
@@ -186,6 +188,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         TradeResult
             The result of performing the trade.
         """
+
+        market_state = copy.copy(market_state)
 
         # TODO: This is somewhat strange since these updates never actually hit
         #       the reserves.
