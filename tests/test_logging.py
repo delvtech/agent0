@@ -84,8 +84,8 @@ class BaseLogTest(unittest.TestCase):
         handler_types = ["file", "stream"]
         for (level, handler_type) in itertools.product(logging_levels, handler_types):
             if handler_type == "file":
-                name = f"test_logging_level-{level}.log"
-                handler = logging.FileHandler(os.path.join(log_dir, name), "w")
+                log_name = f"test_logging_level-{level}.log"
+                handler = logging.FileHandler(os.path.join(log_dir, log_name), "w")
             else:
                 handler = logging.StreamHandler(sys.stdout)
             logging.getLogger().setLevel(level)  # events of this level and above will be tracked

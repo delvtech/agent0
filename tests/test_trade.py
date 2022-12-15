@@ -17,6 +17,7 @@ import numpy as np
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
+import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -78,21 +79,9 @@ class BaseTradeTest(unittest.TestCase):
     @staticmethod
     def setup_logging():
         """Setup test logging levels and handlers"""
-        logging_level = logging.DEBUG
-        log_dir = ".logging"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        name = "test_trades.log"
-        handler = logging.FileHandler(os.path.join(log_dir, name), "w")
-        logging.getLogger().setLevel(logging_level)  # events of this level and above will be tracked
-        handler.setFormatter(
-            logging.Formatter(
-                "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s", "%y-%m-%d %H:%M:%S"
-            )
-        )
-        logging.getLogger().handlers = [
-            handler,
-        ]
+        log_filename = ".logging/test_trades.log"
+        log_level = logging.DEBUG
+        output_utils.setup_logging(log_filename, log_level=log_level)
 
     def run_base_trade_test(self, agent_policies, config_file, delete_logs=True):
         """Assigns member variables that are useful for many tests"""
@@ -119,7 +108,7 @@ class BaseTradeTest(unittest.TestCase):
         TODO: Check that the market values match the desired amounts
         """
         self.setup_logging()
-        target_liquidity = 10e6
+        target_liquidity = 1e6
         target_pool_apr = 0.05
         override_dict = {
             "pricing_model_name": "Yieldspace",
@@ -133,15 +122,16 @@ class BaseTradeTest(unittest.TestCase):
         simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
         # check that apr is within 0.001 of the target
         market_apr = market.get_rate(pricing_model)
-        assert np.allclose(
-            market_apr, target_pool_apr, atol=0.001
-        ), f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
+        assert np.allclose(market_apr, target_pool_apr, atol=0.001), (
+            f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
+            f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
+        )
         # check that the liquidity is within 0.001 of the target
-        # TODO: This will not work with Element PM; also add Hyperdrive PM
+        # TODO: This will not work with Element PM & Hyperdrive PM
         total_liquidity = market.market_state.share_reserves * market.market_state.share_price
         assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
             f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
-            f"with error rate {(np.abs(total_liquidity-target_liquidity)/target_liquidity)=}."
+            f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
         )
         # run the simulation
         simulator.run_simulation()
