@@ -53,6 +53,16 @@ class StretchedTime:
         """The time stretch constant."""
         return self._time_stretch
 
+    def __str__(self):
+        out_str = (
+            "Time components:\n"
+            f"\t{self.days()=}\n"
+            f"\t{self.normalized_days()=}\n"
+            f"\t{self.stretched_time()=}\n"
+            f"\t{self.time_stretch()=}\n"
+        )
+        return out_str
+
 
 @dataclass
 class MarketAction:
@@ -151,6 +161,22 @@ class MarketState:
         self.share_buffer += delta.d_share_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
+
+    def __str__(self):
+        out_str = (
+            "Trading reserves:\n"
+            f"\t{self.share_reserves=}\n"
+            f"\t{self.bond_reserves=}\n"
+            "Trading buffers:\n"
+            f"\t{self.share_buffer=}\n"
+            f"\t{self.bond_buffer=}\n"
+            "LP reserves:\n"
+            f"\t{self.lp_reserves=}\n"
+            "Share price:\n"
+            f"\t{self.share_price=}\n"
+            f"\t{self.init_share_price=}"
+        )
+        return out_str
 
 
 @dataclass
