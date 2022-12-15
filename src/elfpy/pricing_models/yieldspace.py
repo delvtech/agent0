@@ -1,3 +1,5 @@
+"""The YieldSpace pricing model."""
+
 import logging
 from elfpy.pricing_models.base import PricingModel
 
@@ -20,6 +22,13 @@ class YieldSpacePricingModel(PricingModel):
     This pricing model uses the YieldSpace invariant with modifications to
     enable the base reserves to be deposited into yield bearing vaults
     """
+
+    # TODO: The too many locals disable can be removed after refactoring the LP
+    #       functions.
+    #
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=duplicate-code
 
     def model_name(self) -> str:
         return "YieldSpace"
@@ -290,7 +299,7 @@ class YieldSpacePricingModel(PricingModel):
         Arguments
         ---------
         out : Quantity
-            The quantity of tokens that the user wants to receive (the amount 
+            The quantity of tokens that the user wants to receive (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -442,7 +451,7 @@ class YieldSpacePricingModel(PricingModel):
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * fee_percent * d_bonds
             logging.debug(
-                ("fee = (1 - spot_price) * fee_percent * d_bonds = " "(1 - %g) * %g * %g = %g"),
+                ("fee = (1 - spot_price) * fee_percent * d_bonds = (1 - %g) * %g * %g = %g"),
                 spot_price,
                 fee_percent,
                 d_bonds,
@@ -510,7 +519,7 @@ class YieldSpacePricingModel(PricingModel):
         Arguments
         ---------
         in_ : Quantity
-            The quantity of tokens that the user wants to pay (the amount 
+            The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.

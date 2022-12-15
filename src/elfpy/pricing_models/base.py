@@ -1,3 +1,5 @@
+"""The base pricing model."""
+
 from abc import ABC, abstractmethod
 
 from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
@@ -26,6 +28,7 @@ class PricingModel(ABC):
 
     # TODO: set up member object that owns attributes instead of so many individual instance attributes
     # pylint: disable=too-many-instance-attributes
+    # pylint: disable=line-too-long
 
     @abstractmethod
     def calc_in_given_out(
@@ -161,7 +164,7 @@ class PricingModel(ABC):
             market_state,
             time_remaining,
         )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining.normalized_days)
+        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
         return apr
 
     def calc_time_stretch(self, apr):
@@ -176,6 +179,8 @@ class PricingModel(ABC):
         fee_percent: float,
         time_remaining: StretchedTime,
     ):
+        """Applies a set of assertions to the input of a trading function."""
+
         assert (
             quantity.amount > 0
         ), f"pricing_models.check_input_assertions: ERROR: expected quantity.amount > 0, not {quantity.amount}!"
@@ -202,12 +207,14 @@ class PricingModel(ABC):
         self,
         trade_result: TradeResult,
     ):
+        """Applies a set of assertions to a trade result."""
+
         assert isinstance(
             trade_result.breakdown.fee, float
         ), f"pricing_models.check_output_assertions: ERROR: fee should be a float, not {type(trade_result.breakdown.fee)}!"
         assert (
             trade_result.breakdown.fee >= 0
-        ), f"pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
+        ), "pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
         assert isinstance(
             trade_result.breakdown.without_fee, float
         ), f"pricing_models.check_output_assertions: ERROR: without_fee should be a float, not {type(trade_result.breakdown.without_fee)}!"

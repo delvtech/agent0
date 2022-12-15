@@ -9,7 +9,6 @@ Utilities for price
 # pylint: disable=too-many-arguments
 
 from elfpy.types import MarketState, StretchedTime
-from . import time as time_utils
 
 ### Reserves ###
 

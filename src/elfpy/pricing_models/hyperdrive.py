@@ -1,3 +1,5 @@
+"""The Hyperdrive pricing model."""
+
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import (
     Quantity,
@@ -17,6 +19,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     YieldSpace invariant with modifications to enable the base reserves to be
     deposited into yield bearing vaults
     """
+
+    # pylint: disable=line-too-long
 
     def model_name(self) -> str:
         return "Hyperdrive"
@@ -52,7 +56,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         Arguments
         ---------
         out : Quantity
-            The quantity of tokens that the user wants to receive (the amount 
+            The quantity of tokens that the user wants to receive (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -166,7 +170,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         Arguments
         ---------
         in_ : Quantity
-            The quantity of tokens that the user wants to pay (the amount 
+            The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.

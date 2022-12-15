@@ -1,5 +1,7 @@
+"""A set of common types used throughtout the simulation codebase."""
+
 from dataclasses import dataclass
-from typing import NamedTuple, TypeAlias
+from typing import TypeAlias
 from typing import Literal
 from elfpy.utils.outputs import float_to_string
 
@@ -33,18 +35,22 @@ class StretchedTime:
 
     @property
     def days(self):
+        """Format time as days."""
         return self._days
 
     @property
     def normalized_days(self):
+        """Format time as normalized days."""
         return time_utils.norm_days(self._days)
 
     @property
     def stretched_time(self):
+        """Format time as stretched time."""
         return self._stretched_time
 
     @property
     def time_stretch(self):
+        """The time stretch constant."""
         return self._time_stretch
 
 
@@ -139,6 +145,7 @@ class MarketState:
         # names ("base_asset" => "base_reserves" and "token_asset" => bond_reserves").
         delta: MarketDeltas,
     ):
+        """Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
         self.share_buffer += delta.d_share_buffer
@@ -148,18 +155,27 @@ class MarketState:
 
 @dataclass
 class UserTradeResult:
+    """The result to a user of performing a trade."""
+
     d_base: float
     d_bonds: float
 
 
 @dataclass
 class MarketTradeResult:
+    """The result to a market of performing a trade."""
+
     d_base: float
     d_bonds: float
 
 
 @dataclass
 class TradeBreakdown:
+    """
+    A granular breakdown of a trade. This includes information relating to fees
+    and slippage.
+    """
+
     without_fee_or_slippage: float
     with_fee: float
     without_fee: float

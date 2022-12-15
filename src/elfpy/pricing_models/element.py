@@ -1,3 +1,5 @@
+"""The Element pricing model."""
+
 import logging
 from elfpy.pricing_models.base import PricingModel
 
@@ -19,6 +21,14 @@ class ElementPricingModel(PricingModel):
     Does not use the Yield Bearing Vault `init_share_price` (μ) and `share_price` (c) variables.
     TODO: Update element pricing model to include lp calcs
     """
+
+    # TODO: The too many locals disable can be removed after refactoring the LP
+    #       functions.
+    #
+    # pylint: disable=line-too-long
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    # pylint: disable=duplicate-code
 
     def calc_lp_out_given_tokens_in(
         self,
@@ -98,7 +108,7 @@ class ElementPricingModel(PricingModel):
         Arguments
         ---------
         out : Quantity
-            The quantity of tokens that the user wants to receive (the amount 
+            The quantity of tokens that the user wants to receive (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -301,7 +311,7 @@ class ElementPricingModel(PricingModel):
 
         Arguments
         in_ : Quantity
-            The quantity of tokens that the user wants to pay (the amount 
+            The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.

@@ -15,7 +15,6 @@ import unittest
 import numpy as np
 from elfpy.types import MarketState, Quantity, StretchedTime
 
-from elfpy.utils import time as time_utils
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
