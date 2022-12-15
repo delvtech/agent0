@@ -63,7 +63,7 @@ class Market:
         """
         if pricing_model_name.lower() == "element":
             allowed_actions = ["open_long", "close_long", "add_liquidity", "remove_liquidity"]
-        elif pricing_model_name.lower() == "hyperdrive":
+        elif pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
             allowed_actions = [
                 "open_long",
                 "close_long",
@@ -75,7 +75,7 @@ class Market:
         else:
             raise ValueError(
                 "market.check_action_type: ERROR: pricing model name should "
-                f'be in ["element", "hyperdrive"], not {pricing_model_name}'
+                f'be in ["element", "hyperdrive", "yieldspace"], not {pricing_model_name}'
             )
         if action_type not in allowed_actions:
             raise AssertionError(

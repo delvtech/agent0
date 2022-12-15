@@ -41,6 +41,7 @@ def get_init_lp_agent(
     target_liquidity: float,
     target_pool_apy: float,
     fee_percent: float,
+    init_liquidity: float = 1,
 ) -> Agent:
     """
     Calculate the required deposit amounts and instantiate the LP agent
@@ -60,6 +61,9 @@ def get_init_lp_agent(
         target pool apy for the market
         the result will be within 0.001 of the target
     fee_percent : float
+        how much the LPer will collect in fees
+    init_liquidity : float
+        initial (small) liquidity amount for setting the market APR
 
     Returns
     -------
@@ -68,9 +72,9 @@ def get_init_lp_agent(
     """
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments
-    # get the reserve amounts for the target liquidity and pool APR
+    # get the reserve amounts for a small target liquidity to achieve a target pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
-        target_liquidity=target_liquidity,
+        target_liquidity=init_liquidity,
         market_price=config.market.base_asset_price,
         apr=target_pool_apy,
         time_remaining=market.position_duration,
@@ -90,27 +94,33 @@ def get_init_lp_agent(
         time_remaining=market.position_duration,
     ).breakdown.with_fee
     # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
-    base_to_lp = init_share_reserves + output_with_fee
+    first_base_to_lp = init_share_reserves + output_with_fee
+    short_amount = init_bond_reserves
+    second_base_to_lp = target_liquidity - init_share_reserves
     # budget is the full amount for LP & short
-    budget = base_to_lp + init_bond_reserves
+    budget = first_base_to_lp + short_amount + second_base_to_lp
     # construct the init_lp agent with desired budget, lp, and short amounts
     init_lp_agent = import_module("elfpy.policies.init_lp").Policy(
         wallet_address=0,
         budget=budget,
-        base_to_lp=base_to_lp,
+        first_base_to_lp=first_base_to_lp,
         pt_to_short=init_bond_reserves,
+        second_base_to_lp=second_base_to_lp,
     )
     logging.info(
         (
-            "Init LP agent #%g statistics:\ntarget_apy = %g; target_liquidity = %g; "
-            "budget = %g; base_to_lp = %g; pt_to_short = %g"
+            "Init LP agent #%g statistics:\n\t"
+            "target_apy = %g\n\ttarget_liquidity = %g\n\t"
+            "budget = %g\n\tfirst_base_to_lp = %g\n\t"
+            "pt_to_short = %g\n\tsecond_base_to_lp = %g"
         ),
         init_lp_agent.wallet_address,
         target_pool_apy,
         target_liquidity,
         budget,
-        base_to_lp,
+        first_base_to_lp,
         init_bond_reserves,
+        second_base_to_lp,
     )
     return init_lp_agent
 
