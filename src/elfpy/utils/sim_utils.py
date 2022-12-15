@@ -274,6 +274,7 @@ def override_config_variables(config, override_dict):
     -------
     Config
         same dataclass as the config input, but with fields specified by override_dict changed
+    TODO: FIXME: overriding num_trading_days does not work when also overriding vault_apy
     """
     # override the config variables, including random variables that were set
     for key, value in override_dict.items():

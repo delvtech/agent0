@@ -191,7 +191,7 @@ class BaseSimTest(unittest.TestCase):
 class TestSimulator(BaseSimTest):
     """Test running a simulation using each pricing model type"""
 
-    # TODO: add similar test for a sim using the element pricing model
+    # TODO: add similar test for a sim using the other PMs
     def test_hyperdrive_sim(self):
         """Tests hyperdrive setup"""
         self.run_hyperdrive_test()
