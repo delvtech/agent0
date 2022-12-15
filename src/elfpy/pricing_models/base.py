@@ -5,19 +5,6 @@ from abc import ABC, abstractmethod
 from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
 import elfpy.utils.price as price_utils
 
-# TODO: Currently many functions use >5 arguments.
-# These should be packaged up into shared variables, e.g.
-#     reserves = (in_reserves, out_reserves)
-#     share_prices = (init_share_price, share_price)
-# pylint: disable=too-many-arguments
-
-# TODO: This module is too big, we should break it up into pricing_models/{base.py, element.py, hyperdrive.py}
-# pylint: disable=too-many-lines
-
-# TODO: some functions have too many local variables (15 is recommended max),
-#     we should consider how to break them up or delete this TODO if it's not possible
-# pylint: disable=too-many-locals
-
 
 class PricingModel(ABC):
     """
@@ -67,8 +54,9 @@ class PricingModel(ABC):
         time_remaining: float,
         stretched_time_remaining: float,
     ) -> tuple[float, float, float]:
-        """
-        Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        """Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        # TODO: This pylint will be resolved when we switch to MarketState
+        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
     # TODO: Use the MarketState class.
@@ -86,8 +74,9 @@ class PricingModel(ABC):
         time_remaining: float,
         stretched_time_remaining: float,
     ) -> tuple[float, float, float]:
-        """
-        Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        """Computes the amount of LP tokens to be minted for a given amount of base asset"""
+        # TODO: This pylint will be resolved when we switch to MarketState
+        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
     # TODO: Use the MarketState class.
@@ -106,6 +95,8 @@ class PricingModel(ABC):
         stretched_time_remaining: float,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
+        # TODO: This pylint will be resolved when we switch to MarketState
+        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
     @abstractmethod
