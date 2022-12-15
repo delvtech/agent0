@@ -22,6 +22,9 @@ class Quantity:
     amount: float
     unit: TokenType
 
+    def __str__(self):
+        return f"{self.amount=}\t{self.unit=}"
+
 
 class StretchedTime:
     """A stretched time value with the time stretch"""
@@ -56,10 +59,10 @@ class StretchedTime:
     def __str__(self):
         out_str = (
             "Time components:\n"
-            f"\t{self.days()=}\n"
-            f"\t{self.normalized_days()=}\n"
-            f"\t{self.stretched_time()=}\n"
-            f"\t{self.time_stretch()=}\n"
+            f"\t{self.days=}\n"
+            f"\t{self.normalized_days=}\n"
+            f"\t{self.stretched_time=}\n"
+            f"\t{self.time_stretch=}\n"
         )
         return out_str
 
