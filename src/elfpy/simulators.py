@@ -80,7 +80,6 @@ class Simulator:
             "run_trade_number",  # integer, trade number in a given simulation
             "market_step_size",  # minimum time discretization for market time step
             "position_duration",  # time lapse between token mint and expiry as a yearfrac
-            "time_stretch_constant",
             "target_liquidity",
             "fee_percent",
             "floor_fee",  # minimum fee we take
@@ -88,7 +87,13 @@ class Simulator:
             "base_asset_price",
             "vault_apy",
             "pool_apy",
-            "market_state",  # the full state of the market
+            "share_reserves",  # from market state
+            "bond_reserves",  # from market state
+            "share_buffer",  # from market state
+            "bond_buffer",  # from market state
+            "lp_reserves",  # from market state
+            "share_price",  # from market state
+            "init_share_price",  # from market state
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
@@ -268,7 +273,8 @@ class Simulator:
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
         self.analysis_dict["vault_apy"].append(self.random_variables.vault_apy[self.day])
         self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
-        self.analysis_dict["market_state"].append(self.market.market_state)
+        for key, val in self.market.market_state.__dict__.items():
+            self.analysis_dict[key].append(val)
         self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
         self.analysis_dict["num_blocks_per_day"].append(self.config.simulator.num_blocks_per_day)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
