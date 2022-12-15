@@ -88,7 +88,7 @@ def get_init_lp_agent(
         ),
         fee_percent=fee_percent,
         time_remaining=market.position_duration,
-    )[1]
+    ).breakdown.with_fee
     # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
     base_to_lp = init_share_reserves + output_with_fee
     # budget is the full amount for LP & short

@@ -64,6 +64,9 @@ class TestCalcInGivenOut(unittest.TestCase):
 
     # pylint: disable=line-too-long
 
+    # TODO: Add tests for the Hyperdrive pricing model.
+    #
+    # TODO: Add tests for the full TradeResult object.
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
@@ -793,19 +796,19 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining = StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch)
 
                 # Ensure we get the expected results from the pricing model.
-                (without_fee_or_slippage, with_fee, without_fee, fee) = pricing_model.calc_in_given_out(
+                trade_result = pricing_model.calc_in_given_out(
                     out=test_case.out,
                     market_state=test_case.market_state,
                     fee_percent=test_case.fee_percent,
                     time_remaining=time_remaining,
                 )
                 np.testing.assert_almost_equal(
-                    without_fee_or_slippage,
+                    trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
                     err_msg="unexpected without_fee_or_slippage",
                 )
                 np.testing.assert_almost_equal(
-                    without_fee,
+                    trade_result.breakdown.without_fee,
                     expected_result.without_fee,
                     err_msg="unexpected without_fee",
                 )
@@ -815,24 +818,24 @@ class TestCalcInGivenOut(unittest.TestCase):
                     and not expected_result.element_with_fee is None
                 ):
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.fee,
                         expected_result.element_fee,
-                        fee,
                         err_msg="unexpected element fee",
                     )
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.with_fee,
                         expected_result.element_with_fee,
-                        with_fee,
                         err_msg="unexpected element with_fee",
                     )
                 elif model_name == "YieldSpace":
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.fee,
                         expected_result.hyperdrive_fee,
-                        fee,
                         err_msg="unexpected hyperdrive fee",
                     )
                     np.testing.assert_almost_equal(
+                        trade_result.breakdown.with_fee,
                         expected_result.hyperdrive_with_fee,
-                        with_fee,
                         err_msg="unexpected hyperdrive with_fee",
                     )
                 else:

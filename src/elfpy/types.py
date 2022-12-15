@@ -81,6 +81,9 @@ class MarketDeltas:
     # pylint: disable=duplicate-code
     # pylint: disable=too-many-instance-attributes
 
+    # TODO: Use better naming for these values:
+    # - "d_base_asset" => "d_share_reserves" TODO: Is there some reason this is base instead of shares?
+    # - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
     d_token_asset: float = 0
     d_share_buffer: float = 0

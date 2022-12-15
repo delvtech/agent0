@@ -238,10 +238,10 @@ class ElementPricingModel(PricingModel):
 
         logging.debug(
             (
-                "\n\tout = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
+                "\n\tout = %s\n\tshare_reserves = %d\n\tbond_reserves = %d"
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %d\n\tfee_percent = %g"
-                "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
+                "\n\ttime_remaining = %s\n\ttime_elapsed = %g"
                 "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
                 "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
             ),
@@ -440,10 +440,10 @@ class ElementPricingModel(PricingModel):
 
         logging.debug(
             (
-                "\n\tin_ = %g\n\tshare_reserves = %d\n\tbond_reserves = %d"
+                "\n\tin_ = %s\n\tshare_reserves = %d\n\tbond_reserves = %d"
                 "\n\ttotal_reserves = %d\n\tinit_share_price = %g"
                 "\n\tshare_price = %g\n\tfee_percent = %g"
-                "\n\ttime_remaining = %g\n\ttime_elapsed = %g"
+                "\n\ttime_remaining = %s\n\ttime_elapsed = %g"
                 "\n\tspot_price = %g\n\tk = %g\n\twithout_fee_or_slippage = %g"
                 "\n\twithout_fee = %g\n\twith_fee = %g\n\tfee = %g"
             ),

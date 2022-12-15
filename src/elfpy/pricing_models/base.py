@@ -197,17 +197,20 @@ class PricingModel(ABC):
             1 > time_remaining.stretched_time >= 0
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
 
+    # TODO: Add checks for TradeResult's other outputs.
     def check_output_assertions(
         self,
         trade_result: TradeResult,
     ):
         assert isinstance(
-            trade_result.fee, float
-        ), f"pricing_models.check_output_assertions: ERROR: fee should be a float, not {type(trade_result.fee)}!"
-        assert trade_result.fee >= 0, f"pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
-        assert isinstance(
-            trade_result.without_fee, float
-        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be a float, not {type(trade_result.without_fee)}!"
+            trade_result.breakdown.fee, float
+        ), f"pricing_models.check_output_assertions: ERROR: fee should be a float, not {type(trade_result.breakdown.fee)}!"
         assert (
-            trade_result.without_fee >= 0
-        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be non-negative, not {trade_result.without_fee}!"
+            trade_result.breakdown.fee >= 0
+        ), f"pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
+        assert isinstance(
+            trade_result.breakdown.without_fee, float
+        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be a float, not {type(trade_result.breakdown.without_fee)}!"
+        assert (
+            trade_result.breakdown.without_fee >= 0
+        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"

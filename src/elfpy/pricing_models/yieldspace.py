@@ -445,7 +445,6 @@ class YieldSpacePricingModel(PricingModel):
                 ("fee = (1 - spot_price) * fee_percent * d_bonds = " "(1 - %g) * %g * %g = %g"),
                 spot_price,
                 fee_percent,
-                market_state.share_price,
                 d_bonds,
                 (1 - spot_price) * fee_percent * d_bonds,
             )

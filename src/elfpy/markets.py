@@ -241,46 +241,6 @@ class Market:
             )
         return target_reserves
 
-    def check_fees(
-        self,
-        amount: float,
-        tokens: tuple[TokenType, TokenType],
-        reserves: tuple[float, float],
-        trade_results: TradeResult,
-    ) -> None:
-        """Checks fee values for out of bounds"""
-        (token_in, token_out) = tokens
-        (in_reserves, out_reserves) = reserves
-        (
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        ) = trade_results
-        if (
-            any(
-                [
-                    isinstance(output_with_fee, complex),
-                    isinstance(output_without_fee, complex),
-                    isinstance(fee, complex),
-                ]
-            )
-            or fee < 0
-        ):
-            state_string = self.get_market_state_string()
-            assert False, (
-                f"Market.check_fees: Error: fee={fee} should not be < 0 and the type should not be complex."
-                f"\ntoken_in = {token_in}"
-                f"\ntoken_out = {token_out}"
-                f"\nin_reserves = {in_reserves}"
-                f"\nout_reserves = {out_reserves}"
-                f"\ntrade_amount = {amount}"
-                f"\nwithout_fee_or_slippage = {without_fee_or_slippage}"
-                f"\noutput_with_fee = {output_with_fee}"
-                f"\noutput_without_fee = {output_without_fee}\n"
-                f"{state_string}"
-            )
-
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
@@ -307,43 +267,34 @@ class Market:
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_results = pricing_model.calc_out_given_in(
+        trade_result = pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_results)
+        pricing_model.check_output_assertions(trade_result=trade_result)
 
-        # Log the trade results.
-        (
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        ) = trade_results
-        logging.debug(
-            "opening short: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        )
+        # Log the trade result.
+        logging.debug("opening short: trade_result = %g", trade_result)
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=-output_with_fee,
-            d_token_asset=+agent_action.trade_amount,
+            d_base_asset=trade_result.market_result.d_base,
+            d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=+agent_action.trade_amount,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
-        max_loss = agent_action.trade_amount - output_with_fee
+        max_loss = agent_action.trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
             address=agent_action.wallet_address,
             base_in_wallet=-max_loss,
-            base_in_protocol={agent_action.mint_time: +output_with_fee + max_loss},
-            token_in_protocol={agent_action.mint_time: -agent_action.trade_amount},
-            fees_paid=+fee,
+            # TODO: This implementation is opinionated in a way that may not be
+            #       correct. The question of whether or not shorts should be
+            #       fully backed is still up for debate.
+            base_in_protocol={agent_action.mint_time: +trade_result.user_result.d_base + max_loss},
+            token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+            fees_paid=+trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
 
@@ -383,41 +334,36 @@ class Market:
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_results = pricing_model.calc_in_given_out(
+        trade_result = pricing_model.calc_in_given_out(
             out=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_results)
+        pricing_model.check_output_assertions(trade_result=trade_result)
 
-        # Log the trade results.
-        (
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        ) = trade_results
+        # Log the trade result.
         logging.debug(
-            "closing short: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
+            "closing short: trade_result = %g",
+            trade_result,
         )
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=+output_with_fee,
-            d_token_asset=-agent_action.trade_amount,
+            d_base_asset=trade_result.market_result.d_base,
+            d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-agent_action.trade_amount,
         )
+        # TODO: This accounting doesn't look right. The profit from the
+        #       short should be calculated using the difference between
+        #       the open short price and the sale price plus the max loss
+        #       buffer.
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+output_with_fee,
-            base_in_protocol={agent_action.mint_time: agent_action.trade_amount - output_with_fee},
-            token_in_protocol={agent_action.mint_time: +agent_action.trade_amount},
-            fees_paid=+fee,
+            base_in_wallet=trade_result.user_result.d_base,
+            base_in_protocol={agent_action.mint_time: agent_action.trade_amount - trade_result.user_result.d_base},
+            token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+            fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
 
@@ -446,40 +392,34 @@ class Market:
                 fee_percent=self.fee_percent,
                 time_remaining=time_remaining,
             )
-            trade_results = pricing_model.calc_out_given_in(
+            trade_result = pricing_model.calc_out_given_in(
                 in_=trade_quantity,
                 market_state=self.market_state,
                 fee_percent=self.fee_percent,
                 time_remaining=time_remaining,
             )
-            pricing_model.check_output_assertions(trade_result=trade_results)
+            pricing_model.check_output_assertions(trade_result=trade_result)
 
-            # Log the trade results.
-            (
-                without_fee_or_slippage,
-                output_with_fee,
-                output_without_fee,
-                fee,
-            ) = trade_results
+            # Log the trade result.
             logging.debug(
-                "opening long: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
-                without_fee_or_slippage,
-                output_with_fee,
-                output_without_fee,
-                fee,
+                "opening long: trade_result %g",
+                trade_result,
             )
 
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
-                d_base_asset=+agent_action.trade_amount,
-                d_token_asset=-output_with_fee,
-                d_share_buffer=+output_with_fee / self.market_state.share_price,
+                d_base_asset=trade_result.market_result.d_base,
+                d_token_asset=trade_result.market_result.d_bonds,
+                # TODO: We must use a base buffer rather than a share buffer
+                #       since the obligations represented by the buffer don't
+                #       accrue variable rate interest.
+                d_share_buffer=trade_result.user_result.d_bonds / self.market_state.share_price,
             )
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
-                base_in_wallet=-agent_action.trade_amount,
-                token_in_protocol={agent_action.mint_time: +output_with_fee},
-                fees_paid=+fee,
+                base_in_wallet=trade_result.user_result.d_base,
+                token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+                fees_paid=trade_result.breakdown.fee,
             )
         else:
             market_deltas = MarketDeltas()
@@ -508,40 +448,28 @@ class Market:
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_results = pricing_model.calc_out_given_in(
+        trade_result = pricing_model.calc_out_given_in(
             in_=quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_results)
+        pricing_model.check_output_assertions(trade_result)
 
-        # Log the trade results.
-        (
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        ) = trade_results
-        logging.debug(
-            "closing long: without_fee_or_slippage = %g, output_with_fee = %g, output_without_fee = %g, fee = %g",
-            without_fee_or_slippage,
-            output_with_fee,
-            output_without_fee,
-            fee,
-        )
+        # Log the trade result.
+        logging.debug("closing long: trade_result = %g", trade_result)
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=-output_with_fee,
-            d_token_asset=+agent_action.trade_amount,
+            d_base_asset=trade_result.market_result.d_base,
+            d_token_asset=trade_result.market_result.d_bonds,
             d_share_buffer=-agent_action.trade_amount / self.market_state.share_price,
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+output_with_fee,
-            token_in_wallet={agent_action.mint_time: -agent_action.trade_amount},
-            fees_paid=+fee,
+            base_in_wallet=trade_result.user_result.d_base,
+            token_in_wallet={agent_action.mint_time: trade_result.user_result.d_bonds},
+            fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
 
