@@ -108,13 +108,13 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         flat = out.amount * (1 - time_remaining.stretched_time)
         if out.unit == "base":
             user_result = UserTradeResult(
-                d_base=-out.amount,
-                d_bonds=flat + curve.user_result.d_bonds,
+                d_base=out.amount,
+                d_bonds=-flat + curve.user_result.d_bonds,
             )
         elif out.unit == "pt":
             user_result = UserTradeResult(
-                d_base=flat + curve.user_result.d_base,
-                d_bonds=-out.amount,
+                d_base=-flat + curve.user_result.d_base,
+                d_bonds=out.amount,
             )
         else:
             raise AssertionError(
