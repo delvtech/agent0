@@ -148,8 +148,8 @@ class Agent:
             )
         return action_list
 
-    def log_status_report(self):
-        """Return user state"""
+    def log_status_report(self) -> None:
+        """Logs the current user state"""
         logging.debug(
             "agent %g base_in_wallet = %1g and fees_paid = %1g",
             self.wallet_address,
