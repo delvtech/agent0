@@ -17,7 +17,6 @@ from elfpy.types import (
     StretchedTime,
     TokenType,
     TradeDirection,
-    TradeResult,
 )
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
@@ -31,14 +30,6 @@ class Market:
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
     """
-
-    # TODO: set up member object that owns attributes instead of so many individual instance attributes
-    # pylint: disable=too-many-instance-attributes
-    # Currently many functions use >5 arguments.
-    # These should be packaged up into shared variables, e.g.
-    #     reserves = (in_reserves, out_reserves)
-    #     share_prices = (init_share_price, share_price)
-    # pylint: disable=too-many-arguments
 
     def __init__(
         self,
@@ -540,8 +531,8 @@ class Market:
         )
         return market_deltas, agent_deltas
 
-    def log_market_step_string(self, pricing_model: PricingModel):
-        """Returns a string that describes the current market step"""
+    def log_market_step_string(self, pricing_model: PricingModel) -> None:
+        """Logs the current market step"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market_state.share_reserves <= 0:
