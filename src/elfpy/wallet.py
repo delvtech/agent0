@@ -16,21 +16,23 @@ class Wallet:
 
     # fungible
     address: int
-    base_in_wallet: float
-    lp_in_wallet: float = 0  # they're fungible!
+    base: float
+    lp: float = 0  # they're fungible!
     fees_paid: float = 0
+
     # non-fungible (identified by mint_time, stored as dict)
-    token_in_wallet: dict = field(default_factory=dict)
-    base_in_protocol: dict = field(default_factory=dict)
-    token_in_protocol: dict = field(default_factory=dict)
+    longs: dict = field(default_factory=dict)
+    shorts: dict = field(default_factory=dict)
+    margin: dict = field(default_factory=dict)
+
     effective_price: float = field(init=False)  # calculated after init, only for transactions
 
     def __post_init__(self):
         """Post initialization function"""
         # check if this represents a trade (one side will be negative)
-        total_tokens = sum(list(self.token_in_wallet.values()))
-        if self.base_in_wallet < 0 or total_tokens < 0:
-            self.effective_price = total_tokens / self.base_in_wallet
+        total_tokens = sum(list(self.longs.values()))
+        if self.base < 0 or total_tokens < 0:
+            self.effective_price = total_tokens / self.base
 
     def __getitem__(self, key):
         return getattr(self, key)

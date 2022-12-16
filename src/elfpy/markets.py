@@ -248,12 +248,12 @@ class Market:
         max_loss = agent_action.trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=-max_loss,
+            base=-max_loss,
             # TODO: This implementation is opinionated in a way that may not be
             #       correct. The question of whether or not shorts should be
             #       fully backed is still up for debate.
-            base_in_protocol={agent_action.mint_time: +trade_result.user_result.d_base + max_loss},
-            token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+            margin={agent_action.mint_time: +trade_result.user_result.d_base + max_loss},
+            shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
             fees_paid=+trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
@@ -317,9 +317,9 @@ class Market:
         #       buffer.
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=trade_result.user_result.d_base,
-            base_in_protocol={agent_action.mint_time: agent_action.trade_amount - trade_result.user_result.d_base},
-            token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+            base=trade_result.user_result.d_base,
+            margin={agent_action.mint_time: agent_action.trade_amount - trade_result.user_result.d_base},
+            shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -371,13 +371,13 @@ class Market:
             )
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
-                base_in_wallet=trade_result.user_result.d_base,
-                token_in_protocol={agent_action.mint_time: trade_result.user_result.d_bonds},
+                base=trade_result.user_result.d_base,
+                shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = Wallet(address=agent_action.wallet_address, base_in_wallet=0)
+            agent_deltas = Wallet(address=agent_action.wallet_address, base=0)
         return market_deltas, agent_deltas
 
     def _close_long(
@@ -419,8 +419,8 @@ class Market:
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=trade_result.user_result.d_base,
-            token_in_wallet={agent_action.mint_time: trade_result.user_result.d_bonds},
+            base=trade_result.user_result.d_base,
+            longs={agent_action.mint_time: trade_result.user_result.d_bonds},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -461,8 +461,8 @@ class Market:
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=-d_base_reserves,
-            lp_in_wallet=+lp_out,
+            base=-d_base_reserves,
+            lp=+lp_out,
         )
         return market_deltas, agent_deltas
 
@@ -495,8 +495,8 @@ class Market:
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+d_base_reserves,
-            lp_in_wallet=-lp_in,
+            base=+d_base_reserves,
+            lp=-lp_in,
         )
         return market_deltas, agent_deltas
 
