@@ -8,6 +8,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    TokenType,
     TradeBreakdown,
     TradeResult,
     UserTradeResult,
@@ -340,7 +341,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(market_state, time_elapsed)
-        if out.unit == "base":
+        if out.unit == TokenType.BASE:
             in_reserves = market_state.bond_reserves + total_reserves
             out_reserves = market_state.share_reserves
             d_shares = out.amount / market_state.share_price
@@ -407,7 +408,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=-out.amount,
                 d_bonds=with_fee,
             )
-        elif out.unit == "pt":
+        elif out.unit == TokenType.PT:
             in_reserves = market_state.share_reserves
             out_reserves = market_state.bond_reserves + total_reserves
             d_bonds = out.amount
@@ -474,7 +475,8 @@ class YieldSpacePricingModel(PricingModel):
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected out.unit to be "base" or "pt", not {out.unit}!'
+                # pylint: disable-next=line-too-long
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         return TradeResult(
@@ -560,7 +562,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
         k = price_utils.calc_k_const(market_state, time_elapsed)
-        if in_.unit == "base":
+        if in_.unit == TokenType.BASE:
             d_shares = in_.amount / market_state.share_price  # convert from base_asset to z (x=cz)
             in_reserves = market_state.share_reserves
             out_reserves = market_state.bond_reserves + total_reserves
@@ -609,7 +611,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=in_.amount,
                 d_bonds=-with_fee,
             )
-        elif in_.unit == "pt":
+        elif in_.unit == TokenType.PT:
             d_bonds = in_.amount
             in_reserves = market_state.bond_reserves + total_reserves
             out_reserves = market_state.share_reserves
@@ -667,7 +669,8 @@ class YieldSpacePricingModel(PricingModel):
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected in_.unit to be "base" or "pt", not {in_.unit}!'
+                # pylint: disable-next=line-too-long
+                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         return TradeResult(

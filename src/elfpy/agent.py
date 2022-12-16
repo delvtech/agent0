@@ -135,7 +135,7 @@ class Agent:
             if position < 0:
                 action_list.append(
                     self.create_agent_action(
-                        action_type="close_short",
+                        action_type=MarketActionType.CLOSE_SHORT,
                         trade_amount=-position,
                         mint_time=mint_time,
                     )
@@ -143,7 +143,9 @@ class Agent:
         if self.wallet.lp_in_wallet > 0:
             action_list.append(
                 self.create_agent_action(
-                    action_type="remove_liquidity", trade_amount=self.wallet.lp_in_wallet, mint_time=market.time
+                    action_type=MarketActionType.REMOVE_LIQUIDITY,
+                    trade_amount=self.wallet.lp_in_wallet,
+                    mint_time=market.time,
                 )
             )
         return action_list

@@ -7,6 +7,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    TokenType,
     TradeBreakdown,
     TradeResult,
     UserTradeResult,
@@ -93,15 +94,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         #
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
-        if out.unit == "base":
+        if out.unit == TokenType.BASE:
             market_state.share_reserves -= out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
             market_state.bond_reserves += out.amount * (1 - time_remaining.stretched_time)
-        elif out.unit == "pt":
+        elif out.unit == TokenType.PT:
             market_state.share_reserves += out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
             market_state.bond_reserves -= out.amount * (1 - time_remaining.stretched_time)
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected out.unit to be "base" or "pt", not {out.unit}!'
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
@@ -115,19 +116,19 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
         flat = out.amount * (1 - time_remaining.stretched_time)
-        if out.unit == "base":
+        if out.unit == TokenType.BASE:
             user_result = UserTradeResult(
                 d_base=out.amount,
                 d_bonds=-flat + curve.user_result.d_bonds,
             )
-        elif out.unit == "pt":
+        elif out.unit == TokenType.PT:
             user_result = UserTradeResult(
                 d_base=-flat + curve.user_result.d_base,
                 d_bonds=out.amount,
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected in_.unit to be "base" or "pt", not {out.unit}!'
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         return TradeResult(
@@ -200,15 +201,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         #
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
-        if in_.unit == "base":
+        if in_.unit == TokenType.BASE:
             market_state.share_reserves += (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
             market_state.bond_reserves -= in_.amount * (1 - time_remaining.stretched_time)
-        elif in_.unit == "pt":
+        elif in_.unit == TokenType.PT:
             market_state.share_reserves -= (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
             market_state.bond_reserves += in_.amount * (1 - time_remaining.stretched_time)
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
+                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
@@ -222,19 +223,19 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
         flat = in_.amount * (1 - time_remaining.stretched_time)
-        if in_.unit == "base":
+        if in_.unit == TokenType.BASE:
             user_result = UserTradeResult(
                 d_base=-in_.amount,
                 d_bonds=flat + curve.user_result.d_bonds,
             )
-        elif in_.unit == "pt":
+        elif in_.unit == TokenType.PT:
             user_result = UserTradeResult(
                 d_base=flat + curve.user_result.d_base,
                 d_bonds=-in_.amount,
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected in_.unit to be "base" or "pt", not {in_.unit}!'
+                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         return TradeResult(

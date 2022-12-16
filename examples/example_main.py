@@ -14,6 +14,7 @@ from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
+from elfpy.types import MarketActionType
 
 # elfpy utils
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
@@ -40,11 +41,15 @@ class CustomShorter(Agent):
         action_list = []
         if can_open_short:
             if vault_apy > market.get_rate(pricing_model):
-                action_list.append(self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short))
+                action_list.append(
+                    self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
+                )
             elif vault_apy < market.get_rate(pricing_model):
                 if has_opened_short:
                     action_list.append(
-                        self.create_agent_action(action_type="close_short", trade_amount=self.pt_to_short)
+                        self.create_agent_action(
+                            action_type=MarketActionType.CLOSE_SHORT, trade_amount=self.pt_to_short
+                        )
                     )
         return action_list
 

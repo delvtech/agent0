@@ -10,7 +10,7 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.markets import Market
 from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.utils.config import Config
 import elfpy.utils.price as price_utils
 
@@ -83,7 +83,7 @@ def get_init_lp_agent(
     )[:2]
     # mock the short to assess what the delta market conditions will be
     output_with_fee = pricing_model.calc_out_given_in(
-        in_=Quantity(amount=init_bond_reserves, unit="base"),
+        in_=Quantity(amount=init_bond_reserves, unit=TokenType.BASE),
         market_state=MarketState(
             share_reserves=init_share_reserves,
             bond_reserves=0,
