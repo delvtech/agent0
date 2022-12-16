@@ -39,7 +39,7 @@ class StretchedTime:
         return self._days
 
     @property
-    def normalized_days(self):
+    def normalized_time(self):
         """Format time as normalized days."""
         return time_utils.norm_days(self._days)
 
@@ -57,7 +57,7 @@ class StretchedTime:
         out_str = (
             "Time components:"
             f" {self.days=};"
-            f" {self.normalized_days=};"
+            f" {self.normalized_time=};"
             f" {self.stretched_time=};"
             f" {self.time_stretch=};"
         )
@@ -98,10 +98,10 @@ class MarketDeltas:
     # pylint: disable=too-many-instance-attributes
 
     # TODO: Use better naming for these values:
-    # - "d_base_asset" => "d_share_reserves" TODO: Is there some reason this is base instead of shares?
-    # - "d_token_asset" => "d_bond_reserves"
-    d_base_asset: float = 0
-    d_token_asset: float = 0
+    # - "d_share_reserves" => "d_share_reserves" TODO: Is there some reason this is base instead of shares?
+    # - "d_bond_reserves" => "d_bond_reserves"
+    d_share_reserves: float = 0
+    d_bond_reserves: float = 0
     d_share_buffer: float = 0
     d_bond_buffer: float = 0
     d_lp_reserves: float = 0
@@ -156,8 +156,8 @@ class MarketState:
         delta: MarketDeltas,
     ):
         """Applies a delta to the market state."""
-        self.share_reserves += delta.d_base_asset / self.share_price
-        self.bond_reserves += delta.d_token_asset
+        self.share_reserves += delta.d_share_reserves / self.share_price
+        self.bond_reserves += delta.d_bond_reserves
         self.share_buffer += delta.d_share_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
@@ -191,7 +191,7 @@ class UserTradeResult:
 class MarketTradeResult:
     """The result to a market of performing a trade."""
 
-    d_base: float
+    d_shares: float
     d_bonds: float
 
 

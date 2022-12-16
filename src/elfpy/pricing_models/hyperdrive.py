@@ -94,11 +94,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
         if out.unit == "base":
-            market_state.share_reserves -= out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
-            market_state.bond_reserves += out.amount * (1 - time_remaining.stretched_time)
+            market_state.share_reserves -= out.amount * (1 - time_remaining.normalized_time) / market_state.share_price
+            market_state.bond_reserves += out.amount * (1 - time_remaining.normalized_time)
         elif out.unit == "pt":
-            market_state.share_reserves += out.amount * (1 - time_remaining.stretched_time) / market_state.share_price
-            market_state.bond_reserves -= out.amount * (1 - time_remaining.stretched_time)
+            market_state.share_reserves += out.amount * (1 - time_remaining.normalized_time) / market_state.share_price
+            market_state.bond_reserves -= out.amount * (1 - time_remaining.normalized_time)
         else:
             raise AssertionError(
                 f'pricing_models.calc_in_given_out: ERROR: expected out.unit to be "base" or "pt", not {out.unit}!'
@@ -106,7 +106,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=Quantity(amount=out.amount * time_remaining.stretched_time, unit=out.unit),
+            out=Quantity(amount=out.amount * time_remaining.normalized_time, unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
@@ -114,7 +114,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
-        flat = out.amount * (1 - time_remaining.stretched_time)
+        flat = out.amount * (1 - time_remaining.normalized_time)
         if out.unit == "base":
             user_result = UserTradeResult(
                 d_base=out.amount,
@@ -201,11 +201,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
         if in_.unit == "base":
-            market_state.share_reserves += (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
-            market_state.bond_reserves -= in_.amount * (1 - time_remaining.stretched_time)
+            market_state.share_reserves += (
+                in_.amount * (1 - time_remaining.normalized_time)
+            ) / market_state.share_price
+            market_state.bond_reserves -= in_.amount * (1 - time_remaining.normalized_time)
         elif in_.unit == "pt":
-            market_state.share_reserves -= (in_.amount * (1 - time_remaining.stretched_time)) / market_state.share_price
-            market_state.bond_reserves += in_.amount * (1 - time_remaining.stretched_time)
+            market_state.share_reserves -= (
+                in_.amount * (1 - time_remaining.normalized_time)
+            ) / market_state.share_price
+            market_state.bond_reserves += in_.amount * (1 - time_remaining.normalized_time)
         else:
             raise AssertionError(
                 f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
@@ -213,7 +217,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=Quantity(amount=in_.amount * time_remaining.stretched_time, unit=in_.unit),
+            in_=Quantity(amount=in_.amount * time_remaining.normalized_time, unit=in_.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
@@ -221,7 +225,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
-        flat = in_.amount * (1 - time_remaining.stretched_time)
+        flat = in_.amount * (1 - time_remaining.normalized_time)
         if in_.unit == "base":
             user_result = UserTradeResult(
                 d_base=-in_.amount,

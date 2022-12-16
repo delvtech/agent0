@@ -20,6 +20,7 @@ class Wallet:
     lp_in_wallet: float = 0  # they're fungible!
     fees_paid: float = 0
     # non-fungible (identified by mint_time, stored as dict)
+    # TODO: Improve this naming.
     token_in_wallet: dict = field(default_factory=dict)
     base_in_protocol: dict = field(default_factory=dict)
     token_in_protocol: dict = field(default_factory=dict)

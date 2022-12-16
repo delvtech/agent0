@@ -404,7 +404,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_bonds=-with_fee,
             )
             market_result = MarketTradeResult(
-                d_base=-out.amount,
+                d_shares=-out.amount / market_state.share_price,
                 d_bonds=with_fee,
             )
         elif out.unit == "pt":
@@ -469,7 +469,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_bonds=out.amount,
             )
             market_result = MarketTradeResult(
-                d_base=with_fee,
+                d_shares=with_fee / market_state.share_price,
                 d_bonds=-out.amount,
             )
         else:
@@ -606,7 +606,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_bonds=with_fee,
             )
             market_result = MarketTradeResult(
-                d_base=in_.amount,
+                d_shares=in_.amount / market_state.share_price,
                 d_bonds=-with_fee,
             )
         elif in_.unit == "pt":
@@ -662,7 +662,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_bonds=-in_.amount,
             )
             market_result = MarketTradeResult(
-                d_base=-with_fee,
+                d_shares=-with_fee / market_state.share_price,
                 d_bonds=in_.amount,
             )
         else:

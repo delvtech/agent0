@@ -110,7 +110,7 @@ class Market:
             # TODO: We should improve the StretchedTime API so that it accepts yearfracs in
             # the place of days remaining.
             days=time_utils.get_yearfrac_remaining(
-                self.time, agent_action.mint_time, self.position_duration.normalized_days
+                self.time, agent_action.mint_time, self.position_duration.normalized_time
             )
             * 365,
             time_stretch=self.position_duration.time_stretch,
@@ -144,14 +144,14 @@ class Market:
             market_deltas, agent_deltas = self._add_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_days,
+                time_remaining=time_remaining.normalized_time,
                 stretched_time_remaining=time_remaining.stretched_time,
             )
         elif agent_action.action_type == "remove_liquidity":
             market_deltas, agent_deltas = self._remove_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_days,
+                time_remaining=time_remaining.normalized_time,
                 stretched_time_remaining=time_remaining.stretched_time,
             )
         else:
@@ -266,8 +266,8 @@ class Market:
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_share_reserves=trade_result.market_result.d_shares,
+            d_bond_reserves=trade_result.market_result.d_bonds,
             d_bond_buffer=+agent_action.trade_amount,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
@@ -335,8 +335,8 @@ class Market:
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_share_reserves=trade_result.market_result.d_shares,
+            d_bond_reserves=trade_result.market_result.d_bonds,
             d_bond_buffer=-agent_action.trade_amount,
         )
         # TODO: This accounting doesn't look right. The profit from the
@@ -356,6 +356,9 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
+        # FIXME: time_remaining isn't required for open_long. We should just use
+        #        position duration (alternatively we could get rid of
+        #        position_duration).
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -392,13 +395,15 @@ class Market:
 
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
+                d_share_reserves=trade_result.market_result.d_shares,
+                d_bond_reserves=trade_result.market_result.d_bonds,
                 # TODO: We must use a base buffer rather than a share buffer
                 #       since the obligations represented by the buffer don't
                 #       accrue variable rate interest.
                 d_share_buffer=trade_result.user_result.d_bonds / self.market_state.share_price,
             )
+            # TODO: Instead of creating a wallet, shouldn't this create a wallet
+            #       delta?
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
                 base_in_wallet=trade_result.user_result.d_base,
@@ -444,8 +449,8 @@ class Market:
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
-            d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_share_reserves=trade_result.market_result.d_shares,
+            d_bond_reserves=trade_result.market_result.d_bonds,
             d_share_buffer=-agent_action.trade_amount / self.market_state.share_price,
         )
         agent_deltas = Wallet(
@@ -473,7 +478,7 @@ class Market:
             rate = 0
         else:
             rate = self.get_rate(pricing_model)
-        lp_out, d_base_reserves, d_token_reserves = pricing_model.calc_lp_out_given_tokens_in(
+        lp_out, d_share_reserves, d_token_reserves = pricing_model.calc_lp_out_given_tokens_in(
             d_base=agent_action.trade_amount,
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
@@ -486,13 +491,13 @@ class Market:
             stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
-            d_base_asset=+d_base_reserves,
-            d_token_asset=+d_token_reserves,
+            d_share_reserves=+d_share_reserves,
+            d_bond_reserves=+d_token_reserves,
             d_lp_reserves=+lp_out,
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=-d_base_reserves,
+            base_in_wallet=-d_share_reserves,
             lp_in_wallet=+lp_out,
         )
         return market_deltas, agent_deltas
@@ -507,7 +512,7 @@ class Market:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
-        lp_in, d_base_reserves, d_token_reserves = pricing_model.calc_tokens_out_given_lp_in(
+        lp_in, d_share_reserves, d_token_reserves = pricing_model.calc_tokens_out_given_lp_in(
             lp_in=agent_action.trade_amount,
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
@@ -520,13 +525,13 @@ class Market:
             stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
-            d_base_asset=-d_base_reserves,
-            d_token_asset=-d_token_reserves,
+            d_share_reserves=-d_share_reserves,
+            d_bond_reserves=-d_token_reserves,
             d_lp_reserves=-lp_in,
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
-            base_in_wallet=+d_base_reserves,
+            base_in_wallet=+d_share_reserves,
             lp_in_wallet=-lp_in,
         )
         return market_deltas, agent_deltas

@@ -318,8 +318,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 2536.3203786253266,  #
-                "expected_token_asset_reserves": 2525.2716119090405,  #
+                "expected_share_reserves_reserves": 2536.3203786253266,  #
+                "expected_bond_reserves_reserves": 2525.2716119090405,  #
                 "expected_total_liquidity": 5000,  # ~50:50 reserves ratio
             },
             # test 2: 5M target_liquidity; 1k market price; 2% APR;
@@ -335,8 +335,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 3922.192745298014,  #
-                "expected_token_asset_reserves": 1088.5853272490062,  #
+                "expected_share_reserves_reserves": 3922.192745298014,  #
+                "expected_bond_reserves_reserves": 1088.5853272490062,  #
                 "expected_total_liquidity": 5000,  # base > token reserves
             },
             # test 3: 5M target_liquidity; 1k market price; 8% APR;
@@ -352,8 +352,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
-                "expected_base_asset_reserves": 1534.0469740383746,  #
-                "expected_token_asset_reserves": 3604.591147000091,  #
+                "expected_share_reserves_reserves": 1534.0469740383746,  #
+                "expected_bond_reserves_reserves": 3604.591147000091,  #
                 "expected_total_liquidity": 5000,  # token > base reserves
             },
             # test 4: 10M target_liquidity; 500 market price; 3% APR;
@@ -369,8 +369,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1.5,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
-                "expected_base_asset_reserves": 12287.029415142337,  #
-                "expected_token_asset_reserves": 7770.817864244096,  #
+                "expected_share_reserves_reserves": 12287.029415142337,  #
+                "expected_bond_reserves_reserves": 7770.817864244096,  #
                 "expected_total_liquidity": 20000,  # base > token reserves?
             },
             # test 5: 10M target_liquidity; 500 market price; 1% APR;
@@ -386,8 +386,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1.5,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
-                "expected_base_asset_reserves": 19186.027487682495,  #
-                "expected_token_asset_reserves": 816.0074435982989,  #
+                "expected_share_reserves_reserves": 19186.027487682495,  #
+                "expected_bond_reserves_reserves": 816.0074435982989,  #
                 "expected_total_liquidity": 20000,  # base > token reserves?
             },
             # test 6: 10M target_liquidity; 500 market price; 6% APR;
@@ -403,8 +403,8 @@ class TestPriceUtils(unittest.TestCase):
                 ),
                 "init_share_price": 1.5,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
-                "expected_base_asset_reserves": 5195.968749573127,  #
-                "expected_token_asset_reserves": 15026.091719183272,  #
+                "expected_share_reserves_reserves": 5195.968749573127,  #
+                "expected_bond_reserves_reserves": 15026.091719183272,  #
                 "expected_total_liquidity": 20000,  # base > token reserves?
             },
             # test 7: ERROR CASE: 0 TARGET LIQUIDITY -> ZeroDivisionError
@@ -423,8 +423,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2,  # share price of the LP in the yield source
                 "is_error_case": True,  # this test is supposed to fail
                 "expected_result": ZeroDivisionError,
-                "expected_base_asset_reserves": ZeroDivisionError,  #
-                "expected_token_asset_reserves": ZeroDivisionError,  #
+                "expected_share_reserves_reserves": ZeroDivisionError,  #
+                "expected_bond_reserves_reserves": ZeroDivisionError,  #
                 "expected_total_liquidity": ZeroDivisionError,  #
             },
             # test 8: ERROR CASE: 0 MARKET PRICE -> ZeroDivisionError
@@ -443,8 +443,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2,  # share price of the LP in the yield source
                 "is_error_case": True,  # this test is supposed to fail
                 "expected_result": ZeroDivisionError,
-                "expected_base_asset_reserves": ZeroDivisionError,  #
-                "expected_token_asset_reserves": ZeroDivisionError,  #
+                "expected_share_reserves_reserves": ZeroDivisionError,  #
+                "expected_bond_reserves_reserves": ZeroDivisionError,  #
                 "expected_total_liquidity": ZeroDivisionError,  #
             },
             # test 9: STRANGE CASE: 0 APR -> NEGATIVE BASE LIQUIDITY?
@@ -462,8 +462,8 @@ class TestPriceUtils(unittest.TestCase):
                 "init_share_price": 1.5,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
                 "is_error_case": False,  #
-                "expected_base_asset_reserves": 2285.714285714286,  #
-                "expected_token_asset_reserves": -285.7142857142857,  # NEGATIVE?
+                "expected_share_reserves_reserves": 2285.714285714286,  #
+                "expected_bond_reserves_reserves": -285.7142857142857,  # NEGATIVE?
                 "expected_total_liquidity": 2000,  # base > token reserves?
             },
             # test 10: ERROR CASE: 0 MARKET PRICE -> ZeroDivisionError
@@ -482,8 +482,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 2,  # share price of the LP in the yield source
                 "is_error_case": True,  # this test is supposed to fail
                 "expected_result": ZeroDivisionError,
-                "expected_base_asset_reserves": ZeroDivisionError,  #
-                "expected_token_asset_reserves": ZeroDivisionError,  #
+                "expected_share_reserves_reserves": ZeroDivisionError,  #
+                "expected_bond_reserves_reserves": ZeroDivisionError,  #
                 "expected_total_liquidity": ZeroDivisionError,  #
             },
             # test 10: CURRENT SHARE PRICE < INIT SHARE PRICE
@@ -502,8 +502,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 1.0,  # ERROR CASE; share_price below init_share_price
                 "is_error_case": False,  #
                 "expected_result": 0,
-                "expected_base_asset_reserves": 2781.2982274103742,  #
-                "expected_token_asset_reserves": 17476.982299178464,  #
+                "expected_share_reserves_reserves": 2781.2982274103742,  #
+                "expected_bond_reserves_reserves": 17476.982299178464,  #
                 "expected_total_liquidity": 20000,  #
             },
             # test 11: INIT SHARE PRICE = 0; CURRENT SHARE PRICE < INIT SHARE PRICE
@@ -522,8 +522,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 0.5,  # share_price below init_share_price
                 "is_error_case": False,  #
                 "expected_result": 0,
-                "expected_base_asset_reserves": 39417.47572815535,  #
-                "expected_token_asset_reserves": -19708.737864077673,  # NEGATIVE?
+                "expected_share_reserves_reserves": 39417.47572815535,  #
+                "expected_bond_reserves_reserves": -19708.737864077673,  # NEGATIVE?
                 "expected_total_liquidity": 20000,  #
             },
             # test 12: ERROR CASE; BOTH INIT AND CURRENT SHARE PRICE = 0
@@ -542,8 +542,8 @@ class TestPriceUtils(unittest.TestCase):
                 "share_price": 0,  # share_price below init_share_price
                 "is_error_case": True,  # this test is supposed to fail
                 "expected_result": ZeroDivisionError,
-                "expected_base_asset_reserves": ZeroDivisionError,  #
-                "expected_token_asset_reserves": ZeroDivisionError,  #
+                "expected_share_reserves_reserves": ZeroDivisionError,  #
+                "expected_bond_reserves_reserves": ZeroDivisionError,  #
                 "expected_total_liquidity": ZeroDivisionError,  #
             },
         ]
@@ -577,12 +577,12 @@ class TestPriceUtils(unittest.TestCase):
 
                 np.testing.assert_almost_equal(
                     base_asset_reserves,
-                    test_case["expected_base_asset_reserves"],
+                    test_case["expected_share_reserves_reserves"],
                     err_msg="unexpected base_asset_reserves",
                 )
                 np.testing.assert_almost_equal(
                     token_asset_reserves,
-                    test_case["expected_token_asset_reserves"],
+                    test_case["expected_bond_reserves_reserves"],
                     err_msg="unexpected token_asset_reserves",
                 )
                 np.testing.assert_almost_equal(
@@ -677,7 +677,7 @@ class TestPriceUtils(unittest.TestCase):
             },
             # test 8: ERROR CASE
             #   0.95 price; -3mo remaining (negative);
-            #   the function asserts that normalized_days_remaining > 0, so this case \
+            #   the function asserts that time_remaining > 0, so this case \
             #   should raise an AssertionError
             {
                 "price": 0.95,  # 0% APR
