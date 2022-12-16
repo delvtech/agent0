@@ -13,11 +13,11 @@ from typing import Optional
 from dataclasses import dataclass
 import unittest
 import numpy as np
-from elfpy.types import MarketState, Quantity, StretchedTime
 
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
 
 @dataclass
@@ -69,7 +69,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         """Success tests for calc_out_given_in"""
         pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
 
-        # Test cases where token_out = "pt" indicating that bonds are being
+        # Test cases where token_out = TokenType.PT indicating that bonds are being
         # purchased for base.
         #
         # 1. in_ = 100; 1% fee; 100k share reserves; 100k bond reserves;
@@ -100,7 +100,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="base"),
+                    in_=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -166,7 +166,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="base"),
+                    in_=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -202,7 +202,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=10_000, unit="base"),
+                    in_=Quantity(amount=10_000, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -252,7 +252,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=80_000, unit="base"),
+                    in_=Quantity(amount=80_000, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -304,7 +304,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 TestCaseCalcOutGivenInSuccess(
                     # Base in of 200 is 100 shares at the current share price.
-                    in_=Quantity(amount=200, unit="base"),
+                    in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -364,7 +364,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=200, unit="base"),
+                    in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -424,7 +424,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=200, unit="base"),
+                    in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -484,7 +484,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targeting 10% APY.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=200, unit="base"),
+                    in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -543,7 +543,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
         ]
 
-        # Test cases where token_out = "base" indicating that bonds are being
+        # Test cases where token_out = TokenType.BASE indicating that bonds are being
         # sold for base.
         #
         # 1. in_ = 100; 1% fee; 100k share reserves; 100k bond reserves;
@@ -574,7 +574,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -642,7 +642,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -678,7 +678,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=10_000, unit="pt"),
+                    in_=Quantity(amount=10_000, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -730,7 +730,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=80_000, unit="pt"),
+                    in_=Quantity(amount=80_000, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -782,7 +782,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Non-trivial initial share price and share price.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -838,7 +838,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -895,7 +895,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -957,7 +957,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targetting 10% APY.
             (
                 TestCaseCalcOutGivenInSuccess(
-                    in_=Quantity(amount=100, unit="pt"),
+                    in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -1090,7 +1090,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         # Failure test cases.
         test_cases = [
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=-1, unit="pt"),
+                in_=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1101,7 +1101,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=0, unit="pt"),
+                in_=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1112,7 +1112,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=-1,
                     bond_reserves=1_000_000,
@@ -1123,7 +1123,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=-1,
@@ -1134,7 +1134,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1145,7 +1145,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1156,7 +1156,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1167,7 +1167,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1178,7 +1178,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=365, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1189,7 +1189,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=500, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=10_000_000, unit="pt"),
+                in_=Quantity(amount=10_000_000, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1200,7 +1200,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1211,7 +1211,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1222,7 +1222,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit="pt"),
+                in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,

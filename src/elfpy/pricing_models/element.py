@@ -8,6 +8,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    TokenType,
     TradeBreakdown,
     TradeResult,
     UserTradeResult,
@@ -25,7 +26,6 @@ class ElementPricingModel(PricingModel):
     # TODO: The too many locals disable can be removed after refactoring the LP
     #       functions.
     #
-    # pylint: disable=line-too-long
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     # pylint: disable=duplicate-code
@@ -145,7 +145,7 @@ class ElementPricingModel(PricingModel):
         k = price_utils.calc_k_const(market_state, time_elapsed)
         # Solve for the amount that must be paid to receive the specified amount
         # of the output.
-        if out.unit == "base":
+        if out.unit == TokenType.BASE:
             d_base = out.amount
 
             # The amount the user pays without fees or slippage is the amount of
@@ -193,7 +193,7 @@ class ElementPricingModel(PricingModel):
                 d_base=-out.amount,
                 d_bonds=with_fee,
             )
-        elif out.unit == "pt":
+        elif out.unit == TokenType.PT:
             d_bonds = out.amount
 
             # The amount the user pays without fees or slippage is the amount of
@@ -243,7 +243,8 @@ class ElementPricingModel(PricingModel):
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_in_given_out: ERROR: expected token_in to be "base" or "pt", not {out.unit}!'
+                # pylint: disable-next=line-too-long
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         logging.debug(
@@ -347,7 +348,7 @@ class ElementPricingModel(PricingModel):
         # k = x**(1 - t) + (2y + x)**(1 - t)
         k = price_utils.calc_k_const(market_state, time_elapsed)
         # Solve for the amount that received if the specified amount is paid.
-        if in_.unit == "base":
+        if in_.unit == TokenType.BASE:
             d_base = in_.amount
 
             # The amount the user pays without fees or slippage is the amount of
@@ -395,7 +396,7 @@ class ElementPricingModel(PricingModel):
                 d_base=in_.amount,
                 d_bonds=-with_fee,
             )
-        elif in_.unit == "pt":
+        elif in_.unit == TokenType.PT:
             d_bonds = in_.amount
 
             # The amount the user pays without fees or slippage is the amount of
@@ -445,7 +446,8 @@ class ElementPricingModel(PricingModel):
             )
         else:
             raise AssertionError(
-                f'pricing_models.calc_out_given_in: ERROR: expected token_out to be "base" or "pt", not {in_.unit}!'
+                # pylint: disable-next=line-too-long
+                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         logging.debug(
@@ -497,10 +499,10 @@ class ElementPricingModel(PricingModel):
         ), f"pricing_models.check_input_assertions: ERROR: expected quantity.amount > 0, not {quantity.amount}!"
         assert (
             market_state.share_reserves >= 0
-        ), f"pricing_models.check_input_assertions: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
+        ), f"pricing_models.check_input_assertions: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"  # pylint: disable=line-too-long
         assert (
             market_state.bond_reserves >= 0
-        ), f"pricing_models.check_input_assertions: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        ), f"pricing_models.check_input_assertions: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"  # pylint: disable=line-too-long
         assert market_state.share_price == market_state.init_share_price == 1, (
             "pricing_models.check_input_assertions: ERROR: expected share_price == init_share_price == 1,"
             f"not share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
@@ -510,4 +512,4 @@ class ElementPricingModel(PricingModel):
         ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
         assert (
             1 > time_remaining.stretched_time >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"  # pylint: disable=line-too-long

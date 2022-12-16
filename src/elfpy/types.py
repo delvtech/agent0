@@ -1,18 +1,30 @@
 """A set of common types used throughtout the simulation codebase."""
 
 from dataclasses import dataclass
-from typing import TypeAlias
-from typing import Literal
-from elfpy.utils.outputs import float_to_string
+from enum import Enum
 
+from elfpy.utils.outputs import float_to_string
 import elfpy.utils.time as time_utils
 
 
-TokenType = Literal["pt", "base"]
-TradeDirection = Literal["out", "in"]
-MarketActionType: TypeAlias = Literal[
-    "close_short", "close_long", "open_short", "open_long", "add_liquidity", "remove_liquidity"
-]
+class TokenType(Enum):
+    """A type of token"""
+
+    BASE = "base"
+    PT = "pt"
+
+
+class MarketActionType(Enum):
+    """The descriptor of an action in a market"""
+
+    OPEN_LONG = "open_long"
+    OPEN_SHORT = "open_short"
+
+    CLOSE_LONG = "close_long"
+    CLOSE_SHORT = "close_short"
+
+    ADD_LIQUIDITY = "add_liquidity"
+    REMOVE_LIQUIDITY = "remove_liquidity"
 
 
 @dataclass

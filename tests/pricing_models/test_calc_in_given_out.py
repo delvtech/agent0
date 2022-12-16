@@ -13,8 +13,8 @@ from typing import Optional
 from dataclasses import dataclass
 import unittest
 import numpy as np
-from elfpy.types import MarketState, Quantity, StretchedTime
 
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
@@ -71,7 +71,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         """Success tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
 
-        # Test cases where token_in = "base" indicating that bonds are being
+        # Test cases where token_in = TokenType.BASE indicating that bonds are being
         # purchased for base.
         #
         # 1. in_ = 100; 10% fee; 100k share reserves; 100k bond reserves;
@@ -101,7 +101,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         base_in_test_cases = [
             (  ## test one, basic starting point
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=100, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -145,7 +145,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test one
             (  ## test two, double the fee
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=100, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -189,7 +189,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test two
             (  ## test three, 10k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=10_000, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=10_000, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -234,7 +234,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test three
             (  ## test four, 80k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=80_000, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=80_000, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -279,7 +279,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test four
             (  ## test five, change share price
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -319,7 +319,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -359,7 +359,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test six
             (  ## test seven, halve the days remaining
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -399,7 +399,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test seven
             (  ## test eight, halve the APY
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="pt"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -441,7 +441,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         pt_in_test_cases = [
             (  ## test one, basic starting point
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=100, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -486,7 +486,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test one
             (  ## test two, double the fee
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=100, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -531,7 +531,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test two
             (  ## test three, 10k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=10_000, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=10_000, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -576,7 +576,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test three
             (  ## test four, 80k out
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=80_000, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=80_000, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -621,7 +621,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test four
             (  ## test five, change share price
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=100_000,  # PT reserves
@@ -661,7 +661,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test five
             (  ## test six, up bond reserves to 1,000,000
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -701,7 +701,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test six
             (  ## test seven, halve the days remaining
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -741,7 +741,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),  # end of test seven
             (  ## test eight, halve the APY
                 TestCaseCalcInGivenOutSuccess(
-                    out=Quantity(amount=200, unit="base"),  # how many tokens you expect to get
+                    out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
                     market_state=MarketState(
                         share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                         bond_reserves=1_000_000,  # PT reserves
@@ -849,7 +849,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         # Failure test cases.
         test_cases = [
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=-1, unit="pt"),
+                out=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -860,7 +860,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=0, unit="pt"),
+                out=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -871,7 +871,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=-1,
                     bond_reserves=1_000_000,
@@ -882,7 +882,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=0,
                     bond_reserves=1_000_000,
@@ -893,7 +893,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=-1,
@@ -904,7 +904,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -915,7 +915,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -926,7 +926,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -937,7 +937,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -948,7 +948,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=365, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="pt"),
+                out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -959,7 +959,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=500, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=10_000_000, unit="base"),
+                out=Quantity(amount=10_000_000, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -970,7 +970,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=92.5, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="base"),
+                out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -981,7 +981,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="base"),
+                out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -992,7 +992,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit="base"),
+                out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,

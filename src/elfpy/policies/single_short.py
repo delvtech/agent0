@@ -7,6 +7,7 @@ User strategy that opens a single short and doesn't close until liquidation
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
+from elfpy.types import MarketActionType
 
 
 class Policy(Agent):
@@ -27,5 +28,7 @@ class Policy(Agent):
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
         if can_open_short and not has_opened_short:
-            action_list.append(self.create_agent_action(action_type="open_short", trade_amount=self.pt_to_short))
+            action_list.append(
+                self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
+            )
         return action_list

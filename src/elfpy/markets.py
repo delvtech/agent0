@@ -16,7 +16,6 @@ from elfpy.types import (
     Quantity,
     StretchedTime,
     TokenType,
-    TradeDirection,
 )
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
@@ -62,15 +61,20 @@ class Market:
             The name of the pricing model, must be "element" or "hyperdrive"
         """
         if pricing_model_name.lower() == "element":
-            allowed_actions = ["open_long", "close_long", "add_liquidity", "remove_liquidity"]
+            allowed_actions = [
+                MarketActionType.OPEN_LONG,
+                MarketActionType.CLOSE_LONG,
+                MarketActionType.ADD_LIQUIDITY,
+                MarketActionType.REMOVE_LIQUIDITY,
+            ]
         elif pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
             allowed_actions = [
-                "open_long",
-                "close_long",
-                "open_short",
-                "close_short",
-                "add_liquidity",
-                "remove_liquidity",
+                MarketActionType.OPEN_LONG,
+                MarketActionType.CLOSE_LONG,
+                MarketActionType.OPEN_SHORT,
+                MarketActionType.CLOSE_SHORT,
+                MarketActionType.ADD_LIQUIDITY,
+                MarketActionType.REMOVE_LIQUIDITY,
             ]
         else:
             raise ValueError(
@@ -116,38 +120,38 @@ class Market:
             time_stretch=self.position_duration.time_stretch,
         )
         # for each position, specify how to forumulate trade and then execute
-        if agent_action.action_type == "open_long":  # buy to open long
+        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self._open_long(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
-        elif agent_action.action_type == "close_long":  # sell to close long
+        elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             market_deltas, agent_deltas = self._close_long(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
-        elif agent_action.action_type == "open_short":  # sell PT to open short
+        elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self._open_short(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
-        elif agent_action.action_type == "close_short":  # buy PT to close short
+        elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
-        elif agent_action.action_type == "add_liquidity":
+        elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self._add_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining.normalized_days,
                 stretched_time_remaining=time_remaining.stretched_time,
             )
-        elif agent_action.action_type == "remove_liquidity":
+        elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self._remove_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
@@ -200,34 +204,6 @@ class Market:
         state_string = "\n".join(strings)
         return state_string
 
-    def get_target_reserves(self, token_in: TokenType, trade_direction: TradeDirection) -> float:
-        """
-        Determine which asset is the target based on token_in and trade_direction
-        """
-        if trade_direction == "in":
-            if token_in == "base":
-                target_reserves = self.market_state.share_reserves
-            elif token_in == "pt":
-                target_reserves = self.market_state.bond_reserves
-            else:
-                raise AssertionError(
-                    f'markets.get_target_reserves: ERROR: token_in should be "base" or "pt", not {token_in}!'
-                )
-        elif trade_direction == "out":
-            if token_in == "base":
-                target_reserves = self.market_state.share_reserves
-            elif token_in == "pt":
-                target_reserves = self.market_state.bond_reserves
-            else:
-                raise AssertionError(
-                    f'markets.get_target_reserves: ERROR: token_in should be "base" or "pt", not {token_in}!'
-                )
-        else:
-            raise AssertionError(
-                f'markets.get_target_reserves: ERROR: trade_direction should be "in" or "out", not {trade_direction}!'
-            )
-        return target_reserves
-
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
@@ -243,10 +219,8 @@ class Market:
         compute wallet update spec with specific details
         will be conditional on the pricing model
         """
-        # TODO: `token_out` should be phased out in favor of using the unit property of Quantity.
-        #
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
+        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
         pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -309,10 +283,8 @@ class Market:
             )
             agent_action.trade_amount = self.market_state.bond_reserves
 
-        # TODO: `token_in` should be phased out. See above.
-        #
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
+        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
         pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -366,10 +338,8 @@ class Market:
         # TODO: Why are we clamping elsewhere but we don't apply the trade at
         # all here?
         if agent_action.trade_amount <= self.market_state.bond_reserves:
-            # TODO: Phase out `token_out`. See above.
-            #
             # Perform the trade.
-            trade_quantity = Quantity(amount=agent_action.trade_amount, unit="base")
+            trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.BASE)
             pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -422,9 +392,8 @@ class Market:
             will be conditional on the pricing model
         """
 
-        # TODO: Phase out `token_out`. See above.
         # Perform the trade.
-        quantity = Quantity(amount=agent_action.trade_amount, unit="pt")
+        quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
         pricing_model.check_input_assertions(
             quantity=quantity,
             market_state=self.market_state,
