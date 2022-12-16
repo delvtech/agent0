@@ -9,7 +9,29 @@ from elfpy.utils.outputs import float_to_string
 
 @dataclass(frozen=False)
 class Wallet:
-    """Stores what's in the agent's wallet"""
+    """
+    Stores what's in the agent's wallet
+
+    Arguments
+    ---------
+    address : int
+        The trader's address.
+    base : float
+        The base assets that held by the trader.
+    lp : float
+        The LP tokens held by the trader.
+    longs : dict
+        The long positions held by the trader.
+    shorts : dict
+        The short positions held by the trader.
+    margin : dict
+        The margin accounts controlled by the trader.
+    effective_price : float
+        The effective price paid on a particular trade. This is only populated
+        for some transactions.
+    fees_paid : float
+        The fees paid by the wallet.
+    """
 
     # pylint: disable=too-many-instance-attributes
     # dataclasses can have many attributes
@@ -18,14 +40,15 @@ class Wallet:
     address: int
     base: float
     lp: float = 0  # pylint: disable=invalid-name
-    fees_paid: float = 0
 
     # non-fungible (identified by mint_time, stored as dict)
     longs: dict = field(default_factory=dict)
     shorts: dict = field(default_factory=dict)
     margin: dict = field(default_factory=dict)
 
+    # TODO: This isn't used for short trades.
     effective_price: float = field(init=False)  # calculated after init, only for transactions
+    fees_paid: float = 0
 
     def __post_init__(self):
         """Post initialization function"""
