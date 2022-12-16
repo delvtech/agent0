@@ -17,7 +17,7 @@ class Wallet:
     # fungible
     address: int
     base: float
-    lp: float = 0  # they're fungible!
+    lp: float = 0  # pylint: disable=invalid-name
     fees_paid: float = 0
 
     # non-fungible (identified by mint_time, stored as dict)
