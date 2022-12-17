@@ -22,13 +22,13 @@ class Policy(Agent):
 
     def action(self, market: Market, pricing_model: PricingModel):
         """Specify action"""
-        can_open_long = (self.wallet.base_in_wallet >= self.amount_to_trade) and (
+        can_open_long = (self.wallet.base >= self.amount_to_trade) and (
             market.market_state.share_reserves >= self.amount_to_trade
         )
-        block_position_list = list(self.wallet.token_in_protocol.values())
+        block_position_list = list(self.wallet.shorts.values())
         has_opened_long = bool(any((x < 0 for x in block_position_list)))
         action_list = []
-        mint_times = list(self.wallet["token_in_wallet"].keys())
+        mint_times = list(self.wallet["longs"].keys())
         if has_opened_long:
             mint_time = mint_times[-1]
             enough_time_has_passed = market.time - mint_time > 0.25

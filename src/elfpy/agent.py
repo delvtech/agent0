@@ -28,7 +28,7 @@ class Agent:
         self.budget: float = budget
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
-        self.wallet: Wallet = Wallet(address=wallet_address, base_in_wallet=budget)
+        self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
 
     def create_agent_action(
         self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
@@ -87,14 +87,14 @@ class Agent:
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
         """Update the agent's wallet"""
         # track over time the agent's weighted average spend, for return calculation
-        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet["base_in_wallet"])
+        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet["base"])
         self.product_of_time_and_base += new_spend
         self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 pass
             # handle updating a value
-            if key in ["base_in_wallet", "lp_in_wallet", "fees_paid"]:
+            if key in ["base", "lp", "fees_paid"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
                     logging.debug(
                         "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
@@ -106,7 +106,7 @@ class Agent:
                     )
                 self.wallet[key] += value_or_dict
             # handle updating a dict, which have mint_time attached
-            elif key in ["base_in_protocol", "token_in_wallet", "token_in_protocol"]:
+            elif key in ["margin", "longs", "shorts"]:
                 for mint_time, amount in value_or_dict.items():
                     logging.debug(
                         "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
@@ -130,7 +130,7 @@ class Agent:
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """Get final trades for liquidating positions"""
         action_list: list[MarketAction] = []
-        for mint_time, position in self.wallet.token_in_protocol.items():
+        for mint_time, position in self.wallet.shorts.items():
             logging.debug("evaluating closing short: mint_time=%g, position=%d", mint_time, position)
             if position < 0:
                 action_list.append(
@@ -140,11 +140,11 @@ class Agent:
                         mint_time=mint_time,
                     )
                 )
-        if self.wallet.lp_in_wallet > 0:
+        if self.wallet.lp_tokens > 0:
             action_list.append(
                 self.create_agent_action(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=self.wallet.lp_in_wallet,
+                    trade_amount=self.wallet.lp_tokens,
                     mint_time=market.time,
                 )
             )
@@ -153,9 +153,9 @@ class Agent:
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
-            "agent %g base_in_wallet = %1g and fees_paid = %1g",
+            "agent %g base = %1g and fees_paid = %1g",
             self.wallet_address,
-            self.wallet.base_in_wallet,
+            self.wallet.base,
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
@@ -167,8 +167,8 @@ class Agent:
             price = market.get_spot_price(pricing_model)
         else:
             price = 0
-        base = self.wallet.base_in_wallet
-        block_position_list = list(self.wallet.token_in_protocol.values())
+        base = self.wallet.base
+        block_position_list = list(self.wallet.shorts.values())
         tokens = sum(block_position_list) if len(block_position_list) > 0 else 0
         worth = base + tokens * price
         profit_and_loss = worth - self.budget

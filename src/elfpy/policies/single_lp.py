@@ -26,8 +26,8 @@ class Policy(Agent):
         LP if you can, but only do it once
         """
         action_list = []
-        has_lp = self.wallet.lp_in_wallet > 0
-        can_lp = self.wallet.base_in_wallet >= self.amount_to_lp
+        has_lp = self.wallet.lp_tokens > 0
+        can_lp = self.wallet.base >= self.amount_to_lp
         if can_lp and not has_lp:
             action_list.append(
                 self.create_agent_action(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp)

@@ -24,7 +24,7 @@ class Policy(Agent):
         short if you can, only once
         """
         action_list = []
-        block_position_list = list(self.wallet.token_in_protocol.values())
+        block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
         if can_open_short and not has_opened_short:
