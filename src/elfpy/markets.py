@@ -462,7 +462,7 @@ class Market:
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
             base=-d_base_reserves,
-            lp=+lp_out,
+            lp_tokens=+lp_out,
         )
         return market_deltas, agent_deltas
 
@@ -496,7 +496,7 @@ class Market:
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
             base=+d_base_reserves,
-            lp=-lp_in,
+            lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas
 
