@@ -114,7 +114,7 @@ class MarketDeltas:
     # - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
     d_token_asset: float = 0
-    d_share_buffer: float = 0
+    d_base_buffer: float = 0
     d_bond_buffer: float = 0
     d_lp_reserves: float = 0
 
@@ -151,7 +151,7 @@ class MarketState:
     bond_reserves: float = 0.0
 
     # trading buffers
-    share_buffer: float = 0.0  # TODO: This shouldn't be a share buffer. It needs to be a base buffer.
+    base_buffer: float = 0.0
     bond_buffer: float = 0.0
 
     # lp reserves
@@ -170,7 +170,7 @@ class MarketState:
         """Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
-        self.share_buffer += delta.d_share_buffer
+        self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
 
@@ -180,7 +180,7 @@ class MarketState:
             f"\t{self.share_reserves=}\n"
             f"\t{self.bond_reserves=}\n"
             "Trading buffers:\n"
-            f"\t{self.share_buffer=}\n"
+            f"\t{self.base_buffer=}\n"
             f"\t{self.bond_buffer=}\n"
             "LP reserves:\n"
             f"\t{self.lp_reserves=}\n"

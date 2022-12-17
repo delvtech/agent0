@@ -39,7 +39,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         share_reserves: float,
         bond_reserves: float,
-        share_buffer: float,
+        base_buffer: float,
         init_share_price: float,
         share_price: float,
         lp_reserves: float,
@@ -63,8 +63,8 @@ class YieldSpacePricingModel(PricingModel):
             bond_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
-            share_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+            base_buffer >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {base_buffer}!"
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
@@ -82,7 +82,9 @@ class YieldSpacePricingModel(PricingModel):
         )
         d_shares = d_base / share_price
         if share_reserves > 0:  # normal case where we have some share reserves
-            lp_out = (d_shares * lp_reserves) / (share_reserves - share_buffer)
+            # TODO: We need to update these LP calculations to address the LP
+            #       exploit scenario.
+            lp_out = (d_shares * lp_reserves) / (share_reserves - base_buffer / share_price)
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
@@ -92,14 +94,14 @@ class YieldSpacePricingModel(PricingModel):
         logging.debug(
             (
                 "inputs: d_base=%g, share_reserves=%d, "
-                "bond_reserves=%d, share_buffer=%g, "
+                "bond_reserves=%d, base_buffer=%g, "
                 "init_share_price=%g, share_price=%g, "
                 "lp_reserves=%g, rate=%g, "
                 "time_remaining=%g, stretched_time_remaining=%g"
                 "\nd_shares=%g (d_base / share_price = %g / %g)"
                 "\nlp_out=%g\n"
-                "(d_share_reserves * lp_reserves / (share_reserves - share_buffer) = "
-                "%g * %g / (%g - %g))"
+                "(d_share_reserves * lp_reserves / (share_reserves - base_buffer / share_price) = "
+                "%g * %g / (%g - %g / %g))"
                 "\nd_bonds=%g\n"
                 "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** "
                 "(1 / stretched_time_remaining) - share_price) - bond_reserves = "
@@ -109,7 +111,7 @@ class YieldSpacePricingModel(PricingModel):
             d_base,
             share_reserves,
             bond_reserves,
-            share_buffer,
+            base_buffer,
             init_share_price,
             share_price,
             lp_reserves,
@@ -123,7 +125,8 @@ class YieldSpacePricingModel(PricingModel):
             d_shares,
             lp_reserves,
             share_reserves,
-            share_buffer,
+            base_buffer,
+            share_price,
             d_bonds,
             share_reserves,
             d_shares,
@@ -141,7 +144,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         share_reserves: float,
         bond_reserves: float,
-        share_buffer: float,
+        base_buffer: float,
         init_share_price: float,
         share_price: float,
         lp_reserves: float,
@@ -162,8 +165,8 @@ class YieldSpacePricingModel(PricingModel):
             bond_reserves >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
-            share_buffer >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+            base_buffer >= 0
+        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected base_buffer >= 0, not {base_buffer}!"
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
@@ -179,7 +182,7 @@ class YieldSpacePricingModel(PricingModel):
             share_price >= init_share_price >= 1
         ), "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
         d_shares = d_base / share_price
-        lp_in = (d_shares * lp_reserves) / (share_reserves - share_buffer)
+        lp_in = (d_shares * lp_reserves) / (share_reserves - base_buffer / share_price)
         # TODO: Move this calculation to a helper function.
         d_bonds = (share_reserves - d_shares) / 2 * (
             init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
@@ -191,7 +194,7 @@ class YieldSpacePricingModel(PricingModel):
         lp_in: float,
         share_reserves: float,
         bond_reserves: float,
-        share_buffer: float,
+        base_buffer: float,
         init_share_price: float,
         share_price: float,
         lp_reserves: float,
@@ -208,8 +211,8 @@ class YieldSpacePricingModel(PricingModel):
             bond_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
         assert (
-            share_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_buffer >= 0, not {share_buffer}!"
+            base_buffer >= 0
+        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {base_buffer}!"
         assert (
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
@@ -225,7 +228,7 @@ class YieldSpacePricingModel(PricingModel):
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
             f" share_price={share_price}, and init_share_price={init_share_price}"
         )
-        d_base = share_price * (share_reserves - share_buffer) * lp_in / lp_reserves
+        d_base = share_price * (share_reserves - base_buffer / share_price) * lp_in / lp_reserves
         d_shares = d_base / share_price
         # TODO: Move this calculation to a helper function.
         d_bonds = (share_reserves - d_shares) / 2 * (
@@ -234,7 +237,7 @@ class YieldSpacePricingModel(PricingModel):
         logging.debug(
             (
                 "inputs: lp_in=%g, share_reserves=%d, "
-                "bond_reserves=%d, share_buffer=%g, "
+                "bond_reserves=%d, base_buffer=%g, "
                 "init_share_price=%g, share_price=%g, lp_reserves=%g, "
                 "rate=%g, time_remaining=%g, stretched_time_remaining=%g"
                 "  d_shares=%g (d_base / share_price = %g / %g)"
@@ -247,7 +250,7 @@ class YieldSpacePricingModel(PricingModel):
             lp_in,
             share_reserves,
             bond_reserves,
-            share_buffer,
+            base_buffer,
             init_share_price,
             share_price,
             lp_reserves,
