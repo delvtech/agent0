@@ -677,7 +677,7 @@ class TestPriceUtils(unittest.TestCase):
             },
             # test 8: ERROR CASE
             #   0.95 price; -3mo remaining (negative);
-            #   the function asserts that normalized_days_remaining > 0, so this case \
+            #   the function asserts that normalized_time_remaining > 0, so this case \
             #   should raise an AssertionError
             {
                 "price": 0.95,  # 0% APR

@@ -114,7 +114,7 @@ class Market:
             # TODO: We should improve the StretchedTime API so that it accepts yearfracs in
             # the place of days remaining.
             days=time_utils.get_yearfrac_remaining(
-                self.time, agent_action.mint_time, self.position_duration.normalized_days
+                self.time, agent_action.mint_time, self.position_duration.normalized_time
             )
             * 365,
             time_stretch=self.position_duration.time_stretch,
@@ -148,14 +148,14 @@ class Market:
             market_deltas, agent_deltas = self._add_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_days,
+                time_remaining=time_remaining.normalized_time,
                 stretched_time_remaining=time_remaining.stretched_time,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self._remove_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_days,
+                time_remaining=time_remaining.normalized_time,
                 stretched_time_remaining=time_remaining.stretched_time,
             )
         else:
