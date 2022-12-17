@@ -39,7 +39,7 @@ class Policy(Agent):
         LP if you can, but only do it once
         short if you can, but only do it once
         """
-        has_lp = self.wallet.lp > 0
+        has_lp = self.wallet.lp_tokens > 0
         if has_lp:
             action_list = []
         else:

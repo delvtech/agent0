@@ -29,7 +29,7 @@ class Policy(Agent):
         """
         # pylint disable=unused-argument
         action_list = []
-        has_lp = self.wallet.lp > 0
+        has_lp = self.wallet.lp_tokens > 0
         can_lp = self.wallet.base >= self.amount_to_lp
         if not has_lp and can_lp:
             action_list.append(
@@ -39,6 +39,6 @@ class Policy(Agent):
             enough_time_has_passed = market.time > self.time_to_withdraw
             if enough_time_has_passed:
                 self.create_agent_action(
-                    action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp
+                    action_type=MarketActionType.REMOVE_LIQUIDITY, trade_amount=self.wallet.lp_tokens
                 )
         return action_list

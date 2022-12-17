@@ -140,11 +140,11 @@ class Agent:
                         mint_time=mint_time,
                     )
                 )
-        if self.wallet.lp > 0:
+        if self.wallet.lp_tokens > 0:
             action_list.append(
                 self.create_agent_action(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=self.wallet.lp,
+                    trade_amount=self.wallet.lp_tokens,
                     mint_time=market.time,
                 )
             )

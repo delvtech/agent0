@@ -18,7 +18,7 @@ class Wallet:
         The trader's address.
     base : float
         The base assets that held by the trader.
-    lp : float
+    lp_tokens : float
         The LP tokens held by the trader.
     longs : dict
         The long positions held by the trader.
@@ -39,7 +39,7 @@ class Wallet:
     # fungible
     address: int
     base: float
-    lp: float = 0  # pylint: disable=invalid-name
+    lp_tokens: float = 0  # pylint: disable=invalid-name
 
     # non-fungible (identified by mint_time, stored as dict)
     longs: dict = field(default_factory=dict)

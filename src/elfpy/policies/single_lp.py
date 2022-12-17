@@ -26,7 +26,7 @@ class Policy(Agent):
         LP if you can, but only do it once
         """
         action_list = []
-        has_lp = self.wallet.lp > 0
+        has_lp = self.wallet.lp_tokens > 0
         can_lp = self.wallet.base >= self.amount_to_lp
         if can_lp and not has_lp:
             action_list.append(
