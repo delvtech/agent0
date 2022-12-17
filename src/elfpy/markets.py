@@ -36,7 +36,7 @@ class Market:
         market_state: MarketState = MarketState(
             share_reserves=0,
             bond_reserves=0,
-            share_buffer=0,
+            base_buffer=0,
             bond_buffer=0,
             lp_reserves=0,
             share_price=1,
@@ -364,10 +364,7 @@ class Market:
             market_deltas = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
                 d_token_asset=trade_result.market_result.d_bonds,
-                # TODO: We must use a base buffer rather than a share buffer
-                #       since the obligations represented by the buffer don't
-                #       accrue variable rate interest.
-                d_share_buffer=trade_result.user_result.d_bonds / self.market_state.share_price,
+                d_base_buffer=trade_result.user_result.d_bonds,
             )
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
@@ -415,7 +412,7 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_token_asset=trade_result.market_result.d_bonds,
-            d_share_buffer=-agent_action.trade_amount / self.market_state.share_price,
+            d_base_buffer=-agent_action.trade_amount,
         )
         agent_deltas = Wallet(
             address=agent_action.wallet_address,
@@ -446,7 +443,7 @@ class Market:
             d_base=agent_action.trade_amount,
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
-            share_buffer=self.market_state.share_buffer,
+            base_buffer=self.market_state.base_buffer,
             init_share_price=self.market_state.init_share_price,
             share_price=self.market_state.share_price,
             lp_reserves=self.market_state.lp_reserves,
@@ -480,7 +477,7 @@ class Market:
             lp_in=agent_action.trade_amount,
             share_reserves=self.market_state.share_reserves,
             bond_reserves=self.market_state.bond_reserves,
-            share_buffer=self.market_state.share_buffer,
+            base_buffer=self.market_state.base_buffer,
             init_share_price=self.market_state.init_share_price,
             share_price=self.market_state.share_price,
             lp_reserves=self.market_state.lp_reserves,
@@ -517,7 +514,7 @@ class Market:
                 "\ny = %g"
                 "\nlp = %g"
                 "\nz = %g"
-                "\nz_b = %g"
+                "\nx_b = %g"
                 "\ny_b = %g"
                 "\np = %s"
                 "\npool apr = %s"
@@ -527,7 +524,7 @@ class Market:
             self.market_state.bond_reserves,
             self.market_state.lp_reserves,
             self.market_state.share_reserves,
-            self.market_state.share_buffer,
+            self.market_state.base_buffer,
             self.market_state.bond_buffer,
             str(spot_price),
             str(rate),

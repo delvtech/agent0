@@ -89,7 +89,7 @@ class Simulator:
             "pool_apy",
             "share_reserves",  # from market state
             "bond_reserves",  # from market state
-            "share_buffer",  # from market state
+            "base_buffer",  # from market state
             "bond_buffer",  # from market state
             "lp_reserves",  # from market state
             "share_price",  # from market state
