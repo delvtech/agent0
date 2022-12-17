@@ -94,7 +94,7 @@ class Agent:
             if value_or_dict is None:
                 pass
             # handle updating a value
-            if key in ["base", "lp", "fees_paid"]:
+            if key in ["base", "lp_tokens", "fees_paid"]:
                 if value_or_dict != 0 or self.wallet[key] != 0:
                     logging.debug(
                         "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
