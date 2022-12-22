@@ -25,4 +25,4 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install --upgrade jupyter jupyter_contrib_nbextensions
       - name: Clearing Jupyter notebook outputs
-        run: python -m jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace examples/notebooks/*.ipynb
+        run: python -m jupyter nbconvert --clear-output --inplace examples/notebooks/*.ipynb
