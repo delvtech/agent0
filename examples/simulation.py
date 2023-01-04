@@ -16,7 +16,7 @@ from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
-from elfpy.types import MarketActionType
+from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
@@ -24,38 +24,8 @@ import elfpy.utils.parse_config as config_utils
 import elfpy.utils.outputs as output_utils
 
 
-class CustomShorter(Agent):
-    """
-    Agent that is trying to optimize on a rising vault APR via shorts
-    """
-
-    def __init__(self, wallet_address: int, budget: int = 10_000) -> None:
-        """Add custom stuff then call basic policy init"""
-        self.pt_to_short = 1_000
-        super().__init__(wallet_address, budget)
-
-    def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
-        """Implement a custom user strategy"""
-        block_position_list = list(self.wallet.shorts.values())
-        has_opened_short = bool(any((x < -1 for x in block_position_list)))
-        can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apr = market.market_state.share_price * 365 / market.market_state.init_share_price
-        action_list = []
-        if can_open_short:
-            if vault_apr > market.get_rate(pricing_model):
-                action_list.append(
-                    self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
-                )
-            elif vault_apr < market.get_rate(pricing_model):
-                if has_opened_short:
-                    action_list.append(
-                        self.create_agent_action(
-                            action_type=MarketActionType.CLOSE_SHORT, trade_amount=self.pt_to_short
-                        )
-                    )
-        return action_list
-
-
+# TODO: Add more configuration potential by allowing the initializer to
+# influence the relative probability of things like shorting vs longing.
 class RandomAgent(Agent):
     """
     Agent that randomly manages their portfolio
@@ -65,32 +35,54 @@ class RandomAgent(Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
+    # TODO: Implement random short behavior.
     def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
         action_list = []
 
-        # FIXME: Implement random long behavior:
-        #
-        # 1. [ ] Find ways to bound the inputs
-        #    - [ ] Can PTs be purchased?
-        #       - Create a function that gets the max amount of base that can
-        #         be used to buy PTs through a pricing model. Then take the
-        #         minimum of the user's bankroll and this value to get the
-        #         bound.
-        #    - [ ] Can PTs be sold?
-        #       - This is just a question of whether or not the trader owns
-        #         PTs.
-        # 2. Stub out functions needed to bound inputs.
-        # 3. Implement bounding stubs.
-        # 4. Implement random trading behavior.
+        # Flip a biased coin to see whether or not to make a trade.
+        flip = self.rng.random()
+        if flip >= 0.9:
+            max_long = min(
+                self.wallet.base,
+                pricing_model.get_max_long(market.market_state, market.fee_percent, market.position_duration),
+            )
+            open_longs = list(self.wallet.longs.items())
 
-        # FIXME: Implement random short behavior.
+            # Randomly open or close a position depending on the trader's
+            # ability to perform these actions.
+            if max_long > 0 and len(open_longs) == 0:
+                action_list.append(self._open_long(max_long=max_long))
+            elif max_long == 0 and len(open_longs) > 0:
+                action_list.append(self._close_long(open_longs))
+            elif max_long > 0 and len(open_longs) > 0:
+                flip = self.rng.random()
+                if flip < 0.5:
+                    action_list.append(self._open_long(max_long=max_long))
+                else:
+                    action_list.append(self._close_long(open_longs))
 
         return action_list
 
+    def _open_long(self, max_long: float) -> MarketAction:
+        return self.create_agent_action(
+            action_type=MarketActionType.OPEN_LONG,
+            # Uniformly select trade amounts from (0, max_long].
+            trade_amount=abs(self.rng.uniform(-max_long, 0)),
+        )
 
-# TODO: Use random trader agent (randomly goes long or short).
+    def _close_long(self, open_longs: list[tuple[float, float]]) -> MarketAction:
+        (mint_time, long_balance) = open_longs[self.rng.integers(0, len(open_longs))]
+        return self.create_agent_action(
+            action_type=MarketActionType.CLOSE_LONG,
+            # Uniformly select trade amounts from (0, long_balance].
+            trade_amount=abs(self.rng.uniform(-long_balance, 0)),
+            mint_time=mint_time,
+        )
+
+
 def get_example_agents(
     num_new_agents: int,
+    rng: Generator,
     agents: Optional[dict[int, Agent]] = None,
 ) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
@@ -99,7 +91,7 @@ def get_example_agents(
     loop_start = len(agents)  # number of existing agents
     loop_end = loop_start + num_new_agents
     for wallet_address in range(loop_start, loop_end):
-        agent = CustomShorter(wallet_address)
+        agent = RandomAgent(rng, wallet_address)
         agent.log_status_report()
         agents.update({agent.wallet_address: agent})
     return agents
@@ -201,5 +193,5 @@ if __name__ == "__main__":
     # initialize the market using the LP agent
     simulator.collect_and_execute_trades()
     # get trading agent list
-    simulator.agents = get_example_agents(num_new_agents=args.num_agents, agents=init_agents)
+    simulator.agents = get_example_agents(rng=simulator.rng, num_new_agents=args.num_agents, agents=init_agents)
     simulator.run_simulation()
