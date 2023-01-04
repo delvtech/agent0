@@ -25,4 +25,4 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install .
       - name: Running package tests
-        run: pytest
+        run: python -m pytest .

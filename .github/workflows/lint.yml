@@ -23,7 +23,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint
           python -m pip install -r requirements.txt
-      - name: Autolinting code with black
-        run: black .
+      - name: Analyzing code with black
+        run: python -m black --check --diff .
       - name: Analysing code with pylint
-        run: pylint --rcfile=.github/workflows/.pylintrc $(git ls-files '*.py')
+        run: python -m pylint --rcfile=.github/workflows/.pylintrc $(git ls-files '*.py')
+      - name: Ensure clear Jupyter Notebooks
+        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
