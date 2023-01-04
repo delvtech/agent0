@@ -5,9 +5,10 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from elfpy.types import MarketState, StretchedTime
     from elfpy.markets import Market
     from elfpy.pricing_models.base import PricingModel
+
+from elfpy.types import MarketState, StretchedTime
 
 
 ### Reserves ###
@@ -43,14 +44,14 @@ def calc_bond_reserves(
         The expected amount of bonds (token asset) in the pool, given the inputs
     """
     bond_reserves = (share_reserves / 2) * (
-        init_share_price * (1 + target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+        init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
         - share_price
     )  # y = x/2 * (u * (1 + rt)**(1/T) - c)
     # FIXME: Alternate formulation?
     # bond_reserves = (
     #    init_share_price
     #    * share_reserves
-    #    * (1 - target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+    #    * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
     # )  # y = uz(1 - rt)**(1/T)
     return bond_reserves
 
@@ -84,7 +85,7 @@ def calc_share_reserves(
         The expected amount of base asset in the pool, calculated from the provided parameters
     """
     share_reserves = bond_reserves / (
-        init_share_price * (1 - target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+        init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
     )  # z = y / (u * (1 - rt)**(1/T))
     return share_reserves
 
@@ -189,7 +190,6 @@ def calc_liquidity(
         target_apr,
         share_reserves,
         market.position_duration,
-        pricing_model.model_name(),
         market.market_state.init_share_price,
         market.market_state.share_price,
     )
@@ -204,7 +204,6 @@ def calc_liquidity(
             share_price=market.market_state.share_price,
             init_share_price=market.market_state.init_share_price,
         ),
-        pricing_model.model_name(),
         price,
     )
     # compute scaling factor to adjust reserves so that they match the target liquidity

@@ -8,15 +8,16 @@ import numpy as np
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
-    from elfpy.types import (
-        MarketAction,
-        MarketActionType,
-        MarketDeltas,
-        Quantity,
-        TokenType,
-    )
+    from elfpy.types import MarketAction
 
-from elfpy.types import MarketState, StretchedTime
+from elfpy.types import (
+    MarketState,
+    MarketActionType,
+    MarketDeltas,
+    StretchedTime,
+    Quantity,
+    TokenType,
+)
 from elfpy.wallet import Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils

@@ -10,11 +10,11 @@ import numpy as np
 
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
+from elfpy.types import MarketAction, MarketActionType
 
 if TYPE_CHECKING:
     from elfpy.markets import Market
     from elfpy.pricing_models.base import PricingModel
-    from elfpy.types import MarketAction, MarketActionType
 
 
 class Agent:
