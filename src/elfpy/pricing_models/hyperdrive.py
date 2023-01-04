@@ -104,7 +104,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             market_state.bond_reserves -= out.amount * (1 - time_remaining.normalized_time)
         else:
             raise AssertionError(
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
+                "pricing_models.calc_in_given_out: ERROR: "
+                f"Expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
@@ -138,7 +139,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         else:
             raise AssertionError(
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
+                "pricing_models.calc_in_given_out: ERROR: "
+                f"Expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
         return TradeResult(
@@ -226,7 +228,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             market_state.bond_reserves += in_.amount * (1 - time_remaining.normalized_time)
         else:
             raise AssertionError(
-                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
+                "pricing_models.calc_out_given_in: ERROR: "
+                f"Expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
@@ -260,7 +263,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         else:
             raise AssertionError(
-                f"pricing_models.calc_out_given_in: ERROR: expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
+                "pricing_models.calc_out_given_in: ERROR: "
+                f"Expected in_.unit to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
             )
 
         return TradeResult(
