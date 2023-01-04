@@ -132,7 +132,8 @@ class PricingModel(ABC):
             The spot price of principal tokens.
         """
         assert market_state.share_reserves > 0, (
-            f"pricing_models.calc_spot_price_from_reserves: ERROR: expected share_reserves > 0, not {market_state.share_reserves}!",
+            "pricing_models.calc_spot_price_from_reserves: ERROR: "
+            f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
         total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
         bond_reserves_ = market_state.bond_reserves + total_reserves
@@ -172,26 +173,29 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert (
-            quantity.amount > 0
-        ), f"pricing_models.check_input_assertions: ERROR: expected quantity.amount > 0, not {quantity.amount}!"
-        assert (
-            market_state.share_reserves >= 0
-        ), f"pricing_models.check_input_assertions: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
-        assert (
-            market_state.bond_reserves >= 0
-        ), f"pricing_models.check_input_assertions: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
-        assert market_state.share_price >= market_state.init_share_price >= 1, (
-            f"pricing_models.check_input_assertions: ERROR:"
-            f" expected share_price >= init_share_price >= 1, not share_price={market_state.share_price}"
-            f" and init_share_price={market_state.init_share_price}!"
+        assert quantity.amount > 0, (
+            "pricing_models.check_input_assertions: ERROR: " f"expected quantity.amount > 0, not {quantity.amount}!"
         )
-        assert (
-            1 >= fee_percent >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 >= fee_percent >= 0, not {fee_percent}!"
-        assert (
-            1 > time_remaining.stretched_time >= 0
-        ), f"pricing_models.calc_in_given_out: ERROR: expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
+            f"pricing_models.check_input_assertions: ERROR: "
+            f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
+            f"and init_share_price={market_state.init_share_price}!"
+        )
+        assert 1 >= fee_percent >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: " f"expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        )
+        assert 1 > time_remaining.stretched_time >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: "
+            f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+        )
 
     # TODO: Add checks for TradeResult's other outputs.
     def check_output_assertions(
@@ -200,15 +204,19 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to a trade result."""
 
-        assert isinstance(
-            trade_result.breakdown.fee, float
-        ), f"pricing_models.check_output_assertions: ERROR: fee should be a float, not {type(trade_result.breakdown.fee)}!"
-        assert (
-            trade_result.breakdown.fee >= 0
-        ), "pricing_models.check_output_assertions: ERROR: Fee should not be negative!"
-        assert isinstance(
-            trade_result.breakdown.without_fee, float
-        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be a float, not {type(trade_result.breakdown.without_fee)}!"
-        assert (
-            trade_result.breakdown.without_fee >= 0
-        ), f"pricing_models.check_output_assertions: ERROR: without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"
+        assert isinstance(trade_result.breakdown.fee, float), (
+            "pricing_models.check_output_assertions: ERROR: "
+            f"fee should be a float, not {type(trade_result.breakdown.fee)}!"
+        )
+        assert trade_result.breakdown.fee >= 0, (
+            "pricing_models.check_output_assertions: ERROR: "
+            f"Fee should not be negative, but is {trade_result.breakdown.fee}!"
+        )
+        assert isinstance(trade_result.breakdown.without_fee, float), (
+            "pricing_models.check_output_assertions: ERROR: "
+            f"without_fee should be a float, not {type(trade_result.breakdown.without_fee)}!"
+        )
+        assert trade_result.breakdown.without_fee >= 0, (
+            "pricing_models.check_output_assertions: ERROR: "
+            f"without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"
+        )
