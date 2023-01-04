@@ -73,12 +73,12 @@ class YieldSpacePricingModel(PricingModel):
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert stretched_time_remaining >= 0, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0,"
-            f"not {stretched_time_remaining}!"
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         )
         assert share_price >= init_share_price >= 1, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
-            f" share_price={share_price} and init_share_price={init_share_price}!"
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
         )
         d_shares = d_base / share_price
         if share_reserves > 0:  # normal case where we have some share reserves
@@ -171,16 +171,18 @@ class YieldSpacePricingModel(PricingModel):
             lp_reserves >= 0
         ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
         assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
-        assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert stretched_time_remaining >= 0, (
-            "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected stretched_time_remaining >= 0,"
-            f"not {stretched_time_remaining}!"
+        assert 1 > time_remaining >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"expected 1 > time_remaining >= 0, not {time_remaining}!"
         )
-        assert (
-            share_price >= init_share_price >= 1
-        ), "pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_price >= init_share_price >= 1, not"
+        assert stretched_time_remaining >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        )
+        assert share_price >= init_share_price >= 1, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"expected share_price >= init_share_price >= 1, not, {share_price}!"
+        )
         d_shares = d_base / share_price
         lp_in = (d_shares * lp_reserves) / (share_reserves - base_buffer / share_price)
         # TODO: Move this calculation to a helper function.
@@ -221,12 +223,12 @@ class YieldSpacePricingModel(PricingModel):
             1 > time_remaining >= 0
         ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
         assert stretched_time_remaining >= 0, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected stretched_time_remaining >= 0, "
-            f"not {stretched_time_remaining}!"
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
         )
         assert share_price >= init_share_price >= 1, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_price >= init_share_price >= 1, not"
-            f" share_price={share_price}, and init_share_price={init_share_price}"
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected share_price >= init_share_price >= 1, not share_price={share_price}, and init_share_price={init_share_price}"
         )
         d_base = share_price * (share_reserves - base_buffer / share_price) * lp_in / lp_reserves
         d_shares = d_base / share_price
