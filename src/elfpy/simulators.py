@@ -9,15 +9,15 @@ from typing import Optional, TYPE_CHECKING
 import numpy as np
 from numpy.random._generator import Generator
 
+from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.utils.time as time_utils
+from elfpy.utils.outputs import CustomEncoder
+
 if TYPE_CHECKING:
     from elfpy.agent import Agent
     from elfpy.markets import Market
     from elfpy.pricing_models.base import PricingModel
     from elfpy.utils.config import Config
-
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
-import elfpy.utils.time as time_utils
-from elfpy.utils.outputs import CustomEncoder
 
 
 class Simulator:

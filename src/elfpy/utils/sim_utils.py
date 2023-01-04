@@ -9,14 +9,14 @@ import logging
 
 import elfpy.utils.price as price_utils
 
-if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
-    from elfpy.agent import Agent
-
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+
+if TYPE_CHECKING:
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.agent import Agent
 
 
 @dataclass()
@@ -78,7 +78,6 @@ def get_init_lp_agent(
         target_liquidity=init_liquidity,
         target_apr=target_pool_apy,
         market=market,
-        pricing_model=pricing_model,
     )[:2]
     # mock the short to assess what the delta market conditions will be
     output_with_fee = pricing_model.calc_out_given_in(

@@ -13,7 +13,6 @@ import numpy as np
 from elfpy.markets import Market
 from elfpy.types import MarketState, StretchedTime
 from elfpy.utils import price as price_utils
-from elfpy.utils import sim_utils
 
 
 class BasePriceTest(unittest.TestCase):
@@ -87,7 +86,7 @@ class BasePriceTest(unittest.TestCase):
                     share_reserves=test_case["share_reserves"],
                     bond_reserves=test_case["bond_reserves"],
                 ),
-                price=test_case["spot_price"],
+                share_price=test_case["spot_price"],
             )
             assert (
                 liquidity == test_case["expected_result"]
@@ -307,8 +306,8 @@ class BasePriceTest(unittest.TestCase):
                     err_msg="unexpected base_asset_reserves",
                 )
 
-    def run_calc_liquidity_test(self, pricing_model):
-        """Unit tests for the calc_liquidity function"""
+    def run_calc_liquidity_test(self):
+        """Unit tests for the pricing model calc_liquidity function"""
 
         test_cases = [
             # test 1: 5M target_liquidity; 5% APR;
@@ -405,9 +404,7 @@ class BasePriceTest(unittest.TestCase):
                 "expected_bond_reserves": ZeroDivisionError,  #
             },
         ]
-        self.run_calc_liquidity_test_cases(test_cases, pricing_model)
-
-    def run_calc_liquidity_test_cases(self, test_cases, pricing_model):
+        # Loop through the test cases & pricing model
         for test_case in [test_cases[0]]:
             # Check if this test case is supposed to fail
             if "is_error_case" in test_case and test_case["is_error_case"]:
@@ -424,7 +421,6 @@ class BasePriceTest(unittest.TestCase):
                             ),
                             position_duration=test_case["time_remaining"],
                         ),
-                        pricing_model=pricing_model,
                     )
             # If test was not supposed to fail, continue normal execution
             else:
@@ -439,7 +435,6 @@ class BasePriceTest(unittest.TestCase):
                     target_liquidity=test_case["target_liquidity"],
                     target_apr=test_case["target_apr"],
                     market=market,
-                    pricing_model=pricing_model,
                 )
                 np.testing.assert_almost_equal(
                     test_case["expected_share_reserves"],
@@ -815,17 +810,21 @@ class TestPriceUtils(BasePriceTest):
     """Test calculations for each of the price utility functions"""
 
     def test_calc_apr_from_spot_price(self):
+        """Execute the test"""
         self.run_calc_apr_from_spot_price_test()
 
     def test_calc_k_const(self):
+        """Execute the test"""
         self.run_calc_k_const_test()
 
     def test_calc_spot_price_from_apr(self):
+        """Execute the test"""
         self.run_calc_spot_price_from_apr_test()
 
     def test_calc_base_asset_reserves(self):
+        """Execute the test"""
         self.run_calc_base_asset_reserves_test()
 
     def test_calc_liquidity(self):
-        self.run_calc_liquidity_test(sim_utils.get_pricing_model("YieldSpace"))
-        # self.run_calc_liquidity_test(sim_utils.get_pricing_model("Hyperdrive"))
+        """Execute the test"""
+        self.run_calc_liquidity_test()

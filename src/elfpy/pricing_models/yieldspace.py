@@ -49,18 +49,22 @@ class YieldSpacePricingModel(PricingModel):
 
         """
         assert d_base > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected d_base > 0, not {d_base}!"
-        assert (
-            market_state.share_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
-        assert (
-            market_state.bond_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
-        assert (
-            market_state.base_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {market_state.base_buffer}!"
-        assert (
-            market_state.lp_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR:  "
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
         assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert 1 > time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
@@ -149,18 +153,22 @@ class YieldSpacePricingModel(PricingModel):
         y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
         """
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
-        assert (
-            market_state.share_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
-        assert (
-            market_state.bond_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
-        assert (
-            market_state.base_buffer >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected base_buffer >= 0, not {market_state.base_buffer}!"
-        assert (
-            market_state.lp_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
         assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
         assert 1 > time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
@@ -194,22 +202,27 @@ class YieldSpacePricingModel(PricingModel):
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
-        assert (
-            market_state.share_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {market_state.share_reserves}!"
-        assert (
-            market_state.bond_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {market_state.bond_reserves}!"
-        assert (
-            market_state.base_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {market_state.base_buffer}!"
-        assert (
-            market_state.lp_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
         assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
-        assert (
-            1 > time_remaining.normalized_time >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+        assert 1 > time_remaining.normalized_time >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+        )
         assert time_remaining.stretched_time >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             f"expected stretched_time_remaining >= 0, not {time_remaining.stretched_time}!"

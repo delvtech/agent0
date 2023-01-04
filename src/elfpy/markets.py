@@ -6,10 +6,6 @@ import logging
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
-    from elfpy.types import MarketAction
-
 from elfpy.types import (
     MarketState,
     MarketActionType,
@@ -21,6 +17,10 @@ from elfpy.types import (
 from elfpy.wallet import Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
+
+if TYPE_CHECKING:
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.types import MarketAction
 
 
 class Market:

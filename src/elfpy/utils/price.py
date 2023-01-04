@@ -4,11 +4,11 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 
+from elfpy.types import MarketState, StretchedTime
+
 if TYPE_CHECKING:
     from elfpy.markets import Market
     from elfpy.pricing_models.base import PricingModel
-
-from elfpy.types import MarketState, StretchedTime
 
 
 ### Reserves ###
@@ -47,12 +47,6 @@ def calc_bond_reserves(
         init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
         - share_price
     )  # y = x/2 * (u * (1 + rt)**(1/T) - c)
-    # FIXME: Alternate formulation?
-    # bond_reserves = (
-    #    init_share_price
-    #    * share_reserves
-    #    * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
-    # )  # y = uz(1 - rt)**(1/T)
     return bond_reserves
 
 
@@ -152,7 +146,9 @@ def calc_base_asset_reserves(
 
 
 def calc_liquidity(
-    target_liquidity: float, target_apr: float, market: Market, pricing_model: PricingModel
+    target_liquidity: float,
+    target_apr: float,
+    market: Market,
 ) -> tuple[float, float]:
     """Returns the reserve volumes and total supply
 
@@ -176,8 +172,6 @@ def calc_liquidity(
                 current share price. Defaults to 1
             position_duration : StretchedTime
                 amount of time left until bond maturity
-    pricing_model : PricingModel
-        desired pricing model
 
     Returns
     -------
