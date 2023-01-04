@@ -24,8 +24,6 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     deposited into yield bearing vaults
     """
 
-    # pylint: disable=line-too-long
-
     def model_name(self) -> str:
         return "Hyperdrive"
 
@@ -45,9 +43,12 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y \cdot t)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z) + \Delta y \cdot (1 - t),
+            c (\frac{1}{\mu} (
+            \frac{k - (2y + cz - \Delta y \cdot t)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z)
+            + \Delta y \cdot (1 - t),
             &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz) + c \cdot \Delta z \cdot (1 - t),
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - t})^{\frac{1}{1 - t}}
+            - (2y + cz) + c \cdot \Delta z \cdot (1 - t),
             &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
             f =
@@ -170,9 +171,12 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y \cdot t)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}) + \Delta y \cdot (1 - t),
+            c (z - \frac{1}{\mu} (
+            \frac{k - (2y + cz + \Delta y \cdot t)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}})
+            + \Delta y \cdot (1 - t),
             &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - t})^{\frac{1}{1 - t}} + c \cdot \Delta z \cdot (1 - t),
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - t})^{\frac{1}{1 - t}}
+            + c \cdot \Delta z \cdot (1 - t),
             &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f =
