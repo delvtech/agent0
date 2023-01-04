@@ -7,7 +7,6 @@ Special reserved user strategy that is used to initialize a market with a desire
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketActionType
@@ -43,14 +42,7 @@ class Policy(Agent):
         if has_lp:
             action_list = []
         else:
-            if pricing_model.model_name() == ElementPricingModel().model_name():
-                # TODO: This doesn't work correctly -- need to add PT
-                action_list = [
-                    self.create_agent_action(
-                        action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.second_base_to_lp
-                    ),
-                ]
-            elif pricing_model.model_name() == HyperdrivePricingModel().model_name():
+            if pricing_model.model_name() == HyperdrivePricingModel().model_name():
                 # TODO: This PM fails the tests
                 action_list = [
                     self.create_agent_action(

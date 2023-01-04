@@ -58,16 +58,9 @@ class Market:
         action_type : MarketActionType
             See MarketActionType for all acceptable actions that can be performed on this market
         pricing_model_name : str
-            The name of the pricing model, must be "element" or "hyperdrive"
+            The name of the pricing model, must be "hyperdrive" or "yieldspace"
         """
-        if pricing_model_name.lower() == "element":
-            allowed_actions = [
-                MarketActionType.OPEN_LONG,
-                MarketActionType.CLOSE_LONG,
-                MarketActionType.ADD_LIQUIDITY,
-                MarketActionType.REMOVE_LIQUIDITY,
-            ]
-        elif pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
+        if pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
             allowed_actions = [
                 MarketActionType.OPEN_LONG,
                 MarketActionType.CLOSE_LONG,
@@ -79,7 +72,7 @@ class Market:
         else:
             raise ValueError(
                 "market.check_action_type: ERROR: pricing model name should "
-                f'be in ["element", "hyperdrive", "yieldspace"], not {pricing_model_name}'
+                f'be in ["hyperdrive", "yieldspace"], not {pricing_model_name}'
             )
         if action_type not in allowed_actions:
             raise AssertionError(

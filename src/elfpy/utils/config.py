@@ -27,9 +27,7 @@ class MarketConfig:
 class AMMConfig:
     """config parameters specific to the amm"""
 
-    pricing_model_name: str = field(
-        default="Element", metadata={"hint": 'Must be "Element", "Hyperdrive", or "YieldSpace"'}
-    )
+    pricing_model_name: str = field(default="Hyperdrive", metadata={"hint": 'Must be "Hyperdrive", or "YieldSpace"'})
     min_fee: float = field(default=0.1, metadata={"hint": "decimal that assignes fee_percent"})
     max_fee: float = field(default=0.5, metadata={"hint": "decimal that assignes fee_percent"})
     min_pool_apy: float = field(default=0.02, metadata={"hint": "as a decimal"})
