@@ -34,7 +34,7 @@ class TestParseSimulationConfig(unittest.TestCase):
 
         # manually set AMM config to be the same as the TOML file
         amm = config_utils.AMMConfig(
-            pricing_model_name="Element", min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0
+            pricing_model_name="Hyperdrive", min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0
         )
 
         # manually set Simulator config to be the same as the TOML file
@@ -77,7 +77,7 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "base_asset_price": 2500.0,
             },
             "amm": {
-                "pricing_model_name": "Element",
+                "pricing_model_name": "Hyperdrive",
                 "min_fee": 0.1,
                 "max_fee": 0.5,
                 "min_pool_apy": 0.02,

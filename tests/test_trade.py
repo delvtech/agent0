@@ -127,7 +127,7 @@ class BaseTradeTest(unittest.TestCase):
             f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
         )
         # check that the liquidity is within 0.001 of the target
-        # TODO: This will not work with Element PM & Hyperdrive PM
+        # TODO: This will not work with Hyperdrive PM
         total_liquidity = market.market_state.share_reserves * market.market_state.share_price
         assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
             f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "

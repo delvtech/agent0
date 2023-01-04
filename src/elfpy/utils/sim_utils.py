@@ -5,7 +5,6 @@ import logging
 from typing import Any
 
 from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.markets import Market
@@ -175,7 +174,7 @@ def get_pricing_model(model_name: str) -> PricingModel:
     Arguments
     ---------
     model_name : str
-        name of the desired pricing_model; can be "element", "hyperdrive", or "yieldspace"
+        name of the desired pricing_model; can be "hyperdrive", or "yieldspace"
 
     Returns
     -------
@@ -183,14 +182,12 @@ def get_pricing_model(model_name: str) -> PricingModel:
         instantiated pricing model matching the input argument
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
-    if model_name.lower() == "element":
-        pricing_model = ElementPricingModel()
-    elif model_name.lower() == "hyperdrive":
+    if model_name.lower() == "hyperdrive":
         pricing_model = HyperdrivePricingModel()
     elif model_name.lower() == "yieldspace":
         pricing_model = YieldSpacePricingModel()
     else:
-        raise ValueError(f'pricing_model_name must be "Element", "Hyperdrive", or "YieldSpace", not {model_name}')
+        raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model
 
 

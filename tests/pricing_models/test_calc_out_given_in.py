@@ -8,14 +8,11 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=duplicate-code
 
-from typing import Optional
-
 from dataclasses import dataclass
 import unittest
 import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.element import ElementPricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
@@ -51,10 +48,8 @@ class TestResultCalcOutGivenInSuccess:
 
     without_fee_or_slippage: float
     without_fee: float
-    element_fee: Optional[float]
-    element_with_fee: Optional[float]
-    hyperdrive_fee: float
-    hyperdrive_with_fee: float
+    yieldspace_fee: float
+    yieldspace_with_fee: float
 
     __test__ = False  # pytest: don't test this class
 
@@ -67,7 +62,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
+        pricing_models: list[PricingModel] = [YieldSpacePricingModel()]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
         # purchased for base.
@@ -147,20 +142,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=102.50516899477225,
-                    # element_fee = 0.01 * (d_y' - in_)
-                    #             = 0.01 * (102.50516899477225 - 100)
-                    #             = 0.02505168994772248
-                    element_fee=0.02505168994772248,
-                    # element_with_fee = d_y' - fee
-                    #                  = 102.50516899477225 - 0.02505168994772248
-                    #                  = 102.48011730482453
-                    element_with_fee=102.48011730482453,
                     # fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
-                    hyperdrive_fee=0.02506718336486724,
+                    yieldspace_fee=0.02506718336486724,
                     # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.02506718336486724
                     #          = 102.48010181140738
-                    hyperdrive_with_fee=102.48010181140738,
+                    yieldspace_with_fee=102.48010181140738,
                 ),
             ),
             # High fee percentage - 20%.
@@ -183,20 +170,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 TestResultCalcOutGivenInSuccess(
                     without_fee_or_slippage=102.50671833648673,
                     without_fee=102.50516899477225,
-                    # element_fee = 0.2 * (d_y' - in_)
-                    #             = 0.2 * (102.50516899477225 - 100)
-                    #             = 0.5010337989544497
-                    element_fee=0.5010337989544497,
-                    # element_with_fee = d_y' - fee
-                    #                  = 102.50516899477225 - 0.5010337989544497
-                    #                  = 102.0041351958178
-                    element_with_fee=102.0041351958178,
                     # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
-                    hyperdrive_fee=0.5013436672973448,
+                    yieldspace_fee=0.5013436672973448,
                     # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.5013436672973448
                     #          = 102.0038253274749
-                    hyperdrive_with_fee=102.0038253274749,
+                    yieldspace_with_fee=102.0038253274749,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -233,20 +212,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=10235.514826394327,
-                    # element_fee = 0.01 * (d_y' - in_)
-                    #             = 0.01 * (10235.514826394327 - 10000)
-                    #             = 2.3551482639432653
-                    element_fee=2.3551482639432653,
-                    # element_with_fee = d_y' - fee
-                    #                  = 10235.514826394327 - 2.3551482639432653
-                    #                  = 10233.159678130383
-                    element_with_fee=10233.159678130383,
                     # fee = 0.01 * (p - 1) * 10_000 = 2.506718336486724
-                    hyperdrive_fee=2.506718336486724,
+                    yieldspace_fee=2.506718336486724,
                     # with_fee = d_y' - fee
                     #          = 10235.514826394327 - 2.506718336486724
                     #          = 10233.00810805784
-                    hyperdrive_with_fee=10233.00810805784,
+                    yieldspace_with_fee=10233.00810805784,
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
@@ -284,20 +255,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=81138.27602200207,
-                    # element_fee = 0.01 * (d_y' - in_)
-                    #             = 0.01 * (81138.27602200207 - 80000)
-                    #             = 11.38276022002072
-                    element_fee=11.38276022002072,
-                    # element_with_fee = d_y' - fee
-                    #                  = 81138.27602200207 - 11.38276022002072
-                    #                  = 81126.89326178205
-                    element_with_fee=81126.89326178205,
                     # fee = 0.01 * (p - 1) * 80_000 = 20.053746691893792
-                    hyperdrive_fee=20.053746691893792,
+                    yieldspace_fee=20.053746691893792,
                     # with_fee = d_y' - fee
                     #          = 81138.27602200207 - 20.053746691893792
                     #          = 81118.22227531018
-                    hyperdrive_with_fee=81118.22227531018,
+                    yieldspace_with_fee=81118.22227531018,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -351,14 +314,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=204.46650180319557,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (p - 1) * 200 = 0.044699828573532496
-                    hyperdrive_fee=0.044699828573532496,
+                    yieldspace_fee=0.044699828573532496,
                     # with_fee = d_y' - fee
                     #          = 204.46650180319557 - 0.044699828573532496
                     #          = 204.42180197462204
-                    hyperdrive_with_fee=204.42180197462204,
+                    yieldspace_with_fee=204.42180197462204,
                 ),
             ),
             # Very unbalanced reserves.
@@ -411,14 +372,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    hyperdrive_fee=0.1247814132813505,
+                    yieldspace_fee=0.1247814132813505,
                     # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
-                    hyperdrive_with_fee=212.35073531111888,
+                    yieldspace_with_fee=212.35073531111888,
                 ),
             ),
             # A term of a quarter year.
@@ -471,14 +430,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=206.14340814948082,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
-                    hyperdrive_fee=0.06144677994914538,
+                    yieldspace_fee=0.06144677994914538,
                     # with_fee = d_y' - fee
                     #          = 206.14340814948082 - 0.06144677994914538
                     #          = 206.08196136953168
-                    hyperdrive_with_fee=206.08196136953168,
+                    yieldspace_with_fee=206.08196136953168,
                 ),
             ),
             # A time stretch targeting 10% APY.
@@ -531,14 +488,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     #
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    hyperdrive_fee=0.1247814132813505,
+                    yieldspace_fee=0.1247814132813505,
                     # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
-                    hyperdrive_with_fee=212.35073531111888,
+                    yieldspace_with_fee=212.35073531111888,
                 ),
             ),
         ]
@@ -623,20 +578,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.55314236719278,
-                    # element_fee = 0.01 * (in_ - d_x')
-                    #             = 0.01 * (100 - 97.55314236719278)
-                    #             = 0.02446857632807223
-                    element_fee=0.02446857632807223,
-                    # element_with_fee = d_y' - fee
-                    #                  = 97.55314236719278 - 0.02446857632807223
-                    #                  = 97.5286737908647
-                    element_with_fee=97.5286737908647,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                    hyperdrive_fee=0.024454185805248493,
+                    yieldspace_fee=0.024454185805248493,
                     # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.024454185805248493
                     #          = 97.52868818138752
-                    hyperdrive_with_fee=97.52868818138752,
+                    yieldspace_with_fee=97.52868818138752,
                 ),
             ),
             # High fee percentage - 20%.
@@ -659,20 +606,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 TestResultCalcOutGivenInSuccess(
                     without_fee_or_slippage=97.55458141947516,
                     without_fee=97.55314236719278,
-                    # element_fee = 0.2 * (in_ - d_x')
-                    #             = 0.2 * (100 - 97.55314236719278)
-                    #             = 0.48937152656144467
-                    element_fee=0.48937152656144467,
-                    # element_with_fee = d_y' - fee
-                    #                  = 97.55314236719278 - 0.48937152656144467
-                    #                  = 97.06377084063134
-                    element_with_fee=97.06377084063134,
                     # fee = 0.2 * (1 - (1 / p)) * 100 = 0.48908371610497
-                    hyperdrive_fee=0.48908371610497,
+                    yieldspace_fee=0.48908371610497,
                     # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.48908371610497
                     #          = 97.0640586510878
-                    hyperdrive_with_fee=97.0640586510878,
+                    yieldspace_with_fee=97.0640586510878,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -711,20 +650,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=9740.77011591768,
-                    # element_fee = 0.01 * (in_ - d_x')
-                    #             = 0.01 * (10000 - 9740.77011591768)
-                    #             = 2.592298840823205
-                    element_fee=2.592298840823205,
-                    # element_with_fee = d_y' - fee
-                    #                  = 9740.77011591768 - 2.592298840823205
-                    #                  = 9738.177817076856
-                    element_with_fee=9738.177817076856,
                     # fee = 0.01 * (1 - (1 / p)) * 10_000 = 2.4454185805248496
-                    hyperdrive_fee=2.4454185805248496,
+                    yieldspace_fee=2.4454185805248496,
                     # with_fee = d_x' - fee
                     #          = 9740.77011591768 - 2.4454185805248496
                     #          = 9738.324697337155
-                    hyperdrive_with_fee=9738.324697337155,
+                    yieldspace_with_fee=9738.324697337155,
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
@@ -763,20 +694,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # that this is slightly smaller than the without slippage
                     # value.
                     without_fee=76850.14470187116,
-                    # element_fee = 0.01 * (in_ - d_x')
-                    #             = 0.01 * (80000 - 76850.14470187116)
-                    #             = 31.498552981288377
-                    element_fee=31.498552981288377,
-                    # element_with_fee = d_y' - fee
-                    #                  = 76850.14470187116 - 31.498552981288377
-                    #                  = 76818.64614888988
-                    element_with_fee=76818.64614888988,
                     # fee = 0.01 * (1 - (1 / p)) * 80_000 = 19.563348644198797
-                    hyperdrive_fee=19.563348644198797,
+                    yieldspace_fee=19.563348644198797,
                     # with_fee = d_x' - fee
                     #          = 76850.14470187116 - 19.563348644198797
                     #          = 76830.58135322697
-                    hyperdrive_with_fee=76830.58135322697,
+                    yieldspace_with_fee=76830.58135322697,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -825,14 +748,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.81305379542755,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                    hyperdrive_fee=0.02186131575348005,
+                    yieldspace_fee=0.02186131575348005,
                     # with_fee = d_x' - fee
                     #          = 97.81305379542755 - 0.02186131575348005
                     #          = 97.79119247967407
-                    hyperdrive_with_fee=97.79119247967407,
+                    yieldspace_with_fee=97.79119247967407,
                 ),
             ),
             # Very unbalanced reserves.
@@ -882,14 +803,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=94.12678195475019,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731877
-                    hyperdrive_fee=0.05872670595731899,
+                    yieldspace_fee=0.05872670595731899,
                     # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
-                    hyperdrive_with_fee=94.06805524879287,
+                    yieldspace_with_fee=94.06805524879287,
                 ),
             ),
             # A term of a quarter year.
@@ -944,14 +863,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=97.01895001129014,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.0298075994717949
-                    hyperdrive_fee=0.0298075994717949,
+                    yieldspace_fee=0.0298075994717949,
                     # with_fee = d_x' - fee
                     #          = 97.01895001129014 - 0.0298075994717949
                     #          = 96.98914241181835
-                    hyperdrive_with_fee=96.98914241181835,
+                    yieldspace_with_fee=96.98914241181835,
                 ),
             ),
             # A time stretch targetting 10% APY.
@@ -1006,14 +923,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage
                     # value.
                     without_fee=94.12678195475019,
-                    element_fee=None,
-                    element_with_fee=None,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
-                    hyperdrive_fee=0.05872670595731899,
+                    yieldspace_fee=0.05872670595731899,
                     # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
-                    hyperdrive_with_fee=94.06805524879287,
+                    yieldspace_with_fee=94.06805524879287,
                 ),
             ),
         ]
@@ -1027,10 +942,6 @@ class TestCalcOutGivenIn(unittest.TestCase):
         ) in test_cases:
             for pricing_model in pricing_models:
                 model_name = pricing_model.model_name()
-                if model_name == "Element" and (
-                    expected_result.element_fee is None or expected_result.element_with_fee is None
-                ):
-                    continue
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
 
                 # Ensure we get the expected results from the pricing model.
@@ -1053,39 +964,24 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     err_msg="unexpected without_fee",
                 )
                 model_name = pricing_model.model_name()
-                if (
-                    model_name == "Element"
-                    and not expected_result.element_fee is None
-                    and not expected_result.element_with_fee is None
-                ):
+                if model_name == "YieldSpace":
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.fee,
-                        expected_result.element_fee,
-                        err_msg="unexpected element fee",
+                        expected_result.yieldspace_fee,
+                        err_msg="unexpected yieldspace fee",
                     )
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.with_fee,
-                        expected_result.element_with_fee,
-                        err_msg="unexpected element with_fee",
-                    )
-                elif model_name == "YieldSpace":
-                    np.testing.assert_almost_equal(
-                        trade_result.breakdown.fee,
-                        expected_result.hyperdrive_fee,
-                        err_msg="unexpected hyperdrive fee",
-                    )
-                    np.testing.assert_almost_equal(
-                        trade_result.breakdown.with_fee,
-                        expected_result.hyperdrive_with_fee,
-                        err_msg="unexpected hyperdrive with_fee",
+                        expected_result.yieldspace_with_fee,
+                        err_msg="unexpected yieldspace with_fee",
                     )
                 else:
-                    raise AssertionError(f'Expected model_name to be "Element" or "YieldSpace", not {model_name}')
+                    raise AssertionError(f'Expected model_name to be "YieldSpace", not {model_name}')
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [ElementPricingModel(), YieldSpacePricingModel()]
+        pricing_models: list[PricingModel] = [YieldSpacePricingModel()]
 
         # Failure test cases.
         test_cases = [

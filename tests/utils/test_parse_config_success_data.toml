@@ -12,7 +12,7 @@ max_vault_apy = 0.9  # as a decimal
 base_asset_price = 2.5e3  # aka market price
 
 [amm]
-pricing_model_name = "Element" # specify a pricing model
+pricing_model_name = "Hyperdrive" # specify a pricing model
 # random variables
 min_fee = 0.1  # decimal that assigns fee_percent
 max_fee = 0.5  # decimal that assigns fee_percent
