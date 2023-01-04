@@ -40,26 +40,37 @@ class AMMConfig:
 class SimulatorConfig:
     """config parameters specific to the simulator"""
 
+    # durations
     pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
     token_duration: float = field(
         default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
     )
-    precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
-    agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
+
+    # users
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
+    agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
-    random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
-    verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
+
+    # trading
     target_liquidity: float = field(default=0, metadata={"hint": ""})
     target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
     fee_percent: float = field(default=0, metadata={"hint": ""})
+
+    # vault
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
     vault_apr: list[float] = field(
         default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
     )
+
+    # logging
+    verbose: bool = field(default=False, metadata={"hint": "verbosity level for logging"})
     logging_level: str = field(default="info", metadata={"hint": "Logging level, as defined by stdlib logging"})
+
+    # numerical
+    precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
+    random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
 
 
 @dataclass
