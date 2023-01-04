@@ -72,7 +72,6 @@ class PricingModel(ABC):
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
-    # TODO: FIXME: This does not work with yieldspace/hyperdrive
     def calc_spot_price_from_reserves(
         self,
         market_state: MarketState,
@@ -85,7 +84,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            p = (\frac{2y + cz}{\mu z})^{-\tau}
+            p = (\frac{y + cz}{\mu z})^{-\tau}
             \end{align}
 
         Arguments
@@ -104,12 +103,11 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
-        bond_reserves_ = market_state.bond_reserves + total_reserves
-        spot_price = 1 / (
-            ((bond_reserves_) / (market_state.init_share_price * market_state.share_reserves))
-            ** time_remaining.stretched_time
-        )
+        total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
+        spot_price = (
+            (market_state.bond_reserves + total_reserves)
+            / (market_state.init_share_price * market_state.share_reserves)
+        ) ** -time_remaining.stretched_time
         return spot_price
 
     def calc_apr_from_reserves(
