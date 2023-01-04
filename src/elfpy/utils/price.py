@@ -2,48 +2,110 @@
 Utilities for price
 """
 
-# Currently many functions use >5 arguments.
-# These should be packaged up into shared variables, e.g.
-#     reserves = (in_reserves, out_reserves)
-#     share_prices = (init_share_price, share_price)
-# pylint: disable=too-many-arguments
-
 from elfpy.types import MarketState, StretchedTime
+from elfpy.markets import Market
+from elfpy.pricing_models.base import PricingModel
+
 
 ### Reserves ###
 
 
-def calc_total_liquidity_from_reserves_and_price(base_asset_reserves, token_asset_reserves, spot_price):
-    """
-    Returns the total liquidity in the pool in terms of base
-
-    We are using spot_price when calculating total_liquidity to convert the two tokens into the same units.
-    Otherwise we're comparing apples(base_asset_reserves in ETH) and oranges (token_asset_reserves in ptETH)
-        ptEth = 1.0 ETH at maturity ONLY
-        ptEth = 0.95 ETH ahead of time
-    Discount factor from the time value of money
-        Present Value = Future Value / (1 + r)^n
-        Future Value = Present Value * (1 + r)^n
-    The equation converts from future value to present value at the appropriate discount rate,
-    which measures the opportunity cost of getting a dollar tomorrow instead of today.
-    discount rate = (1 + r)^n
-    spot price APR = 1 / (1 + r)^n
+def calc_bond_reserves(
+    target_apr: float,
+    share_reserves: float,
+    time_remaining: StretchedTime,
+    init_share_price: float = 1,
+    share_price: float = 1,
+):
+    """Returns the assumed bond (i.e. token asset) reserve amounts given the share (i.e. base asset) reserves and APR
 
     Arguments
     ---------
-    base_asset_reserves : float
-        Base reserves in the pool
-    token_asset_reserves : float
-        Bond (pt) reserves in the pool
-    spot_price : float
-        Price of bonds (pts) in terms of base
+    target_apr : float
+        Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+    share_reserves : float
+        base asset reserves in the pool
+    days_remaining : float
+        Amount of days left until bond maturity
+    time_stretch : float
+        Time stretch parameter, in years
+    init_share_price : float
+        Original share price when the pool started
+    share_price : float
+        Current share price
+
+    Returns
+    -------
+    float
+        The expected amount of bonds (token asset) in the pool, given the inputs
+    """
+    bond_reserves = (share_reserves / 2) * (
+        init_share_price * (1 + target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+        - share_price
+    )  # y = x/2 * (u * (1 + rt)**(1/T) - c)
+    # FIXME: Alternate formulation?
+    # bond_reserves = (
+    #    init_share_price
+    #    * share_reserves
+    #    * (1 - target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+    # )  # y = uz(1 - rt)**(1/T)
+    return bond_reserves
+
+
+def calc_share_reserves(
+    target_apr: float,
+    bond_reserves: float,
+    time_remaining: StretchedTime,
+    init_share_price: float = 1,
+):
+    """Returns the assumed share (i.e. base asset) reserve amounts given the bond (i.e. token asset) reserves and APR
+
+    Arguments
+    ---------
+    target_apr : float
+        Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+    bond_reserves : float
+        token asset (pt) reserves in the pool
+    days_remaining : float
+        Amount of days left until bond maturity
+    time_stretch : float
+        Time stretch parameter, in years
+    init_share_price : float
+        Original share price when the pool started
+    share_price : float
+        Current share price
+
+    Returns
+    -------
+    float
+        The expected amount of base asset in the pool, calculated from the provided parameters
+    """
+    share_reserves = bond_reserves / (
+        init_share_price * (1 - target_apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+    )  # z = y / (u * (1 - rt)**(1/T))
+    return share_reserves
+
+
+def calc_total_liquidity_from_reserves_and_price(market_state: MarketState, share_price: float) -> float:
+    """Returns the total liquidity in the pool in terms of base
+
+    Arguments
+    ---------
+    MarketState : MarketState
+        The following member variables are used:
+            share_reserves : float
+                Base asset reserves in the pool
+            bond_reserves : float
+                Token asset (pt) reserves in the pool
+    share_price : float
+        Variable (underlying) yield source price
 
     Returns
     -------
     float
         Total liquidity in the pool in terms of base, calculated from the provided parameters
     """
-    return base_asset_reserves + token_asset_reserves * spot_price
+    return market_state.share_reserves * share_price
 
 
 def calc_base_asset_reserves(
@@ -86,15 +148,9 @@ def calc_base_asset_reserves(
 
 
 def calc_liquidity(
-    target_liquidity: float,
-    market_price: float,
-    apr: float,
-    time_remaining: StretchedTime,
-    init_share_price: float = 1,
-    share_price: float = 1,
-):
-    """
-    Returns the reserve volumes and total supply
+    target_liquidity: float, target_apr: float, market: Market, pricing_model: PricingModel
+) -> tuple(float, float):
+    """Returns the reserve volumes and total supply
 
     The scaling factor ensures token_asset_reserves and base_asset_reserves add
     up to target_liquidity, while keeping their ratio constant (preserves apr).
@@ -105,46 +161,55 @@ def calc_liquidity(
     Arguments
     ---------
     target_liquidity_usd : float
-        Amount of liquidity, denominated in USD, that the simulation is trying to achieve in a given market
-    market_price : float
-        Price of the base asset, denominated in USD
-    apr : float
-        Fixed APR that the bonds should provide, in decimal form (for example, 5% APR is 0.05)
-    time_remaining : Stretched
-        Amount of time left until bond maturity
-    init_share_price : float
-        Original share price when the pool started. Defaults to 1
-    share_price : float
-        Current share price. Defaults to 1
+        amount of liquidity that the simulation is trying to achieve in a given market
+    target_apr : float
+        desired APR for the seeded market
+    market : Market
+        This function uses:
+            market_state.init_share_price : float
+                original share price when the pool started. Defaults to 1
+            market_state.share_price : float
+                current share price. Defaults to 1
+            position_duration : StretchedTime
+                amount of time left until bond maturity
+    pricing_model : PricingModel
+        desired pricing model
 
     Returns
     -------
-    (float, float, float)
-        Tuple that contains (base_asset_reserves, token_asset_reserves, total_liquidity)
+    (float, float)
+        Tuple that contains (share_reserves, bond_reserves)
         calculated from the provided parameters
     """
-    # estimate reserve values with the information we have
-    spot_price = calc_spot_price_from_apr(apr, time_remaining)
-    token_asset_reserves = target_liquidity / 2 / spot_price  # guesstimate, in base units still
-    base_asset_reserves = calc_base_asset_reserves(
-        apr,
-        token_asset_reserves,
-        time_remaining,
-        init_share_price,
-        share_price,
-    )  # ensures an accurate ratio of prices
-    total_liquidity = calc_total_liquidity_from_reserves_and_price(
-        base_asset_reserves, token_asset_reserves, spot_price
-    )  # in base asset units
-    # compute scaling factor to adjust reserves so that they match the target liquidity
-    scaling_factor = (target_liquidity / market_price) / total_liquidity  # both in token units
-    # update variables by rescaling the original estimates
-    token_asset_reserves = token_asset_reserves * scaling_factor
-    base_asset_reserves = base_asset_reserves * scaling_factor
-    total_liquidity = calc_total_liquidity_from_reserves_and_price(
-        base_asset_reserves, token_asset_reserves, spot_price
+    share_reserves = target_liquidity / market.market_state.share_price
+    bond_reserves = calc_bond_reserves(
+        target_apr,
+        share_reserves,
+        market.position_duration,
+        pricing_model.model_name(),
+        market.market_state.init_share_price,
+        market.market_state.share_price,
     )
-    return (base_asset_reserves, token_asset_reserves, total_liquidity)
+    price = market.market_state.share_price
+    total_liquidity = calc_total_liquidity_from_reserves_and_price(
+        MarketState(
+            share_reserves=share_reserves,
+            bond_reserves=bond_reserves,
+            base_buffer=market.market_state.base_buffer,
+            bond_buffer=market.market_state.bond_buffer,
+            lp_reserves=market.market_state.lp_reserves,
+            share_price=market.market_state.share_price,
+            init_share_price=market.market_state.init_share_price,
+        ),
+        pricing_model.model_name(),
+        price,
+    )
+    # compute scaling factor to adjust reserves so that they match the target liquidity
+    scaling_factor = target_liquidity / total_liquidity  # both in token units
+    # update variables by rescaling the original estimates
+    bond_reserves = bond_reserves * scaling_factor
+    share_reserves = share_reserves * scaling_factor
+    return (share_reserves, bond_reserves)
 
 
 ### Spot Price and APR ###
@@ -174,7 +239,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    return (1 - price) / (price * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
+    return (1 - price) / (price * time_remaining.normalized_time)  # r = ((1/s)-1)/t = (1-s)/(st)
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
@@ -194,9 +259,6 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
     return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
-
-
-### YieldSpace ###
 
 
 # TODO: This should be updated to use StretchedTime.
