@@ -78,7 +78,7 @@ def calc_base_asset_reserves(
     """
     numerator = 2 * share_price * token_asset_reserves  # 2*c*y
     denominator = (
-        init_share_price * (1 + apr * time_remaining.normalized_days) ** (1 / time_remaining.stretched_time)
+        init_share_price * (1 + apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
         - share_price
     )
     result = numerator / denominator  # 2*c*y/(u*(r*t + 1)**(1/T) - c)
@@ -158,7 +158,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     ---------
     price : float
         Spot price of bonds in terms of base
-    normalized_days_remaining : StretchedTime
+    normalized_time_remaining : StretchedTime
         Time remaining until bond maturity, in yearfracs
 
     Returns
@@ -170,11 +170,11 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"Price argument should be greater or equal to zero, not {price}"
     )
-    assert time_remaining.normalized_days > 0, (
+    assert time_remaining.normalized_time > 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
-        f"time_remaining.normalized_days should be greater than zero, not {time_remaining.normalized_days}"
+        f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    return (1 - price) / (price * time_remaining.normalized_days)  # price = 1 / (1 + r * t)
+    return (1 - price) / (price * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
@@ -193,7 +193,7 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
     float
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
-    return 1 / (1 + apr * time_remaining.normalized_days)  # price = 1 / (1 + r * t)
+    return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
 
 
 ### YieldSpace ###

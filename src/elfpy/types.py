@@ -51,7 +51,7 @@ class StretchedTime:
         return self._days
 
     @property
-    def normalized_days(self):
+    def normalized_time(self):
         """Format time as normalized days."""
         return time_utils.norm_days(self._days)
 
@@ -69,7 +69,7 @@ class StretchedTime:
         out_str = (
             "Time components:"
             f" {self.days=};"
-            f" {self.normalized_days=};"
+            f" {self.normalized_time=};"
             f" {self.stretched_time=};"
             f" {self.time_stretch=};"
         )
