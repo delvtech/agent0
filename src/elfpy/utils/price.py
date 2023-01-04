@@ -235,7 +235,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    return (1 - price) / (price * time_remaining.normalized_time)  # r = ((1/s)-1)/t = (1-s)/(st)
+    return (1 - price) / (price * time_remaining.normalized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
