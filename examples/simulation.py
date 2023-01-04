@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 # external imports
 import numpy as np
+from numpy.random import Generator
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
@@ -52,6 +53,38 @@ class CustomShorter(Agent):
                             action_type=MarketActionType.CLOSE_SHORT, trade_amount=self.pt_to_short
                         )
                     )
+        return action_list
+
+
+class RandomAgent(Agent):
+    """
+    Agent that randomly manages their portfolio
+    """
+
+    def __init__(self, rng: Generator, wallet_address: int, budget: int = 10_000) -> None:
+        self.rng = rng
+        super().__init__(wallet_address, budget)
+
+    def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
+        action_list = []
+
+        # FIXME: Implement random long behavior:
+        #
+        # 1. [ ] Find ways to bound the inputs
+        #    - [ ] Can PTs be purchased?
+        #       - Create a function that gets the max amount of base that can
+        #         be used to buy PTs through a pricing model. Then take the
+        #         minimum of the user's bankroll and this value to get the
+        #         bound.
+        #    - [ ] Can PTs be sold?
+        #       - This is just a question of whether or not the trader owns
+        #         PTs.
+        # 2. Stub out functions needed to bound inputs.
+        # 3. Implement bounding stubs.
+        # 4. Implement random trading behavior.
+
+        # FIXME: Implement random short behavior.
+
         return action_list
 
 
