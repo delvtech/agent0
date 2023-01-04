@@ -38,7 +38,7 @@ class Simulator:
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
-        random_simulation_variables: Optional[list] = None,
+        random_simulation_variables: Optional[sim_utils.RandomSimulationVariables] = None,
     ):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
