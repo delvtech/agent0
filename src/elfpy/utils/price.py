@@ -1,10 +1,13 @@
-"""
-Utilities for price
-"""
+"""Utilities for price calculations"""
 
-from elfpy.types import MarketState, StretchedTime
-from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
+
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from elfpy.types import MarketState, StretchedTime
+    from elfpy.markets import Market
+    from elfpy.pricing_models.base import PricingModel
 
 
 ### Reserves ###
@@ -149,7 +152,7 @@ def calc_base_asset_reserves(
 
 def calc_liquidity(
     target_liquidity: float, target_apr: float, market: Market, pricing_model: PricingModel
-) -> tuple(float, float):
+) -> tuple[float, float]:
     """Returns the reserve volumes and total supply
 
     The scaling factor ensures token_asset_reserves and base_asset_reserves add

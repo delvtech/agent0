@@ -1,6 +1,4 @@
-"""
-Helper functions for converting time units
-"""
+"""Helper functions for converting time units"""
 
 
 from datetime import datetime, timedelta

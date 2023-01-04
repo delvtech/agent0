@@ -1,25 +1,26 @@
-"""
-Market simulators store state information when interfacing AMM pricing models with users
-"""
+"""Market simulators store state information when interfacing AMM pricing models with users"""
 
-from __future__ import annotations
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 import logging
 
 import numpy as np
 
-from elfpy.pricing_models.base import PricingModel
-from elfpy.types import (
-    MarketAction,
-    MarketActionType,
-    MarketDeltas,
-    MarketState,
-    Quantity,
-    StretchedTime,
-    TokenType,
-)
+if TYPE_CHECKING:
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.types import (
+        MarketAction,
+        MarketActionType,
+        MarketDeltas,
+        MarketState,
+        Quantity,
+        StretchedTime,
+        TokenType,
+    )
+
+from elfpy.wallet import Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
-from elfpy.wallet import Wallet
 
 
 class Market:

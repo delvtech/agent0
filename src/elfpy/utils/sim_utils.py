@@ -1,17 +1,21 @@
 """Implements helper functions for setting up a simulation"""
+
+
+from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
 from dataclasses import dataclass, field
+from typing import Any, TYPE_CHECKING
 import logging
-from typing import Any
 
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-from elfpy.markets import Market
-from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
-from elfpy.utils.config import Config
 import elfpy.utils.price as price_utils
+
+if TYPE_CHECKING:
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+    from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+    from elfpy.markets import Market
+    from elfpy.agent import Agent
+    from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
 
 @dataclass()

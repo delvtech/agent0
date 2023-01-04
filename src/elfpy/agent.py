@@ -2,15 +2,19 @@
 Implements abstract classes that control agent behavior
 """
 
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 import logging
 
 import numpy as np
 
-from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
-from elfpy.types import MarketAction, MarketActionType
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
+
+if TYPE_CHECKING:
+    from elfpy.markets import Market
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.types import MarketAction, MarketActionType
 
 
 class Agent:
