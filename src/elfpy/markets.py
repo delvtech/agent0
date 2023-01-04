@@ -12,12 +12,11 @@ if TYPE_CHECKING:
         MarketAction,
         MarketActionType,
         MarketDeltas,
-        MarketState,
         Quantity,
-        StretchedTime,
         TokenType,
     )
 
+from elfpy.types import MarketState, StretchedTime
 from elfpy.wallet import Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils

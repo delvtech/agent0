@@ -11,11 +11,12 @@ import elfpy.utils.price as price_utils
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
-    from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-    from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-    from elfpy.markets import Market
     from elfpy.agent import Agent
-    from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.markets import Market
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 @dataclass()

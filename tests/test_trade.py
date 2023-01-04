@@ -47,7 +47,6 @@ class BaseTradeTest(unittest.TestCase):
         # instantiate the init_lp agent
         init_agents = {
             0: sim_utils.get_init_lp_agent(
-                config,
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
@@ -105,7 +104,6 @@ class BaseTradeTest(unittest.TestCase):
     def run_base_lp_test(self, agent_policies, config_file, delete_logs=True):
         """
         Assigns member variables that are useful for many tests
-        TODO: Check that the market values match the desired amounts
         """
         self.setup_logging()
         target_liquidity = 1e6
