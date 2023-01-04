@@ -78,7 +78,8 @@ class YieldSpacePricingModel(PricingModel):
         )
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
-            f"expected share_price >= init_share_price >= 1, not share_price={share_price} and init_share_price={init_share_price}!"
+            "expected share_price >= init_share_price >= 1, not "
+            f"share_price={share_price} and init_share_price={init_share_price}!"
         )
         d_shares = d_base / share_price
         if share_reserves > 0:  # normal case where we have some share reserves
@@ -228,7 +229,8 @@ class YieldSpacePricingModel(PricingModel):
         )
         assert share_price >= init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
-            f"expected share_price >= init_share_price >= 1, not share_price={share_price}, and init_share_price={init_share_price}"
+            "expected share_price >= init_share_price >= 1, not "
+            f"share_price={share_price}, and init_share_price={init_share_price}"
         )
         d_base = share_price * (share_reserves - base_buffer / share_price) * lp_in / lp_reserves
         d_shares = d_base / share_price
