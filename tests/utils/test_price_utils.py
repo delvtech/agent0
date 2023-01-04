@@ -307,7 +307,26 @@ class BasePriceTest(unittest.TestCase):
                 )
 
     def run_calc_liquidity_test(self):
-        """Unit tests for the pricing model calc_liquidity function"""
+        """Unit tests for the pricing model calc_liquidity function
+
+        Example check for the test:
+            # test 1: 5M target_liquidity; 5% APR;
+            #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
+            #   1 init share price; 1 share price
+            l = target_liquidity = 5_000_000
+            r = target_apr = 0.05
+            days = 182.5
+            time_stretch = 3.09396 / (0.02789 * r * 100)
+            t = days / 365
+            T = t / time_stretch
+            u = init_share_price = 1
+            c = share_price = 1  # share price of the LP in the yield source; c = 1
+            z = share_reserves = l / c
+            y = bond_reserves = (z / 2) * (u * (1 + r * t) ** (1 / T) - c)
+            p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
+            final_apr = (1 - p) / (p * t)
+            total_liquidity = c * z
+        """
 
         test_cases = [
             # test 1: 5M target_liquidity; 5% APR;
