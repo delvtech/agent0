@@ -52,7 +52,7 @@ class TestParseSimulationConfig(unittest.TestCase):
             fee_percent=0.10,
             init_vault_age=0,
             vault_apr=[0.05],
-            logging_level=logging.WARNING,
+            logging_level="warning",
         )
 
         print(simulator)

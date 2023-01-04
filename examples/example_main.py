@@ -1,7 +1,7 @@
 """Example main.py file for illustrating a simulator workflow"""
 # stdlib
 import argparse
-from typing import Any
+from typing import Any, Optional
 
 # external imports
 import numpy as np
@@ -56,7 +56,7 @@ class CustomShorter(Agent):
 
 def get_example_agents(
     num_new_agents: int,
-    agents: dict[int, Agent] = None,
+    agents: Optional[dict[int, Agent]] = None,
 ) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
     if agents is None:
@@ -80,10 +80,8 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--output", help="Optional output filename for logging", default=None, type=str)
     parser.add_argument(
         "--max_bytes",
-        help=(
-            f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes.",
-            "More than 100 files will cause overwrites.",
-        ),
+        help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes."
+        "More than 100 files will cause overwrites.",
         default=elfpy.DEFAULT_LOG_MAXBYTES,
         type=int,
     )
@@ -119,10 +117,12 @@ if __name__ == "__main__":
     # get config & logging level
     config = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
     if args.log_level is not None:
-        config.simulator.logging_level = config_utils.text_to_logging_level(args.log_level)
+        config.simulator.logging_level = args.log_level
     # define root logging parameters
     output_utils.setup_logging(
-        log_filename=args.output, max_bytes=args.max_bytes, log_level=config.simulator.logging_level
+        log_filename=args.output,
+        max_bytes=args.max_bytes,
+        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
     )
     # instantiate random number generator
     rng = np.random.default_rng(config.simulator.random_seed)

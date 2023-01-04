@@ -1,7 +1,7 @@
 """A minimum viable simulation"""
 # stdlib
 import argparse
-from typing import Any
+from typing import Any, Optional
 
 # external imports
 import numpy as np
@@ -55,10 +55,10 @@ class CustomShorter(Agent):
         return action_list
 
 
-# FIXME: Use random trader agent (randomly goes long or short).
+# TODO: Use random trader agent (randomly goes long or short).
 def get_example_agents(
     num_new_agents: int,
-    agents: dict[int, Agent] = None,
+    agents: Optional[dict[int, Agent]] = None,
 ) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
     if agents is None:
@@ -119,16 +119,17 @@ if __name__ == "__main__":
     # get config & logging level
     config = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
     if args.log_level is not None:
-        config.simulator.logging_level = config_utils.text_to_logging_level(args.log_level)
+        config.simulator.logging_level = args.log_level
     # define root logging parameters
     output_utils.setup_logging(
-        log_filename=args.output, max_bytes=args.max_bytes, log_level=config.simulator.logging_level
+        log_filename=args.output,
+        max_bytes=args.max_bytes,
+        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
     )
     # instantiate random number generator
     rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
     random_sim_vars = sim_utils.get_random_variables(config, rng)
-    # FIXME: Consider "vault_apr" => "vault_apr" or "yield_source_apr"?
     # TODO: The stochastic process should be part of the config.
     # override randomly sampled random simulation variables with geometric brownian motion.
     random_sim_vars.vault_apr = GeometricBrownianMotion(rng=rng).sample(
