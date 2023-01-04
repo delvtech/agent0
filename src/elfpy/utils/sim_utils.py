@@ -34,7 +34,6 @@ class RandomSimulationVariables:
 
 
 def get_init_lp_agent(
-    config: Config,
     market: Market,
     pricing_model: PricingModel,
     target_liquidity: float,
@@ -47,8 +46,6 @@ def get_init_lp_agent(
 
     Arguments
     ---------
-    config : Config
-        config object, as defined in elfpy.utils.config
     market : Market
         empty market object
     pricing_model : PricingModel
@@ -74,11 +71,9 @@ def get_init_lp_agent(
     # get the reserve amounts for a small target liquidity to achieve a target pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
         target_liquidity=init_liquidity,
-        market_price=config.market.base_asset_price,
-        apr=target_pool_apy,
-        time_remaining=market.position_duration,
-        init_share_price=market.market_state.init_share_price,
-        share_price=market.market_state.init_share_price,
+        target_apr=target_pool_apy,
+        market=market,
+        pricing_model=pricing_model,
     )[:2]
     # mock the short to assess what the delta market conditions will be
     output_with_fee = pricing_model.calc_out_given_in(
