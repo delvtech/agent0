@@ -7,15 +7,10 @@ import elfpy.utils.price as price_utils
 
 
 class PricingModel(ABC):
-    """
-    Contains functions for calculating AMM variables
+    """Contains functions for calculating AMM variables
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
-
-    # TODO: set up member object that owns attributes instead of so many individual instance attributes
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=line-too-long
 
     @abstractmethod
     def calc_in_given_out(
@@ -39,64 +34,37 @@ class PricingModel(ABC):
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_in_given_tokens_out(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
     @abstractmethod
@@ -104,6 +72,7 @@ class PricingModel(ABC):
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
+    # TODO: FIXME: This does not work with yieldspace/hyperdrive
     def calc_spot_price_from_reserves(
         self,
         market_state: MarketState,
