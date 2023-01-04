@@ -91,7 +91,7 @@ class BaseTradeTest(unittest.TestCase):
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
             "target_pool_apy": 0.05,
-            "vault_apy": 0.05,
+            "vault_apr": 0.05,
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
         }
@@ -112,7 +112,7 @@ class BaseTradeTest(unittest.TestCase):
             "pricing_model_name": "Yieldspace",
             "target_liquidity": target_liquidity,
             "target_pool_apy": target_pool_apr,
-            "vault_apy": 0.05,
+            "vault_apr": 0.05,
             "fee_percent": 0.1,
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing

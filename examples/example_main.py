@@ -37,14 +37,14 @@ class CustomShorter(Agent):
         block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apy = market.market_state.share_price * 365 / market.market_state.init_share_price
+        vault_apr = market.market_state.share_price * 365 / market.market_state.init_share_price
         action_list = []
         if can_open_short:
-            if vault_apy > market.get_rate(pricing_model):
+            if vault_apr > market.get_rate(pricing_model):
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
                 )
-            elif vault_apy < market.get_rate(pricing_model):
+            elif vault_apr < market.get_rate(pricing_model):
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(

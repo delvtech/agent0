@@ -38,14 +38,14 @@ class CustomShorter(Agent):
         block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apy = market.market_state.share_price * 365 / market.market_state.init_share_price
+        vault_apr = market.market_state.share_price * 365 / market.market_state.init_share_price
         action_list = []
         if can_open_short:
-            if vault_apy > market.get_rate(pricing_model):
+            if vault_apr > market.get_rate(pricing_model):
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
                 )
-            elif vault_apy < market.get_rate(pricing_model):
+            elif vault_apr < market.get_rate(pricing_model):
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(
@@ -128,10 +128,10 @@ if __name__ == "__main__":
     rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
     random_sim_vars = sim_utils.get_random_variables(config, rng)
-    # FIXME: Consider "vault_apy" => "vault_apr" or "yield_source_apr"?
+    # FIXME: Consider "vault_apr" => "vault_apr" or "yield_source_apr"?
     # TODO: The stochastic process should be part of the config.
     # override randomly sampled random simulation variables with geometric brownian motion.
-    random_sim_vars.vault_apy = GeometricBrownianMotion(rng=rng).sample(
+    random_sim_vars.vault_apr = GeometricBrownianMotion(rng=rng).sample(
         n=config.simulator.num_trading_days - 1, initial=0.05  # pyright: ignore
     )
     # instantiate the pricing model

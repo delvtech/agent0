@@ -28,14 +28,14 @@ class RandomSimulationVariables:
     target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
     target_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
     fee_percent: float = field(metadata="percent to charge for LPer fees")
-    vault_apy: list[float] = field(metadata="vault apy values")
+    vault_apr: list[float] = field(metadata="vault apy values")
     init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
     init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
 
     def __post_init__(self):
         """init_share_price is a function of other random variables"""
         if self.init_share_price is None:
-            self.init_share_price = (1 + self.vault_apy[0]) ** self.init_vault_age
+            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
 
 def get_init_lp_agent(
@@ -214,9 +214,9 @@ def get_random_variables(config, rng):
             low=config.amm.min_pool_apy, high=config.amm.max_pool_apy
         ),  # starting fixed apy as a decimal
         fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        vault_apy=rng.uniform(
-            low=config.market.min_vault_apy,
-            high=config.market.max_vault_apy,
+        vault_apr=rng.uniform(
+            low=config.market.min_vault_apr,
+            high=config.market.max_vault_apr,
             size=config.simulator.num_trading_days,
         ).tolist(),  # vault apy over time as a decimal
         init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
@@ -242,7 +242,7 @@ def override_random_variables(
     RandomSimulationVariables
         same dataclass as the random_variables input, but with fields specified by override_dict changed
 
-    vault_apy: list[float] = field(metadata="vault apy values")
+    vault_apr: list[float] = field(metadata="vault apy values")
     """
     allowed_keys = [
         "target_liquidity",
@@ -250,7 +250,7 @@ def override_random_variables(
         "fee_percent",
         "init_vault_age",
         "init_share_price",
-        "vault_apy",
+        "vault_apr",
     ]
     for key, value in override_dict.items():
         if hasattr(random_variables, key):

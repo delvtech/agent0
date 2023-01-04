@@ -138,8 +138,8 @@ class BaseSimTest(unittest.TestCase):
         override_list = [
             {},
             {"fee_percent": 0.1},
-            {"num_trading_days": 3, "vault_apy": 0.05},  # this should get broadcasted into a list
-            {"num_trading_days": 3, "vault_apy": [0.05, 0.04, 0.03]},
+            {"num_trading_days": 3, "vault_apr": 0.05},  # this should get broadcasted into a list
+            {"num_trading_days": 3, "vault_apr": [0.05, 0.04, 0.03]},
         ]
         for override_dict in override_list:
             config, pricing_model, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
@@ -154,9 +154,9 @@ class BaseSimTest(unittest.TestCase):
                 random_simulation_variables=random_sim_vars,
             )
             # make sure that the random variable list is being assigned properly
-            if "vault_apy" in override_dict and isinstance(override_dict["vault_apy"], float):
+            if "vault_apr" in override_dict and isinstance(override_dict["vault_apr"], float):
                 # check that broadcasting works
-                assert len(simulator.random_variables.vault_apy) == override_dict["num_trading_days"]
+                assert len(simulator.random_variables.vault_apr) == override_dict["num_trading_days"]
             else:
                 assert np.all(simulator.random_variables == random_sim_vars)
             simulator = Simulator(
@@ -170,7 +170,7 @@ class BaseSimTest(unittest.TestCase):
             # make sure that the random variable list is created if not given
             assert simulator.random_variables is not None
             assert np.all(simulator.random_variables != random_sim_vars)
-        incorrect_override_dict = {"num_trading_days": 5, "vault_apy": [0.05, 0.04, 0.03]}
+        incorrect_override_dict = {"num_trading_days": 5, "vault_apr": [0.05, 0.04, 0.03]}
         config, pricing_model, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
             config_file, incorrect_override_dict
         )

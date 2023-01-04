@@ -18,8 +18,8 @@ class MarketConfig:
     max_target_volume: float = field(default=0.01, metadata={"hint": "fraction of pool liquidity"})
     min_vault_age: int = field(default=0, metadata={"hint": "fraction of a year"})
     max_vault_age: int = field(default=1, metadata={"hint": "fraction of a year"})
-    min_vault_apy: float = field(default=0.001, metadata={"hint": "decimal"})
-    max_vault_apy: float = field(default=0.9, metadata={"hint": "decimal"})
+    min_vault_apr: float = field(default=0.001, metadata={"hint": "decimal"})
+    max_vault_apr: float = field(default=0.9, metadata={"hint": "decimal"})
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
 
 
@@ -56,7 +56,7 @@ class SimulatorConfig:
     target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
     fee_percent: float = field(default=0, metadata={"hint": ""})
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
-    vault_apy: list[float] = field(
+    vault_apr: list[float] = field(
         default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
     )
     logging_level: str = field(default="info", metadata={"hint": "Logging level, as defined by stdlib logging"})
