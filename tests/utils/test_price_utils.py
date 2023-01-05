@@ -13,300 +13,13 @@ import numpy as np
 from elfpy.markets import Market
 from elfpy.types import MarketState, StretchedTime
 from elfpy.utils import price as price_utils
+from elfpy.utils import sim_utils
 
 
 class BasePriceTest(unittest.TestCase):
     """Unit tests for price utilities"""
 
-    def run_calc_total_liquidity_from_reserves_and_price_test(self):
-        """
-        Test cases for calc_total_liquidity_from_reserves_and_price
-        The functions calculates total liquidity using the following formula:
-        liquidity = base_asset_reserves + token_asset_reserves * spot_price
-        """
-
-        # Test cases
-        # 1. 500k base asset, 500k pts, p = 0.95
-        # liquidity = 500000 + 500000 * 0.95 = 975000
-        # 2. 800k base asset, 200k pts, p = 0.98
-        # liquidity = 800000 + 200000 * 0.98 = 996000
-        # 3. 200k base asset, 800k pts, p = 0.92
-        # liquidity = 200000 + 800000 * 0.92 = 936000
-        # 4. 1M base asset, 0 pts, p = 1.00
-        # liquidity = 1000000 + 0 * 1.00 = 1000000
-        # 5. 0 base asset, 1M pts, p = 0.90
-        # liquidity = 0 + 1000000 * 0.90 = 900000
-        # 6. 500k base asset, 500k pts, p = 1.50
-        # liquidity = 500000 + 500000 * 1.50 = 1250000
-        # The AMM math wouldn't allow p > 1
-        # 7. 999999 base asset, 1 pt, p = 0
-        # liquidity = 950000 + 50000 * 0 = 950000
-        # The AMM math wouldn't allow p = 0. In fact, for this ratio p should be almost 1.00
-
-        test_cases = [
-            # test 1
-            {
-                "share_reserves": 500000,
-                "bond_reserves": 500000,
-                "spot_price": 0.95,
-                "expected_result": 975000,
-            },
-            # test 2
-            {
-                "share_reserves": 800000,
-                "bond_reserves": 200000,
-                "spot_price": 0.98,
-                "expected_result": 996000,
-            },
-            # test 3
-            {
-                "share_reserves": 200000,
-                "bond_reserves": 800000,
-                "spot_price": 0.92,
-                "expected_result": 936000,
-            },
-            # test 4
-            {"share_reserves": 1000000, "bond_reserves": 0, "spot_price": 1.00, "expected_result": 1000000},
-            # test 5
-            {"share_reserves": 0, "bond_reserves": 1000000, "spot_price": 0.90, "expected_result": 900000},
-            # test 6. Price > 1.00. The AMM math wouldn't allow this though but the function doesn't check for it
-            {
-                "share_reserves": 500000,
-                "bond_reserves": 500000,
-                "spot_price": 1.50,
-                "expected_result": 1250000,
-            },
-            # test 7. 999999 base asset, 1 pt, p = 0
-            {"share_reserves": 999999, "bond_reserves": 1, "spot_price": 0, "expected_result": 999999},
-        ]
-
-        for test_case in test_cases:
-            liquidity = price_utils.calc_total_liquidity_from_reserves_and_price(
-                market_state=MarketState(
-                    share_reserves=test_case["share_reserves"],
-                    bond_reserves=test_case["bond_reserves"],
-                ),
-                share_price=test_case["spot_price"],
-            )
-            assert (
-                liquidity == test_case["expected_result"]
-            ), f"Calculated liquidity doesn't match the expected amount for these inputs: {test_case}"
-
-    def run_calc_base_asset_reserves_test(self):
-        """Unit tests for the calc_base_asset_reserves function"""
-
-        test_cases = [
-            # test 1: 5% APR; 500k bond reserves; 6mo remaining;
-            #   22.186877016851916 t_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
-            #
-            {
-                "apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "token_asset_reserves": 500000,  # PT reserves; y = 500000
-                "time_remaining": StretchedTime(
-                    days=182.5,  # 6 months remaining; t = 0.50
-                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
-                ),
-                "init_share_price": 1,  # original share price pool started; u = 1
-                "share_price": 1,  # share price of the LP in the yield source; c = 1
-                # from the inputs, we have:
-                # c = 1
-                # y = 500000
-                # u = 1
-                # r = 0.05
-                # t = 0.50
-                # T = 0.02253584403
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*1*500000/(1*(0.05*0.50 + 1)**(1/0.02253584403) - 1)
-                #   = 502187.63927495584
-                "expected_result": 502187.63927495584,  # ~50:50 reserves ratio
-            },
-            # test 2: 2% APR; 200k bond reserves; 6mo remaining;
-            #   22.186877016851916 t_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
-            {
-                "apr": 0.02,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "token_asset_reserves": 200000,  # PT reserves; y = 200000
-                "time_remaining": StretchedTime(
-                    days=182.5,  # 6 months remaining; t = 0.50
-                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
-                ),
-                "init_share_price": 1,  # original share price pool started; u = 1
-                "share_price": 1,  # share price of the LP in the yield source; c = 1
-                # from the inputs, we have:
-                # c = 1
-                # y = 200000
-                # u = 1
-                # r = 0.02
-                # t = 0.50
-                # T = 0.02253584403
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*1*200000/(1*(0.02*0.50 + 1)**(1/0.02253584403) - 1)
-                #   = 720603.6398101918
-                "expected_result": 720603.6398101918,  # base > token reserves
-            },
-            # test 3: 8% APR; 800k bond reserves; 6mo remaining;
-            #   22.186877016851916 t_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
-            {
-                "apr": 0.08,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "token_asset_reserves": 800000,  # PT reserves; y = 800000
-                "time_remaining": StretchedTime(
-                    days=182.5,  # 6 months remaining; t = 0.50
-                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.02253584403
-                ),
-                "init_share_price": 1,  # original share price pool started; u = 1
-                "share_price": 1,  # share price of the LP in the yield source; c = 1
-                # from the inputs, we have:
-                # c = 1
-                # y = 800000
-                # u = 1
-                # r = 0.08
-                # t = 0.50
-                # T = 0.02253584403
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*1*800000/(1*(0.08*0.50 + 1)**(1/0.02253584403) - 1)
-                #   = 340465.1260523857
-                "expected_result": 340465.1260523857,  # token > base reserves
-            },
-            # test 4: 3% APR; 500k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR);
-            #   1.5 init share price; 2 share price
-            {
-                "apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "token_asset_reserves": 500000,  # PT reserves; y = 500000
-                "time_remaining": StretchedTime(
-                    days=91.25,  # 3 months remaining; t = 0.25
-                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
-                ),
-                "init_share_price": 1.5,  # original share price pool started; u = 1.5
-                "share_price": 2,  # share price of the LP in the yield source; c = 2
-                # from the inputs, we have:
-                # c = 2
-                # y = 500000
-                # u = 1.5
-                # r = 0.03
-                # t = 0.25
-                # T = 0.006760753209
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*2*500000/(1.5*(0.03*0.25 + 1)**(1/0.006760753209) - 1)
-                #   = 790587.9168574204
-                "expected_result": 790587.9168574204,  # token > base reserves (too much? share_price sus)
-            },
-            # test 5: 1% APR; 200k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR);
-            #   1.5 init share price; 2 share price
-            {
-                "apr": 0.01,  # fixed rate APR you'd get from purchasing bonds; r = 0.01
-                "token_asset_reserves": 200000,  # PT reserves; y = 200000
-                "time_remaining": StretchedTime(
-                    days=91.25,  # 3 months remaining; t = 0.25
-                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
-                ),
-                "init_share_price": 1.5,  # original share price pool started; u = 1.5
-                "share_price": 2,  # share price of the LP in the yield source; c = 2
-                # from the inputs, we have:
-                # c = 2
-                # y = 500000
-                # u = 1.5
-                # r = 0.01
-                # t = 0.25
-                # T = 0.006760753209
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*2*200000/(1.5*(0.01*0.25 + 1)**(1/0.006760753209) - 1)
-                #   = 4702414.821874424
-                "expected_result": 4702414.821874424,  # base > token reserves (too much? share_price sus)
-            },
-            # test 6: 6% APR; 800k bond reserves; 3mo remaining;
-            #   36.97812836141986 t_stretch (targets 3% APR);
-            #   1.5 init share price; 2 share price
-            {
-                "apr": 0.06,  # fixed rate APR you'd get from purchasing bonds; r = 0.06
-                "token_asset_reserves": 800000,  # PT reserves; y = 800000
-                "time_remaining": StretchedTime(
-                    days=91.25,  # 3 months remaining; t = 0.25
-                    time_stretch=36.97812836141986,  # 36.97812836141986 time_stretch; T = 0.006760753209
-                ),
-                "init_share_price": 1.5,  # original share price pool started; u = 1.5
-                "share_price": 2,  # share price of the LP in the yield source; c = 2
-                # from the inputs, we have:
-                # c = 2
-                # y = 800000
-                # u = 1.5
-                # r = 0.06
-                # t = 0.25
-                # T = 0.006760753209
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*2*800000/(1.5*(0.06*0.25 + 1)**(1/0.006760753209) - 1)
-                #   = 276637.1374102353
-                "expected_result": 276637.1374102353,  # token > base reserves (is it enough? share_price sus)
-            },
-            # test 7: STRANGE RESULTS CASE
-            #   0.01% APR; 1000 bond reserves; 3mo remaining;
-            #   22.186877016851916 t_stretch (targets 5% APR);
-            #   1 init share price; 1.03 share price
-            #
-            #   This case is low fixed APR on a pool whose yield source has performed very well
-            #   (share price increased a lot) which could happen, for example, if the source of
-            #   the high yield dries up during the term. The result is negative base_asset_reserves
-            #   which shouldn't happen
-            {
-                "apr": 0.0001,  # fixed rate APR you'd get from purchasing bonds; r = 0.01
-                "token_asset_reserves": 1000,  # PT reserves; y = 1000
-                "time_remaining": StretchedTime(
-                    days=91.25,  # 3 months remaining; t = 0.25
-                    time_stretch=22.186877016851916,  # 22.186877016851916 time_stretch; T = 0.01126792202
-                ),
-                "init_share_price": 1,  # original share price pool started; u = 1
-                "share_price": 1.01,  # share price of the LP in the yield source; c = 1.25
-                # from the inputs, we have:
-                # c = 1.03
-                # y = 1000
-                # u = 1
-                # r = 0.0001
-                # t = 0.25
-                # T = 0.01126792202
-                # x = 2*c*y/(u*(r*t + 1)**(1/T) - c)
-                #   = 2*1.01*1000/(1*(0.0001*0.25 + 1)**(1/0.01126792202) - 1.01)
-                #   = -74157.0654965635 (negative)
-                "expected_result": -259677.58637922065,  # negative result? Strange, check math!
-            },
-        ]
-
-        for test_case in test_cases:
-
-            # Check if this test case is supposed to fail
-            if "is_error_case" in test_case and test_case["is_error_case"]:
-
-                # Check that test case throws the expected error
-                with self.assertRaises(test_case["expected_result"]):
-                    base_asset_reserves = price_utils.calc_base_asset_reserves(
-                        test_case["apr"],
-                        test_case["token_asset_reserves"],
-                        test_case["time_remaining"],
-                        test_case["init_share_price"],
-                        test_case["share_price"],
-                    )
-
-            # If test was not supposed to fail, continue normal execution
-            else:
-                base_asset_reserves = price_utils.calc_base_asset_reserves(
-                    test_case["apr"],
-                    test_case["token_asset_reserves"],
-                    test_case["time_remaining"],
-                    test_case["init_share_price"],
-                    test_case["share_price"],
-                )
-                # assert base_asset_reserves >= 0, \
-                #     f'the provided parameters resulted in negative base_asset_reserves {base_asset_reserves}'
-
-                np.testing.assert_almost_equal(
-                    base_asset_reserves,
-                    test_case["expected_result"],
-                    err_msg="unexpected base_asset_reserves",
-                )
-
-    def run_calc_liquidity_test(self):
+    def run_calc_liquidity_test(self, pricing_model):
         """Unit tests for the pricing model calc_liquidity function
 
         Example check for the test:
@@ -440,6 +153,7 @@ class BasePriceTest(unittest.TestCase):
                             ),
                             position_duration=test_case["time_remaining"],
                         ),
+                        pricing_model=pricing_model,
                     )
             # If test was not supposed to fail, continue normal execution
             else:
@@ -454,6 +168,7 @@ class BasePriceTest(unittest.TestCase):
                     target_liquidity=test_case["target_liquidity"],
                     target_apr=test_case["target_apr"],
                     market=market,
+                    pricing_model=pricing_model,
                 )
                 np.testing.assert_almost_equal(
                     test_case["expected_share_reserves"],
@@ -840,10 +555,7 @@ class TestPriceUtils(BasePriceTest):
         """Execute the test"""
         self.run_calc_spot_price_from_apr_test()
 
-    def test_calc_base_asset_reserves(self):
-        """Execute the test"""
-        self.run_calc_base_asset_reserves_test()
-
     def test_calc_liquidity(self):
         """Execute the test"""
-        self.run_calc_liquidity_test()
+        self.run_calc_liquidity_test(sim_utils.get_pricing_model("hyperdrive"))
+        self.run_calc_liquidity_test(sim_utils.get_pricing_model("yieldspace"))

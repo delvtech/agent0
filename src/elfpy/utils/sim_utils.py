@@ -78,6 +78,7 @@ def get_init_lp_agent(
         target_liquidity=init_liquidity,
         target_apr=target_pool_apy,
         market=market,
+        pricing_model=pricing_model,
     )[:2]
     # mock the short to assess what the delta market conditions will be
     output_with_fee = pricing_model.calc_out_given_in(
