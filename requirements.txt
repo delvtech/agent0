@@ -7,3 +7,4 @@ pandas>=1.5.0
 matplotlib>=3.6.0
 plotly>=5.10.0
 tomli>=2.0.1
+stochastic>=0.7.0
