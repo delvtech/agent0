@@ -80,7 +80,8 @@ class PricingModel(ABC):
         init_share_price: float = 1,
         share_price: float = 1,
     ):
-        """Returns the assumed bond (i.e. token asset) reserve amounts given the share (i.e. base asset) reserves and APR
+        """Returns the assumed bond (i.e. token asset) reserve amounts given
+        the share (i.e. base asset) reserves and APR
 
         Arguments
         ---------
@@ -102,6 +103,8 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
         """
+        # TODO: Package up some of these arguments into market_state
+        # pylint: disable=too-many-arguments
         bond_reserves = (share_reserves / 2) * (
             init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
             - share_price
@@ -115,7 +118,8 @@ class PricingModel(ABC):
         time_remaining: StretchedTime,
         init_share_price: float = 1,
     ):
-        """Returns the assumed share (i.e. base asset) reserve amounts given the bond (i.e. token asset) reserves and APR
+        """Returns the assumed share (i.e. base asset) reserve amounts given
+        the bond (i.e. token asset) reserves and APR
 
         Arguments
         ---------
