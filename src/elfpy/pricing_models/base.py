@@ -102,6 +102,8 @@ class PricingModel(ABC):
         -------
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
+
+        TODO: Write a test for this function
         """
         # TODO: Package up some of these arguments into market_state
         # pylint: disable=too-many-arguments
@@ -140,6 +142,8 @@ class PricingModel(ABC):
         -------
         float
             The expected amount of base asset in the pool, calculated from the provided parameters
+
+        TODO: Write a test for this function
         """
         share_reserves = bond_reserves / (
             init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
