@@ -1,5 +1,5 @@
 """
-Testing for the calc_in_given_out of the pricing models.
+Testing for the get_max_long function of the pricing models.
 """
 
 # pylint: disable=too-many-lines
@@ -29,7 +29,10 @@ class TestCaseGetMaxLongCase:
 
 
 class TestGetMaxLong(unittest.TestCase):
+    """Tests for get_max_long"""
+
     def test_get_max_long(self):
+        """Tests for get_max_long"""
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
 
         test_cases: list[TestCaseGetMaxLongCase] = [

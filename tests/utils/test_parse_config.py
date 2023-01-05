@@ -8,7 +8,6 @@ Testing for the parsing of the Market, AMM and Simulator configs from a TOML fil
 # pylint: disable=attribute-defined-outside-init
 
 import unittest
-import logging
 
 from elfpy.utils import parse_config as config_utils
 

@@ -22,6 +22,9 @@ import elfpy.utils.parse_config as config_utils
 import elfpy.utils.outputs as output_utils
 
 
+# pylint: disable=duplicate-code
+
+
 class CustomShorter(Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts

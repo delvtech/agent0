@@ -19,7 +19,8 @@ from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
+from elfpy.utils import sim_utils
+from elfpy.utils.config import Config  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
 import elfpy.utils.outputs as output_utils
 
@@ -81,8 +82,8 @@ class RandomAgent(Agent):
 
 
 def get_example_agents(
-    num_new_agents: int,
     rng: Generator,
+    num_new_agents: int,
     agents: Optional[dict[int, Agent]] = None,
 ) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
@@ -132,37 +133,20 @@ def get_argparser() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
-    # define & parse script args
-    args = get_argparser().parse_args()
-    # override any particular simulation arguments
-    override_dict = {}
-    if args.trading_days is not None:
-        override_dict["num_trading_days"] = args.trading_days
-    if args.blocks_per_day is not None:
-        override_dict["num_blocks_per_day"] = args.blocks_per_day
-    # get config & logging level
-    config = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
-    if args.log_level is not None:
-        config.simulator.logging_level = args.log_level
-    # define root logging parameters
-    output_utils.setup_logging(
-        log_filename=args.output,
-        max_bytes=args.max_bytes,
-        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
-    )
-    # instantiate random number generator
+# TODO: This should live within the Simulator class.
+def run_random_agent_simulation(config: Config):
+    """Executes a simulation with random agents"""
+
+    # Sample the random simulation arguments.
     rng = np.random.default_rng(config.simulator.random_seed)
-    # run random number generators to get random simulation arguments
     random_sim_vars = sim_utils.get_random_variables(config, rng)
     # TODO: The stochastic process should be part of the config.
-    # override randomly sampled random simulation variables with geometric brownian motion.
     random_sim_vars.vault_apr = GeometricBrownianMotion(rng=rng).sample(
         n=config.simulator.num_trading_days - 1, initial=0.05  # pyright: ignore
     )
-    # instantiate the pricing model
+
+    # Instantiate the pricing model and market.
     sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
-    # instantiate the market
     sim_market = sim_utils.get_market(
         sim_pricing_model,
         random_sim_vars.target_pool_apy,
@@ -170,7 +154,8 @@ if __name__ == "__main__":
         config.simulator.token_duration,
         random_sim_vars.init_share_price,
     )
-    # instantiate the init_lp agent
+
+    # Instantiate the initial LP agent.
     init_agents = {
         0: sim_utils.get_init_lp_agent(
             config,
@@ -181,7 +166,8 @@ if __name__ == "__main__":
             random_sim_vars.fee_percent,
         )
     }
-    # set up simulator with only the init_lp_agent
+
+    # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
         pricing_model=sim_pricing_model,
@@ -190,8 +176,33 @@ if __name__ == "__main__":
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )
-    # initialize the market using the LP agent
     simulator.collect_and_execute_trades()
-    # get trading agent list
+
+    # Add the other trading agents.
     simulator.agents = get_example_agents(rng=simulator.rng, num_new_agents=args.num_agents, agents=init_agents)
+
+    # Run the simulation.
     simulator.run_simulation()
+
+
+if __name__ == "__main__":
+    # Initialize the configuration and apply overrides from the command line arguments.
+    args = get_argparser().parse_args()
+    override_dict = {}
+    if args.trading_days is not None:
+        override_dict["num_trading_days"] = args.trading_days
+    if args.blocks_per_day is not None:
+        override_dict["num_blocks_per_day"] = args.blocks_per_day
+    if args.log_level is not None:
+        override_dict["logging_level"] = args.log_level
+    config_ = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
+
+    # Define root logging parameters.
+    output_utils.setup_logging(
+        log_filename=args.output,
+        max_bytes=args.max_bytes,
+        log_level=config_utils.text_to_logging_level(config_.simulator.logging_level),
+    )
+
+    # Run the simulation.
+    run_random_agent_simulation(config_)
