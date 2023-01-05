@@ -141,7 +141,6 @@ if __name__ == "__main__":
     # instantiate the init_lp agent
     init_agents = {
         0: sim_utils.get_init_lp_agent(
-            config,
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,

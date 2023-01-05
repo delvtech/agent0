@@ -1,25 +1,26 @@
-"""
-Market simulators store state information when interfacing AMM pricing models with users
-"""
+"""Market simulators store state information when interfacing AMM pricing models with users"""
 
-from __future__ import annotations
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 import logging
 
 import numpy as np
 
-from elfpy.pricing_models.base import PricingModel
 from elfpy.types import (
-    MarketAction,
+    MarketState,
     MarketActionType,
     MarketDeltas,
-    MarketState,
-    Quantity,
     StretchedTime,
+    Quantity,
     TokenType,
 )
+from elfpy.wallet import Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
-from elfpy.wallet import Wallet
+
+if TYPE_CHECKING:
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.types import MarketAction
 
 
 class Market:
@@ -141,15 +142,13 @@ class Market:
             market_deltas, agent_deltas = self._add_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_time,
-                stretched_time_remaining=time_remaining.stretched_time,
+                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self._remove_liquidity(
                 pricing_model=pricing_model,
                 agent_action=agent_action,
-                time_remaining=time_remaining.normalized_time,
-                stretched_time_remaining=time_remaining.stretched_time,
+                time_remaining=time_remaining,
             )
         else:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
@@ -419,8 +418,7 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is added
@@ -434,15 +432,9 @@ class Market:
             rate = self.get_rate(pricing_model)
         lp_out, d_base_reserves, d_token_reserves = pricing_model.calc_lp_out_given_tokens_in(
             d_base=agent_action.trade_amount,
-            share_reserves=self.market_state.share_reserves,
-            bond_reserves=self.market_state.bond_reserves,
-            base_buffer=self.market_state.base_buffer,
-            init_share_price=self.market_state.init_share_price,
-            share_price=self.market_state.share_price,
-            lp_reserves=self.market_state.lp_reserves,
             rate=rate,
+            market_state=self.market_state,
             time_remaining=time_remaining,
-            stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
             d_base_asset=+d_base_reserves,
@@ -460,23 +452,16 @@ class Market:
         self,
         pricing_model: PricingModel,
         agent_action: MarketAction,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
         lp_in, d_base_reserves, d_token_reserves = pricing_model.calc_tokens_out_given_lp_in(
             lp_in=agent_action.trade_amount,
-            share_reserves=self.market_state.share_reserves,
-            bond_reserves=self.market_state.bond_reserves,
-            base_buffer=self.market_state.base_buffer,
-            init_share_price=self.market_state.init_share_price,
-            share_price=self.market_state.share_price,
-            lp_reserves=self.market_state.lp_reserves,
             rate=self.get_rate(pricing_model),
+            market_state=self.market_state,
             time_remaining=time_remaining,
-            stretched_time_remaining=stretched_time_remaining,
         )
         market_deltas = MarketDeltas(
             d_base_asset=-d_base_reserves,

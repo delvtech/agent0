@@ -1,26 +1,23 @@
-"""
-Simulator class wraps the pricing models and markets
-for experiment tracking and execution
+"""Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 
-TODO: rewrite all functions to have typed inputs
-"""
-
-from __future__ import annotations
+from __future__ import annotations  # types will be strings by default in 3.11
 import datetime
 import json
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 from numpy.random._generator import Generator
 
-from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
-from elfpy.utils.config import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
+
+if TYPE_CHECKING:
+    from elfpy.agent import Agent
+    from elfpy.markets import Market
+    from elfpy.pricing_models.base import PricingModel
+    from elfpy.utils.config import Config
 
 
 class Simulator:
@@ -167,8 +164,6 @@ class Simulator:
         last_block_in_sim : bool
             If True, indicates if the current set of trades are occuring on the final block in the simulation
         """
-        if not isinstance(self.market, Market):
-            raise ValueError("Market not defined")
         # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
         # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
         # But right now, if the LPer removes liquidity while shorts are open,
@@ -214,8 +209,6 @@ class Simulator:
         -------
         There are no returns, but the function does update the analysis_dict member variable
         """
-        if not isinstance(self.market, Market):
-            raise ValueError("Market not defined")
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
         for day in range(0, self.config.simulator.num_trading_days):
@@ -246,8 +239,6 @@ class Simulator:
     def update_analysis_dict(self) -> None:
         """Increment the list for each key in the analysis_dict output variable"""
         # pylint: disable=too-many-statements
-        if not isinstance(self.market, Market):
-            raise ValueError("Market not defined")
         self.analysis_dict["model_name"].append(self.pricing_model.model_name())
         self.analysis_dict["run_number"].append(self.run_number)
         self.analysis_dict["simulation_start_time"].append(self.start_time)

@@ -54,12 +54,12 @@ class BaseSimTest(unittest.TestCase):
         # instantiate the init_lp agent
         init_agents = {
             0: sim_utils.get_init_lp_agent(
-                config,
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
                 random_sim_vars.target_pool_apy,
                 random_sim_vars.fee_percent,
+                init_liquidity=1,
             )
         }
         return config, pricing_model, market, init_agents, rng, random_sim_vars

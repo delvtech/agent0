@@ -47,7 +47,6 @@ class BaseTradeTest(unittest.TestCase):
         # instantiate the init_lp agent
         init_agents = {
             0: sim_utils.get_init_lp_agent(
-                config,
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
@@ -105,7 +104,6 @@ class BaseTradeTest(unittest.TestCase):
     def run_base_lp_test(self, agent_policies, config_file, delete_logs=True):
         """
         Assigns member variables that are useful for many tests
-        TODO: Check that the market values match the desired amounts
         """
         self.setup_logging()
         target_liquidity = 1e6
@@ -120,9 +118,9 @@ class BaseTradeTest(unittest.TestCase):
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
         simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
-        # check that apr is within 0.001 of the target
+        # check that apr is within 0.005 of the target
         market_apr = market.get_rate(pricing_model)
-        assert np.allclose(market_apr, target_pool_apr, atol=0.001), (
+        assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
             f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
             f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
         )

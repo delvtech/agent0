@@ -7,15 +7,10 @@ import elfpy.utils.price as price_utils
 
 
 class PricingModel(ABC):
-    """
-    Contains functions for calculating AMM variables
+    """Contains functions for calculating AMM variables
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
-
-    # TODO: set up member object that owns attributes instead of so many individual instance attributes
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=line-too-long
 
     @abstractmethod
     def calc_in_given_out(
@@ -39,70 +34,144 @@ class PricingModel(ABC):
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_lp_in_given_tokens_out(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
-    # TODO: Use the MarketState class.
     @abstractmethod
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
-        # TODO: This pylint will be resolved when we switch to MarketState
-        # pylint: disable=too-many-arguments
         raise NotImplementedError
 
     @abstractmethod
     def model_name(self) -> str:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
+
+    def calc_bond_reserves(
+        self,
+        target_apr: float,
+        share_reserves: float,
+        time_remaining: StretchedTime,
+        init_share_price: float = 1,
+        share_price: float = 1,
+    ):
+        """Returns the assumed bond (i.e. token asset) reserve amounts given
+        the share (i.e. base asset) reserves and APR
+
+        Arguments
+        ---------
+        target_apr : float
+            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+        share_reserves : float
+            base asset reserves in the pool
+        days_remaining : float
+            Amount of days left until bond maturity
+        time_stretch : float
+            Time stretch parameter, in years
+        init_share_price : float
+            Original share price when the pool started
+        share_price : float
+            Current share price
+
+        Returns
+        -------
+        float
+            The expected amount of bonds (token asset) in the pool, given the inputs
+
+        TODO: Write a test for this function
+        """
+        # TODO: Package up some of these arguments into market_state
+        # pylint: disable=too-many-arguments
+        bond_reserves = (share_reserves / 2) * (
+            init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            - share_price
+        )  # y = x/2 * (u * (1 + rt)**(1/T) - c)
+        return bond_reserves
+
+    def calc_share_reserves(
+        self,
+        target_apr: float,
+        bond_reserves: float,
+        time_remaining: StretchedTime,
+        init_share_price: float = 1,
+    ):
+        """Returns the assumed share (i.e. base asset) reserve amounts given
+        the bond (i.e. token asset) reserves and APR
+
+        Arguments
+        ---------
+        target_apr : float
+            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+        bond_reserves : float
+            token asset (pt) reserves in the pool
+        days_remaining : float
+            Amount of days left until bond maturity
+        time_stretch : float
+            Time stretch parameter, in years
+        init_share_price : float
+            Original share price when the pool started
+        share_price : float
+            Current share price
+
+        Returns
+        -------
+        float
+            The expected amount of base asset in the pool, calculated from the provided parameters
+
+        TODO: Write a test for this function
+        """
+        share_reserves = bond_reserves / (
+            init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+        )  # z = y / (u * (1 - rt)**(1/T))
+        return share_reserves
+
+    def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
+        """Returns the total liquidity in the pool in terms of base
+
+        Arguments
+        ---------
+        MarketState : MarketState
+            The following member variables are used:
+                share_reserves : float
+                    Base asset reserves in the pool
+                bond_reserves : float
+                    Token asset (pt) reserves in the pool
+        share_price : float
+            Variable (underlying) yield source price
+
+        Returns
+        -------
+        float
+            Total liquidity in the pool in terms of base, calculated from the provided parameters
+
+        TODO: Write a test for this function
+        """
+        return market_state.share_reserves * share_price
 
     def calc_spot_price_from_reserves(
         self,
@@ -116,7 +185,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            p = (\frac{2y + cz}{\mu z})^{-\tau}
+            p = (\frac{y + cz}{\mu z})^{-\tau}
             \end{align}
 
         Arguments
@@ -135,12 +204,11 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
-        bond_reserves_ = market_state.bond_reserves + total_reserves
-        spot_price = 1 / (
-            ((bond_reserves_) / (market_state.init_share_price * market_state.share_reserves))
-            ** time_remaining.stretched_time
-        )
+        total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
+        spot_price = (
+            (market_state.bond_reserves + total_reserves)
+            / (market_state.init_share_price * market_state.share_reserves)
+        ) ** -time_remaining.stretched_time
         return spot_price
 
     def calc_apr_from_reserves(

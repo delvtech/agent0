@@ -45,7 +45,6 @@ class BaseLogTest(unittest.TestCase):
         # instantiate the init_lp agent
         init_agents = {
             0: sim_utils.get_init_lp_agent(
-                config,
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
@@ -100,7 +99,7 @@ class BaseLogTest(unittest.TestCase):
 
             config_file = "config/example_config.toml"
             override_dict = {
-                "pricing_model_name": "Hyperdrive",
+                "pricing_model_name": "Yieldspace",
                 "num_trading_days": 10,
                 "num_blocks_per_day": 3,  # 1 block a day, keep it fast for testing
             }

@@ -27,7 +27,6 @@ class YieldSpacePricingModel(PricingModel):
     # TODO: The too many locals disable can be removed after refactoring the LP
     #       functions.
     #
-    # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     # pylint: disable=duplicate-code
 
@@ -37,15 +36,9 @@ class YieldSpacePricingModel(PricingModel):
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -56,42 +49,49 @@ class YieldSpacePricingModel(PricingModel):
 
         """
         assert d_base > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected d_base > 0, not {d_base}!"
-        assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
-        assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
-        assert (
-            base_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {base_buffer}!"
-        assert (
-            lp_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
-        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
-        assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert stretched_time_remaining >= 0, (
-            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
-            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR:  "
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
         )
-        assert share_price >= init_share_price >= 1, (
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
+        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert 1 > time_remaining.normalized_time >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected 1 > time_remaining >= 0, not {time_remaining.normalied_time}!"
+        )
+        assert time_remaining.stretched_time >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected stretched_time_remaining >= 0, not {time_remaining.stretched_time}!"
+        )
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             "expected share_price >= init_share_price >= 1, not "
-            f"share_price={share_price} and init_share_price={init_share_price}!"
+            f"share_price={market_state.share_price} and init_share_price={market_state.init_share_price}!"
         )
-        d_shares = d_base / share_price
-        if share_reserves > 0:  # normal case where we have some share reserves
+        d_shares = d_base / market_state.share_price
+        if market_state.share_reserves > 0:  # normal case where we have some share reserves
             # TODO: We need to update these LP calculations to address the LP
             #       exploit scenario.
-            lp_out = (d_shares * lp_reserves) / (share_reserves - base_buffer / share_price)
+            lp_out = (d_shares * market_state.lp_reserves) / (market_state.share_reserves - market_state.base_buffer)
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
-        d_bonds = (share_reserves + d_shares) / 2 * (
-            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
-        ) - bond_reserves
+        d_bonds = (market_state.share_reserves + d_shares) / 2 * (
+            market_state.init_share_price
+            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
+        ) - market_state.bond_reserves
         logging.debug(
             (
                 "inputs: d_base=%g, share_reserves=%d, "
@@ -110,48 +110,42 @@ class YieldSpacePricingModel(PricingModel):
                 "(1 / %g) - %g) - %g)"
             ),
             d_base,
-            share_reserves,
-            bond_reserves,
-            base_buffer,
-            init_share_price,
-            share_price,
-            lp_reserves,
+            market_state.share_reserves,
+            market_state.bond_reserves,
+            market_state.base_buffer,
+            market_state.init_share_price,
+            market_state.share_price,
+            market_state.lp_reserves,
             rate,
-            time_remaining,
-            stretched_time_remaining,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
             d_shares,
             d_base,
-            share_price,
+            market_state.share_price,
             lp_out,
             d_shares,
-            lp_reserves,
-            share_reserves,
-            base_buffer,
-            share_price,
+            market_state.lp_reserves,
+            market_state.share_reserves,
+            market_state.base_buffer,
+            market_state.share_price,
             d_bonds,
-            share_reserves,
+            market_state.share_reserves,
             d_shares,
-            init_share_price,
+            market_state.init_share_price,
             rate,
-            time_remaining,
-            stretched_time_remaining,
-            share_price,
-            bond_reserves,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
+            market_state.share_price,
+            market_state.bond_reserves,
         )
         return lp_out, d_base, d_bonds
 
     def calc_lp_in_given_tokens_out(
         self,
         d_base: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -159,85 +153,98 @@ class YieldSpacePricingModel(PricingModel):
         y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
         """
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
-        assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected share_reserves >= 0, not {share_reserves}!"
-        assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
-        assert (
-            base_buffer >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected base_buffer >= 0, not {base_buffer}!"
-        assert (
-            lp_reserves >= 0
-        ), f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
+        assert market_state.share_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
         assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
-        assert 1 > time_remaining >= 0, (
+        assert 1 > time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining}!"
+            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
-        assert stretched_time_remaining >= 0, (
+        assert time_remaining.stretched_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
-            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+            f"expected stretched_time_remaining >= 0, not {time_remaining.stretched_time}!"
         )
-        assert share_price >= init_share_price >= 1, (
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
-            f"expected share_price >= init_share_price >= 1, not, {share_price}!"
+            "expected share_price >= init_share_price >= 1, not "
+            f"share_price={market_state.share_price}, and init_share_price={market_state.init_share_price}"
         )
-        d_shares = d_base / share_price
-        lp_in = (d_shares * lp_reserves) / (share_reserves - base_buffer / share_price)
+        d_shares = d_base / market_state.share_price
+        lp_in = (d_shares * market_state.lp_reserves) / (market_state.share_reserves - market_state.base_buffer)
         # TODO: Move this calculation to a helper function.
-        d_bonds = (share_reserves - d_shares) / 2 * (
-            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
-        ) - bond_reserves
+        d_bonds = (market_state.share_reserves - d_shares) / 2 * (
+            market_state.init_share_price
+            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
+        ) - market_state.bond_reserves
         return lp_in, d_base, d_bonds
 
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
-        share_reserves: float,
-        bond_reserves: float,
-        base_buffer: float,
-        init_share_price: float,
-        share_price: float,
-        lp_reserves: float,
         rate: float,
-        time_remaining: float,
-        stretched_time_remaining: float,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
-        assert (
-            share_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected share_reserves >= 0, not {share_reserves}!"
-        assert (
-            bond_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected bond_reserves >= 0, not {bond_reserves}!"
-        assert (
-            base_buffer >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected base_buffer >= 0, not {base_buffer}!"
-        assert (
-            lp_reserves >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_reserves >= 0, not {lp_reserves}!"
-        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
-        assert (
-            1 > time_remaining >= 0
-        ), f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected 1 > time_remaining >= 0, not {time_remaining}!"
-        assert stretched_time_remaining >= 0, (
+        assert market_state.share_reserves >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
-            f"expected stretched_time_remaining >= 0, not {stretched_time_remaining}!"
+            f"Expected share_reserves >= 0, not {market_state.share_reserves}!"
         )
-        assert share_price >= init_share_price >= 1, (
+        assert market_state.bond_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+        )
+        assert market_state.base_buffer >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
+        )
+        assert market_state.lp_reserves >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
+        )
+        assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
+        assert 1 > time_remaining.normalized_time >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"Expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+        )
+        assert time_remaining.stretched_time >= 0, (
+            "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
+            f"expected stretched_time_remaining >= 0, not {time_remaining.stretched_time}!"
+        )
+        assert market_state.share_price >= market_state.init_share_price >= 1, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             "expected share_price >= init_share_price >= 1, not "
-            f"share_price={share_price}, and init_share_price={init_share_price}"
+            f"share_price={market_state.share_price}, and init_share_price={market_state.init_share_price}"
         )
-        d_base = share_price * (share_reserves - base_buffer / share_price) * lp_in / lp_reserves
-        d_shares = d_base / share_price
+        d_base = (
+            market_state.share_price
+            * (market_state.share_reserves - market_state.base_buffer)
+            * lp_in
+            / market_state.lp_reserves
+        )
+        d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
-        d_bonds = (share_reserves - d_shares) / 2 * (
-            init_share_price * (1 + rate * time_remaining) ** (1 / stretched_time_remaining) - share_price
-        ) - bond_reserves
+        d_bonds = (market_state.share_reserves - d_shares) / 2 * (
+            market_state.init_share_price
+            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
+        ) - market_state.bond_reserves
         logging.debug(
             (
                 "inputs: lp_in=%g, share_reserves=%d, "
@@ -252,27 +259,27 @@ class YieldSpacePricingModel(PricingModel):
                 "** (1 / %g) - %g) - %g)"
             ),
             lp_in,
-            share_reserves,
-            bond_reserves,
-            base_buffer,
-            init_share_price,
-            share_price,
-            lp_reserves,
+            market_state.share_reserves,
+            market_state.bond_reserves,
+            market_state.base_buffer,
+            market_state.init_share_price,
+            market_state.share_price,
+            market_state.lp_reserves,
             rate,
-            time_remaining,
-            stretched_time_remaining,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
             d_shares,
             d_base,
-            share_price,
+            market_state.share_price,
             d_bonds,
-            share_reserves,
+            market_state.share_reserves,
             d_shares,
-            init_share_price,
+            market_state.init_share_price,
             rate,
-            time_remaining,
-            stretched_time_remaining,
-            share_price,
-            bond_reserves,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
+            market_state.share_price,
+            market_state.bond_reserves,
         )
         return lp_in, d_base, d_bonds
 
