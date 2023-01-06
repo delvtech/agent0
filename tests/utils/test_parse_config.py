@@ -49,7 +49,6 @@ class TestParseSimulationConfig(unittest.TestCase):
             target_liquidity=10000000,
             fee_percent=0.10,
             init_vault_age=0,
-            vault_apr=[0.05],
             logging_level="warning",
         )
 
@@ -94,7 +93,6 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "target_liquidity": 10000000,
                 "fee_percent": 0.1,
                 "init_vault_age": 0,
-                "vault_apr": [0.05],
                 "logging_level": "warning",
             },
         }

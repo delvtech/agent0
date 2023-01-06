@@ -20,7 +20,8 @@ class MarketConfig:
     min_vault_age: int = field(default=0, metadata={"hint": "fraction of a year"})
     max_vault_age: int = field(default=1, metadata={"hint": "fraction of a year"})
     vault_apr: Union[Callable, dict] = field(
-        default_factory=lambda: {"type": "constant", "value": 0.3}, metadata={"hint": "yield bearing vault apr"}
+        default_factory=lambda: {"type": "constant", "value": 0.3},
+        metadata={"hint": "the underlying (variable) vault apr at each time step"},
     )
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
 
@@ -61,9 +62,6 @@ class SimulatorConfig:
 
     # vault
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
-    vault_apr: list[float] = field(
-        default_factory=list, metadata={"hint": "the underlying (variable) vault apr at each time step"}
-    )
 
     # logging
     logging_level: str = field(default="info", metadata={"hint": "Logging level, as defined by stdlib logging"})
