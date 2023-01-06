@@ -6,7 +6,6 @@ from typing import Any, Optional
 # external imports
 import numpy as np
 from numpy.random import Generator
-from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
@@ -140,10 +139,6 @@ def run_random_agent_simulation(config: Config):
     # Sample the random simulation arguments.
     rng = np.random.default_rng(config.simulator.random_seed)
     random_sim_vars = sim_utils.get_random_variables(config, rng)
-    # TODO: The stochastic process should be part of the config.
-    random_sim_vars.vault_apr = GeometricBrownianMotion(rng=rng).sample(
-        n=config.simulator.num_trading_days - 1, initial=0.05  # pyright: ignore
-    )
 
     # Instantiate the pricing model and market.
     sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)

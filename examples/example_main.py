@@ -111,14 +111,20 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # define & parse script args
     args = get_argparser().parse_args()
+    # get config & logging level
+    config = config_utils.load_and_parse_config_file(args.config)
     # override any particular simulation arguments
     override_dict = {}
     if args.trading_days is not None:
         override_dict["num_trading_days"] = args.trading_days
     if args.blocks_per_day is not None:
         override_dict["num_blocks_per_day"] = args.blocks_per_day
-    # get config & logging level
-    config = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
+    override_dict["vault_apr"] = {
+        "type": "uniform",
+        "low": 0.001,
+        "high": 0.9,
+    }
+    config = sim_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
     # define root logging parameters

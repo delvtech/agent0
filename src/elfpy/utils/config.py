@@ -6,6 +6,7 @@ Config structure
 
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 
 @dataclass
@@ -18,8 +19,9 @@ class MarketConfig:
     max_target_volume: float = field(default=0.01, metadata={"hint": "fraction of pool liquidity"})
     min_vault_age: int = field(default=0, metadata={"hint": "fraction of a year"})
     max_vault_age: int = field(default=1, metadata={"hint": "fraction of a year"})
-    min_vault_apr: float = field(default=0.001, metadata={"hint": "decimal"})
-    max_vault_apr: float = field(default=0.9, metadata={"hint": "decimal"})
+    vault_apr: Callable | dict = field(
+        default_factory=lambda: {"type": "constant", "value": 0.3}, metadata={"hint": "yield bearing vault apr"}
+    )
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
 
 

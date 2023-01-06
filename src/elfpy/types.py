@@ -1,6 +1,7 @@
 """A set of common types used throughtout the simulation codebase."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Callable
 from enum import Enum
 
 from elfpy.utils.outputs import float_to_string
@@ -117,6 +118,7 @@ class MarketDeltas:
     d_base_buffer: float = 0
     d_bond_buffer: float = 0
     d_lp_reserves: float = 0
+    d_share_price: float = 0
 
     def __getitem__(self, key):
         getattr(self, key)
@@ -158,21 +160,18 @@ class MarketState:
     lp_reserves: float = 0.0
 
     # share price
+    vault_apr: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
 
-    def apply_delta(
-        self,
-        # TODO: This should be moved into the types file and should get better
-        # names ("base_asset" => "base_reserves" and "token_asset" => bond_reserves").
-        delta: MarketDeltas,
-    ):
+    def apply_delta(self, delta: MarketDeltas) -> None:
         """Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
+        self.share_price += delta.d_share_price
 
     def __str__(self):
         out_str = (
@@ -232,3 +231,16 @@ class TradeResult:
     user_result: UserTradeResult
     market_result: MarketTradeResult
     breakdown: TradeBreakdown
+
+
+@dataclass()
+class RandomSimulationVariables:
+    """Random variables to be used during simulation setup & execution"""
+
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
+    target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
+    target_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
+    fee_percent: float = field(metadata="percent to charge for LPer fees")
+    vault_apr: list = field(metadata="yield bearing source APR")
+    init_vault_age: float = field(metadata="fraction of a year since the vault was opened")

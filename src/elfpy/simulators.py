@@ -12,6 +12,7 @@ from numpy.random._generator import Generator
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
+from elfpy.types import MarketDeltas
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
@@ -213,14 +214,17 @@ class Simulator:
         self.start_time = time_utils.current_datetime()
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
+            self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                self.market.market_state.share_price += (
-                    self.random_variables.vault_apr[self.day]  # current day's apy
-                    / 365  # convert annual yield to daily
-                    * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
-                    # * self.market.share_price # APY, apply return to latest price (full compounding)
+                delta = MarketDeltas(
+                    d_share_price=(
+                        self.market.market_state.vault_apr  # current day's apy
+                        / 365  # convert annual yield to daily
+                        * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
+                    )
                 )
+                self.market.update_market(delta)
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
