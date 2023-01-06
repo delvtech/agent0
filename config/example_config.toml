@@ -6,10 +6,7 @@ min_target_liquidity = 1e6  # in shares
 max_target_liquidity = 10e6  # in shares
 min_vault_age = 0  # fraction of a year
 max_vault_age = 1  # fraction of a year
-vault_apr_generator = {
-    "type": "GeometricBrownianMotion",
-    "initial": 0.05,
-}
+vault_apr = {type = "constant", value = 0.05}
 # fixed variables
 base_asset_price = 1  # aka market price
 

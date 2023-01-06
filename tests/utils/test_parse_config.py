@@ -26,8 +26,7 @@ class TestParseSimulationConfig(unittest.TestCase):
             max_target_liquidity=10000000.0,
             min_vault_age=0,
             max_vault_age=1,
-            min_vault_apr=0.001,
-            max_vault_apr=0.9,
+            vault_apr={"type": "constant", "value": 0.05},
             base_asset_price=2500.0,
         )
 
@@ -71,8 +70,7 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "max_target_liquidity": 10000000.0,
                 "min_vault_age": 0,
                 "max_vault_age": 1,
-                "min_vault_apr": 0.001,
-                "max_vault_apr": 0.9,
+                "vault_apr": {"type": "constant", "value": 0.05},
                 "base_asset_price": 2500.0,
             },
             "amm": {
