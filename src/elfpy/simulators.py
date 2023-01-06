@@ -217,9 +217,9 @@ class Simulator:
             self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                if self.config.simulator.compound_vault_apr:  # APY, apply return to latest price (full compounding)
+                if self.config.simulator.compound_vault_apr:  # Apply return to latest price (full compounding)
                     price_multiplier = self.market.market_state.share_price
-                else:  # APR, apply return to starting price (no compounding)
+                else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
                 delta = MarketDeltas(
                     d_share_price=(
