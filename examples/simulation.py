@@ -190,6 +190,7 @@ if __name__ == "__main__":
         override_dict["num_blocks_per_day"] = args.blocks_per_day
     if args.log_level is not None:
         override_dict["logging_level"] = args.log_level
+    override_dict["vault_apr"] = {"type": "GeometricBrownianMotion", "initial": 0.05}
     config_ = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
 
     # Define root logging parameters.

@@ -49,6 +49,7 @@ class BaseSimTest(unittest.TestCase):
             random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
+            random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
         # instantiate the init_lp agent
@@ -138,7 +139,14 @@ class BaseSimTest(unittest.TestCase):
         override_list = [
             {},
             {"fee_percent": 0.1},
-            {"num_trading_days": 3, "vault_apr": 0.05},  # this should get broadcasted into a list
+            {
+                "num_trading_days": 3,
+                "vault_apr": {"type": "Constant", "value": 0.05},
+            },  # this should get generated as a list
+            {
+                "num_trading_days": 3,
+                "vault_apr": {"type": "GeometricBrownianMotion", "initial": 0.05},
+            },  # this should get generated as a list
             {"num_trading_days": 3, "vault_apr": [0.05, 0.04, 0.03]},
         ]
         for override_dict in override_list:

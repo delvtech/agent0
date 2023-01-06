@@ -223,8 +223,12 @@ def setup_vault_apr(config, rng):
             raise ValueError(f"{config.market.vault_apr['type']=} not in {allowable_keys=}")
     elif isinstance(config.market.vault_apr, Callable):  # callable function
         vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
+    elif isinstance(config.market.vault_apr, list):  # user-defined list of values
+        vault_apr = config.market.vault_apr
     else:
-        raise TypeError(f"config.market.vault_apr must be a dict or callable, not {type(config.market.vault_apr)}")
+        raise TypeError(
+            f"config.market.vault_apr must be a list, dict, or callable, not {type(config.market.vault_apr)}"
+        )
     return vault_apr
 
 
@@ -300,8 +304,6 @@ def override_config_variables(config, override_dict):
     -------
     Config
         same dataclass as the config input, but with fields specified by override_dict changed
-
-    TODO: Overriding num_trading_days does not work when also overriding vault_apr
     """
     # override the config variables, including random variables that were set
     for key, value in override_dict.items():
