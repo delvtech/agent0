@@ -40,6 +40,7 @@ class BaseLogTest(unittest.TestCase):
             random_sim_vars.target_pool_apy,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
+            random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
         # instantiate the init_lp agent

@@ -244,3 +244,9 @@ class RandomSimulationVariables:
     fee_percent: float = field(metadata="percent to charge for LPer fees")
     vault_apr: list = field(metadata="yield bearing source APR")
     init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
+    init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
+
+    def __post_init__(self):
+        """init_share_price is a function of other random variables"""
+        if self.init_share_price is None:
+            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
