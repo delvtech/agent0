@@ -266,7 +266,7 @@ class Simulator:
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.random_variables.init_vault_age)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
-        self.analysis_dict["vault_apr"].append(self.random_variables.vault_apr[self.day])
+        self.analysis_dict["vault_apr"].append(self.market.market_state.vault_apr)
         self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
         for key, val in self.market.market_state.__dict__.items():
             self.analysis_dict[key].append(val)
