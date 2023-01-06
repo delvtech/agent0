@@ -60,7 +60,6 @@ def parse_simulation_config(config_dict):
         amm=AMMConfig(**config_dict["amm"]),
         simulator=SimulatorConfig(**config_dict["simulator"]),
     )
-    simulation_config.simulator.logging_level = text_to_logging_level(simulation_config.simulator.logging_level)
     return simulation_config
 
 

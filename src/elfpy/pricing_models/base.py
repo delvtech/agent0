@@ -1,8 +1,9 @@
 """The base pricing model."""
 
 from abc import ABC, abstractmethod
+import copy
 
-from elfpy.types import Quantity, MarketState, StretchedTime, TradeResult
+from elfpy.types import MarketDeltas, Quantity, MarketState, StretchedTime, TokenType, TradeResult
 import elfpy.utils.price as price_utils
 
 
@@ -226,6 +227,105 @@ class PricingModel(ABC):
         )
         apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
         return apr
+
+    # TODO: This needs to take the base buffer into account. The base buffer
+    # should never exceed the base reserves.
+    #
+    # TODO: This needs to be tested. Some of these conditionals seem unnecessary.
+    # If they aren't document why they aren't. Otherwise, remove them.
+    def get_max_long(
+        self,
+        market_state: MarketState,
+        fee_percent: float,
+        time_remaining: StretchedTime,
+    ) -> float:
+        r"""
+        Calculates the maximum long the market can support using the bisection
+        method.
+
+        Arguments
+        ---------
+        market_state : MarketState
+            The reserves and share prices of the pool.
+        fee_percent : float
+            The fee percent charged by the market.
+        time_remaining : StretchedTime
+            The time remaining for the asset (incorporates time stretch).
+
+        Returns
+        -------
+        float
+            The maximum amount of base that can be used to purchase bonds.
+        """
+        purchasable_bonds = market_state.bond_reserves - market_state.bond_buffer
+        if purchasable_bonds <= 0:
+            return 0
+
+        last_maybe_max_long = 0
+        bond_percent = 1
+        for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
+            # Compute the amount of base needed to purchase the required amount
+            # of bonds.
+            trade_result = self.calc_in_given_out(
+                out=Quantity(amount=purchasable_bonds * bond_percent, unit=TokenType.PT),
+                market_state=market_state,
+                fee_percent=fee_percent,
+                time_remaining=time_remaining,
+            )
+            maybe_max_long = trade_result.breakdown.with_fee
+
+            # If the max long is less than or equal to zero, we need to reduce
+            # the amount of bonds that we are attempting to purchase. Otherwise,
+            # with more checks for the bisection.
+            if maybe_max_long <= 0:
+                bond_percent -= step_size
+            else:
+                # TODO: Do we actually need to do this? Run some tests and see
+                # if the result that only uses calc_in_given_out is always
+                # slightly lower. If so, then just take that.
+                #
+                # Compute the amount of bonds that will be purchased with the
+                # amount of base. We feed the result of calc_in_given_out back
+                # into the pricing model as this computation is more accurate.
+                trade_result = self.calc_out_given_in(
+                    in_=Quantity(amount=maybe_max_long, unit=TokenType.BASE),
+                    market_state=market_state,
+                    fee_percent=fee_percent,
+                    time_remaining=time_remaining,
+                )
+                d_bonds = trade_result.breakdown.with_fee
+
+                # Apply the trade to the market state.
+                market_state_post_trade = copy.copy(market_state)
+                market_state_post_trade.apply_delta(
+                    delta=MarketDeltas(
+                        d_base_asset=trade_result.market_result.d_base,
+                        d_token_asset=trade_result.market_result.d_bonds,
+                        d_base_buffer=d_bonds,
+                    )
+                )
+
+                # Verify that the bonds that were purchased don't exceed the
+                # bond reserves and that the pool APR didn't go negative. If
+                # either condition fails, then reduce the bond size. Otherwise,
+                # we've found a new max long amount, so we store that value and
+                # proceed with bisection with larger bond purchases.
+                if (
+                    market_state.bond_reserves < d_bonds
+                    or self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining)
+                    < 0
+                    or market_state_post_trade.share_price * market_state_post_trade.share_reserves
+                    < market_state_post_trade.base_buffer
+                    or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer
+                ):
+                    bond_percent -= step_size
+                else:
+                    if bond_percent == 1:
+                        return maybe_max_long
+                    last_maybe_max_long = maybe_max_long
+                    bond_percent += step_size
+
+        return last_maybe_max_long
 
     def calc_time_stretch(self, apr):
         """Returns fixed time-stretch value based on current apr (as a decimal)"""

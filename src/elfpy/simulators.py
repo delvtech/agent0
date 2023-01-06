@@ -38,7 +38,7 @@ class Simulator:
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
-        random_simulation_variables: Optional[list] = None,
+        random_simulation_variables: Optional[sim_utils.RandomSimulationVariables] = None,
     ):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
@@ -53,7 +53,7 @@ class Simulator:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
         else:
             self.random_variables = random_simulation_variables
-        self.check_vault_apy_type()
+        self.check_vault_apr_type()
         # Simulation variables
         self.run_number = 0
         self.day = 0
@@ -82,7 +82,7 @@ class Simulator:
             "floor_fee",  # minimum fee we take
             "init_vault_age",
             "base_asset_price",
-            "vault_apy",
+            "vault_apr",
             "pool_apy",
             "share_reserves",  # from market state
             "bond_reserves",  # from market state
@@ -97,18 +97,18 @@ class Simulator:
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
-    def check_vault_apy_type(self) -> None:
+    def check_vault_apr_type(self) -> None:
         """Recast the vault apy into a list of floats if a float was given on init"""
-        if isinstance(self.random_variables.vault_apy, float):
-            self.random_variables.vault_apy = [
-                float(self.random_variables.vault_apy)
+        if isinstance(self.random_variables.vault_apr, float):
+            self.random_variables.vault_apr = [
+                float(self.random_variables.vault_apr)
             ] * self.config.simulator.num_trading_days
         else:  # check that the length is correct
-            if not len(self.random_variables.vault_apy) == self.config.simulator.num_trading_days:
+            if not len(self.random_variables.vault_apr) == self.config.simulator.num_trading_days:
                 raise ValueError(
-                    "vault_apy must have len equal to num_trading_days = "
+                    "vault_apr must have len equal to num_trading_days = "
                     + f"{self.config.simulator.num_trading_days},"
-                    + f" not {len(self.random_variables.vault_apy)}"
+                    + f" not {len(self.random_variables.vault_apr)}"
                 )
 
     def set_rng(self, rng: Generator) -> None:
@@ -216,7 +216,7 @@ class Simulator:
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 self.market.market_state.share_price += (
-                    self.random_variables.vault_apy[self.day]  # current day's apy
+                    self.random_variables.vault_apr[self.day]  # current day's apy
                     / 365  # convert annual yield to daily
                     * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
                     # * self.market.share_price # APY, apply return to latest price (full compounding)
@@ -262,7 +262,7 @@ class Simulator:
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.random_variables.init_vault_age)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
-        self.analysis_dict["vault_apy"].append(self.random_variables.vault_apy[self.day])
+        self.analysis_dict["vault_apr"].append(self.random_variables.vault_apr[self.day])
         self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
         for key, val in self.market.market_state.__dict__.items():
             self.analysis_dict[key].append(val)

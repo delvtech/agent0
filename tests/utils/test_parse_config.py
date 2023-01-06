@@ -8,7 +8,6 @@ Testing for the parsing of the Market, AMM and Simulator configs from a TOML fil
 # pylint: disable=attribute-defined-outside-init
 
 import unittest
-import logging
 
 from elfpy.utils import parse_config as config_utils
 
@@ -27,8 +26,8 @@ class TestParseSimulationConfig(unittest.TestCase):
             max_target_liquidity=10000000.0,
             min_vault_age=0,
             max_vault_age=1,
-            min_vault_apy=0.001,
-            max_vault_apy=0.9,
+            min_vault_apr=0.001,
+            max_vault_apr=0.9,
             base_asset_price=2500.0,
         )
 
@@ -51,8 +50,8 @@ class TestParseSimulationConfig(unittest.TestCase):
             target_liquidity=10000000,
             fee_percent=0.10,
             init_vault_age=0,
-            vault_apy=[0.05],
-            logging_level=logging.WARNING,
+            vault_apr=[0.05],
+            logging_level="warning",
         )
 
         print(simulator)
@@ -72,8 +71,8 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "max_target_liquidity": 10000000.0,
                 "min_vault_age": 0,
                 "max_vault_age": 1,
-                "min_vault_apy": 0.001,
-                "max_vault_apy": 0.9,
+                "min_vault_apr": 0.001,
+                "max_vault_apr": 0.9,
                 "base_asset_price": 2500.0,
             },
             "amm": {
@@ -97,7 +96,7 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "target_liquidity": 10000000,
                 "fee_percent": 0.1,
                 "init_vault_age": 0,
-                "vault_apy": [0.05],
+                "vault_apr": [0.05],
                 "logging_level": "warning",
             },
         }
