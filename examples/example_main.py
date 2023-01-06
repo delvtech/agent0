@@ -40,7 +40,7 @@ class CustomShorter(Agent):
         block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apr = market.market_state.share_price * 365 / market.market_state.init_share_price
+        vault_apr = market.market_state.vault_apr
         action_list = []
         if can_open_short:
             if vault_apr > market.get_rate(pricing_model):
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # instantiate the market
     sim_market = sim_utils.get_market(
         sim_pricing_model,
-        random_sim_vars.target_pool_apy,
+        random_sim_vars.target_pool_apr,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,
         random_sim_vars.vault_apr,
@@ -154,7 +154,7 @@ if __name__ == "__main__":
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
         )
     }
