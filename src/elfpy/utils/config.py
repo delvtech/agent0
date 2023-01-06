@@ -43,7 +43,6 @@ class SimulatorConfig:
     """config parameters specific to the simulator"""
 
     # durations
-    pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
     token_duration: float = field(
@@ -55,12 +54,10 @@ class SimulatorConfig:
     agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
 
-    # trading
-    target_liquidity: float = field(default=0, metadata={"hint": ""})
-    target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
-    fee_percent: float = field(default=0, metadata={"hint": ""})
-
     # vault
+    compound_vault_apr: bool = field(
+        default=True, metadata={"hint": "whether or not to use compounding revenue for the underlying yield source"}
+    )
     init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
 
     # logging

@@ -37,18 +37,15 @@ class TestParseSimulationConfig(unittest.TestCase):
 
         # manually set Simulator config to be the same as the TOML file
         simulator = config_utils.SimulatorConfig(
-            pool_duration=180,
             num_trading_days=180,
             num_blocks_per_day=7200,
             token_duration=180,
-            precision=64,
             agent_policies=["single_long"],
-            random_seed=123,
             shuffle_users=True,
             init_lp=True,
-            target_liquidity=10000000,
-            fee_percent=0.10,
-            init_vault_age=0,
+            compound_vault_apr=True,
+            random_seed=123,
+            precision=64,
             logging_level="warning",
         )
 
@@ -81,18 +78,15 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "floor_fee": 0,
             },
             "simulator": {
-                "pool_duration": 180,
                 "num_trading_days": 180,
                 "num_blocks_per_day": 7200,
                 "token_duration": 180,
-                "precision": 64,
                 "agent_policies": ["single_long"],
                 "random_seed": 123,
                 "shuffle_users": True,
                 "init_lp": True,
-                "target_liquidity": 10000000,
-                "fee_percent": 0.1,
-                "init_vault_age": 0,
+                "compound_vault_apr": True,
+                "precision": 64,
                 "logging_level": "warning",
             },
         }

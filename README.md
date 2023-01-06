@@ -16,7 +16,11 @@ Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip 
 
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python3 -m pytest`, or you can pick a specific test in the `tests/` folder with `python3 -m pytest tests/{test_file.py}`.
 
-## Analysis repo git workflow:
+## Examples
+
+Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent. We do not recommend using Google Colab because the install process requires upgrading the Colab Python version to 3.10 and pip installing elfpy from the git URI.
+
+## Contributor git workflow:
 
 We will follow the Rebase workflow that is used by the Element frontend team.
 Commits to `main` should **only** be made in the form of squash merges from pull requests.

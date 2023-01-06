@@ -21,7 +21,7 @@ def analysis_dict_to_dataframe(analysis_dict: dict) -> pd.DataFrame:
     # construct simulation dataframe output
     trades = pd.DataFrame.from_dict(analysis_dict)
     # calculate derived variables across runs
-    trades["pool_apy_percent"] = trades.pool_apy * 100
+    trades["pool_apr_percent"] = trades.pool_apr * 100
     trades["vault_apr_percent"] = trades.vault_apr * 100
     share_liquidity_usd = trades.share_reserves * trades.share_price
     bond_liquidity_usd = trades.bond_reserves * trades.share_price * trades.spot_price

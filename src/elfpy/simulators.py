@@ -84,7 +84,7 @@ class Simulator:
             "init_vault_age",
             "base_asset_price",
             "vault_apr",
-            "pool_apy",
+            "pool_apr",
             "share_reserves",  # from market state
             "bond_reserves",  # from market state
             "base_buffer",  # from market state
@@ -217,11 +217,15 @@ class Simulator:
             self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
+                if self.config.simulator.compound_vault_apr:  # APY, apply return to latest price (full compounding)
+                    price_multiplier = self.market.market_state.share_price
+                else:  # APR, apply return to starting price (no compounding)
+                    price_multiplier = self.market.market_state.init_share_price
                 delta = MarketDeltas(
                     d_share_price=(
                         self.market.market_state.vault_apr  # current day's apy
                         / 365  # convert annual yield to daily
-                        * self.market.market_state.init_share_price  # apply return to starting price (no compounding)
+                        * price_multiplier
                     )
                 )
                 self.market.update_market(delta)
@@ -266,8 +270,8 @@ class Simulator:
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.random_variables.init_vault_age)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
-        self.analysis_dict["vault_apr"].append(self.market.market_state.vault_apr)
-        self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
+        self.analysis_dict["vault_apr"].append("X")
+        self.analysis_dict["pool_apr"].append(self.market.get_rate(self.pricing_model))
         for key, val in self.market.market_state.__dict__.items():
             self.analysis_dict[key].append(val)
         self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)
