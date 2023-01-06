@@ -345,7 +345,15 @@ class Market:
                 fee_percent=self.fee_percent,
                 time_remaining=time_remaining,
             )
-            pricing_model.check_output_assertions(trade_result=trade_result)
+            # FIXME
+            try:
+                pricing_model.check_output_assertions(trade_result=trade_result)
+            except:
+                print(f"{trade_quantity=}")
+                print(f"{self.market_state=}")
+                print(f"{self.fee_percent=}")
+                print(f"{time_remaining=!s}")
+                raise AssertionError
 
             # Log the trade result.
             logging.debug(
@@ -362,7 +370,7 @@ class Market:
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
                 base=trade_result.user_result.d_base,
-                shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
+                longs={agent_action.mint_time: trade_result.user_result.d_bonds},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:

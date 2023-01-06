@@ -177,9 +177,7 @@ class Simulator:
                 trade_list = agent.get_trade_list(self.market, self.pricing_model)
             for agent_trade in trade_list:  # execute trades
                 wallet_deltas = self.market.trade_and_update(agent_trade, self.pricing_model)
-                agent.update_wallet(
-                    wallet_deltas, self.market
-                )  # update agent state since market doesn't know about agents
+                agent.update_wallet(wallet_deltas, self.market)
                 logging.debug(
                     "agent #%g wallet deltas = \n%s",
                     agent.wallet.address,
