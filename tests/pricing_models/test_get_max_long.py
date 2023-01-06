@@ -32,7 +32,13 @@ class TestGetMaxLong(unittest.TestCase):
     """Tests for get_max_long"""
 
     def test_get_max_long(self):
-        """Tests for get_max_long"""
+        """Tests that get_max_long is safe.
+
+        These tests ensure that trades made with get_max_long will not put the
+        market into a pathological state (i.e. the trade amount is non-negative,
+        the bond reserves is non-negative, the buffer invariants hold, and the
+        APR is still non-negative).
+        """
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
 
         test_cases: list[TestCaseGetMaxLongCase] = [
