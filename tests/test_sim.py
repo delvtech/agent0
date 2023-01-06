@@ -46,7 +46,7 @@ class BaseSimTest(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
             random_sim_vars.vault_apr,
@@ -58,7 +58,7 @@ class BaseSimTest(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apy,
+                random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
                 init_liquidity=1,
             )

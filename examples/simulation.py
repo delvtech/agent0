@@ -144,9 +144,10 @@ def run_random_agent_simulation(config: Config):
     sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     sim_market = sim_utils.get_market(
         sim_pricing_model,
-        random_sim_vars.target_pool_apy,
+        random_sim_vars.target_pool_apr,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,
+        random_sim_vars.vault_apr,
         random_sim_vars.init_share_price,
     )
 
@@ -157,7 +158,7 @@ def run_random_agent_simulation(config: Config):
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
         )
     }

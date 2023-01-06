@@ -3,7 +3,6 @@
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
-from dataclasses import dataclass, field
 from typing import Any, Callable, TYPE_CHECKING
 import logging
 
@@ -30,7 +29,7 @@ def get_init_lp_agent(
     market: Market,
     pricing_model: PricingModel,
     target_liquidity: float,
-    target_pool_apy: float,
+    target_pool_apr: float,
     fee_percent: float,
     init_liquidity: float = 1,
 ) -> Agent:
@@ -45,8 +44,8 @@ def get_init_lp_agent(
     target_liquidity : float
         target total liquidity for LPer to provide (bonds+shares)
         the result will be within 7% of the target
-    target_pool_apy : float
-        target pool apy for the market
+    target_pool_apr : float
+        target pool apr for the market
         the result will be within 0.001 of the target
     fee_percent : float
         how much the LPer will collect in fees
@@ -63,7 +62,7 @@ def get_init_lp_agent(
     # get the reserve amounts for a small target liquidity to achieve a target pool APR
     init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
         target_liquidity=init_liquidity,
-        target_apr=target_pool_apy,
+        target_apr=target_pool_apr,
         market=market,
         pricing_model=pricing_model,
     )[:2]
@@ -96,12 +95,12 @@ def get_init_lp_agent(
     logging.info(
         (
             "Init LP agent #%g statistics:\n\t"
-            "target_apy = %g\n\ttarget_liquidity = %g\n\t"
+            "target_apr = %g\n\ttarget_liquidity = %g\n\t"
             "budget = %g\n\tfirst_base_to_lp = %g\n\t"
             "pt_to_short = %g\n\tsecond_base_to_lp = %g"
         ),
         init_lp_agent.wallet_address,
-        target_pool_apy,
+        target_pool_apr,
         target_liquidity,
         budget,
         first_base_to_lp,
@@ -113,7 +112,7 @@ def get_init_lp_agent(
 
 def get_market(
     pricing_model: PricingModel,
-    target_pool_apy: float,
+    target_pool_apr: float,
     fee_percent: float,
     position_duration: float,
     vault_apr: list,
@@ -125,9 +124,9 @@ def get_market(
     ---------
     pricing_model : PricingModel
         instantiated pricing model
-    target_pool_apy : float
-        target apy, used for calculating the time stretch
-        NOTE: the market apy will not have this target value until the init_lp agent trades,
+    target_pool_apr : float
+        target apr, used for calculating the time stretch
+        NOTE: the market apr will not have this target value until the init_lp agent trades,
         or the share & bond reserves are explicitly set
     fee_percent : float
         portion of outputs to be collected as fees for LPers, expressed as a decimal
@@ -145,6 +144,8 @@ def get_market(
         instantiated market without any liquidity (i.e. no shares or bonds)
 
     """
+    # Wrapper functions are expected to have a lot of arguments
+    # pylint: disable=too-many-arguments
     market = Market(
         market_state=MarketState(
             init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
@@ -152,7 +153,7 @@ def get_market(
             vault_apr=vault_apr[0],  # yield bearing source apr
         ),
         position_duration=StretchedTime(
-            days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apy)
+            days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apr)
         ),
         fee_percent=fee_percent,  # g
     )
@@ -249,9 +250,9 @@ def get_random_variables(config, rng):
     """
     random_vars = RandomSimulationVariables(
         target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),
-        target_pool_apy=rng.uniform(
-            low=config.amm.min_pool_apy, high=config.amm.max_pool_apy
-        ),  # starting fixed apy as a decimal
+        target_pool_apr=rng.uniform(
+            low=config.amm.min_pool_apr, high=config.amm.max_pool_apr
+        ),  # starting fixed apr as a decimal
         fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
         vault_apr=setup_vault_apr(config, rng),
         init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
@@ -279,7 +280,7 @@ def override_random_variables(
     """
     allowed_keys = [
         "target_liquidity",
-        "target_pool_apy",
+        "target_pool_apr",
         "fee_percent",
         "init_vault_age",
     ]

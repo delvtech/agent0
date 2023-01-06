@@ -1,7 +1,6 @@
 """A set of common types used throughtout the simulation codebase."""
 
 from dataclasses import dataclass, field
-from typing import Callable
 from enum import Enum
 
 from elfpy.utils.outputs import float_to_string
@@ -143,10 +142,14 @@ class MarketDeltas:
         return output_string
 
 
-# TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
 @dataclass
 class MarketState:
-    """The state of an AMM"""
+    """The state of an AMM
+    TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    """
+
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
 
     # trading reserves
     share_reserves: float = 0.0
@@ -240,7 +243,7 @@ class RandomSimulationVariables:
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
-    target_pool_apy: float = field(metadata="desired fixed apy for as a decimal")
+    target_pool_apr: float = field(metadata="desired fixed apr for as a decimal")
     fee_percent: float = field(metadata="percent to charge for LPer fees")
     vault_apr: list = field(metadata="yield bearing source APR")
     init_vault_age: float = field(metadata="fraction of a year since the vault was opened")

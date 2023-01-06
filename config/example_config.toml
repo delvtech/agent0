@@ -15,8 +15,8 @@ pricing_model_name = "Hyperdrive" # specify a pricing model
 # random variables
 min_fee = 0.1  # decimal that assigns fee_percent
 max_fee = 0.5  # decimal that assigns fee_percent
-min_pool_apy = 0.02  # as a decimal
-max_pool_apy = 0.9  # as a decimal
+min_pool_apr = 0.02  # as a decimal
+max_pool_apr = 0.9  # as a decimal
 # fixed variables
 floor_fee = 0  # minimum fee percentage (bps)
 

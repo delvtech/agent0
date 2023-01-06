@@ -221,7 +221,7 @@ class Simulator:
                     d_share_price=(
                         self.market.market_state.vault_apr  # current day's apy
                         / 365  # convert annual yield to daily
-                        * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
+                        * self.market.market_state.init_share_price  # apply return to starting price (no compounding)
                     )
                 )
                 self.market.update_market(delta)
