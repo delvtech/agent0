@@ -12,6 +12,7 @@ from numpy.random._generator import Generator
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
+from elfpy.types import MarketDeltas
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
@@ -83,7 +84,7 @@ class Simulator:
             "init_vault_age",
             "base_asset_price",
             "vault_apr",
-            "pool_apy",
+            "pool_apr",
             "share_reserves",  # from market state
             "bond_reserves",  # from market state
             "base_buffer",  # from market state
@@ -213,14 +214,21 @@ class Simulator:
         self.start_time = time_utils.current_datetime()
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
+            self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                self.market.market_state.share_price += (
-                    self.random_variables.vault_apr[self.day]  # current day's apy
-                    / 365  # convert annual yield to daily
-                    * self.market.market_state.init_share_price  # APR, apply return to starting price (no compounding)
-                    # * self.market.share_price # APY, apply return to latest price (full compounding)
+                if self.config.simulator.compound_vault_apr:  # Apply return to latest price (full compounding)
+                    price_multiplier = self.market.market_state.share_price
+                else:  # Apply return to starting price (no compounding)
+                    price_multiplier = self.market.market_state.init_share_price
+                delta = MarketDeltas(
+                    d_share_price=(
+                        self.market.market_state.vault_apr  # current day's apy
+                        / 365  # convert annual yield to daily
+                        * price_multiplier
+                    )
                 )
+                self.market.update_market(delta)
             for daily_block_number in range(self.config.simulator.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
@@ -262,8 +270,8 @@ class Simulator:
         self.analysis_dict["floor_fee"].append(self.config.amm.floor_fee)
         self.analysis_dict["init_vault_age"].append(self.random_variables.init_vault_age)
         self.analysis_dict["base_asset_price"].append(self.config.market.base_asset_price)
-        self.analysis_dict["vault_apr"].append(self.random_variables.vault_apr[self.day])
-        self.analysis_dict["pool_apy"].append(self.market.get_rate(self.pricing_model))
+        self.analysis_dict["pool_apr"].append(self.market.get_rate(self.pricing_model))
+        # Include all market state variables
         for key, val in self.market.market_state.__dict__.items():
             self.analysis_dict[key].append(val)
         self.analysis_dict["num_trading_days"].append(self.config.simulator.num_trading_days)

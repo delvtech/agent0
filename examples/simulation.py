@@ -6,7 +6,6 @@ from typing import Any, Optional
 # external imports
 import numpy as np
 from numpy.random import Generator
-from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
@@ -140,18 +139,15 @@ def run_random_agent_simulation(config: Config):
     # Sample the random simulation arguments.
     rng = np.random.default_rng(config.simulator.random_seed)
     random_sim_vars = sim_utils.get_random_variables(config, rng)
-    # TODO: The stochastic process should be part of the config.
-    random_sim_vars.vault_apr = GeometricBrownianMotion(rng=rng).sample(
-        n=config.simulator.num_trading_days - 1, initial=0.05  # pyright: ignore
-    )
 
     # Instantiate the pricing model and market.
     sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     sim_market = sim_utils.get_market(
         sim_pricing_model,
-        random_sim_vars.target_pool_apy,
+        random_sim_vars.target_pool_apr,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,
+        random_sim_vars.vault_apr,
         random_sim_vars.init_share_price,
     )
 
@@ -162,7 +158,7 @@ def run_random_agent_simulation(config: Config):
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
         )
     }
@@ -195,6 +191,7 @@ if __name__ == "__main__":
         override_dict["num_blocks_per_day"] = args.blocks_per_day
     if args.log_level is not None:
         override_dict["logging_level"] = args.log_level
+    override_dict["vault_apr"] = {"type": "GeometricBrownianMotion", "initial": 0.05}
     config_ = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
 
     # Define root logging parameters.

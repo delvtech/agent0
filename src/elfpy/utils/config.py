@@ -6,6 +6,7 @@ Config structure
 
 
 from dataclasses import dataclass, field
+from typing import Callable, Union
 
 
 @dataclass
@@ -18,8 +19,10 @@ class MarketConfig:
     max_target_volume: float = field(default=0.01, metadata={"hint": "fraction of pool liquidity"})
     min_vault_age: int = field(default=0, metadata={"hint": "fraction of a year"})
     max_vault_age: int = field(default=1, metadata={"hint": "fraction of a year"})
-    min_vault_apr: float = field(default=0.001, metadata={"hint": "decimal"})
-    max_vault_apr: float = field(default=0.9, metadata={"hint": "decimal"})
+    vault_apr: Union[Callable, dict] = field(
+        default_factory=lambda: {"type": "constant", "value": 0.3},
+        metadata={"hint": "the underlying (variable) vault apr at each time step"},
+    )
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
 
 
@@ -30,8 +33,8 @@ class AMMConfig:
     pricing_model_name: str = field(default="Hyperdrive", metadata={"hint": 'Must be "Hyperdrive", or "YieldSpace"'})
     min_fee: float = field(default=0.1, metadata={"hint": "decimal that assignes fee_percent"})
     max_fee: float = field(default=0.5, metadata={"hint": "decimal that assignes fee_percent"})
-    min_pool_apy: float = field(default=0.02, metadata={"hint": "as a decimal"})
-    max_pool_apy: float = field(default=0.9, metadata={"hint": "as a decimal"})
+    min_pool_apr: float = field(default=0.02, metadata={"hint": "as a decimal"})
+    max_pool_apr: float = field(default=0.9, metadata={"hint": "as a decimal"})
     floor_fee: float = field(default=0, metadata={"hint": "minimum fee percentage (bps)"})
 
 
@@ -40,7 +43,6 @@ class SimulatorConfig:
     """config parameters specific to the simulator"""
 
     # durations
-    pool_duration: int = field(default=180, metadata={"hint": "in days"})
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
     token_duration: float = field(
@@ -52,16 +54,11 @@ class SimulatorConfig:
     agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
 
-    # trading
-    target_liquidity: float = field(default=0, metadata={"hint": ""})
-    target_daily_volume: float = field(default=0, metadata={"hint": "daily volume in base asset of trades"})
-    fee_percent: float = field(default=0, metadata={"hint": ""})
-
     # vault
-    init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
-    vault_apr: list[float] = field(
-        default_factory=list, metadata={"hint": "the underlying (variable) vault apy at each time step"}
+    compound_vault_apr: bool = field(
+        default=True, metadata={"hint": "whether or not to use compounding revenue for the underlying yield source"}
     )
+    init_vault_age: float = field(default=0, metadata={"hint": "initial vault age"})
 
     # logging
     logging_level: str = field(default="info", metadata={"hint": "Logging level, as defined by stdlib logging"})

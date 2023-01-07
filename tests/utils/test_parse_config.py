@@ -26,31 +26,26 @@ class TestParseSimulationConfig(unittest.TestCase):
             max_target_liquidity=10000000.0,
             min_vault_age=0,
             max_vault_age=1,
-            min_vault_apr=0.001,
-            max_vault_apr=0.9,
+            vault_apr={"type": "constant", "value": 0.05},
             base_asset_price=2500.0,
         )
 
         # manually set AMM config to be the same as the TOML file
         amm = config_utils.AMMConfig(
-            pricing_model_name="Hyperdrive", min_fee=0.1, max_fee=0.5, min_pool_apy=0.02, max_pool_apy=0.9, floor_fee=0
+            pricing_model_name="Hyperdrive", min_fee=0.1, max_fee=0.5, min_pool_apr=0.02, max_pool_apr=0.9, floor_fee=0
         )
 
         # manually set Simulator config to be the same as the TOML file
         simulator = config_utils.SimulatorConfig(
-            pool_duration=180,
             num_trading_days=180,
             num_blocks_per_day=7200,
             token_duration=180,
-            precision=64,
             agent_policies=["single_long"],
-            random_seed=123,
             shuffle_users=True,
             init_lp=True,
-            target_liquidity=10000000,
-            fee_percent=0.10,
-            init_vault_age=0,
-            vault_apr=[0.05],
+            compound_vault_apr=True,
+            random_seed=123,
+            precision=64,
             logging_level="warning",
         )
 
@@ -71,32 +66,27 @@ class TestParseSimulationConfig(unittest.TestCase):
                 "max_target_liquidity": 10000000.0,
                 "min_vault_age": 0,
                 "max_vault_age": 1,
-                "min_vault_apr": 0.001,
-                "max_vault_apr": 0.9,
+                "vault_apr": {"type": "constant", "value": 0.05},
                 "base_asset_price": 2500.0,
             },
             "amm": {
                 "pricing_model_name": "Hyperdrive",
                 "min_fee": 0.1,
                 "max_fee": 0.5,
-                "min_pool_apy": 0.02,
-                "max_pool_apy": 0.9,
+                "min_pool_apr": 0.02,
+                "max_pool_apr": 0.9,
                 "floor_fee": 0,
             },
             "simulator": {
-                "pool_duration": 180,
                 "num_trading_days": 180,
                 "num_blocks_per_day": 7200,
                 "token_duration": 180,
-                "precision": 64,
                 "agent_policies": ["single_long"],
                 "random_seed": 123,
                 "shuffle_users": True,
                 "init_lp": True,
-                "target_liquidity": 10000000,
-                "fee_percent": 0.1,
-                "init_vault_age": 0,
-                "vault_apr": [0.05],
+                "compound_vault_apr": True,
+                "precision": 64,
                 "logging_level": "warning",
             },
         }

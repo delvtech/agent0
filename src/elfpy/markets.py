@@ -40,6 +40,7 @@ class Market:
             base_buffer=0,
             bond_buffer=0,
             lp_reserves=0,
+            vault_apr=0,
             share_price=1,
             init_share_price=1,
         ),

@@ -37,9 +37,10 @@ class BaseLogTest(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
+            random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
         # instantiate the init_lp agent
@@ -48,7 +49,7 @@ class BaseLogTest(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apy,
+                random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
             )
         }

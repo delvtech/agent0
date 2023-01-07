@@ -6,8 +6,7 @@ min_target_liquidity = 1e6  # in shares
 max_target_liquidity = 10e6  # in shares
 min_vault_age = 0  # fraction of a year
 max_vault_age = 1  # fraction of a year
-min_vault_apr = 0.001  # as a decimal
-max_vault_apr = 0.9  # as a decimal
+vault_apr = {type = "constant", value = 0.05}
 # fixed variables
 base_asset_price = 1  # aka market price
 
@@ -16,8 +15,8 @@ pricing_model_name = "Hyperdrive" # specify a pricing model
 # random variables
 min_fee = 0.1  # decimal that assigns fee_percent
 max_fee = 0.5  # decimal that assigns fee_percent
-min_pool_apy = 0.02  # as a decimal
-max_pool_apy = 0.9  # as a decimal
+min_pool_apr = 0.02  # as a decimal
+max_pool_apr = 0.9  # as a decimal
 # fixed variables
 floor_fee = 0  # minimum fee percentage (bps)
 
@@ -26,9 +25,10 @@ floor_fee = 0  # minimum fee percentage (bps)
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
 token_duration = 0.24657534246575342465753424657534  # 90 / 365 = time lapse between token mint and expiry as a yearfrac
-precision = 64 # 64 is max precision (and the default for numpy)
 agent_policies = ["single_long"] # specify a list of trading policies by name
 shuffle_users = true # shuffle order of action (as if random gas paid)
 init_lp = true # use initial LP to seed pool
+compound_vault_apr = true # whether or not to use compounding revenue for the underlying yield source
+precision = 64 # 64 is max precision (and the default for numpy)
 random_seed = 123 # to be passed to a rng
 logging_level = "info" # must be one of [DEBUG, INFO, WARNING, ERROR, CRITICAL]

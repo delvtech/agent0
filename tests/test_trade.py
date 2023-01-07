@@ -39,9 +39,10 @@ class BaseTradeTest(unittest.TestCase):
         # instantiate the market
         market = sim_utils.get_market(
             pricing_model,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
             config.simulator.token_duration,
+            random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
         # instantiate the init_lp agent
@@ -50,7 +51,7 @@ class BaseTradeTest(unittest.TestCase):
                 market,
                 pricing_model,
                 random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apy,
+                random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
             )
         }
@@ -90,8 +91,8 @@ class BaseTradeTest(unittest.TestCase):
             "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6,
             "fee_percent": 0.1,
-            "target_pool_apy": 0.05,
-            "vault_apr": 0.05,
+            "target_pool_apr": 0.05,
+            "vault_apr": {"type": "constant", "value": 0.05},
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
         }
@@ -111,8 +112,8 @@ class BaseTradeTest(unittest.TestCase):
         override_dict = {
             "pricing_model_name": "Yieldspace",
             "target_liquidity": target_liquidity,
-            "target_pool_apy": target_pool_apr,
-            "vault_apr": 0.05,
+            "target_pool_apr": target_pool_apr,
+            "vault_apr": {"type": "constant", "value": 0.05},
             "fee_percent": 0.1,
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing

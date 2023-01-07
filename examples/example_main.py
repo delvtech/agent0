@@ -40,7 +40,7 @@ class CustomShorter(Agent):
         block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
         can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
-        vault_apr = market.market_state.share_price * 365 / market.market_state.init_share_price
+        vault_apr = market.market_state.vault_apr
         action_list = []
         if can_open_short:
             if vault_apr > market.get_rate(pricing_model):
@@ -111,14 +111,20 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # define & parse script args
     args = get_argparser().parse_args()
+    # get config & logging level
+    config = config_utils.load_and_parse_config_file(args.config)
     # override any particular simulation arguments
     override_dict = {}
     if args.trading_days is not None:
         override_dict["num_trading_days"] = args.trading_days
     if args.blocks_per_day is not None:
         override_dict["num_blocks_per_day"] = args.blocks_per_day
-    # get config & logging level
-    config = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
+    override_dict["vault_apr"] = {
+        "type": "uniform",
+        "low": 0.001,
+        "high": 0.9,
+    }
+    config = sim_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
     # define root logging parameters
@@ -136,9 +142,10 @@ if __name__ == "__main__":
     # instantiate the market
     sim_market = sim_utils.get_market(
         sim_pricing_model,
-        random_sim_vars.target_pool_apy,
+        random_sim_vars.target_pool_apr,
         random_sim_vars.fee_percent,
         config.simulator.token_duration,
+        random_sim_vars.vault_apr,
         random_sim_vars.init_share_price,
     )
     # instantiate the init_lp agent
@@ -147,7 +154,7 @@ if __name__ == "__main__":
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apy,
+            random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
         )
     }
