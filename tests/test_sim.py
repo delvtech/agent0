@@ -196,6 +196,7 @@ class BaseSimTest(unittest.TestCase):
             os.remove(file_loc)
 
     def run_analysis_dict_test(self, delete_logs=True):
+        """Runs a small number of trades, then checks that analysis_dict has the correct number of logs per category"""
         self.setup_logging()
         config_file = "config/example_config.toml"
         override_dict = {"num_trading_days": 3, "num_blocks_per_day": 3}
