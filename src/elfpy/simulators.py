@@ -125,6 +125,20 @@ class Simulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
+    def add_agents(self, agent_list: list) -> None:
+        for agent in agent_list:
+            # add the agent to the agents list
+            self.agents.update({agent.wallet.address: agent})
+            # update the simulator state to include empty trades
+            setattr(
+                self.analysis_dict,
+                f"agent_{agent.wallet.address}",
+                [
+                    None,
+                ]
+                * self.run_trade_number,
+            )
+
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
         """Get trades from the agent list, execute them, and update states
 
