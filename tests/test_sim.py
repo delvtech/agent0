@@ -88,6 +88,7 @@ class BaseSimTest(unittest.TestCase):
         simulator.collect_and_execute_trades()
         # run the simulation
         simulator.run_simulation()
+        return simulator
 
     def run_hyperdrive_test(self, delete_logs=True):
         """Tests the simulator output to verify that indices are correct"""
@@ -95,9 +96,8 @@ class BaseSimTest(unittest.TestCase):
         config_file = "config/example_config.toml"
         for rng_seed in range(1, 10):
             try:
-                # simulator.setup_simulated_entities()
                 override_dict = {"num_trading_days": 5, "num_blocks_per_day": 3}
-                self.setup_and_run_simulator(config_file, override_dict)
+                _ = self.setup_and_run_simulator(config_file, override_dict)
             # pylint: disable=broad-except
             except Exception as exc:
                 raise AssertionError(f"ERROR: Test failed at seed {rng_seed}") from exc
@@ -195,6 +195,24 @@ class BaseSimTest(unittest.TestCase):
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
 
+    def run_analysis_dict_test(self, delete_logs=True):
+        self.setup_logging()
+        config_file = "config/example_config.toml"
+        override_dict = {"num_trading_days": 3, "num_blocks_per_day": 3}
+        simulator = self.setup_and_run_simulator(config_file, override_dict)
+        analysis_dict_num_writes = np.array([len(value) for value in simulator.analysis_dict.values()])
+        goal_writes = analysis_dict_num_writes[0]
+        try:
+            np.testing.assert_equal(analysis_dict_num_writes, goal_writes)
+        except Exception as exc:
+            bad_keys = [
+                key for key in simulator.analysis_dict.keys() if len(simulator.analysis_dict[key]) != goal_writes
+            ]
+            raise AssertionError(f"ERROR: Analysis keys have too many entries: {bad_keys}") from exc
+        if delete_logs:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)
+
 
 class TestSimulator(BaseSimTest):
     """Test running a simulation using each pricing model type"""
@@ -215,3 +233,7 @@ class TestSimulator(BaseSimTest):
     def test_random_variables(self):
         """Test override & initalizaiton of random variables"""
         self.run_random_variables_test(delete_logs=True)
+
+    def test_analysis_dict(self):
+        """Test override & initalizaiton of random variables"""
+        self.run_analysis_dict_test(delete_logs=True)
