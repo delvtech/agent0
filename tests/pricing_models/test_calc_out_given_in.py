@@ -8,6 +8,7 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=duplicate-code
 
+from decimal import Decimal
 from dataclasses import dataclass
 import decimal
 from typing import Type
@@ -17,6 +18,7 @@ import numpy as np
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
 
@@ -1258,3 +1260,48 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         time_remaining=test_case.time_remaining,
                     )
                     pricing_model.check_output_assertions(trade_result=trade_result)
+
+    # FIXME: Remove this test once it's served its purpose.
+    def test_example(self):
+        # pricing_model: PricingModel = HyperdrivePricingModel()
+        # trade_quantity = Quantity(amount=1.7359883498549127e-09, unit=TokenType.PT)
+        # market_state = MarketState(
+        #     share_reserves=6886430.0517728785,
+        #     bond_reserves=1861020.3831258137,
+        #     base_buffer=9937.310853662613,
+        #     bond_buffer=1.0024308644783892,
+        #     lp_reserves=14035648.707374929,
+        #     share_price=1.0393188529045994,
+        #     init_share_price=1.038436427353945,
+        # )
+        # fee_percent = 0.18814394910904456
+        # time_remaining = StretchedTime(days=83.64513888889257, time_stretch=16.468271036923056)
+        # trade_result = pricing_model.calc_out_given_in(
+        #     in_=trade_quantity,
+        #     market_state=market_state,
+        #     fee_percent=fee_percent,
+        #     time_remaining=time_remaining,
+        # )
+        # print(f"{trade_result=}")
+
+        print("\n")
+        pricing_model: PricingModel = YieldSpacePricingModel()
+        trade_quantity = Quantity(amount=3.9782736063866743e-10, unit=TokenType.PT)
+        market_state = MarketState(
+            share_reserves=6886430.051772878,
+            bond_reserves=1861020.383125815,
+            base_buffer=9937.310853662613,
+            bond_buffer=1.0024308644783892,
+            lp_reserves=14035648.707374929,
+            share_price=1.0393188529045994,
+            init_share_price=1.038436427353945,
+        )
+        fee_percent = 0.18814394910904456
+        time_remaining = StretchedTime(days=365, time_stretch=16.468271036923056)
+        trade_result = pricing_model.calc_out_given_in(
+            in_=trade_quantity,
+            market_state=market_state,
+            fee_percent=fee_percent,
+            time_remaining=time_remaining,
+        )
+        print(f"{trade_result=}")

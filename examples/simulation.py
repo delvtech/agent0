@@ -51,23 +51,24 @@ class RandomAgent(Agent):
             # Randomly open or close a position depending on the trader's
             # ability to perform these actions.
             if max_long > 0 and len(open_longs) == 0:
-                action_list.append(self._open_long(max_long=max_long))
+                action_list.append(self._open_long(max_long=max_long, market_time=market.time))
             elif max_long == 0 and len(open_longs) > 0:
                 action_list.append(self._close_long(open_longs))
             elif max_long > 0 and len(open_longs) > 0:
                 flip = self.rng.random()
                 if flip < 0.5:
-                    action_list.append(self._open_long(max_long=max_long))
+                    action_list.append(self._open_long(max_long=max_long, market_time=market.time))
                 else:
                     action_list.append(self._close_long(open_longs))
 
         return action_list
 
-    def _open_long(self, max_long: float) -> MarketAction:
+    def _open_long(self, max_long: float, market_time: float) -> MarketAction:
         return self.create_agent_action(
             action_type=MarketActionType.OPEN_LONG,
             # Uniformly select trade amounts from (0, max_long].
             trade_amount=abs(self.rng.uniform(-max_long, 0)),
+            mint_time=market_time,
         )
 
     def _close_long(self, open_longs: list[tuple[float, float]]) -> MarketAction:
