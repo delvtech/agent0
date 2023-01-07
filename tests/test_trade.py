@@ -73,7 +73,7 @@ class BaseTradeTest(unittest.TestCase):
                 wallet_address=wallet_address,  # first policy goes to init_lp_agent
             )
             agent.log_status_report()
-            simulator.agents.update({agent.wallet_address: agent})
+            simulator.agents.update({agent.wallet.address: agent})
         return (simulator, market, pricing_model)
 
     @staticmethod

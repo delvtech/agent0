@@ -19,6 +19,7 @@ def analysis_dict_to_dataframe(analysis_dict: dict) -> pd.DataFrame:
         Pandas dataframe containing the analysis_dict keys as columns, as well as some computed columns
     """
     # construct simulation dataframe output
+    agent_wallets = analysis_dict.pop("agent_wallets")
     trades = pd.DataFrame.from_dict(analysis_dict)
     # calculate derived variables across runs
     trades["pool_apr_percent"] = trades.pool_apr * 100
@@ -48,7 +49,7 @@ def analysis_dict_to_dataframe(analysis_dict: dict) -> pd.DataFrame:
     trades["share_price_total_return_percent_annualized"] = scale * trades["share_price_total_return_percent"]
     # create explicit column that increments per trade
     trades = trades.reset_index()
-    return trades
+    return trades, agent_wallets
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:

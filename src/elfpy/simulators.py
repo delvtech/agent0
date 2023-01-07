@@ -95,6 +95,7 @@ class Simulator:
             "num_trading_days",  # number of days in a simulation
             "num_blocks_per_day",  # number of blocks in a day, simulates time between blocks
             "spot_price",
+            "agent_wallets",
         ]
         self.analysis_dict = {key: [] for key in analysis_keys}
 
@@ -190,7 +191,7 @@ class Simulator:
                 )  # update agent state since market doesn't know about agents
                 logging.debug(
                     "agent #%g wallet deltas = \n%s",
-                    agent.wallet_address,
+                    agent.wallet.address,
                     wallet_deltas.__dict__,
                 )
                 agent.log_status_report()
@@ -282,3 +283,7 @@ class Simulator:
             self.analysis_dict["spot_price"].append(self.market.get_spot_price(self.pricing_model))
         else:
             self.analysis_dict["spot_price"].append(np.nan)
+        for agent in self.agents.values():
+            self.analysis_dict["agent_wallets"].append(
+                [self.run_trade_number, agent.wallet.address, agent.wallet.base, agent.wallet.lp_tokens]
+            )

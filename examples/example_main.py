@@ -69,7 +69,7 @@ def get_example_agents(
     for wallet_address in range(loop_start, loop_end):
         agent = CustomShorter(wallet_address)
         agent.log_status_report()
-        agents.update({agent.wallet_address: agent})
+        agents.update({agent.wallet.address: agent})
     return agents
 
 

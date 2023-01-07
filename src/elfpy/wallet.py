@@ -36,17 +36,19 @@ class Wallet:
     # pylint: disable=too-many-instance-attributes
     # dataclasses can have many attributes
 
-    # fungible
+    # agent identifier
     address: int
+
+    # fungible
     base: float
-    lp_tokens: float = 0  # pylint: disable=invalid-name
+    lp_tokens: float = 0
 
     # non-fungible (identified by mint_time, stored as dict)
     longs: dict = field(default_factory=dict)
     shorts: dict = field(default_factory=dict)
     margin: dict = field(default_factory=dict)
 
-    # TODO: This isn't used for short trades.
+    # TODO: This isn't used for short trades
     effective_price: float = field(init=False)  # calculated after init, only for transactions
     fees_paid: float = 0
 
