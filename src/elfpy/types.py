@@ -345,25 +345,6 @@ class SimulationState:
         else:
             setattr(self, f"agent_{agent.wallet.address}", [d_state])
 
-    def pop(self, key) -> Any:
-        """Remove entry, referenced by the `key` argument, from the SimulationState object and return that entry
-
-        Arguments
-        ---------
-        key : str
-            index string for dereferencing the object (behaves the same as a dictionary key)
-
-        Returns
-        ---------
-        Any | None
-            The value corresponding to the `key` argument
-        """
-        if hasattr(self, key):
-            val = getattr(self, key)
-            delattr(self, key)
-            return val
-        return None
-
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
