@@ -1,7 +1,7 @@
 """Example main.py file for illustrating a simulator workflow"""
 # stdlib
 import argparse
-from typing import Any, Optional
+from typing import Any
 
 # external imports
 import numpy as np
