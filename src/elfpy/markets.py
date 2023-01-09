@@ -47,10 +47,17 @@ class Market:
         position_duration: StretchedTime = StretchedTime(365, 1),
     ):
         # market state variables
-        self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self._time: StretchedTime = StretchedTime(
+            days=0, time_stretch=position_duration.time_stretch
+        )  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.market_state: MarketState = market_state
         self.fee_percent: float = fee_percent  # g
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
+
+    @property
+    def time(self) -> float:
+        """Get the current time in the market"""
+        return self._time.normalized_time
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         """Ensure that the agent action is an allowed action for this market
@@ -198,8 +205,23 @@ class Market:
         return state_string
 
     def tick(self, delta_time: float) -> None:
-        """Increments the time member variable"""
-        self.time += delta_time
+        """
+        Increments the time member variable
+
+        Arguments
+        ---------
+        delta_time: float
+            time between blocks, which is computed as 1 / blocks_per_year
+            in units of years
+            calculated in simulators.py by market_step_size()
+
+        Returns
+        ---------
+        float
+            current market time, after being incremented by delta_time
+            in units of years
+        """
+        self._time += delta_time
 
     def _open_short(
         self,

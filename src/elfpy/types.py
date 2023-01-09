@@ -41,29 +41,35 @@ class StretchedTime:
     # TODO: Improve this constructor so that StretchedTime can be constructed
     # from yearfracs.
     def __init__(self, days: float, time_stretch: float):
-        self._days = days
+        self._years = days * 365
         self._time_stretch = time_stretch
-        self._stretched_time = time_utils.days_to_time_remaining(self._days, self._time_stretch)
 
     @property
     def days(self):
-        """Format time as days."""
-        return self._days
+        """Return time in days"""
+        return self._years * 365
 
     @property
     def normalized_time(self):
-        """Format time as normalized days."""
-        return time_utils.norm_days(self._days)
+        """Return time in years"""
+        return self._years
 
     @property
     def stretched_time(self):
-        """Format time as stretched time."""
-        return self._stretched_time
+        """Return as stretched time"""
+        return time_utils.days_to_time_remaining(self._days, self._time_stretch)
 
     @property
     def time_stretch(self):
         """The time stretch constant."""
         return self._time_stretch
+
+    def __iadd__(self, other):
+        """Add a time to this time"""
+        if isinstance(other, StretchedTime):
+            other = other.normalized_time
+        self._years += other
+        return self
 
     def __str__(self):
         out_str = (
@@ -146,6 +152,7 @@ class MarketDeltas:
 class MarketState:
     """The state of an AMM
     TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    TODO: should MarketState contain a Time or StretchedTime object? maybe StretchedTime is suclass of Time?
     """
 
     # dataclasses can have many attributes

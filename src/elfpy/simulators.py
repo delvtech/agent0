@@ -153,6 +153,7 @@ class Simulator:
         ---------
         float
             time between blocks, which is computed as 1 / blocks_per_year
+            in units of years
         """
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
