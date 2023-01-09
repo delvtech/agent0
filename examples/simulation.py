@@ -154,7 +154,6 @@ def run_random_agent_simulation(config: Config):
     # Instantiate the initial LP agent.
     init_agents = {
         0: sim_utils.get_init_lp_agent(
-            config,
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,
