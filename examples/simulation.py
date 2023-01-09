@@ -93,7 +93,7 @@ def get_example_agents(
     for wallet_address in range(loop_start, loop_end):
         agent = RandomAgent(rng, wallet_address)
         agent.log_status_report()
-        agents.update({agent.wallet_address: agent})
+        agents.update({agent.wallet.address: agent})
     return agents
 
 
@@ -154,7 +154,6 @@ def run_random_agent_simulation(config: Config):
     # Instantiate the initial LP agent.
     init_agents = {
         0: sim_utils.get_init_lp_agent(
-            config,
             sim_market,
             sim_pricing_model,
             random_sim_vars.target_liquidity,

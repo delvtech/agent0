@@ -2,9 +2,14 @@
 Implements abstract classes that control user behavior
 """
 
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from elfpy.utils.outputs import float_to_string
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 @dataclass(frozen=False)
@@ -36,34 +41,36 @@ class Wallet:
     # pylint: disable=too-many-instance-attributes
     # dataclasses can have many attributes
 
-    # fungible
+    # agent identifier
     address: int
+
+    # fungible
     base: float
-    lp_tokens: float = 0  # pylint: disable=invalid-name
+    lp_tokens: float = 0
 
     # non-fungible (identified by mint_time, stored as dict)
     longs: dict = field(default_factory=dict)
     shorts: dict = field(default_factory=dict)
     margin: dict = field(default_factory=dict)
 
-    # TODO: This isn't used for short trades.
+    # TODO: This isn't used for short trades
     effective_price: float = field(init=False)  # calculated after init, only for transactions
     fees_paid: float = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post initialization function"""
         # check if this represents a trade (one side will be negative)
         total_tokens = sum(list(self.longs.values()))
         if self.base < 0 or total_tokens < 0:
             self.effective_price = total_tokens / self.base
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         output_string = ""
         for key, value in vars(self).items():
             if value:  #  check if object exists
@@ -78,3 +85,8 @@ class Wallet:
                     else:
                         output_string += f"{value}"
         return output_string
+
+    @property
+    def state(self) -> tuple[int, float, float]:
+        """The wallet's current state of public variables"""
+        return (self.address, self.base, self.lp_tokens)

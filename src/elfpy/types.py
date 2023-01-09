@@ -1,10 +1,16 @@
 """A set of common types used throughtout the simulation codebase."""
 
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 
 from elfpy.utils.outputs import float_to_string
 import elfpy.utils.time as time_utils
+
+if TYPE_CHECKING:
+    from elfpy.agent import Agent
+    from typing import Any
 
 
 class TokenType(Enum):
@@ -253,3 +259,96 @@ class RandomSimulationVariables:
         """init_share_price is a function of other random variables"""
         if self.init_share_price is None:
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
+
+
+@dataclass
+class SimulationState:
+    """Simulator state, updated after each trade"""
+
+    # dataclasses can have many attributes
+    # pylint: disable=too-many-instance-attributes
+    model_name: list = field(
+        default_factory=list, metadata={"hint": "the name of the pricing model that is used in simulation"}
+    )
+    run_number: list = field(default_factory=list, metadata={"hint": "simulation index"})
+    simulation_start_time: list = field(
+        default_factory=list, metadata={"hint": "start datetime for a given simulation"}
+    )
+    day: list = field(default_factory=list, metadata={"hint": "day index in a given simulation"})
+    block_number: list = field(default_factory=list, metadata={"hint": " integer, block index in a given simulation"})
+    daily_block_number: list = field(default_factory=list, metadata={"hint": " integer, block index in a given day"})
+    block_timestamp: list = field(default_factory=list, metadata={"hint": " datetime of a given block's creation"})
+    current_market_datetime: list = field(
+        default_factory=list, metadata={"hint": " float, current market time as a datetime"}
+    )
+    current_market_yearfrac: list = field(
+        default_factory=list, metadata={"hint": " float, current market time as a yearfrac"}
+    )
+    run_trade_number: list = field(
+        default_factory=list, metadata={"hint": " integer, trade number in a given simulation"}
+    )
+    market_step_size: list = field(
+        default_factory=list, metadata={"hint": " minimum time discretization for market time step"}
+    )
+    position_duration: list = field(
+        default_factory=list, metadata={"hint": " time lapse between token mint and expiry as a yearfrac"}
+    )
+    target_liquidity: list = field(
+        default_factory=list, metadata={"hint": "amount of liquidity the market should stop with"}
+    )
+    fee_percent: list = field(
+        default_factory=list, metadata={"hint": "the percentage of trade outputs to be collected as fees"}
+    )
+    floor_fee: list = field(default_factory=list, metadata={"hint": " minimum fee we take"})
+    init_vault_age: list = field(default_factory=list, metadata={"hint": "the age of the underlying vault"})
+    base_asset_price: list = field(default_factory=list, metadata={"hint": "the market price of the shares"})
+    pool_apr: list = field(default_factory=list, metadata={"hint": "apr of the AMM pool"})
+    num_trading_days: list = field(default_factory=list, metadata={"hint": " number of days in a simulation"})
+    num_blocks_per_day: list = field(
+        default_factory=list, metadata={"hint": " number of blocks in a day, simulates time between blocks"}
+    )
+    spot_price: list = field(default_factory=list, metadata={"hint": "price of shares"})
+
+    def update_market_state(self, market_state: MarketState) -> None:
+        """Update each entry in the SimulationState's copy for the market state
+        by appending to the list for each key, or creating a new key.
+
+        Arguments
+        ---------
+        market_state: MarketState
+            The state variable for the Market class
+        """
+        for key, val in market_state.__dict__.items():
+            if hasattr(self, key):
+                attribute_state = getattr(self, key)
+                attribute_state.append(val)
+                setattr(self, key, attribute_state)
+            else:
+                setattr(self, key, [val])
+
+    def update_agent_wallet(self, log_index: int, agent: Agent) -> None:
+        """Update each entry in the SimulationState's copy for the agent wallet state
+        by appending to the list for each key, or creating a new key.
+
+        Arguments
+        ---------
+        log_index : int
+            Some index indicating the log entry, typically the simulation run_trade_number
+        agent: Agent
+            An instantiated Agent object
+        """
+        d_state = [log_index] + list(agent.wallet.state)
+        if hasattr(self, f"agent_{agent.wallet.address}"):
+            agent_state = getattr(self, f"agent_{agent.wallet.address}")
+            agent_state.append(d_state)
+            setattr(self, f"agent_{agent.wallet.address}", agent_state)
+        else:
+            setattr(self, f"agent_{agent.wallet.address}", [d_state])
+
+    def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        """Set object attribute referenced by `key` to `value`"""
+        setattr(self, key, value)

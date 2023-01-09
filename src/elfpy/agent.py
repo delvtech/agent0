@@ -27,8 +27,6 @@ class Agent:
         """
         Set up initial conditions
         """
-        # TODO: remove this, wallet_address is a property of wallet, not the agent
-        self.wallet_address: int = wallet_address
         self.budget: float = budget
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
@@ -43,7 +41,7 @@ class Agent:
             action_type=action_type,
             trade_amount=trade_amount,
             # next two variables are set automatically by the basic agent class
-            wallet_address=self.wallet_address,
+            wallet_address=self.wallet.address,
             mint_time=mint_time,
         )
         return agent_action
@@ -102,7 +100,7 @@ class Agent:
                 if value_or_dict != 0 or self.wallet[key] != 0:
                     logging.debug(
                         "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.wallet_address,
+                        self.wallet.address,
                         key,
                         self.wallet[key],
                         self.wallet[key] + value_or_dict,
@@ -114,7 +112,7 @@ class Agent:
                 for mint_time, amount in value_or_dict.items():
                     logging.debug(
                         "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                        self.wallet_address,
+                        self.wallet.address,
                         key,
                         mint_time,
                         self.wallet[key],
@@ -158,7 +156,7 @@ class Agent:
         """Logs the current user state"""
         logging.debug(
             "agent %g base = %1g and fees_paid = %1g",
-            self.wallet_address,
+            self.wallet.address,
             self.wallet.base,
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
@@ -190,7 +188,7 @@ class Agent:
                 " (%.2g in %s years), net worth = $%s"
                 " from %s base and %s tokens at p = %g\n"
             ),
-            self.wallet_address,
+            self.wallet.address,
             lost_or_made,
             float_to_string(profit_and_loss),
             float_to_string(spend),

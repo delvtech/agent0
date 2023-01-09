@@ -99,7 +99,7 @@ def get_init_lp_agent(
             "budget = %g\n\tfirst_base_to_lp = %g\n\t"
             "pt_to_short = %g\n\tsecond_base_to_lp = %g"
         ),
-        init_lp_agent.wallet_address,
+        init_lp_agent.wallet.address,
         target_pool_apr,
         target_liquidity,
         budget,

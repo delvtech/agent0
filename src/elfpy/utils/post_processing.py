@@ -1,25 +1,30 @@
 """
 Helper functions for post-processing simulation outputs
 """
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
+if TYPE_CHECKING:
+    from elfpy.types import SimulationState
 
-def analysis_dict_to_dataframe(analysis_dict: dict) -> pd.DataFrame:
+
+def simulation_state_to_dataframe(simulation_state: SimulationState) -> pd.DataFrame:
     """Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Arguments
     ---------
-    analysis_dict : dict
-        analysis_dict, which is a member variable of the Simulator class
+    simulation_state : SimulationState
+        simulation_state, which is a member variable of the Simulator class
 
     Returns
     -------
     trades : DataFrame
-        Pandas dataframe containing the analysis_dict keys as columns, as well as some computed columns
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     """
     # construct simulation dataframe output
-    trades = pd.DataFrame.from_dict(analysis_dict)
+    trades = pd.DataFrame.from_dict(simulation_state.__dict__)
     # calculate derived variables across runs
     trades["pool_apr_percent"] = trades.pool_apr * 100
     trades["vault_apr_percent"] = trades.vault_apr * 100
@@ -57,7 +62,7 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     Arguments
     ---------
     trades : DataFrame
-        Pandas dataframe containing the analysis_dict keys as columns, as well as some computed columns
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
 
     Returns
     -------
