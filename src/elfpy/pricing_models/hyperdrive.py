@@ -1,6 +1,7 @@
 """The Hyperdrive pricing model."""
 
 import copy
+from decimal import Decimal
 
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import (
@@ -97,11 +98,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
         if out.unit == TokenType.BASE:
-            market_state.share_reserves -= out.amount * (1 - time_remaining.normalized_time) / market_state.share_price
-            market_state.bond_reserves += out.amount * (1 - time_remaining.normalized_time)
+            market_state.share_reserves -= float(
+                Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)) / Decimal(market_state.share_price)
+            )
+            market_state.bond_reserves += float(Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)))
         elif out.unit == TokenType.PT:
-            market_state.share_reserves += out.amount * (1 - time_remaining.normalized_time) / market_state.share_price
-            market_state.bond_reserves -= out.amount * (1 - time_remaining.normalized_time)
+            market_state.share_reserves += float(
+                Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)) / Decimal(market_state.share_price)
+            )
+            market_state.bond_reserves -= float(Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)))
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
@@ -110,7 +115,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=Quantity(amount=out.amount * time_remaining.normalized_time, unit=out.unit),
+            out=Quantity(amount=float(Decimal(out.amount) * Decimal(time_remaining.normalized_time)), unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
@@ -118,11 +123,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
-        flat = out.amount * (1 - time_remaining.normalized_time)
+        flat = Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time))
         if out.unit == TokenType.BASE:
             user_result = UserTradeResult(
                 d_base=out.amount,
-                d_bonds=-flat + curve.user_result.d_bonds,
+                d_bonds=float(-flat + Decimal(curve.user_result.d_bonds)),
             )
             market_result = MarketTradeResult(
                 d_base=-out.amount,
@@ -130,11 +135,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         elif out.unit == TokenType.PT:
             user_result = UserTradeResult(
-                d_base=-flat + curve.user_result.d_base,
+                d_base=float(-flat + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
             )
             market_result = MarketTradeResult(
-                d_base=flat + curve.market_result.d_base,
+                d_base=float(flat + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -147,10 +152,10 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=flat + curve.breakdown.without_fee_or_slippage,
-                without_fee=flat + curve.breakdown.without_fee,
+                without_fee_or_slippage=float(flat + Decimal(curve.breakdown.without_fee_or_slippage)),
+                without_fee=float(flat + Decimal(curve.breakdown.without_fee)),
                 fee=curve.breakdown.fee,
-                with_fee=flat + curve.breakdown.with_fee,
+                with_fee=float(flat + Decimal(curve.breakdown.with_fee)),
             ),
         )
 
@@ -217,14 +222,16 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # Redeem the matured bonds 1:1 and simulate these updates hitting the
         # reserves.
         if in_.unit == TokenType.BASE:
-            market_state.share_reserves += (
-                in_.amount * (1 - time_remaining.normalized_time)
-            ) / market_state.share_price
-            market_state.bond_reserves -= in_.amount * (1 - time_remaining.normalized_time)
+            market_state.share_reserves += float(
+                (Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
+                / Decimal(market_state.share_price)
+            )
+            market_state.bond_reserves -= float(Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
         elif in_.unit == TokenType.PT:
-            market_state.share_reserves -= (
-                in_.amount * (1 - time_remaining.normalized_time)
-            ) / market_state.share_price
+            market_state.share_reserves -= float(
+                (Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
+                / Decimal(market_state.share_price)
+            )
             market_state.bond_reserves += in_.amount * (1 - time_remaining.normalized_time)
         else:
             raise AssertionError(
@@ -234,7 +241,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=Quantity(amount=in_.amount * time_remaining.normalized_time, unit=in_.unit),
+            in_=Quantity(amount=float(Decimal(in_.amount) * Decimal(time_remaining.normalized_time)), unit=in_.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
@@ -242,11 +249,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve
         # parts of the trade.
-        flat = in_.amount * (1 - time_remaining.normalized_time)
+        flat = Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time))
         if in_.unit == TokenType.BASE:
             user_result = UserTradeResult(
                 d_base=-in_.amount,
-                d_bonds=flat + curve.user_result.d_bonds,
+                d_bonds=float(flat + Decimal(curve.user_result.d_bonds)),
             )
             market_result = MarketTradeResult(
                 d_base=in_.amount,
@@ -254,11 +261,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         elif in_.unit == TokenType.PT:
             user_result = UserTradeResult(
-                d_base=flat + curve.user_result.d_base,
+                d_base=float(flat + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
             )
             market_result = MarketTradeResult(
-                d_base=-flat + curve.market_result.d_base,
+                d_base=float(-flat + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -271,9 +278,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=flat + curve.breakdown.without_fee_or_slippage,
-                without_fee=flat + curve.breakdown.without_fee,
+                without_fee_or_slippage=float(flat + Decimal(curve.breakdown.without_fee_or_slippage)),
+                without_fee=float(flat + Decimal(curve.breakdown.without_fee)),
                 fee=curve.breakdown.fee,
-                with_fee=flat + curve.breakdown.with_fee,
+                with_fee=float(flat + Decimal(curve.breakdown.with_fee)),
             ),
         )

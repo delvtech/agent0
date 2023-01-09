@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 import copy
+from decimal import Decimal
 
 from elfpy.types import MarketDeltas, Quantity, MarketState, StretchedTime, TokenType, TradeResult
 import elfpy.utils.price as price_utils
@@ -201,15 +202,46 @@ class PricingModel(ABC):
         float
             The spot price of principal tokens.
         """
+        return float(self._calc_spot_price_from_reserves(market_state=market_state, time_remaining=time_remaining))
+
+    def _calc_spot_price_from_reserves(
+        self,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
+    ) -> Decimal:
+        r"""
+        Calculates the spot price of base in terms of bonds.
+
+        The spot price is defined as:
+
+        .. math::
+            \begin{align}
+            p = (\frac{y + cz}{\mu z})^{-\tau}
+            \end{align}
+
+        Arguments
+        ---------
+        market_state: MarketState
+            The reserves and share prices of the pool.
+        time_remaining : StretchedTime
+            The time remaining for the asset (incorporates time stretch).
+
+        Returns
+        -------
+        Decimal
+            The spot price of principal tokens.
+        """
         assert market_state.share_reserves > 0, (
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-        total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
+        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
+            market_state.share_reserves
+        )
         spot_price = (
-            (market_state.bond_reserves + total_reserves)
-            / (market_state.init_share_price * market_state.share_reserves)
-        ) ** -time_remaining.stretched_time
+            (Decimal(market_state.bond_reserves) + total_reserves)
+            / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
+        ) ** Decimal(-time_remaining.stretched_time)
         return spot_price
 
     def calc_apr_from_reserves(

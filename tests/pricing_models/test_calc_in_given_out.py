@@ -9,6 +9,8 @@ Testing for the calc_in_given_out of the pricing models.
 # pylint: disable=duplicate-code
 
 from dataclasses import dataclass
+import decimal
+from typing import Type
 import unittest
 import numpy as np
 
@@ -50,6 +52,7 @@ class TestCaseCalcInGivenOutFailure:
     market_state: MarketState
     fee_percent: float
     time_remaining: StretchedTime
+    exception_type: Type[Exception]
 
     __test__ = False  # pytest: don't test this class
 
@@ -756,6 +759,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=0, unit=TokenType.PT),
@@ -767,6 +771,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -778,6 +783,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -789,6 +795,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -800,6 +807,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -811,6 +819,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=-1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -822,6 +831,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=1.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -833,6 +843,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=1.1,
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -844,6 +855,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -855,6 +867,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=500, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=10_000_000, unit=TokenType.BASE),
@@ -866,6 +879,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=92.5, time_stretch=1),
+                exception_type=decimal.InvalidOperation,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -877,6 +891,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -888,6 +903,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -899,14 +915,15 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
         ]
 
-        # Iterate over all of the test cases and verify that the pricing model
-        # raises an AssertionError for each test case.
+        # Verify that the pricing model raises the expected exception type for
+        # each test case.
         for test_case in test_cases:
             for pricing_model in pricing_models:
-                with self.assertRaises(AssertionError):
+                with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.out,
                         market_state=test_case.market_state,
