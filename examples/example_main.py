@@ -57,19 +57,13 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(
-    num_new_agents: int,
-    agents: Optional[dict[int, Agent]] = None,
-) -> dict[int, Agent]:
+def get_example_agents(num_new_agents: int, num_existing_agents: int = 0) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
-    if agents is None:
-        agents = {}
-    loop_start = len(agents)  # number of existing agents
-    loop_end = loop_start + num_new_agents
-    for wallet_address in range(loop_start, loop_end):
+    agents = []
+    for wallet_address in range(num_existing_agents, num_new_agents + 1):
         agent = CustomShorter(wallet_address)
         agent.log_status_report()
-        agents.update({agent.wallet.address: agent})
+        agents.append(agent)
     return agents
 
 
@@ -170,5 +164,5 @@ if __name__ == "__main__":
     # initialize the market using the LP agent
     simulator.collect_and_execute_trades()
     # get trading agent list
-    simulator.agents = get_example_agents(num_new_agents=args.num_agents, agents=init_agents)
+    simulator.add_agents(get_example_agents(num_new_agents=args.num_agents, num_existing_agents=1))
     simulator.run_simulation()
