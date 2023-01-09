@@ -653,6 +653,11 @@ class YieldSpacePricingModel(PricingModel):
             # user receives without fees. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
+            print(f"1st -> {1 / time_elapsed=}")
+            print(f"2nd -> {(in_reserves + d_bonds) ** time_elapsed=}")
+            print(f"3rd -> {k - (in_reserves + d_bonds) ** time_elapsed=}")
+            print(f"4th -> {(k - (in_reserves + d_bonds) ** time_elapsed) / scale=}")
+            print(f"5th -> {((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)=}")
             without_fee = (
                 Decimal(market_state.share_reserves)
                 - (1 / Decimal(market_state.init_share_price))
