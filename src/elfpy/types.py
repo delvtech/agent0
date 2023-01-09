@@ -312,7 +312,8 @@ class SimulationState:
             else:
                 setattr(self, key, [val])
 
-    def update_agent_wallet(self, agent, d_state):
+    def update_agent_wallet(self, log_index, agent):
+        d_state = [log_index] + list(agent.wallet.state)
         if hasattr(self, f"agent_{agent.wallet.address}"):
             agent_state = getattr(self, f"agent_{agent.wallet.address}")
             agent_state.append(d_state)
@@ -328,4 +329,7 @@ class SimulationState:
         return None
 
     def __getitem__(self, key):
-        getattr(self, key)
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

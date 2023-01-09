@@ -64,7 +64,7 @@ class Simulator:
         self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
-        self.analysis_dict = SimulationState()
+        self.simulation_state = SimulationState()
 
     def check_vault_apr_type(self) -> None:
         """Recast the vault apy into a list of floats if a float was given on init"""
@@ -109,7 +109,7 @@ class Simulator:
         """
         strings = []
         for attribute, value in self.__dict__.items():
-            if attribute not in ("analysis_dict", "rng"):
+            if attribute not in ("simulation_state", "rng"):
                 strings.append(f"{attribute} = {value}")
         state_string = "\n".join(strings)
         return state_string
@@ -129,15 +129,12 @@ class Simulator:
         for agent in agent_list:
             # add the agent to the agents list
             self.agents.update({agent.wallet.address: agent})
-            # update the simulator state to include empty trades
-            setattr(
-                self.analysis_dict,
-                f"agent_{agent.wallet.address}",
-                [
-                    None,
-                ]
-                * self.run_trade_number,
-            )
+            # update the simulator state to include null wallet for each prior trade
+            state_vector_length = len(agent.wallet.state) + 1
+            agent_state = []
+            for trade_number in range(self.run_trade_number):
+                agent_state.append([trade_number] + [None] * state_vector_length)
+            setattr(self.simulation_state, f"agent_{agent.wallet.address}", agent_state)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
         """Get trades from the agent list, execute them, and update states
@@ -177,7 +174,7 @@ class Simulator:
                 )
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
-                self.update_analysis_dict()
+                self.update_simulation_state()
                 self.run_trade_number += 1
 
     def run_simulation(self) -> None:
@@ -190,7 +187,7 @@ class Simulator:
 
         Returns
         -------
-        There are no returns, but the function does update the analysis_dict member variable
+        There are no returns, but the function does update the simulation_state member variable
         """
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
@@ -226,43 +223,41 @@ class Simulator:
         for agent in self.agents.values():
             agent.log_final_report(self.market, self.pricing_model)
 
-    def update_analysis_dict(self) -> None:
-        """Increment the list for each key in the analysis_dict output variable"""
+    def update_simulation_state(self) -> None:
+        """Increment the list for each key in the simulation_state output variable"""
         # pylint: disable=too-many-statements
-        self.analysis_dict.model_name.append(self.pricing_model.model_name())
-        self.analysis_dict.run_number.append(self.run_number)
-        self.analysis_dict.simulation_start_time.append(self.start_time)
-        self.analysis_dict.day.append(self.day)
-        self.analysis_dict.block_number.append(self.block_number)
-        self.analysis_dict.daily_block_number.append(self.daily_block_number)
-        self.analysis_dict.block_timestamp.append(
+        self.simulation_state.model_name.append(self.pricing_model.model_name())
+        self.simulation_state.run_number.append(self.run_number)
+        self.simulation_state.simulation_start_time.append(self.start_time)
+        self.simulation_state.day.append(self.day)
+        self.simulation_state.block_number.append(self.block_number)
+        self.simulation_state.daily_block_number.append(self.daily_block_number)
+        self.simulation_state.block_timestamp.append(
             time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
             if self.start_time
             else "None"
         )
-        self.analysis_dict.current_market_datetime.append(
+        self.simulation_state.current_market_datetime.append(
             time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
         )
-        self.analysis_dict.current_market_yearfrac.append(self.market.time)
-        self.analysis_dict.run_trade_number.append(self.run_trade_number)
-        self.analysis_dict.market_step_size.append(self.market_step_size())
-        self.analysis_dict.position_duration.append(self.market.position_duration)
-        self.analysis_dict.target_liquidity.append(self.random_variables.target_liquidity)
-        self.analysis_dict.fee_percent.append(self.market.fee_percent)
-        self.analysis_dict.floor_fee.append(self.config.amm.floor_fee)
-        self.analysis_dict.init_vault_age.append(self.random_variables.init_vault_age)
-        self.analysis_dict.base_asset_price.append(self.config.market.base_asset_price)
-        self.analysis_dict.pool_apr.append(self.market.get_rate(self.pricing_model))
-        self.analysis_dict.num_trading_days.append(self.config.simulator.num_trading_days)
-        self.analysis_dict.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
-        self.analysis_dict.update_market_state(self.market.market_state)
+        self.simulation_state.current_market_yearfrac.append(self.market.time)
+        self.simulation_state.run_trade_number.append(self.run_trade_number)
+        self.simulation_state.market_step_size.append(self.market_step_size())
+        self.simulation_state.position_duration.append(self.market.position_duration)
+        self.simulation_state.target_liquidity.append(self.random_variables.target_liquidity)
+        self.simulation_state.fee_percent.append(self.market.fee_percent)
+        self.simulation_state.floor_fee.append(self.config.amm.floor_fee)
+        self.simulation_state.init_vault_age.append(self.random_variables.init_vault_age)
+        self.simulation_state.base_asset_price.append(self.config.market.base_asset_price)
+        self.simulation_state.pool_apr.append(self.market.get_rate(self.pricing_model))
+        self.simulation_state.num_trading_days.append(self.config.simulator.num_trading_days)
+        self.simulation_state.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
+        self.simulation_state.update_market_state(self.market.market_state)
         for agent in self.agents.values():
-            self.analysis_dict.update_agent_wallet(
-                agent, [self.run_trade_number, agent.wallet.address, agent.wallet.base, agent.wallet.lp_tokens]
-            )
+            self.simulation_state.update_agent_wallet(self.run_trade_number, agent)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market
-            self.analysis_dict.spot_price.append(self.market.get_spot_price(self.pricing_model))
+            self.simulation_state.spot_price.append(self.market.get_spot_price(self.pricing_model))
         else:
-            self.analysis_dict.spot_price.append(np.nan)
+            self.simulation_state.spot_price.append(np.nan)

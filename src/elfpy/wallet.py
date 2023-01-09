@@ -2,6 +2,7 @@
 Implements abstract classes that control user behavior
 """
 
+from typing import Any
 from dataclasses import dataclass, field
 
 from elfpy.utils.outputs import float_to_string
@@ -52,20 +53,20 @@ class Wallet:
     effective_price: float = field(init=False)  # calculated after init, only for transactions
     fees_paid: float = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post initialization function"""
         # check if this represents a trade (one side will be negative)
         total_tokens = sum(list(self.longs.values()))
         if self.base < 0 or total_tokens < 0:
             self.effective_price = total_tokens / self.base
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         output_string = ""
         for key, value in vars(self).items():
             if value:  #  check if object exists
@@ -80,3 +81,7 @@ class Wallet:
                     else:
                         output_string += f"{value}"
         return output_string
+
+    @property
+    def state(self) -> tuple[int, float, float]:
+        return (self.address, self.base, self.lp_tokens)
