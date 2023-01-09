@@ -1,10 +1,10 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 
 from __future__ import annotations  # types will be strings by default in 3.11
+from typing import Optional, TYPE_CHECKING
 import datetime
 import json
 import logging
-from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 from numpy.random._generator import Generator
@@ -125,7 +125,18 @@ class Simulator:
         blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def add_agents(self, agent_list: list) -> None:
+    def add_agents(self, agent_list: list[Agent]) -> None:
+        """Append the agents and simulation_state member variables
+
+        If trades have already happened (as indicated by self.run_trade_number), then empty wallet states are
+        prepended to the simulation_state for each new agent so that the state can still easily be converted into
+        a pandas dataframe.
+
+        Arguments
+        ---------
+        agent_list : list[Agent]
+            A list of instantiated Agent objects
+        """
         for agent in agent_list:
             # add the agent to the agents list
             self.agents.update({agent.wallet.address: agent})

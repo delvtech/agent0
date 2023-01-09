@@ -195,19 +195,23 @@ class BaseSimTest(unittest.TestCase):
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
 
-    def run_analysis_dict_test(self, delete_logs=True):
-        """Runs a small number of trades, then checks that analysis_dict has the correct number of logs per category"""
+    def run_simulation_state_test(self, delete_logs=True):
+        """Runs a small number of trades, then checks that simulation_state
+        has the correct number of logs per category.
+        """
         self.setup_logging()
         config_file = "config/example_config.toml"
         override_dict = {"num_trading_days": 3, "num_blocks_per_day": 3}
         simulator = self.setup_and_run_simulator(config_file, override_dict)
-        analysis_dict_num_writes = np.array([len(value) for value in simulator.analysis_dict.values()])
-        goal_writes = analysis_dict_num_writes[0]
+        simulation_state_num_writes = np.array([len(value) for value in simulator.simulation_state.__dict__.values()])
+        goal_writes = simulation_state_num_writes[0]
         try:
-            np.testing.assert_equal(analysis_dict_num_writes, goal_writes)
+            np.testing.assert_equal(simulation_state_num_writes, goal_writes)
         except Exception as exc:
             bad_keys = [
-                key for key in simulator.analysis_dict.keys() if len(simulator.analysis_dict[key]) != goal_writes
+                key
+                for key in simulator.simulation_state.__dict__
+                if len(simulator.simulation_state[key]) != goal_writes
             ]
             raise AssertionError(f"ERROR: Analysis keys have too many entries: {bad_keys}") from exc
         if delete_logs:
@@ -235,6 +239,6 @@ class TestSimulator(BaseSimTest):
         """Test override & initalizaiton of random variables"""
         self.run_random_variables_test(delete_logs=True)
 
-    def test_analysis_dict(self):
+    def test_simulation_state(self):
         """Test override & initalizaiton of random variables"""
-        self.run_analysis_dict_test(delete_logs=True)
+        self.run_simulation_state_test(delete_logs=True)

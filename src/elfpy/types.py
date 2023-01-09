@@ -1,10 +1,16 @@
 """A set of common types used throughtout the simulation codebase."""
 
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 
 from elfpy.utils.outputs import float_to_string
 import elfpy.utils.time as time_utils
+
+if TYPE_CHECKING:
+    from elfpy.agent import Agent
+    from typing import Any
 
 
 class TokenType(Enum):
@@ -303,7 +309,15 @@ class SimulationState:
     )
     spot_price: list = field(default_factory=list, metadata={"hint": "price of shares"})
 
-    def update_market_state(self, market_state):
+    def update_market_state(self, market_state: MarketState) -> None:
+        """Update each entry in the SimulationState's copy for the market state
+        by appending to the list for each key, or creating a new key.
+
+        Arguments
+        ---------
+        market_state: MarketState
+            The state variable for the Market class
+        """
         for key, val in market_state.__dict__.items():
             if hasattr(self, key):
                 attribute_state = getattr(self, key)
@@ -312,7 +326,17 @@ class SimulationState:
             else:
                 setattr(self, key, [val])
 
-    def update_agent_wallet(self, log_index, agent):
+    def update_agent_wallet(self, log_index: int, agent: Agent) -> None:
+        """Update each entry in the SimulationState's copy for the agent wallet state
+        by appending to the list for each key, or creating a new key.
+
+        Arguments
+        ---------
+        log_index : int
+            Some index indicating the log entry, typically the simulation run_trade_number
+        agent: Agent
+            An instantiated Agent object
+        """
         d_state = [log_index] + list(agent.wallet.state)
         if hasattr(self, f"agent_{agent.wallet.address}"):
             agent_state = getattr(self, f"agent_{agent.wallet.address}")
@@ -321,7 +345,19 @@ class SimulationState:
         else:
             setattr(self, f"agent_{agent.wallet.address}", [d_state])
 
-    def pop(self, key):
+    def pop(self, key) -> Any:
+        """Remove entry, referenced by the `key` argument, from the SimulationState object and return that entry
+
+        Arguments
+        ---------
+        key : str
+            index string for dereferencing the object (behaves the same as a dictionary key)
+
+        Returns
+        ---------
+        Any | None
+            The value corresponding to the `key` argument
+        """
         if hasattr(self, key):
             val = getattr(self, key)
             delattr(self, key)
@@ -329,7 +365,9 @@ class SimulationState:
         return None
 
     def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
     def __setitem__(self, key, value):
+        """Set object attribute referenced by `key` to `value`"""
         setattr(self, key, value)

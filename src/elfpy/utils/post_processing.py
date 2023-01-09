@@ -1,10 +1,13 @@
 """
 Helper functions for post-processing simulation outputs
 """
-
-from elfpy.types import SimulationState
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from elfpy.types import SimulationState
 
 
 def simulation_state_to_dataframe(simulation_state: SimulationState) -> pd.DataFrame:

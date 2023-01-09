@@ -2,10 +2,14 @@
 Implements abstract classes that control user behavior
 """
 
-from typing import Any
+from __future__ import annotations  # types will be strings by default in 3.11
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 from elfpy.utils.outputs import float_to_string
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 @dataclass(frozen=False)
@@ -84,4 +88,5 @@ class Wallet:
 
     @property
     def state(self) -> tuple[int, float, float]:
+        """The wallet's current state of public variables"""
         return (self.address, self.base, self.lp_tokens)
