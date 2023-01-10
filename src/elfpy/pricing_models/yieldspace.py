@@ -348,7 +348,7 @@ class YieldSpacePricingModel(PricingModel):
         total_reserves = Decimal(market_state.share_price) * Decimal(market_state.share_reserves) + Decimal(
             market_state.bond_reserves
         )
-        spot_price = self._calc_spot_price_from_reserves(
+        spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
@@ -567,7 +567,7 @@ class YieldSpacePricingModel(PricingModel):
         total_reserves = Decimal(market_state.share_price) * Decimal(market_state.share_reserves) + Decimal(
             market_state.bond_reserves
         )
-        spot_price = self._calc_spot_price_from_reserves(
+        spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )

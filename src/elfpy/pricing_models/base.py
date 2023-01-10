@@ -208,15 +208,18 @@ class PricingModel(ABC):
         float
             The spot price of principal tokens.
         """
-        return float(self._calc_spot_price_from_reserves(market_state=market_state, time_remaining=time_remaining))
+        return float(
+            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
+        )
 
-    def _calc_spot_price_from_reserves(
+    def _calc_spot_price_from_reserves_high_precision(
         self,
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> Decimal:
         r"""
-        Calculates the spot price of base in terms of bonds.
+        Calculates the spot price of base in terms of bonds. This variant returns
+        the result in a high precision format.
 
         The spot price is defined as:
 
