@@ -8,7 +8,6 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=duplicate-code
 
-from decimal import Decimal
 from dataclasses import dataclass
 import decimal
 from typing import Type
@@ -18,7 +17,6 @@ import numpy as np
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
 
