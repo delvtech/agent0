@@ -12,7 +12,7 @@ from elfpy.types import (
     TokenType,
     TradeBreakdown,
     TradeResult,
-    UserTradeResult,
+    AgentTradeResult,
 )
 
 
@@ -125,7 +125,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # parts of the trade.
         flat = Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time))
         if out.unit == TokenType.BASE:
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-flat + Decimal(curve.user_result.d_bonds)),
             )
@@ -134,7 +134,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif out.unit == TokenType.PT:
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(-flat + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
             )
@@ -251,7 +251,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         # parts of the trade.
         flat = Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time))
         if in_.unit == TokenType.BASE:
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(flat + Decimal(curve.user_result.d_bonds)),
             )
@@ -260,7 +260,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif in_.unit == TokenType.PT:
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(flat + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
             )

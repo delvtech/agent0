@@ -209,7 +209,7 @@ class MarketState:
 
 
 @dataclass
-class UserTradeResult:
+class AgentTradeResult:
     """The result to a user of performing a trade."""
 
     d_base: float
@@ -246,7 +246,7 @@ class TradeResult:
     the user and the market are computed.
     """
 
-    user_result: UserTradeResult
+    user_result: AgentTradeResult
     market_result: MarketTradeResult
     breakdown: TradeBreakdown
 
