@@ -1,8 +1,9 @@
 """The YieldSpace pricing model."""
 
+from decimal import Decimal
 import logging
-from elfpy.pricing_models.base import PricingModel
 
+from elfpy.pricing_models.base import PricingModel
 from elfpy.types import (
     MarketTradeResult,
     Quantity,
@@ -68,7 +69,7 @@ class YieldSpacePricingModel(PricingModel):
         assert rate >= 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected rate >= 0, not {rate}!"
         assert 1 > time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining.normalied_time}!"
+            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
         assert time_remaining.stretched_time >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
@@ -342,10 +343,12 @@ class YieldSpacePricingModel(PricingModel):
         """
 
         # Calculate some common values up front.
-        time_elapsed = 1 - time_remaining.stretched_time
-        scale = market_state.share_price / market_state.init_share_price
-        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
-        spot_price = self.calc_spot_price_from_reserves(
+        time_elapsed = 1 - Decimal(time_remaining.stretched_time)
+        scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
+        total_reserves = Decimal(market_state.share_price) * Decimal(market_state.share_reserves) + Decimal(
+            market_state.bond_reserves
+        )
+        spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
@@ -354,11 +357,11 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(market_state, time_elapsed)
+        k = price_utils.calc_k_const(market_state, time_remaining)
         if out.unit == TokenType.BASE:
-            in_reserves = market_state.bond_reserves + total_reserves
-            out_reserves = market_state.share_reserves
-            d_shares = out.amount / market_state.share_price
+            in_reserves = Decimal(market_state.bond_reserves) + total_reserves
+            out_reserves = Decimal(market_state.share_reserves)
+            d_shares = Decimal(out.amount) / Decimal(market_state.share_price)
 
             # The amount the user pays without fees or slippage is simply the
             # amount of base the user would receive times the inverse of the
@@ -368,7 +371,7 @@ class YieldSpacePricingModel(PricingModel):
             # be the conventional spot price, then we can write this as:
             #
             # without_fee_or_slippage = (1 / p) * c * d_z
-            without_fee_or_slippage = (1 / spot_price) * market_state.share_price * d_shares
+            without_fee_or_slippage = (1 / spot_price) * Decimal(market_state.share_price) * d_shares
 
             # We solve the YieldSpace invariant for the bonds paid to receive
             # the requested amount of base. We set up the invariant where the
@@ -383,18 +386,15 @@ class YieldSpacePricingModel(PricingModel):
             #
             # without_fee = d_y'
             without_fee = (
-                pow(
-                    k - scale * pow((market_state.init_share_price * (out_reserves - d_shares)), time_elapsed),
-                    1 / time_elapsed,
-                )
-                - in_reserves
-            )
+                k - scale * (Decimal(market_state.init_share_price) * (out_reserves - d_shares)) ** time_elapsed
+            ) ** (1 / time_elapsed) - in_reserves
 
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
             #
             # fee = ((1 / p) - 1) * φ * c * d_z
+            fee = ((1 / Decimal(spot_price)) - 1) * Decimal(fee_percent) * Decimal(market_state.share_price) * d_shares
             logging.debug(
                 (
                     "fee = ((1 / spot_price) - 1) * fee_percent * share_price * d_shares = "
@@ -404,9 +404,8 @@ class YieldSpacePricingModel(PricingModel):
                 fee_percent,
                 market_state.share_price,
                 d_shares,
-                ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares,
+                fee,
             )
-            fee = ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares
 
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
@@ -416,16 +415,16 @@ class YieldSpacePricingModel(PricingModel):
             # Create the user and market trade results.
             user_result = UserTradeResult(
                 d_base=out.amount,
-                d_bonds=-with_fee,
+                d_bonds=float(-with_fee),
             )
             market_result = MarketTradeResult(
                 d_base=-out.amount,
-                d_bonds=with_fee,
+                d_bonds=float(with_fee),
             )
         elif out.unit == TokenType.PT:
-            in_reserves = market_state.share_reserves
-            out_reserves = market_state.bond_reserves + total_reserves
-            d_bonds = out.amount
+            in_reserves = Decimal(market_state.share_reserves)
+            out_reserves = Decimal(market_state.bond_reserves) + total_reserves
+            d_bonds = Decimal(out.amount)
 
             # The amount the user pays without fees or slippage is simply
             # the amount of bonds the user would receive times the spot price of
@@ -451,26 +450,23 @@ class YieldSpacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             without_fee = (
-                (1 / market_state.init_share_price)
-                * pow(
-                    (k - pow(out_reserves - d_bonds, time_elapsed)) / scale,
-                    1 / time_elapsed,
-                )
+                (1 / Decimal(market_state.init_share_price))
+                * ((k - (out_reserves - d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
                 - in_reserves
-            ) * market_state.share_price
+            ) * Decimal(market_state.share_price)
 
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
             #
             # fee = (1 - p) * φ * d_y
-            fee = (1 - spot_price) * fee_percent * d_bonds
+            fee = (1 - spot_price) * Decimal(fee_percent) * d_bonds
             logging.debug(
                 ("fee = (1 - spot_price) * fee_percent * d_bonds = (1 - %g) * %g * %g = %g"),
                 spot_price,
                 fee_percent,
                 d_bonds,
-                (1 - spot_price) * fee_percent * d_bonds,
+                fee,
             )
 
             # To get the amount paid with fees, add the fee to the calculation that
@@ -480,11 +476,11 @@ class YieldSpacePricingModel(PricingModel):
 
             # Create the user and market trade results.
             user_result = UserTradeResult(
-                d_base=-with_fee,
+                d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
             market_result = MarketTradeResult(
-                d_base=with_fee,
+                d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
         else:
@@ -497,7 +493,10 @@ class YieldSpacePricingModel(PricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=without_fee_or_slippage, with_fee=with_fee, without_fee=without_fee, fee=fee
+                without_fee_or_slippage=float(without_fee_or_slippage),
+                with_fee=float(with_fee),
+                without_fee=float(without_fee),
+                fee=float(fee),
             ),
         )
 
@@ -563,10 +562,12 @@ class YieldSpacePricingModel(PricingModel):
         """
 
         # Calculate some common values up front.
-        scale = market_state.share_price / market_state.init_share_price
-        time_elapsed = 1 - time_remaining.stretched_time
-        total_reserves = market_state.share_price * market_state.share_reserves + market_state.bond_reserves
-        spot_price = self.calc_spot_price_from_reserves(
+        scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
+        time_elapsed = 1 - Decimal(time_remaining.stretched_time)
+        total_reserves = Decimal(market_state.share_price) * Decimal(market_state.share_reserves) + Decimal(
+            market_state.bond_reserves
+        )
+        spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
@@ -575,11 +576,11 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(market_state, time_elapsed)
+        k = price_utils.calc_k_const(market_state, time_remaining)
         if in_.unit == TokenType.BASE:
-            d_shares = in_.amount / market_state.share_price  # convert from base_asset to z (x=cz)
-            in_reserves = market_state.share_reserves
-            out_reserves = market_state.bond_reserves + total_reserves
+            d_shares = Decimal(in_.amount) / Decimal(market_state.share_price)  # convert from base_asset to z (x=cz)
+            in_reserves = Decimal(market_state.share_reserves)
+            out_reserves = Decimal(market_state.bond_reserves) + total_reserves
 
             # The amount the user would receive without fees or slippage is
             # the amount of base the user pays times inverse of the spot price
@@ -587,7 +588,7 @@ class YieldSpacePricingModel(PricingModel):
             # price, then we can write this as:
             #
             # (1 / p) * c * d_z
-            without_fee_or_slippage = (1 / spot_price) * market_state.share_price * d_shares
+            without_fee_or_slippage = (1 / spot_price) * Decimal(market_state.share_price) * d_shares
 
             # We solve the YieldSpace invariant for the bonds received from
             # paying the specified amount of base. We set up the invariant where
@@ -599,17 +600,16 @@ class YieldSpacePricingModel(PricingModel):
             # without including fees:
             #
             # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
-            without_fee = out_reserves - pow(
-                k - scale * pow(market_state.init_share_price * (in_reserves + d_shares), time_elapsed),
-                1 / time_elapsed,
-            )
+            without_fee = out_reserves - (
+                k - scale * (Decimal(market_state.init_share_price) * (in_reserves + d_shares)) ** time_elapsed
+            ) ** (1 / time_elapsed)
 
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
             #
             # ((1 / p) - 1) * φ * c * d_z
-            fee = ((1 / spot_price) - 1) * fee_percent * market_state.share_price * d_shares
+            fee = ((1 / spot_price) - 1) * Decimal(fee_percent) * Decimal(market_state.share_price) * d_shares
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
@@ -619,16 +619,16 @@ class YieldSpacePricingModel(PricingModel):
             # Create the user and market trade results.
             user_result = UserTradeResult(
                 d_base=-in_.amount,
-                d_bonds=with_fee,
+                d_bonds=float(with_fee),
             )
             market_result = MarketTradeResult(
                 d_base=in_.amount,
-                d_bonds=-with_fee,
+                d_bonds=float(-with_fee),
             )
         elif in_.unit == TokenType.PT:
-            d_bonds = in_.amount
-            in_reserves = market_state.bond_reserves + total_reserves
-            out_reserves = market_state.share_reserves
+            d_bonds = Decimal(in_.amount)
+            in_reserves = Decimal(market_state.bond_reserves) + total_reserves
+            out_reserves = Decimal(market_state.share_reserves)
 
             # The amount the user would receive without fees or slippage is the
             # amount of bonds the user pays times the spot price of base in
@@ -654,17 +654,17 @@ class YieldSpacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             without_fee = (
-                market_state.share_reserves
-                - (1 / market_state.init_share_price)
+                Decimal(market_state.share_reserves)
+                - (1 / Decimal(market_state.init_share_price))
                 * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
-            ) * market_state.share_price
+            ) * Decimal(market_state.share_price)
 
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
             #
             # fee = (1 - p) * φ * d_y
-            fee = (1 - spot_price) * fee_percent * d_bonds
+            fee = (1 - spot_price) * Decimal(fee_percent) * d_bonds
             with_fee = without_fee - fee
 
             # To get the amount paid with fees, subtract the fee from the
@@ -674,11 +674,11 @@ class YieldSpacePricingModel(PricingModel):
 
             # Create the user and market trade results.
             user_result = UserTradeResult(
-                d_base=with_fee,
+                d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
             market_result = MarketTradeResult(
-                d_base=-with_fee,
+                d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
         else:
@@ -691,6 +691,9 @@ class YieldSpacePricingModel(PricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=without_fee_or_slippage, with_fee=with_fee, without_fee=without_fee, fee=fee
+                without_fee_or_slippage=float(without_fee_or_slippage),
+                with_fee=float(with_fee),
+                without_fee=float(without_fee),
+                fee=float(fee),
             ),
         )

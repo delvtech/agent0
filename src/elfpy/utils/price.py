@@ -2,6 +2,7 @@
 
 
 from __future__ import annotations  # types will be strings by default in 3.11
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from elfpy.types import MarketState, StretchedTime
@@ -127,8 +128,7 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
     return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
 
 
-# TODO: This should be updated to use StretchedTime.
-def calc_k_const(market_state: MarketState, time_elapsed):
+def calc_k_const(market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
     """
     Returns the 'k' constant variable for trade mathematics
 
@@ -136,16 +136,20 @@ def calc_k_const(market_state: MarketState, time_elapsed):
     ---------
     market_state : MarketState
         The state of the AMM
-    time_elapsed : float
-        Amount of time that has elapsed in the current market, in yearfracs
+    time_remaining : StretchedTime
+        Amount of time that remains in the current market
 
     Returns
     -------
-    float
+    Decimal
         'k' constant used for trade mathematics, calculated from the provided parameters
     """
-    scale = market_state.share_price / market_state.init_share_price
-    total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
-    return scale * (market_state.init_share_price * market_state.share_reserves) ** (time_elapsed) + (
-        market_state.bond_reserves + total_reserves
-    ) ** (time_elapsed)
+    scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
+    total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
+        market_state.share_reserves
+    )
+    time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
+    return (
+        scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
+        + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
+    )

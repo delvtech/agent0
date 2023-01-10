@@ -14,6 +14,7 @@ from elfpy.markets import Market
 from elfpy.types import MarketState, StretchedTime
 from elfpy.utils import price as price_utils
 from elfpy.utils import sim_utils
+from elfpy.utils.time import time_to_days_remaining
 
 
 class BasePriceTest(unittest.TestCase):
@@ -524,19 +525,25 @@ class BasePriceTest(unittest.TestCase):
 
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
-                    k = price_utils.calc_k_const(
-                        market_state=test_case["market_state"],
-                        time_elapsed=test_case["time_elapsed"],
+                    k = float(
+                        price_utils.calc_k_const(
+                            market_state=test_case["market_state"],
+                            time_remaining=StretchedTime(
+                                days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1
+                            ),
+                        )
                     )
 
             # If test was not supposed to fail, continue normal execution
             else:
-
-                k = price_utils.calc_k_const(
-                    market_state=test_case["market_state"],
-                    time_elapsed=test_case["time_elapsed"],
+                k = float(
+                    price_utils.calc_k_const(
+                        market_state=test_case["market_state"],
+                        time_remaining=StretchedTime(
+                            days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1
+                        ),
+                    )
                 )
-
                 np.testing.assert_almost_equal(k, test_case["expected_result"], err_msg="unexpected k")
 
 

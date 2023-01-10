@@ -2,9 +2,25 @@
 
 from abc import ABC, abstractmethod
 import copy
+import decimal
+from decimal import Decimal
 
-from elfpy.types import MarketDeltas, Quantity, MarketState, StretchedTime, TokenType, TradeResult
+from elfpy.types import (
+    MAX_RESERVES_DIFFERENCE,
+    WEI,
+    MarketDeltas,
+    Quantity,
+    MarketState,
+    StretchedTime,
+    TokenType,
+    TradeResult,
+)
 import elfpy.utils.price as price_utils
+
+# Set the Decimal precision to be higher than the default of 28. This ensures
+# that the pricing models can safely a lowest possible input of 1e-18 with an
+# reserves difference of up to 20 billion.
+decimal.getcontext().prec = 30
 
 
 class PricingModel(ABC):
@@ -186,7 +202,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            p = (\frac{y + cz}{\mu z})^{-\tau}
+            p = (\frac{2y + cz}{\mu z})^{-\tau}
             \end{align}
 
         Arguments
@@ -201,15 +217,49 @@ class PricingModel(ABC):
         float
             The spot price of principal tokens.
         """
+        return float(
+            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
+        )
+
+    def _calc_spot_price_from_reserves_high_precision(
+        self,
+        market_state: MarketState,
+        time_remaining: StretchedTime,
+    ) -> Decimal:
+        r"""
+        Calculates the spot price of base in terms of bonds. This variant returns
+        the result in a high precision format.
+
+        The spot price is defined as:
+
+        .. math::
+            \begin{align}
+            p = (\frac{2y + cz}{\mu z})^{-\tau}
+            \end{align}
+
+        Arguments
+        ---------
+        market_state: MarketState
+            The reserves and share prices of the pool.
+        time_remaining : StretchedTime
+            The time remaining for the asset (incorporates time stretch).
+
+        Returns
+        -------
+        Decimal
+            The spot price of principal tokens.
+        """
         assert market_state.share_reserves > 0, (
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-        total_reserves = market_state.bond_reserves + market_state.share_price * market_state.share_reserves
+        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
+            market_state.share_reserves
+        )
         spot_price = (
-            (market_state.bond_reserves + total_reserves)
-            / (market_state.init_share_price * market_state.share_reserves)
-        ) ** -time_remaining.stretched_time
+            (Decimal(market_state.bond_reserves) + total_reserves)
+            / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
+        ) ** Decimal(-time_remaining.stretched_time)
         return spot_price
 
     def calc_apr_from_reserves(
@@ -341,21 +391,27 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert quantity.amount > 0, (
-            "pricing_models.check_input_assertions: ERROR: " f"expected quantity.amount > 0, not {quantity.amount}!"
-        )
-        assert market_state.share_reserves >= 0, (
+        assert quantity.amount >= WEI, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
+            f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         )
-        assert market_state.bond_reserves >= 0, (
+        assert market_state.share_reserves >= WEI, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= 0, not {market_state.bond_reserves}!"
+            f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
+        )
+        assert market_state.bond_reserves >= WEI or market_state.bond_reserves == 0, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         assert market_state.share_price >= market_state.init_share_price >= 1, (
             f"pricing_models.check_input_assertions: ERROR: "
             f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
             f"and init_share_price={market_state.init_share_price}!"
+        )
+        reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
+        assert reserves_difference < MAX_RESERVES_DIFFERENCE, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
         assert 1 >= fee_percent >= 0, (
             "pricing_models.calc_in_given_out: ERROR: " f"expected 1 >= fee_percent >= 0, not {fee_percent}!"
