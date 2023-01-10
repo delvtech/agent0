@@ -101,7 +101,6 @@ class Agent:
         return agent_action
 
     def action(self, market: Market) -> list[MarketAction]:
-        """Specify action from the policy"""
         """
         Abstract method meant to be implemented by the specific policy
 
