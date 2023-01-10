@@ -193,7 +193,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            p = (\frac{y + cz}{\mu z})^{-\tau}
+            p = (\frac{2y + cz}{\mu z})^{-\tau}
             \end{align}
 
         Arguments
@@ -222,7 +222,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            p = (\frac{y + cz}{\mu z})^{-\tau}
+            p = (\frac{2y + cz}{\mu z})^{-\tau}
             \end{align}
 
         Arguments
