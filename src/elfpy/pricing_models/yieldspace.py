@@ -665,7 +665,6 @@ class YieldSpacePricingModel(PricingModel):
             #
             # fee = (1 - p) * φ * d_y
             fee = (1 - spot_price) * Decimal(fee_percent) * d_bonds
-            with_fee = without_fee - fee
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less

@@ -362,7 +362,7 @@ class Market:
             agent_deltas = Wallet(
                 address=agent_action.wallet_address,
                 base=trade_result.user_result.d_base,
-                shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
+                longs={agent_action.mint_time: trade_result.user_result.d_bonds},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
@@ -383,20 +383,20 @@ class Market:
         """
 
         # Perform the trade.
-        quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
+        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
         pricing_model.check_input_assertions(
-            quantity=quantity,
+            quantity=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         trade_result = pricing_model.calc_out_given_in(
-            in_=quantity,
+            in_=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result)
+        pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
         logging.debug("closing long: trade_result = %s", trade_result)
