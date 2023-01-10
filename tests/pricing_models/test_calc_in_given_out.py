@@ -751,9 +751,9 @@ class TestCalcInGivenOut(unittest.TestCase):
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
 
         for pricing_model in pricing_models:
-            for x in [1 / 10**x for x in range(0, 19)]:
+            for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # out is in base, in is in bonds
-                trade_quantity = Quantity(amount=x, unit=TokenType.BASE)
+                trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
                 market_state = MarketState(
                     share_reserves=10_000_000_000,
                     bond_reserves=1,
@@ -771,7 +771,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
 
                 # out is in bonds, in is in base
-                trade_quantity = Quantity(amount=x, unit=TokenType.PT)
+                trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
                 market_state = MarketState(
                     share_reserves=1,
                     bond_reserves=10_000_000_000,
