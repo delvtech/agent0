@@ -14,7 +14,6 @@ from elfpy.types import MarketAction, MarketActionType
 
 if TYPE_CHECKING:
     from elfpy.markets import Market
-    from elfpy.pricing_models.base import PricingModel
 
 
 class Agent:
@@ -46,12 +45,12 @@ class Agent:
         )
         return agent_action
 
-    def action(self, market: Market, pricing_model: PricingModel) -> list[MarketAction]:
+    def action(self, market: Market) -> list[MarketAction]:
         """Specify action from the policy"""
         raise NotImplementedError
 
     # TODO: Fix up this function
-    def get_max_pt_short(self, market: Market, pricing_model: PricingModel) -> float:
+    def get_max_pt_short(self, market: Market) -> float:
         """
         Returns an approximation of maximum amount of base that the agent can short given current market conditions
 
@@ -61,12 +60,10 @@ class Agent:
         """
         if market.market_state.share_reserves == 0:
             return 0
-        max_pt_short = (
-            market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price(pricing_model)
-        )
+        max_pt_short = market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price()
         return max_pt_short
 
-    def get_trade_list(self, market: Market, pricing_model: PricingModel) -> list:
+    def get_trade_list(self, market: Market) -> list:
         """
         Helper function for computing a agent trade
         direction is chosen based on this logic:
@@ -78,7 +75,7 @@ class Agent:
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
         """
-        action_list = self.action(market, pricing_model)  # get the action list from the policy
+        action_list = self.action(market)  # get the action list from the policy
         for action in action_list:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = market.time
@@ -161,12 +158,12 @@ class Agent:
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
-    def log_final_report(self, market: Market, pricing_model: PricingModel) -> None:
+    def log_final_report(self, market: Market) -> None:
         """Logs a report of the agent's state"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if market.market_state.share_reserves > 0:
-            price = market.get_spot_price(pricing_model)
+            price = market.get_spot_price()
         else:
             price = 0
         base = self.wallet.base

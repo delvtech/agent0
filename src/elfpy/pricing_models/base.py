@@ -89,6 +89,11 @@ class PricingModel(ABC):
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
+    @abstractmethod
+    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+        """Returns the 'k' constant variable for trade mathematics"""
+        raise NotImplementedError
+
     def calc_bond_reserves(
         self,
         target_apr: float,
@@ -166,6 +171,69 @@ class PricingModel(ABC):
             init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
         )  # z = y / (u * (1 - rt)**(1/T))
         return share_reserves
+
+    def calc_liquidity(
+        self,
+        market_state: MarketState,
+        target_liquidity: float,
+        target_apr: float,
+        # TODO: Fields like position_duration and fee_percent could arguably be
+        # wrapped up into a "MarketContext" value that includes the state as
+        # one of its fields.
+        position_duration: StretchedTime,
+    ) -> tuple[float, float]:
+        """Returns the reserve volumes and total supply
+
+        The scaling factor ensures bond_reserves and share_reserves add
+        up to target_liquidity, while keeping their ratio constant (preserves apr).
+
+        total_liquidity = in base terms, used to target liquidity as passed in
+        total_reserves  = in arbitrary units (AU), used for yieldspace math
+
+        Arguments
+        ---------
+        market_state : MarketState
+            the state of the market
+        target_liquidity_usd : float
+            amount of liquidity that the simulation is trying to achieve in a given market
+        target_apr : float
+            desired APR for the seeded market
+        position_duration : float
+            the duration of positions in this market
+
+        Returns
+        -------
+        (float, float)
+            Tuple that contains (share_reserves, bond_reserves)
+            calculated from the provided parameters
+        """
+        share_reserves = target_liquidity / market_state.share_price
+        bond_reserves = self.calc_bond_reserves(
+            target_apr,
+            share_reserves,
+            position_duration,
+            market_state.init_share_price,
+            market_state.share_price,
+        )
+        price = market_state.share_price
+        total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
+            MarketState(
+                share_reserves=share_reserves,
+                bond_reserves=bond_reserves,
+                base_buffer=market_state.base_buffer,
+                bond_buffer=market_state.bond_buffer,
+                lp_reserves=market_state.lp_reserves,
+                share_price=market_state.share_price,
+                init_share_price=market_state.init_share_price,
+            ),
+            price,
+        )
+        # compute scaling factor to adjust reserves so that they match the target liquidity
+        scaling_factor = target_liquidity / total_liquidity  # both in token units
+        # update variables by rescaling the original estimates
+        bond_reserves = bond_reserves * scaling_factor
+        share_reserves = share_reserves * scaling_factor
+        return (share_reserves, bond_reserves)
 
     def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
         """Returns the total liquidity in the pool in terms of base

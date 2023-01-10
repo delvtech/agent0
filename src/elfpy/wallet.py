@@ -54,15 +54,7 @@ class Wallet:
     margin: dict = field(default_factory=dict)
 
     # TODO: This isn't used for short trades
-    effective_price: float = field(init=False)  # calculated after init, only for transactions
     fees_paid: float = 0
-
-    def __post_init__(self) -> None:
-        """Post initialization function"""
-        # check if this represents a trade (one side will be negative)
-        total_tokens = sum(list(self.longs.values()))
-        if self.base < 0 or total_tokens < 0:
-            self.effective_price = total_tokens / self.base
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)

@@ -33,7 +33,7 @@ class Market:
 
     def __init__(
         self,
-        fee_percent: float = 0,
+        pricing_model: PricingModel,
         market_state: MarketState = MarketState(
             share_reserves=0,
             bond_reserves=0,
@@ -45,9 +45,11 @@ class Market:
             init_share_price=1,
         ),
         position_duration: StretchedTime = StretchedTime(365, 1),
+        fee_percent: float = 0,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
         self.fee_percent: float = fee_percent  # g
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
@@ -82,7 +84,7 @@ class Market:
                 f" model={pricing_model_name}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action: MarketAction, pricing_model: PricingModel) -> Wallet:
+    def trade_and_update(self, agent_action: MarketAction) -> Wallet:
         """
         Execute a trade in the simulated market.
 
@@ -102,7 +104,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
-        self.check_action_type(agent_action.action_type, pricing_model.model_name())
+        self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # TODO: check the desired amount is feasible, otherwise return descriptive error
         # update market variables which may have changed since the user action was created
         time_remaining = StretchedTime(
@@ -117,37 +119,31 @@ class Market:
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self._open_long(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             market_deltas, agent_deltas = self._close_long(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self._open_short(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             market_deltas, agent_deltas = self._close_short(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self._add_liquidity(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self._remove_liquidity(
-                pricing_model=pricing_model,
                 agent_action=agent_action,
                 time_remaining=time_remaining,
             )
@@ -168,7 +164,7 @@ class Market:
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.market_state.apply_delta(market_deltas)
 
-    def get_rate(self, pricing_model):
+    def get_rate(self):
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -176,16 +172,16 @@ class Market:
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
-            rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(pricing_model), self.position_duration)
+            rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.position_duration)
         return rate
 
-    def get_spot_price(self, pricing_model: PricingModel):
+    def get_spot_price(self):
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
             spot_price = np.nan
         else:
-            spot_price = pricing_model.calc_spot_price_from_reserves(
+            spot_price = self.pricing_model.calc_spot_price_from_reserves(
                 market_state=self.market_state,
                 time_remaining=self.position_duration,
             )
@@ -203,7 +199,6 @@ class Market:
 
     def _open_short(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -214,19 +209,19 @@ class Market:
         """
         # Perform the trade.
         trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
-        pricing_model.check_input_assertions(
+        self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_result = pricing_model.calc_out_given_in(
+        trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_result)
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
         logging.debug("opening short: trade_result = %s", trade_result)
@@ -253,7 +248,6 @@ class Market:
 
     def _close_short(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -278,19 +272,19 @@ class Market:
 
         # Perform the trade.
         trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
-        pricing_model.check_input_assertions(
+        self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_result = pricing_model.calc_in_given_out(
+        trade_result = self.pricing_model.calc_in_given_out(
             out=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_result)
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
         logging.debug(
@@ -319,7 +313,6 @@ class Market:
 
     def _open_long(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -333,19 +326,19 @@ class Market:
         if agent_action.trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
             trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.BASE)
-            pricing_model.check_input_assertions(
+            self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
                 fee_percent=self.fee_percent,
                 time_remaining=time_remaining,
             )
-            trade_result = pricing_model.calc_out_given_in(
+            trade_result = self.pricing_model.calc_out_given_in(
                 in_=trade_quantity,
                 market_state=self.market_state,
                 fee_percent=self.fee_percent,
                 time_remaining=time_remaining,
             )
-            pricing_model.check_output_assertions(trade_result=trade_result)
+            self.pricing_model.check_output_assertions(trade_result=trade_result)
 
             # Log the trade result.
             logging.debug(
@@ -372,7 +365,6 @@ class Market:
 
     def _close_long(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -384,19 +376,19 @@ class Market:
 
         # Perform the trade.
         trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
-        pricing_model.check_input_assertions(
+        self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        trade_result = pricing_model.calc_out_given_in(
+        trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_result)
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
         logging.debug("closing long: trade_result = %s", trade_result)
@@ -417,7 +409,6 @@ class Market:
 
     def _add_liquidity(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -430,8 +421,8 @@ class Market:
         ):  # pool has not been initialized
             rate = 0
         else:
-            rate = self.get_rate(pricing_model)
-        lp_out, d_base_reserves, d_token_reserves = pricing_model.calc_lp_out_given_tokens_in(
+            rate = self.get_rate()
+        lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=agent_action.trade_amount,
             rate=rate,
             market_state=self.market_state,
@@ -451,16 +442,15 @@ class Market:
 
     def _remove_liquidity(
         self,
-        pricing_model: PricingModel,
         agent_action: MarketAction,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
-        lp_in, d_base_reserves, d_token_reserves = pricing_model.calc_tokens_out_given_lp_in(
+        lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=agent_action.trade_amount,
-            rate=self.get_rate(pricing_model),
+            rate=self.get_rate(),
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
@@ -476,7 +466,7 @@ class Market:
         )
         return market_deltas, agent_deltas
 
-    def log_market_step_string(self, pricing_model: PricingModel) -> None:
+    def log_market_step_string(self) -> None:
         """Logs the current market step"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
@@ -484,8 +474,8 @@ class Market:
             spot_price = str(np.nan)
             rate = str(np.nan)
         else:
-            spot_price = self.get_spot_price(pricing_model)
-            rate = self.get_rate(pricing_model)
+            spot_price = self.get_spot_price()
+            rate = self.get_rate()
         logging.debug(
             (
                 "t = %g"

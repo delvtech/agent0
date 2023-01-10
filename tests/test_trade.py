@@ -13,6 +13,7 @@ import logging
 from importlib import import_module
 
 import numpy as np
+from elfpy.markets import Market
 
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
@@ -24,7 +25,7 @@ class BaseTradeTest(unittest.TestCase):
     """Generic Trade Test class"""
 
     @staticmethod
-    def setup_simulation_entities(config_file, override_dict, agent_policies):
+    def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
         """Construct and run the simulator"""
         # create config object
         config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
@@ -49,7 +50,6 @@ class BaseTradeTest(unittest.TestCase):
         init_agents = {
             0: sim_utils.get_init_lp_agent(
                 market,
-                pricing_model,
                 random_sim_vars.target_liquidity,
                 random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
@@ -58,7 +58,6 @@ class BaseTradeTest(unittest.TestCase):
         # set up simulator with only the init_lp_agent
         simulator = Simulator(
             config=config,
-            pricing_model=pricing_model,
             market=market,
             agents=init_agents,
             rng=rng,
@@ -74,7 +73,7 @@ class BaseTradeTest(unittest.TestCase):
             )
             agent.log_status_report()
             simulator.agents.update({agent.wallet.address: agent})
-        return (simulator, market, pricing_model)
+        return (simulator, market)
 
     @staticmethod
     def setup_logging():
@@ -118,9 +117,9 @@ class BaseTradeTest(unittest.TestCase):
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
-        simulator, market, pricing_model = self.setup_simulation_entities(config_file, override_dict, agent_policies)
+        simulator, market = self.setup_simulation_entities(config_file, override_dict, agent_policies)
         # check that apr is within 0.005 of the target
-        market_apr = market.get_rate(pricing_model)
+        market_apr = market.get_rate()
         assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
             f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
             f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
