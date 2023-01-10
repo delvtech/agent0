@@ -10,7 +10,8 @@ import numpy as np
 
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Wallet
-from elfpy.types import MarketAction, MarketActionType
+from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
+import elfpy.utils.time as time_utils
 
 if TYPE_CHECKING:
     from elfpy.markets import Market
@@ -53,18 +54,19 @@ class Agent:
     # TODO: Fix up this function
     def get_max_pt_short(self, market: Market, pricing_model: PricingModel) -> float:
         """
-        Returns an approximation of maximum amount of base that the agent can short given current market conditions
-
-        TODO: This currently is a first-order approximation.
-        An alternative is to do this iteratively and find a max trade, but that is probably too slow.
-        Maybe we could add an optional flag to iteratively solve it, like num_iters.
+        calls pricing model to figure out what the max short amount is
+        call is calc_in_given_out with out as the entire share_reserves
+        this tells us what the max amount of base can be provided as input for a sell/short transaction
         """
         if market.market_state.share_reserves == 0:
             return 0
-        max_pt_short = (
-            market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price(pricing_model)
+        trade_results = pricing_model.calc_in_given_out(
+            out=Quantity(amount=market.market_state.share_reserves, unit=TokenType.PT),
+            market_state=market.market_state,
+            fee_percent=market.fee_percent,
+            time_remaining=market.position_duration,
         )
-        return max_pt_short
+        return trade_results.market_result.d_base
 
     def get_trade_list(self, market: Market, pricing_model: PricingModel) -> list:
         """
