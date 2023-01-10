@@ -12,7 +12,7 @@ from elfpy.types import (
     TokenType,
     TradeBreakdown,
     TradeResult,
-    UserTradeResult,
+    AgentTradeResult,
 )
 import elfpy.utils.price as price_utils
 
@@ -413,7 +413,7 @@ class YieldSpacePricingModel(PricingModel):
             with_fee = without_fee + fee
 
             # Create the user and market trade results.
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
@@ -475,7 +475,7 @@ class YieldSpacePricingModel(PricingModel):
             with_fee = without_fee + fee
 
             # Create the user and market trade results.
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
@@ -617,7 +617,7 @@ class YieldSpacePricingModel(PricingModel):
             with_fee = without_fee - fee
 
             # Create the user and market trade results.
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
@@ -673,7 +673,7 @@ class YieldSpacePricingModel(PricingModel):
             with_fee = without_fee - fee
 
             # Create the user and market trade results.
-            user_result = UserTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
