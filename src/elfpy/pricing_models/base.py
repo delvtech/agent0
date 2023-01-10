@@ -2,10 +2,17 @@
 
 from abc import ABC, abstractmethod
 import copy
+import decimal
 from decimal import Decimal
 
 from elfpy.types import MarketDeltas, Quantity, MarketState, StretchedTime, TokenType, TradeResult
 import elfpy.utils.price as price_utils
+
+# Set the Decimal precision to be higher than the default of 28. This ensures
+# that the pricing models can safely a lowest possible input of 1e-18 with an
+# opposing reserves of over 1 billion (although this should be viewed as a cap
+# to give the market room for interest to accrue over time).
+decimal.getcontext().prec = 30
 
 
 class PricingModel(ABC):
@@ -373,8 +380,9 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert quantity.amount > 0, (
-            "pricing_models.check_input_assertions: ERROR: " f"expected quantity.amount > 0, not {quantity.amount}!"
+        assert quantity.amount >= 1e-18, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected quantity.amount >= 1e-18, not {quantity.amount}!"
         )
         assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
