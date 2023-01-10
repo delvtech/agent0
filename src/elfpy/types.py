@@ -10,7 +10,16 @@ import elfpy.utils.time as time_utils
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
-    from typing import Any
+
+# This is the minimum allowed value to be passed into calculations to avoid
+# problems with sign flips that occur when the floating point range is exceeded.
+WEI = 1e-18
+
+# The maximum allowed difference between the base reserves and bond reserves.
+# This value was calculated using trial and error and is close to the maximum
+# difference between the reserves that will not result in a sign flip when a
+# small trade is put on.
+MAX_RESERVES_DIFFERENCE = 2e10
 
 
 class TokenType(Enum):

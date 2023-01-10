@@ -5,7 +5,16 @@ import copy
 import decimal
 from decimal import Decimal
 
-from elfpy.types import MarketDeltas, Quantity, MarketState, StretchedTime, TokenType, TradeResult
+from elfpy.types import (
+    MAX_RESERVES_DIFFERENCE,
+    WEI,
+    MarketDeltas,
+    Quantity,
+    MarketState,
+    StretchedTime,
+    TokenType,
+    TradeResult,
+)
 import elfpy.utils.price as price_utils
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
@@ -382,17 +391,17 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert quantity.amount >= 1e-18, (
+        assert quantity.amount >= WEI, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected quantity.amount >= 1e-18, not {quantity.amount}!"
+            f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         )
-        assert market_state.share_reserves >= 1e-18, (
+        assert market_state.share_reserves >= WEI, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= 1e-18, not {market_state.share_reserves}!"
+            f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
         )
-        assert market_state.bond_reserves >= 1e-18 or market_state.bond_reserves == 0, (
+        assert market_state.bond_reserves >= WEI or market_state.bond_reserves == 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= 1e-18 or bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         assert market_state.share_price >= market_state.init_share_price >= 1, (
             f"pricing_models.check_input_assertions: ERROR: "
@@ -400,9 +409,9 @@ class PricingModel(ABC):
             f"and init_share_price={market_state.init_share_price}!"
         )
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert reserves_difference < 20_000_000_000, (
+        assert reserves_difference < MAX_RESERVES_DIFFERENCE, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected reserves_difference < 10_000_000_000, not {reserves_difference}!"
+            f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
         assert 1 >= fee_percent >= 0, (
             "pricing_models.calc_in_given_out: ERROR: " f"expected 1 >= fee_percent >= 0, not {fee_percent}!"
