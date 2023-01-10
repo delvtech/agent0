@@ -1,8 +1,8 @@
 """Utilities for price calculations"""
 
 
-from __future__ import annotations
-from decimal import Decimal  # types will be strings by default in 3.11
+from __future__ import annotations  # types will be strings by default in 3.11
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from elfpy.types import MarketState, StretchedTime
@@ -128,7 +128,7 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
     return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
 
 
-def calc_k_const(market_state: MarketState, time_remaining: StretchedTime):
+def calc_k_const(market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
     """
     Returns the 'k' constant variable for trade mathematics
 
