@@ -757,7 +757,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 market_state = MarketState(
                     share_reserves=10_000_000_000,
                     bond_reserves=1,
-                    share_price=1,
+                    share_price=2,
                     init_share_price=1,
                 )
                 fee_percent = 0.1
@@ -775,7 +775,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 market_state = MarketState(
                     share_reserves=1,
                     bond_reserves=10_000_000_000,
-                    share_price=1.5,
+                    share_price=2,
                     init_share_price=1.2,
                 )
                 fee_percent = 0.1
@@ -964,14 +964,50 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=0.5e-18, unit=TokenType.BASE),
+                out=Quantity(amount=0.5e-18, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=0,
                     init_share_price=1.5,
                 ),
-                fee_percent=0.1,
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=0.5e-18,
+                    bond_reserves=1_000_000,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=0.5e-18,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=30_000_000_000,
+                    bond_reserves=1,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
                 exception_type=AssertionError,
             ),
