@@ -118,33 +118,43 @@ class Market:
         )
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
-            market_deltas, agent_deltas = self._open_long(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.open_long(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
+                mint_time=agent_action.mint_time,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
-            market_deltas, agent_deltas = self._close_long(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.close_long(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
+                mint_time=agent_action.mint_time,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
-            market_deltas, agent_deltas = self._open_short(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.open_short(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
+                mint_time=agent_action.mint_time,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
-            market_deltas, agent_deltas = self._close_short(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.close_short(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
+                mint_time=agent_action.mint_time,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
-            market_deltas, agent_deltas = self._add_liquidity(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.add_liquidity(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
                 time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
-            market_deltas, agent_deltas = self._remove_liquidity(
-                agent_action=agent_action,
+            market_deltas, agent_deltas = self.remove_liquidity(
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,
                 time_remaining=time_remaining,
             )
         else:
@@ -199,9 +209,11 @@ class Market:
         """Increments the time member variable"""
         self.time += delta_time
 
-    def _open_short(
+    def open_short(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
+        mint_time: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -210,7 +222,7 @@ class Market:
         will be conditional on the pricing model
         """
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
+        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -232,25 +244,27 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_token_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=+agent_action.trade_amount,
+            d_bond_buffer=+trade_amount,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
-        max_loss = agent_action.trade_amount - trade_result.user_result.d_base
+        max_loss = trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
-            address=agent_action.wallet_address,
+            address=wallet_address,
             base=-max_loss,
             # TODO: This implementation is opinionated in a way that may not be
             #       correct. The question of whether or not shorts should be
             #       fully backed is still up for debate.
-            margin={agent_action.mint_time: +trade_result.user_result.d_base + max_loss},
-            shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
+            margin={mint_time: +trade_result.user_result.d_base + max_loss},
+            shorts={mint_time: trade_result.user_result.d_bonds},
             fees_paid=+trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
 
-    def _close_short(
+    def close_short(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
+        mint_time: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -260,20 +274,20 @@ class Market:
         """
 
         # Clamp the trade amount to the bond reserves.
-        if agent_action.trade_amount > self.market_state.bond_reserves:
+        if trade_amount > self.market_state.bond_reserves:
             logging.warning(
                 (
                     "markets._close_short: WARNING: trade amount = %g"
                     "is greater than bond reserves = %g."
                     "Adjusting to allowable amount."
                 ),
-                agent_action.trade_amount,
+                trade_amount,
                 self.market_state.bond_reserves,
             )
-            agent_action.trade_amount = self.market_state.bond_reserves
+            trade_amount = self.market_state.bond_reserves
 
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
+        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -298,24 +312,26 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_token_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=-agent_action.trade_amount,
+            d_bond_buffer=-trade_amount,
         )
         # TODO: This accounting doesn't look right. The profit from the
         #       short should be calculated using the difference between
         #       the open short price and the sale price plus the max loss
         #       buffer.
         agent_deltas = Wallet(
-            address=agent_action.wallet_address,
+            address=wallet_address,
             base=trade_result.user_result.d_base,
-            margin={agent_action.mint_time: agent_action.trade_amount - trade_result.user_result.d_base},
-            shorts={agent_action.mint_time: trade_result.user_result.d_bonds},
+            margin={mint_time: trade_amount - trade_result.user_result.d_base},
+            shorts={mint_time: trade_result.user_result.d_bonds},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
 
-    def _open_long(
+    def open_long(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
+        mint_time: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -325,9 +341,9 @@ class Market:
         """
         # TODO: Why are we clamping elsewhere but we don't apply the trade at
         # all here?
-        if agent_action.trade_amount <= self.market_state.bond_reserves:
+        if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
-            trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.BASE)
+            trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
             self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -355,19 +371,21 @@ class Market:
                 d_base_buffer=trade_result.user_result.d_bonds,
             )
             agent_deltas = Wallet(
-                address=agent_action.wallet_address,
+                address=wallet_address,
                 base=trade_result.user_result.d_base,
-                longs={agent_action.mint_time: trade_result.user_result.d_bonds},
+                longs={mint_time: trade_result.user_result.d_bonds},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = Wallet(address=agent_action.wallet_address, base=0)
+            agent_deltas = Wallet(address=wallet_address, base=0)
         return market_deltas, agent_deltas
 
-    def _close_long(
+    def close_long(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
+        mint_time: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -377,7 +395,7 @@ class Market:
         """
 
         # Perform the trade.
-        trade_quantity = Quantity(amount=agent_action.trade_amount, unit=TokenType.PT)
+        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -399,19 +417,20 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_token_asset=trade_result.market_result.d_bonds,
-            d_base_buffer=-agent_action.trade_amount,
+            d_base_buffer=-trade_amount,
         )
         agent_deltas = Wallet(
-            address=agent_action.wallet_address,
+            address=wallet_address,
             base=trade_result.user_result.d_base,
-            longs={agent_action.mint_time: trade_result.user_result.d_bonds},
+            longs={mint_time: trade_result.user_result.d_bonds},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
 
-    def _add_liquidity(
+    def add_liquidity(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
@@ -425,7 +444,7 @@ class Market:
         else:
             rate = self.rate
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
-            d_base=agent_action.trade_amount,
+            d_base=trade_amount,
             rate=rate,
             market_state=self.market_state,
             time_remaining=time_remaining,
@@ -436,22 +455,23 @@ class Market:
             d_lp_reserves=+lp_out,
         )
         agent_deltas = Wallet(
-            address=agent_action.wallet_address,
+            address=wallet_address,
             base=-d_base_reserves,
             lp_tokens=+lp_out,
         )
         return market_deltas, agent_deltas
 
-    def _remove_liquidity(
+    def remove_liquidity(
         self,
-        agent_action: MarketAction,
+        wallet_address: int,
+        trade_amount: float,
         time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
-            lp_in=agent_action.trade_amount,
+            lp_in=trade_amount,
             rate=self.rate,
             market_state=self.market_state,
             time_remaining=time_remaining,
@@ -462,7 +482,7 @@ class Market:
             d_lp_reserves=-lp_in,
         )
         agent_deltas = Wallet(
-            address=agent_action.wallet_address,
+            address=wallet_address,
             base=+d_base_reserves,
             lp_tokens=-lp_in,
         )
