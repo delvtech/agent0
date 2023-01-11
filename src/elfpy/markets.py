@@ -155,36 +155,27 @@ class Market:
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.market_state.apply_delta(market_deltas)
 
-    @property
-    def rate(self):
-        """Returns the current market apr"""
-        # calc_apr_from_spot_price will throw an error if share_reserves <= zero
-        # TODO: Negative values should never happen, but do because of rounding errors.
-        #       Write checks to remedy this in the market.
-        if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
-            rate = np.nan
-        else:
-            rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.position_duration)
-        return rate
+    # TODO: Use this in the simulator.
+    #
+    # TODO: Should should_compound be a variable owned by the market?
+    def accrue(self, apr: float, delta_time: float, should_compound: bool = True) -> None:
+        """Accrues interest to the market
 
-    @property
-    def spot_price(self):
-        """Returns the current market price of the share reserves"""
-        # calc_spot_price_from_reserves will throw an error if share_reserves is zero
-        if self.market_state.share_reserves == 0:  # market is empty
-            spot_price = np.nan
+        Arguments
+        ---------
+        apr : float
+            The annualized interest rate during the accrual period.
+        delta_time : float
+            The amount of time that passed during the accrual period represented
+            as a year fraction.
+        should_compound : bool
+            Indicates whether or not the interest should compound.
+        """
+        if should_compound:
+            price_multiplier = self.market_state.share_price
         else:
-            spot_price = self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
-            )
-        return spot_price
-
-    def get_market_state_string(self) -> str:
-        """Returns a formatted string containing all of the Market class member variables"""
-        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        state_string = "\n".join(strings)
-        return state_string
+            price_multiplier = self.market_state.init_share_price
+        self.market_state.share_price += price_multiplier * apr * delta_time
 
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
@@ -476,6 +467,43 @@ class Market:
             lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas
+
+    @property
+    def max_long(self):
+        return self.pricing_model.get_max_long(
+            market_state=self.market_state, fee_percent=self.fee_percent, time_remaining=self.position_duration
+        )
+
+    @property
+    def rate(self):
+        """Returns the current market apr"""
+        # calc_apr_from_spot_price will throw an error if share_reserves <= zero
+        # TODO: Negative values should never happen, but do because of rounding errors.
+        #       Write checks to remedy this in the market.
+        if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
+            rate = np.nan
+        else:
+            rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.position_duration)
+        return rate
+
+    @property
+    def spot_price(self):
+        """Returns the current market price of the share reserves"""
+        # calc_spot_price_from_reserves will throw an error if share_reserves is zero
+        if self.market_state.share_reserves == 0:  # market is empty
+            spot_price = np.nan
+        else:
+            spot_price = self.pricing_model.calc_spot_price_from_reserves(
+                market_state=self.market_state,
+                time_remaining=self.position_duration,
+            )
+        return spot_price
+
+    def get_market_state_string(self) -> str:
+        """Returns a formatted string containing all of the Market class member variables"""
+        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
+        state_string = "\n".join(strings)
+        return state_string
 
     def log_market_step_string(self) -> None:
         """Logs the current market step"""
