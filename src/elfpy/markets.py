@@ -105,57 +105,38 @@ class Market:
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
-        # TODO: check the desired amount is feasible, otherwise return descriptive error
-        # update market variables which may have changed since the user action was created
-        time_remaining = StretchedTime(
-            # TODO: We should improve the StretchedTime API so that it accepts yearfracs in
-            # the place of days remaining.
-            days=time_utils.get_yearfrac_remaining(
-                self.time, agent_action.mint_time, self.position_duration.normalized_time
-            )
-            * 365,
-            time_stretch=self.position_duration.time_stretch,
-        )
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
-                mint_time=agent_action.mint_time,
-                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             market_deltas, agent_deltas = self.close_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
                 mint_time=agent_action.mint_time,
-                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
-                mint_time=agent_action.mint_time,
-                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             market_deltas, agent_deltas = self.close_short(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
                 mint_time=agent_action.mint_time,
-                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
-                time_remaining=time_remaining,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self.remove_liquidity(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,
-                time_remaining=time_remaining,
             )
         else:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
@@ -213,8 +194,6 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-        mint_time: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -227,13 +206,13 @@ class Market:
             quantity=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
-            time_remaining=time_remaining,
+            time_remaining=self.position_duration,
         )
         trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
             fee_percent=self.fee_percent,
-            time_remaining=time_remaining,
+            time_remaining=self.position_duration,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
 
@@ -254,8 +233,8 @@ class Market:
             # TODO: This implementation is opinionated in a way that may not be
             #       correct. The question of whether or not shorts should be
             #       fully backed is still up for debate.
-            margin={mint_time: +trade_result.user_result.d_base + max_loss},
-            shorts={mint_time: trade_result.user_result.d_bonds},
+            margin={self.time: +trade_result.user_result.d_base + max_loss},
+            shorts={self.time: trade_result.user_result.d_bonds},
             fees_paid=+trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
@@ -265,7 +244,6 @@ class Market:
         wallet_address: int,
         trade_amount: float,
         mint_time: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -285,6 +263,12 @@ class Market:
                 self.market_state.bond_reserves,
             )
             trade_amount = self.market_state.bond_reserves
+
+        # Compute the time remaining given the mint time.
+        time_remaining = StretchedTime(
+            days=time_utils.get_yearfrac_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
+            time_stretch=self.position_duration.time_stretch,
+        )
 
         # Perform the trade.
         trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -331,8 +315,6 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-        mint_time: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -348,13 +330,13 @@ class Market:
                 quantity=trade_quantity,
                 market_state=self.market_state,
                 fee_percent=self.fee_percent,
-                time_remaining=time_remaining,
+                time_remaining=self.position_duration,
             )
             trade_result = self.pricing_model.calc_out_given_in(
                 in_=trade_quantity,
                 market_state=self.market_state,
                 fee_percent=self.fee_percent,
-                time_remaining=time_remaining,
+                time_remaining=self.position_duration,
             )
             self.pricing_model.check_output_assertions(trade_result=trade_result)
 
@@ -373,7 +355,7 @@ class Market:
             agent_deltas = Wallet(
                 address=wallet_address,
                 base=trade_result.user_result.d_base,
-                longs={mint_time: trade_result.user_result.d_bonds},
+                longs={self.time: trade_result.user_result.d_bonds},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
@@ -386,13 +368,18 @@ class Market:
         wallet_address: int,
         trade_amount: float,
         mint_time: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
             will be conditional on the pricing model
         """
+
+        # Compute the time remaining given the mint time.
+        time_remaining = StretchedTime(
+            days=time_utils.get_yearfrac_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
+            time_stretch=self.position_duration.time_stretch,
+        )
 
         # Perform the trade.
         trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -431,7 +418,6 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is added
@@ -447,7 +433,7 @@ class Market:
             d_base=trade_amount,
             rate=rate,
             market_state=self.market_state,
-            time_remaining=time_remaining,
+            time_remaining=self.position_duration,
         )
         market_deltas = MarketDeltas(
             d_base_asset=+d_base_reserves,
@@ -465,7 +451,6 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-        time_remaining: StretchedTime,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         Computes new deltas for bond & share reserves after liquidity is removed
@@ -474,7 +459,7 @@ class Market:
             lp_in=trade_amount,
             rate=self.rate,
             market_state=self.market_state,
-            time_remaining=time_remaining,
+            time_remaining=self.position_duration,
         )
         market_deltas = MarketDeltas(
             d_base_asset=-d_base_reserves,
