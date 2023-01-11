@@ -60,7 +60,7 @@ class Agent:
         """
         if market.market_state.share_reserves == 0:
             return 0
-        max_pt_short = market.market_state.share_reserves * market.market_state.share_price / market.get_spot_price()
+        max_pt_short = market.market_state.share_reserves * market.market_state.share_price / market.spot_price
         return max_pt_short
 
     def get_trade_list(self, market: Market) -> list:
@@ -163,7 +163,7 @@ class Agent:
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if market.market_state.share_reserves > 0:
-            price = market.get_spot_price()
+            price = market.spot_price
         else:
             price = 0
         base = self.wallet.base

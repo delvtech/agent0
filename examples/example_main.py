@@ -42,11 +42,11 @@ class CustomShorter(Agent):
         vault_apr = market.market_state.vault_apr
         action_list = []
         if can_open_short:
-            if vault_apr > market.get_rate():
+            if vault_apr > market.rate:
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
                 )
-            elif vault_apr < market.get_rate():
+            elif vault_apr < market.rate:
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(

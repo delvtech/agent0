@@ -119,7 +119,7 @@ class BaseTradeTest(unittest.TestCase):
         }
         simulator, market = self.setup_simulation_entities(config_file, override_dict, agent_policies)
         # check that apr is within 0.005 of the target
-        market_apr = market.get_rate()
+        market_apr = market.rate
         assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
             f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
             f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"

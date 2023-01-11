@@ -164,7 +164,8 @@ class Market:
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
         self.market_state.apply_delta(market_deltas)
 
-    def get_rate(self):
+    @property
+    def rate(self):
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -172,10 +173,11 @@ class Market:
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
-            rate = price_utils.calc_apr_from_spot_price(self.get_spot_price(), self.position_duration)
+            rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.position_duration)
         return rate
 
-    def get_spot_price(self):
+    @property
+    def spot_price(self):
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
@@ -421,7 +423,7 @@ class Market:
         ):  # pool has not been initialized
             rate = 0
         else:
-            rate = self.get_rate()
+            rate = self.rate
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=agent_action.trade_amount,
             rate=rate,
@@ -450,7 +452,7 @@ class Market:
         """
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=agent_action.trade_amount,
-            rate=self.get_rate(),
+            rate=self.rate,
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
@@ -474,8 +476,8 @@ class Market:
             spot_price = str(np.nan)
             rate = str(np.nan)
         else:
-            spot_price = self.get_spot_price()
-            rate = self.get_rate()
+            spot_price = self.spot_price
+            rate = self.rate
         logging.debug(
             (
                 "t = %g"

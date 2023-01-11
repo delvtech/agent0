@@ -35,7 +35,7 @@ class Policy(Agent):
                 action_list.append(
                     self.create_agent_action(
                         action_type=MarketActionType.CLOSE_LONG,
-                        trade_amount=sum(block_position_list) / (market.get_spot_price() * 0.99),  # assume 1% slippage
+                        trade_amount=sum(block_position_list) / (market.spot_price * 0.99),  # assume 1% slippage
                         mint_time=mint_time,
                     )
                 )

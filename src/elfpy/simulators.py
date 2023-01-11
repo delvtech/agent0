@@ -258,7 +258,7 @@ class Simulator:
         self.simulation_state.floor_fee.append(self.config.amm.floor_fee)
         self.simulation_state.init_vault_age.append(self.random_variables.init_vault_age)
         self.simulation_state.base_asset_price.append(self.config.market.base_asset_price)
-        self.simulation_state.pool_apr.append(self.market.get_rate())
+        self.simulation_state.pool_apr.append(self.market.rate)
         self.simulation_state.num_trading_days.append(self.config.simulator.num_trading_days)
         self.simulation_state.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
         self.simulation_state.update_market_state(self.market.market_state)
@@ -267,6 +267,6 @@ class Simulator:
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market
-            self.simulation_state.spot_price.append(self.market.get_spot_price())
+            self.simulation_state.spot_price.append(self.market.spot_price)
         else:
             self.simulation_state.spot_price.append(np.nan)
