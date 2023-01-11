@@ -14,7 +14,6 @@ from elfpy.types import (
     TradeResult,
     AgentTradeResult,
 )
-import elfpy.utils.price as price_utils
 
 
 class YieldSpacePricingModel(PricingModel):
@@ -357,7 +356,7 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(market_state, time_remaining)
+        k = self._calc_k_const(market_state, time_remaining)
         if out.unit == TokenType.BASE:
             in_reserves = Decimal(market_state.bond_reserves) + total_reserves
             out_reserves = Decimal(market_state.share_reserves)
@@ -576,7 +575,7 @@ class YieldSpacePricingModel(PricingModel):
         # share price:
         #
         # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
-        k = price_utils.calc_k_const(market_state, time_remaining)
+        k = self._calc_k_const(market_state, time_remaining)
         if in_.unit == TokenType.BASE:
             d_shares = Decimal(in_.amount) / Decimal(market_state.share_price)  # convert from base_asset to z (x=cz)
             in_reserves = Decimal(market_state.share_reserves)
@@ -695,4 +694,30 @@ class YieldSpacePricingModel(PricingModel):
                 without_fee=float(without_fee),
                 fee=float(fee),
             ),
+        )
+
+    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+        """
+        Returns the 'k' constant variable for trade mathematics
+
+        Arguments
+        ---------
+        market_state : MarketState
+            The state of the AMM
+        time_remaining : StretchedTime
+            Amount of time that remains in the current market
+
+        Returns
+        -------
+        Decimal
+            'k' constant used for trade mathematics, calculated from the provided parameters
+        """
+        scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
+        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
+            market_state.share_reserves
+        )
+        time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
+        return (
+            scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
+            + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
         )

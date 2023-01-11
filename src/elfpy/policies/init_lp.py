@@ -6,7 +6,6 @@ Special reserved user strategy that is used to initialize a market with a desire
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketActionType
@@ -32,7 +31,7 @@ class Policy(Agent):
         self.second_base_to_lp = second_base_to_lp
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: Market, pricing_model: PricingModel):
+    def action(self, market: Market):
         """
         implement user strategy
         LP if you can, but only do it once
@@ -42,7 +41,7 @@ class Policy(Agent):
         if has_lp:
             action_list = []
         else:
-            if pricing_model.model_name() == HyperdrivePricingModel().model_name():
+            if market.pricing_model.model_name() == HyperdrivePricingModel().model_name():
                 # TODO: This PM fails the tests
                 action_list = [
                     self.create_agent_action(
@@ -53,7 +52,7 @@ class Policy(Agent):
                         action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.second_base_to_lp
                     ),
                 ]
-            elif pricing_model.model_name() == YieldSpacePricingModel().model_name():
+            elif market.pricing_model.model_name() == YieldSpacePricingModel().model_name():
                 action_list = [
                     self.create_agent_action(
                         action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.first_base_to_lp
@@ -64,5 +63,5 @@ class Policy(Agent):
                     ),
                 ]
             else:
-                raise ValueError(f"Pricing model = {pricing_model.model_name()} is not supported.")
+                raise ValueError(f"Pricing model = {market.pricing_model.model_name()} is not supported.")
         return action_list

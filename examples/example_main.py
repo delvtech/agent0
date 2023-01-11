@@ -13,7 +13,6 @@ import elfpy
 from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketActionType
 
 # elfpy utils
@@ -35,19 +34,19 @@ class CustomShorter(Agent):
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
+    def action(self, market: Market) -> list[Any]:
         """Implement a custom user strategy"""
         block_position_list = list(self.wallet.shorts.values())
         has_opened_short = bool(any((x < -1 for x in block_position_list)))
-        can_open_short = self.get_max_pt_short(market, pricing_model) >= self.pt_to_short
+        can_open_short = self.get_max_pt_short(market) >= self.pt_to_short
         vault_apr = market.market_state.vault_apr
         action_list = []
         if can_open_short:
-            if vault_apr > market.get_rate(pricing_model):
+            if vault_apr > market.rate:
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short)
                 )
-            elif vault_apr < market.get_rate(pricing_model):
+            elif vault_apr < market.rate:
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(
@@ -57,7 +56,7 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(num_new_agents: int, num_existing_agents: int = 0) -> dict[int, Agent]:
+def get_example_agents(num_new_agents: int, num_existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for wallet_address in range(num_existing_agents, num_new_agents + 1):
@@ -146,7 +145,6 @@ if __name__ == "__main__":
     init_agents = {
         0: sim_utils.get_init_lp_agent(
             sim_market,
-            sim_pricing_model,
             random_sim_vars.target_liquidity,
             random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
@@ -155,7 +153,6 @@ if __name__ == "__main__":
     # set up simulator with only the init_lp_agent
     simulator = Simulator(
         config=config,
-        pricing_model=sim_pricing_model,
         market=sim_market,
         agents=init_agents,
         rng=rng,

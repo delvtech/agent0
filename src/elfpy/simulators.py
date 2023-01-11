@@ -35,7 +35,6 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        pricing_model: PricingModel,
         market: Market,
         agents: dict[int, Agent],
         rng: Generator,
@@ -46,7 +45,6 @@ class Simulator:
         # User specified variables
         self.config = config
         self.log_config_variables()
-        self.pricing_model = pricing_model
         self.market = market
         self.agents = agents
         self.set_rng(rng)
@@ -174,9 +172,9 @@ class Simulator:
             if last_block_in_sim:  # get all of a agent's trades
                 trade_list = agent.get_liquidation_trades(self.market)
             else:
-                trade_list = agent.get_trade_list(self.market, self.pricing_model)
+                trade_list = agent.get_trade_list(self.market)
             for agent_trade in trade_list:  # execute trades
-                wallet_deltas = self.market.trade_and_update(agent_trade, self.pricing_model)
+                wallet_deltas = self.market.trade_and_update(agent_trade)
                 agent.update_wallet(wallet_deltas, self.market)
                 logging.debug(
                     "agent #%g wallet deltas = \n%s",
@@ -226,18 +224,18 @@ class Simulator:
                 )
                 self.collect_and_execute_trades(last_block_in_sim)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
-                self.market.log_market_step_string(self.pricing_model)
+                self.market.log_market_step_string()
                 if not last_block_in_sim:
                     self.market.tick(self.market_step_size())
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
-            agent.log_final_report(self.market, self.pricing_model)
+            agent.log_final_report(self.market)
 
     def update_simulation_state(self) -> None:
         """Increment the list for each key in the simulation_state output variable"""
         # pylint: disable=too-many-statements
-        self.simulation_state.model_name.append(self.pricing_model.model_name())
+        self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
         self.simulation_state.simulation_start_time.append(self.start_time)
         self.simulation_state.day.append(self.day)
@@ -260,7 +258,7 @@ class Simulator:
         self.simulation_state.floor_fee.append(self.config.amm.floor_fee)
         self.simulation_state.init_vault_age.append(self.random_variables.init_vault_age)
         self.simulation_state.base_asset_price.append(self.config.market.base_asset_price)
-        self.simulation_state.pool_apr.append(self.market.get_rate(self.pricing_model))
+        self.simulation_state.pool_apr.append(self.market.rate)
         self.simulation_state.num_trading_days.append(self.config.simulator.num_trading_days)
         self.simulation_state.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
         self.simulation_state.update_market_state(self.market.market_state)
@@ -269,6 +267,6 @@ class Simulator:
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market
-            self.simulation_state.spot_price.append(self.market.get_spot_price(self.pricing_model))
+            self.simulation_state.spot_price.append(self.market.spot_price)
         else:
             self.simulation_state.spot_price.append(np.nan)

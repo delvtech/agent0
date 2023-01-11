@@ -14,7 +14,6 @@ import elfpy
 from elfpy.agent import Agent
 from elfpy.simulators import Simulator
 from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
@@ -36,7 +35,7 @@ class RandomAgent(Agent):
         super().__init__(wallet_address, budget)
 
     # TODO: Implement random short behavior.
-    def action(self, market: Market, pricing_model: PricingModel) -> list[Any]:
+    def action(self, market: Market) -> list[Any]:
         action_list = []
 
         # Flip a biased coin to see whether or not to make a trade.
@@ -44,7 +43,7 @@ class RandomAgent(Agent):
         if flip >= 0.9:
             max_long = min(
                 self.wallet.base,
-                pricing_model.get_max_long(market.market_state, market.fee_percent, market.position_duration),
+                market.pricing_model.get_max_long(market.market_state, market.fee_percent, market.position_duration),
             )
             open_longs = list(self.wallet.longs.items())
 
@@ -156,7 +155,6 @@ def run_random_agent_simulation(config: Config):
     init_agents = {
         0: sim_utils.get_init_lp_agent(
             sim_market,
-            sim_pricing_model,
             random_sim_vars.target_liquidity,
             random_sim_vars.target_pool_apr,
             random_sim_vars.fee_percent,
@@ -166,7 +164,6 @@ def run_random_agent_simulation(config: Config):
     # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
-        pricing_model=sim_pricing_model,
         market=sim_market,
         agents=init_agents,
         rng=rng,

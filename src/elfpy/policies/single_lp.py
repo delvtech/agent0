@@ -8,7 +8,6 @@ User strategy that adds base liquidity and doesn't remove until liquidation
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketActionType
 
 
@@ -20,7 +19,7 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: Market, _model: PricingModel):
+    def action(self, _market: Market):
         """
         implement user strategy
         LP if you can, but only do it once

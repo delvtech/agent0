@@ -8,12 +8,17 @@ Testing for the ElfPy package modules
 # pylint: disable=duplicate-code
 
 import logging
+from typing import Dict
 import unittest
 import os
 import numpy as np
-from numpy.random import RandomState
+from numpy.random import Generator, RandomState
+from elfpy.agent import Agent
+from elfpy.markets import Market
 
 from elfpy.simulators import Simulator
+from elfpy.types import RandomSimulationVariables
+from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
@@ -29,7 +34,9 @@ class BaseSimTest(unittest.TestCase):
         output_utils.setup_logging(log_filename, log_level=log_level)
 
     @staticmethod
-    def setup_simulator_inputs(config_file, override_dict=None):
+    def setup_simulator_inputs(
+        config_file, override_dict=None
+    ) -> tuple[Config, Market, Dict[int, Agent], Generator, RandomSimulationVariables]:
         """Instantiate input objects to the simulator class"""
         if override_dict is None:
             override_dict = {}  # empty dict means nothing is overridden
@@ -56,24 +63,20 @@ class BaseSimTest(unittest.TestCase):
         init_agents = {
             0: sim_utils.get_init_lp_agent(
                 market,
-                pricing_model,
                 random_sim_vars.target_liquidity,
                 random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
                 init_liquidity=1,
             )
         }
-        return config, pricing_model, market, init_agents, rng, random_sim_vars
+        return config, market, init_agents, rng, random_sim_vars
 
     def setup_simulator(self, config_file, override_dict=None):
         """Instantiate the simulator object"""
-        config, pricing_model, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
-            config_file, override_dict
-        )
+        config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(config_file, override_dict)
         # set up simulator with only the init_lp_agent
         simulator = Simulator(
             config=config,
-            pricing_model=pricing_model,
             market=market,
             agents=init_agents,
             rng=rng,
@@ -150,12 +153,9 @@ class BaseSimTest(unittest.TestCase):
             {"num_trading_days": 3, "vault_apr": [0.05, 0.04, 0.03]},
         ]
         for override_dict in override_list:
-            config, pricing_model, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
-                config_file, override_dict
-            )
+            config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(config_file, override_dict)
             simulator = Simulator(
                 config=config,
-                pricing_model=pricing_model,
                 market=market,
                 agents=init_agents,
                 rng=rng,
@@ -169,7 +169,6 @@ class BaseSimTest(unittest.TestCase):
                 assert np.all(simulator.random_variables == random_sim_vars)
             simulator = Simulator(
                 config=config,
-                pricing_model=pricing_model,
                 market=market,
                 agents=init_agents,
                 rng=rng,
@@ -179,13 +178,12 @@ class BaseSimTest(unittest.TestCase):
             assert simulator.random_variables is not None
             assert np.all(simulator.random_variables != random_sim_vars)
         incorrect_override_dict = {"num_trading_days": 5, "vault_apr": [0.05, 0.04, 0.03]}
-        config, pricing_model, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
+        config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
             config_file, incorrect_override_dict
         )
         with self.assertRaises(ValueError):
             simulator = Simulator(
                 config=config,
-                pricing_model=pricing_model,
                 market=market,
                 agents=init_agents,
                 rng=rng,

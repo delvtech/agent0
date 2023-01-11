@@ -47,7 +47,6 @@ class BaseLogTest(unittest.TestCase):
         init_agents = {
             0: sim_utils.get_init_lp_agent(
                 market,
-                pricing_model,
                 random_sim_vars.target_liquidity,
                 random_sim_vars.target_pool_apr,
                 random_sim_vars.fee_percent,
@@ -56,7 +55,6 @@ class BaseLogTest(unittest.TestCase):
         # set up simulator with only the init_lp_agent
         simulator = Simulator(
             config=config,
-            pricing_model=pricing_model,
             market=market,
             agents=init_agents,
             rng=rng,

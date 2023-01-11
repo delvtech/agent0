@@ -6,7 +6,6 @@ User strategy that adds liquidity and then removes it when enough time has passe
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models.base import PricingModel
 from elfpy.types import MarketActionType
 
 
@@ -22,7 +21,7 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market, _pricing_model: PricingModel):
+    def action(self, market: Market):
         """
         implement user strategy
         LP if you can, but only do it once

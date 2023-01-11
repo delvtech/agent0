@@ -2,81 +2,8 @@
 
 
 from __future__ import annotations  # types will be strings by default in 3.11
-from decimal import Decimal
-from typing import TYPE_CHECKING
 
-from elfpy.types import MarketState, StretchedTime
-
-if TYPE_CHECKING:
-    from elfpy.markets import Market
-    from elfpy.pricing_models.base import PricingModel
-
-
-### Reserves ###
-
-
-def calc_liquidity(
-    target_liquidity: float,
-    target_apr: float,
-    market: Market,
-    pricing_model: PricingModel,
-) -> tuple[float, float]:
-    """Returns the reserve volumes and total supply
-
-    The scaling factor ensures bond_reserves and share_reserves add
-    up to target_liquidity, while keeping their ratio constant (preserves apr).
-
-    total_liquidity = in base terms, used to target liquidity as passed in
-    total_reserves  = in arbitrary units (AU), used for yieldspace math
-
-    Arguments
-    ---------
-    target_liquidity_usd : float
-        amount of liquidity that the simulation is trying to achieve in a given market
-    target_apr : float
-        desired APR for the seeded market
-    market : Market
-        This function uses:
-            market_state.init_share_price : float
-                original share price when the pool started. Defaults to 1
-            market_state.share_price : float
-                current share price. Defaults to 1
-            position_duration : StretchedTime
-                amount of time left until bond maturity
-
-    Returns
-    -------
-    (float, float)
-        Tuple that contains (share_reserves, bond_reserves)
-        calculated from the provided parameters
-    """
-    share_reserves = target_liquidity / market.market_state.share_price
-    bond_reserves = pricing_model.calc_bond_reserves(
-        target_apr,
-        share_reserves,
-        market.position_duration,
-        market.market_state.init_share_price,
-        market.market_state.share_price,
-    )
-    price = market.market_state.share_price
-    total_liquidity = pricing_model.calc_total_liquidity_from_reserves_and_price(
-        MarketState(
-            share_reserves=share_reserves,
-            bond_reserves=bond_reserves,
-            base_buffer=market.market_state.base_buffer,
-            bond_buffer=market.market_state.bond_buffer,
-            lp_reserves=market.market_state.lp_reserves,
-            share_price=market.market_state.share_price,
-            init_share_price=market.market_state.init_share_price,
-        ),
-        price,
-    )
-    # compute scaling factor to adjust reserves so that they match the target liquidity
-    scaling_factor = target_liquidity / total_liquidity  # both in token units
-    # update variables by rescaling the original estimates
-    bond_reserves = bond_reserves * scaling_factor
-    share_reserves = share_reserves * scaling_factor
-    return (share_reserves, bond_reserves)
+from elfpy.types import StretchedTime
 
 
 ### Spot Price and APR ###
@@ -126,30 +53,3 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
     return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
-
-
-def calc_k_const(market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
-    """
-    Returns the 'k' constant variable for trade mathematics
-
-    Arguments
-    ---------
-    market_state : MarketState
-        The state of the AMM
-    time_remaining : StretchedTime
-        Amount of time that remains in the current market
-
-    Returns
-    -------
-    Decimal
-        'k' constant used for trade mathematics, calculated from the provided parameters
-    """
-    scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
-    total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
-        market_state.share_reserves
-    )
-    time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
-    return (
-        scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
-        + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
-    )

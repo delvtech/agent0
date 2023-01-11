@@ -8,7 +8,6 @@ import logging
 
 from stochastic.processes import GeometricBrownianMotion
 
-import elfpy.utils.price as price_utils
 from elfpy.types import (
     MarketState,
     Quantity,
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
 
 def get_init_lp_agent(
     market: Market,
-    pricing_model: PricingModel,
     target_liquidity: float,
     target_pool_apr: float,
     fee_percent: float,
@@ -39,8 +37,6 @@ def get_init_lp_agent(
     ---------
     market : Market
         empty market object
-    pricing_model : PricingModel
-        desired pricing model
     target_liquidity : float
         target total liquidity for LPer to provide (bonds+shares)
         the result will be within 7% of the target
@@ -60,14 +56,14 @@ def get_init_lp_agent(
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments
     # get the reserve amounts for a small target liquidity to achieve a target pool APR
-    init_share_reserves, init_bond_reserves = price_utils.calc_liquidity(
+    init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
+        market_state=market.market_state,
         target_liquidity=init_liquidity,
         target_apr=target_pool_apr,
-        market=market,
-        pricing_model=pricing_model,
+        position_duration=market.position_duration,
     )[:2]
     # mock the short to assess what the delta market conditions will be
-    output_with_fee = pricing_model.calc_out_given_in(
+    output_with_fee = market.pricing_model.calc_out_given_in(
         in_=Quantity(amount=init_bond_reserves, unit=TokenType.BASE),
         market_state=MarketState(
             share_reserves=init_share_reserves,
@@ -147,6 +143,7 @@ def get_market(
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments
     market = Market(
+        pricing_model=pricing_model,
         market_state=MarketState(
             init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
