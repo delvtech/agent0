@@ -223,7 +223,7 @@ class Market:
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_token_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=+trade_amount,
+            d_bond_buffer=trade_amount,
         )
         # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_amount - trade_result.user_result.d_base
@@ -233,9 +233,9 @@ class Market:
             # TODO: This implementation is opinionated in a way that may not be
             #       correct. The question of whether or not shorts should be
             #       fully backed is still up for debate.
-            margin={self.time: +trade_result.user_result.d_base + max_loss},
+            margin={self.time: trade_result.user_result.d_base + max_loss},
             shorts={self.time: trade_result.user_result.d_bonds},
-            fees_paid=+trade_result.breakdown.fee,
+            fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
 
@@ -436,14 +436,14 @@ class Market:
             time_remaining=self.position_duration,
         )
         market_deltas = MarketDeltas(
-            d_base_asset=+d_base_reserves,
-            d_token_asset=+d_token_reserves,
-            d_lp_reserves=+lp_out,
+            d_base_asset=d_base_reserves,
+            d_token_asset=d_token_reserves,
+            d_lp_reserves=lp_out,
         )
         agent_deltas = Wallet(
             address=wallet_address,
             base=-d_base_reserves,
-            lp_tokens=+lp_out,
+            lp_tokens=lp_out,
         )
         return market_deltas, agent_deltas
 
@@ -468,7 +468,7 @@ class Market:
         )
         agent_deltas = Wallet(
             address=wallet_address,
-            base=+d_base_reserves,
+            base=d_base_reserves,
             lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas

@@ -15,10 +15,10 @@ from importlib import import_module
 import numpy as np
 from elfpy.markets import Market
 
-from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
+import elfpy.utils.parse_config as config_utils
 
 
 class BaseTradeTest(unittest.TestCase):
@@ -28,7 +28,9 @@ class BaseTradeTest(unittest.TestCase):
     def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
         """Construct and run the simulator"""
         # create config object
-        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
+        config = config_utils.override_config_variables(
+            config_utils.load_and_parse_config_file(config_file), override_dict
+        )
         # instantiate rng object
         rng = np.random.default_rng(config.simulator.random_seed)
         # run random number generators to get random simulation arguments

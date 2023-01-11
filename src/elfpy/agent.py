@@ -94,15 +94,14 @@ class Agent:
                 pass
             # handle updating a value
             if key in ["base", "lp_tokens", "fees_paid"]:
-                if value_or_dict != 0 or self.wallet[key] != 0:
-                    logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.wallet.address,
-                        key,
-                        self.wallet[key],
-                        self.wallet[key] + value_or_dict,
-                        value_or_dict,
-                    )
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.wallet.address,
+                    key,
+                    self.wallet[key],
+                    self.wallet[key] + value_or_dict,
+                    value_or_dict,
+                )
                 self.wallet[key] += value_or_dict
             # handle updating a dict, which have mint_time attached
             elif key in ["margin", "longs", "shorts"]:

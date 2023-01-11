@@ -96,7 +96,7 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pricing_model", help="Pricing model to be used in the simulation", default="Hyperdrive", type=str
     )
-    parser.add_argument("--trading_days", help="Number of simulated trading days", default=None, type=int)
+    parser.add_argument("--num_trading_days", help="Number of simulated trading days", default=None, type=int)
     parser.add_argument("--blocks_per_day", help="Number of simulated trading blocks per day", default=None, type=int)
     return parser
 
@@ -108,8 +108,8 @@ if __name__ == "__main__":
     config = config_utils.load_and_parse_config_file(args.config)
     # override any particular simulation arguments
     override_dict = {}
-    if args.trading_days is not None:
-        override_dict["num_trading_days"] = args.trading_days
+    if args.num_trading_days is not None:
+        override_dict["num_trading_days"] = args.num_trading_days
     if args.blocks_per_day is not None:
         override_dict["num_blocks_per_day"] = args.blocks_per_day
     override_dict["vault_apr"] = {
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         "low": 0.001,
         "high": 0.9,
     }
-    config = sim_utils.override_config_variables(config, override_dict)
+    config = config_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
     # define root logging parameters
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # instantiate random number generator
     rng = np.random.default_rng(config.simulator.random_seed)
     # run random number generators to get random simulation arguments
-    random_sim_vars = sim_utils.get_random_variables(config, rng)
+    random_sim_vars = sim_utils.override_random_variables(sim_utils.get_random_variables(config, rng), override_dict)
     # instantiate the pricing model
     sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     # instantiate the market
@@ -161,5 +161,5 @@ if __name__ == "__main__":
     # initialize the market using the LP agent
     simulator.collect_and_execute_trades()
     # get trading agent list
-    simulator.add_agents(get_example_agents(num_new_agents=args.num_agents, num_existing_agents=1))
+    simulator.add_agents(get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(simulator.agents)))
     simulator.run_simulation()

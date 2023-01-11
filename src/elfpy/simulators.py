@@ -52,7 +52,7 @@ class Simulator:
             self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
         else:
             self.random_variables = random_simulation_variables
-        self.check_vault_apr_type()
+        self.check_vault_apr()
         # Simulation variables
         self.run_number = 0
         self.day = 0
@@ -64,19 +64,14 @@ class Simulator:
         self.start_time: datetime.datetime | None = None
         self.simulation_state = SimulationState()
 
-    def check_vault_apr_type(self) -> None:
-        """Recast the vault apy into a list of floats if a float was given on init"""
-        if isinstance(self.random_variables.vault_apr, float):
-            self.random_variables.vault_apr = [
-                float(self.random_variables.vault_apr)
-            ] * self.config.simulator.num_trading_days
-        else:  # check that the length is correct
-            if not len(self.random_variables.vault_apr) == self.config.simulator.num_trading_days:
-                raise ValueError(
-                    "vault_apr must have len equal to num_trading_days = "
-                    + f"{self.config.simulator.num_trading_days},"
-                    + f" not {len(self.random_variables.vault_apr)}"
-                )
+    def check_vault_apr(self) -> None:
+        """Verify that the vault_apr is the right length"""
+        if not len(self.random_variables.vault_apr) == self.config.simulator.num_trading_days:
+            raise ValueError(
+                "vault_apr must have len equal to num_trading_days = "
+                + f"{self.config.simulator.num_trading_days},"
+                + f" not {len(self.random_variables.vault_apr)}"
+            )
 
     def set_rng(self, rng: Generator) -> None:
         """Assign the internal random number generator to a new instantiation

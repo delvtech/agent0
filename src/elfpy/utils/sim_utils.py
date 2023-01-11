@@ -219,13 +219,15 @@ def setup_vault_apr(config, rng):
                     )
         else:
             raise ValueError(f"{config.market.vault_apr['type']=} not in {allowable_keys=}")
-    elif isinstance(config.market.vault_apr, Callable):  # callable function
+    elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
         vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
     elif isinstance(config.market.vault_apr, list):  # user-defined list of values
         vault_apr = config.market.vault_apr
+    elif isinstance(config.market.vault_apr, float):  # single constant value to be cast to a float
+        vault_apr = [float(config.market.vault_apr)] * config.simulator.num_trading_days
     else:
         raise TypeError(
-            f"config.market.vault_apr must be a list, dict, or callable, not {type(config.market.vault_apr)}"
+            f"config.market.vault_apr must be an int, list, dict, or callable, not {type(config.market.vault_apr)}"
         )
     return vault_apr
 
@@ -286,29 +288,3 @@ def override_random_variables(
             if key in allowed_keys:
                 setattr(random_variables, key, value)
     return random_variables
-
-
-def override_config_variables(config, override_dict):
-    """Replace existing member & config variables with ones defined in override_dict
-
-    Arguments
-    ---------
-    config : Config
-        config object, as defined in elfpy.utils.config
-    override_dict : dict
-        dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
-
-    Returns
-    -------
-    Config
-        same dataclass as the config input, but with fields specified by override_dict changed
-    """
-    # override the config variables, including random variables that were set
-    for key, value in override_dict.items():
-        for variable_object in [config.market, config.amm, config.simulator]:
-            if hasattr(
-                variable_object, key
-            ):  # TODO: This is a non safe HACK -- we should assign & type each key/value individually
-                logging.debug("Overridding %s from %s to %s.", key, str(getattr(variable_object, key)), str(value))
-                setattr(variable_object, key, value)
-    return config
