@@ -27,5 +27,9 @@ jobs:
         run: python -m black --check --diff .
       - name: Analysing code with pylint
         run: python -m pylint $(git ls-files '*.py')
+      - name: Analysing code with pyright
+        run: python -m pyright .
+        # TODO: We should address all of the typing issues and remove this flag.
+        continue-on-error: true
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1

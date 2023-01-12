@@ -24,8 +24,8 @@ class Policy(Agent):
         can_open_long = (self.wallet.base >= self.amount_to_trade) and (
             market.market_state.share_reserves >= self.amount_to_trade
         )
-        block_position_list = list(self.wallet.shorts.values())
-        has_opened_long = bool(any((x < 0 for x in block_position_list)))
+        longs = list(self.wallet.longs.values())
+        has_opened_long = bool(any((long.balance > 0 for long in longs)))
         action_list = []
         mint_times = list(self.wallet["longs"].keys())
         if has_opened_long:
@@ -35,7 +35,8 @@ class Policy(Agent):
                 action_list.append(
                     self.create_agent_action(
                         action_type=MarketActionType.CLOSE_LONG,
-                        trade_amount=sum(block_position_list) / (market.spot_price * 0.99),  # assume 1% slippage
+                        trade_amount=sum([long.balance for long in longs])
+                        / (market.spot_price * 0.99),  # assume 1% slippage
                         mint_time=mint_time,
                     )
                 )

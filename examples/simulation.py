@@ -17,10 +17,9 @@ from elfpy.markets import Market
 from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
-from elfpy.utils import sim_utils
-from elfpy.utils.config import Config  # utilities for setting up a simulation
-import elfpy.utils.parse_config as config_utils
-import elfpy.utils.outputs as output_utils
+from elfpy.utils import sim_utils, parse_config as config_utils, outputs as output_utils
+from elfpy.utils.config import Config
+from elfpy.wallet import Long
 
 
 # TODO: Add more configuration potential by allowing the initializer to
@@ -70,12 +69,12 @@ class RandomAgent(Agent):
             mint_time=market_time,
         )
 
-    def _close_long(self, open_longs: list[tuple[float, float]]) -> MarketAction:
-        (mint_time, long_balance) = open_longs[self.rng.integers(0, len(open_longs))]
+    def _close_long(self, open_longs: list[tuple[float, Long]]) -> MarketAction:
+        (mint_time, long) = open_longs[self.rng.integers(0, len(open_longs))]
         return self.create_agent_action(
             action_type=MarketActionType.CLOSE_LONG,
             # Uniformly select trade amounts from (0, long_balance].
-            trade_amount=abs(self.rng.uniform(-long_balance, 0)),
+            trade_amount=abs(self.rng.uniform(-long.balance, 0)),
             mint_time=mint_time,
         )
 
@@ -189,7 +188,9 @@ if __name__ == "__main__":
     if args.log_level is not None:
         override_dict["logging_level"] = args.log_level
     override_dict["vault_apr"] = {"type": "GeometricBrownianMotion", "initial": 0.05}
-    config_ = sim_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
+    config_ = config_utils.override_config_variables(
+        config_utils.load_and_parse_config_file(args.config), override_dict
+    )
 
     # Define root logging parameters.
     output_utils.setup_logging(

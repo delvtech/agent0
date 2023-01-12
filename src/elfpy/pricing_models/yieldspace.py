@@ -184,7 +184,9 @@ class YieldSpacePricingModel(PricingModel):
             f"share_price={market_state.share_price}, and init_share_price={market_state.init_share_price}"
         )
         d_shares = d_base / market_state.share_price
-        lp_in = (d_shares * market_state.lp_reserves) / (market_state.share_reserves - market_state.base_buffer)
+        lp_in = (d_shares * market_state.lp_reserves) / (
+            market_state.share_reserves - market_state.base_buffer / market_state.share_price
+        )
         # TODO: Move this calculation to a helper function.
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
             market_state.init_share_price
