@@ -3,13 +3,13 @@ Implements abstract classes that control agent behavior
 """
 
 from __future__ import annotations  # types will be strings by default in 3.11
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 import logging
 
 import numpy as np
 
 from elfpy.utils.outputs import float_to_string
-from elfpy.wallet import Long, Wallet
+from elfpy.wallet import Long, Short, Wallet
 from elfpy.types import MarketAction, MarketActionType
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ class Agent:
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
-            if key in ["fees_paid", "effective_price", "address"]:
+            if key in ["fees_paid", "address"]:
                 continue
             # handle updating a value
             if key in ["base", "lp_tokens", "fees_paid"]:
@@ -107,46 +107,50 @@ class Agent:
                 self.wallet[key] += value_or_dict
             # handle updating a dict, which have mint_time attached
             elif key == "longs":
-                for mint_time, long in value_or_dict.items():
-                    if long.balance != 0:
-                        logging.debug(
-                            "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                            self.wallet.address,
-                            key,
-                            mint_time,
-                            self.wallet.longs,
-                            long,
-                        )
-                        if mint_time in self.wallet.longs:  #  entry already exists for this mint_time, so add to it
-                            self.wallet.longs[mint_time].balance += long.balance
-                        else:
-                            self.wallet.longs.update({mint_time: long})
-                    if self.wallet.longs[mint_time].balance == 0:
-                        # Remove the empty long from the wallet.
-                        del self.wallet.longs[mint_time]
+                self._update_longs(value_or_dict.items())
             elif key == "shorts":
-                for mint_time, short in value_or_dict.items():
-                    if short.balance != 0:
-                        logging.debug(
-                            "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                            self.wallet.address,
-                            key,
-                            mint_time,
-                            self.wallet.shorts,
-                            short,
-                        )
-                        if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
-                            self.wallet.shorts[mint_time].balance += short.balance
-                            self.wallet.shorts[mint_time].margin += short.margin
-                        else:
-                            self.wallet.shorts.update({mint_time: short})
-                    if self.wallet.shorts[mint_time].balance == 0:
-                        # Add the remaining margin balance to the wallet's base.
-                        self.wallet.base += self.wallet.shorts[mint_time].margin
-                        # Remove the empty short from the wallet.
-                        del self.wallet.shorts[mint_time]
+                self._update_shorts(value_or_dict.items())
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
+
+    def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+        for mint_time, long in longs:
+            if long.balance != 0:
+                logging.debug(
+                    "agent #%g trade longs, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    self.wallet.address,
+                    mint_time,
+                    self.wallet.longs,
+                    long,
+                )
+                if mint_time in self.wallet.longs:  #  entry already exists for this mint_time, so add to it
+                    self.wallet.longs[mint_time].balance += long.balance
+                else:
+                    self.wallet.longs.update({mint_time: long})
+            if self.wallet.longs[mint_time].balance == 0:
+                # Remove the empty long from the wallet.
+                del self.wallet.longs[mint_time]
+
+    def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+        for mint_time, short in shorts:
+            if short.balance != 0:
+                logging.debug(
+                    "agent #%g trade shorts, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    self.wallet.address,
+                    mint_time,
+                    self.wallet.shorts,
+                    short,
+                )
+                if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
+                    self.wallet.shorts[mint_time].balance += short.balance
+                    self.wallet.shorts[mint_time].margin += short.margin
+                else:
+                    self.wallet.shorts.update({mint_time: short})
+            if self.wallet.shorts[mint_time].balance == 0:
+                # Add the remaining margin balance to the wallet's base.
+                self.wallet.base += self.wallet.shorts[mint_time].margin
+                # Remove the empty short from the wallet.
+                del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """Get final trades for liquidating positions"""
@@ -203,8 +207,8 @@ class Agent:
         shorts = list(self.wallet.shorts.values())
 
         # Calculate the total pnl of the trader.
-        longs_value = (sum([long.balance for long in longs]) if len(longs) > 0 else 0) * price
-        shorts_value = sum([short.margin - short.balance * price for short in shorts]) if len(shorts) > 0 else 0
+        longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
+        shorts_value = sum(short.margin - short.balance * price for short in shorts) if len(shorts) > 0 else 0
         total_value = base + longs_value + shorts_value
         profit_and_loss = total_value - self.budget
 
@@ -234,7 +238,7 @@ class Agent:
             float_to_string(market.time, precision=2),
             float_to_string(total_value),
             float_to_string(base),
-            float_to_string(sum([long.balance for long in longs])),
-            float_to_string(sum([short.balance for short in shorts])),
+            float_to_string(sum(long.balance for long in longs)),
+            float_to_string(sum(short.balance for short in shorts)),
             price,
         )

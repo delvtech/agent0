@@ -64,9 +64,6 @@ class Wallet:
         The long positions held by the trader.
     shorts : Dict[float, Short]
         The short positions held by the trader.
-    effective_price : float
-        The effective price paid on a particular trade. This is only populated
-        for some transactions.
     fees_paid : float
         The fees paid by the wallet.
     """
