@@ -23,8 +23,8 @@ class Policy(Agent):
         short if you can, only once
         """
         action_list = []
-        block_position_list = list(self.wallet.shorts.values())
-        has_opened_short = bool(any((x < -1 for x in block_position_list)))
+        shorts = list(self.wallet.shorts.values())
+        has_opened_short = bool(any(short.balance > 0 for short in shorts))
         can_open_short = self.get_max_pt_short(market) >= self.pt_to_short
         if can_open_short and not has_opened_short:
             action_list.append(

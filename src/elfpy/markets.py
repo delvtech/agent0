@@ -14,7 +14,7 @@ from elfpy.types import (
     Quantity,
     TokenType,
 )
-from elfpy.wallet import Wallet
+from elfpy.wallet import Long, Short, Wallet
 import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
 
@@ -225,16 +225,17 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=trade_amount,
         )
-        # TODO: _in_protocol values should be managed by pricing_model and referenced by user
         max_loss = trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
             address=wallet_address,
             base=-max_loss,
-            # TODO: This implementation is opinionated in a way that may not be
-            #       correct. The question of whether or not shorts should be
-            #       fully backed is still up for debate.
-            margin={self.time: trade_result.user_result.d_base + max_loss},
-            shorts={self.time: trade_result.user_result.d_bonds},
+            # The margin account is seeded with the amount of bonds the trader
+            # shorted. As the trader closes out the short, the amount of base
+            # that every close operation "costs" will be debited from the
+            # margin account. Once the entire balance has been closed, the
+            # trader can withdraw the remaining margin balance into their
+            # wallet.
+            shorts={self.time: Short(balance=trade_amount, margin=trade_amount)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, wallet_deltas
@@ -298,15 +299,18 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-trade_amount,
         )
-        # TODO: This accounting doesn't look right. The profit from the
-        #       short should be calculated using the difference between
-        #       the open short price and the sale price plus the max loss
-        #       buffer.
         agent_deltas = Wallet(
             address=wallet_address,
-            base=trade_result.user_result.d_base,
-            margin={mint_time: trade_amount - trade_result.user_result.d_base},
-            shorts={mint_time: trade_result.user_result.d_bonds},
+            # The short balance will be decreased by the trade amount and the
+            # margin account is decreased by the amount of base the trader
+            # needed to pay to buy the specified amount of bonds at the current
+            # market price.
+            shorts={
+                mint_time: Short(
+                    balance=-trade_amount,
+                    margin=trade_result.user_result.d_base,
+                )
+            },
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -355,7 +359,7 @@ class Market:
             agent_deltas = Wallet(
                 address=wallet_address,
                 base=trade_result.user_result.d_base,
-                longs={self.time: trade_result.user_result.d_bonds},
+                longs={self.time: Long(trade_result.user_result.d_bonds)},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
@@ -409,7 +413,7 @@ class Market:
         agent_deltas = Wallet(
             address=wallet_address,
             base=trade_result.user_result.d_base,
-            longs={mint_time: trade_result.user_result.d_bonds},
+            longs={mint_time: Long(trade_result.user_result.d_bonds)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
