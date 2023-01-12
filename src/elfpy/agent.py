@@ -91,7 +91,9 @@ class Agent:
         self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
-                pass
+                continue
+            if key in ["fees_paid", "effective_price", "address"]:
+                continue
             # handle updating a value
             if key in ["base", "lp_tokens", "fees_paid"]:
                 logging.debug(
@@ -106,22 +108,21 @@ class Agent:
             # handle updating a dict, which have mint_time attached
             elif key in ["margin", "longs", "shorts"]:
                 for mint_time, amount in value_or_dict.items():
-                    logging.debug(
-                        "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                        self.wallet.address,
-                        key,
-                        mint_time,
-                        self.wallet[key],
-                        amount,
-                    )
-                    if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
-                        self.wallet[key][mint_time] += amount
-                    else:
-                        self.wallet[key].update({mint_time: amount})
-            elif key in ["fees_paid", "effective_price"]:
-                pass
-            elif key in ["address"]:
-                pass
+                    if amount != 0:
+                        logging.debug(
+                            "agent #%g trade %s, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                            self.wallet.address,
+                            key,
+                            mint_time,
+                            self.wallet[key],
+                            amount,
+                        )
+                        if mint_time in self.wallet[key]:  #  entry already exists for this mint_time, so add to it
+                            self.wallet[key][mint_time] += amount
+                        else:
+                            self.wallet[key].update({mint_time: amount})
+                    if self.wallet[key][mint_time] == 0:
+                        del self.wallet[key][mint_time]
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
