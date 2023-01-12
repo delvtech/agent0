@@ -208,7 +208,11 @@ class Market:
         self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
-        logging.debug("opening short: trade_result = %s", trade_result)
+        logging.debug(
+            "opening short: trade_amount %g -> trade_result %s",
+            trade_amount,
+            trade_result,
+        )
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
@@ -280,7 +284,8 @@ class Market:
 
         # Log the trade result.
         logging.debug(
-            "closing short: trade_result = %s",
+            "closing short: trade_amount %g -> trade_result %s",
+            trade_amount,
             trade_result,
         )
 
@@ -337,7 +342,8 @@ class Market:
 
             # Log the trade result.
             logging.debug(
-                "opening long: trade_result %s",
+                "opening long: trade_amount %g -> trade_result %s",
+                trade_amount,
                 trade_result,
             )
 
@@ -393,7 +399,11 @@ class Market:
         self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
-        logging.debug("closing long: trade_result = %s", trade_result)
+        logging.debug(
+            "closing long: trade_amount %g -> trade_result %s",
+            trade_amount,
+            trade_result,
+        )
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
