@@ -16,6 +16,7 @@ import numpy as np
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.utils.parse_config as config_utils
 
 
 class BaseLogTest(unittest.TestCase):
@@ -25,7 +26,7 @@ class BaseLogTest(unittest.TestCase):
     def setup_and_run_simulator(config_file, override_dict: dict[str, Any]):
         """Construct and run the simulator"""
         # instantiate config object
-        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
+        config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
         # instantiate random number generator
         rng = np.random.default_rng(config.simulator.random_seed)
         # run random number generators to get random simulation arguments

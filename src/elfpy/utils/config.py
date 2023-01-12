@@ -25,6 +25,12 @@ class MarketConfig:
     )
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
 
 @dataclass
 class AMMConfig:
@@ -36,6 +42,12 @@ class AMMConfig:
     min_pool_apr: float = field(default=0.02, metadata={"hint": "as a decimal"})
     max_pool_apr: float = field(default=0.9, metadata={"hint": "as a decimal"})
     floor_fee: float = field(default=0, metadata={"hint": "minimum fee percentage (bps)"})
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
 
 
 @dataclass
@@ -67,11 +79,20 @@ class SimulatorConfig:
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
 
 @dataclass
 class Config:
     """Data object for storing user simulation config parameters"""
 
-    market: MarketConfig
-    amm: AMMConfig
-    simulator: SimulatorConfig
+    market: MarketConfig = MarketConfig()
+    amm: AMMConfig = AMMConfig()
+    simulator: SimulatorConfig = SimulatorConfig()
+
+    def __getitem__(self, key):
+        return getattr(self, key)

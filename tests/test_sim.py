@@ -22,6 +22,7 @@ from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
+import elfpy.utils.parse_config as config_utils
 
 
 class BaseSimTest(unittest.TestCase):
@@ -41,7 +42,7 @@ class BaseSimTest(unittest.TestCase):
         if override_dict is None:
             override_dict = {}  # empty dict means nothing is overridden
         # instantiate config object
-        config = sim_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
+        config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
         # instantiate random number generator
         rng = np.random.default_rng(config.simulator.random_seed)
         # run random number generators to get random simulation arguments
