@@ -19,7 +19,7 @@ class Long:
     Arguments
     ---------
     balance : float
-        The amount of longs that are open.
+        The amount of bonds that the position is long.
     """
 
     balance: float
@@ -35,7 +35,7 @@ class Short:
     Arguments
     ---------
     balance : float
-        The amount of shorts that are open.
+        The amount of bonds that the position is short.
     margin : float
         The amount of margin the short position has.
     """
