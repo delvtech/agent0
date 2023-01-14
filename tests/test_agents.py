@@ -3,8 +3,8 @@ Unit tests for the core Agent API.
 """
 import unittest
 from dataclasses import dataclass
-from elfpy.agent import Agent
 
+from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
@@ -14,6 +14,8 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 @dataclass
 class TestCaseGetMax:
+    """Test case for get_max_long and get_max_short tests"""
+
     market_state: MarketState
     fee_percent: float
     time_remaining: StretchedTime
@@ -152,12 +154,21 @@ class TestAgent(unittest.TestCase):
                 )
 
                 # Ensure safety for Agents with different budgets.
-                for budget in (1e-18 * 10 ** (9 * x) for x in range(0, 4)):
+                for budget in (1e-3 * 10 ** (3 * x) for x in range(0, 5)):
                     agent = Agent(wallet_address=0, budget=budget)
 
                     # Ensure that get_max_long is safe.
                     max_long = agent.get_max_long(market)
                     self.assertGreaterEqual(agent.wallet.base, max_long)
+                    (market_max_long, _) = market.pricing_model.get_max_long(
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
+                    )
+                    self.assertLessEqual(
+                        max_long,
+                        market_max_long,
+                    )
 
                     # Ensure that get_max_short is safe.
                     max_short = agent.get_max_short(market)
@@ -169,3 +180,12 @@ class TestAgent(unittest.TestCase):
                     )
                     max_loss = max_short - trade_result.user_result.d_base
                     self.assertGreaterEqual(agent.wallet.base, max_loss)
+                    (_, market_max_short) = market.pricing_model.get_max_short(
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
+                    )
+                    self.assertLessEqual(
+                        max_short,
+                        market_max_short,
+                    )

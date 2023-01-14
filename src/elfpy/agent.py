@@ -5,7 +5,6 @@ Implements abstract classes that control agent behavior
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING, Iterable
 import logging
-
 import numpy as np
 
 from elfpy.utils.outputs import float_to_string
@@ -72,11 +71,16 @@ class Agent:
         Gets an approximation of the maximum amount of bonds the agent can short.
         """
         # Get the market level max short.
-        (_, max_short) = market.pricing_model.get_max_short(
+        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
             market_state=market.market_state,
             fee_percent=market.fee_percent,
             time_remaining=market.position_duration,
         )
+
+        # If the Agent's base balance can cover the max loss of the maximum
+        # short, we can simply return the maximum short.
+        if self.wallet.base >= max_short_max_loss:
+            return max_short
 
         last_maybe_max_short = 0
         bond_percent = 1

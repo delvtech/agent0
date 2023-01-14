@@ -485,7 +485,7 @@ class PricingModel(ABC):
                     fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
-                maybe_max_short_base = trade_result.breakdown.with_fee
+                maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
             except decimal.InvalidOperation:
                 bond_percent -= step_size
                 continue
