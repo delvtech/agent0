@@ -63,9 +63,6 @@ class Agent:
             max_long,
         )
 
-    # TODO: There are some improvements that can be made to this algorithm. In
-    # particular, we can most likely bound the bottom of the range with
-    # `(self.wallet.base / max_short_base) * max_short_bonds`.
     def get_max_short(self, market: Market) -> float:
         """
         Gets an approximation of the maximum amount of bonds the agent can short.
