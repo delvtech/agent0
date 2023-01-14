@@ -44,6 +44,7 @@ class RandomAgent(Agent):
                 self.wallet.base,
                 market.pricing_model.get_max_long(market.market_state, market.fee_percent, market.position_duration),
             )
+            max_long = self.get_max_long(market)
             open_longs = list(self.wallet.longs.items())
 
             # Randomly open or close a position depending on the trader's

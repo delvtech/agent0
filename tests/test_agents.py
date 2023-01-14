@@ -1,25 +1,20 @@
 """
-Testing for the get_max_long function of the pricing models.
+Unit tests for the core Agent API.
 """
-
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
-
-from dataclasses import dataclass
 import unittest
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from dataclasses import dataclass
 
-from elfpy.types import MarketDeltas, MarketState, Quantity, StretchedTime, TokenType
+from elfpy.agent import Agent
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 @dataclass
-class TestCaseGetMaxLongCase:
-    """Dataclass for get_max_long test cases"""
+class TestCaseGetMax:
+    """Test case for get_max_long and get_max_short tests"""
 
     market_state: MarketState
     fee_percent: float
@@ -28,21 +23,18 @@ class TestCaseGetMaxLongCase:
     __test__ = False  # pytest: don't test this class
 
 
-class TestGetMaxLong(unittest.TestCase):
-    """Tests for get_max_long"""
+class TestAgent(unittest.TestCase):
+    """Unit tests for the core Agent API"""
 
-    def test_get_max_long(self):
-        """Tests that get_max_long is safe.
-
-        These tests ensure that trades made with get_max_long will not put the
-        market into a pathological state (i.e. the trade amount is non-negative,
-        the bond reserves is non-negative, the buffer invariants hold, and the
-        APR is still non-negative).
+    def test_get_max_safety(self):
+        """
+        Ensures that get_max_long and get_max_short will not exceed the balance
+        of an agent in a variety of market conditions.
         """
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
 
-        test_cases: list[TestCaseGetMaxLongCase] = [
-            TestCaseGetMaxLongCase(
+        test_cases: list[TestCaseGetMax] = [
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -54,7 +46,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -66,7 +58,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=100_000_000,
                     bond_reserves=1_000_000,
@@ -78,7 +70,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=100_000_000,
@@ -90,7 +82,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=500_000,
                     bond_reserves=1_000_000,
@@ -102,7 +94,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -114,7 +106,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -126,7 +118,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.5,
                 time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -138,7 +130,7 @@ class TestGetMaxLong(unittest.TestCase):
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
             ),
-            TestCaseGetMaxLongCase(
+            TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -154,40 +146,46 @@ class TestGetMaxLong(unittest.TestCase):
 
         for test_case in test_cases:
             for pricing_model in pricing_models:
-                # Get the max long.
-                max_long = pricing_model.get_max_long(
+                market = Market(
+                    pricing_model=pricing_model,
                     market_state=test_case.market_state,
                     fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
+                    position_duration=test_case.time_remaining,
                 )
-                # Ensure that the max long is valid.
-                self.assertGreaterEqual(max_long, 0.0)
 
-                # Simulate the trade.
-                trade_result = pricing_model.calc_out_given_in(
-                    in_=Quantity(amount=max_long, unit=TokenType.BASE),
-                    market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
-                )
-                test_case.market_state.apply_delta(
-                    delta=MarketDeltas(
-                        d_base_asset=trade_result.market_result.d_base,
-                        d_token_asset=trade_result.market_result.d_bonds,
-                        d_base_buffer=trade_result.breakdown.with_fee,
+                # Ensure safety for Agents with different budgets.
+                for budget in (1e-3 * 10 ** (3 * x) for x in range(0, 5)):
+                    agent = Agent(wallet_address=0, budget=budget)
+
+                    # Ensure that get_max_long is safe.
+                    max_long = agent.get_max_long(market)
+                    self.assertGreaterEqual(agent.wallet.base, max_long)
+                    (market_max_long, _) = market.pricing_model.get_max_long(
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
                     )
-                )
-                apr = pricing_model.calc_apr_from_reserves(
-                    market_state=test_case.market_state, time_remaining=test_case.time_remaining
-                )
+                    self.assertLessEqual(
+                        max_long,
+                        market_max_long,
+                    )
 
-                # Ensure that the pool is in a valid state after the trade.
-                self.assertGreaterEqual(apr, 0.0)
-                self.assertGreaterEqual(
-                    test_case.market_state.share_price * test_case.market_state.share_reserves,
-                    test_case.market_state.base_buffer,
-                )
-                self.assertGreaterEqual(
-                    test_case.market_state.bond_reserves,
-                    test_case.market_state.bond_buffer,
-                )
+                    # Ensure that get_max_short is safe.
+                    max_short = agent.get_max_short(market)
+                    trade_result = market.pricing_model.calc_out_given_in(
+                        in_=Quantity(amount=max_short, unit=TokenType.PT),
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
+                    )
+                    max_loss = max_short - trade_result.user_result.d_base
+                    self.assertGreaterEqual(agent.wallet.base, max_loss)
+                    (_, market_max_short) = market.pricing_model.get_max_short(
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
+                    )
+                    self.assertLessEqual(
+                        max_short,
+                        market_max_short,
+                    )
