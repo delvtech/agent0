@@ -10,7 +10,7 @@ import numpy as np
 
 from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Long, Short, Wallet
-from elfpy.types import MarketAction, MarketActionType
+from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
 
 if TYPE_CHECKING:
     from elfpy.markets import Market
@@ -49,20 +49,6 @@ class Agent:
         """Specify action from the policy"""
         raise NotImplementedError
 
-    # TODO: Fix up this function
-    def get_max_pt_short(self, market: Market) -> float:
-        """
-        Returns an approximation of maximum amount of base that the agent can short given current market conditions
-
-        TODO: This currently is a first-order approximation.
-        An alternative is to do this iteratively and find a max trade, but that is probably too slow.
-        Maybe we could add an optional flag to iteratively solve it, like num_iters.
-        """
-        if market.market_state.share_reserves == 0:
-            return 0
-        max_pt_short = market.market_state.share_reserves * market.market_state.share_price / market.spot_price
-        return max_pt_short
-
     def get_max_long(self, market: Market) -> float:
         """
         Gets an approximation of the maximum amount of base the agent can use to
@@ -77,6 +63,47 @@ class Agent:
             self.wallet.base,
             max_long,
         )
+
+    # TODO: There are some improvements that can be made to this algorithm. In
+    # particular, we can most likely bound the bottom of the range with
+    # `(self.wallet.base / max_short_base) * max_short_bonds`.
+    def get_max_short(self, market: Market) -> float:
+        """
+        Gets an approximation of the maximum amount of bonds the agent can short.
+        """
+        # Get the market level max short.
+        (_, max_short) = market.pricing_model.get_max_short(
+            market_state=market.market_state,
+            fee_percent=market.fee_percent,
+            time_remaining=market.position_duration,
+        )
+
+        last_maybe_max_short = 0
+        bond_percent = 1
+        for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
+            # Compute the amount of base returned by selling the specified
+            # amount of bonds.
+            maybe_max_short = max_short * bond_percent
+            trade_result = market.pricing_model.calc_out_given_in(
+                in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
+                market_state=market.market_state,
+                fee_percent=market.fee_percent,
+                time_remaining=market.position_duration,
+            )
+
+            # If the max loss is greater than the wallet's base, we need to
+            # decrease the bond percentage. Otherwise, we may have found the
+            # max short, and we should increase the bond percentage.
+            max_loss = maybe_max_short - trade_result.user_result.d_base
+            if max_loss > self.wallet.base:
+                bond_percent -= step_size
+            else:
+                last_maybe_max_short = maybe_max_short
+                if bond_percent == 1:
+                    return last_maybe_max_short
+                bond_percent += step_size
+
+        return last_maybe_max_short
 
     def get_trade_list(self, market: Market) -> list:
         """
