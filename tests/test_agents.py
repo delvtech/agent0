@@ -1,27 +1,19 @@
 """
-Testing for the get_max_long function of the pricing models.
+Unit tests for the core Agent API.
 """
-
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
-
-import copy
-from dataclasses import dataclass
 import unittest
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from dataclasses import dataclass
+from elfpy.agent import Agent
 
-from elfpy.types import MarketDeltas, MarketState, Quantity, StretchedTime, TokenType, TradeResult
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 @dataclass
 class TestCaseGetMax:
-    """Dataclass for get_max_long test cases"""
-
     market_state: MarketState
     fee_percent: float
     time_remaining: StretchedTime
@@ -29,16 +21,13 @@ class TestCaseGetMax:
     __test__ = False  # pytest: don't test this class
 
 
-class TestGetMax(unittest.TestCase):
-    """Tests for the various get_max functions within the pricing model."""
+class TestAgent(unittest.TestCase):
+    """Unit tests for the core Agent API"""
 
-    def test_get_max(self):
-        """Tests that get_max_long and get_max_short are safe.
-
-        These tests ensure that trades made with get_max_long and get_max_short
-        will not put the market into a pathological state (i.e. the trade amount
-        is non-negative, the bond reserves is non-negative, the buffer
-        invariants hold, and the APR is still non-negative).
+    def test_get_max_safety(self):
+        """
+        Ensures that get_max_long and get_max_short will not exceed the balance
+        of an agent in a variety of market conditions.
         """
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
 
@@ -155,83 +144,28 @@ class TestGetMax(unittest.TestCase):
 
         for test_case in test_cases:
             for pricing_model in pricing_models:
-                # Get the max long.
-                (max_long, _) = pricing_model.get_max_long(
-                    market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
-                )
-
-                # Ensure that the max long is valid.
-                self.assertGreaterEqual(max_long, 0.0)
-
-                # Simulate the trade and ensure the trade was safe.
-                trade_result = pricing_model.calc_out_given_in(
-                    in_=Quantity(amount=max_long, unit=TokenType.BASE),
-                    market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
-                )
-                self._ensure_market_safety(
-                    pricing_model=pricing_model, trade_result=trade_result, test_case=test_case, is_long=True
-                )
-
-                # Get the max short.
-                (_, max_short) = pricing_model.get_max_short(
-                    market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
-                )
-
-                # Ensure that the max short is valid.
-                self.assertGreaterEqual(max_short, 0.0)
-
-                # Simulate the trade.
-                trade_result = pricing_model.calc_out_given_in(
-                    in_=Quantity(amount=max_short, unit=TokenType.PT),
-                    market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
-                    time_remaining=test_case.time_remaining,
-                )
-                self._ensure_market_safety(
+                market = Market(
                     pricing_model=pricing_model,
-                    trade_result=trade_result,
-                    test_case=test_case,
-                    is_long=False,
+                    market_state=test_case.market_state,
+                    fee_percent=test_case.fee_percent,
+                    position_duration=test_case.time_remaining,
                 )
 
-    def _ensure_market_safety(
-        self,
-        pricing_model: PricingModel,
-        trade_result: TradeResult,
-        test_case: TestCaseGetMax,
-        is_long: bool,
-    ) -> None:
-        market_state = copy.copy(test_case.market_state)
+                # Ensure safety for Agents with different budgets.
+                for budget in (1e-18 * 10 ** (9 * x) for x in range(0, 4)):
+                    agent = Agent(wallet_address=0, budget=budget)
 
-        # Simulate the trade.
-        if is_long:
-            delta = MarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
-                d_base_buffer=trade_result.breakdown.with_fee,
-            )
-        else:
-            delta = MarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
-                d_bond_buffer=-trade_result.user_result.d_bonds,
-            )
-        market_state.apply_delta(delta=delta)
+                    # Ensure that get_max_long is safe.
+                    max_long = agent.get_max_long(market)
+                    self.assertGreaterEqual(agent.wallet.base, max_long)
 
-        # Ensure that the pool is in a valid state after the trade.
-        apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
-        self.assertGreaterEqual(apr, 0.0)
-        self.assertGreaterEqual(
-            market_state.share_price * market_state.share_reserves,
-            market_state.base_buffer,
-        )
-        self.assertGreaterEqual(
-            market_state.bond_reserves,
-            market_state.bond_buffer,
-        )
+                    # Ensure that get_max_short is safe.
+                    max_short = agent.get_max_short(market)
+                    trade_result = market.pricing_model.calc_out_given_in(
+                        in_=Quantity(amount=max_short, unit=TokenType.PT),
+                        market_state=market.market_state,
+                        fee_percent=market.fee_percent,
+                        time_remaining=market.position_duration,
+                    )
+                    max_loss = max_short - trade_result.user_result.d_base
+                    self.assertGreaterEqual(agent.wallet.base, max_loss)
