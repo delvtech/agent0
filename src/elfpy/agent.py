@@ -63,6 +63,21 @@ class Agent:
         max_pt_short = market.market_state.share_reserves * market.market_state.share_price / market.spot_price
         return max_pt_short
 
+    def get_max_long(self, market: Market) -> float:
+        """
+        Gets an approximation of the maximum amount of base the agent can use to
+        enter into a long position.
+        """
+        (max_long, _) = market.pricing_model.get_max_long(
+            market_state=market.market_state,
+            fee_percent=market.fee_percent,
+            time_remaining=market.position_duration,
+        )
+        return min(
+            self.wallet.base,
+            max_long,
+        )
+
     def get_trade_list(self, market: Market) -> list:
         """
         Helper function for computing a agent trade
