@@ -437,6 +437,12 @@ class TestLP(unittest.TestCase):
         bob.update_wallet(wallet_deltas=wallet_deltas, market=market)
 
         # Bob goes maximally short.
+        (market_deltas, wallet_deltas) = market.open_short(
+            wallet_address=bob.wallet.address,
+            trade_amount=bob.get_max_short(market=market),
+        )
+        market.market_state.apply_delta(market_deltas)
+        bob.update_wallet(wallet_deltas=wallet_deltas, market=market)
 
         # Bob adds liquidity to the market.
         (market_deltas, wallet_deltas) = market.add_liquidity(
@@ -446,11 +452,21 @@ class TestLP(unittest.TestCase):
         market.market_state.apply_delta(market_deltas)
         bob.update_wallet(wallet_deltas=wallet_deltas, market=market)
 
-        # Bob immediately closes the long.
+        # Bob closes his long.
         (mint_time, long) = list(bob.wallet.longs.items())[0]
         (market_deltas, wallet_deltas) = market.close_long(
             wallet_address=bob.wallet.address,
             trade_amount=long.balance,
+            mint_time=mint_time,
+        )
+        market.market_state.apply_delta(market_deltas)
+        bob.update_wallet(wallet_deltas=wallet_deltas, market=market)
+
+        # Bob closes his short.
+        (mint_time, short) = list(bob.wallet.shorts.items())[0]
+        (market_deltas, wallet_deltas) = market.close_short(
+            wallet_address=bob.wallet.address,
+            trade_amount=short.balance,
             mint_time=mint_time,
         )
         market.market_state.apply_delta(market_deltas)

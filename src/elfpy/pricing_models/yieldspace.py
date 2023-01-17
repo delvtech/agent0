@@ -83,7 +83,9 @@ class YieldSpacePricingModel(PricingModel):
         if market_state.share_reserves > 0:  # normal case where we have some share reserves
             # TODO: We need to update these LP calculations to address the LP
             #       exploit scenario.
-            lp_out = (d_shares * market_state.lp_reserves) / (market_state.share_reserves - market_state.base_buffer)
+            lp_out = (d_shares * market_state.lp_reserves) / (
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price
+            )
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
