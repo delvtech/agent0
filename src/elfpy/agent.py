@@ -112,6 +112,7 @@ class Agent:
         ---------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
+
         Returns
         -------
         list[MarketAction]
@@ -142,6 +143,7 @@ class Agent:
         ---------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
+
         Returns
         -------
         float
@@ -260,6 +262,15 @@ class Agent:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+        """
+        Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+
+        Arguments
+        ---------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Long object
+            and its market-relative mint time
+        """
         for mint_time, long in longs:
             if long.balance != 0:
                 logging.debug(
@@ -278,6 +289,15 @@ class Agent:
                 del self.wallet.longs[mint_time]
 
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+        """
+        Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+
+        Arguments
+        ---------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Short object
+            and its market-relative mint time
+        """
         for mint_time, short in shorts:
             if short.balance != 0:
                 logging.debug(
