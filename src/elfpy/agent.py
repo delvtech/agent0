@@ -19,6 +19,48 @@ class Agent:
     """
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
     date value is an inte with how many tokens they have for that date
+
+    Attributes
+    ----------
+
+    market : elfpy.markets.Market
+        Market object that this Agent will be trading on.
+    rng : numpy.random._generator.Generator
+        Random number generator used for various simulation functions
+    wallet_address : int
+        Random ID used to identify this specific agent in the simulation
+    budget : float
+        Amount of assets that this agent has available for spending in the simulation
+    last_update_spend : float
+        Time relative to the market, in yearfracs, when this agent last made a trade. This is used to track PnL
+    product_of_time_and_base : float
+        Helper attribute used to track how an agent spends their assets over time
+    wallet : elfpy.wallet.Wallet
+        Wallet object which tracks the agent's asset balances
+
+    Methods
+    -------
+    create_agent_action(action_type: MarketActionType, trade_amount: float, mint_time: float = 0) -> MarketAction
+        Creates and returns a MarketAction object which represents a trade that this agent can make
+    action(self) -> list[MarketAction]
+        Execute the MarketAction implemented by a specific policy
+    get_max_long(self, market: Market) -> float
+        Returns an approximation of the maximum amoun of base that the agent can long given current market conditions
+    get_max_short(self, market: Market) -> float
+        Returns an approximation of the maximum amount of base that the agent can short given current market conditions
+    get_trade_list(self, market: Market) -> list[MarketAction]
+        Helper function for computing a agent trade
+    update_spend(self) -> None
+        Track over time the agent's weighted average spend, for return calculation
+    update_wallet(self, wallet_deltas: Wallet, market: Market) -> None
+        Update the agent's wallet
+    get_liquidation_trades(self, market: Market) -> list[MarketAction]
+        Get final trades for liquidating positions
+    log_status_report(self) -> None
+        Logs user state
+    log_final_report(self, market: Market) -> None
+        Logs a report of the agent's state
+
     """
 
     def __init__(self, wallet_address: int, budget: float):
@@ -33,7 +75,23 @@ class Agent:
     def create_agent_action(
         self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
     ) -> MarketAction:
-        """Instantiate a agent action"""
+        """
+        Creates and returns a MarketAction object which represents a trade that this agent can make
+
+        Arguments
+        ---------
+        action_type : MarketActionType
+            Type of action this function will execute. Must be one of the supported MarketActionTypes
+        trade_amount : float
+            Amount of assets that the agent will trade
+        mint_time : float
+            Time relative to the market at which the tokens relevant to this trade were minted, in yearfracs
+
+        Returns
+        -------
+        MarketAction
+            The MarketAction object that contains the details about the action to execute in the market
+        """
         agent_action = MarketAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
@@ -45,7 +103,21 @@ class Agent:
         return agent_action
 
     def action(self, market: Market) -> list[MarketAction]:
-        """Specify action from the policy"""
+        """
+        Abstract method meant to be implemented by the specific policy
+
+        Specify action from the policy
+
+        Arguments
+        ---------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        list[MarketAction]
+            List of actions to execute in the market
+        """
         raise NotImplementedError
 
     def get_max_long(self, market: Market) -> float:
@@ -66,6 +138,16 @@ class Agent:
     def get_max_short(self, market: Market) -> float:
         """
         Gets an approximation of the maximum amount of bonds the agent can short.
+
+        Arguments
+        ---------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        float
+            Amount of base that the agent can short in the current market
         """
         # Get the market level max short.
         (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
@@ -117,6 +199,18 @@ class Agent:
         we use calcInGivenOut because we know how much we want to get,
         and care less about how much we have to spend.
         we spend what we have to spend, and get what we get.
+
+        Arguments
+        ---------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+        pricing_model : PricingModel
+            The pricing model in use for this simulated market
+
+        Returns
+        -------
+        list
+            List of MarketAction objects that represent the trades to be made by this agent
         """
         action_list = self.action(market)  # get the action list from the policy
         for action in action_list:  # edit each action in place
@@ -127,7 +221,18 @@ class Agent:
         return action_list
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
-        """Update the agent's wallet"""
+        """
+        Update the agent's wallet
+
+        Arguments
+        ---------
+        wallet_deltas : Wallet
+            The agent's wallet that tracks the amount of assets this agent holds
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        This method has no returns. It updates the Agent's Wallet according to the passed parameters
+        """
         # track over time the agent's weighted average spend, for return calculation
         new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet["base"])
         self.product_of_time_and_base += new_spend
@@ -157,6 +262,15 @@ class Agent:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+        """
+        Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+
+        Arguments
+        ---------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Long object
+            and its market-relative mint time
+        """
         for mint_time, long in longs:
             if long.balance != 0:
                 logging.debug(
@@ -175,6 +289,15 @@ class Agent:
                 del self.wallet.longs[mint_time]
 
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+        """
+        Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+
+        Arguments
+        ---------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Short object
+            and its market-relative mint time
+        """
         for mint_time, short in shorts:
             if short.balance != 0:
                 logging.debug(
@@ -196,7 +319,19 @@ class Agent:
                 del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
-        """Get final trades for liquidating positions"""
+        """
+        Get final trades for liquidating positions
+
+        Arguments
+        ---------
+        market : Market
+            The market on which this agent will be executing trades or liquidations (MarketActions)
+
+        Returns
+        -------
+        list[MarketAction]
+            List of trades to execute in order to liquidate positions where applicable
+        """
         action_list: list[MarketAction] = []
         for mint_time, long in self.wallet.longs.items():
             logging.debug("evaluating closing long: mint_time=%g, position=%s", mint_time, long)
@@ -238,7 +373,14 @@ class Agent:
         )
 
     def log_final_report(self, market: Market) -> None:
-        """Logs a report of the agent's state"""
+        """
+        Logs a report of the agent's state
+
+        Arguments
+        ---------
+        market : Market
+            The market on which this agent can execute trades (MarketActions)
+        """
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if market.market_state.share_reserves > 0:
