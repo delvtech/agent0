@@ -1,6 +1,9 @@
 """
 Unit tests for the core Agent API.
 """
+
+# pylint: disable=abstract-method
+
 import unittest
 from dataclasses import dataclass
 
@@ -24,6 +27,8 @@ class ErrorPolicy(Agent):
 
     # self.action() method is intentionally not implemented, so we can test error behavior
 
+    __test__ = False  # pytest: don't test this class
+
 @dataclass
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
@@ -39,9 +44,8 @@ class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
 
     @staticmethod
-    def setup_market(
-        config_file, override_dict=None
-    ) -> Market:
+    def setup_market() -> Market:
+        """Instantiate a market object for testing purposes"""
 
         # Give an initial market state
         pricing_model = HyperdrivePricingModel()
@@ -62,6 +66,8 @@ class TestAgent(unittest.TestCase):
             fee_percent=fee_percent,
             position_duration=time_remaining,
         )
+
+        return market
 
     def test_get_max_safety(self):
         """
@@ -233,10 +239,9 @@ class TestAgent(unittest.TestCase):
 
         # instantiate the market
 
-        config_file = "config/example_config.toml"
-        market = self.setup_market(config_file)
+        market = self.setup_market()
 
         agent = ErrorPolicy(wallet_address=1)
 
         with self.assertRaises(NotImplementedError):
-            actions = agent.action(market)
+            agent.action(market)
