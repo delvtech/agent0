@@ -118,7 +118,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             out=Quantity(amount=float(Decimal(out.amount) * Decimal(time_remaining.normalized_time)), unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
-            # TODO:
+            # TODO: don't hardcode days to 365, initialize to term length
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 

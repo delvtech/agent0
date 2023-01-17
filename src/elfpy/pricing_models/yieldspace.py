@@ -303,7 +303,7 @@ class YieldSpacePricingModel(PricingModel):
             \begin{cases}
             c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z),
             &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - t})^{\frac{1}{1 - t}} - (2y + cz),
+            (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz),
             &\text{ if } token\_in = \text{"pt"}
             \end{cases} \\
             f =
@@ -357,7 +357,7 @@ class YieldSpacePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
+        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
         k = self._calc_k_const(market_state, time_remaining)
         if out.unit == TokenType.BASE:
             in_reserves = Decimal(market_state.bond_reserves) + total_reserves
@@ -378,12 +378,12 @@ class YieldSpacePricingModel(PricingModel):
             # the requested amount of base. We set up the invariant where the
             # user pays d_y' bonds and receives d_z shares:
             #
-            # (c / μ) * (μ * (z - d_z))**(1 - t) + (2y + cz + d_y')**(1 - t) = k
+            # (c / μ) * (μ * (z - d_z))**(1 - τ) + (2y + cz + d_y')**(1 - τ)) = k
             #
             # Solving for d_y' gives us the amount of bonds the user must pay
             # without including fees:
             #
-            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - t))**(1 / (1 - t)) - (2y + cz)
+            # d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - τ))**(1 / (1 - τ)) - (2y + cz)
             #
             # without_fee = d_y'
             without_fee = (
@@ -439,12 +439,12 @@ class YieldSpacePricingModel(PricingModel):
             # requested amount of bonds. We set up the invariant where the user
             # pays d_z' shares and receives d_y bonds:
             #
-            # (c / μ) * (μ * (z + d_z'))**(1 - t) + (2y + cz - d_y)**(1 - t) = k
+            # (c / μ) * (μ * (z + d_z'))**(1 - τ) + (2y + cz - d_y)**(1 - τ) = k
             #
             # Solving for d_z' gives us the amount of shares the user pays
             # without including fees:
             #
-            # d_z' = (1 / μ) * ((k - (2y + cz - d_y)**(1 - t)) / (c / μ))**(1 / (1 - t)) - z
+            # d_z' = (1 / μ) * ((k - (2y + cz - d_y)**(1 - τ)) / (c / μ))**(1 / (1 - τ)) - z
             #
             # We really want to know the value of d_x', the amount of base the
             # user pays. This is given by d_x' = c * d_z'.
@@ -520,9 +520,9 @@ class YieldSpacePricingModel(PricingModel):
         .. math::
             out' =
             \begin{cases}
-            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - t}}{\frac{c}{\mu}})^{\frac{1}{1 - t}}),
+            c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}}),
             &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - t})^{\frac{1}{1 - t}},
+            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}},
             &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             f =
@@ -576,7 +576,7 @@ class YieldSpacePricingModel(PricingModel):
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #
-        # k = (c / μ) * (μ * z)**(1 - t) + (2y + cz)**(1 - t)
+        # k = (c / μ) * (μ * z)**(1 - τ) + (2y + cz)**(1 - τ)
         k = self._calc_k_const(market_state, time_remaining)
         if in_.unit == TokenType.BASE:
             d_shares = Decimal(in_.amount) / Decimal(market_state.share_price)  # convert from base_asset to z (x=cz)
@@ -595,12 +595,12 @@ class YieldSpacePricingModel(PricingModel):
             # paying the specified amount of base. We set up the invariant where
             # the user pays d_z shares and receives d_y' bonds:
             #
-            # (c / μ) * (μ * (z + d_z))**(1 - t) + (2y + cz - d_y')**(1 - t) = k
+            # (c / μ) * (μ * (z + d_z))**(1 - τ) + (2y + cz - d_y')**(1 - τ) = k
             #
             # Solving for d_y' gives us the amount of bonds the user receives
             # without including fees:
             #
-            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - t))**(1 / (1 - t))
+            # d_y' = 2y + cz - (k - (c / μ) * (μ * (z + d_z))**(1 - τ))**(1 / (1 - τ))
             without_fee = out_reserves - (
                 k - scale * (Decimal(market_state.init_share_price) * (in_reserves + d_shares)) ** time_elapsed
             ) ** (1 / time_elapsed)
@@ -643,12 +643,12 @@ class YieldSpacePricingModel(PricingModel):
             # selling the specified amount of bonds. We set up the invariant
             # where the user pays d_y bonds and receives d_z' shares:
             #
-            # (c / μ) * (μ * (z - d_z'))**(1 - t) + (2y + cz + d_y)**(1 - t) = k
+            # (c / μ) * (μ * (z - d_z'))**(1 - τ) + (2y + cz + d_y)**(1 - τ) = k
             #
             # Solving for d_z' gives us the amount of shares the user receives
             # without fees:
             #
-            # d_z' = z - (1 / μ) * ((k - (2y + cz + d_y)**(1 - t)) / (c / μ))**(1 / (1 - t))
+            # d_z' = z - (1 / μ) * ((k - (2y + cz + d_y)**(1 - τ)) / (c / μ))**(1 / (1 - τ))
             #
             # We really want to know the value of d_x', the amount of base the
             # user receives without fees. This is given by d_x' = c * d_z'.

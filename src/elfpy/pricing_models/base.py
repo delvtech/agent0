@@ -321,9 +321,14 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
+
+        # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
+        # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
         )
+        # p = ((y + s)/(u*z))^(-tau)
+        # p = ((2y + cz)/(u*z))^(-tau)
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
