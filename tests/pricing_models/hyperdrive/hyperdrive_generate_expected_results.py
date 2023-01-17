@@ -78,7 +78,7 @@ def calc_in_given_out(token_out, test_id):
         without_fee_or_slippage = (
             # 'curve' part, but not really, just spot price.  again note the use of t_full for the
             # curve part of the equation
-            p * delta_y * t_full
+            p * delta_y * t
             # flat part
             + delta_y * (1 - t)
         )
@@ -120,15 +120,15 @@ def calc_in_given_out(token_out, test_id):
 
 
 def run_it(func, test_number):
-    token = "base"
-    print(f"            (  # test {test_number}, token {token.upper()}")
-    func(token, test_number)
-    print(f"            ),  # end of test {test_number}")
-
-    # token = "pt"
+    # token = "base"
     # print(f"            (  # test {test_number}, token {token.upper()}")
     # func(token, test_number)
     # print(f"            ),  # end of test {test_number}")
+
+    token = "pt"
+    print(f"            (  # test {test_number}, token {token.upper()}")
+    func(token, test_number)
+    print(f"            ),  # end of test {test_number + 8}")
 
 
 ####################
