@@ -350,7 +350,7 @@ class Agent:
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
-    def log_final_report(self, market: Market, pricing_model: PricingModel) -> None:
+    def log_final_report(self, market: Market) -> None:
         """
         Logs a report of the agent's state
 

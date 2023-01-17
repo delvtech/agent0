@@ -12,6 +12,18 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
+class ErrorPolicy(Agent):
+    """
+    This class was made for testing purposes. It does not implement the required self.action() method
+    """
+
+    def __init__(self, wallet_address, budget=1000):
+        """call basic policy init then add custom stuff"""
+        super().__init__(wallet_address, budget)
+        self.amount_to_spend = 500
+
+    # self.action() method is intentionally not implemented, so we can test error behavior
+
 @dataclass
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
@@ -25,6 +37,31 @@ class TestCaseGetMax:
 
 class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
+
+    @staticmethod
+    def setup_market(
+        config_file, override_dict=None
+    ) -> Market:
+
+        # Give an initial market state
+        pricing_model = HyperdrivePricingModel()
+        market_state = MarketState(
+            share_reserves=1_000_000,
+            bond_reserves=1_000_000,
+            base_buffer=0,
+            bond_buffer=0,
+            init_share_price=1,
+            share_price=1,
+        )
+        fee_percent=0.1,
+        time_remaining=StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05)),
+
+        market = Market(
+            pricing_model=pricing_model,
+            market_state=market_state,
+            fee_percent=fee_percent,
+            position_duration=time_remaining,
+        )
 
     def test_get_max_safety(self):
         """
@@ -189,3 +226,17 @@ class TestAgent(unittest.TestCase):
                         max_short,
                         market_max_short,
                     )
+
+    # Test agent instantiation
+    def test_init(self):
+        """Tests for Agent instantiation"""
+
+        # instantiate the market
+
+        config_file = "config/example_config.toml"
+        market = self.setup_market(config_file)
+
+        agent = ErrorPolicy(wallet_address=1)
+
+        with self.assertRaises(NotImplementedError):
+            actions = agent.action(market)
