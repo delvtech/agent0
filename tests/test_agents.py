@@ -29,6 +29,7 @@ class ErrorPolicy(Agent):
 
     __test__ = False  # pytest: don't test this class
 
+
 @dataclass
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
@@ -57,8 +58,8 @@ class TestAgent(unittest.TestCase):
             init_share_price=1,
             share_price=1,
         )
-        fee_percent=0.1,
-        time_remaining=StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05)),
+        fee_percent = (0.1,)
+        time_remaining = (StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05)),)
 
         market = Market(
             pricing_model=pricing_model,

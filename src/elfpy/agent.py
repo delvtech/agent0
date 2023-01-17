@@ -44,19 +44,21 @@ class Agent:
         Creates and returns a MarketAction object which represents a trade that this agent can make
     action(self) -> list[MarketAction]
         Execute the MarketAction implemented by a specific policy
-    get_max_pt_short(self) -> float
-        Returns an approximation of maximum amount of base that the agent can short given current market conditions
-    get_trade_list(self) -> list[MarketAction]
+    get_max_long(self, market: Market) -> float
+        Returns an approximation of the maximum amoun of base that the agent can long given current market conditions
+    get_max_short(self, market: Market) -> float
+        Returns an approximation of the maximum amount of base that the agent can short given current market conditions
+    get_trade_list(self, market: Market) -> list[MarketAction]
         Helper function for computing a agent trade
     update_spend(self) -> None
         Track over time the agent's weighted average spend, for return calculation
-    update_wallet(self, wallet_deltas: Wallet) -> None
+    update_wallet(self, wallet_deltas: Wallet, market: Market) -> None
         Update the agent's wallet
-    get_liquidation_trades(self) -> list[MarketAction]
+    get_liquidation_trades(self, market: Market) -> list[MarketAction]
         Get final trades for liquidating positions
     log_status_report(self) -> None
         Logs user state
-    log_final_report(self) -> None
+    log_final_report(self, market: Market) -> None
         Logs a report of the agent's state
 
     """
