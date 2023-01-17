@@ -100,7 +100,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9755311553623102
+                # spot_price=0.9516610350825238
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -114,13 +114,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=1,
                 ),
-                # in_base=98.7769175342255
-                # in_pt=101.25451693299692
+                # in_base=97.58374088542769
+                # in_pt=102.54051519598579
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=101.25412932755603,
-                    without_fee=101.25451693299692,
-                    hyperdrive_fee=0.12541293275560306,
-                    hyperdrive_with_fee=101.37992986575253,
+                    without_fee_or_slippage=102.53971546251678,
+                    without_fee=102.54051519598579,
+                    hyperdrive_fee=0.25397154625167895,
+                    hyperdrive_with_fee=102.79448674223747,
                 ),
             ),  # end of test 1
             (  # test 2, token BASE
@@ -128,7 +128,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9755311553623102
+                # spot_price=0.9516610350825238
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -142,13 +142,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=2,
                 ),
-                # in_base=98.7769175342255
-                # in_pt=101.25451693299692
+                # in_base=97.58374088542769
+                # in_pt=102.54051519598579
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=101.25412932755603,
-                    without_fee=101.25451693299692,
-                    hyperdrive_fee=0.2508258655112061,
-                    hyperdrive_with_fee=101.50534279850812,
+                    without_fee_or_slippage=102.53971546251678,
+                    without_fee=102.54051519598579,
+                    hyperdrive_fee=0.5079430925033579,
+                    hyperdrive_with_fee=103.04845828848914,
                 ),
             ),  # end of test 2
             (  # test 3, token BASE
@@ -156,7 +156,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9740558904034232
+                # spot_price=0.9487848776296056
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=10000, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -170,13 +170,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=3,
                 ),
-                # in_base=9873.953751197507
-                # in_pt=10137.245456477627
+                # in_base=9750.950516367564
+                # in_pt=10278.313158090226
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=10133.175672218518,
-                    without_fee=10137.245456477627,
-                    hyperdrive_fee=13.317567221851846,
-                    hyperdrive_with_fee=10150.563023699478,
+                    without_fee_or_slippage=10269.89849637121,
+                    without_fee=10278.313158090226,
+                    hyperdrive_fee=26.989849637120926,
+                    hyperdrive_with_fee=10305.303007727347,
                 ),
             ),  # end of test 3
             (  # test 4, token BASE
@@ -184,7 +184,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9616634834271521
+                # spot_price=0.9247966553572445
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=80000, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -198,13 +198,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=4,
                 ),
-                # in_base=78754.38434374728
-                # in_pt=82076.5665282032
+                # in_base=77535.00890610163
+                # in_pt=84268.97713182
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=81594.5917562025,
-                    without_fee=82076.5665282032,
-                    hyperdrive_fee=159.45917562024994,
-                    hyperdrive_with_fee=82236.02570382346,
+                    without_fee_or_slippage=83252.75158412871,
+                    without_fee=84268.97713182,
+                    hyperdrive_fee=325.2751584128717,
+                    hyperdrive_with_fee=84594.25229023286,
                 ),
             ),  # end of test 4
             (  # test 5, token BASE
@@ -212,7 +212,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9781221499330645
+                # spot_price=0.9567229401896802
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -226,13 +226,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=5,
                 ),
-                # in_base=197.81302968543605
-                # in_pt=202.23759035329567
+                # in_base=195.6738646971353
+                # in_pt=204.52526228054194
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=202.23671962325284,
-                    without_fee=202.23759035329567,
-                    hyperdrive_fee=0.22367196232528477,
-                    hyperdrive_with_fee=202.46126231562096,
+                    without_fee_or_slippage=204.52346839323616,
+                    without_fee=204.52526228054194,
+                    hyperdrive_fee=0.45234683932361636,
+                    hyperdrive_with_fee=204.97760911986555,
                 ),
             ),  # end of test 5
             (  # test 6, token BASE
@@ -240,7 +240,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=22.186877016851916
-                # spot_price=0.9412617210897727
+                # spot_price=0.885973627588881
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -254,13 +254,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=6,
                 ),
-                # in_base=194.12671964618494
-                # in_pt=206.2410336495377
+                # in_base=188.59833831203287
+                # in_pt=212.87157998187467
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=206.24037688924835,
-                    without_fee=206.2410336495377,
-                    hyperdrive_fee=0.6240376889248345,
-                    hyperdrive_with_fee=206.86507133846254,
+                    without_fee_or_slippage=212.87017681569534,
+                    without_fee=212.87157998187467,
+                    hyperdrive_fee=1.2870176815695311,
+                    hyperdrive_with_fee=214.1585976634442,
                 ),
             ),  # end of test 6
             (  # test 7, token BASE
@@ -268,7 +268,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.011267922015798525
                 # 1-tau=0.9887320779842015
                 # t_stretch=22.186877016851916
-                # spot_price=0.9701834531122594
+                # spot_price=0.885962730829445
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -282,13 +282,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.05,  # APY used to calculate time_stretch
                     test_id=7,
                 ),
-                # in_base=198.50924519836553
-                # in_pt=201.5367242335342
+                # in_base=194.29838049286627
+                # in_pt=206.43613336980343
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=201.53664478568933,
-                    without_fee=201.5367242335342,
-                    hyperdrive_fee=0.15366447856893342,
-                    hyperdrive_with_fee=201.69038871210313,
+                    without_fee_or_slippage=206.4357825223524,
+                    without_fee=206.43613336980343,
+                    hyperdrive_fee=0.6435782522352407,
+                    hyperdrive_with_fee=207.07971162203867,
                 ),
             ),  # end of test 7
             (  # test 8, token BASE
@@ -296,7 +296,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 # tau=0.02253584403159705
                 # 1-tau=0.977464155968403
                 # t_stretch=11.093438508425958
-                # spot_price=0.9412559326928277
+                # spot_price=0.7849299604187676
                 TestCaseCalcInGivenOutSuccess(
                     out=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -310,13 +310,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch_apy=0.1,  # APY used to calculate time_stretch
                     test_id=8,
                 ),
-                # in_base=197.06293355708476
-                # in_pt=203.12067932868376
+                # in_base=189.24688558027265
+                # in_pt=213.70075247436762
                 TestResultCalcInGivenOutSuccess(
-                    without_fee_or_slippage=203.12051511532638,
-                    without_fee=203.12067932868376,
-                    hyperdrive_fee=0.31205151153263944,
-                    hyperdrive_with_fee=203.4327308402164,
+                    without_fee_or_slippage=213.69995097820515,
+                    without_fee=213.70075247436762,
+                    hyperdrive_fee=1.3699950978205144,
+                    hyperdrive_with_fee=215.07074757218814,
                 ),
             ),  # end of test 8
         ]

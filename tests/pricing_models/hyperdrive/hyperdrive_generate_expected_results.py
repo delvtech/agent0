@@ -20,26 +20,32 @@ def calc_in_given_out(token_out, test_id):
         z += out * (1 - t) / c
         y -= out * (1 - t)
 
-    ## amm constants
-    k = (c / u) * (u * z) ** (1 - tau) + (2 * y + c * z) ** (1 - tau)
-
-    ## from base.py
-    p = spot_price = ((2 * y + c * z) / (u * z)) ** -tau
-
     ## output calculations
     # in = curve + flat
     # curve = c * ((1 / u) * ((k - (2 * y + c * z - delta_y * tau) ** (1 - tau)) / (c / u)) ** (1 / (1 - tau)) - z)
     # flat = delta_y * (1 - t)
+
+    # in the curve part of the equation, we pass the full time remaining so that we are always
+    # trading on the same curve to prevent sandwhich attacks via curve hopping
+    t_full = 1
+    tau_full = t_full / t_stretch
+
+    ## amm constants
+    k = (c / u) * (u * z) ** (1 - tau_full) + (2 * y + c * z) ** (1 - tau_full)
+    ## from base.py
+    p = spot_price = ((2 * y + c * z) / (u * z)) ** -tau_full
 
     # if token_out is base:
     #   yield space equation: (for hyperdrive multiply d_z by t)
     #   (c / μ) * (μ * (z - d_z))**(1 - tau) + (2y + cz + d_y')**(1 - tau) = k
     #   d_y' = (k - (c / μ) * (μ * (z - d_z))**(1 - tau))**(1 / (1 - tau)) - (2y + cz)
     in_pt = (
-        # curve (note delta_z * t instead of just delta_z from above equation)
-        (k - (c / u) * (u * (z - delta_z * t)) ** (1 - tau)) ** (1 / (1 - tau))
+        # curve (note: use delta_z * t to phase the curve part out, and delta_z * (1 - t)
+        # to phase the flat part in over the length of the term.
+        # curve out and flat in over time)
+        (k - (c / u) * (u * (z - delta_z * t)) ** (1 - tau_full)) ** (1 / (1 - tau_full))
         - (2 * y + c * z)
-        # flat
+        # flat uses t (time remaining)
         + c * delta_z * (1 - t)
     )
 
@@ -50,43 +56,37 @@ def calc_in_given_out(token_out, test_id):
     #   d_x' = c * d_z', x = cz
     #   d_x' = c*(1 / μ) * ((k - (2y + cz - d_y)**(1 - tau)) / (c / μ))**(1 / (1 - tau)) - z
     in_base = (
-        # curve (note delta_y * t instead of just delta_y from above equation)
-        c * ((1 / u) * ((k - (2 * y + c * z - delta_y * t) ** (1 - tau)) / (c / u)) ** (1 / (1 - tau)) - z)
-        # flat
+        # curve (note: delta_y * t to phase out curve part)
+        c * ((1 / u) * ((k - (2 * y + c * z - delta_y * t) ** (1 - tau_full)) / (c / u)) ** (1 / (1 - tau_full)) - z)
+        # flat (note: delta_y * (t - 1) to phase in flat part)
         + delta_y * (1 - t)
     )
 
     if token_out == "base":
         without_fee_or_slippage = (
-            # 'curve' part, but not really, just spot price
+            # 'curve' part, but not really, just spot price.  again note the use of t_full for the
+            # curve part of the equation
             (1 / p) * c * delta_z * t
             # flat part
             + c * delta_z * (1 - t)
         )
+        # normal flat + curve equation, includes slippage
         without_fee = in_pt
-        fee = (((2 * y + c * z) / (u * z)) ** tau - 1) * phi * c * delta_z * t
+        fee = (((2 * y + c * z) / (u * z)) ** tau_full - 1) * phi * c * delta_z * t
         with_fee = in_pt + fee
     else:  # token_out == 'pt'
         without_fee_or_slippage = (
-            # 'curve' part, but not really, just spot price
-            p * delta_y * t
+            # 'curve' part, but not really, just spot price.  again note the use of t_full for the
+            # curve part of the equation
+            p * delta_y * t_full
             # flat part
             + delta_y * (1 - t)
         )
+        # normal flat + curve equation, includes slippage
         without_fee = in_base
-        fee = (1 - (1 / ((2 * y + c * z) / (u * z)) ** tau)) * phi * delta_y * t
+        fee = (1 - (1 / ((2 * y + c * z) / (u * z)) ** tau_full)) * phi * delta_y * t
         with_fee = in_base + fee
 
-    print(f"{1/p*c*delta_z*t=}")
-    print(f"{c*delta_z*(1-t)=}")
-    print(f"{delta_z=}")
-    print(f"{out=}")
-    print(f"{u=}")
-    print(f"{c=}")
-    print(f"{z=}")
-    print(f"{y=}")
-    print(f"{k=}")
-    print(f"{p=}")
     print(
         (
             f"                # {t_d=}\n"
