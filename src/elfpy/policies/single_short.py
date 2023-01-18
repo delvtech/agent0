@@ -12,10 +12,10 @@ from elfpy.types import MarketActionType
 class Policy(Agent):
     """simple short thatonly has one long open at a time"""
 
-    def __init__(self, wallet_address, budget=100):
+    def __init__(self, wallet_address, budget=100, **kwargs):
         """call basic policy init then add custom stuff"""
         self.pt_to_short = 100
-        super().__init__(wallet_address, budget)
+        super().__init__(wallet_address, budget, **kwargs)
 
     def action(self, market: Market):
         """
