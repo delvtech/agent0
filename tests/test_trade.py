@@ -61,21 +61,50 @@ class BaseTradeTest(unittest.TestCase):
         simulator = Simulator(
             config=config,
             market=market,
-            agents=init_agents,
+            agents=init_agents.copy(),  # we use this variable later, so pass a copy ;)
             rng=rng,
             random_simulation_variables=random_sim_vars,
         )
         # initialize the market using the LP agent
         simulator.collect_and_execute_trades()
         # get trading agent list
-        for agent_id, policy_name in enumerate(agent_policies):
+        for agent_id, policy_instruction in enumerate(agent_policies):
+            if ":" in policy_instruction:  # we have custom parameters
+                policy_name, kwargs = BaseTradeTest.validate_custom_parameters(policy_instruction)
+            else:  # we don't have custom parameters
+                policy_name = policy_instruction
+                kwargs = {}
             wallet_address = len(init_agents) + agent_id
             agent = import_module(f"elfpy.policies.{policy_name}").Policy(
                 wallet_address=wallet_address,  # first policy goes to init_lp_agent
+                **kwargs,
             )
             agent.log_status_report()
             simulator.agents.update({agent.wallet.address: agent})
         return (simulator, market)
+
+    @staticmethod
+    def validate_custom_parameters(policy_instruction):
+        """
+        separate the policy name from the policy arguments and validate the arguments
+        """
+        policy_name, policy_args = policy_instruction.split(":")
+        try:
+            policy_args = policy_args.split(",")
+        except AttributeError as exception:
+            logging.info("ERROR: No policy arguments provided")
+            raise exception
+        try:
+            policy_args = [arg.split("=") for arg in policy_args]
+        except AttributeError as exception:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise exception
+        try:
+            kwargs = {key: float(value) for key, value in policy_args}
+        except ValueError as exception:
+            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
+            raise exception
+        return policy_name, kwargs
 
     @staticmethod
     def setup_logging():
@@ -84,10 +113,11 @@ class BaseTradeTest(unittest.TestCase):
         log_level = logging.DEBUG
         output_utils.setup_logging(log_filename, log_level=log_level)
 
+    # pylint: disable=too-many-arguments because we're testing lots of stuff here!
     def run_base_trade_test(
         self,
         agent_policies,
-        config_file,
+        config_file="config/example_config.toml",
         delete_logs=True,
         additional_overrides=None,
         target_liquidity=None,
@@ -107,7 +137,9 @@ class BaseTradeTest(unittest.TestCase):
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
-        simulator, market = self.setup_simulation_entities(config_file, override_dict, agent_policies)
+        simulator, market = self.setup_simulation_entities(
+            config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
+        )
         if target_pool_apr:  # check that apr is within 0.005 of the target
             market_apr = market.rate
             assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
@@ -125,6 +157,30 @@ class BaseTradeTest(unittest.TestCase):
         if delete_logs:
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
+        return simulator
+
+    def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
+        """Test custom parameters passed to agent creation"""
+        # create simulator with agent_policies
+        simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=False)
+        number_of_init_agents = 0  # count number of init agents so we can skip over them
+        for all_agent_index, agent in simulator.agents.items():  # loop over all agents
+            if agent.name == "init_lp":
+                number_of_init_agents += 1
+            else:  # only for custom agents, loop across them and check their parameters
+                custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
+                expected_result_dict = expected_result[custom_agent_index]
+                for key, value in expected_result_dict.items():  # for each custom parameter to check
+                    np.testing.assert_almost_equal(
+                        getattr(agent, key),
+                        value,
+                        err_msg=f"{key} does not equal {value}",
+                    )
+        if delete_logs:
+            file_loc = logging.getLogger().handlers[0].baseFilename
+            os.remove(file_loc)
+        # garbage collect
+        simulator = None
 
 
 class SingleTradeTests(BaseTradeTest):
@@ -134,28 +190,39 @@ class SingleTradeTests(BaseTradeTest):
     """
 
     def __init__(self, *args, **kwargs):
-        self.config_file = "config/example_config.toml"
         super().__init__(*args, **kwargs)
 
     def test_init_only(self):
         """Tests base LP setups"""
-        self.run_base_trade_test(
-            agent_policies=[], config_file=self.config_file, target_liquidity=1e6, target_pool_apr=0.05
-        )
+        self.run_base_trade_test(agent_policies=[], target_liquidity=1e6, target_pool_apr=0.05)
 
     def test_single_long(self):
         """Tests the BaseUser class"""
-        self.run_base_trade_test(agent_policies=["single_long"], config_file=self.config_file)
+        self.run_base_trade_test(agent_policies=["single_long"])
 
     def test_single_short(self):
         """Tests the BaseUser class"""
-        self.run_base_trade_test(agent_policies=["single_short"], config_file=self.config_file)
+        self.run_base_trade_test(agent_policies=["single_short"])
 
     def test_base_lps(self):
         """Tests base LP setups"""
-        self.run_base_trade_test(
-            agent_policies=["single_lp"], config_file=self.config_file, target_liquidity=1e6, target_pool_apr=0.05
-        )
+        self.run_base_trade_test(agent_policies=["single_lp"], target_liquidity=1e6, target_pool_apr=0.05)
+
+    def test_custom_parameters(self):
+        """Tests passing custom parameters"""
+        list_of_agent_policies_that_pass = [["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"]]
+        list_of_agent_policies_that_fail = [
+            ["single_lp:amount_to_lp=200", "single_short:pt_to_short=499"],
+            ["single_lp:amount_to_lp=200", "single_short:pt_to_short=501"],
+            ["single_lp:amount_to_lp=199", "single_short:pt_to_short=500"],
+            ["single_lp:amount_to_lp=201", "single_short:pt_to_short=500"],
+        ]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        for agent_policies in list_of_agent_policies_that_pass:
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+        for agent_policies in list_of_agent_policies_that_fail:
+            with self.assertRaises(AssertionError):
+                self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
 
 if __name__ == "__main__":
