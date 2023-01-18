@@ -14,8 +14,6 @@ import numpy as np
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 @dataclass
