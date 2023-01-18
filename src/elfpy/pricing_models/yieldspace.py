@@ -84,7 +84,8 @@ class YieldSpacePricingModel(PricingModel):
             # TODO: We need to update these LP calculations to address the LP
             #       exploit scenario.
             lp_out = (d_shares * market_state.lp_reserves) / (
-                market_state.share_reserves - market_state.base_buffer / market_state.share_price
+                market_state.share_reserves
+                + (market_state.bond_buffer - market_state.base_buffer) * market_state.share_price
             )
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
@@ -187,7 +188,8 @@ class YieldSpacePricingModel(PricingModel):
         )
         d_shares = d_base / market_state.share_price
         lp_in = (d_shares * market_state.lp_reserves) / (
-            market_state.share_reserves - market_state.base_buffer / market_state.share_price
+            market_state.share_reserves
+            + (market_state.bond_buffer - market_state.base_buffer) * market_state.share_price
         )
         # TODO: Move this calculation to a helper function.
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
