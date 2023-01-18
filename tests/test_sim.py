@@ -32,8 +32,20 @@ class BaseSimTest(unittest.TestCase):
         output_utils.setup_logging(log_filename, log_level=log_level)
 
     @staticmethod
-    def setup_config(config_file, override_dict=None) -> Config:
-        """Creates a config from a config file and an override dictionary"""
+    def close_logging(delete_logs=True):
+        """Close logging and handlers for the test"""
+        logging.shutdown()
+        if delete_logs:
+            for handler in logging.getLogger().handlers:
+                handler.close()
+                if hasattr(handler, "baseFilename"):
+                    if os.path.exists(handler.baseFilename):
+                        os.remove(handler.baseFilename)
+
+    def setup_simulator_inputs(
+        config_file, override_dict=None
+    ) -> tuple[Config, Market, Dict[int, Agent], Generator, RandomSimulationVariables]:
+        """Instantiate input objects to the simulator class"""
         if override_dict is None:
             override_dict = {}
         config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
@@ -64,7 +76,7 @@ class BaseSimTest(unittest.TestCase):
             # pylint: disable=broad-except
             except Exception as exc:
                 raise AssertionError(f"ERROR: Test failed at seed {rng_seed}") from exc
-        output_utils.close_logging(delete_logs=delete_logs)
+        self.close_logging(delete_logs=delete_logs)
 
     def run_set_rng_test(self, delete_logs=True):
         """Verifies that the rng gets set properly & fails properly"""
@@ -77,8 +89,8 @@ class BaseSimTest(unittest.TestCase):
         assert simulator.rng == new_rng
         for bad_input in ([1234, "1234", RandomState(1234)],):
             with self.assertRaises(TypeError):
-                simulator.set_rng(bad_input)  # type: ignore
-        output_utils.close_logging(delete_logs=delete_logs)
+                simulator.set_rng(bad_input)
+        self.close_logging(delete_logs=delete_logs)
 
     def run_log_config_variables_test(self, delete_logs=True):
         """Verfies that the config variables are successfully logged"""
@@ -87,7 +99,7 @@ class BaseSimTest(unittest.TestCase):
         simulator = self.setup_simulator(config_file)
         simulator.log_config_variables()
         self.assertLogs(level=logging.INFO)
-        output_utils.close_logging(delete_logs=delete_logs)
+        self.close_logging(delete_logs=delete_logs)
 
     def run_random_variables_test(self, delete_logs=True):
         """Test random variable creation & overriding"""
@@ -134,7 +146,8 @@ class BaseSimTest(unittest.TestCase):
                 config=invalid_config,
                 market=simulator.market,
             )
-        output_utils.close_logging(delete_logs=delete_logs)
+
+        self.close_logging(delete_logs=delete_logs)
 
     def run_simulation_state_test(self, delete_logs=True):
         """Runs a small number of trades, then checks that simulation_state
@@ -155,7 +168,7 @@ class BaseSimTest(unittest.TestCase):
                 if len(simulator.simulation_state[key]) != goal_writes
             ]
             raise AssertionError(f"ERROR: Analysis keys have too many entries: {bad_keys}") from exc
-        output_utils.close_logging(delete_logs=delete_logs)
+        self.close_logging(delete_logs=delete_logs)
 
 
 class TestSimulator(BaseSimTest):
