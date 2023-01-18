@@ -107,11 +107,21 @@ class BaseTradeTest(unittest.TestCase):
         return policy_name, kwargs
 
     @staticmethod
-    def setup_logging():
+    def setup_logging(log_level=logging.DEBUG):
         """Setup test logging levels and handlers"""
         log_filename = ".logging/test_trades.log"
-        log_level = logging.DEBUG
         output_utils.setup_logging(log_filename, log_level=log_level)
+
+    @staticmethod
+    def close_logging(delete_logs=True):
+        """Close logging and handlers for the test"""
+        logging.shutdown()
+        if delete_logs:
+            for handler in logging.getLogger().handlers:
+                handler.close()
+                if hasattr(handler, "baseFilename"):
+                    if os.path.exists(handler.baseFilename):
+                        os.remove(handler.baseFilename)
 
     # pylint: disable=too-many-arguments because we're testing lots of stuff here!
     def run_base_trade_test(
@@ -154,9 +164,7 @@ class BaseTradeTest(unittest.TestCase):
                 f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
             )
         simulator.run_simulation()
-        if delete_logs:
-            file_loc = logging.getLogger().handlers[0].baseFilename
-            os.remove(file_loc)
+        self.close_logging(delete_logs=delete_logs)
         return simulator
 
     def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
@@ -176,9 +184,7 @@ class BaseTradeTest(unittest.TestCase):
                         value,
                         err_msg=f"{key} does not equal {value}",
                     )
-        if delete_logs:
-            file_loc = logging.getLogger().handlers[0].baseFilename
-            os.remove(file_loc)
+        self.close_logging(delete_logs=delete_logs)
 
 
 class SingleTradeTests(BaseTradeTest):
