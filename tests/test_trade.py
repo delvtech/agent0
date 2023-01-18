@@ -179,8 +179,6 @@ class BaseTradeTest(unittest.TestCase):
         if delete_logs:
             file_loc = logging.getLogger().handlers[0].baseFilename
             os.remove(file_loc)
-        # garbage collect
-        simulator = None
 
 
 class SingleTradeTests(BaseTradeTest):
