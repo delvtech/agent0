@@ -63,8 +63,6 @@ class TestCalcInGivenOut(unittest.TestCase):
 
     # pylint: disable=line-too-long
 
-    # TODO: Add tests for the Hyperdrive pricing model.
-    #
     # TODO: Add tests for the full TradeResult object.
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
