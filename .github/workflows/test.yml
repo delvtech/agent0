@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -22,6 +22,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint pytest nose
+          python -m pip install stochastic --ignore-requires-python
           python -m pip install -r requirements.txt
           python -m pip install .
       - name: Running package tests

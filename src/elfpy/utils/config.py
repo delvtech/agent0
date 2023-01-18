@@ -90,9 +90,9 @@ class SimulatorConfig:
 class Config:
     """Data object for storing user simulation config parameters"""
 
-    market: MarketConfig = MarketConfig()
-    amm: AMMConfig = AMMConfig()
-    simulator: SimulatorConfig = SimulatorConfig()
+    market: MarketConfig = field(default_factory=MarketConfig)
+    amm: AMMConfig = field(default_factory=AMMConfig)
+    simulator: SimulatorConfig = field(default_factory=SimulatorConfig)
 
     def __getitem__(self, key):
         return getattr(self, key)
