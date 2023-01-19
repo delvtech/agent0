@@ -11,16 +11,16 @@ Testing for the calc_in_given_out of the pricing models.
 import decimal
 import unittest
 import numpy as np
+from test_dataclasses import (
+    TestCaseCalcInGivenOutFailure,
+    TestCaseCalcInGivenOutSuccess,
+    TestResultCalcInGivenOutSuccess,
+)
 
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-from tests.pricing_models.test_dataclasses import (
-    TestCaseCalcInGivenOutFailure,
-    TestCaseCalcInGivenOutSuccess,
-    TestResultCalcInGivenOutSuccess,
-)
 
 
 class TestCalcInGivenOut(unittest.TestCase):

@@ -10,14 +10,14 @@ Testing for the calc_in_given_out of the pricing models.
 
 import unittest
 import numpy as np
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
-from tests.pricing_models.test_dataclasses import (
-    TestCaseCalcInGivenOutFailure,
+from test_dataclasses import (
     TestCaseCalcInGivenOutSuccess,
     TestResultCalcInGivenOutSuccess,
+    TestCaseCalcInGivenOutFailure,
 )
+
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 
 
 class TestCalcInGivenOut(unittest.TestCase):
@@ -555,6 +555,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=0, unit=TokenType.PT),
@@ -566,6 +567,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -577,6 +579,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -588,6 +591,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -599,6 +603,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -610,6 +615,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=-1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -621,6 +627,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=1.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -632,6 +639,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=1.1,
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -643,6 +651,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=365, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -654,6 +663,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=500, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=10_000_000, unit=TokenType.BASE),
@@ -665,6 +675,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=92.5, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -676,6 +687,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -687,6 +699,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -698,13 +711,14 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                exception_type=AssertionError,
             ),
         ]
 
         # Iterate over all of the test cases and verify that the pricing model
         # raises an AssertionError for each test case.
         for test_case in test_cases:
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(test_case.exception_type):
                 pricing_model.check_input_assertions(
                     quantity=test_case.out,
                     market_state=test_case.market_state,

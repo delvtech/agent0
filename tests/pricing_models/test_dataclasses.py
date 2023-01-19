@@ -3,6 +3,7 @@ Useful dataclasses for testing a pricing model's calc_in_given_out method
 """
 
 from dataclasses import dataclass
+from typing import Type
 from elfpy.types import MarketState, Quantity, StretchedTime
 
 
@@ -39,6 +40,6 @@ class TestCaseCalcInGivenOutFailure:
     market_state: MarketState
     fee_percent: float
     time_remaining: StretchedTime
-    exception_type = AssertionError
+    exception_type: Type[BaseException]
 
     __test__ = False  # pytest: don't test this class
