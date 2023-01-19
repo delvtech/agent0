@@ -24,5 +24,3 @@ jobs:
           python -m pip install -r requirements.txt
       - name: Analysing code with pyright
         run: python -m pyright .
-        # TODO: We should address all of the typing issues and remove this flag.
-        continue-on-error: true
