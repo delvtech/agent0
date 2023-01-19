@@ -82,6 +82,14 @@ def float_to_string(value, precision=3, min_digits=0, debug=False):
     return string
 
 
+def delete_log_file() -> None:
+    """If the logger's handler if a file handler, delete the underlying file."""
+    handler = logging.getLogger().handlers[0]
+    if isinstance(handler, logging.FileHandler):
+        os.remove(handler.baseFilename)
+    logging.getLogger().removeHandler(handler)
+
+
 def setup_logging(
     log_filename: Optional[str] = None,
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,

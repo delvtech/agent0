@@ -82,15 +82,12 @@ class RandomAgent(Agent):
 
 def get_example_agents(
     rng: Generator,
-    num_new_agents: int,
-    agents: Optional[dict[int, Agent]] = None,
+    new_agents: int,
+    existing_agents: int,
 ) -> dict[int, Agent]:
     """Instantiate a set of custom agents"""
-    if agents is None:
-        agents = {}
-    loop_start = len(agents)  # number of existing agents
-    loop_end = loop_start + num_new_agents
-    for wallet_address in range(loop_start, loop_end):
+    agents = {}
+    for wallet_address in range(existing_agents, existing_agents + new_agents):
         agent = RandomAgent(rng, wallet_address)
         agent.log_status_report()
         agents.update({agent.wallet.address: agent})
@@ -165,16 +162,11 @@ def run_random_agent_simulation(config: Config):
     simulator = Simulator(
         config=config,
         market=sim_market,
-        agents=init_agents,
+        init_agents=init_agents,
+        agents=get_example_agents(rng=rng, new_agents=args.num_agents, existing_agents=1),
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )
-    simulator.collect_and_execute_trades()
-
-    # Add the other trading agents.
-    simulator.agents = get_example_agents(rng=simulator.rng, num_new_agents=args.num_agents, agents=init_agents)
-
-    # Run the simulation.
     simulator.run_simulation()
 
 

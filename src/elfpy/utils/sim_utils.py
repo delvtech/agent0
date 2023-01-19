@@ -197,28 +197,28 @@ def setup_vault_apr(config, rng):
         list of apr values that is the same length as num_trading_days
     """
     if isinstance(config.market.vault_apr, dict):  # dictionary specifies parameters for the callable
-        allowable_keys = ["constant", "uniform", "geometricbrownianmotion"]
-        if config.market.vault_apr["type"].lower() in allowable_keys:
-            match config.market.vault_apr["type"].lower():
-                case "constant":
-                    vault_apr = [
-                        config.market.vault_apr["value"],
-                    ] * config.simulator.num_trading_days
-                case "uniform":
-                    vault_apr = rng.uniform(
-                        low=config.market.vault_apr["low"],
-                        high=config.market.vault_apr["high"],
-                        size=config.simulator.num_trading_days,
-                    ).tolist()
-                case "geometricbrownianmotion":
-                    # the n argument is number of steps, so the number of points is n+1
-                    vault_apr = (
-                        GeometricBrownianMotion(rng=rng)
-                        .sample(n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"])
-                        .tolist()
-                    )
-        else:
-            raise ValueError(f"{config.market.vault_apr['type']=} not in {allowable_keys=}")
+        match config.market.vault_apr["type"].lower():
+            case "constant":
+                vault_apr = [
+                    config.market.vault_apr["value"],
+                ] * config.simulator.num_trading_days
+            case "uniform":
+                vault_apr = rng.uniform(
+                    low=config.market.vault_apr["low"],
+                    high=config.market.vault_apr["high"],
+                    size=config.simulator.num_trading_days,
+                ).tolist()
+            case "geometricbrownianmotion":
+                # the n argument is number of steps, so the number of points is n+1
+                vault_apr = (
+                    GeometricBrownianMotion(rng=rng)
+                    .sample(n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"])
+                    .tolist()
+                )
+            case _:
+                raise ValueError(
+                    f"{config.market.vault_apr['type']=} not one of \"constant\", \"uniform\", or \"geometricbrownianmotion\""
+                )
     elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
         vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
     elif isinstance(config.market.vault_apr, list):  # user-defined list of values

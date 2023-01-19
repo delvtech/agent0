@@ -141,7 +141,7 @@ if __name__ == "__main__":
         random_sim_vars.vault_apr,
         random_sim_vars.init_share_price,
     )
-    # instantiate the init_lp agent
+    # initialize the simulator
     init_agents = {
         0: sim_utils.get_init_lp_agent(
             sim_market,
@@ -150,16 +150,19 @@ if __name__ == "__main__":
             random_sim_vars.fee_percent,
         )
     }
-    # set up simulator with only the init_lp_agent
+    agents = dict(
+        [
+            (agent.wallet.address, agent)
+            for agent in get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(init_agents))
+        ]
+    )
     simulator = Simulator(
         config=config,
         market=sim_market,
-        agents=init_agents,
+        init_agents=init_agents,
+        agents=agents,
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )
-    # initialize the market using the LP agent
-    simulator.collect_and_execute_trades()
-    # get trading agent list
-    simulator.add_agents(get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(simulator.agents)))
+    # run the simulation
     simulator.run_simulation()

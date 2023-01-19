@@ -15,7 +15,7 @@ import numpy as np
 
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.simulators import Simulator
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
+from elfpy.utils import sim_utils, outputs as output_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
 
 
@@ -44,7 +44,7 @@ class BaseLogTest(unittest.TestCase):
             random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
-        # instantiate the init_lp agent
+        # run a simulation with only the initial LP agent
         init_agents = {
             0: sim_utils.get_init_lp_agent(
                 market,
@@ -53,17 +53,14 @@ class BaseLogTest(unittest.TestCase):
                 random_sim_vars.fee_percent,
             )
         }
-        # set up simulator with only the init_lp_agent
         simulator = Simulator(
             config=config,
             market=market,
-            agents=init_agents,
+            init_agents=init_agents,
+            agents={},
             rng=rng,
             random_simulation_variables=random_sim_vars,
         )
-        # initialize the market using the LP agent
-        simulator.collect_and_execute_trades()
-        # get trading agent list
         simulator.run_simulation()
 
     def run_logging_test(self, delete_logs=True):
@@ -106,8 +103,7 @@ class BaseLogTest(unittest.TestCase):
             self.setup_and_run_simulator(config_file, override_dict)
             self.assertLogs(level=level)
             if delete_logs and handler_type == "file":
-                file_loc = logging.getLogger().handlers[0].baseFilename
-                os.remove(file_loc)
+                output_utils.delete_log_file()
 
 
 class TestLogging(BaseLogTest):

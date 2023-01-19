@@ -58,8 +58,8 @@ class TestAgent(unittest.TestCase):
             init_share_price=1,
             share_price=1,
         )
-        fee_percent = (0.1,)
-        time_remaining = (StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05)),)
+        fee_percent = 0.1
+        time_remaining = StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05))
 
         market = Market(
             pricing_model=pricing_model,

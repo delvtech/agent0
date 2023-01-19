@@ -48,7 +48,7 @@ class BaseTradeTest(unittest.TestCase):
             random_sim_vars.vault_apr,
             random_sim_vars.init_share_price,
         )
-        # instantiate the init_lp agent
+        # instantiate the agents
         init_agents = {
             0: sim_utils.get_init_lp_agent(
                 market,
@@ -57,24 +57,24 @@ class BaseTradeTest(unittest.TestCase):
                 random_sim_vars.fee_percent,
             )
         }
-        # set up simulator with only the init_lp_agent
-        simulator = Simulator(
-            config=config,
-            market=market,
-            agents=init_agents,
-            rng=rng,
-            random_simulation_variables=random_sim_vars,
-        )
-        # initialize the market using the LP agent
-        simulator.collect_and_execute_trades()
-        # get trading agent list
+        agents = {}
         for agent_id, policy_name in enumerate(agent_policies):
             wallet_address = len(init_agents) + agent_id
             agent = import_module(f"elfpy.policies.{policy_name}").Policy(
                 wallet_address=wallet_address,  # first policy goes to init_lp_agent
             )
             agent.log_status_report()
-            simulator.agents.update({agent.wallet.address: agent})
+            agents.update({agent.wallet.address: agent})
+        # set up the simulator
+        simulator = Simulator(
+            config=config,
+            market=market,
+            init_agents=init_agents,
+            agents=agents,
+            rng=rng,
+            random_simulation_variables=random_sim_vars,
+        )
+        # get trading agent list
         return (simulator, market)
 
     @staticmethod
@@ -100,8 +100,7 @@ class BaseTradeTest(unittest.TestCase):
         simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)[0]
         simulator.run_simulation()
         if delete_logs:
-            file_loc = logging.getLogger().handlers[0].baseFilename
-            os.remove(file_loc)
+            output_utils.delete_log_file()
 
     def run_base_lp_test(self, agent_policies, config_file, delete_logs=True):
         """
@@ -136,8 +135,7 @@ class BaseTradeTest(unittest.TestCase):
         # run the simulation
         simulator.run_simulation()
         if delete_logs:
-            file_loc = logging.getLogger().handlers[0].baseFilename
-            os.remove(file_loc)
+            output_utils.delete_log_file()
 
 
 class SingleTradeTests(BaseTradeTest):

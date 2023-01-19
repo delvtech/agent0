@@ -11,6 +11,12 @@ import elfpy.utils.time as time_utils
 if TYPE_CHECKING:
     from elfpy.agent import Agent
 
+
+def to_description(s: str) -> dict[str, str]:
+    """A dataclass helper that constructs metadata containing a description."""
+    return {"description": s}
+
+
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
 WEI = 1e-18
@@ -257,16 +263,18 @@ class RandomSimulationVariables:
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
-    target_pool_apr: float = field(metadata="desired fixed apr for as a decimal")
-    fee_percent: float = field(metadata="percent to charge for LPer fees")
-    vault_apr: list = field(metadata="yield bearing source APR")
-    init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
-    init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
+    target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
+    target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
+    fee_percent: float = field(metadata=to_description("percent to charge for LPer fees"))
+    vault_apr: list = field(metadata=to_description("yield bearing source APR"))
+    init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
+    init_share_price: float = field(
+        default=0, metadata=to_description("initial market share price for the vault asset")
+    )
 
     def __post_init__(self):
         """init_share_price is a function of other random variables"""
-        if self.init_share_price is None:
+        if self.init_share_price == 0:
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
 
