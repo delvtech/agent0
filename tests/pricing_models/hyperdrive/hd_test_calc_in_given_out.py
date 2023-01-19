@@ -13,7 +13,11 @@ import numpy as np
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
-from tests.pricing_models.test_dataclasses import TestCaseCalcInGivenOutSuccess, TestResultCalcInGivenOutSuccess
+from tests.pricing_models.test_dataclasses import (
+    TestCaseCalcInGivenOutFailure,
+    TestCaseCalcInGivenOutSuccess,
+    TestResultCalcInGivenOutSuccess,
+)
 
 
 class TestCalcInGivenOut(unittest.TestCase):
@@ -535,185 +539,184 @@ class TestCalcInGivenOut(unittest.TestCase):
             )
 
     # # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
-    # def test_calc_in_given_out_failure(self):
-    #     """Failure tests for calc_in_given_out"""
-    #     pricing_models: list[PricingModel] = [YieldSpacePricingModel()]
+    def test_calc_in_given_out_failure(self):
+        """Failure tests for calc_in_given_out"""
 
-    #     # Failure test cases.
-    #     test_cases = [
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=-1, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.01,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=0, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.01,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=-1,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.01,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=0,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.01,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=-1,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.01,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=-1,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=1.1,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=1.1,
-    #             time_remaining=StretchedTime(days=-91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=365, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.PT),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=500, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=10_000_000, unit=TokenType.BASE),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=92.5, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.BASE),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=2,
-    #                 init_share_price=0,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.BASE),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=1,
-    #                 init_share_price=1.5,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #         TestCaseCalcInGivenOutFailure(
-    #             out=Quantity(amount=100, unit=TokenType.BASE),
-    #             market_state=MarketState(
-    #                 share_reserves=100_000,
-    #                 bond_reserves=1_000_000,
-    #                 share_price=0,
-    #                 init_share_price=1.5,
-    #             ),
-    #             fee_percent=0.1,
-    #             time_remaining=StretchedTime(days=91.25, time_stretch=1),
-    #         ),
-    #     ]
+        pricing_model = HyperdrivePricingModel()
+        # Failure test cases.
+        test_cases = [
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=-1, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=0, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=-1,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=-1,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.01,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=-1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=1.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=1.1,
+                time_remaining=StretchedTime(days=-91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=365, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=500, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=10_000_000, unit=TokenType.BASE),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=92.5, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.BASE),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=2,
+                    init_share_price=0,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.BASE),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.BASE),
+                market_state=MarketState(
+                    share_reserves=100_000,
+                    bond_reserves=1_000_000,
+                    share_price=0,
+                    init_share_price=1.5,
+                ),
+                fee_percent=0.1,
+                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+            ),
+        ]
 
-    #     # Iterate over all of the test cases and verify that the pricing model
-    #     # raises an AssertionError for each test case.
-    #     for test_case in test_cases:
-    #         for pricing_model in pricing_models:
-    #             with self.assertRaises(AssertionError):
-    #                 pricing_model.check_input_assertions(
-    #                     quantity=test_case.out,
-    #                     market_state=test_case.market_state,
-    #                     fee_percent=test_case.fee_percent,
-    #                     time_remaining=test_case.time_remaining,
-    #                 )
-    #                 trade_result = pricing_model.calc_in_given_out(
-    #                     out=test_case.out,
-    #                     market_state=test_case.market_state,
-    #                     fee_percent=test_case.fee_percent,
-    #                     time_remaining=test_case.time_remaining,
-    #                 )
-    #                 pricing_model.check_output_assertions(
-    #                     trade_result=trade_result,
-    #                 )
+        # Iterate over all of the test cases and verify that the pricing model
+        # raises an AssertionError for each test case.
+        for test_case in test_cases:
+            with self.assertRaises(AssertionError):
+                pricing_model.check_input_assertions(
+                    quantity=test_case.out,
+                    market_state=test_case.market_state,
+                    fee_percent=test_case.fee_percent,
+                    time_remaining=test_case.time_remaining,
+                )
+                trade_result = pricing_model.calc_in_given_out(
+                    out=test_case.out,
+                    market_state=test_case.market_state,
+                    fee_percent=test_case.fee_percent,
+                    time_remaining=test_case.time_remaining,
+                )
+                pricing_model.check_output_assertions(
+                    trade_result=trade_result,
+                )

@@ -736,7 +736,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
-                # exception_type=AssertionError,
+                exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=0, unit=TokenType.PT),
