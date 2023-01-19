@@ -63,7 +63,7 @@ class Agent:
 
     """
 
-    def __init__(self, wallet_address: int, budget: float, **kwargs):
+    def __init__(self, wallet_address: int, budget: float):
         """
         Set up initial conditions
         """
@@ -72,10 +72,6 @@ class Agent:
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
-        for key, value in kwargs.items():
-            if value and hasattr(self, key):
-                logging.info("setting agent's %s to %s", key, str(value))
-                setattr(self, key, value)
 
     def create_agent_action(
         self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
