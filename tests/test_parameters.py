@@ -11,9 +11,9 @@ import unittest
 import logging
 
 import numpy as np
+import utils_for_tests as test_utils  # utilities for testing
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
-import elfpy.utils.testing as test_utils  # utilities for testing
 
 
 class BaseParameterTest(unittest.TestCase):
