@@ -15,7 +15,6 @@ Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip 
 for Python 3.10, this is sufficient:
 
 ```
-python -m pip install stochastic --ignore-requires-python
 python -m pip install -r requirements.txt
 ```
 
