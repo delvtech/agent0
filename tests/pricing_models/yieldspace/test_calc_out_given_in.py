@@ -114,18 +114,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 182.5 / (365 * 22.1868770168519182502689135891)
                 #     = 0.0225358440315970471499308329778
                 #
-                #   1 - t = 0.977464155968402952850069167022
+                #   1 - tau = 0.977464155968402952850069167022
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = 100000**0.9774641559684029528500691670222 + (2*100000 +
                 #           100000*1)**0.9774641559684029528500691670222
                 #     = 302929.51067963685
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 1 * 100_000) / (1 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0250671833648672
                 TestResultCalcOutGivenInSuccess(
@@ -136,12 +136,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = 100_100 ** (1 - T) + (300_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = 100_100 ** () + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 100_100 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 100_100 ** ()) ** (1 / (1 - tau))
                     #       = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -206,12 +206,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = 110_000 ** (1 - T) + (300_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = 110_000 ** () + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 110_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 110_000 ** ()) ** (1 / (1 - tau))
                     #       = 10235.514826394327
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -249,12 +249,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = 180_000 ** (1 - T) + (300_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = 180_000 ** () + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 180_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 300_000 - (k - 180_000 ** ()) ** (1 / (1 - tau))
                     #       = 81138.27602200207
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -286,18 +286,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 182.5 / (365 * 22.1868770168519182502689135891)
                 #     = 0.0225358440315970471499308329778
                 #
-                #   1 - t = 0.977464155968402952850069167022
+                #   1 - tau = 0.977464155968402952850069167022
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.50) * (1.5 * 100000) ** 0.9774641559684029528500691670222 + (2 * 100000 +
                 #           2 * 100000) ** 0.9774641559684029528500691670222
                 #     = 451988.7122137336
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0223499142867662
                 TestResultCalcOutGivenInSuccess(
@@ -308,12 +308,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (400_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** () + (400_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 400_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 400_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
                     #       = 204.46650180319557
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -344,18 +344,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 182.5 / (365 * 22.1868770168519182502689135891)
                 #     = 0.0225358440315970471499308329778
                 #
-                #   1 - t = 0.977464155968402952850069167022
+                #   1 - tau = 0.977464155968402952850069167022
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.50) * (1.5 * 100000) ** 0.9774641559684029528500691670222 + (2 * 100000 +
                 #           2 * 1_000_000) ** 0.9774641559684029528500691670222
                 #     = 1_735_927.3223407117
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0623907066406753
                 TestResultCalcOutGivenInSuccess(
@@ -366,12 +366,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -402,18 +402,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 91.25 / (365 * 22.1868770168519182502689135891)
                 #     = 0.011267922015798522
                 #
-                #   1 - t = 0.9887320779842015
+                #   1 - tau = 0.9887320779842015
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.50) * (1.5 * 100000) ** 0.9887320779842015 + (2 * 100000 +
                 #           2 * 1_000_000) ** 0.9887320779842015
                 #     = 2_041_060.1949973335
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.011267922015798522
                 #     = 1.0307233899745727
                 TestResultCalcOutGivenInSuccess(
@@ -424,12 +424,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
                     #       = 206.14340814948082
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -460,18 +460,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 11.093438508425956
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 91.25 / (365 * 11.093438508425956)
                 #     = 0.022535844031597054
                 #
-                #   1 - t = 0.977464155968403
+                #   1 - tau = 0.977464155968403
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.50) * (1.5 * 100000) ** 0.977464155968403 + (2 * 100000 +
                 #           2 * 1_000_000) ** 0.977464155968403
                 #     = 1_735_927.3223407117
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.022535844031597054
                 #     = 1.0623907066406753
                 TestResultCalcOutGivenInSuccess(
@@ -482,12 +482,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of bonds out given the
                     # amount of shares coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z + d_z)) ** (1 - t) + (2 * y + c * z - d_y') ** (1 - t)
-                    #     = (2 / 1.5) * 150_150 ** (1 - T) + (2_200_000 - d_y') ** (1 - T)
+                    #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -548,18 +548,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 182.5 / (365 * 22.1868770168519182502689135891)
                 #     = 0.022535844031597044
                 #
-                #   1 - t = 0.977464155968403
+                #   1 - tau = 0.977464155968403
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = 100000**0.9774641559684029528500691670222 + (2*100000 +
                 #           100000*1)**0.9774641559684029528500691670222
                 #     = 302929.51067963685
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 1 * 100_000) / (1 * 100_000)) ** 0.022535844031597044
                 #     = 1.0250671833648672
                 TestResultCalcOutGivenInSuccess(
@@ -570,12 +570,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (100_000 - d_z') ** (1 - T) + 300_100 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (100_000 - d_z') ** () + 300_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 300_100 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 300_100 ** ()) ** (1 / (1 - tau))
                     #       = 97.55314236719278
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -642,12 +642,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (100_000 - d_z') ** (1 - T) + 310_000 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (100_000 - d_z') ** () + 310_000 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 310_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 310_000 ** ()) ** (1 / (1 - tau))
                     #       = 9740.77011591768
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -686,12 +686,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (100_000 - d_z') ** (1 - T) + 380_000 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (100_000 - d_z') ** () + 380_000 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 380_000 ** (1 - T)) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (k - 380_000 ** ()) ** (1 / (1 - tau))
                     #       = 76850.14470187116
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -725,11 +725,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 # From the new values, we have:
                 #
-                #   k = (c / μ) * (μ * z) ** (1 - t) + (2 * y + c * z) ** (1 - t)
+                #   k = (c / mu) * (mu * z) ** (1 - tau) + (2 * y + c * z) ** (1 - tau)
                 #     = (2 / 1.5) * (1.5 * 100000) ** 0.977464155968403 + (2 * 100000 + 2 * 100000) ** 0.977464155968403
                 #     = 451_988.7122137336
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.022535844031597044
                 #     = 1.0223499142867662
                 TestResultCalcOutGivenInSuccess(
@@ -740,12 +740,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 400_100 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 400_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** ())) ** (1 / (1 - tau))
                     #       = 48.906526897713775
                     #
                     # The output is d_x' = c * d_z' = 2 * 48.906526897713775 = 97.81305379542755.
@@ -779,12 +779,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 # From the new values, we have:
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.5) * (1.5 * 100_000) ** 0.977464155968403 + (2 * 100_000 +
                 #           2 * 1_000_000) ** 0.977464155968403
                 #     = 1735927.3223407117
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 1_000_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.022535844031597044
                 #     = 1.062390706640675
                 TestResultCalcOutGivenInSuccess(
@@ -795,12 +795,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 2_200_100 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
                     #       = 47.06339097737509
                     #
                     # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
@@ -833,18 +833,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 22.1868770168519182502689135891
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 91.25 / (365 * 22.1868770168519182502689135891)
                 #     = 0.011267922015798522
                 #
-                #   1 - t = 0.9887320779842015
+                #   1 - tau = 0.9887320779842015
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.5) * (1.5 * 100_000) ** 0.9887320779842015 +
                 #           (2 * 1_000_000 + 2 * 100_000) ** 0.9887320779842015
                 #     = 2_041_060.1949973335
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.011267922015798522
                 #     = 1.0307233899745727
                 TestResultCalcOutGivenInSuccess(
@@ -855,12 +855,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - T) + 2_200_100 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
                     #       = 48.50947500564507
                     #
                     # The output is d_x' = c * d_z' = 2 * 48.50947500564507 = 97.01895001129014.
@@ -893,18 +893,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #
                 #   t_stretch = 11.093438508425956
                 #
-                #   t = d / (365 * t_stretch)
+                #   tau = d / (365 * t_stretch)
                 #     = 91.25 / (365 * 11.093438508425956)
                 #     = 0.022535844031597054
                 #
-                #   1 - t = 0.977464155968403
+                #   1 - tau = 0.977464155968403
                 #
-                #   k = (c / μ) * (μ * z) **(1 - t) + (2 * y + c * z)**(1 - t)
+                #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
                 #     = (2 / 1.5) * (1.5 * 100_000) ** 0.977464155968403 +
                 #           (2 * 1_000_000 + 2 * 100_000) ** 0.977464155968403
                 #     = 1_735_927.3223407117
                 #
-                #   p = ((2 * y + c * z) / (μ * z)) ** t
+                #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.022535844031597054
                 #     = 1.0623907066406753
                 TestResultCalcOutGivenInSuccess(
@@ -915,12 +915,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # We want to solve for the amount of shares out given the
                     # amount of bonds coming in, so we set up the problem as:
                     #
-                    #   k = (c / μ) * (μ * (z - d_z')) ** (1 - t) + (2 * y + c * z + d_y) ** (1 - t)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - T) + 2_200_100 ** (1 - T)
+                    #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** () + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - T))) ** (1 / (1 - T))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
                     #       = 47.06339097737509
                     #
                     # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
