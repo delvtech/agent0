@@ -8,7 +8,6 @@ Testing for the ElfPy package modules
 # pylint: disable=duplicate-code
 
 import unittest
-import os
 import logging
 from importlib import import_module
 

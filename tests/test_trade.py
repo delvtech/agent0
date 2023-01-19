@@ -113,17 +113,6 @@ class BaseTradeTest(unittest.TestCase):
         log_filename = ".logging/test_trades.log"
         output_utils.setup_logging(log_filename, log_level=log_level)
 
-    @staticmethod
-    def close_logging(delete_logs=True):
-        """Close logging and handlers for the test"""
-        logging.shutdown()
-        if delete_logs:
-            for handler in logging.getLogger().handlers:
-                handler.close()
-                if hasattr(handler, "baseFilename"):
-                    if os.path.exists(handler.baseFilename):
-                        os.remove(handler.baseFilename)
-
     # pylint: disable=too-many-arguments
     # because we're testing lots of stuff here!
     def run_base_trade_test(
@@ -166,7 +155,7 @@ class BaseTradeTest(unittest.TestCase):
                 f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
             )
         simulator.run_simulation()
-        self.close_logging(delete_logs=delete_logs)
+        output_utils.close_logging(delete_logs=delete_logs)
         return simulator
 
 
