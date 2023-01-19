@@ -114,7 +114,7 @@ def close_logging(delete_logs=True):
     if delete_logs:
         for handler in logging.getLogger().handlers:
             handler.close()
-            if isinstance(handler, logging.FileHandler):
+            if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
                 if os.path.exists(handler.baseFilename):
                     os.remove(handler.baseFilename)
 
