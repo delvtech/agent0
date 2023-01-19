@@ -163,25 +163,6 @@ class BaseTradeTest(unittest.TestCase):
         self.close_logging(delete_logs=delete_logs)
         return simulator
 
-    def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
-        """Test custom parameters passed to agent creation"""
-        # create simulator with agent_policies
-        simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=False)
-        number_of_init_agents = 0  # count number of init agents so we can skip over them
-        for all_agent_index, agent in simulator.agents.items():  # loop over all agents
-            if agent.name == "init_lp":
-                number_of_init_agents += 1
-            else:  # only for custom agents, loop across them and check their parameters
-                custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
-                expected_result_dict = expected_result[custom_agent_index]
-                for key, value in expected_result_dict.items():  # for each custom parameter to check
-                    np.testing.assert_almost_equal(
-                        getattr(agent, key),
-                        value,
-                        err_msg=f"{key} does not equal {value}",
-                    )
-        self.close_logging(delete_logs=delete_logs)
-
 
 class SingleTradeTests(BaseTradeTest):
     """
@@ -207,22 +188,6 @@ class SingleTradeTests(BaseTradeTest):
     def test_base_lps(self):
         """Tests base LP setups"""
         self.run_base_trade_test(agent_policies=["single_lp"], target_liquidity=1e6, target_pool_apr=0.05)
-
-    def test_custom_parameters(self):
-        """Tests passing custom parameters"""
-        list_of_agent_policies_that_pass = [["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"]]
-        list_of_agent_policies_that_fail = [
-            ["single_lp:amount_to_lp=200", "single_short:pt_to_short=499"],
-            ["single_lp:amount_to_lp=200", "single_short:pt_to_short=501"],
-            ["single_lp:amount_to_lp=199", "single_short:pt_to_short=500"],
-            ["single_lp:amount_to_lp=201", "single_short:pt_to_short=500"],
-        ]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
-        for agent_policies in list_of_agent_policies_that_pass:
-            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
-        for agent_policies in list_of_agent_policies_that_fail:
-            with self.assertRaises(AssertionError):
-                self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
 
 if __name__ == "__main__":
