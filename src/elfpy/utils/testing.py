@@ -1,6 +1,7 @@
 """ Implements functions that are useful for testing """
 
 # pylint: disable=too-many-locals
+# pylint: disable=duplicate-code
 
 import logging
 from importlib import import_module
