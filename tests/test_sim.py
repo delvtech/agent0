@@ -10,7 +10,7 @@ Testing for the ElfPy package modules
 import logging
 from typing import Dict
 import unittest
-import os
+
 import numpy as np
 from numpy.random import Generator, RandomState
 from elfpy.agent import Agent
@@ -28,6 +28,8 @@ import elfpy.utils.parse_config as config_utils
 class BaseSimTest(unittest.TestCase):
     """Simulator base test class"""
 
+    # TODO: modernize this class, using helper functions, lower days to 3, etc.
+
     @staticmethod
     def setup_logging(log_level=logging.DEBUG):
         """Setup logging and handlers for the test"""
@@ -37,13 +39,7 @@ class BaseSimTest(unittest.TestCase):
     @staticmethod
     def close_logging(delete_logs=True):
         """Close logging and handlers for the test"""
-        logging.shutdown()
-        if delete_logs:
-            for handler in logging.getLogger().handlers:
-                handler.close()
-                if hasattr(handler, "baseFilename"):
-                    if os.path.exists(handler.baseFilename):
-                        os.remove(handler.baseFilename)
+        output_utils.close_logging(delete_logs=delete_logs)
 
     @staticmethod
     def setup_simulator_inputs(
