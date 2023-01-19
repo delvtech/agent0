@@ -9,103 +9,15 @@ Testing for the ElfPy package modules
 
 import unittest
 import logging
+
 import numpy as np
 
-import utils_for_tests as test_utils
-import elfpy.utils.outputs as output_utils
+import elfpy.utils.outputs as output_utils  # utilities for file outputs
+import elfpy.utils.testing as test_utils  # utilities for testing
 
 
 class BaseTradeTest(unittest.TestCase):
     """Generic Trade Test class"""
-
-    @staticmethod
-    def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
-        """Construct and run the simulator"""
-        # create config object
-        config = config_utils.override_config_variables(
-            config_utils.load_and_parse_config_file(config_file), override_dict
-        )
-        # instantiate rng object
-        rng = np.random.default_rng(config.simulator.random_seed)
-        # run random number generators to get random simulation arguments
-        random_sim_vars = sim_utils.override_random_variables(
-            sim_utils.get_random_variables(config, rng), override_dict
-        )
-        # instantiate the pricing model
-        pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
-        # instantiate the market
-        market = sim_utils.get_market(
-            pricing_model,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-            config.simulator.token_duration,
-            random_sim_vars.vault_apr,
-            random_sim_vars.init_share_price,
-        )
-        # instantiate the init_lp agent
-        init_agents = {
-            0: sim_utils.get_init_lp_agent(
-                market,
-                random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apr,
-                random_sim_vars.fee_percent,
-            )
-        }
-        # set up simulator with only the init_lp_agent
-        simulator = Simulator(
-            config=config,
-            market=market,
-            agents=init_agents.copy(),  # we use this variable later, so pass a copy ;)
-            rng=rng,
-            random_simulation_variables=random_sim_vars,
-        )
-        # initialize the market using the LP agent
-        simulator.collect_and_execute_trades()
-        # get trading agent list
-        for agent_id, policy_instruction in enumerate(agent_policies):
-            if ":" in policy_instruction:  # we have custom parameters
-                policy_name, not_kwargs = BaseTradeTest.validate_custom_parameters(policy_instruction)
-            else:  # we don't have custom parameters
-                policy_name = policy_instruction
-                not_kwargs = {}
-            wallet_address = len(init_agents) + agent_id
-            agent = import_module(f"elfpy.policies.{policy_name}").Policy(
-                wallet_address=wallet_address,  # first policy goes to init_lp_agent
-            )
-            for key, value in not_kwargs.items():
-                setattr(agent, key, value)
-            agent.log_status_report()
-            simulator.agents.update({agent.wallet.address: agent})
-        return (simulator, market)
-
-    @staticmethod
-    def validate_custom_parameters(policy_instruction):
-        """
-        separate the policy name from the policy arguments and validate the arguments
-        """
-        policy_name, policy_args = policy_instruction.split(":")
-        try:
-            policy_args = policy_args.split(",")
-        except AttributeError as exception:
-            logging.info("ERROR: No policy arguments provided")
-            raise exception
-        try:
-            policy_args = [arg.split("=") for arg in policy_args]
-        except AttributeError as exception:
-            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
-            raise exception
-        try:
-            kwargs = {key: float(value) for key, value in policy_args}
-        except ValueError as exception:
-            logging.info("ERROR: Policy arguments must be provided as key=value pairs")
-            raise exception
-        return policy_name, kwargs
-
-    @staticmethod
-    def setup_logging(log_level=logging.DEBUG):
-        """Setup test logging levels and handlers"""
-        log_filename = ".logging/test_trades.log"
-        output_utils.setup_logging(log_filename, log_level=log_level)
 
     # pylint: disable=too-many-arguments
     # because we're testing lots of stuff here!
@@ -132,18 +44,18 @@ class BaseTradeTest(unittest.TestCase):
         }
         if additional_overrides:
             override_dict.update(additional_overrides)
-        simulator, market = self.setup_simulation_entities(
+        simulator = test_utils.setup_simulation_entities(
             config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
         )
         if target_pool_apr:  # check that apr is within 0.005 of the target
-            market_apr = market.rate
+            market_apr = simulator.market.rate
             assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
                 f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
                 f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
             )
         if target_liquidity:  # check that the liquidity is within 0.001 of the target
             # TODO: This will not work with Hyperdrive PM
-            total_liquidity = market.market_state.share_reserves * market.market_state.share_price
+            total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
             assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
                 f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
                 f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
