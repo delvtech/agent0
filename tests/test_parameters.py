@@ -21,8 +21,8 @@ import elfpy.utils.outputs as output_utils  # utilities for file outputs
 import elfpy.utils.parse_config as config_utils
 
 
-class BaseTradeTest(unittest.TestCase):
-    """Generic Trade Test class"""
+class BaseParameterTest(unittest.TestCase):
+    """Generic Parameter Test class"""
 
     @staticmethod
     def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
@@ -70,7 +70,7 @@ class BaseTradeTest(unittest.TestCase):
         # get trading agent list
         for agent_id, policy_instruction in enumerate(agent_policies):
             if ":" in policy_instruction:  # we have custom parameters
-                policy_name, not_kwargs = BaseTradeTest.validate_custom_parameters(policy_instruction)
+                policy_name, not_kwargs = BaseParameterTest.validate_custom_parameters(policy_instruction)
             else:  # we don't have custom parameters
                 policy_name = policy_instruction
                 not_kwargs = {}
@@ -169,32 +169,78 @@ class BaseTradeTest(unittest.TestCase):
         self.close_logging(delete_logs=delete_logs)
         return simulator
 
-
-class SingleTradeTests(BaseTradeTest):
-    """
-    Tests for the SingeLong policy
-    TODO: In a followup PR, loop over pricing model types & rerun tests
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def test_init_only(self):
-        """Tests base LP setups"""
-        self.run_base_trade_test(agent_policies=[], target_liquidity=1e6, target_pool_apr=0.05)
-
-    def test_single_long(self):
-        """Tests the BaseUser class"""
-        self.run_base_trade_test(agent_policies=["single_long"])
-
-    def test_single_short(self):
-        """Tests the BaseUser class"""
-        self.run_base_trade_test(agent_policies=["single_short"])
-
-    def test_base_lps(self):
-        """Tests base LP setups"""
-        self.run_base_trade_test(agent_policies=["single_lp"], target_liquidity=1e6, target_pool_apr=0.05)
+    def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
+        """Test custom parameters passed to agent creation"""
+        # create simulator with agent_policies
+        simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=False)
+        number_of_init_agents = 0  # count number of init agents so we can skip over them
+        for all_agent_index, agent in simulator.agents.items():  # loop over all agents
+            if agent.name == "init_lp":
+                number_of_init_agents += 1
+            else:  # only for custom agents, loop across them and check their parameters
+                custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
+                expected_result_dict = expected_result[custom_agent_index]
+                for key, value in expected_result_dict.items():  # for each custom parameter to check
+                    np.testing.assert_almost_equal(
+                        getattr(agent, key),
+                        value,
+                        err_msg=f"{key} does not equal {value}",
+                    )
+        self.close_logging(delete_logs=delete_logs)
 
 
-if __name__ == "__main__":
-    unittest.main()
+# @dataclass
+# class TestCaseParameter:
+#     """Defines a test case for parameter testing"""
+#     agent_policies: List[str]
+#     __test__ = False  # pytest: don't test this class
+
+# @dataclass
+# class TestResultParameter:
+#     """Defines expected results of a parameter test"""
+#     expected_result: List[str]
+#     __test__ = False  # pytest: don't test this class
+
+
+class CustomParameterTests(BaseParameterTest):
+    """Tests of custom parameters"""
+
+    def test_successfully_pass_custom_parameters(self):
+        """Test successfully setting to passsed in values"""
+        # TestCaseParameter(agent_policies=["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"])
+        # TestResultParameter(expected_result=[{"amount_to_lp": 200}, {"pt_to_short": 500}])
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_first_parameter_smaller(self):
+        """Test failure when first parameter is smaller"""
+        agent_policies = ["single_lp:amount_to_lp=199", "single_short:pt_to_short=500"]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        exception_type = AssertionError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_first_parameter_larger(self):
+        """Test failure when first parameter is larger"""
+        agent_policies = ["single_lp:amount_to_lp=201", "single_short:pt_to_short=500"]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        exception_type = AssertionError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_second_parameter_smaller(self):
+        """Test failure when second parameter is smaller"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=499"]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        exception_type = AssertionError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_second_parameter_larger(self):
+        """Test failure when second parameter is larger"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=501"]
+        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        exception_type = AssertionError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
