@@ -189,19 +189,6 @@ class BaseParameterTest(unittest.TestCase):
         self.close_logging(delete_logs=delete_logs)
 
 
-# @dataclass
-# class TestCaseParameter:
-#     """Defines a test case for parameter testing"""
-#     agent_policies: List[str]
-#     __test__ = False  # pytest: don't test this class
-
-# @dataclass
-# class TestResultParameter:
-#     """Defines expected results of a parameter test"""
-#     expected_result: List[str]
-#     __test__ = False  # pytest: don't test this class
-
-
 class CustomParameterTests(BaseParameterTest):
     """Tests of custom parameters"""
 
