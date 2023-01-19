@@ -150,17 +150,15 @@ if __name__ == "__main__":
             random_sim_vars.fee_percent,
         )
     }
-    agents = dict(
-        [
-            (agent.wallet.address, agent)
-            for agent in get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(init_agents))
-        ]
-    )
+    agents_ = {
+        agent.wallet.address: agent
+        for agent in get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(init_agents))
+    }
     simulator = Simulator(
         config=config,
         market=sim_market,
         init_agents=init_agents,
-        agents=agents,
+        agents=agents_,
         rng=rng,
         random_simulation_variables=random_sim_vars,
     )

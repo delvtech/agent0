@@ -12,9 +12,9 @@ if TYPE_CHECKING:
     from elfpy.agent import Agent
 
 
-def to_description(s: str) -> dict[str, str]:
+def to_description(description: str) -> dict[str, str]:
     """A dataclass helper that constructs metadata containing a description."""
-    return {"description": s}
+    return {"description": description}
 
 
 # This is the minimum allowed value to be passed into calculations to avoid

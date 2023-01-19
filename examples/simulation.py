@@ -1,7 +1,7 @@
 """A minimum viable simulation"""
 # stdlib
 import argparse
-from typing import Any, Optional
+from typing import Any
 
 # external imports
 import numpy as np

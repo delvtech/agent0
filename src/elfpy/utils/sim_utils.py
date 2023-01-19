@@ -217,7 +217,8 @@ def setup_vault_apr(config, rng):
                 )
             case _:
                 raise ValueError(
-                    f"{config.market.vault_apr['type']=} not one of \"constant\", \"uniform\", or \"geometricbrownianmotion\""
+                    f"{config.market.vault_apr['type']=} not one of \"constant\","
+                    f'"uniform", or "geometricbrownianmotion"'
                 )
     elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
         vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
