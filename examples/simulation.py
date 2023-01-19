@@ -37,10 +37,6 @@ class RandomAgent(Agent):
         # Flip a biased coin to see whether or not to make a trade.
         flip = self.rng.random()
         if flip >= 0.9:
-            max_long = min(
-                self.wallet.base,
-                market.pricing_model.get_max_long(market.market_state, market.fee_percent, market.position_duration),
-            )
             max_long = self.get_max_long(market)
             open_longs = list(self.wallet.longs.items())
 

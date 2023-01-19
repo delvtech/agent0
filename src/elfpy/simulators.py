@@ -1,7 +1,7 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 
 from __future__ import annotations  # types will be strings by default in 3.11
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING
 import datetime
 import json
 import logging
@@ -11,7 +11,7 @@ from stochastic.processes import GeometricBrownianMotion
 
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
-from elfpy.types import MarketDeltas, RandomSimulationVariables, SimulationState
+from elfpy.types import MarketAction, MarketDeltas, RandomSimulationVariables, SimulationState
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
@@ -224,34 +224,66 @@ class Simulator:
         last_block_in_sim : bool
             If True, indicates if the current set of trades are occuring on the final block in the simulation
         """
-        # TODO: This is a HACK to prevent the initial LPer from rugging other agents.
-        # The initial LPer should be able to remove their liquidity and any open shorts can still be closed.
-        # But right now, if the LPer removes liquidity while shorts are open,
-        # then closing the shorts results in an error (share_reserves == 0).
         if self.config.simulator.shuffle_users:
-            if last_block_in_sim:
-                wallet_ids = self.rng.permutation(  # shuffle wallets except init_lp
-                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
-                )
-                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
-            else:
-                wallet_ids = self.rng.permutation(
-                    list(self.agents)
-                )  # random permutation of keys (agent wallet addresses)
-        else:  # we are in a deterministic mode
-            if not last_block_in_sim:
-                wallet_ids = list(self.agents)  # execute in increasing order
-            else:  # last block in sim
-                # close their trades in reverse order to allow withdrawing of LP tokens
-                wallet_ids = list(self.agents)[::-1]
-        for agent_id in wallet_ids:  # trade is different on the last block
+            # Shuffle the traders if the configuration calls for it.
+            agent_ids = self.rng.permutation(list(self.agents.keys())).tolist()
+        else:
+            # Close their trades in reverse order to allow withdrawing of LP tokens.
+            agent_ids = list(self.agents)[::-1]
+
+        # Collect trades from all of the agents.
+        if last_block_in_sim:
+            trades = self.collect_liquidation_trades(agent_ids)
+        else:
+            trades = self.collect_trades(agent_ids)
+
+        # Execute the trades.
+        self.execute_trades(trades)
+
+    def collect_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
+        """Collect trades from a set of provided agent IDs.
+
+        Arguments
+        ---------
+        agent_ids : Any
+            A list of agent IDs. These IDs must correspond to agents that are
+            registered in the simulator.
+
+        Returns
+        -------
+        list[tuple[int, list[MarketAction]]]
+            A list of trades associated with specific agents.
+        """
+        return [(agent_id, self.agents[agent_id].get_trades(self.market)) for agent_id in agent_ids]
+
+    def collect_liquidation_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
+        """Collect liquidation trades from a set of provided agent IDs.
+
+        Arguments
+        ---------
+        agent_ids : Any
+            A list of agent IDs. These IDs must correspond to agents that are
+            registered in the simulator.
+
+        Returns
+        -------
+        list[tuple[int, list[MarketAction]]]
+            A list of liquidation trades associated with specific agents.
+        """
+        return [(agent_id, self.agents[agent_id].get_liquidation_trades(self.market)) for agent_id in agent_ids]
+
+    def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:
+        """Execute a list of trades associated with agents in the simulator.
+
+        Arguments
+        ---------
+        trades : list[tuple[int, list[MarketAction]]]
+            A list of agent trades. These will be executed in order.
+        """
+        for (agent_id, agent_trades) in trades:
             agent = self.agents[agent_id]
-            if last_block_in_sim:  # get all of a agent's trades
-                trade_list = agent.get_liquidation_trades(self.market)
-            else:
-                trade_list = agent.get_trade_list(self.market)
-            for agent_trade in trade_list:  # execute trades
-                wallet_deltas = self.market.trade_and_update(agent_trade)
+            for trade in agent_trades:
+                wallet_deltas = self.market.trade_and_update(trade)
                 agent.update_wallet(wallet_deltas, self.market)
                 logging.debug(
                     "agent #%g wallet deltas = \n%s",
