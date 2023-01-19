@@ -123,7 +123,8 @@ class BaseTradeTest(unittest.TestCase):
                     if os.path.exists(handler.baseFilename):
                         os.remove(handler.baseFilename)
 
-    # pylint: disable=too-many-arguments because we're testing lots of stuff here!
+    # pylint: disable=too-many-arguments
+    # because we're testing lots of stuff here!
     def run_base_trade_test(
         self,
         agent_policies,
