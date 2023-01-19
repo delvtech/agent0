@@ -100,6 +100,17 @@ def setup_logging(
     logging.getLogger().addHandler(handler)  # assign handler to logging
 
 
+def close_logging(delete_logs=True):
+    """Close logging and handlers for the test"""
+    logging.shutdown()
+    if delete_logs:
+        for handler in logging.getLogger().handlers:
+            handler.close()
+            if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
+                if os.path.exists(handler.baseFilename):
+                    os.remove(handler.baseFilename)
+
+
 class CustomEncoder(json.JSONEncoder):
     """Custom encoder for JSON string dumps"""
 

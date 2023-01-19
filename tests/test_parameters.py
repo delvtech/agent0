@@ -107,23 +107,6 @@ class BaseParameterTest(unittest.TestCase):
             raise exception
         return policy_name, kwargs
 
-    @staticmethod
-    def setup_logging(log_level=logging.DEBUG):
-        """Setup test logging levels and handlers"""
-        log_filename = ".logging/test_trades.log"
-        output_utils.setup_logging(log_filename, log_level=log_level)
-
-    @staticmethod
-    def close_logging(delete_logs=True):
-        """Close logging and handlers for the test"""
-        logging.shutdown()
-        if delete_logs:
-            for handler in logging.getLogger().handlers:
-                handler.close()
-                if hasattr(handler, "baseFilename"):
-                    if os.path.exists(handler.baseFilename):
-                        os.remove(handler.baseFilename)
-
     def run_base_trade_test(
         self,
         agent_policies,
@@ -131,7 +114,7 @@ class BaseParameterTest(unittest.TestCase):
         delete_logs=True,
     ):
         """Assigns member variables that are useful for many tests"""
-        self.setup_logging()
+        output_utils.setup_logging(log_filename=".logging/test_parameters.log", log_level=logging.DEBUG)
         override_dict = {
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
@@ -140,13 +123,13 @@ class BaseParameterTest(unittest.TestCase):
             config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
         )
         simulator.run_simulation()
-        self.close_logging(delete_logs=delete_logs)
+        output_utils.close_logging(delete_logs=delete_logs)
         return simulator
 
     def run_custom_parameters_test(self, agent_policies, expected_result, delete_logs=True):
         """Test custom parameters passed to agent creation"""
         # create simulator with agent_policies
-        simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=False)
+        simulator = self.run_base_trade_test(agent_policies=agent_policies, delete_logs=delete_logs)
         number_of_init_agents = 0  # count number of init agents so we can skip over them
         for all_agent_index, agent in simulator.agents.items():  # loop over all agents
             if agent.name == "init_lp":
@@ -160,7 +143,6 @@ class BaseParameterTest(unittest.TestCase):
                         value,
                         err_msg=f"{key} does not equal {value}",
                     )
-        self.close_logging(delete_logs=delete_logs)
 
 
 class CustomParameterTests(BaseParameterTest):
