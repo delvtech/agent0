@@ -8,14 +8,13 @@ from importlib import import_module
 
 import numpy as np
 
-from elfpy.markets import Market
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
 import elfpy.utils.parse_config as config_utils
 
 
 @staticmethod
-def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
+def setup_simulation_entities(config_file, override_dict, agent_policies) -> Simulator:
     """Construct and run the simulator"""
     # create config object
     config = config_utils.override_config_variables(config_utils.load_and_parse_config_file(config_file), override_dict)
