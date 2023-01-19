@@ -70,15 +70,16 @@ class BaseTradeTest(unittest.TestCase):
         # get trading agent list
         for agent_id, policy_instruction in enumerate(agent_policies):
             if ":" in policy_instruction:  # we have custom parameters
-                policy_name, kwargs = BaseTradeTest.validate_custom_parameters(policy_instruction)
+                policy_name, not_kwargs = BaseTradeTest.validate_custom_parameters(policy_instruction)
             else:  # we don't have custom parameters
                 policy_name = policy_instruction
-                kwargs = {}
+                not_kwargs = {}
             wallet_address = len(init_agents) + agent_id
             agent = import_module(f"elfpy.policies.{policy_name}").Policy(
                 wallet_address=wallet_address,  # first policy goes to init_lp_agent
-                **kwargs,
             )
+            for key, value in not_kwargs.items():
+                setattr(agent, key, value)
             agent.log_status_report()
             simulator.agents.update({agent.wallet.address: agent})
         return (simulator, market)
