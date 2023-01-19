@@ -9,6 +9,7 @@ Testing for the ElfPy package modules
 
 import logging
 import unittest
+
 import numpy as np
 from numpy.random import RandomState
 
@@ -34,13 +35,7 @@ class BaseSimTest(unittest.TestCase):
     @staticmethod
     def close_logging(delete_logs=True):
         """Close logging and handlers for the test"""
-        logging.shutdown()
-        if delete_logs:
-            for handler in logging.getLogger().handlers:
-                handler.close()
-                if hasattr(handler, "baseFilename"):
-                    if os.path.exists(handler.baseFilename):
-                        os.remove(handler.baseFilename)
+        output_utils.close_logging(delete_logs=delete_logs)
 
     def setup_simulator_inputs(
         config_file, override_dict=None
