@@ -8,9 +8,25 @@ This project is a work-in-progress. All code is provided as is and without guara
 
 ## Install
 
-Set up your favorite [python virutal environment](https://github.com/pyenv/pyenv#how-it-works) with python >= 3.10.
+Set up your favorite [python virutal environment](https://github.com/pyenv/pyenv#how-it-works) with python >= 3.10 (note additional command required for 3.11, not guaranteed to work due to the `stochastic` package having a <3.11 pythond dependency, but it's been working for us in testing).
 
-Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip with `python3 -m pip install --upgrade pip` and then install the required packages with `python3 -m pip install -r requirements.txt`. Finally, you can install the elfpy package with `python3 -m pip install -e .` from the git directory root.
+Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip with `python3 -m pip install --upgrade pip` and then install the required packages.
+
+for Python 3.10, this is sufficient:
+
+```
+python -m pip install stochastic --ignore-requires-python
+python -m pip install -r requirements.txt
+```
+
+for Python 3.11, an extra step is required:
+
+```
+python -m pip install stochastic --ignore-requires-python
+python -m pip install -r requirements.txt
+```
+
+Then install the elfpy package with `python3 -m pip install -e .` from the git directory root.
 
 ## Testing
 
