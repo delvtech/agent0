@@ -109,22 +109,22 @@ class Market:
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
-                trade_amount=agent_action.trade_amount,
+                trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             market_deltas, agent_deltas = self.close_long(
                 wallet_address=agent_action.wallet_address,
-                trade_amount=agent_action.trade_amount,
+                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                 mint_time=agent_action.mint_time,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet_address,  # in bonds: that's the thing you want to short
                 trade_amount=agent_action.trade_amount,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             market_deltas, agent_deltas = self.close_short(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet_address,  # in bonds: that's the thing you owe, and need to buy back
                 trade_amount=agent_action.trade_amount,
                 mint_time=agent_action.mint_time,
             )
@@ -318,7 +318,7 @@ class Market:
     def open_long(
         self,
         wallet_address: int,
-        trade_amount: float,
+        trade_amount: float,  # in base
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -370,7 +370,7 @@ class Market:
     def close_long(
         self,
         wallet_address: int,
-        trade_amount: float,
+        trade_amount: float,  # in bonds
         mint_time: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """

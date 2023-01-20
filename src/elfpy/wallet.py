@@ -98,11 +98,11 @@ class Wallet:
                 if value != 0:
                     output_string += f" {key}: "
                     if isinstance(value, float):
-                        output_string += f"{float_to_string(value)}"
+                        output_string += f"{value}"
                     elif isinstance(value, list):
-                        output_string += "[" + ", ".join([float_to_string(x) for x in value]) + "]"
+                        output_string += "[" + ", ".join(list(value)) + "]"
                     elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {float_to_string(v)}" for k, v in value.items()]) + "}"
+                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
                     else:
                         output_string += f"{value}"
         return output_string
