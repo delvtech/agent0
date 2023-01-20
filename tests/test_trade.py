@@ -24,57 +24,26 @@ class BaseTradeTest(unittest.TestCase):
     """Generic Trade Test class"""
 
     @staticmethod
-    def setup_simulation_entities(config_file, override_dict, agent_policies) -> tuple[Simulator, Market]:
+    def setup_simulation_entities(config_file, override_dict, agent_policies) -> Simulator:
         """Construct and run the simulator"""
-        # create config object
-        config = config_utils.override_config_variables(
-            config_utils.load_and_parse_config_file(config_file), override_dict
-        )
-        # instantiate rng object
-        rng = np.random.default_rng(config.simulator.random_seed)
-        # run random number generators to get random simulation arguments
-        random_sim_vars = sim_utils.override_random_variables(
-            sim_utils.get_random_variables(config, rng), override_dict
-        )
-        # instantiate the pricing model
-        pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
-        # instantiate the market
-        market = sim_utils.get_market(
-            pricing_model,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-            config.simulator.token_duration,
-            random_sim_vars.vault_apr,
-            random_sim_vars.init_share_price,
-        )
-        # instantiate the agents
-        init_agents = {
-            0: sim_utils.get_init_lp_agent(
-                market,
-                random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apr,
-                random_sim_vars.fee_percent,
-            )
-        }
-        agents = {}
+        # Instantiate the agents.
+        agents = []
         for agent_id, policy_name in enumerate(agent_policies):
-            wallet_address = len(init_agents) + agent_id
+            wallet_address = agent_id + 1  # addresses start at one because there is an initial agent.
             agent = import_module(f"elfpy.policies.{policy_name}").Policy(
                 wallet_address=wallet_address,  # first policy goes to init_lp_agent
             )
             agent.log_status_report()
-            agents.update({agent.wallet.address: agent})
-        # set up the simulator
-        simulator = Simulator(
-            config=config,
-            market=market,
-            init_agents=init_agents,
-            agents=agents,
-            rng=rng,
-            random_simulation_variables=random_sim_vars,
+            agents += [agent]
+
+        # Initialize the simulator.
+        config = config_utils.override_config_variables(
+            config_utils.load_and_parse_config_file(config_file), override_dict
         )
-        # get trading agent list
-        return (simulator, market)
+        rng = np.random.default_rng(config.simulator.random_seed)
+        simulator = sim_utils.get_simulator(config, rng, agents)
+
+        return simulator
 
     @staticmethod
     def setup_logging():
@@ -96,7 +65,7 @@ class BaseTradeTest(unittest.TestCase):
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
         }
-        simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)[0]
+        simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)
         simulator.run_simulation()
         if delete_logs:
             output_utils.delete_log_file()
@@ -117,16 +86,16 @@ class BaseTradeTest(unittest.TestCase):
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 blocks per day to keep it fast for testing
         }
-        simulator, market = self.setup_simulation_entities(config_file, override_dict, agent_policies)
+        simulator = self.setup_simulation_entities(config_file, override_dict, agent_policies)
         # check that apr is within 0.005 of the target
-        market_apr = market.rate
+        market_apr = simulator.market.rate
         assert np.allclose(market_apr, target_pool_apr, atol=0.005), (
             f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
             f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
         )
         # check that the liquidity is within 0.001 of the target
         # TODO: This will not work with Hyperdrive PM
-        total_liquidity = market.market_state.share_reserves * market.market_state.share_price
+        total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
         assert np.allclose(total_liquidity, target_liquidity, atol=0.001), (
             f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
             f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."

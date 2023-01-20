@@ -11,7 +11,6 @@ import elfpy
 
 # elfpy core classes
 from elfpy.agent import Agent
-from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.types import MarketActionType
 
@@ -97,16 +96,15 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    # define & parse script args
+    # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    # get config & logging level
     config = config_utils.load_and_parse_config_file(args.config)
-    # override any particular simulation arguments
     override_dict = {}
     if args.num_trading_days is not None:
         override_dict["num_trading_days"] = args.num_trading_days
     if args.blocks_per_day is not None:
         override_dict["num_blocks_per_day"] = args.blocks_per_day
+    override_dict["pricing_model_name"] = args.pricing_model
     override_dict["vault_apr"] = {
         "type": "uniform",
         "low": 0.001,
@@ -115,16 +113,18 @@ if __name__ == "__main__":
     config = config_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
-    # define root logging parameters.
+
+    # Define root logging parameters.
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
         log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
     )
-    # get the initialized simulator.
+
+    # Initialize the simulator.
     rng = np.random.default_rng(config.simulator.random_seed)
-    pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
     agents = get_example_agents(new_agents=args.num_agents, existing_agents=1)
-    simulator = sim_utils.get_simulator(config, rng, pricing_model, agents)
-    # run the simulation
+    simulator = sim_utils.get_simulator(config, rng, agents)
+
+    # Run the simulation.
     simulator.run_simulation()
