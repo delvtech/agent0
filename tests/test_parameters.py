@@ -50,7 +50,7 @@ class BaseParameterTest(unittest.TestCase):
                 custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
                 expected_result_dict = expected_result[custom_agent_index]
                 for key, value in expected_result_dict.items():  # for each custom parameter to check
-                    np.testing.assert_almost_equal(
+                    np.testing.assert_equal(
                         getattr(agent, key),
                         value,
                         err_msg=f"{key} does not equal {value}",
