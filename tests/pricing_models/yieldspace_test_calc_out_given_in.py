@@ -137,11 +137,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = 100_100 ** () + (300_000 - d_y') ** (1 - tau)
+                    #     = 100_100 ** (1 - tau) + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 100_100 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 300_000 - (k - 100_100 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 102.50516899477225
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -207,11 +207,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = 110_000 ** () + (300_000 - d_y') ** (1 - tau)
+                    #     = 110_000 ** (1 - tau) + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 110_000 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 300_000 - (k - 110_000 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 10235.514826394327
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -250,11 +250,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = 180_000 ** () + (300_000 - d_y') ** (1 - tau)
+                    #     = 180_000 ** (1 - tau) + (300_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 300_000 - (k - 180_000 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 300_000 - (k - 180_000 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 81138.27602200207
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -309,11 +309,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = (2 / 1.5) * 150_150 ** () + (400_000 - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** (1 - tau) + (400_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 400_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 400_000 - (k - (2 / 1.5) * 150_150 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 204.46650180319557
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -367,11 +367,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** (1 - tau) + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -425,11 +425,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** (1 - tau) + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 206.14340814948082
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -483,11 +483,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of shares coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z + d_z)) ** (1 - tau) + (2 * y + c * z - d_y') ** (1 - tau)
-                    #     = (2 / 1.5) * 150_150 ** () + (2_200_000 - d_y') ** (1 - tau)
+                    #     = (2 / 1.5) * 150_150 ** (1 - tau) + (2_200_000 - d_y') ** (1 - tau)
                     #
                     # Solving for d_y, we get the following calculation:
                     #
-                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** ()) ** (1 / (1 - tau))
+                    #   d_y' = 2_200_000 - (k - (2 / 1.5) * 150_150 ** (1 - tau) ** (1 / (1 - tau))
                     #       = 212.47551672440022
                     #
                     # Note that this is slightly smaller than the without slippage value
@@ -571,11 +571,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (100_000 - d_z') ** () + 300_100 ** (1 - tau)
+                    #     = (100_000 - d_z') ** (1 - tau) + 300_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 300_100 ** ()) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (k - 300_100 ** (1 - tau)) ** (1 / (1 - tau))
                     #       = 97.55314236719278
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -643,11 +643,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (100_000 - d_z') ** () + 310_000 ** (1 - tau)
+                    #     = (100_000 - d_z') ** (1 - tau) + 310_000 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 310_000 ** ()) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (k - 310_000 ** (1 - tau)) ** (1 / (1 - tau))
                     #       = 9740.77011591768
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -687,11 +687,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (100_000 - d_z') ** () + 380_000 ** (1 - tau)
+                    #     = (100_000 - d_z') ** (1 - tau) + 380_000 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (k - 380_000 ** ()) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (k - 380_000 ** (1 - tau)) ** (1 / (1 - tau))
                     #       = 76850.14470187116
                     #
                     # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
@@ -741,11 +741,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 400_100 ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - tau) + 400_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** ())) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 400_100 ** (1 - tau))) ** (1 / (1 - tau))
                     #       = 48.906526897713775
                     #
                     # The output is d_x' = c * d_z' = 2 * 48.906526897713775 = 97.81305379542755.
@@ -796,11 +796,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 2_200_100 ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - tau) + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - tau))) ** (1 / (1 - tau))
                     #       = 47.06339097737509
                     #
                     # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
@@ -856,11 +856,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** () + 2_200_100 ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z')) ** (1 - tau) + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - tau))) ** (1 / (1 - tau))
                     #       = 48.50947500564507
                     #
                     # The output is d_x' = c * d_z' = 2 * 48.50947500564507 = 97.01895001129014.
@@ -916,11 +916,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # amount of bonds coming in, so we set up the problem as:
                     #
                     #   k = (c / mu) * (mu * (z - d_z')) ** (1 - tau) + (2 * y + c * z + d_y) ** (1 - tau)
-                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** () + 2_200_100 ** (1 - tau)
+                    #     = (2 / 1.5) * (1.5 * (100_000 - d_z)) ** (1 - tau) + 2_200_100 ** (1 - tau)
                     #
                     # Solving for d_z, we get the following calculation:
                     #
-                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** ())) ** (1 / (1 - tau))
+                    #   d_z' = 100_000 - (1 / 1.5) * ((1.5 / 2) * (k - 2_200_100 ** (1 - tau))) ** (1 / (1 - tau))
                     #       = 47.06339097737509
                     #
                     # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.

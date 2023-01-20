@@ -301,7 +301,7 @@ class YieldSpacePricingModel(PricingModel):
         .. math::
             in' =
             \begin{cases}
-            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-t}}{\frac{c}{\mu}})^{\frac{1}{1-t}} - z),
+            c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z),
             &\text{ if } token\_in = \text{"base"} \\
             (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz),
             &\text{ if } token\_in = \text{"pt"}
