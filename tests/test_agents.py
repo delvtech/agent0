@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from importlib import import_module
 from os import walk, path
 
-from elfpy import policies
+# TODO: Investigate why this raises a type issue in pyright.
+from elfpy import policies  # type: ignore
 from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
@@ -74,7 +75,7 @@ class TestAgent(unittest.TestCase):
         return market
 
     @staticmethod
-    def get_implemented_policies() -> list[Agent]:
+    def get_implemented_policies() -> list[str]:
         """Get a list of all implemented agent policies in elfpy/policies directory"""
 
         policies_path = f"{policies.__path__[0]}/policies"

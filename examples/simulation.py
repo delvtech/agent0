@@ -148,8 +148,9 @@ if __name__ == "__main__":
     )
 
     # Initialize the simulator.
-    agents = get_example_agents(rng=config.simulator.rng, new_agents=args.num_agents, existing_agents=1)
-    simulator = sim_utils.get_simulator(config, agents)
+    simulator = sim_utils.get_simulator(
+        config, get_example_agents(rng=config.simulator.rng, new_agents=args.num_agents, existing_agents=1)
+    )
 
     # Run the simulation.
     simulator.run_simulation()
