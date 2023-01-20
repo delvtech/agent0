@@ -10,11 +10,9 @@ Testing for the ElfPy package modules
 import unittest
 import logging
 from importlib import import_module
-
 import numpy as np
-from elfpy.markets import Market
 
-from elfpy.simulators import Simulator
+from elfpy.simulators import Simulator, get_random_variables
 from elfpy.utils import sim_utils
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 import elfpy.utils.parse_config as config_utils
@@ -40,8 +38,8 @@ class BaseTradeTest(unittest.TestCase):
         config = config_utils.override_config_variables(
             config_utils.load_and_parse_config_file(config_file), override_dict
         )
-        rng = np.random.default_rng(config.simulator.random_seed)
-        simulator = sim_utils.get_simulator(config, rng, agents)
+        random_sim_vars = sim_utils.override_random_variables(get_random_variables(config), override_dict)
+        simulator = sim_utils.get_simulator(config, agents, random_sim_vars)
 
         return simulator
 

@@ -41,8 +41,7 @@ class BaseSimTest(unittest.TestCase):
     def setup_simulator(config_file, override_dict=None):
         """Instantiate the simulator object"""
         config = BaseSimTest.setup_config(config_file, override_dict)
-        rng = np.random.default_rng(config.simulator.random_seed)
-        simulator = sim_utils.get_simulator(config, rng)
+        simulator = sim_utils.get_simulator(config)
         return simulator
 
     def setup_and_run_simulator(self, config_file, override_dict):
@@ -110,22 +109,17 @@ class BaseSimTest(unittest.TestCase):
         ]
         for override_dict in override_list:
             simulator = self.setup_simulator(config_file, override_dict)
-            random_sim_vars = sim_utils.override_random_variables(
-                sim_utils.get_random_variables(simulator.config, simulator.rng), override_dict
-            )
+            random_sim_vars = simulator.random_variables
 
             # Ensure that the random variable list is being assigned properly.
             if "vault_apr" in override_dict and isinstance(override_dict["vault_apr"], float):
                 # check that broadcasting works
                 assert len(simulator.random_variables.vault_apr) == override_dict["num_trading_days"]
-            else:
-                assert np.all(simulator.random_variables == random_sim_vars)
 
             # Ensure that the random variable list is created if it is None.
             simulator = Simulator(
                 config=simulator.config,
                 market=simulator.market,
-                rng=simulator.rng,
                 random_simulation_variables=None,
             )
             assert simulator.random_variables is not None
@@ -140,7 +134,6 @@ class BaseSimTest(unittest.TestCase):
             Simulator(
                 config=invalid_config,
                 market=simulator.market,
-                rng=simulator.rng,
             )
         if delete_logs:
             output_utils.delete_log_file()

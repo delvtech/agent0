@@ -3,10 +3,8 @@
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 import logging
-
-from numpy.random import Generator
 
 from elfpy.utils.config import Config
 from elfpy.simulators import Simulator, get_random_variables
@@ -26,7 +24,9 @@ if TYPE_CHECKING:
     from elfpy.agent import Agent
 
 
-def get_simulator(config: Config, rng: Generator, agents: list[Agent] = []) -> Simulator:
+def get_simulator(
+    config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
+) -> Simulator:
     """Constructs a simulator with sane defaults and initializes the simulator
     with an initial LP.
 
@@ -42,7 +42,8 @@ def get_simulator(config: Config, rng: Generator, agents: list[Agent] = []) -> S
         The agents to that should be used in the simulator.
     """
     # Sample the random simulation arguments.
-    random_sim_vars = get_random_variables(config, rng)
+    if random_sim_vars is None:
+        random_sim_vars = get_random_variables(config)
 
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
@@ -69,14 +70,14 @@ def get_simulator(config: Config, rng: Generator, agents: list[Agent] = []) -> S
     simulator = Simulator(
         config=config,
         market=market,
-        rng=rng,
         random_simulation_variables=random_sim_vars,
     )
     simulator.add_agents(init_agents)
     simulator.collect_and_execute_trades()
 
     # Add the remaining agents.
-    simulator.add_agents(agents)
+    if not agents is None:
+        simulator.add_agents(agents)
 
     return simulator
 

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from elfpy.utils.config import Config
 
 
-def setup_vault_apr(config, rng):
+def setup_vault_apr(config: Config):
     """Construct the vault_apr list
     Note: callable type option would allow for infinite num_trading_days after small modifications
 
@@ -27,8 +27,6 @@ def setup_vault_apr(config, rng):
     ---------
     config : Config
         config object, as defined in elfpy.utils.config
-    rng : Generator
-        random number generator; output of np.random.default_rng(seed)
 
     Returns
     -------
@@ -42,7 +40,7 @@ def setup_vault_apr(config, rng):
                     config.market.vault_apr["value"],
                 ] * config.simulator.num_trading_days
             case "uniform":
-                vault_apr = rng.uniform(
+                vault_apr = config.simulator.rng.uniform(
                     low=config.market.vault_apr["low"],
                     high=config.market.vault_apr["high"],
                     size=config.simulator.num_trading_days,
@@ -50,7 +48,7 @@ def setup_vault_apr(config, rng):
             case "geometricbrownianmotion":
                 # the n argument is number of steps, so the number of points is n+1
                 vault_apr = (
-                    GeometricBrownianMotion(rng=rng)
+                    GeometricBrownianMotion(rng=config.simulator.rng)
                     .sample(n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"])
                     .tolist()
                 )
@@ -72,15 +70,13 @@ def setup_vault_apr(config, rng):
     return vault_apr
 
 
-def get_random_variables(config, rng):
+def get_random_variables(config: Config):
     """Use random number generator to assign initial simulation parameter values
 
     Arguments
     ---------
     config : Config
         config object, as defined in elfpy.utils.config
-    rng : Generator
-        random number generator; output of np.random.default_rng(seed)
 
     Returns
     -------
@@ -88,13 +84,15 @@ def get_random_variables(config, rng):
         dataclass that contains variables for initiating and running simulations
     """
     random_vars = RandomSimulationVariables(
-        target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),
-        target_pool_apr=rng.uniform(
+        target_liquidity=config.simulator.rng.uniform(
+            low=config.market.min_target_liquidity, high=config.market.max_target_liquidity
+        ),
+        target_pool_apr=config.simulator.rng.uniform(
             low=config.amm.min_pool_apr, high=config.amm.max_pool_apr
         ),  # starting fixed apr as a decimal
-        fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        vault_apr=setup_vault_apr(config, rng),
-        init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
+        fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
+        vault_apr=setup_vault_apr(config),
+        init_vault_age=config.simulator.rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
     )
     return random_vars
 
@@ -114,7 +112,6 @@ class Simulator:
         self,
         config: Config,
         market: Market,
-        rng: Generator,
         random_simulation_variables: Optional[RandomSimulationVariables] = None,
     ):
         # pylint: disable=too-many-arguments
@@ -124,9 +121,9 @@ class Simulator:
         self.config = config
         self.log_config_variables()
         self.market = market
-        self.set_rng(rng)
+        self.set_rng(config.simulator.rng)
         if random_simulation_variables is None:
-            self.random_variables = get_random_variables(self.config, self.rng)
+            self.random_variables = get_random_variables(self.config)
         else:
             self.random_variables = random_simulation_variables
         self.check_vault_apr()

@@ -125,5 +125,5 @@ class CustomEncoder(json.JSONEncoder):
             case _:
                 try:
                     return o.__dict__
-                except AttributeError as err:
-                    raise AttributeError("Object does not have __dict__ attribute") from err
+                except AttributeError:
+                    return repr(o)

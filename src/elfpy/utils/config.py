@@ -7,6 +7,8 @@ Config structure
 
 from dataclasses import dataclass, field
 from typing import Callable, Union
+import numpy as np
+from numpy.random import Generator
 
 
 @dataclass
@@ -77,7 +79,15 @@ class SimulatorConfig:
 
     # numerical
     precision: int = field(default=64, metadata={"hint": "precision of calculations; max is 64"})
+
+    # random
     random_seed: int = field(default=1, metadata={"hint": "int to be used for the random seed"})
+    rng: Generator = field(
+        init=False, compare=False, metadata={"hint": "random number generator used in the simulation"}
+    )
+
+    def __post_init__(self):
+        self.rng = np.random.default_rng(self.random_seed)
 
     def __getitem__(self, key):
         return getattr(self, key)

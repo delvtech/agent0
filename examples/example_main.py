@@ -3,9 +3,6 @@
 import argparse
 from typing import Any
 
-# external imports
-import numpy as np
-
 # elfpy core repo
 import elfpy
 
@@ -122,9 +119,8 @@ if __name__ == "__main__":
     )
 
     # Initialize the simulator.
-    rng = np.random.default_rng(config.simulator.random_seed)
     agents = get_example_agents(new_agents=args.num_agents, existing_agents=1)
-    simulator = sim_utils.get_simulator(config, rng, agents)
+    simulator = sim_utils.get_simulator(config, agents)
 
     # Run the simulation.
     simulator.run_simulation()

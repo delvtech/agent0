@@ -11,8 +11,6 @@ import os
 import sys
 from typing import Any
 
-import numpy as np
-
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils, outputs as output_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
@@ -26,8 +24,7 @@ class BaseLogTest(unittest.TestCase):
         """Construct and run the simulator"""
         # Initialize the simulator.
         config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
-        rng = np.random.default_rng(config.simulator.random_seed)
-        simulator = sim_utils.get_simulator(config, rng)
+        simulator = sim_utils.get_simulator(config)
 
         # Run the simulation.
         simulator.run_simulation()
