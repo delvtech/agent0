@@ -25,42 +25,13 @@ class BaseLogTest(unittest.TestCase):
     @staticmethod
     def setup_and_run_simulator(config_file, override_dict: dict[str, Any]):
         """Construct and run the simulator"""
-        # instantiate config object
+        # Initialize the simulator.
         config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
-        # instantiate random number generator
         rng = np.random.default_rng(config.simulator.random_seed)
-        # run random number generators to get random simulation arguments
-        random_sim_vars = sim_utils.override_random_variables(
-            sim_utils.get_random_variables(config, rng), override_dict
-        )
-        # instantiate the pricing model
         pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
-        # instantiate the market
-        market = sim_utils.get_market(
-            pricing_model,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-            config.simulator.token_duration,
-            random_sim_vars.vault_apr,
-            random_sim_vars.init_share_price,
-        )
-        # run a simulation with only the initial LP agent
-        init_agents = {
-            0: sim_utils.get_init_lp_agent(
-                market,
-                random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apr,
-                random_sim_vars.fee_percent,
-            )
-        }
-        simulator = Simulator(
-            config=config,
-            market=market,
-            init_agents=init_agents,
-            agents={},
-            rng=rng,
-            random_simulation_variables=random_sim_vars,
-        )
+        simulator = sim_utils.get_simulator(config, rng, pricing_model, [])
+
+        # Run the simulation.
         simulator.run_simulation()
 
     def run_logging_test(self, delete_logs=True):

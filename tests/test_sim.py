@@ -73,7 +73,8 @@ class BaseSimTest(unittest.TestCase):
 
     def setup_simulator(self, config_file, override_dict=None):
         """Instantiate the simulator object"""
-        config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(config_file, override_dict)
+        config, _, _, _, _ = self.setup_simulator_inputs(config_file, override_dict)
+
         # set up simulator with only the init_lp_agent
         simulator = Simulator(
             config=config,

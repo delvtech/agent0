@@ -12,13 +12,11 @@ import elfpy
 
 # elfpy core classes
 from elfpy.agent import Agent
-from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
 from elfpy.utils import sim_utils, parse_config as config_utils, outputs as output_utils
-from elfpy.utils.config import Config
 from elfpy.wallet import Long
 
 
@@ -84,14 +82,9 @@ def get_example_agents(
     rng: Generator,
     new_agents: int,
     existing_agents: int,
-) -> dict[int, Agent]:
+) -> list[Agent]:
     """Instantiate a set of custom agents"""
-    agents = {}
-    for wallet_address in range(existing_agents, existing_agents + new_agents):
-        agent = RandomAgent(rng, wallet_address)
-        agent.log_status_report()
-        agents.update({agent.wallet.address: agent})
-    return agents
+    return [RandomAgent(rng, address) for address in range(existing_agents, existing_agents + new_agents)]
 
 
 def get_argparser() -> argparse.ArgumentParser:
@@ -129,47 +122,6 @@ def get_argparser() -> argparse.ArgumentParser:
     return parser
 
 
-# TODO: This should live within the Simulator class.
-def run_random_agent_simulation(config: Config):
-    """Executes a simulation with random agents"""
-
-    # Sample the random simulation arguments.
-    rng = np.random.default_rng(config.simulator.random_seed)
-    random_sim_vars = sim_utils.get_random_variables(config, rng)
-
-    # Instantiate the pricing model and market.
-    sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
-    sim_market = sim_utils.get_market(
-        sim_pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.fee_percent,
-        config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
-    )
-
-    # Instantiate the initial LP agent.
-    init_agents = {
-        0: sim_utils.get_init_lp_agent(
-            sim_market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-        )
-    }
-
-    # Initialize the simulator using only the initial LP.
-    simulator = Simulator(
-        config=config,
-        market=sim_market,
-        init_agents=init_agents,
-        agents=get_example_agents(rng=rng, new_agents=args.num_agents, existing_agents=1),
-        rng=rng,
-        random_simulation_variables=random_sim_vars,
-    )
-    simulator.run_simulation()
-
-
 if __name__ == "__main__":
     # Initialize the configuration and apply overrides from the command line arguments.
     args = get_argparser().parse_args()
@@ -192,5 +144,11 @@ if __name__ == "__main__":
         log_level=config_utils.text_to_logging_level(config_.simulator.logging_level),
     )
 
+    # Initialize the simulator.
+    rng = np.random.default_rng(config_.simulator.random_seed)
+    pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
+    agents = get_example_agents(rng=rng, new_agents=args.num_agents, existing_agents=1)
+    simulator = sim_utils.get_simulator(config_, rng, pricing_model, agents)
+
     # Run the simulation.
-    run_random_agent_simulation(config_)
+    simulator.run_simulation()

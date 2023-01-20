@@ -56,14 +56,9 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(num_new_agents: int, num_existing_agents: int = 0) -> list[Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
-    agents = []
-    for wallet_address in range(num_existing_agents, num_new_agents + 1):
-        agent = CustomShorter(wallet_address)
-        agent.log_status_report()
-        agents.append(agent)
-    return agents
+    return [CustomShorter(address) for address in range(existing_agents, existing_agents + new_agents)]
 
 
 def get_argparser() -> argparse.ArgumentParser:
@@ -120,47 +115,16 @@ if __name__ == "__main__":
     config = config_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
-    # define root logging parameters
+    # define root logging parameters.
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
         log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
     )
-    # instantiate random number generator
+    # get the initialized simulator.
     rng = np.random.default_rng(config.simulator.random_seed)
-    # run random number generators to get random simulation arguments
-    random_sim_vars = sim_utils.override_random_variables(sim_utils.get_random_variables(config, rng), override_dict)
-    # instantiate the pricing model
-    sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
-    # instantiate the market
-    sim_market = sim_utils.get_market(
-        sim_pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.fee_percent,
-        config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
-    )
-    # initialize the simulator
-    init_agents = {
-        0: sim_utils.get_init_lp_agent(
-            sim_market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-        )
-    }
-    agents_ = {
-        agent.wallet.address: agent
-        for agent in get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(init_agents))
-    }
-    simulator = Simulator(
-        config=config,
-        market=sim_market,
-        init_agents=init_agents,
-        agents=agents_,
-        rng=rng,
-        random_simulation_variables=random_sim_vars,
-    )
+    pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
+    agents = get_example_agents(new_agents=args.num_agents, existing_agents=1)
+    simulator = sim_utils.get_simulator(config, rng, pricing_model, agents)
     # run the simulation
     simulator.run_simulation()

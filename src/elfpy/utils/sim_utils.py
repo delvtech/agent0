@@ -6,7 +6,12 @@ from importlib import import_module
 from typing import Any, Callable, TYPE_CHECKING
 import logging
 
+from numpy.random import Generator
+from elfpy.utils.config import Config
+import numpy as np
+
 from stochastic.processes import GeometricBrownianMotion
+from elfpy.simulators import Simulator
 
 from elfpy.types import (
     MarketState,
@@ -22,6 +27,63 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
+
+
+def get_simulator(config: Config, rng: Generator, pricing_model: PricingModel, agents: list[Agent]) -> Simulator:
+    """Constructs a simulator with sane defaults and initializes the simulator
+    with an initial LP.
+
+    Arguments
+    ---------
+    rng : Generator
+        The random number generator that should be used in these simulations.
+        We pass this in to avoid restarting the generator after using it to
+        setting up the agents.
+    config : Config
+        The simulator config.
+    pricing_model : PricingModel
+        The pricing model.
+    agents : list[Agent]
+        The agents to that should be used in the simulator.
+    """
+    # Sample the random simulation arguments.
+    rng = np.random.default_rng(config.simulator.random_seed)
+    random_sim_vars = get_random_variables(config, rng)
+
+    # Instantiate the market.
+    market = get_market(
+        pricing_model,
+        random_sim_vars.target_pool_apr,
+        random_sim_vars.fee_percent,
+        config.simulator.token_duration,
+        random_sim_vars.vault_apr,
+        random_sim_vars.init_share_price,
+    )
+
+    # Instantiate the initial LP agent.
+    init_agents = {
+        0: get_init_lp_agent(
+            market,
+            random_sim_vars.target_liquidity,
+            random_sim_vars.target_pool_apr,
+            random_sim_vars.fee_percent,
+        )
+    }
+
+    # Initialize the simulator using only the initial LP.
+    simulator = Simulator(
+        config=config,
+        market=market,
+        agents=init_agents,
+        rng=rng,
+        random_simulation_variables=random_sim_vars,
+    )
+    simulator.collect_and_execute_trades()
+
+    # Add the remaining agents.
+    simulator.add_agents(agents)
+
+    return simulator
 
 
 def get_init_lp_agent(

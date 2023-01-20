@@ -36,7 +36,6 @@ class Simulator:
         self,
         config: Config,
         market: Market,
-        init_agents: dict[int, Agent],
         agents: dict[int, Agent],
         rng: Generator,
         random_simulation_variables: Optional[sim_utils.RandomSimulationVariables] = None,
@@ -54,6 +53,7 @@ class Simulator:
         else:
             self.random_variables = random_simulation_variables
         self.check_vault_apr()
+        self.agents = agents
 
         # Simulation variables
         self.run_number = 0
@@ -65,17 +65,6 @@ class Simulator:
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
         self.simulation_state = SimulationState()
-
-        # Initialize the market with the initial agents and set up the other
-        # agents.
-        assert init_agents.keys().isdisjoint(agents.keys()), (
-            "simulators.__init__: ERROR: expected init_agents.keys() and agents.keys()"
-            f"to be disjoint, not {init_agents=} and {agents=}"
-        )
-        if init_agents != {}:
-            self.agents = init_agents
-            self.collect_and_execute_trades()
-        self.agents.update(agents)
 
     def check_vault_apr(self) -> None:
         """Verify that the vault_apr is the right length"""
