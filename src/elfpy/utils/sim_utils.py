@@ -3,7 +3,7 @@
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
-from typing import Any, TYPE_CHECKING, Optional
+from typing import Any, TYPE_CHECKING
 import logging
 
 from elfpy.utils.config import Config
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def get_simulator(
-    config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
+    config: Config, agents: list[Agent] | None = None, random_sim_vars: RandomSimulationVariables | None = None
 ) -> Simulator:
     """Constructs a simulator with sane defaults and initializes the simulator
     with an initial LP.
