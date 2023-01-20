@@ -97,9 +97,18 @@ def setup_logging(
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().handlers = [
-        handler,
-    ]
+    logging.getLogger().addHandler(handler)  # assign handler to logging
+
+
+def close_logging(delete_logs=True):
+    """Close logging and handlers for the test"""
+    logging.shutdown()
+    if delete_logs:
+        for handler in logging.getLogger().handlers:
+            handler.close()
+            if hasattr(handler, "baseFilename") and not isinstance(handler, logging.StreamHandler):
+                if os.path.exists(handler.baseFilename):
+                    os.remove(handler.baseFilename)
 
 
 class CustomEncoder(json.JSONEncoder):

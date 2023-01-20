@@ -163,10 +163,11 @@ class Simulator:
                     list(self.agents)
                 )  # random permutation of keys (agent wallet addresses)
         else:  # we are in a deterministic mode
-            # reverse the list excluding 0 (init_lp)
-            wallet_ids = [key for key in self.agents if key > 0][::-1]
-            if self.config.simulator.init_lp and last_block_in_sim:
-                wallet_ids = np.append(wallet_ids, 0)  # add init_lp so that they're always last
+            if not last_block_in_sim:
+                wallet_ids = list(self.agents)  # execute in increasing order
+            else:  # last block in sim
+                # close their trades in reverse order to allow withdrawing of LP tokens
+                wallet_ids = list(self.agents)[::-1]
         for agent_id in wallet_ids:  # trade is different on the last block
             agent = self.agents[agent_id]
             if last_block_in_sim:  # get all of a agent's trades
