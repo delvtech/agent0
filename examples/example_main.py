@@ -54,7 +54,12 @@ class CustomShorter(Agent):
 
 def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
-    return [CustomShorter(address) for address in range(existing_agents, existing_agents + new_agents)]
+    agents = []
+    for address in range(existing_agents, existing_agents + new_agents):
+        agent = CustomShorter(address)
+        agent.log_status_report()
+        agents += [agent]
+    return agents
 
 
 def get_argparser() -> argparse.ArgumentParser:
