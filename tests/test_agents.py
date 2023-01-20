@@ -6,7 +6,10 @@ Unit tests for the core Agent API.
 
 import unittest
 from dataclasses import dataclass
+from importlib import import_module
+from os import walk, path
 
+from elfpy import policies
 from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
@@ -15,7 +18,7 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
-class ErrorPolicy(Agent):
+class TestErrorPolicy(Agent):
     """
     This class was made for testing purposes. It does not implement the required self.action() method
     """
@@ -46,7 +49,7 @@ class TestAgent(unittest.TestCase):
 
     @staticmethod
     def setup_market() -> Market:
-        """Instantiate a market object for testing purposes"""
+        """Instantiates a market object for testing purposes"""
 
         # Give an initial market state
         pricing_model = HyperdrivePricingModel()
@@ -69,6 +72,16 @@ class TestAgent(unittest.TestCase):
         )
 
         return market
+
+    @staticmethod
+    def get_implemented_policies() -> list[Agent]:
+        """Get a list of all implemented agent policies in elfpy/policies directory"""
+
+        policies_path = f"{policies.__path__[0]}/policies"
+        filenames = next(walk(policies_path), (None, None, []))[2]
+        agent_policies = [path.splitext(filename)[0] for filename in filenames]
+
+        return agent_policies
 
     def test_get_max_safety(self):
         """
@@ -238,11 +251,57 @@ class TestAgent(unittest.TestCase):
     def test_init(self):
         """Tests for Agent instantiation"""
 
-        # instantiate the market
-
+        # Instantiate a test market
         market = self.setup_market()
 
-        agent = ErrorPolicy(wallet_address=1)
+        # Instantiate a wrongly implemented agent policy
+        agent = TestErrorPolicy(wallet_address=1)
 
         with self.assertRaises(NotImplementedError):
             agent.action(market)
+
+        # Get the list of policies in the elfpy/policies directory
+        agent_policies = self.get_implemented_policies()
+
+        # Instantiate an agent for each policy
+        agent_list = []
+        for agent_id, policy_name in enumerate(agent_policies):
+            wallet_address = agent_id
+            agent_list.extend(
+                import_module(f"elfpy.policies.{policy_name}").Policy(
+                    wallet_address=wallet_address,  # first policy goes to init_lp_agent
+                )
+            )
+
+    def test_action(self):
+        """
+        Test for calling the action() method on all implemented policies
+
+        Does a basic check to ensure the implemented action() doesn't call for
+        invalid trades
+        """
+
+        # instantiate the market
+        market = self.setup_market()
+
+        # Get the list of policies in the elfpy/policies directory
+        agent_policies = self.get_implemented_policies()
+
+        # Instantiate an agent for each policy, with a variety of budgets
+        budget_list = [10, 1_000, 1_000_000, 100_000_000]
+        agent_list = []
+        for agent_budget in budget_list:
+            for agent_id, policy_name in enumerate(agent_policies):
+                wallet_address = agent_id
+                agent_list.extend(
+                    import_module(f"elfpy.policies.{policy_name}").Policy(
+                        wallet_address=wallet_address, budget=agent_budget
+                    )
+                )
+
+        # For each agent policy, call their action() method
+        for agent in agent_list:
+            actions_list = agent.get_trade_list(market)
+            for market_action in actions_list:
+                # Ensure trade size is smaller than wallet size
+                self.assertGreaterEqual(market_action.trade_amount, agent.budget)
