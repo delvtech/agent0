@@ -11,7 +11,7 @@ import unittest
 import logging
 import numpy as np
 
-import test_utils
+import utils_for_tests as test_utils
 import elfpy.utils.outputs as output_utils
 
 
