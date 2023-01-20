@@ -62,40 +62,56 @@ class CustomParameterTests(BaseParameterTest):
 
     def test_successfully_pass_custom_parameters(self):
         """Test successfully setting to passsed in values"""
-        # TestCaseParameter(agent_policies=["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"])
-        # TestResultParameter(expected_result=[{"amount_to_lp": 200}, {"pt_to_short": 500}])
-        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=500"]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        # TestCaseParameter(agent_policies=["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"])
+        # TestResultParameter(expected_result=[{"amount_to_lp": 200}, {"amount_to_trade": 500}])
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_first_parameter_smaller(self):
         """Test failure when first parameter is smaller"""
-        agent_policies = ["single_lp:amount_to_lp=199", "single_short:pt_to_short=500"]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        agent_policies = ["single_lp:amount_to_lp=199", "single_short:amount_to_trade=500"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
         with self.assertRaises(exception_type):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_first_parameter_larger(self):
         """Test failure when first parameter is larger"""
-        agent_policies = ["single_lp:amount_to_lp=201", "single_short:pt_to_short=500"]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        agent_policies = ["single_lp:amount_to_lp=201", "single_short:amount_to_trade=500"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
         with self.assertRaises(exception_type):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_second_parameter_smaller(self):
         """Test failure when second parameter is smaller"""
-        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=499"]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=499"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
         with self.assertRaises(exception_type):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_second_parameter_larger(self):
         """Test failure when second parameter is larger"""
-        agent_policies = ["single_lp:amount_to_lp=200", "single_short:pt_to_short=501"]
-        expected_result = [{"amount_to_lp": 200}, {"pt_to_short": 500}]
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=501"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         exception_type = AssertionError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_incorrect_first_parameter(self):
+        """Test failure when trying to assignt a parameter that doesn't exist"""
+        agent_policies = ["single_lp:amount_to_lpx=200", "single_short:amount_to_trade=500"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
+        exception_type = AttributeError
+        with self.assertRaises(exception_type):
+            self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+
+    def test_failure_incorrect_second_parameter(self):
+        """Test failure when trying to assignt a parameter that doesn't exist"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_tradex=500"]
+        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
+        exception_type = AttributeError
         with self.assertRaises(exception_type):
             self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)

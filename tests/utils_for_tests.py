@@ -34,7 +34,10 @@ def setup_simulation_entities(config_file, override_dict, agent_policies) -> Sim
             wallet_address=wallet_address,  # first policy goes to init_lp_agent
         )
         for key, value in not_kwargs.items():
-            setattr(agent, key, value)
+            if hasattr(agent, key):  # check if parameter exists
+                setattr(agent, key, value)
+            else:
+                raise AttributeError(f"Policy {policy_name} does not have parameter {key}")
         agent.log_status_report()
         agents += [agent]
 
