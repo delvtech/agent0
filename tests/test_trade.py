@@ -9,11 +9,10 @@ Testing for the ElfPy package modules
 
 import unittest
 import logging
-
 import numpy as np
-import utils_for_tests as test_utils  # utilities for testing
 
-import elfpy.utils.outputs as output_utils  # utilities for file outputs
+import utils_for_tests as test_utils
+import elfpy.utils.outputs as output_utils
 
 
 class BaseTradeTest(unittest.TestCase):

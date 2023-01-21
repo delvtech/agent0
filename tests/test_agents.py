@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from importlib import import_module
 from os import walk, path
 
-from elfpy import policies
+# TODO: Investigate why this raises a type issue in pyright.
+from elfpy import policies  # type: ignore
 from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
@@ -61,8 +62,8 @@ class TestAgent(unittest.TestCase):
             init_share_price=1,
             share_price=1,
         )
-        fee_percent = (0.1,)
-        time_remaining = (StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05)),)
+        fee_percent = 0.1
+        time_remaining = StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05))
 
         market = Market(
             pricing_model=pricing_model,
@@ -74,7 +75,7 @@ class TestAgent(unittest.TestCase):
         return market
 
     @staticmethod
-    def get_implemented_policies() -> list[Agent]:
+    def get_implemented_policies() -> list[str]:
         """Get a list of all implemented agent policies in elfpy/policies directory"""
 
         policies_path = f"{policies.__path__[0]}/policies"

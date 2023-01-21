@@ -61,8 +61,7 @@ class TestTimeUtils(unittest.TestCase):
             block_time = time_utils.block_number_to_datetime(
                 test_case["start_time"], test_case["block_number"], test_case["time_between_blocks"]
             )
-
-        assert block_time == test_case["expected_result"], f"unexpected time value {block_time}"
+            assert block_time == test_case["expected_result"], f"unexpected time value {block_time}"
 
     def test_yearfrac_as_datetime(self):
         """Unit tests for the yearfrac_as_datetime function"""

@@ -11,6 +11,12 @@ import elfpy.utils.time as time_utils
 if TYPE_CHECKING:
     from elfpy.agent import Agent
 
+
+def to_description(description: str) -> dict[str, str]:
+    """A dataclass helper that constructs metadata containing a description."""
+    return {"description": description}
+
+
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
 WEI = 1e-18
@@ -257,12 +263,16 @@ class RandomSimulationVariables:
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    target_liquidity: float = field(metadata="total size of the market pool (bonds + shares)")
-    target_pool_apr: float = field(metadata="desired fixed apr for as a decimal")
-    fee_percent: float = field(metadata="percent to charge for LPer fees")
-    vault_apr: list = field(metadata="yield bearing source APR")
-    init_vault_age: float = field(metadata="fraction of a year since the vault was opened")
-    init_share_price: float = field(default=None, metadata="initial market share price for the vault asset")
+    target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
+    target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
+    fee_percent: float = field(metadata=to_description("percent to charge for LPer fees"))
+    vault_apr: list = field(metadata=to_description("yield bearing source APR"))
+    init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
+    # NOTE: We ignore the type error since the value will never be None after
+    # initialization, and we don't want the value to be set to None downstream.
+    init_share_price: float = field(
+        default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
+    )
 
     def __post_init__(self):
         """init_share_price is a function of other random variables"""
@@ -277,46 +287,52 @@ class SimulationState:
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
     model_name: list = field(
-        default_factory=list, metadata={"hint": "the name of the pricing model that is used in simulation"}
+        default_factory=list, metadata=to_description("the name of the pricing model that is used in simulation")
     )
-    run_number: list = field(default_factory=list, metadata={"hint": "simulation index"})
+    run_number: list = field(default_factory=list, metadata=to_description("simulation index"))
     simulation_start_time: list = field(
-        default_factory=list, metadata={"hint": "start datetime for a given simulation"}
+        default_factory=list, metadata=to_description("start datetime for a given simulation")
     )
-    day: list = field(default_factory=list, metadata={"hint": "day index in a given simulation"})
-    block_number: list = field(default_factory=list, metadata={"hint": " integer, block index in a given simulation"})
-    daily_block_number: list = field(default_factory=list, metadata={"hint": " integer, block index in a given day"})
-    block_timestamp: list = field(default_factory=list, metadata={"hint": " datetime of a given block's creation"})
+    day: list = field(default_factory=list, metadata=to_description("day index in a given simulation"))
+    block_number: list = field(
+        default_factory=list, metadata=to_description(" integer, block index in a given simulation")
+    )
+    daily_block_number: list = field(
+        default_factory=list, metadata=to_description(" integer, block index in a given day")
+    )
+    block_timestamp: list = field(
+        default_factory=list, metadata=to_description(" datetime of a given block's creation")
+    )
     current_market_datetime: list = field(
-        default_factory=list, metadata={"hint": " float, current market time as a datetime"}
+        default_factory=list, metadata=to_description(" float, current market time as a datetime")
     )
     current_market_yearfrac: list = field(
-        default_factory=list, metadata={"hint": " float, current market time as a yearfrac"}
+        default_factory=list, metadata=to_description(" float, current market time as a yearfrac")
     )
     run_trade_number: list = field(
-        default_factory=list, metadata={"hint": " integer, trade number in a given simulation"}
+        default_factory=list, metadata=to_description(" integer, trade number in a given simulation")
     )
     market_step_size: list = field(
-        default_factory=list, metadata={"hint": " minimum time discretization for market time step"}
+        default_factory=list, metadata=to_description(" minimum time discretization for market time step")
     )
     position_duration: list = field(
-        default_factory=list, metadata={"hint": " time lapse between token mint and expiry as a yearfrac"}
+        default_factory=list, metadata=to_description(" time lapse between token mint and expiry as a yearfrac")
     )
     target_liquidity: list = field(
-        default_factory=list, metadata={"hint": "amount of liquidity the market should stop with"}
+        default_factory=list, metadata=to_description("amount of liquidity the market should stop with")
     )
     fee_percent: list = field(
-        default_factory=list, metadata={"hint": "the percentage of trade outputs to be collected as fees"}
+        default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
     )
-    floor_fee: list = field(default_factory=list, metadata={"hint": " minimum fee we take"})
-    init_vault_age: list = field(default_factory=list, metadata={"hint": "the age of the underlying vault"})
-    base_asset_price: list = field(default_factory=list, metadata={"hint": "the market price of the shares"})
-    pool_apr: list = field(default_factory=list, metadata={"hint": "apr of the AMM pool"})
-    num_trading_days: list = field(default_factory=list, metadata={"hint": " number of days in a simulation"})
+    floor_fee: list = field(default_factory=list, metadata=to_description(" minimum fee we take"))
+    init_vault_age: list = field(default_factory=list, metadata=to_description("the age of the underlying vault"))
+    base_asset_price: list = field(default_factory=list, metadata=to_description("the market price of the shares"))
+    pool_apr: list = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
+    num_trading_days: list = field(default_factory=list, metadata=to_description(" number of days in a simulation"))
     num_blocks_per_day: list = field(
-        default_factory=list, metadata={"hint": " number of blocks in a day, simulates time between blocks"}
+        default_factory=list, metadata=to_description(" number of blocks in a day, simulates time between blocks")
     )
-    spot_price: list = field(default_factory=list, metadata={"hint": "price of shares"})
+    spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
     def update_market_state(self, market_state: MarketState) -> None:
         """Update each entry in the SimulationState's copy for the market state

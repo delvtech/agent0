@@ -5,19 +5,17 @@ from typing import Optional, TYPE_CHECKING
 import datetime
 import json
 import logging
-
 import numpy as np
 from numpy.random._generator import Generator
 
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
-from elfpy.types import MarketDeltas, SimulationState
+from elfpy.types import MarketDeltas, RandomSimulationVariables, SimulationState
+from elfpy.utils import config as config_utils
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
     from elfpy.markets import Market
-    from elfpy.pricing_models.base import PricingModel
     from elfpy.utils.config import Config
 
 
@@ -36,23 +34,23 @@ class Simulator:
         self,
         config: Config,
         market: Market,
-        agents: dict[int, Agent],
-        rng: Generator,
-        random_simulation_variables: Optional[sim_utils.RandomSimulationVariables] = None,
+        random_simulation_variables: Optional[RandomSimulationVariables] = None,
     ):
         # pylint: disable=too-many-arguments
         # pylint: disable=too-many-statements
+
         # User specified variables
         self.config = config
         self.log_config_variables()
         self.market = market
-        self.agents = agents
-        self.set_rng(rng)
+        self.set_rng(config.simulator.rng)
         if random_simulation_variables is None:
-            self.random_variables = sim_utils.get_random_variables(self.config, self.rng)
+            self.random_variables = config_utils.get_random_variables(self.config)
         else:
             self.random_variables = random_simulation_variables
         self.check_vault_apr()
+        self.agents = {}
+
         # Simulation variables
         self.run_number = 0
         self.day = 0

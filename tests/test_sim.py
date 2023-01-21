@@ -8,16 +8,11 @@ Testing for the ElfPy package modules
 # pylint: disable=duplicate-code
 
 import logging
-from typing import Dict
 import unittest
-
 import numpy as np
-from numpy.random import Generator, RandomState
-from elfpy.agent import Agent
-from elfpy.markets import Market
+from numpy.random import RandomState
 
 from elfpy.simulators import Simulator
-from elfpy.types import RandomSimulationVariables
 from elfpy.utils.config import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
@@ -37,61 +32,23 @@ class BaseSimTest(unittest.TestCase):
         output_utils.setup_logging(log_filename, log_level=log_level)
 
     @staticmethod
-    def setup_simulator_inputs(
-        config_file, override_dict=None
-    ) -> tuple[Config, Market, Dict[int, Agent], Generator, RandomSimulationVariables]:
-        """Instantiate input objects to the simulator class"""
+    def setup_config(config_file, override_dict=None) -> Config:
+        """Creates a config from a config file and an override dictionary"""
         if override_dict is None:
-            override_dict = {}  # empty dict means nothing is overridden
-        # instantiate config object
+            override_dict = {}
         config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
-        # instantiate random number generator
-        rng = np.random.default_rng(config.simulator.random_seed)
-        # run random number generators to get random simulation arguments
-        random_sim_vars = sim_utils.override_random_variables(
-            sim_utils.get_random_variables(config, rng), override_dict
-        )
-        # instantiate the pricing model
-        pricing_model = sim_utils.get_pricing_model(model_name=config.amm.pricing_model_name)
-        # instantiate the market
-        market = sim_utils.get_market(
-            pricing_model,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-            config.simulator.token_duration,
-            random_sim_vars.vault_apr,
-            random_sim_vars.init_share_price,
-        )
-        # instantiate the init_lp agent
-        init_agents = {
-            0: sim_utils.get_init_lp_agent(
-                market,
-                random_sim_vars.target_liquidity,
-                random_sim_vars.target_pool_apr,
-                random_sim_vars.fee_percent,
-                init_liquidity=1,
-            )
-        }
-        return config, market, init_agents, rng, random_sim_vars
+        return config
 
-    def setup_simulator(self, config_file, override_dict=None):
+    @staticmethod
+    def setup_simulator(config_file, override_dict=None):
         """Instantiate the simulator object"""
-        config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(config_file, override_dict)
-        # set up simulator with only the init_lp_agent
-        simulator = Simulator(
-            config=config,
-            market=market,
-            agents=init_agents,
-            rng=rng,
-            random_simulation_variables=random_sim_vars,
-        )
+        config = BaseSimTest.setup_config(config_file, override_dict)
+        simulator = sim_utils.get_simulator(config)
         return simulator
 
     def setup_and_run_simulator(self, config_file, override_dict):
         """Construct and run the simulator"""
         simulator = self.setup_simulator(config_file, override_dict)
-        # initialize the market using the LP agent
-        simulator.collect_and_execute_trades()
         # run the simulation
         simulator.run_simulation()
         return simulator
@@ -120,7 +77,7 @@ class BaseSimTest(unittest.TestCase):
         assert simulator.rng == new_rng
         for bad_input in ([1234, "1234", RandomState(1234)],):
             with self.assertRaises(TypeError):
-                simulator.set_rng(bad_input)
+                simulator.set_rng(bad_input)  # type: ignore
         output_utils.close_logging(delete_logs=delete_logs)
 
     def run_log_config_variables_test(self, delete_logs=True):
@@ -150,43 +107,33 @@ class BaseSimTest(unittest.TestCase):
             {"num_trading_days": 3, "vault_apr": [0.05, 0.04, 0.03]},
         ]
         for override_dict in override_list:
-            config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(config_file, override_dict)
-            simulator = Simulator(
-                config=config,
-                market=market,
-                agents=init_agents,
-                rng=rng,
-                random_simulation_variables=random_sim_vars,
-            )
-            # make sure that the random variable list is being assigned properly
+            simulator = self.setup_simulator(config_file, override_dict)
+            random_sim_vars = simulator.random_variables
+
+            # Ensure that the random variable list is being assigned properly.
             if "vault_apr" in override_dict and isinstance(override_dict["vault_apr"], float):
                 # check that broadcasting works
                 assert len(simulator.random_variables.vault_apr) == override_dict["num_trading_days"]
-            else:
-                assert np.all(simulator.random_variables == random_sim_vars)
+
+            # Ensure that the random variable list is created if it is None.
             simulator = Simulator(
-                config=config,
-                market=market,
-                agents=init_agents,
-                rng=rng,
+                config=simulator.config,
+                market=simulator.market,
                 random_simulation_variables=None,
             )
-            # make sure that the random variable list is created if not given
             assert simulator.random_variables is not None
             assert np.all(simulator.random_variables != random_sim_vars)
-        incorrect_override_dict = {"num_trading_days": 5, "vault_apr": [0.05, 0.04, 0.03]}
-        config, market, init_agents, rng, random_sim_vars = self.setup_simulator_inputs(
-            config_file, incorrect_override_dict
-        )
-        with self.assertRaises(ValueError):
-            simulator = Simulator(
-                config=config,
-                market=market,
-                agents=init_agents,
-                rng=rng,
-                random_simulation_variables=random_sim_vars,
-            )
 
+        # Ensure that initializing the simulator with an invalid override list
+        # raises an error.
+        incorrect_override_dict = {"num_trading_days": 5, "vault_apr": [0.05, 0.04, 0.03]}
+        invalid_config = BaseSimTest.setup_config(config_file, incorrect_override_dict)
+        simulator = BaseSimTest.setup_simulator(config_file)
+        with self.assertRaises(ValueError):
+            Simulator(
+                config=invalid_config,
+                market=simulator.market,
+            )
         output_utils.close_logging(delete_logs=delete_logs)
 
     def run_simulation_state_test(self, delete_logs=True):

@@ -3,11 +3,11 @@
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from stochastic.processes import GeometricBrownianMotion
-
+from elfpy.utils.config import Config, get_random_variables
+from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
@@ -22,6 +22,66 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
+
+
+def get_simulator(
+    config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
+) -> Simulator:
+    """Constructs a simulator with sane defaults and initializes the simulator
+    with an initial LP.
+
+    Arguments
+    ---------
+    rng : Generator
+        The random number generator that should be used in these simulations.
+        We pass this in to avoid restarting the generator after using it to
+        setting up the agents.
+    config : Config
+        The simulator config.
+    agents : list[Agent]
+        The agents to that should be used in the simulator.
+    """
+    # Sample the random simulation arguments.
+    if random_sim_vars is None:
+        random_variables = get_random_variables(config)
+    else:
+        random_variables = random_sim_vars
+
+    # Instantiate the market.
+    pricing_model = get_pricing_model(config.amm.pricing_model_name)
+    market = get_market(
+        pricing_model,
+        random_variables.target_pool_apr,
+        random_variables.fee_percent,
+        config.simulator.token_duration,
+        random_variables.vault_apr,
+        random_variables.init_share_price,
+    )
+
+    # Instantiate the initial LP agent.
+    init_agents = [
+        get_init_lp_agent(
+            market,
+            random_variables.target_liquidity,
+            random_variables.target_pool_apr,
+            random_variables.fee_percent,
+        )
+    ]
+
+    # Initialize the simulator using only the initial LP.
+    simulator = Simulator(
+        config=config,
+        market=market,
+        random_simulation_variables=random_sim_vars,
+    )
+    simulator.add_agents(init_agents)
+    simulator.collect_and_execute_trades()
+
+    # Add the remaining agents.
+    if not agents is None:
+        simulator.add_agents(agents)
+
+    return simulator
 
 
 def get_init_lp_agent(
@@ -178,85 +238,6 @@ def get_pricing_model(model_name: str) -> PricingModel:
     else:
         raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model
-
-
-def setup_vault_apr(config, rng):
-    """Construct the vault_apr list
-    Note: callable type option would allow for infinite num_trading_days after small modifications
-
-    Arguments
-    ---------
-    config : Config
-        config object, as defined in elfpy.utils.config
-    rng : Generator
-        random number generator; output of np.random.default_rng(seed)
-
-    Returns
-    -------
-    vault_apr : list
-        list of apr values that is the same length as num_trading_days
-    """
-    if isinstance(config.market.vault_apr, dict):  # dictionary specifies parameters for the callable
-        allowable_keys = ["constant", "uniform", "geometricbrownianmotion"]
-        if config.market.vault_apr["type"].lower() in allowable_keys:
-            match config.market.vault_apr["type"].lower():
-                case "constant":
-                    vault_apr = [
-                        config.market.vault_apr["value"],
-                    ] * config.simulator.num_trading_days
-                case "uniform":
-                    vault_apr = rng.uniform(
-                        low=config.market.vault_apr["low"],
-                        high=config.market.vault_apr["high"],
-                        size=config.simulator.num_trading_days,
-                    ).tolist()
-                case "geometricbrownianmotion":
-                    # the n argument is number of steps, so the number of points is n+1
-                    vault_apr = (
-                        GeometricBrownianMotion(rng=rng)
-                        .sample(n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"])
-                        .tolist()
-                    )
-        else:
-            raise ValueError(f"{config.market.vault_apr['type']=} not in {allowable_keys=}")
-    elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
-        vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
-    elif isinstance(config.market.vault_apr, list):  # user-defined list of values
-        vault_apr = config.market.vault_apr
-    elif isinstance(config.market.vault_apr, float):  # single constant value to be cast to a float
-        vault_apr = [float(config.market.vault_apr)] * config.simulator.num_trading_days
-    else:
-        raise TypeError(
-            f"config.market.vault_apr must be an int, list, dict, or callable, not {type(config.market.vault_apr)}"
-        )
-    return vault_apr
-
-
-def get_random_variables(config, rng):
-    """Use random number generator to assign initial simulation parameter values
-
-    Arguments
-    ---------
-    config : Config
-        config object, as defined in elfpy.utils.config
-    rng : Generator
-        random number generator; output of np.random.default_rng(seed)
-
-    Returns
-    -------
-    RandomSimulationVariables
-        dataclass that contains variables for initiating and running simulations
-    """
-    random_vars = RandomSimulationVariables(
-        target_liquidity=rng.uniform(low=config.market.min_target_liquidity, high=config.market.max_target_liquidity),
-        target_pool_apr=rng.uniform(
-            low=config.amm.min_pool_apr, high=config.amm.max_pool_apr
-        ),  # starting fixed apr as a decimal
-        fee_percent=rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        vault_apr=setup_vault_apr(config, rng),
-        init_vault_age=rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
-    )
-    return random_vars
 
 
 def override_random_variables(

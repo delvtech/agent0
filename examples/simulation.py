@@ -1,10 +1,9 @@
 """A minimum viable simulation"""
 # stdlib
 import argparse
-from typing import Any, Optional
+from typing import Any
 
 # external imports
-import numpy as np
 from numpy.random import Generator
 
 # elfpy core repo
@@ -12,13 +11,11 @@ import elfpy
 
 # elfpy core classes
 from elfpy.agent import Agent
-from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.types import MarketAction, MarketActionType
 
 # elfpy utils
 from elfpy.utils import sim_utils, parse_config as config_utils, outputs as output_utils
-from elfpy.utils.config import Config
 from elfpy.wallet import Long
 
 
@@ -82,18 +79,15 @@ class RandomAgent(Agent):
 
 def get_example_agents(
     rng: Generator,
-    num_new_agents: int,
-    agents: Optional[dict[int, Agent]] = None,
-) -> dict[int, Agent]:
+    new_agents: int,
+    existing_agents: int,
+) -> list[Agent]:
     """Instantiate a set of custom agents"""
-    if agents is None:
-        agents = {}
-    loop_start = len(agents)  # number of existing agents
-    loop_end = loop_start + num_new_agents
-    for wallet_address in range(loop_start, loop_end):
-        agent = RandomAgent(rng, wallet_address)
+    agents = []
+    for address in range(existing_agents, existing_agents + new_agents):
+        agent = RandomAgent(rng, address)
         agent.log_status_report()
-        agents.update({agent.wallet.address: agent})
+        agents += [agent]
     return agents
 
 
@@ -132,54 +126,8 @@ def get_argparser() -> argparse.ArgumentParser:
     return parser
 
 
-# TODO: This should live within the Simulator class.
-def run_random_agent_simulation(config: Config):
-    """Executes a simulation with random agents"""
-
-    # Sample the random simulation arguments.
-    rng = np.random.default_rng(config.simulator.random_seed)
-    random_sim_vars = sim_utils.get_random_variables(config, rng)
-
-    # Instantiate the pricing model and market.
-    sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
-    sim_market = sim_utils.get_market(
-        sim_pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.fee_percent,
-        config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
-    )
-
-    # Instantiate the initial LP agent.
-    init_agents = {
-        0: sim_utils.get_init_lp_agent(
-            sim_market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-        )
-    }
-
-    # Initialize the simulator using only the initial LP.
-    simulator = Simulator(
-        config=config,
-        market=sim_market,
-        agents=init_agents,
-        rng=rng,
-        random_simulation_variables=random_sim_vars,
-    )
-    simulator.collect_and_execute_trades()
-
-    # Add the other trading agents.
-    simulator.agents = get_example_agents(rng=simulator.rng, num_new_agents=args.num_agents, agents=init_agents)
-
-    # Run the simulation.
-    simulator.run_simulation()
-
-
 if __name__ == "__main__":
-    # Initialize the configuration and apply overrides from the command line arguments.
+    # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
     override_dict = {}
     if args.trading_days is not None:
@@ -188,17 +136,21 @@ if __name__ == "__main__":
         override_dict["num_blocks_per_day"] = args.blocks_per_day
     if args.log_level is not None:
         override_dict["logging_level"] = args.log_level
+    override_dict["pricing_model_name"] = args.pricing_model
     override_dict["vault_apr"] = {"type": "GeometricBrownianMotion", "initial": 0.05}
-    config_ = config_utils.override_config_variables(
-        config_utils.load_and_parse_config_file(args.config), override_dict
-    )
+    config = config_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
 
     # Define root logging parameters.
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
-        log_level=config_utils.text_to_logging_level(config_.simulator.logging_level),
+        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
+    )
+
+    # Initialize the simulator.
+    simulator = sim_utils.get_simulator(
+        config, get_example_agents(rng=config.simulator.rng, new_agents=args.num_agents, existing_agents=1)
     )
 
     # Run the simulation.
-    run_random_agent_simulation(config_)
+    simulator.run_simulation()

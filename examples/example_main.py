@@ -3,15 +3,11 @@
 import argparse
 from typing import Any
 
-# external imports
-import numpy as np
-
 # elfpy core repo
 import elfpy
 
 # elfpy core classes
 from elfpy.agent import Agent
-from elfpy.simulators import Simulator
 from elfpy.markets import Market
 from elfpy.types import MarketActionType
 
@@ -56,13 +52,13 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(num_new_agents: int, num_existing_agents: int = 0) -> list[Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
-    for wallet_address in range(num_existing_agents, num_new_agents + 1):
-        agent = CustomShorter(wallet_address)
+    for address in range(existing_agents, existing_agents + new_agents):
+        agent = CustomShorter(address)
         agent.log_status_report()
-        agents.append(agent)
+        agents += [agent]
     return agents
 
 
@@ -102,16 +98,15 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    # define & parse script args
+    # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    # get config & logging level
     config = config_utils.load_and_parse_config_file(args.config)
-    # override any particular simulation arguments
     override_dict = {}
     if args.num_trading_days is not None:
         override_dict["num_trading_days"] = args.num_trading_days
     if args.blocks_per_day is not None:
         override_dict["num_blocks_per_day"] = args.blocks_per_day
+    override_dict["pricing_model_name"] = args.pricing_model
     override_dict["vault_apr"] = {
         "type": "uniform",
         "low": 0.001,
@@ -120,46 +115,16 @@ if __name__ == "__main__":
     config = config_utils.override_config_variables(config, override_dict)
     if args.log_level is not None:
         config.simulator.logging_level = args.log_level
-    # define root logging parameters
+
+    # Define root logging parameters.
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
         log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
     )
-    # instantiate random number generator
-    rng = np.random.default_rng(config.simulator.random_seed)
-    # run random number generators to get random simulation arguments
-    random_sim_vars = sim_utils.override_random_variables(sim_utils.get_random_variables(config, rng), override_dict)
-    # instantiate the pricing model
-    sim_pricing_model = sim_utils.get_pricing_model(model_name=args.pricing_model)
-    # instantiate the market
-    sim_market = sim_utils.get_market(
-        sim_pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.fee_percent,
-        config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
-    )
-    # instantiate the init_lp agent
-    init_agents = {
-        0: sim_utils.get_init_lp_agent(
-            sim_market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
-        )
-    }
-    # set up simulator with only the init_lp_agent
-    simulator = Simulator(
-        config=config,
-        market=sim_market,
-        agents=init_agents,
-        rng=rng,
-        random_simulation_variables=random_sim_vars,
-    )
-    # initialize the market using the LP agent
-    simulator.collect_and_execute_trades()
-    # get trading agent list
-    simulator.add_agents(get_example_agents(num_new_agents=args.num_agents, num_existing_agents=len(simulator.agents)))
+
+    # Initialize the simulator.
+    simulator = sim_utils.get_simulator(config, get_example_agents(new_agents=args.num_agents, existing_agents=1))
+
+    # Run the simulation.
     simulator.run_simulation()
