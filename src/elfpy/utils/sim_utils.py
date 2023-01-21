@@ -6,8 +6,8 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.utils.config import Config
-from elfpy.simulators import Simulator, get_random_variables
+from elfpy.utils.config import Config, get_random_variables
+from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
