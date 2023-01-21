@@ -189,7 +189,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trade_list(self, market: Market) -> list:
+    def get_trades(self, market: Market) -> list:
         """
         Helper function for computing a agent trade
         direction is chosen based on this logic:
@@ -213,13 +213,13 @@ class Agent:
         list
             List of MarketAction objects that represent the trades to be made by this agent
         """
-        action_list = self.action(market)  # get the action list from the policy
-        for action in action_list:  # edit each action in place
+        actions = self.action(market)  # get the action list from the policy
+        for action in actions:  # edit each action in place
             if action.mint_time is None:
                 action.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
-        return action_list
+        return actions
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
         """
