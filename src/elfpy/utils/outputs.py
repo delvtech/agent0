@@ -11,7 +11,7 @@ from logging.handlers import RotatingFileHandler
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+from matplotlib import gridspec
 
 import elfpy
 
@@ -43,28 +43,28 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) 
     xtick_step = 10
     nrows = 1
     ncols = 2
-    fig, axs, gs = get_gridspec_subplots(nrows, ncols, wspace=0.5)
+    fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.5)
     for address in simulator.agents:
         if exclude_first_agent and address > 0:
             dict_key = f"agent_{address}"
-            axs[0].plot(
+            axes[0].plot(
                 [item[2] for item in simulator.simulation_state[dict_key] if item is not None], label=f"agent {address}"
             )
-            axs[1].plot(
+            axes[1].plot(
                 [item[3] for item in simulator.simulation_state[dict_key] if item is not None], label=f"agent {address}"
             )
-    axs[0].set_ylabel("Base asset in wallet")
-    axs[1].set_ylabel("LP tokens in wallet")
-    axs[0].legend()
-    trade_labels = [x for x in simulator.simulation_state.run_trade_number][::xtick_step]
-    for ax in axs:
-        ax.set_xlabel("Trade number")
-        ax.set_xticks(trade_labels)
-        ax.set_xticklabels([str(x + 1) for x in trade_labels])
-        ax.set_box_aspect(1)
+    axes[0].set_ylabel("Base asset in wallet")
+    axes[1].set_ylabel("LP tokens in wallet")
+    axes[0].legend()
+    trade_labels = simulator.simulation_state.run_trade_number[::xtick_step]
+    for axis in axes:
+        axis.set_xlabel("Trade number")
+        axis.set_xticks(trade_labels)
+        axis.set_xticklabels([str(x + 1) for x in trade_labels])
+        axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
     fig.set_size_inches([2 * fig_size[0], fig_size[1]])
-    title_handle = fig.suptitle("Agent profitability", y=0.88)
+    _ = fig.suptitle("Agent profitability", y=0.88)
     return fig
 
 
@@ -87,42 +87,54 @@ def get_gridspec_subplots(nrows: int, ncols: int, **kwargs: Any) -> tuple[Figure
     """
     if "wspace" not in kwargs:
         kwargs["wspace"] = 1.0
-    gs = gridspec.GridSpec(nrows, ncols, **kwargs)
+    grid_spec = gridspec.GridSpec(nrows, ncols, **kwargs)
     fig = plt.figure()
-    axs = [fig.add_subplot(gs[plot_id]) for plot_id in np.ndindex((nrows, ncols))]
-    return (fig, axs, gs)
+    axes = [fig.add_subplot(grid_spec[plot_id]) for plot_id in np.ndindex((nrows, ncols))]
+    return (fig, axes, grid_spec)
 
 
-def clear_axis(ax, spines="none"):
+def clear_axis(axis: Axes, spines: str = "none") -> Axes:
     """
     Clear spines & tick labels from proplot axis object
 
     Arguments
     ---------
-        ax [proplot ax object, or matplotlib axis object]
-        spines [str] any matplotlib color
+        axis : matplotlib axis object
+           axis to be cleared
+        spines : str
+           any matplotlib color, defaults to "none" which makes the spines invisible
 
     Returns
     ---------
-        ax [proplot ax object, or matplotlib axis object]
+        axis : matplotlib axis object
     """
     for ax_loc in ["top", "bottom", "left", "right"]:
-        ax.spines[ax_loc].set_color(spines)
-    ax.set_yticklabels([])
-    ax.set_xticklabels([])
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    ax.tick_params(axis="both", bottom=False, top=False, left=False, right=False)
-    return ax
+        axis.spines[ax_loc].set_color(spines)
+    axis.set_yticklabels([])
+    axis.set_xticklabels([])
+    axis.get_xaxis().set_visible(False)
+    axis.get_yaxis().set_visible(False)
+    axis.tick_params(axis="both", bottom=False, top=False, left=False, right=False)
+    return axis
 
 
-def clear_axes(axs, spines="none"):
+def clear_axes(axes: list[Axes], spines: str = "none") -> list:
     """
-    Calls clear_axis iteratively for each axis in axs
+    Calls clear_axis iteratively for each axis in axes
+    Arguments
+    ---------
+        axes : list of matplotlib axis objects
+           axes to be cleared
+        spines : str
+           any matplotlib color, defaults to "none" which makes the spines invisible
+
+    Returns
+    ---------
+        axes : list of matplotlib axis objects
     """
-    for ax in axs:
-        clear_axis(ax, spines)
-    return axs
+    for axis in axes:
+        clear_axis(axis, spines)
+    return axes
 
 
 def format_axis(
