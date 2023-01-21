@@ -12,6 +12,7 @@ from stochastic.processes import GeometricBrownianMotion
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
 from elfpy.types import MarketAction, MarketDeltas, RandomSimulationVariables, SimulationState
+from elfpy.utils import config as config_utils
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
@@ -123,7 +124,7 @@ class Simulator:
         self.market = market
         self.set_rng(config.simulator.rng)
         if random_simulation_variables is None:
-            self.random_variables = get_random_variables(self.config)
+            self.random_variables = config_utils.get_random_variables(self.config)
         else:
             self.random_variables = random_simulation_variables
         self.check_vault_apr()

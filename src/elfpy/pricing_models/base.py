@@ -132,7 +132,7 @@ class PricingModel(ABC):
         bond_reserves = (share_reserves / 2) * (
             init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
             - share_price
-        )  # y = x/2 * (u * (1 + rt)**(1/T) - c)
+        )  # y = x/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
 
     def calc_share_reserves(
@@ -169,7 +169,7 @@ class PricingModel(ABC):
         """
         share_reserves = bond_reserves / (
             init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
-        )  # z = y / (u * (1 - rt)**(1/T))
+        )  # z = y / (mu * (1 - rt)**(1/tau))
         return share_reserves
 
     def calc_liquidity(
@@ -321,9 +321,14 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
+
+        # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
+        # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
         )
+        # p = ((y + s)/(mu*z))^(-tau)
+        # p = ((2y + cz)/(mu*z))^(-tau)
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))

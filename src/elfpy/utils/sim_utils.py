@@ -3,11 +3,11 @@
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from importlib import import_module
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.utils.config import Config
-from elfpy.simulators import Simulator, get_random_variables
+from elfpy.utils.config import Config, get_random_variables
+from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def get_simulator(
-    config: Config, agents: list[Agent] | None = None, random_sim_vars: RandomSimulationVariables | None = None
+    config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
 ) -> Simulator:
     """Constructs a simulator with sane defaults and initializes the simulator
     with an initial LP.
@@ -43,26 +43,28 @@ def get_simulator(
     """
     # Sample the random simulation arguments.
     if random_sim_vars is None:
-        random_sim_vars = get_random_variables(config)
+        random_variables = get_random_variables(config)
+    else:
+        random_variables = random_sim_vars
 
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
     market = get_market(
         pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.fee_percent,
+        random_variables.target_pool_apr,
+        random_variables.fee_percent,
         config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
+        random_variables.vault_apr,
+        random_variables.init_share_price,
     )
 
     # Instantiate the initial LP agent.
     init_agents = [
         get_init_lp_agent(
             market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.fee_percent,
+            random_variables.target_liquidity,
+            random_variables.target_pool_apr,
+            random_variables.fee_percent,
         )
     ]
 
