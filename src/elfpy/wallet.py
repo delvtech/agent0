@@ -6,8 +6,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass, field
 
-from elfpy.utils.outputs import float_to_string
-
 if TYPE_CHECKING:
     from typing import Any
 

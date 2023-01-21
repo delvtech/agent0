@@ -299,16 +299,16 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-trade_amount,
         )
+        d_worst_case_scenario = trade_amount  # in the worst case for the short, p=1 and they owe the face value
+        # calculate the improvement in your max loss (worst case scenario - cost to close the short)
+        d_max_loss = d_worst_case_scenario + trade_result.user_result.d_base
         agent_deltas = Wallet(
             address=wallet_address,
-            # The short balance will be decreased by the trade amount and the
-            # margin account is decreased by the amount of base the trader
-            # needed to pay to buy the specified amount of bonds at the current
-            # market price.
+            base=d_max_loss,  # you get back in your wallet the improvement in your max loss (no longer need the margin)
             shorts={
                 mint_time: Short(
                     balance=-trade_amount,
-                    margin=trade_result.user_result.d_base,
+                    margin=-d_worst_case_scenario,
                 )
             },
             fees_paid=trade_result.breakdown.fee,

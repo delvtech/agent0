@@ -313,11 +313,6 @@ class Agent:
                     self.wallet.shorts[mint_time].margin += short.margin
                 else:
                     self.wallet.shorts.update({mint_time: short})
-            if self.wallet.shorts[mint_time].balance == 0:
-                # Add the remaining margin balance to the wallet's base.
-                self.wallet.base += self.wallet.shorts[mint_time].margin
-                # Remove the empty short from the wallet.
-                del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """
