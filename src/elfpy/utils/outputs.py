@@ -1,5 +1,5 @@
 """
-Helper functions for post-processing simulation outputs
+Helper functions for delivering simulation outputs
 """
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
