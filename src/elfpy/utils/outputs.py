@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import elfpy
+import elfpy.utils.post_processing as post_processing
+import elfpy.utils.outputs as output_utils
+
 
 if TYPE_CHECKING:
     from typing import Optional, Any
@@ -24,6 +27,75 @@ if TYPE_CHECKING:
 
 
 ## Plotting
+def plot_market_lp_reserves(simulator: Simulator) -> Figure:
+    """
+    Plot the simulator market LP reserves per day
+
+    Arguments
+    ---------
+    simulator : Simulator
+        An instantiated simulator that has run trades with agents
+
+    Returns
+    ---------
+    Figure
+    """
+    state_df = post_processing.compute_derived_variables(simulator)
+    fig, axis, _ = output_utils.get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="lp_reserves", ax=axis[0])
+    axis.get_legend().remove()
+    axis.set_title("Market liquidity provider reserves")
+    axis.set_ylabel("LP reserves")
+    axis.set_xlabel("Day")
+    return fig
+
+
+def plot_market_spot_price(simulator: Simulator) -> Figure:
+    """
+    Plot the simulator market APR per day
+
+    Arguments
+    ---------
+    simulator : Simulator
+        An instantiated simulator that has run trades with agents
+
+    Returns
+    ---------
+    Figure
+    """
+    state_df = post_processing.compute_derived_variables(simulator)
+    fig, axis, _ = output_utils.get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="spot_price", ax=axis[0])
+    axis.get_legend().remove()
+    axis.set_title("Market spot price")
+    axis.set_ylabel("Spot price of principle tokens")
+    axis.set_xlabel("Day")
+    return fig
+
+
+def plot_pool_apr(simulator: Simulator) -> Figure:
+    """
+    Plot the simulator market APR per day
+
+    Arguments
+    ---------
+    simulator : Simulator
+        An instantiated simulator that has run trades with agents
+
+    Returns
+    ---------
+    Figure
+    """
+    state_df = post_processing.compute_derived_variables(simulator)
+    fig, axis, _ = output_utils.get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="pool_apr_percent", ax=axis[0])
+    axis.get_legend().remove()
+    axis.set_title("Market pool APR")
+    axis.set_ylabel("APR (%)")
+    axis.set_xlabel("Day")
+    return fig
+
+
 def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) -> Figure:
     """
     Plot the wallet base asset and LP token quantities over time
@@ -68,7 +140,7 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) 
     return fig
 
 
-def get_gridspec_subplots(nrows: int, ncols: int, **kwargs: Any) -> tuple[Figure, Axes, GridSpec]:
+def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, Axes, GridSpec]:
     """Setup a figure with axes that have reasonable spacing
 
     Arguments
