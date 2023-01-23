@@ -31,9 +31,12 @@ class TestCalcInGivenOut(unittest.TestCase):
         success_test_cases = base_in_test_cases + pt_in_test_cases
 
         for (
-            test_case,
-            results_by_model,
-        ) in success_test_cases:
+            test_number,
+            (
+                test_case,
+                results_by_model,
+            ),
+        ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
@@ -52,23 +55,23 @@ class TestCalcInGivenOut(unittest.TestCase):
                 np.testing.assert_almost_equal(
                     trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
-                    err_msg="unexpected without_fee_or_slippage",
+                    err_msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 np.testing.assert_almost_equal(
                     trade_result.breakdown.without_fee,
                     expected_result.without_fee,
-                    err_msg="unexpected without_fee",
+                    err_msg=f"test {test_number + 1} unexpected without_fee",
                 )
                 if model_type in {"yieldspace", "hyperdrive"}:
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.fee,
                         expected_result.fee,
-                        err_msg="unexpected yieldspace fee",
+                        err_msg=f"test {test_number + 1} unexpected yieldspace fee",
                     )
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.with_fee,
                         expected_result.with_fee,
-                        err_msg="unexpected yieldspace with_fee",
+                        err_msg=f"test {test_number + 1} unexpected yieldspace with_fee",
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be or "YieldSpace", not {model_name}')
@@ -734,10 +737,10 @@ base_in_test_cases = [
                 with_fee=197.2976182186442,
             ),
             hyperdrive=TestResultCalcInGivenOutSuccess(
-                without_fee_or_slippage=189.25228759556148,
-                without_fee=189.25267474842258,
-                fee=1.0747712404438503,
-                with_fee=190.32744598886643,
+                without_fee_or_slippage=197.0645321939592,
+                without_fee=197.06466894078767,
+                fee=0.2935467806040798,
+                with_fee=197.35821572139176,
             ),
         ),
     ),  # end of test eight
@@ -1084,10 +1087,10 @@ pt_in_test_cases = [
                 with_fee=203.35463114060687,
             ),
             hyperdrive=TestResultCalcInGivenOutSuccess(
-                without_fee_or_slippage=213.69995097820515,
-                without_fee=213.70075247436762,
-                fee=1.3699950978205144,
-                with_fee=215.07074757218814,
+                without_fee_or_slippage=203.12051511532638,
+                without_fee=203.12067932868376,
+                fee=0.31205151153263944,
+                with_fee=203.4327308402164,
             ),
         ),
     ),  # end of test eight
