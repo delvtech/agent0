@@ -3,10 +3,6 @@ Testing for the calc_out_given_in of the pricing models.
 """
 
 # pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
 
 import decimal
 import unittest
@@ -26,8 +22,6 @@ from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 class TestCalcOutGivenIn(unittest.TestCase):
     """Unit tests for the calc_out_given_in function"""
 
-    # TODO: Add tests for the Hyperdrive pricing model.
-    #
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
