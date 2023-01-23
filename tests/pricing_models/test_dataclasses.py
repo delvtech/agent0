@@ -33,6 +33,18 @@ class TestResultCalcInGivenOutSuccess:
 
 
 @dataclass
+class TestResultCalcInGivenOutSuccessByModel:
+    """Dataclass for calc_in_given_out test results by pricing_model"""
+
+    def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
+        return getattr(self, key)
+
+    yieldspace: TestResultCalcInGivenOutSuccess
+    hyperdrive: TestResultCalcInGivenOutSuccess
+
+
+@dataclass
 class TestCaseCalcInGivenOutFailure:
     """Dataclass for calc_in_given_out test cases"""
 
@@ -43,3 +55,15 @@ class TestCaseCalcInGivenOutFailure:
     exception_type: Type[BaseException]
 
     __test__ = False  # pytest: don't test this class
+
+
+@dataclass
+class TestResultCalcInGivenOutFailureByModel:
+    """Dataclass for calc_in_given_out test cases by pricing_model"""
+
+    def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
+        return getattr(self, key)
+
+    yieldspace: TestCaseCalcInGivenOutFailure
+    hyperdrive: TestCaseCalcInGivenOutFailure
