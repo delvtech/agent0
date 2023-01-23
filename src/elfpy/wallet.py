@@ -106,6 +106,21 @@ class Wallet:
         return output_string
 
     @property
-    def state(self) -> tuple[int, float, float]:
+    def state_keys(self) -> list[str]:
+        """The keys for the wallet's current state"""
+        return [
+            f"agent_{self.address}_base",
+            f"agent_{self.address}_lp_tokens",
+            f"agent_{self.address}_total_longs",
+            f"agent_{self.address}_total_shorts",
+        ]
+
+    @property
+    def state(self) -> dict:
         """The wallet's current state of public variables"""
-        return (self.address, self.base, self.lp_tokens)
+        return {
+            f"agent_{self.address}_base": self.base,
+            f"agent_{self.address}_lp_tokens": self.lp_tokens,
+            f"agent_{self.address}_total_longs": sum((long.balance for long in self.longs.values())),
+            f"agent_{self.address}_total_shorts": sum((short.balance for short in self.shorts.values())),
+        }

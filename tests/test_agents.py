@@ -306,3 +306,19 @@ class TestAgent(unittest.TestCase):
             for market_action in actions_list:
                 # Ensure trade size is smaller than wallet size
                 self.assertGreaterEqual(market_action.trade_amount, agent.budget)
+
+    def test_wallet_state(self):
+        """Tests for Agent wallet state initialization"""
+        # Get the list of policies in the elfpy/policies directory
+        agent_policies = self.get_implemented_policies()
+        # Instantiate an agent for each policy
+        agent_list = []
+        for agent_id, policy_name in enumerate(agent_policies):
+            wallet_address = agent_id
+            agent_list.extend(
+                import_module(f"elfpy.policies.{policy_name}").Policy(
+                    wallet_address=wallet_address,  # first policy goes to init_lp_agent
+                )
+            )
+        for agent in agent_list:
+            assert agent.wallet.state_keys == list(agent.wallet.state)

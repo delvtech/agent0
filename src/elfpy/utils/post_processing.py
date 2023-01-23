@@ -23,7 +23,7 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     """
-    # construct simulation dataframe output
+    # construct dataframe from simulation dict
     return pd.DataFrame.from_dict(simulator.simulation_state.__dict__)
 
 

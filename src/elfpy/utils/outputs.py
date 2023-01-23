@@ -14,9 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import elfpy
-import elfpy.utils.post_processing as post_processing
-import elfpy.utils.outputs as output_utils
-
+from elfpy.utils import post_processing
 
 if TYPE_CHECKING:
     from typing import Optional, Any
@@ -41,7 +39,7 @@ def plot_market_lp_reserves(simulator: Simulator) -> Figure:
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = output_utils.get_gridspec_subplots()
+    fig, axis, _ = get_gridspec_subplots()
     axis = state_df.plot(x="day", y="lp_reserves", ax=axis[0])
     axis.get_legend().remove()
     axis.set_title("Market liquidity provider reserves")
@@ -64,7 +62,7 @@ def plot_market_spot_price(simulator: Simulator) -> Figure:
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = output_utils.get_gridspec_subplots()
+    fig, axis, _ = get_gridspec_subplots()
     axis = state_df.plot(x="day", y="spot_price", ax=axis[0])
     axis.get_legend().remove()
     axis.set_title("Market spot price")
@@ -87,12 +85,52 @@ def plot_pool_apr(simulator: Simulator) -> Figure:
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = output_utils.get_gridspec_subplots()
+    fig, axis, _ = get_gridspec_subplots()
     axis = state_df.plot(x="day", y="pool_apr_percent", ax=axis[0])
     axis.get_legend().remove()
     axis.set_title("Market pool APR")
     axis.set_ylabel("APR (%)")
     axis.set_xlabel("Day")
+    return fig
+
+
+def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True) -> Figure:
+    """
+    Plot the total market longs & shorts over time
+
+    Arguments
+    ---------
+    simulator : Simulator
+        An instantiated simulator that has run trades with agents
+
+    exclude_first_agent : bool
+        If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
+
+    Returns
+    ---------
+    Figure
+    """
+    xtick_step = 10
+    nrows = 1
+    ncols = 2
+    fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.4)
+    for address in simulator.agents:
+        if (exclude_first_agent and address > 0) or (not exclude_first_agent):
+            dict_key = f"agent_{address}"
+            axes[0].plot(simulator.simulation_state[dict_key + "_total_longs"])
+            axes[1].plot(simulator.simulation_state[dict_key + "_total_shorts"])
+    axes[0].set_ylabel("Total longs")
+    axes[1].set_ylabel("Total shorts")
+    axes[0].legend()
+    trade_labels = simulator.simulation_state.run_trade_number[::xtick_step]
+    for axis in axes:
+        axis.set_xlabel("Trade number")
+        axis.set_xticks(trade_labels)
+        axis.set_xticklabels([str(x + 1) for x in trade_labels])
+        axis.set_box_aspect(1)
+    fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
+    fig.set_size_inches([2 * fig_size[0], fig_size[1]])
+    _ = fig.suptitle("Longs and shorts per agent", y=0.90)
     return fig
 
 
@@ -117,14 +155,10 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) 
     ncols = 2
     fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.5)
     for address in simulator.agents:
-        if exclude_first_agent and address > 0:
+        if (exclude_first_agent and address > 0) or (not exclude_first_agent):
             dict_key = f"agent_{address}"
-            axes[0].plot(
-                [item[2] for item in simulator.simulation_state[dict_key] if item is not None], label=f"agent {address}"
-            )
-            axes[1].plot(
-                [item[3] for item in simulator.simulation_state[dict_key] if item is not None], label=f"agent {address}"
-            )
+            axes[0].plot(simulator.simulation_state[dict_key + "_base"])
+            axes[1].plot(simulator.simulation_state[dict_key + "_lp_tokens"])
     axes[0].set_ylabel("Base asset in wallet")
     axes[1].set_ylabel("LP tokens in wallet")
     axes[0].legend()
@@ -136,7 +170,7 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) 
         axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
     fig.set_size_inches([2 * fig_size[0], fig_size[1]])
-    _ = fig.suptitle("Agent profitability", y=0.88)
+    _ = fig.suptitle("Agent profitability", y=0.90)
     return fig
 
 
