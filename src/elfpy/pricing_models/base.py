@@ -90,6 +90,11 @@ class PricingModel(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def model_type(self) -> str:
+        """Unique identifier given to the model, should be lower snake_cased name"""
+        raise NotImplementedError
+
+    @abstractmethod
     def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError

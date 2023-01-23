@@ -33,6 +33,9 @@ class YieldSpacePricingModel(PricingModel):
     def model_name(self) -> str:
         return "YieldSpace"
 
+    def model_type(self) -> str:
+        return "yieldspace"
+
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,

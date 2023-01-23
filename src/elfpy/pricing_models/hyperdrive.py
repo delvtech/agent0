@@ -28,6 +28,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     def model_name(self) -> str:
         return "Hyperdrive"
 
+    def model_type(self) -> str:
+        return "hyperdrive"
+
     def calc_in_given_out(
         self,
         out: Quantity,
