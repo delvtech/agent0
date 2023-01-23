@@ -8,54 +8,19 @@ Testing for the calc_out_given_in of the pricing models.
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=duplicate-code
 
-from dataclasses import dataclass
 import decimal
-from typing import Type
 import unittest
 import numpy as np
+from test_dataclasses import (
+    TestCaseCalcOutGivenInSuccess,
+    TestResultCalcOutGivenInSuccess,
+    TestCaseCalcOutGivenInFailure,
+)
 
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
-
-
-@dataclass
-class TestCaseCalcOutGivenInSuccess:
-    """Dataclass for calc_out_given_in success test cases"""
-
-    in_: Quantity
-    market_state: MarketState
-    fee_percent: float
-    days_remaining: float
-    time_stretch_apy: float
-
-    __test__ = False  # pytest: don't test this class
-
-
-@dataclass
-class TestCaseCalcOutGivenInFailure:
-    """Dataclass for calc_out_given_in failure test cases"""
-
-    in_: Quantity
-    market_state: MarketState
-    fee_percent: float
-    time_remaining: StretchedTime
-    exception_type: Type[Exception]
-
-    __test__ = False  # pytest: don't test this class
-
-
-@dataclass
-class TestResultCalcOutGivenInSuccess:
-    """Dataclass for calc_out_given_in test results"""
-
-    without_fee_or_slippage: float
-    without_fee: float
-    yieldspace_fee: float
-    yieldspace_with_fee: float
-
-    __test__ = False  # pytest: don't test this class
 
 
 class TestCalcOutGivenIn(unittest.TestCase):
@@ -147,11 +112,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=102.50516899477225,
                     # fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
-                    yieldspace_fee=0.02506718336486724,
+                    fee=0.02506718336486724,
                     # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.02506718336486724
                     #          = 102.48010181140738
-                    yieldspace_with_fee=102.48010181140738,
+                    with_fee=102.48010181140738,
                 ),
             ),
             # High fee percentage - 20%.
@@ -175,11 +140,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     without_fee_or_slippage=102.50671833648673,
                     without_fee=102.50516899477225,
                     # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
-                    yieldspace_fee=0.5013436672973448,
+                    fee=0.5013436672973448,
                     # with_fee = d_y' - fee
                     #          = 102.50516899477225 - 0.5013436672973448
                     #          = 102.0038253274749
-                    yieldspace_with_fee=102.0038253274749,
+                    with_fee=102.0038253274749,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -217,11 +182,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=10235.514826394327,
                     # fee = 0.01 * (p - 1) * 10_000 = 2.506718336486724
-                    yieldspace_fee=2.506718336486724,
+                    fee=2.506718336486724,
                     # with_fee = d_y' - fee
                     #          = 10235.514826394327 - 2.506718336486724
                     #          = 10233.00810805784
-                    yieldspace_with_fee=10233.00810805784,
+                    with_fee=10233.00810805784,
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
@@ -260,11 +225,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=81138.27602200207,
                     # fee = 0.01 * (p - 1) * 80_000 = 20.053746691893792
-                    yieldspace_fee=20.053746691893792,
+                    fee=20.053746691893792,
                     # with_fee = d_y' - fee
                     #          = 81138.27602200207 - 20.053746691893792
                     #          = 81118.22227531018
-                    yieldspace_with_fee=81118.22227531018,
+                    with_fee=81118.22227531018,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -319,11 +284,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=204.46650180319557,
                     # fee = 0.01 * (p - 1) * 200 = 0.044699828573532496
-                    yieldspace_fee=0.044699828573532496,
+                    fee=0.044699828573532496,
                     # with_fee = d_y' - fee
                     #          = 204.46650180319557 - 0.044699828573532496
                     #          = 204.42180197462204
-                    yieldspace_with_fee=204.42180197462204,
+                    with_fee=204.42180197462204,
                 ),
             ),
             # Very unbalanced reserves.
@@ -377,11 +342,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
                     # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    yieldspace_fee=0.1247814132813505,
+                    fee=0.1247814132813505,
                     # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
-                    yieldspace_with_fee=212.35073531111888,
+                    with_fee=212.35073531111888,
                 ),
             ),
             # A term of a quarter year.
@@ -435,11 +400,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=206.14340814948082,
                     # fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
-                    yieldspace_fee=0.06144677994914538,
+                    fee=0.06144677994914538,
                     # with_fee = d_y' - fee
                     #          = 206.14340814948082 - 0.06144677994914538
                     #          = 206.08196136953168
-                    yieldspace_with_fee=206.08196136953168,
+                    with_fee=206.08196136953168,
                 ),
             ),
             # A time stretch targeting 10% APY.
@@ -493,11 +458,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # Note that this is slightly smaller than the without slippage value
                     without_fee=212.47551672440022,
                     # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                    yieldspace_fee=0.1247814132813505,
+                    fee=0.1247814132813505,
                     # with_fee = d_y' - fee
                     #          = 212.47551672440022 - 0.1247814132813505
                     #          = 212.35073531111888
-                    yieldspace_with_fee=212.35073531111888,
+                    with_fee=212.35073531111888,
                 ),
             ),
         ]
@@ -583,11 +548,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=97.55314236719278,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                    yieldspace_fee=0.024454185805248493,
+                    fee=0.024454185805248493,
                     # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.024454185805248493
                     #          = 97.52868818138752
-                    yieldspace_with_fee=97.52868818138752,
+                    with_fee=97.52868818138752,
                 ),
             ),
             # High fee percentage - 20%.
@@ -611,11 +576,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     without_fee_or_slippage=97.55458141947516,
                     without_fee=97.55314236719278,
                     # fee = 0.2 * (1 - (1 / p)) * 100 = 0.48908371610497
-                    yieldspace_fee=0.48908371610497,
+                    fee=0.48908371610497,
                     # with_fee = d_x' - fee
                     #          = 97.55314236719278 - 0.48908371610497
                     #          = 97.0640586510878
-                    yieldspace_with_fee=97.0640586510878,
+                    with_fee=97.0640586510878,
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
@@ -655,11 +620,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=9740.77011591768,
                     # fee = 0.01 * (1 - (1 / p)) * 10_000 = 2.4454185805248496
-                    yieldspace_fee=2.4454185805248496,
+                    fee=2.4454185805248496,
                     # with_fee = d_x' - fee
                     #          = 9740.77011591768 - 2.4454185805248496
                     #          = 9738.324697337155
-                    yieldspace_with_fee=9738.324697337155,
+                    with_fee=9738.324697337155,
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
@@ -699,11 +664,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=76850.14470187116,
                     # fee = 0.01 * (1 - (1 / p)) * 80_000 = 19.563348644198797
-                    yieldspace_fee=19.563348644198797,
+                    fee=19.563348644198797,
                     # with_fee = d_x' - fee
                     #          = 76850.14470187116 - 19.563348644198797
                     #          = 76830.58135322697
-                    yieldspace_with_fee=76830.58135322697,
+                    with_fee=76830.58135322697,
                 ),
             ),
             # Non-trivial initial share price and share price.
@@ -753,11 +718,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=97.81305379542755,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                    yieldspace_fee=0.02186131575348005,
+                    fee=0.02186131575348005,
                     # with_fee = d_x' - fee
                     #          = 97.81305379542755 - 0.02186131575348005
                     #          = 97.79119247967407
-                    yieldspace_with_fee=97.79119247967407,
+                    with_fee=97.79119247967407,
                 ),
             ),
             # Very unbalanced reserves.
@@ -808,11 +773,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=94.12678195475019,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731877
-                    yieldspace_fee=0.05872670595731899,
+                    fee=0.05872670595731899,
                     # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
-                    yieldspace_with_fee=94.06805524879287,
+                    with_fee=94.06805524879287,
                 ),
             ),
             # A term of a quarter year.
@@ -868,11 +833,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=97.01895001129014,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.0298075994717949
-                    yieldspace_fee=0.0298075994717949,
+                    fee=0.0298075994717949,
                     # with_fee = d_x' - fee
                     #          = 97.01895001129014 - 0.0298075994717949
                     #          = 96.98914241181835
-                    yieldspace_with_fee=96.98914241181835,
+                    with_fee=96.98914241181835,
                 ),
             ),
             # A time stretch targetting 10% APY.
@@ -928,11 +893,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     # value.
                     without_fee=94.12678195475019,
                     # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
-                    yieldspace_fee=0.05872670595731899,
+                    fee=0.05872670595731899,
                     # with_fee = d_x' - fee
                     #          = 94.12678195475019 - 0.05872670595731899
                     #          = 94.06805524879287
-                    yieldspace_with_fee=94.06805524879287,
+                    with_fee=94.06805524879287,
                 ),
             ),
         ]
@@ -971,12 +936,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 if model_name == "YieldSpace":
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.fee,
-                        expected_result.yieldspace_fee,
+                        expected_result.fee,
                         err_msg="unexpected yieldspace fee",
                     )
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.with_fee,
-                        expected_result.yieldspace_with_fee,
+                        expected_result.with_fee,
                         err_msg="unexpected yieldspace with_fee",
                     )
                 else:
