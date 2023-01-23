@@ -2,11 +2,6 @@
 Testing for the calc_in_given_out of the pricing models.
 """
 
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
 # pylint: disable=line-too-long
 
 import decimal
