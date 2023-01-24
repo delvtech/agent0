@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
