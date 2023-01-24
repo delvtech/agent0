@@ -321,4 +321,10 @@ class TestAgent(unittest.TestCase):
                 )
             )
         for agent in agent_list:
-            assert agent.wallet.state_keys == list(agent.wallet.state)
+            expected_keys = [
+                f"agent_{agent.address}_base",
+                f"agent_{agent.address}_lp_tokens",
+                f"agent_{agent.address}_total_longs",
+                f"agent_{agent.address}_total_shorts",
+            ]
+            assert expected_keys == list(agent.wallet.state)

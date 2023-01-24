@@ -130,7 +130,7 @@ class Simulator:
         """
         for agent in agent_list:
             self.agents.update({agent.wallet.address: agent})
-            for key in agent.wallet.state_keys:
+            for key in agent.wallet.state.__dict__:
                 setattr(self.simulation_state, key, [None] * self.run_trade_number)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
