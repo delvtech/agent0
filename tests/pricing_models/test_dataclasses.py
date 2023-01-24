@@ -114,7 +114,7 @@ class TestCaseCalcOutGivenInFailure:
     market_state: MarketState
     fee_percent: float
     time_remaining: StretchedTime
-    exception_type: Type[Exception]
+    exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
     __test__ = False  # pytest: don't test this class
 

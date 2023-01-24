@@ -1363,11 +1363,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel()]
+        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
 
         # Failure test cases.
         test_cases = [
             TestCaseCalcOutGivenInFailure(
+                # amount negative
                 in_=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1379,6 +1380,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
                 exception_type=AssertionError,
             ),
+            # amount 0
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
@@ -1394,6 +1396,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # share reserves negative
                     share_reserves=-1,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1407,6 +1410,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
+                    # bond reserves negative
                     bond_reserves=-1,
                     share_price=1,
                     init_share_price=1,
@@ -1423,6 +1427,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
+                # fee negative
                 fee_percent=-1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
                 exception_type=AssertionError,
@@ -1435,6 +1440,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
+                # fee above 1
                 fee_percent=1.1,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
                 exception_type=AssertionError,
@@ -1448,6 +1454,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     init_share_price=1,
                 ),
                 fee_percent=0.01,
+                # days remaining negative
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1),
                 exception_type=AssertionError,
             ),
@@ -1460,6 +1467,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     init_share_price=1,
                 ),
                 fee_percent=0.01,
+                # days remaining == 365, will get divide by zero error
                 time_remaining=StretchedTime(days=365, time_stretch=1),
                 exception_type=AssertionError,
             ),
@@ -1472,10 +1480,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     init_share_price=1,
                 ),
                 fee_percent=0.01,
+                # days remaining > 365
                 time_remaining=StretchedTime(days=500, time_stretch=1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcOutGivenInFailure(
+                # amount very high, can't make trade
                 in_=Quantity(amount=10_000_000, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1485,7 +1495,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
-                exception_type=decimal.InvalidOperation,
+                exception_type=(AssertionError, decimal.InvalidOperation),
             ),
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
@@ -1493,6 +1503,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=2,
+                    # init_share_price 0
                     init_share_price=0,
                 ),
                 fee_percent=0.01,
@@ -1504,6 +1515,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
+                    # share_price < init_share_price
                     share_price=1,
                     init_share_price=1.5,
                 ),
@@ -1516,6 +1528,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
+                    # share_price 0
                     share_price=0,
                     init_share_price=1.5,
                 ),
@@ -1524,12 +1537,13 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             TestCaseCalcOutGivenInFailure(
+                # amount < 1 wei
                 in_=Quantity(amount=0.5e-18, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
@@ -1538,10 +1552,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # share_reserves < 1 wei
                     share_reserves=0.5e-18,
                     bond_reserves=1_000_000,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
@@ -1551,9 +1566,10 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
+                    # bond reserves < 1 wei
                     bond_reserves=0.5e-18,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
@@ -1562,10 +1578,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,
                     bond_reserves=1,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 fee_percent=0.01,
                 time_remaining=StretchedTime(days=91.25, time_stretch=1),
