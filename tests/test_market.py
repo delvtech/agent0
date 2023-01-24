@@ -163,7 +163,8 @@ class BaseMarketTest(unittest.TestCase):
 
     def run_market_test_close_short(
         self, agent_policy, expected_deltas: Deltas, delete_logs=True, partial=None, tick_time=None
-    ):
+    ):  # pylint: disable=too-many-arguments
+        # disabling pylint because this function is used in 3 tests w/ tiny parameter tweaks
         """Test market trades result in the expected wallet balances"""
         simulator = self.set_up_test(agent_policies=[agent_policy])
         agent = simulator.agents[1]
