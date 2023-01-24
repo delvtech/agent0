@@ -33,10 +33,8 @@ class BaseSimTest(unittest.TestCase):
         output_utils.setup_logging(log_filename, log_level=log_level)
 
     @staticmethod
-    def setup_simulator_inputs(
-        config_file, override_dict=None
-    ) -> tuple[Config, Market, Dict[int, Agent], Generator, RandomSimulationVariables]:
-        """Instantiate input objects to the simulator class"""
+    def setup_config(config_file, override_dict=None) -> Config:
+        """Creates a config from a config file and an override dictionary"""
         if override_dict is None:
             override_dict = {}
         config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
@@ -80,7 +78,7 @@ class BaseSimTest(unittest.TestCase):
         assert simulator.rng == new_rng
         for bad_input in ([1234, "1234", RandomState(1234)],):
             with self.assertRaises(TypeError):
-                simulator.set_rng(bad_input)
+                simulator.set_rng(bad_input)  # type: ignore
         output_utils.close_logging(delete_logs=delete_logs)
 
     def run_log_config_variables_test(self, delete_logs=True):
