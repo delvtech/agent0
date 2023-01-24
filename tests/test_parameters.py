@@ -50,7 +50,7 @@ class BaseParameterTest(unittest.TestCase):
                 custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
                 expected_result_dict = expected_result[custom_agent_index]
                 for key, value in expected_result_dict.items():  # for each custom parameter to check
-                    np.testing.assert_almost_equal(
+                    np.testing.assert_equal(
                         getattr(agent, key),
                         value,
                         err_msg=f"{key} does not equal {value}",
@@ -62,8 +62,6 @@ class CustomParameterTests(BaseParameterTest):
 
     def test_successfully_pass_custom_parameters(self):
         """Test successfully setting to passsed in values"""
-        # TestCaseParameter(agent_policies=["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"])
-        # TestResultParameter(expected_result=[{"amount_to_lp": 200}, {"amount_to_trade": 500}])
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
         self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
