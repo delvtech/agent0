@@ -10,6 +10,7 @@ Testing for the ElfPy package modules
 from dataclasses import dataclass
 import unittest
 import logging
+from typing import Any
 
 import numpy as np
 import utils_for_tests as test_utils  # utilities for testing
@@ -97,28 +98,19 @@ class BaseMarketTest(unittest.TestCase):
                         ),
                     )
 
-    # I'd make this a static method but you can't call assertEqual on a static method
-    # reference https://stackoverflow.com/questions/27514589/using-assertequals-in-a-static-method-in-python
-    def compare_thing(self, thing: str, expected_thing, actual_thing):
+    def assert_equal_and_log(self, thing: str, expected: Any, actual: Any):
         """Compare actual thing to expected thing"""
-        logging.debug(
-            "=== %s ===\nexpected %s: %s\nactual %s: %s",
-            thing.upper(),
-            thing,
-            expected_thing,
-            thing,
-            actual_thing,
-        )
-        self.assertEqual(expected_thing, actual_thing, f"{thing} do not match")
+        logging.debug("=== %s ===\nexpected %s: %s\nactual %s: %s", thing.upper(), thing, expected, thing, actual)
+        self.assertEqual(expected, actual, f"{thing} do not match")
 
     def compare_deltas(self, actual_deltas: Deltas, expected_deltas: Deltas):
         """Compare actual deltas to expected deltas"""
-        self.compare_thing("market deltas", expected_deltas.market_deltas, actual_deltas.market_deltas)
-        self.compare_thing("agent deltas", expected_deltas.agent_deltas, actual_deltas.agent_deltas)
+        self.assert_equal_and_log("market deltas", expected_deltas.market_deltas, actual_deltas.market_deltas)
+        self.assert_equal_and_log("agent deltas", expected_deltas.agent_deltas, actual_deltas.agent_deltas)
 
     def compare_wallets(self, actual_wallet: Wallet, expected_wallet: Wallet):
         """Compare actual wallet to expected wallet"""
-        self.compare_thing("wallet", expected_wallet, actual_wallet)
+        self.assert_equal_and_log("wallet", expected_wallet, actual_wallet)
 
     def run_market_test_open_long(self, agent_policy, expected_deltas: Deltas):
         """Test market trades result in the expected wallet balances"""
