@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from elfpy.simulators import Simulator
 
 
-## Plotting FIXME: Unify font size/type/weight between suptitle & title
+## Plotting
 def plot_market_lp_reserves(simulator: Simulator) -> Figure:
     """
     Plot the simulator market LP reserves per day

@@ -63,7 +63,7 @@ rc_params = {
     "axes.linewidth": LINEWIDTH,
     "axes.titlepad": TITLEPAD,  # more compact
     "axes.titlesize": LARGESIZE,
-    "axes.titleweight": "normal",
+    "axes.titleweight": "bold",
     "axes.xmargin": MARGIN,
     "axes.ymargin": MARGIN,
     "errorbar.capsize": 3.0,
