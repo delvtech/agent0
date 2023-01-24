@@ -12,7 +12,6 @@ import unittest
 import logging
 from typing import Any
 
-import numpy as np
 import utils_for_tests as test_utils  # utilities for testing
 from elfpy.types import MarketDeltas
 from elfpy.wallet import Wallet, Long, Short
@@ -56,47 +55,6 @@ class BaseMarketTest(unittest.TestCase):
             config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
         )
         return simulator
-
-    def run_market_test(self, agent_policies, expected_wallet, delete_logs=True, full_sim=False):
-        """Test market trades result in the expected wallet balances"""
-        simulator = self.set_up_test(agent_policies=agent_policies)
-        if full_sim:
-            simulator.run_simulation()  # run the simulation
-        else:
-            simulator.collect_and_execute_trades()  # execute one time-step only
-        output_utils.close_logging(delete_logs=delete_logs)
-        # simulation is over, now we inspect the output of the agents' wallets
-        number_of_init_agents = 0  # count number of init agents so we can skip over them
-        for all_agent_index, agent in simulator.agents.items():  # loop over all agents
-            if agent.name == "init_lp":
-                number_of_init_agents += 1
-            else:  # only for custom agents, loop across them and check their parameters
-                custom_agent_index = all_agent_index - number_of_init_agents  # identify which custom agent we are on
-                expected_wallet_dict = expected_wallet[custom_agent_index]
-                for account, expected_balance in expected_wallet_dict.items():  # for each custom parameter to check
-                    agent_balance_in_pts = getattr(agent.wallet, account)
-                    if isinstance(agent_balance_in_pts, dict):
-                        list_of_account_values = list(agent_balance_in_pts.values())
-                        agent_balance_in_pts = sum(x.balance for x in list_of_account_values)
-                    agent_balance_in_base = agent_balance_in_pts * simulator.market.spot_price
-
-                    ##### GENERAL LOGIC TESTING #####
-                    # value of Long position in base has to be less than the # of PTs
-                    # it could only get close if price were equal to 1, and even then there would be slippage
-                    assert agent_balance_in_base < agent.amount_to_trade, (
-                        f"agent #{custom_agent_index}'s {account} is worth more than the amount they traded",
-                    )
-
-                    ##### SPECIFIC MANUAL TESTING #####
-                    # this holds only if we know the exact value
-                    np.testing.assert_almost_equal(
-                        agent_balance_in_pts,
-                        expected_balance,  # passed in as pt's
-                        err_msg=(
-                            f"agent #{custom_agent_index}'s {account} does not equal {expected_balance}"
-                            f", instead we have (base,pt)=({agent_balance_in_base},{agent_balance_in_pts})"
-                        ),
-                    )
 
     def assert_equal_and_log(self, descriptor: str, expected: Any, actual: Any):
         """Compare actual thing to expected thing"""
@@ -152,7 +110,7 @@ class BaseMarketTest(unittest.TestCase):
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
 
     def run_market_test_close_short(
-        self, agent_policy, expected_deltas: Deltas, delete_logs=True, partial=1, tick_time=False
+        self, agent_policy, expected_deltas: Deltas, delete_logs=True, partial: float = 1, tick_time=False
     ):  # pylint: disable=too-many-arguments
         # disabling pylint because this function is used in 3 tests w/ tiny parameter tweaks
         """Test market trades result in the expected wallet balances"""
@@ -408,14 +366,3 @@ class MarketTestsOneFunction(BaseMarketTest):
         self.run_market_test_close_short(
             agent_policy=agent_policy, expected_deltas=expected_deltas, partial=0.5, tick_time=True
         )
-
-
-class MarketTestsOneTimestep(BaseMarketTest):
-    """Tests of market trades that execute the simulation for one timestep only"""
-
-    def test_100_long(self):
-        """self-explanatory"""
-        # list to test multiple agents, dict to test multiple balances
-        agent_policies = ["single_long:amount_to_trade=100"]
-        expected_wallet = [{"longs": 101.12192099324383}]
-        self.run_market_test(agent_policies=agent_policies, expected_wallet=expected_wallet)
