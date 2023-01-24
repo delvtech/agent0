@@ -83,6 +83,30 @@ class TestCaseCalcOutGivenInSuccess:
 
 
 @dataclass
+class TestResultCalcOutGivenInSuccess:
+    """Dataclass for calc_out_given_in test results"""
+
+    without_fee_or_slippage: float
+    without_fee: float
+    fee: float
+    with_fee: float
+
+    __test__ = False  # pytest: don't test this class
+
+
+@dataclass
+class TestResultCalcOutGivenInSuccessByModel:
+    """Dataclass for calc_out_given_in success test cases by pricing_model"""
+
+    def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
+        return getattr(self, key)
+
+    yieldspace: TestResultCalcOutGivenInSuccess
+    hyperdrive: TestResultCalcOutGivenInSuccess
+
+
+@dataclass
 class TestCaseCalcOutGivenInFailure:
     """Dataclass for calc_out_given_in failure test cases"""
 
@@ -96,12 +120,12 @@ class TestCaseCalcOutGivenInFailure:
 
 
 @dataclass
-class TestResultCalcOutGivenInSuccess:
-    """Dataclass for calc_out_given_in test results"""
+class TestCaseCalcOutGivenInFailureByModel:
+    """Dataclass for calc_out_given_in failure test cases by pricing_model"""
 
-    without_fee_or_slippage: float
-    without_fee: float
-    fee: float
-    with_fee: float
+    def __getitem__(self, key):
+        """Get object attribute referenced by `key`"""
+        return getattr(self, key)
 
-    __test__ = False  # pytest: don't test this class
+    yieldspace: TestCaseCalcOutGivenInFailure
+    hyperdrive: TestCaseCalcOutGivenInFailure
