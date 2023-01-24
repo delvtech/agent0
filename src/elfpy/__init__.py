@@ -38,6 +38,7 @@ LINEWIDTH = 0.6
 MARGIN = 0.05
 MATHTEXT = shutil.which("latex") is not None  # True if latex is installed, as required by matplotlib
 SMALLSIZE = "medium"
+TITLEWEIGHT = "bold"
 TICKDIR = "out"
 TICKLEN = 4.0
 TICKLENRATIO = 0.5  # very noticeable length reduction
@@ -63,7 +64,7 @@ rc_params = {
     "axes.linewidth": LINEWIDTH,
     "axes.titlepad": TITLEPAD,  # more compact
     "axes.titlesize": LARGESIZE,
-    "axes.titleweight": "bold",
+    "axes.titleweight": TITLEWEIGHT,
     "axes.xmargin": MARGIN,
     "axes.ymargin": MARGIN,
     "errorbar.capsize": 3.0,
@@ -72,7 +73,7 @@ rc_params = {
     "figure.dpi": 100,
     "figure.facecolor": "#f4f4f4",  # similar to MATLAB interface
     "figure.titlesize": LARGESIZE,
-    "figure.titleweight": "bold",  # differentiate from axes titles
+    "figure.titleweight": TITLEWEIGHT,
     "font.family": FONTNAME,
     "font.size": FONTSIZE,
     "grid.alpha": GRIDALPHA,  # lightweight unobtrusive gridlines
