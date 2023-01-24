@@ -133,7 +133,7 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
     return fig
 
 
-def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int=10) -> Figure:
+def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
     """
     Plot the wallet base asset and LP token quantities over time
 
