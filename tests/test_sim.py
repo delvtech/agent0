@@ -9,6 +9,7 @@ Testing for the ElfPy package modules
 
 import logging
 import unittest
+
 import numpy as np
 from numpy.random import RandomState
 
@@ -134,6 +135,7 @@ class BaseSimTest(unittest.TestCase):
                 config=invalid_config,
                 market=simulator.market,
             )
+
         output_utils.close_logging(delete_logs=delete_logs)
 
     def run_simulation_state_test(self, delete_logs=True):

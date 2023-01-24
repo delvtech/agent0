@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Iterable
 import logging
 import numpy as np
 
-from elfpy.utils.outputs import float_to_string
 from elfpy.wallet import Long, Short, Wallet
 from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
 
@@ -313,11 +312,6 @@ class Agent:
                     self.wallet.shorts[mint_time].margin += short.margin
                 else:
                     self.wallet.shorts.update({mint_time: short})
-            if self.wallet.shorts[mint_time].balance == 0:
-                # Add the remaining margin balance to the wallet's base.
-                self.wallet.base += self.wallet.shorts[mint_time].margin
-                # Remove the empty short from the wallet.
-                del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """
@@ -417,14 +411,14 @@ class Agent:
             ),
             self.wallet.address,
             lost_or_made,
-            float_to_string(profit_and_loss),
-            float_to_string(spend),
+            profit_and_loss,
+            spend,
             annual_percentage_rate,
             holding_period_rate,
-            float_to_string(market.time, precision=2),
-            float_to_string(total_value),
-            float_to_string(base),
-            float_to_string(sum(long.balance for long in longs)),
-            float_to_string(sum(short.balance for short in shorts)),
+            market.time,
+            total_value,
+            base,
+            sum(long.balance for long in longs),
+            sum(short.balance for short in shorts),
             price,
         )
