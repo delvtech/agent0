@@ -197,8 +197,6 @@ class Market:
         trade_amount: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """
-        ##############################
-        ### SHORT ACCOUNTING LOGIC ###
         shorts need their margin account to cover the worst case scenario (p=1)
         margin comes from 2 sources:
         - the proceeds from your short sale (p)
@@ -207,7 +205,6 @@ class Market:
         so we have the following identity:
             total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
         this guarantees that bonds in the system are always fully backed by an equal amount of base
-        ##############################
         """
         # Perform the trade.
         trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -251,15 +248,12 @@ class Market:
         mint_time: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """
-        ###########################
-        ### CLOSING SHORT LOGIC ###
         when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
         the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
         at the same time, margin in their account is drained to pay for the bonds being bought back
         so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
         that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
         for more on short accounting, see the open short method
-        ###########################
         """
 
         # Clamp the trade amount to the bond reserves.
