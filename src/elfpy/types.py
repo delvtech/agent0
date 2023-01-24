@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 
-from elfpy.utils.outputs import float_to_string
 import elfpy.utils.time as time_utils
 
 if TYPE_CHECKING:
@@ -116,9 +115,9 @@ class MarketAction:
             if key == "action_type":
                 output_string += f" execute {value}()"
             elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
             elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {float_to_string(value)}"
+                output_string += f" {key}: {value}"
         return output_string
 
 

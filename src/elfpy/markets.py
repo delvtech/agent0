@@ -234,7 +234,7 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=trade_amount,
         )
-        # amount to cover the worst case scenario where p=1, this amount is 1-p
+        # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
         max_loss = trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
             address=wallet_address,
