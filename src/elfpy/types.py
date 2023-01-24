@@ -350,24 +350,22 @@ class SimulationState:
             else:
                 setattr(self, key, [val])
 
-    def update_agent_wallet(self, log_index: int, agent: Agent) -> None:
+    def update_agent_wallet(self, agent: Agent) -> None:
         """Update each entry in the SimulationState's copy for the agent wallet state
         by appending to the list for each key, or creating a new key.
 
         Arguments
         ---------
-        log_index : int
-            Some index indicating the log entry, typically the simulation run_trade_number
         agent: Agent
             An instantiated Agent object
         """
-        d_state = [log_index] + list(agent.wallet.state)
-        if hasattr(self, f"agent_{agent.wallet.address}"):
-            agent_state = getattr(self, f"agent_{agent.wallet.address}")
-            agent_state.append(d_state)
-            setattr(self, f"agent_{agent.wallet.address}", agent_state)
-        else:
-            setattr(self, f"agent_{agent.wallet.address}", [d_state])
+        for key, value in agent.wallet.state.items():
+            if hasattr(self, key):
+                key_list = getattr(self, key)
+                key_list.append(value)
+                setattr(self, key, key_list)
+            else:
+                setattr(self, key, [value])
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""

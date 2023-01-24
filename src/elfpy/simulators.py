@@ -129,14 +129,9 @@ class Simulator:
             A list of instantiated Agent objects
         """
         for agent in agent_list:
-            # add the agent to the agents list
             self.agents.update({agent.wallet.address: agent})
-            # update the simulator state to include null wallet for each prior trade
-            state_vector_length = len(agent.wallet.state) + 1
-            agent_state = []
-            for trade_number in range(self.run_trade_number):
-                agent_state.append([trade_number] + [None] * state_vector_length)
-            setattr(self.simulation_state, f"agent_{agent.wallet.address}", agent_state)
+            for key in agent.wallet.state:
+                setattr(self.simulation_state, key, [None] * self.run_trade_number)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
         """Get trades from the agent list, execute them, and update states
@@ -304,7 +299,7 @@ class Simulator:
         self.simulation_state.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
         self.simulation_state.update_market_state(self.market.market_state)
         for agent in self.agents.values():
-            self.simulation_state.update_agent_wallet(self.run_trade_number, agent)
+            self.simulation_state.update_agent_wallet(agent)
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market
