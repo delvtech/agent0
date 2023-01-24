@@ -104,6 +104,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
+        # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
@@ -119,13 +120,13 @@ class Market:
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
-                wallet_address=agent_action.wallet_address,  # in bonds: that's the thing you want to short
-                trade_amount=agent_action.trade_amount,
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             market_deltas, agent_deltas = self.close_short(
-                wallet_address=agent_action.wallet_address,  # in bonds: that's the thing you owe, and need to buy back
-                trade_amount=agent_action.trade_amount,
+                wallet_address=agent_action.wallet_address,
+                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                 mint_time=agent_action.mint_time,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
@@ -196,9 +197,17 @@ class Market:
         trade_amount: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-        will be conditional on the pricing model
+        ##############################
+        ### SHORT ACCOUNTING LOGIC ###
+        shorts need their margin account to cover the worst case scenario (p=1)
+        margin comes from 2 sources:
+        - the proceeds from your short sale (p)
+        - the max value you cover with base deposted from your wallet (1-p)
+        these two components are both priced in base, yet happily add up to 1.0 units of bonds
+        so we have the following identity:
+            total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
+        this guarantees that bonds in the system are always fully backed by an equal amount of base
+        ##############################
         """
         # Perform the trade.
         trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
@@ -225,16 +234,11 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=trade_amount,
         )
+        # amount to cover the worst case scenario where p=1, this amount is 1-p
         max_loss = trade_amount - trade_result.user_result.d_base
         wallet_deltas = Wallet(
             address=wallet_address,
             base=-max_loss,
-            # The margin account is seeded with the amount of bonds the trader
-            # shorted. As the trader closes out the short, the amount of base
-            # that every close operation "costs" will be debited from the
-            # margin account. Once the entire balance has been closed, the
-            # trader can withdraw the remaining margin balance into their
-            # wallet.
             shorts={self.time: Short(balance=trade_amount, margin=trade_amount)},
             fees_paid=trade_result.breakdown.fee,
         )
@@ -247,9 +251,15 @@ class Market:
         mint_time: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-            will be conditional on the pricing model
+        ###########################
+        ### CLOSING SHORT LOGIC ###
+        when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
+        the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
+        at the same time, margin in their account is drained to pay for the bonds being bought back
+        so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
+        that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
+        for more on short accounting, see the open short method
+        ###########################
         """
 
         # Clamp the trade amount to the bond reserves.
@@ -288,10 +298,7 @@ class Market:
         self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Log the trade result.
-        logging.debug(
-            "closing short: trade_result = %s",
-            trade_result,
-        )
+        logging.debug("closing short: trade_result = %s", trade_result)
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
@@ -299,16 +306,13 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-trade_amount,
         )
-        d_worst_case_scenario = trade_amount  # in the worst case for the short, p=1 and they owe the face value
-        # calculate the improvement in your max loss (worst case scenario - cost to close the short)
-        d_max_loss = d_worst_case_scenario + trade_result.user_result.d_base
         agent_deltas = Wallet(
             address=wallet_address,
-            base=d_max_loss,  # you get back in your wallet the improvement in your max loss (no longer need the margin)
+            base=trade_amount + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
             shorts={
                 mint_time: Short(
                     balance=-trade_amount,
-                    margin=-d_worst_case_scenario,
+                    margin=-trade_amount,
                 )
             },
             fees_paid=trade_result.breakdown.fee,
@@ -325,8 +329,7 @@ class Market:
         compute wallet update spec with specific details
             will be conditional on the pricing model
         """
-        # TODO: Why are we clamping elsewhere but we don't apply the trade at
-        # all here?
+        # TODO: Why are we clamping elsewhere but we don't apply the trade at all here?
         if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
             trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
