@@ -94,7 +94,7 @@ def plot_pool_apr(simulator: Simulator) -> Figure:
     return fig
 
 
-def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True) -> Figure:
+def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
     """
     Plot the total market longs & shorts over time
 
@@ -110,7 +110,6 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
     ---------
     Figure
     """
-    xtick_step = 10
     nrows = 1
     ncols = 2
     fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.4)
@@ -134,7 +133,7 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
     return fig
 
 
-def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) -> Figure:
+def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int=10) -> Figure:
     """
     Plot the wallet base asset and LP token quantities over time
 
@@ -150,7 +149,6 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True) 
     ---------
     Figure
     """
-    xtick_step = 10
     nrows = 1
     ncols = 2
     fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.5)

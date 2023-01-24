@@ -32,14 +32,12 @@ def get_simulator(
 
     Arguments
     ---------
-    rng : Generator
-        The random number generator that should be used in these simulations.
-        We pass this in to avoid restarting the generator after using it to
-        setting up the agents.
     config : Config
-        The simulator config.
+        the simulator config
     agents : list[Agent]
-        The agents to that should be used in the simulator.
+        the agents to that should be used in the simulator
+    random_sim_vars : RandomSimulationVariables
+        dataclass that contains variables for initiating and running simulations
     """
     # Sample the random simulation arguments.
     if random_sim_vars is None:
