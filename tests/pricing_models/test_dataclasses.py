@@ -43,6 +43,8 @@ class TestResultCalcInGivenOutSuccessByModel:
     yieldspace: TestResultCalcInGivenOutSuccess
     hyperdrive: TestResultCalcInGivenOutSuccess
 
+    __test__ = False  # pytest: don't test this class
+
 
 @dataclass
 class TestCaseCalcInGivenOutFailure:
@@ -67,3 +69,5 @@ class TestResultCalcInGivenOutFailureByModel:
 
     yieldspace: TestCaseCalcInGivenOutFailure
     hyperdrive: TestCaseCalcInGivenOutFailure
+
+    __test__ = False  # pytest: don't test this class
