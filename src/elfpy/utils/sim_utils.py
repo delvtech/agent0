@@ -97,9 +97,11 @@ def get_init_lp_agent(
         empty market object
     target_liquidity : float
         target total liquidity for LPer to provide (bonds+shares)
+        TODO: update this number
         the result will be within 7% of the target
     target_pool_apr : float
         target pool apr for the market
+        TODO: update this number
         the result will be within 0.001 of the target
     fee_percent : float
         how much the LPer will collect in fees
@@ -112,8 +114,8 @@ def get_init_lp_agent(
         Agent class that will perform the lp initialization action
     """
     # Wrapper functions are expected to have a lot of arguments
-    # pylint: disable=too-many-arguments
-    # get the reserve amounts for a small target liquidity to achieve a target pool APR
+    # pylint: disable=too-many-locals
+
     init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
         market_state=market.market_state,
         target_liquidity=init_liquidity,
@@ -121,25 +123,29 @@ def get_init_lp_agent(
         position_duration=market.position_duration,
     )[:2]
     # mock the short to assess what the delta market conditions will be
-    output_with_fee = market.pricing_model.calc_out_given_in(
-        in_=Quantity(amount=init_bond_reserves, unit=TokenType.BASE),
-        market_state=MarketState(
-            share_reserves=init_share_reserves,
-            bond_reserves=0,
-            share_price=market.market_state.init_share_price,
-            init_share_price=market.market_state.init_share_price,
-        ),
-        fee_percent=fee_percent,
-        time_remaining=market.position_duration,
-    ).breakdown.with_fee
-    # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
-    first_base_to_lp = init_share_reserves + output_with_fee
-    short_amount = init_bond_reserves
-    second_base_to_lp = target_liquidity - init_share_reserves
-    # budget is the full amount for LP & short
-    budget = first_base_to_lp + short_amount + second_base_to_lp
-    # construct the init_lp agent with desired budget, lp, and short amounts
-    init_lp_agent = import_module("elfpy.policies.init_lp").Policy(
+    delta_shares = 0
+    delta_base = 0
+    trade_result = None
+    for _ in range(6):
+        trade_result = market.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=init_bond_reserves, unit=TokenType.PT),
+            market_state=MarketState(
+                share_reserves=init_share_reserves + delta_shares,
+                bond_reserves=0,
+                share_price=market.market_state.share_price,
+                init_share_price=market.market_state.init_share_price,
+            ),
+            fee_percent=fee_percent,
+            time_remaining=market.position_duration,
+        )
+        delta_base = trade_result.user_result.d_base
+        delta_shares = delta_base / market.market_state.share_price
+    max_loss = init_bond_reserves - trade_result.user_result.d_base if trade_result is not None else 0
+    init_base_reserves = init_share_reserves * market.market_state.share_price
+    first_base_to_lp = init_base_reserves + delta_base  # add back delta_base to immunize effect of short
+    second_base_to_lp = target_liquidity - init_base_reserves  # remember delta_base is immunized
+    budget = first_base_to_lp + max_loss + second_base_to_lp  # full amount needed to trade
+    init_lp_agent = import_module("elfpy.policies.init_lp").Policy(  # construct the agent with desired amounts
         wallet_address=0,
         budget=budget,
         first_base_to_lp=first_base_to_lp,
