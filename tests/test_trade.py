@@ -45,7 +45,7 @@ class BaseTradeTest(unittest.TestCase):
         simulator = test_utils.setup_simulation_entities(
             config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
         )
-        if target_pool_apr:  # check that apr is within 0.005 of the target
+        if target_pool_apr:
             market_apr = simulator.market.rate
             # use rtol here because liquidity spans 2 orders of magnitude
             assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-13), (
@@ -56,7 +56,7 @@ class BaseTradeTest(unittest.TestCase):
                 f"test_trade.run_base_lp_test: {target_pool_apr=} equals {market_apr=}"
                 f" within {(np.abs(market_apr - target_pool_apr)/target_pool_apr):.2e}"
             )
-        if target_liquidity:  # check that the liquidity is within 0.001 of the target
+        if target_liquidity:
             # TODO: This will not work with Hyperdrive PM
             total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
             # use rtol here because liquidity spans 7 orders of magnitude
@@ -123,9 +123,7 @@ class SingleTradeTests(BaseTradeTest):
                 total_liquidity_old = market_old.pricing_model.calc_total_liquidity_from_reserves_and_price(
                     market_state=market_old.market_state, share_price=market_old.market_state.share_price
                 )
-                # total liquidity check
                 total_liquidity_new = share_reserves_new * simulator.market.market_state.share_price
-                # print(f"{total_liquidity_old=} and {total_liquidity_new=}")
                 assert np.allclose(total_liquidity_old, total_liquidity_new, atol=0, rtol=1e-15), (
                     f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {total_liquidity_old=}"
                     f"does not equal {total_liquidity_new=} "
