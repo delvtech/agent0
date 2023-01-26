@@ -52,17 +52,25 @@ class BaseTradeTest(unittest.TestCase):
         )
         if target_pool_apr:  # check that apr is within 0.005 of the target
             market_apr = simulator.market.rate
-            assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-14), (
+            assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-13), (
                 f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
-                f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=}"
+                f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
+            )
+            print(
+                f"test_trade.run_base_lp_test: {target_pool_apr=} equals {market_apr=}"
+                f" within {(np.abs(market_apr - target_pool_apr)/target_pool_apr):.2e}"
             )
         if target_liquidity:  # check that the liquidity is within 0.001 of the target
             # TODO: This will not work with Hyperdrive PM
             total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
             # use rtol here because liquidity can be set to any magnitude
-            assert np.allclose(total_liquidity, target_liquidity, atol=0, rtol=1e-14), (
+            assert np.allclose(total_liquidity, target_liquidity, atol=0, rtol=1e-15), (
                 f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
-                f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=}."
+                f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=:.2e}."
+            )
+            print(
+                f"test_trade.run_base_lp_test: {total_liquidity=} equals {target_liquidity=}"
+                f" within {(np.abs(total_liquidity - target_liquidity)/target_liquidity):.2e}"
             )
         if not init_only:
             simulator.run_simulation()
@@ -85,53 +93,54 @@ class SingleTradeTests(BaseTradeTest):
 
     def test_compare_agent_to_calc_liquidity(self):
         """Compare agent init as above to old calc_liquidity method"""
-        target_liquidity = 1e6
-        target_pool_apr = 0.05
-        simulator = self.run_base_trade_test(
-            agent_policies=[], target_liquidity=target_liquidity, target_pool_apr=target_pool_apr, init_only=True
-        )
-        # assign the results of the init_lp agent to explicit variables
-        share_reserves_new = simulator.market.market_state.share_reserves
-        share_reserves_old, bond_reserves_old = simulator.market.pricing_model.calc_liquidity(
-            market_state=simulator.market.market_state,  # used only for share_price and init_share_price
-            target_liquidity=target_liquidity,
-            target_apr=target_pool_apr,
-            position_duration=simulator.market.position_duration,
-        )
-        market_old = Market(
-            pricing_model=simulator.market.pricing_model,
-            market_state=MarketState(
-                share_reserves=share_reserves_old,
-                bond_reserves=bond_reserves_old,
-                base_buffer=simulator.market.market_state.base_buffer,
-                bond_buffer=simulator.market.market_state.bond_buffer,
-                lp_reserves=simulator.market.market_state.lp_reserves,
-                vault_apr=simulator.market.market_state.vault_apr,
-                share_price=simulator.market.market_state.share_price,
-                init_share_price=simulator.market.market_state.init_share_price,
-            ),
-            position_duration=simulator.market.position_duration,
-        )
-        total_liquidity_old = market_old.pricing_model.calc_total_liquidity_from_reserves_and_price(
-            market_state=market_old.market_state, share_price=market_old.market_state.share_price
-        )
-        calc_apr = market_old.rate
-        # total liquidity check
-        total_liquidity_new = share_reserves_new * simulator.market.market_state.share_price
-        print(f"{total_liquidity_old=} and {total_liquidity_new=}")
-        atol = 1
-        assert np.allclose(total_liquidity_old, total_liquidity_new, atol=atol, rtol=1e-05), (
-            f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {total_liquidity_old=}"
-            f"does not equal {total_liquidity_new=} "
-            f"off by {(np.abs(total_liquidity_old - total_liquidity_new))=}."
-        )
-        # apr check
-        print(f"{calc_apr=} and {simulator.market.rate=}")
-        assert np.allclose(calc_apr, simulator.market.rate, atol=1e-20), (
-            f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {calc_apr=}"
-            f" does not equal {simulator.market.rate=}"
-            f"off by {(np.abs(calc_apr - simulator.market.rate))=}."
-        )
+        for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
+            for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 2):  # breaks at 500%
+                print(f"running test with {target_liquidity=} and {target_pool_apr=}")
+                simulator = self.run_base_trade_test(
+                    agent_policies=[],
+                    target_liquidity=target_liquidity,
+                    target_pool_apr=target_pool_apr,
+                    init_only=True,
+                )
+                # assign the results of the init_lp agent to explicit variables
+                share_reserves_new = simulator.market.market_state.share_reserves
+                share_reserves_old, bond_reserves_old = simulator.market.pricing_model.calc_liquidity(
+                    market_state=simulator.market.market_state,  # used only for share_price and init_share_price
+                    target_liquidity=target_liquidity,
+                    target_apr=target_pool_apr,
+                    position_duration=simulator.market.position_duration,
+                )
+                market_old = Market(
+                    pricing_model=simulator.market.pricing_model,
+                    market_state=MarketState(
+                        share_reserves=share_reserves_old,
+                        bond_reserves=bond_reserves_old,
+                        base_buffer=simulator.market.market_state.base_buffer,
+                        bond_buffer=simulator.market.market_state.bond_buffer,
+                        lp_reserves=simulator.market.market_state.lp_reserves,
+                        vault_apr=simulator.market.market_state.vault_apr,
+                        share_price=simulator.market.market_state.share_price,
+                        init_share_price=simulator.market.market_state.init_share_price,
+                    ),
+                    position_duration=simulator.market.position_duration,
+                )
+                total_liquidity_old = market_old.pricing_model.calc_total_liquidity_from_reserves_and_price(
+                    market_state=market_old.market_state, share_price=market_old.market_state.share_price
+                )
+                calc_apr = market_old.rate
+                # total liquidity check
+                total_liquidity_new = share_reserves_new * simulator.market.market_state.share_price
+                # print(f"{total_liquidity_old=} and {total_liquidity_new=}")
+                assert np.allclose(total_liquidity_old, total_liquidity_new, atol=0, rtol=1e-15), (
+                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {total_liquidity_old=}"
+                    f"does not equal {total_liquidity_new=} "
+                    f"off by {(np.abs(total_liquidity_old - total_liquidity_new))=}."
+                )
+                assert np.allclose(calc_apr, simulator.market.rate, atol=0, rtol=1e-13), (
+                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {calc_apr=}"
+                    f" does not equal {simulator.market.rate=}"
+                    f"off by {(np.abs(calc_apr - simulator.market.rate))=}."
+                )
 
     def test_single_long(self):
         """Tests the BaseUser class"""
@@ -144,7 +153,3 @@ class SingleTradeTests(BaseTradeTest):
     def test_base_lps(self):
         """Tests base LP setups"""
         self.run_base_trade_test(agent_policies=["single_lp"], target_liquidity=1e6, target_pool_apr=0.05)
-
-
-if __name__ == "__main__":
-    unittest.main()

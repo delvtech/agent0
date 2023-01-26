@@ -366,7 +366,3 @@ class MarketTestsOneFunction(BaseMarketTest):
         self.run_market_test_close_short(
             agent_policy=agent_policy, expected_deltas=expected_deltas, partial=0.5, tick_time=True
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

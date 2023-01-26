@@ -97,12 +97,10 @@ def get_init_lp_agent(
         empty market object
     target_liquidity : float
         target total liquidity for LPer to provide (bonds+shares)
-        TODO: update this number
-        the result will be within 7% of the target
+        the result will be within 1e-15% of the target
     target_pool_apr : float
         target pool apr for the market
-        TODO: update this number
-        the result will be within 0.001 of the target
+        the result will be within 1e-13% of the target
     fee_percent : float
         how much the LPer will collect in fees
     init_liquidity : float
@@ -123,10 +121,10 @@ def get_init_lp_agent(
         position_duration=market.position_duration,
     )[:2]
     # mock the short to assess what the delta market conditions will be
-    delta_shares = 0
+    delta_shares = init_liquidity
     delta_base = 0
     trade_result = None
-    for _ in range(6):
+    for _ in range(11):
         trade_result = market.pricing_model.calc_out_given_in(
             in_=Quantity(amount=init_bond_reserves, unit=TokenType.PT),
             market_state=MarketState(
