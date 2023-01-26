@@ -2,11 +2,6 @@
 Testing for the ElfPy package modules
 """
 
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
-
 import unittest
 import logging
 
@@ -52,6 +47,7 @@ class BaseTradeTest(unittest.TestCase):
         )
         if target_pool_apr:  # check that apr is within 0.005 of the target
             market_apr = simulator.market.rate
+            # use rtol here because liquidity spans 2 orders of magnitude
             assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-13), (
                 f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
                 f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
@@ -63,7 +59,7 @@ class BaseTradeTest(unittest.TestCase):
         if target_liquidity:  # check that the liquidity is within 0.001 of the target
             # TODO: This will not work with Hyperdrive PM
             total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
-            # use rtol here because liquidity can be set to any magnitude
+            # use rtol here because liquidity spans 7 orders of magnitude
             assert np.allclose(total_liquidity, target_liquidity, atol=0, rtol=1e-15), (
                 f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
                 f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=:.2e}."
@@ -127,7 +123,6 @@ class SingleTradeTests(BaseTradeTest):
                 total_liquidity_old = market_old.pricing_model.calc_total_liquidity_from_reserves_and_price(
                     market_state=market_old.market_state, share_price=market_old.market_state.share_price
                 )
-                calc_apr = market_old.rate
                 # total liquidity check
                 total_liquidity_new = share_reserves_new * simulator.market.market_state.share_price
                 # print(f"{total_liquidity_old=} and {total_liquidity_new=}")
@@ -136,10 +131,10 @@ class SingleTradeTests(BaseTradeTest):
                     f"does not equal {total_liquidity_new=} "
                     f"off by {(np.abs(total_liquidity_old - total_liquidity_new))=}."
                 )
-                assert np.allclose(calc_apr, simulator.market.rate, atol=0, rtol=1e-13), (
-                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {calc_apr=}"
+                assert np.allclose(market_old.rate, simulator.market.rate, atol=0, rtol=1e-13), (
+                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_old.rate=}"
                     f" does not equal {simulator.market.rate=}"
-                    f"off by {(np.abs(calc_apr - simulator.market.rate))=}."
+                    f"off by {(np.abs(market_old.rate - simulator.market.rate))=}."
                 )
 
     def test_single_long(self):
