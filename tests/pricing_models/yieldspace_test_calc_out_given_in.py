@@ -4,6 +4,7 @@ Testing for the calc_out_given_in of the pricing models.
 
 # pylint: disable=too-many-lines
 # pylint: disable=line-too-long
+# pylint: disable=duplicate-code
 
 import decimal
 import unittest
