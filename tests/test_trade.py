@@ -106,7 +106,7 @@ class SingleTradeTests(BaseTradeTest):
                     target_apr=target_pool_apr,
                     position_duration=simulator.market.position_duration,
                 )
-                market_old = Market(
+                market_direct = Market(
                     pricing_model=simulator.market.pricing_model,
                     market_state=MarketState(
                         share_reserves=share_reserves_old,
@@ -120,8 +120,8 @@ class SingleTradeTests(BaseTradeTest):
                     ),
                     position_duration=simulator.market.position_duration,
                 )
-                total_liquidity_old = market_old.pricing_model.calc_total_liquidity_from_reserves_and_price(
-                    market_state=market_old.market_state, share_price=market_old.market_state.share_price
+                total_liquidity_old = market_direct.pricing_model.calc_total_liquidity_from_reserves_and_price(
+                    market_state=market_direct.market_state, share_price=market_direct.market_state.share_price
                 )
                 total_liquidity_new = share_reserves_new * simulator.market.market_state.share_price
                 assert np.allclose(total_liquidity_old, total_liquidity_new, atol=0, rtol=1e-15), (
@@ -129,10 +129,10 @@ class SingleTradeTests(BaseTradeTest):
                     f"does not equal {total_liquidity_new=} "
                     f"off by {(np.abs(total_liquidity_old - total_liquidity_new))=}."
                 )
-                assert np.allclose(market_old.rate, simulator.market.rate, atol=0, rtol=1e-13), (
-                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_old.rate=}"
+                assert np.allclose(market_direct.rate, simulator.market.rate, atol=0, rtol=1e-13), (
+                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_direct.rate=}"
                     f" does not equal {simulator.market.rate=}"
-                    f"off by {(np.abs(market_old.rate - simulator.market.rate))=}."
+                    f"off by {(np.abs(market_direct.rate - simulator.market.rate))=}."
                 )
 
     def test_single_long(self):
