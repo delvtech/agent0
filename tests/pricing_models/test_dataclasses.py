@@ -2,6 +2,7 @@
 Useful dataclasses for testing a pricing model's calc_in_given_out method
 """
 
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Type
 from elfpy.types import MarketState, Quantity, StretchedTime
