@@ -113,7 +113,6 @@ class SingleTradeTests(BaseTradeTest):
                     init_only=True,
                 )
                 # assign the results of the init_lp agent to explicit variables
-                share_reserves_agent = simulator.market.market_state.share_reserves
                 share_reserves_direct, bond_reserves_direct = simulator.market.pricing_model.calc_liquidity(
                     market_state=simulator.market.market_state,  # used only for share_price and init_share_price
                     target_liquidity=target_liquidity,
@@ -137,7 +136,9 @@ class SingleTradeTests(BaseTradeTest):
                 total_liquidity_direct = market_direct.pricing_model.calc_total_liquidity_from_reserves_and_price(
                     market_state=market_direct.market_state, share_price=market_direct.market_state.share_price
                 )
-                total_liquidity_agent = share_reserves_agent * simulator.market.market_state.share_price
+                total_liquidity_agent = simulator.market.pricing_model.calc_total_liquidity_from_reserves_and_price(
+                    market_state=simulator.market.market_state, share_price=simulator.market.market_state.share_price
+                )
                 assert np.allclose(total_liquidity_direct, total_liquidity_agent, atol=0, rtol=1e-15), (
                     f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {total_liquidity_direct=}"
                     f"does not equal {total_liquidity_agent=} "
