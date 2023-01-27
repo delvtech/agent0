@@ -386,9 +386,9 @@ class PricingModel(ABC):
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
-            return (0, 0)
+            return 0, 0
 
-        last_maybe_max_long = (0, 0)
+        last_maybe_max_long = 0, 0
         bond_percent = 1
         for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
             # Compute the amount of base needed to purchase the specified amount
@@ -481,9 +481,9 @@ class PricingModel(ABC):
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
-            return (0, 0)
+            return 0, 0
 
-        last_maybe_max_short = (0, 0)
+        last_maybe_max_short = 0, 0
         bond_percent = 1
         for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
             try:
