@@ -52,9 +52,14 @@ class BaseTradeTest(unittest.TestCase):
                 f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
                 f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
             )
-            print(
-                f"test_trade.run_base_lp_test: {target_pool_apr=} equals {market_apr=}"
-                f" within {(np.abs(market_apr - target_pool_apr)/target_pool_apr):.2e}"
+            logging.debug(
+                (
+                    "test_trade.run_base_lp_test: target_pool_apr=%g equals market_apr=%g"
+                    " within (np.abs(market_apr - target_pool_apr)/target_pool_apr)=%.2e}"
+                ),
+                target_pool_apr,
+                market_apr,
+                (np.abs(market_apr - target_pool_apr) / target_pool_apr),
             )
         if target_liquidity:
             # TODO: This will not work with Hyperdrive PM
@@ -64,9 +69,14 @@ class BaseTradeTest(unittest.TestCase):
                 f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
                 f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=:.2e}."
             )
-            print(
-                f"test_trade.run_base_lp_test: {total_liquidity=} equals {target_liquidity=}"
-                f" within {(np.abs(total_liquidity - target_liquidity)/target_liquidity):.2e}"
+            logging.debug(
+                (
+                    "test_trade.run_base_lp_test: total_liquidity=%g equals target_liquidity=%g"
+                    " within (np.abs(total_liquidity - target_liquidity)/target_liquidity)=%.2e}"
+                ),
+                total_liquidity,
+                target_liquidity,
+                (np.abs(total_liquidity - target_liquidity) / target_liquidity),
             )
         if not init_only:
             simulator.run_simulation()
@@ -91,7 +101,11 @@ class SingleTradeTests(BaseTradeTest):
         """Compare agent init as above to old calc_liquidity method"""
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
             for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 2):  # breaks at 500%
-                print(f"running test with {target_liquidity=} and {target_pool_apr=}")
+                logging.debug(
+                    "running test with target_liquidity=%g and target_pool_apr=%g",
+                    target_liquidity,
+                    target_pool_apr,
+                )
                 simulator = self.run_base_trade_test(
                     agent_policies=[],
                     target_liquidity=target_liquidity,
