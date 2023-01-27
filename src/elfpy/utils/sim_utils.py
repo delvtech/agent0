@@ -91,6 +91,13 @@ def get_init_lp_agent(
 ) -> Agent:
     """Calculate the required deposit amounts and instantiate the LP agent
 
+    The required deposit amounts are computed iteratively to determine market reserve levels that achieve
+    the target liquidity and APR. To hit the desired ratio, the agent opens a small LP, then a short,
+    then a larger LP. Each iteration estimates the slippage due to the short and adjusts the first LP amount
+    to account for it. The difference in slippage from one iteration to the next monotonically decreases,
+    since it is accounting for diminishing additions to the market share reserves. A more detailed description
+    is here: https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764
+
     Arguments
     ---------
     market : Market
@@ -103,7 +110,7 @@ def get_init_lp_agent(
         the result will be within 1e-13% of the target
     fee_percent : float
         how much the LPer will collect in fees
-    init_liquidity : float
+    seed_liquidity : float
         initial (small) liquidity amount for setting the market APR
 
     Returns
@@ -111,33 +118,22 @@ def get_init_lp_agent(
     init_lp_agent : Agent
         Agent class that will perform the lp initialization action
     """
-    # Wrapper functions are expected to have a lot of arguments
-    # pylint: disable=too-many-locals
-
-    # calc_liquidity is used only to get the reserve ratio which hits the target apr
+    # calc_liquidity is used to get the reserve ratio which hits the target apr
     init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
         market_state=market.market_state,
         target_liquidity=seed_liquidity,  # tiny seed amount ($1)
         target_apr=target_pool_apr,
         position_duration=market.position_duration,
     )[:2]
-    # to hit the desired reserve ratio, we open a short which increases bond reserves exactly by the amount we want
-    # this short trade decreases share reserves by an exact amount that we know (delta_shares)
-    # since this is undesired, we add delta_shares to the initial liquidity amount (first_base_lp)
-    # however, this new initial LP amount changes the result of the short trade due to a change in slippage
-    # this change in slippage is relatively small, and added to the estimate at each iteration, converges quickly
-    # for detailed convergence process: https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764
     delta_shares = seed_liquidity
     prev_delta_shares = 0
-    trade_result = None
     iteration = 0
-    absolute_tolerance = 1e-20
-    while abs(delta_shares - prev_delta_shares) > absolute_tolerance and iteration < 20:
-        iteration += 1
+    while abs(delta_shares - prev_delta_shares) > 1e-20 and iteration < 20:
+        # estimate change in base resulting from a short
         trade_result = market.pricing_model.calc_out_given_in(
             in_=Quantity(amount=init_bond_reserves, unit=TokenType.PT),
             market_state=MarketState(
-                share_reserves=init_share_reserves + delta_shares,  # what will turn into first_base_lp (mock-up)
+                share_reserves=init_share_reserves + delta_shares,  # estimate of first LP amount
                 bond_reserves=0,
                 share_price=market.market_state.share_price,
                 init_share_price=market.market_state.init_share_price,
@@ -146,7 +142,9 @@ def get_init_lp_agent(
             time_remaining=market.position_duration,
         )
         prev_delta_shares = delta_shares
+        # increase first LP amount to cover slippage
         delta_shares = trade_result.user_result.d_base / market.market_state.share_price
+        iteration += 1
         logging.debug(
             (
                 "\niteration %g: init_share_reserves=%g delta_shares=%g"
@@ -159,17 +157,18 @@ def get_init_lp_agent(
             (delta_shares - prev_delta_shares) / prev_delta_shares,
             (init_share_reserves + delta_shares) * market.market_state.share_price,
         )
-    logging.debug(
-        ("\nstopping at iteration %g because delta_delta_shares is <= %g"),
-        iteration,
-        absolute_tolerance,
-    )
-    delta_base = delta_shares * market.market_state.share_price
-    max_loss_in_base = init_bond_reserves - delta_base
-    init_base_reserves = init_share_reserves * market.market_state.share_price
-    first_base_to_lp = init_base_reserves + delta_base  # add back delta_base to immunize effect of short
-    second_base_to_lp = target_liquidity - init_base_reserves  # remember delta_base is immunized, doesn't need adding
-    budget = first_base_to_lp + max_loss_in_base + second_base_to_lp  # full amount needed to trade
+    first_base_to_lp = (
+        init_share_reserves * market.market_state.share_price + delta_shares * market.market_state.share_price
+    )  # add back delta_base=delta_shares*share_price to immunize effect of short
+    second_base_to_lp = (
+        target_liquidity - init_share_reserves * market.market_state.share_price
+    )  # fill pools to hit target liquidity
+    budget = (
+        first_base_to_lp
+        + second_base_to_lp
+        + init_bond_reserves
+        - (delta_shares * market.market_state.share_price)  # delta_base
+    )  # budget needs to account for max_loss, which will be deducted from the agent's wallet
     init_lp_agent = import_module("elfpy.policies.init_lp").Policy(  # construct the agent with desired amounts
         wallet_address=0,
         budget=budget,
@@ -180,9 +179,12 @@ def get_init_lp_agent(
     logging.info(
         (
             "Init LP agent #%g statistics:\n\t"
-            "target_apr = %g\n\ttarget_liquidity = %g\n\t"
-            "budget = %g\n\tfirst_base_to_lp = %g\n\t"
-            "pt_to_short = %g\n\tsecond_base_to_lp = %g"
+            "target_apr = %g\n\t"
+            "target_liquidity = %g\n\t"
+            "budget = %g\n\t"
+            "first_base_to_lp = %g\n\t"
+            "pt_to_short = %g\n\t"
+            "second_base_to_lp = %g"
         ),
         init_lp_agent.wallet.address,
         target_pool_apr,
