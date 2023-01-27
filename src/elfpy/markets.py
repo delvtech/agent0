@@ -233,13 +233,13 @@ class Market:
         )
         # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
         max_loss = trade_amount - trade_result.user_result.d_base
-        wallet_deltas = Wallet(
+        agent_deltas = Wallet(
             address=wallet_address,
             base=-max_loss,
             shorts={self.time: Short(balance=trade_amount, margin=trade_amount)},
             fees_paid=trade_result.breakdown.fee,
         )
-        return market_deltas, wallet_deltas
+        return market_deltas, agent_deltas
 
     def close_short(
         self,
