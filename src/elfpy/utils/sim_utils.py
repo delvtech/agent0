@@ -160,6 +160,9 @@ def get_init_lp_agent(
     first_base_to_lp = (
         init_share_reserves * market.market_state.share_price + delta_shares * market.market_state.share_price
     )  # add back delta_base=delta_shares*share_price to immunize effect of short
+    # TODO: investigate why max_loss_in_base is not accounted for here, as it increases the protocol liquidity,
+    # even though it doesn't go into the pool.
+    # see discussion: https://github.com/element-fi/elf-simulations/pull/136#discussion_r1089404750
     second_base_to_lp = (
         target_liquidity - init_share_reserves * market.market_state.share_price
     )  # fill pools to hit target liquidity
