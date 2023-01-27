@@ -194,7 +194,7 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
     grid_spec = gridspec.GridSpec(nrows, ncols, **kwargs)
     fig = plt.figure()
     axes = [fig.add_subplot(grid_spec[plot_id]) for plot_id in np.ndindex((nrows, ncols))]
-    return (fig, axes, grid_spec)
+    return fig, axes, grid_spec
 
 
 def clear_axis(axis: Axes, spines: str = "none") -> Axes:

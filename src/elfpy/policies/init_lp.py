@@ -41,18 +41,9 @@ class Policy(Agent):
         if has_lp:
             action_list = []
         else:
-            if market.pricing_model.model_name() == HyperdrivePricingModel().model_name():
-                # TODO: This PM fails the tests
-                action_list = [
-                    self.create_agent_action(
-                        action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.first_base_to_lp
-                    ),
-                    self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short),
-                    self.create_agent_action(
-                        action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.second_base_to_lp
-                    ),
-                ]
-            elif market.pricing_model.model_name() == YieldSpacePricingModel().model_name():
+            if (market.pricing_model.model_name() == HyperdrivePricingModel().model_name()) or (
+                market.pricing_model.model_name() == YieldSpacePricingModel().model_name()
+            ):
                 action_list = [
                     self.create_agent_action(
                         action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.first_base_to_lp

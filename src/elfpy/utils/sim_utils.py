@@ -87,9 +87,16 @@ def get_init_lp_agent(
     target_liquidity: float,
     target_pool_apr: float,
     fee_percent: float,
-    init_liquidity: float = 1,
+    seed_liquidity: float = 1,
 ) -> Agent:
     """Calculate the required deposit amounts and instantiate the LP agent
+
+    The required deposit amounts are computed iteratively to determine market reserve levels that achieve
+    the target liquidity and APR. To hit the desired ratio, the agent opens a small LP, then a short,
+    then a larger LP. Each iteration estimates the slippage due to the short and adjusts the first LP amount
+    to account for it. The difference in slippage from one iteration to the next monotonically decreases,
+    since it is accounting for diminishing additions to the market share reserves. A more detailed description
+    is here: https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764
 
     Arguments
     ---------
@@ -97,13 +104,13 @@ def get_init_lp_agent(
         empty market object
     target_liquidity : float
         target total liquidity for LPer to provide (bonds+shares)
-        the result will be within 7% of the target
+        the result will be within 1e-15% of the target
     target_pool_apr : float
         target pool apr for the market
-        the result will be within 0.001 of the target
+        the result will be within 1e-13% of the target
     fee_percent : float
         how much the LPer will collect in fees
-    init_liquidity : float
+    seed_liquidity : float
         initial (small) liquidity amount for setting the market APR
 
     Returns
@@ -111,35 +118,61 @@ def get_init_lp_agent(
     init_lp_agent : Agent
         Agent class that will perform the lp initialization action
     """
-    # Wrapper functions are expected to have a lot of arguments
-    # pylint: disable=too-many-arguments
-    # get the reserve amounts for a small target liquidity to achieve a target pool APR
+    # calc_liquidity is used to get the reserve ratio which hits the target apr
     init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
         market_state=market.market_state,
-        target_liquidity=init_liquidity,
+        target_liquidity=seed_liquidity,  # tiny seed amount ($1)
         target_apr=target_pool_apr,
         position_duration=market.position_duration,
     )[:2]
-    # mock the short to assess what the delta market conditions will be
-    output_with_fee = market.pricing_model.calc_out_given_in(
-        in_=Quantity(amount=init_bond_reserves, unit=TokenType.BASE),
-        market_state=MarketState(
-            share_reserves=init_share_reserves,
-            bond_reserves=0,
-            share_price=market.market_state.init_share_price,
-            init_share_price=market.market_state.init_share_price,
-        ),
-        fee_percent=fee_percent,
-        time_remaining=market.position_duration,
-    ).breakdown.with_fee
-    # output_with_fee will be subtracted from the share reserves, so we want to add that much extra in
-    first_base_to_lp = init_share_reserves + output_with_fee
-    short_amount = init_bond_reserves
-    second_base_to_lp = target_liquidity - init_share_reserves
-    # budget is the full amount for LP & short
-    budget = first_base_to_lp + short_amount + second_base_to_lp
-    # construct the init_lp agent with desired budget, lp, and short amounts
-    init_lp_agent = import_module("elfpy.policies.init_lp").Policy(
+    delta_shares = seed_liquidity
+    prev_delta_shares = 0
+    iteration = 0
+    while abs(delta_shares - prev_delta_shares) > 1e-20 and iteration < 20:
+        # estimate change in base resulting from a short
+        trade_result = market.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=init_bond_reserves, unit=TokenType.PT),
+            market_state=MarketState(
+                share_reserves=init_share_reserves + delta_shares,  # estimate of first LP amount
+                bond_reserves=0,
+                share_price=market.market_state.share_price,
+                init_share_price=market.market_state.init_share_price,
+            ),
+            fee_percent=fee_percent,
+            time_remaining=market.position_duration,
+        )
+        prev_delta_shares = delta_shares
+        # increase first LP amount to cover slippage
+        delta_shares = trade_result.user_result.d_base / market.market_state.share_price
+        iteration += 1
+        logging.debug(
+            (
+                "\niteration %g: init_share_reserves=%g delta_shares=%g"
+                "\na relative change of %.2e"
+                "\nestimate for first_base_lp: %g"
+            ),
+            iteration,
+            init_share_reserves,
+            delta_shares,
+            (delta_shares - prev_delta_shares) / prev_delta_shares,
+            (init_share_reserves + delta_shares) * market.market_state.share_price,
+        )
+    first_base_to_lp = (
+        init_share_reserves * market.market_state.share_price + delta_shares * market.market_state.share_price
+    )  # add back delta_base=delta_shares*share_price to immunize effect of short
+    # TODO: investigate why max_loss_in_base is not accounted for here, as it increases the protocol liquidity,
+    # even though it doesn't go into the pool.
+    # see discussion: https://github.com/element-fi/elf-simulations/pull/136#discussion_r1089404750
+    second_base_to_lp = (
+        target_liquidity - init_share_reserves * market.market_state.share_price
+    )  # fill pools to hit target liquidity
+    budget = (
+        first_base_to_lp
+        + second_base_to_lp
+        + init_bond_reserves
+        - (delta_shares * market.market_state.share_price)  # delta_base
+    )  # budget needs to account for max_loss, which will be deducted from the agent's wallet
+    init_lp_agent = import_module("elfpy.policies.init_lp").Policy(  # construct the agent with desired amounts
         wallet_address=0,
         budget=budget,
         first_base_to_lp=first_base_to_lp,
@@ -149,9 +182,12 @@ def get_init_lp_agent(
     logging.info(
         (
             "Init LP agent #%g statistics:\n\t"
-            "target_apr = %g\n\ttarget_liquidity = %g\n\t"
-            "budget = %g\n\tfirst_base_to_lp = %g\n\t"
-            "pt_to_short = %g\n\tsecond_base_to_lp = %g"
+            "target_apr = %g\n\t"
+            "target_liquidity = %g\n\t"
+            "budget = %g\n\t"
+            "first_base_to_lp = %g\n\t"
+            "pt_to_short = %g\n\t"
+            "second_base_to_lp = %g"
         ),
         init_lp_agent.wallet.address,
         target_pool_apr,

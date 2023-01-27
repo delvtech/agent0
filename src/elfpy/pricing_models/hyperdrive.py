@@ -92,24 +92,24 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             base.
         """
 
+        # Calculate some common values up front
+        out_amount = Decimal(out.amount)
+        _time_remaining = Decimal(time_remaining.normalized_time)
+        share_price = Decimal(market_state.share_price)
+        d_bonds = out_amount * (1 - _time_remaining)
+        d_shares = d_bonds / share_price
+
         # TODO: Verify that this is needed.
         market_state = copy.copy(market_state)
 
-        # TODO: This is somewhat strange since these updates never actually hit
-        #       the reserves.
-        #
-        # Redeem the matured bonds 1:1 and simulate these updates hitting the
-        # reserves.
+        # TODO: This is somewhat strange since these updates never actually hit the reserves.
+        # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         if out.unit == TokenType.BASE:
-            market_state.share_reserves -= float(
-                Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)) / Decimal(market_state.share_price)
-            )
-            market_state.bond_reserves += float(Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)))
+            market_state.share_reserves -= float(d_shares)
+            market_state.bond_reserves += float(d_bonds)
         elif out.unit == TokenType.PT:
-            market_state.share_reserves += float(
-                Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)) / Decimal(market_state.share_price)
-            )
-            market_state.bond_reserves -= float(Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time)))
+            market_state.share_reserves += float(d_shares)
+            market_state.bond_reserves -= float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
@@ -118,16 +118,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=Quantity(amount=float(Decimal(out.amount) * Decimal(time_remaining.normalized_time)), unit=out.unit),
+            out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             # TODO: don't hardcode days to 365, initialize to term length
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
-        # Compute the user's trade result including both the flat and the curve
-        # parts of the trade.
-        flat = Decimal(out.amount) * (1 - Decimal(time_remaining.normalized_time))
+        # Compute the user's trade result including both the flat and the curve parts of the trade.
+        flat = out_amount * (1 - _time_remaining)
         if out.unit == TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=out.amount,
@@ -217,26 +216,24 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             The result of performing the trade.
         """
 
+        # Calculate some common values up front
+        in_amount = Decimal(in_.amount)
+        _time_remaining = Decimal(time_remaining.normalized_time)
+        share_price = Decimal(market_state.share_price)
+        d_bonds = in_amount * (1 - _time_remaining)
+        d_shares = d_bonds / share_price
+
         # TODO: Verify that this is needed.
         market_state = copy.copy(market_state)
 
-        # TODO: This is somewhat strange since these updates never actually hit
-        #       the reserves.
-        #
-        # Redeem the matured bonds 1:1 and simulate these updates hitting the
-        # reserves.
+        # TODO: This is somewhat strange since these updates never actually hit the reserves.
+        # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         if in_.unit == TokenType.BASE:
-            market_state.share_reserves += float(
-                (Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
-                / Decimal(market_state.share_price)
-            )
-            market_state.bond_reserves -= float(Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
+            market_state.share_reserves += float(d_shares)
+            market_state.bond_reserves -= float(d_bonds)
         elif in_.unit == TokenType.PT:
-            market_state.share_reserves -= float(
-                (Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time)))
-                / Decimal(market_state.share_price)
-            )
-            market_state.bond_reserves += in_.amount * (1 - time_remaining.normalized_time)
+            market_state.share_reserves -= float(d_shares)
+            market_state.bond_reserves += float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
@@ -245,15 +242,14 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=Quantity(amount=float(Decimal(in_.amount) * Decimal(time_remaining.normalized_time)), unit=in_.unit),
+            in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
             fee_percent=fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
-        # Compute the user's trade result including both the flat and the curve
-        # parts of the trade.
-        flat = Decimal(in_.amount) * (1 - Decimal(time_remaining.normalized_time))
+        # Compute the user's trade result including both the flat and the curve parts of the trade.
+        flat = in_amount * (1 - _time_remaining)
         if in_.unit == TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=-in_.amount,

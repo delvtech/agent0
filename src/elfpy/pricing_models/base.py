@@ -213,6 +213,7 @@ class PricingModel(ABC):
             calculated from the provided parameters
         """
         share_reserves = target_liquidity / market_state.share_price
+        # guarantees only that it hits target_apr
         bond_reserves = self.calc_bond_reserves(
             target_apr,
             share_reserves,
@@ -238,7 +239,7 @@ class PricingModel(ABC):
         # update variables by rescaling the original estimates
         bond_reserves = bond_reserves * scaling_factor
         share_reserves = share_reserves * scaling_factor
-        return (share_reserves, bond_reserves)
+        return share_reserves, bond_reserves
 
     def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
         """Returns the total liquidity in the pool in terms of base
@@ -385,9 +386,9 @@ class PricingModel(ABC):
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
-            return (0, 0)
+            return 0, 0
 
-        last_maybe_max_long = (0, 0)
+        last_maybe_max_long = 0, 0
         bond_percent = 1
         for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
             # Compute the amount of base needed to purchase the specified amount
@@ -480,9 +481,9 @@ class PricingModel(ABC):
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
-            return (0, 0)
+            return 0, 0
 
-        last_maybe_max_short = (0, 0)
+        last_maybe_max_short = 0, 0
         bond_percent = 1
         for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
             try:

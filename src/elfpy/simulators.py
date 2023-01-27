@@ -210,12 +210,12 @@ class Simulator:
         for (agent_id, agent_trades) in trades:
             agent = self.agents[agent_id]
             for trade in agent_trades:
-                wallet_deltas = self.market.trade_and_update(trade)
-                agent.update_wallet(wallet_deltas, self.market)
+                agent_deltas = self.market.trade_and_update(trade)
+                agent.update_wallet(agent_deltas, self.market)
                 logging.debug(
                     "agent #%g wallet deltas = \n%s",
                     agent.wallet.address,
-                    wallet_deltas.__dict__,
+                    agent_deltas.__dict__,
                 )
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
