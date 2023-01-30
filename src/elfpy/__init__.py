@@ -1,5 +1,5 @@
 """
-Setup barebones logging without a handler for users to adapt to their needs.
+Elfpy package
 """
 
 import shutil
@@ -7,6 +7,7 @@ import logging
 
 import matplotlib as mpl
 
+# Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 # Logging defaults
