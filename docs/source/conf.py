@@ -42,6 +42,8 @@ release = version
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx.ext.napoleon",  # enables Sphinx to understand docstrings in Google format
+    "numpydoc",  # enables NumPy docstring format
     "sphinx.ext.duration",  # gives reading length summaries at build time
     "sphinx.ext.todo",  # support for todo items
     "sphinx.ext.doctest",  # allows one to test code snippets against the python code to ensure synchrony
@@ -49,8 +51,6 @@ extensions = [
     "sphinx.ext.autosummary",  # generates documents that contain all the necessary autodoc directives
     "sphinx_autodoc_typehints",  # insert typehints into the final docs
     "myst_parser",  # include .md files
-    "sphinx.ext.napoleon",  # enables Sphinx to understand docstrings in Google format
-    "numpydoc",  # enables NumPy docstring format
     "sphinx.ext.coverage",  # collect documentation coverage stats
     "autodocsumm",  # display a list of all class methods in table format
     "nbsphinx",  # to showcase Jupyter notebooks
@@ -104,7 +104,6 @@ html_static_path = ["_static"]
 html_theme_options = {
     "sidebar_collapse": True,
     "show_powered_by": False,
-    "relbarbgcolor": "black",
 }
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -138,7 +137,7 @@ today_fmt = "%B %d, %Y"
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = f"{project} Documentation"
+html_title = f"{project} v{release} documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "Documentation"
