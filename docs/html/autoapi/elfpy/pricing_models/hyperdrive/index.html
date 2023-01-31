@@ -18,8 +18,6 @@
     <script src="../../../../_static/doctools.js"></script>
     <script src="../../../../_static/sphinx_highlight.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
    
@@ -78,23 +76,6 @@ deposited into yield bearing vaults</p>
 <dd><p>Calculates the amount of an asset that must be provided to receive a
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The input is calculated as:</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}in' =
-\begin{cases}
-c (\frac{1}{\mu} (
-\frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
-+ \Delta y \cdot (1 - \tau), \\
-&amp;\text{ if } token\_in = \text{&quot;base&quot;}
-(k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-- (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
-&amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases} \\
-f =
-\begin{cases}
-(1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
-(\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases} \\
-in = in' + f\end{split}\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -129,23 +110,6 @@ base.</p></li>
 <dd><p>Calculates the amount of an asset that must be provided to receive a
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The output is calculated as:</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}out' =
-\begin{cases}
-c (z - \frac{1}{\mu} (
-\frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-+ \Delta y \cdot (1 - \tau), \\
-&amp;\text{ if } token\_out = \text{&quot;base&quot;}
-2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-+ c \cdot \Delta z \cdot (1 - \tau),
-&amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases} \\
-f =
-\begin{cases}
-(1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
-(\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases} \\
-out = out' + f\end{split}\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

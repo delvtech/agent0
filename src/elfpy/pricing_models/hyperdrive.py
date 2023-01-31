@@ -45,22 +45,27 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The input is calculated as:
 
         .. math::
-            in' =
-            \begin{cases}
-            c (\frac{1}{\mu} (
-            \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
-            + \Delta y \cdot (1 - \tau), \\
-            &\text{ if } token\_in = \text{"base"}
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            f =
-            \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            in = in' + f
+            :nowrap:
+            \begin{flalign}
+                in' &=
+                \begin{cases}
+                    c (\frac{1}{\mu} (
+                    \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
+                    + \Delta y \cdot (1 - \tau), \\
+                    &\text{ if } token\_in = \text{"base"}
+                    (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
+                    - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
+                    &\text{ if } token\_in = \text{"pt"}
+                \end{cases}
+
+                f &=
+                \begin{cases}
+                    (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
+                    (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
+                \end{cases}
+
+                in &= in' + f
+            \end{flalign}
 
         Parameters
         ----------
@@ -179,22 +184,27 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The output is calculated as:
 
         .. math::
-            out' =
-            \begin{cases}
-            c (z - \frac{1}{\mu} (
-            \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-            + \Delta y \cdot (1 - \tau), \\
-            &\text{ if } token\_out = \text{"base"}
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
-            f =
-            \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
-            out = out' + f
+            :nowrap:
+            \begin{flalign}
+                out' &=
+                \begin{cases}
+                    c (z - \frac{1}{\mu} (
+                    \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
+                    + \Delta y \cdot (1 - \tau), \\
+                    &\text{ if } token\_out = \text{"base"}
+                    2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
+                    + c \cdot \Delta z \cdot (1 - \tau),
+                    &\text{ if } token\_out = \text{"pt"}
+                \end{cases}
+
+                f &=
+                \begin{cases}
+                    (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
+                    (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+                \end{cases}
+
+                out &= out' + f
+            \end{flalign}
 
         Parameters
         ----------
