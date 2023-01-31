@@ -35,9 +35,6 @@ class Simulator:
         market: Market,
         random_simulation_variables: Optional[RandomSimulationVariables] = None,
     ):
-        # pylint: disable=too-many-arguments
-        # pylint: disable=too-many-statements
-
         # User specified variables
         self.config = config
         self.log_config_variables()
