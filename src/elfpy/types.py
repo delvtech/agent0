@@ -323,8 +323,11 @@ class SimulationState:
     target_liquidity: list = field(
         default_factory=list, metadata=to_description("amount of liquidity the market should stop with")
     )
-    fee_percent: list = field(
+    trade_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
+    )
+    redemption_fee_percent: list = field(
+        default_factory=list, metadata=to_description("the percentage of redemption outputs to be collected as fees")
     )
     floor_fee: list = field(default_factory=list, metadata=to_description(" minimum fee we take"))
     init_vault_age: list = field(default_factory=list, metadata=to_description("the age of the underlying vault"))
