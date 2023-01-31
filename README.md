@@ -38,7 +38,7 @@ docker build -t elf-simulations-dev .
 Then to create an isolated shell environment which observes file changes run:
 
 ``` bash
-docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host elf-simulations-dev:latest sh
+docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host elf-simulations-dev:latest bash
 ```
 
 ## Testing
