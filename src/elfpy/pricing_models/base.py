@@ -170,8 +170,8 @@ class PricingModel(ABC):
         float
             The expected amount of base asset in the pool, calculated from the provided parameters
 
-        TODO: Write a test for this function
         """
+        # TODO: Write a test for this function
         share_reserves = bond_reserves / (
             init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
         )  # z = y / (mu * (1 - rt)**(1/tau))
