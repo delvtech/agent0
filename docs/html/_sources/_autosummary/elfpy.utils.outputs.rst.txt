@@ -1,0 +1,50 @@
+elfpy.utils.outputs
+===================
+
+.. automodule:: elfpy.utils.outputs
+  
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:                                          
+   
+      annotate
+      clear_axes
+      clear_axis
+      close_logging
+      delete_log_file
+      format_axis
+      get_gridspec_subplots
+      plot_longs_and_shorts
+      plot_market_lp_reserves
+      plot_market_spot_price
+      plot_pool_apr
+      plot_wallet_returns
+      setup_logging
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:                                          
+      :template: custom-class-template.rst               
+   
+      CustomEncoder
+   
+   
+
+   
+   
+   
+
+
+

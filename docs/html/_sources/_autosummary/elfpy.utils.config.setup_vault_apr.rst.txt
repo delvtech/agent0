@@ -1,0 +1,6 @@
+elfpy.utils.config.setup\_vault\_apr
+====================================
+
+.. currentmodule:: elfpy.utils.config
+
+.. autofunction:: setup_vault_apr

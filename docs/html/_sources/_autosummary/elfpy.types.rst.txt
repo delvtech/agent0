@@ -1,0 +1,50 @@
+elfpy.types
+===========
+
+.. automodule:: elfpy.types
+  
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:                                          
+   
+      to_description
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:                                          
+      :template: custom-class-template.rst               
+   
+      AgentTradeResult
+      MarketAction
+      MarketActionType
+      MarketDeltas
+      MarketState
+      MarketTradeResult
+      Quantity
+      RandomSimulationVariables
+      SimulationState
+      StretchedTime
+      TokenType
+      TradeBreakdown
+      TradeResult
+   
+   
+
+   
+   
+   
+
+
+

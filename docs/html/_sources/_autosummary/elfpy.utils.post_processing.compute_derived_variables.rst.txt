@@ -1,0 +1,6 @@
+elfpy.utils.post\_processing.compute\_derived\_variables
+========================================================
+
+.. currentmodule:: elfpy.utils.post_processing
+
+.. autofunction:: compute_derived_variables

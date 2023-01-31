@@ -1,0 +1,31 @@
+elfpy.utils.price
+=================
+
+.. automodule:: elfpy.utils.price
+  
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:                                          
+   
+      calc_apr_from_spot_price
+      calc_spot_price_from_apr
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

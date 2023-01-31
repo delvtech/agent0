@@ -1,0 +1,42 @@
+elfpy.utils.config.SimulatorConfig
+==================================
+
+.. currentmodule:: elfpy.utils.config
+
+.. autoclass:: SimulatorConfig
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SimulatorConfig.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SimulatorConfig.compound_vault_apr
+      ~SimulatorConfig.init_lp
+      ~SimulatorConfig.init_vault_age
+      ~SimulatorConfig.logging_level
+      ~SimulatorConfig.num_blocks_per_day
+      ~SimulatorConfig.num_trading_days
+      ~SimulatorConfig.precision
+      ~SimulatorConfig.random_seed
+      ~SimulatorConfig.shuffle_users
+      ~SimulatorConfig.token_duration
+      ~SimulatorConfig.agent_policies
+      ~SimulatorConfig.rng
+   
+   

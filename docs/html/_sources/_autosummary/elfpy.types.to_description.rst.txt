@@ -1,0 +1,6 @@
+elfpy.types.to\_description
+===========================
+
+.. currentmodule:: elfpy.types
+
+.. autofunction:: to_description

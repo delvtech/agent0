@@ -1,0 +1,6 @@
+elfpy.utils.outputs.format\_axis
+================================
+
+.. currentmodule:: elfpy.utils.outputs
+
+.. autofunction:: format_axis

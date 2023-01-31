@@ -1,0 +1,6 @@
+elfpy.utils.sim\_utils.get\_init\_lp\_agent
+===========================================
+
+.. currentmodule:: elfpy.utils.sim_utils
+
+.. autofunction:: get_init_lp_agent

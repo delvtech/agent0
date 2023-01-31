@@ -1,0 +1,39 @@
+elfpy.utils.time
+================
+
+.. automodule:: elfpy.utils.time
+  
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:                                          
+   
+      block_number_to_datetime
+      current_datetime
+      days_to_time_remaining
+      get_yearfrac_remaining
+      norm_days
+      stretch_time
+      time_to_days_remaining
+      unnorm_days
+      unstretch_time
+      yearfrac_as_datetime
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
