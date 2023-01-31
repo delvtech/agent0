@@ -308,12 +308,16 @@ class YieldSpacePricingModel(PricingModel):
             &\text{ if } token\_in = \text{"base"} \\
             (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz),
             &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
+            \end{cases}
+
+        .. math::
             f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
+            \end{cases}
+
+        .. math::
             in = in' + f
 
         Parameters
@@ -530,12 +534,16 @@ class YieldSpacePricingModel(PricingModel):
             &\text{ if } token\_out = \text{"base"} \\
             2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}},
             &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
+            \end{cases}
+
+        .. math::
             f =
             \begin{cases}
             (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
             (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
+            \end{cases}
+
+        .. math::
             out = out' + f
 
         Parameters
