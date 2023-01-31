@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Long:
-    """An open long position.
+    r"""An open long position.
 
     Parameters
     ----------
@@ -28,7 +28,7 @@ class Long:
 
 @dataclass
 class Short:
-    """An open short position.
+    r"""An open short position.
 
     Parameters
     ----------
@@ -47,8 +47,7 @@ class Short:
 
 @dataclass(frozen=False)
 class Wallet:
-    """
-    Stores what's in the agent's wallet
+    r"""Stores what is in the agent's wallet
 
     Parameters
     ----------
@@ -107,7 +106,8 @@ class Wallet:
 
     @property
     def state(self) -> dict:
-        """The wallet's current state of public variables
+        r"""The wallet's current state of public variables
+
         TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state
         """
         return {

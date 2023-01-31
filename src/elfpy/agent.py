@@ -1,6 +1,4 @@
-"""
-Implements abstract classes that control agent behavior
-"""
+"""Implements abstract classes that control agent behavior"""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING, Iterable
@@ -36,29 +34,6 @@ class Agent:
         Helper attribute used to track how an agent spends their assets over time
     wallet : elfpy.wallet.Wallet
         Wallet object which tracks the agent's asset balances
-
-    Methods
-    -------
-    create_agent_action(action_type: MarketActionType, trade_amount: float, mint_time: float = 0) -> MarketAction
-        Creates and returns a MarketAction object which represents a trade that this agent can make
-    action(self) -> list[MarketAction]
-        Execute the MarketAction implemented by a specific policy
-    get_max_long(self, market: Market) -> float
-        Returns an approximation of the maximum amoun of base that the agent can long given current market conditions
-    get_max_short(self, market: Market) -> float
-        Returns an approximation of the maximum amount of base that the agent can short given current market conditions
-    get_trade_list(self, market: Market) -> list[MarketAction]
-        Helper function for computing a agent trade
-    update_spend(self) -> None
-        Track over time the agent's weighted average spend, for return calculation
-    update_wallet(self, wallet_deltas: Wallet, market: Market) -> None
-        Update the agent's wallet
-    get_liquidation_trades(self, market: Market) -> list[MarketAction]
-        Get final trades for liquidating positions
-    log_status_report(self) -> None
-        Logs user state
-    log_final_report(self, market: Market) -> None
-        Logs a report of the agent's state
     """
 
     def __init__(self, wallet_address: int, budget: float):

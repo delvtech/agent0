@@ -54,12 +54,15 @@ extensions = [
     "sphinx.ext.coverage",  # collect documentation coverage stats
     "autodocsumm",  # display a list of all class methods in table format
     "nbsphinx",  # to showcase Jupyter notebooks
+    "autoapi.extension",  #
 ]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+autoapi_dirs = ["../../src"]
 autodoc_default_options = {"autosummary": True}
 autosummary_generate = True
+numpydoc_show_class_members = False
 
 github_url = "https://github.com"
 github_repo_org = "element-fi"
