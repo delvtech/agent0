@@ -169,7 +169,7 @@ class TestGetMax(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=Quantity(amount=max_long, unit=TokenType.BASE),
                     market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
+                    trade_fee_percent=test_case.fee_percent,
                     time_remaining=test_case.time_remaining,
                 )
                 self._ensure_market_safety(
@@ -190,7 +190,7 @@ class TestGetMax(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=Quantity(amount=max_short, unit=TokenType.PT),
                     market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
+                    trade_fee_percent=test_case.fee_percent,
                     time_remaining=test_case.time_remaining,
                 )
                 self._ensure_market_safety(

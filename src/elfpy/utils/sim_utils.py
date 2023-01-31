@@ -139,7 +139,7 @@ def get_init_lp_agent(
                 share_price=market.market_state.share_price,
                 init_share_price=market.market_state.init_share_price,
             ),
-            fee_percent=fee_percent,
+            trade_fee_percent=fee_percent,
             time_remaining=market.position_duration,
         )
         prev_delta_shares = delta_shares

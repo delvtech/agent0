@@ -233,7 +233,7 @@ class TestAgent(unittest.TestCase):
                     trade_result = market.pricing_model.calc_out_given_in(
                         in_=Quantity(amount=max_short, unit=TokenType.PT),
                         market_state=market.market_state,
-                        fee_percent=market.fee_percent,
+                        trade_fee_percent=market.fee_percent,
                         time_remaining=market.position_duration,
                     )
                     max_loss = max_short - trade_result.user_result.d_base

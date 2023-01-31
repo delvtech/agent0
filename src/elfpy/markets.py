@@ -225,7 +225,7 @@ class Market:
         trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
+            trade_fee_percent=self.fee_percent,
             time_remaining=self.position_duration,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -294,7 +294,7 @@ class Market:
         trade_result = self.pricing_model.calc_in_given_out(
             out=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
+            trade_fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -344,7 +344,7 @@ class Market:
             trade_result = self.pricing_model.calc_out_given_in(
                 in_=trade_quantity,
                 market_state=self.market_state,
-                fee_percent=self.fee_percent,
+                trade_fee_percent=self.fee_percent,
                 time_remaining=self.position_duration,
             )
             self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -401,7 +401,7 @@ class Market:
         trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
+            trade_fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)

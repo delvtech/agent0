@@ -149,7 +149,7 @@ class Agent:
             trade_result = market.pricing_model.calc_out_given_in(
                 in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
                 market_state=market.market_state,
-                fee_percent=market.fee_percent,
+                trade_fee_percent=market.fee_percent,
                 time_remaining=market.position_duration,
             )
 

@@ -1290,7 +1290,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=test_case.in_,
                     market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
+                    trade_fee_percent=test_case.fee_percent,
                     time_remaining=StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch),
                 )
                 np.testing.assert_almost_equal(
@@ -1340,7 +1340,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=trade_quantity,
                     market_state=market_state,
-                    fee_percent=fee_percent,
+                    trade_fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
@@ -1358,7 +1358,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=trade_quantity,
                     market_state=market_state,
-                    fee_percent=fee_percent,
+                    trade_fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
@@ -1607,7 +1607,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     trade_result = pricing_model.calc_out_given_in(
                         in_=test_case.in_,
                         market_state=test_case.market_state,
-                        fee_percent=test_case.fee_percent,
+                        trade_fee_percent=test_case.fee_percent,
                         time_remaining=test_case.time_remaining,
                     )
                     pricing_model.check_output_assertions(trade_result=trade_result)
