@@ -4,7 +4,6 @@ Testing for the calc_in_given_out of the pricing models.
 
 # pylint: disable=too-many-lines
 # pylint: disable=line-too-long
-# pylint: disable=too-many-lines
 
 
 import decimal
