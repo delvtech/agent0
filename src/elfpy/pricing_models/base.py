@@ -362,7 +362,7 @@ class PricingModel(ABC):
     def get_max_long(
         self,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> tuple[float, float]:
         r"""
@@ -395,7 +395,9 @@ class PricingModel(ABC):
             trade_result = self.calc_in_given_out(
                 out=Quantity(amount=available_bonds * bond_percent, unit=TokenType.PT),
                 market_state=market_state,
-                trade_fee_percent=fee_percent,
+                trade_fee_percent=trade_fee_percent,
+                # there is no redemption fee for opening a long
+                redemption_fee_percent=0,
                 time_remaining=time_remaining,
             )
             maybe_max_long = trade_result.breakdown.with_fee
@@ -416,7 +418,9 @@ class PricingModel(ABC):
                 trade_result = self.calc_out_given_in(
                     in_=Quantity(amount=maybe_max_long, unit=TokenType.BASE),
                     market_state=market_state,
-                    trade_fee_percent=fee_percent,
+                    trade_fee_percent=trade_fee_percent,
+                    # there is no redemption fee for opening a long
+                    redemption_fee_percent=0,
                     time_remaining=time_remaining,
                 )
                 d_bonds = trade_result.breakdown.with_fee
@@ -493,6 +497,7 @@ class PricingModel(ABC):
                     in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
                     market_state=market_state,
                     trade_fee_percent=fee_percent,
+                    redemption_fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
                 maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
