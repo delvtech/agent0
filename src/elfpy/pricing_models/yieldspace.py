@@ -581,7 +581,6 @@ class YieldSpacePricingModel(PricingModel):
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
-        share_price = Decimal(market_state.init_share_price)
         _fee_percent = Decimal(fee_percent)
 
         # We precompute the YieldSpace constant k using the current reserves and
@@ -593,7 +592,6 @@ class YieldSpacePricingModel(PricingModel):
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
-
             # The amount the user would receive without fees or slippage is
             # the amount of base the user pays times inverse of the spot price
             # of base in terms of bonds. If we let p be the conventional spot
@@ -612,9 +610,9 @@ class YieldSpacePricingModel(PricingModel):
             # without including fees:
             #
             # d_y' = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
-            without_fee = out_reserves - (k - scale * (share_price * (in_reserves + d_shares)) ** time_elapsed) ** (
-                1 / time_elapsed
-            )
+            without_fee = out_reserves - (
+                k - scale * (init_share_price * (in_reserves + d_shares)) ** time_elapsed
+            ) ** (1 / time_elapsed)
 
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
@@ -667,7 +665,7 @@ class YieldSpacePricingModel(PricingModel):
             # without_fee = d_x'
             without_fee = (
                 share_reserves
-                - (1 / share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
+                - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
             ) * share_price
 
             # The fees are calculated as the difference between the bonds paid
