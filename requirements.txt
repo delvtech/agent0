@@ -10,8 +10,8 @@ plotly>=5.10.0
 tomli>=2.0.1
 stochastic>=0.7.0
 # documentation
-sphynx>=6.1.3
-sphynx_autodoc_typehings>=1.21.8
+sphinx>=6.1.3
+sphinx_autodoc_typehings>=1.21.8
 myst-parser>=0.18.1
 numpydoc>=1.5.0
 sphinxcontrib-napoleon>=0.7
