@@ -122,21 +122,21 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
             market_state=market_state,
             trade_fee_percent=trade_fee_percent,
+            redemption_fee_percent=redemption_fee_percent,
             # TODO: don't hardcode days to 365, initialize to term length
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
         # Compute flat part with fee
         flat_without_fee = out_amount * (1 - _time_remaining)
-        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
+        redemption_fee = flat_without_fee * Decimal(redemption_fee_percent)
         flat_with_fee = flat_without_fee + redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
-        flat = out_amount * (1 - _time_remaining)
         if out.unit == TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=out.amount,
-                d_bonds=float(-flat + Decimal(curve.user_result.d_bonds)),
+                d_bonds=float(-flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
             market_result = MarketTradeResult(
                 d_base=-out.amount,
@@ -144,11 +144,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         elif out.unit == TokenType.PT:
             user_result = AgentTradeResult(
-                d_base=float(-flat + Decimal(curve.user_result.d_base)),
+                d_base=float(-flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
             )
             market_result = MarketTradeResult(
-                d_base=float(flat + Decimal(curve.market_result.d_base)),
+                d_base=float(flat_with_fee + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -252,15 +252,20 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
             trade_fee_percent=trade_fee_percent,
+            redemption_fee_percent=redemption_fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
+        # Compute flat part with fee
+        flat_without_fee = in_amount * (1 - _time_remaining)
+        redemption_fee = flat_without_fee * Decimal(redemption_fee_percent)
+        flat_with_fee = flat_without_fee - redemption_fee
+
         # Compute the user's trade result including both the flat and the curve parts of the trade.
-        flat = in_amount * (1 - _time_remaining)
         if in_.unit == TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
-                d_bonds=float(flat + Decimal(curve.user_result.d_bonds)),
+                d_bonds=float(flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
             market_result = MarketTradeResult(
                 d_base=in_.amount,
@@ -268,11 +273,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         elif in_.unit == TokenType.PT:
             user_result = AgentTradeResult(
-                d_base=float(flat + Decimal(curve.user_result.d_base)),
+                d_base=float(flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
             )
             market_result = MarketTradeResult(
-                d_base=float(-flat + Decimal(curve.market_result.d_base)),
+                d_base=float(-flat_with_fee + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -285,9 +290,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=float(flat + Decimal(curve.breakdown.without_fee_or_slippage)),
-                without_fee=float(flat + Decimal(curve.breakdown.without_fee)),
-                fee=curve.breakdown.fee,
-                with_fee=float(flat + Decimal(curve.breakdown.with_fee)),
+                without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
+                without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
+                fee=curve.breakdown.fee + float(redemption_fee),
+                with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
             ),
         )
