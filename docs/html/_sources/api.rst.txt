@@ -18,3 +18,6 @@ API
 
 .. automodule:: elfpy.utils
     :members:
+
+.. automodule:: elfpy.pricing_models
+    :members:

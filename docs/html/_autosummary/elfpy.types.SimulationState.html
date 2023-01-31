@@ -44,17 +44,6 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">SimulationState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_number=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simulation_start_time=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_number=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">daily_block_number=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_timestamp=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_market_datetime=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_market_yearfrac=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_trade_number=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_step_size=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_duration=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_liquidity=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floor_fee=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_vault_age=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_asset_price=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_apr=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_trading_days=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_blocks_per_day=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spot_price=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.SimulationState" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Simulator state, updated after each trade</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.update_agent_wallet" title="elfpy.types.SimulationState.update_agent_wallet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_agent_wallet</span></code></a>(agent)</p></td>
-<td><p>Update each entry in the SimulationState's copy for the agent wallet state by appending to the list for each key, or creating a new key.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.update_market_state" title="elfpy.types.SimulationState.update_market_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_market_state</span></code></a>(market_state)</p></td>
-<td><p>Update each entry in the SimulationState's copy for the market state by appending to the list for each key, or creating a new key.</p></td>
-</tr>
-</tbody>
-</table>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -120,10 +109,10 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.__init__" title="elfpy.types.SimulationState.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([model_name, run_number, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.update_agent_wallet" title="elfpy.types.SimulationState.update_agent_wallet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_agent_wallet</span></code></a>(agent)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.update_agent_wallet" title="elfpy.types.SimulationState.update_agent_wallet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_agent_wallet</span></code></a>(agent)</p></td>
 <td><p>Update each entry in the SimulationState's copy for the agent wallet state by appending to the list for each key, or creating a new key.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.update_market_state" title="elfpy.types.SimulationState.update_market_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_market_state</span></code></a>(market_state)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.update_market_state" title="elfpy.types.SimulationState.update_market_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_market_state</span></code></a>(market_state)</p></td>
 <td><p>Update each entry in the SimulationState's copy for the market state by appending to the list for each key, or creating a new key.</p></td>
 </tr>
 </tbody>
@@ -131,67 +120,67 @@
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.model_name" title="elfpy.types.SimulationState.model_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_name</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.model_name" title="elfpy.types.SimulationState.model_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_name</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.run_number" title="elfpy.types.SimulationState.run_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_number</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.run_number" title="elfpy.types.SimulationState.run_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_number</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.simulation_start_time" title="elfpy.types.SimulationState.simulation_start_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation_start_time</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.simulation_start_time" title="elfpy.types.SimulationState.simulation_start_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation_start_time</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.day" title="elfpy.types.SimulationState.day"><code class="xref py py-obj docutils literal notranslate"><span class="pre">day</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.day" title="elfpy.types.SimulationState.day"><code class="xref py py-obj docutils literal notranslate"><span class="pre">day</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.block_number" title="elfpy.types.SimulationState.block_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_number</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.block_number" title="elfpy.types.SimulationState.block_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_number</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.daily_block_number" title="elfpy.types.SimulationState.daily_block_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daily_block_number</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.daily_block_number" title="elfpy.types.SimulationState.daily_block_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daily_block_number</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.block_timestamp" title="elfpy.types.SimulationState.block_timestamp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_timestamp</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.block_timestamp" title="elfpy.types.SimulationState.block_timestamp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_timestamp</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.current_market_datetime" title="elfpy.types.SimulationState.current_market_datetime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_market_datetime</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.current_market_datetime" title="elfpy.types.SimulationState.current_market_datetime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_market_datetime</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.current_market_yearfrac" title="elfpy.types.SimulationState.current_market_yearfrac"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_market_yearfrac</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.current_market_yearfrac" title="elfpy.types.SimulationState.current_market_yearfrac"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_market_yearfrac</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.run_trade_number" title="elfpy.types.SimulationState.run_trade_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_trade_number</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.run_trade_number" title="elfpy.types.SimulationState.run_trade_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_trade_number</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.market_step_size" title="elfpy.types.SimulationState.market_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">market_step_size</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.market_step_size" title="elfpy.types.SimulationState.market_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">market_step_size</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.position_duration" title="elfpy.types.SimulationState.position_duration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">position_duration</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.position_duration" title="elfpy.types.SimulationState.position_duration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">position_duration</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.target_liquidity" title="elfpy.types.SimulationState.target_liquidity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target_liquidity</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.target_liquidity" title="elfpy.types.SimulationState.target_liquidity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target_liquidity</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.fee_percent" title="elfpy.types.SimulationState.fee_percent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fee_percent</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.fee_percent" title="elfpy.types.SimulationState.fee_percent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fee_percent</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.floor_fee" title="elfpy.types.SimulationState.floor_fee"><code class="xref py py-obj docutils literal notranslate"><span class="pre">floor_fee</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.floor_fee" title="elfpy.types.SimulationState.floor_fee"><code class="xref py py-obj docutils literal notranslate"><span class="pre">floor_fee</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.init_vault_age" title="elfpy.types.SimulationState.init_vault_age"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_vault_age</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.init_vault_age" title="elfpy.types.SimulationState.init_vault_age"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_vault_age</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.base_asset_price" title="elfpy.types.SimulationState.base_asset_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_asset_price</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.base_asset_price" title="elfpy.types.SimulationState.base_asset_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_asset_price</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.pool_apr" title="elfpy.types.SimulationState.pool_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pool_apr</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.pool_apr" title="elfpy.types.SimulationState.pool_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pool_apr</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.num_trading_days" title="elfpy.types.SimulationState.num_trading_days"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_trading_days</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.num_trading_days" title="elfpy.types.SimulationState.num_trading_days"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_trading_days</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.num_blocks_per_day" title="elfpy.types.SimulationState.num_blocks_per_day"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_blocks_per_day</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.num_blocks_per_day" title="elfpy.types.SimulationState.num_blocks_per_day"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_blocks_per_day</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.SimulationState.spot_price" title="elfpy.types.SimulationState.spot_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spot_price</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState.spot_price" title="elfpy.types.SimulationState.spot_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spot_price</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -308,7 +297,7 @@
 by appending to the list for each key, or creating a new key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market_state</strong> (<a class="reference internal" href="../api.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The state variable for the Market class</p>
+<dd class="field-odd"><p><strong>market_state</strong> (<a class="reference internal" href="elfpy.types.MarketState.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The state variable for the Market class</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -323,7 +312,7 @@ by appending to the list for each key, or creating a new key.</p>
 by appending to the list for each key, or creating a new key.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>agent</strong> (<a class="reference internal" href="../api.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a>) – An instantiated Agent object</p>
+<dd class="field-odd"><p><strong>agent</strong> (<a class="reference internal" href="elfpy.agent.Agent.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a>) – An instantiated Agent object</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -356,6 +345,7 @@ by appending to the list for each key, or creating a new key.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.types.html">elfpy.types</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="elfpy.types.to_description.html">elfpy.types.to_description</a></li>

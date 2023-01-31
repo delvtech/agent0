@@ -47,13 +47,13 @@
 <td><p>Wrapper function for loading a toml config file and parsing it.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="elfpy.utils.parse_config.load_config_file.html#elfpy.utils.parse_config.load_config_file" title="elfpy.utils.parse_config.load_config_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_config_file</span></code></a>(config_file)</p></td>
-<td><p>Load a config file as a dictionary :type config_file:  :param config_file: Absolute path to a toml config file.</p></td>
+<td><p>Load a config file as a dictionary</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="elfpy.utils.parse_config.override_config_variables.html#elfpy.utils.parse_config.override_config_variables" title="elfpy.utils.parse_config.override_config_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">override_config_variables</span></code></a>(config, override_dict)</p></td>
-<td><p>Replace existing member &amp; config variables with ones defined in override_dict :type config: <a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.utils.config.Config</span></code></a> :param config: config object, as defined in elfpy.utils.config :type config: Config :type override_dict: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> :param override_dict: dictionary containing keys that correspond to member fields of the RandomSimulationVariables class :type override_dict: dict</p></td>
+<td><p>Replace existing member &amp; config variables with ones defined in override_dict</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="elfpy.utils.parse_config.parse_simulation_config.html#elfpy.utils.parse_config.parse_simulation_config" title="elfpy.utils.parse_config.parse_simulation_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_simulation_config</span></code></a>(config_dict)</p></td>
-<td><p>Parse the TOML config file and return a config object :type config_dict:  :param config_dict: Nested dictionary containing the market, amm, and simulator config dicts :type config_dict: dictionary</p></td>
+<td><p>Parse the TOML config file and return a config object</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="elfpy.utils.parse_config.text_to_logging_level.html#elfpy.utils.parse_config.text_to_logging_level" title="elfpy.utils.parse_config.text_to_logging_level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">text_to_logging_level</span></code></a>(logging_text)</p></td>
 <td><p>Converts logging level description to an integer</p></td>
@@ -63,16 +63,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.load_and_parse_config_file">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_and_parse_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_and_parse_config_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Wrapper function for loading a toml config file and parsing it.
-:type config_file: 
-:param config_file: Absolute path to a toml config file.
-:type config_file: str</p>
+<dd><p>Wrapper function for loading a toml config file and parsing it.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<em>str</em>) – Absolute path to a toml config file.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -80,16 +80,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.load_config_file">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_config_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a config file as a dictionary
-:type config_file: 
-:param config_file: Absolute path to a toml config file.
-:type config_file: str</p>
+<dd><p>Load a config file as a dictionary</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config_dict</strong> – Nested dictionary containing the market, amm, and simulator config dicts</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<em>str</em>) – Absolute path to a toml config file.</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>dictionary</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>config_dict</strong> – Nested dictionary containing the market, amm, and simulator config dicts</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dictionary</p>
 </dd>
 </dl>
 </dd></dl>
@@ -97,16 +97,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.parse_simulation_config">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">parse_simulation_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.parse_simulation_config" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse the TOML config file and return a config object
-:type config_dict: 
-:param config_dict: Nested dictionary containing the market, amm, and simulator config dicts
-:type config_dict: dictionary</p>
+<dd><p>Parse the TOML config file and return a config object</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_dict</strong> (<em>dictionary</em>) – Nested dictionary containing the market, amm, and simulator config dicts</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -131,19 +131,19 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.override_config_variables">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">override_config_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.override_config_variables" title="Permalink to this definition">¶</a></dt>
-<dd><p>Replace existing member &amp; config variables with ones defined in override_dict
-:type config: <a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.utils.config.Config</span></code></a>
-:param config: config object, as defined in elfpy.utils.config
-:type config: Config
-:type override_dict: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>
-:param override_dict: dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
-:type override_dict: dict</p>
+<dd><p>Replace existing member &amp; config variables with ones defined in override_dict</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>same dataclass as the config input, but with fields specified by override_dict changed</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><em>Config</em></a>) – config object, as defined in elfpy.utils.config</p></li>
+<li><p><strong>override_dict</strong> (<em>dict</em>) – dictionary containing keys that correspond to member fields of the RandomSimulationVariables class</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>same dataclass as the config input, but with fields specified by override_dict changed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -171,6 +171,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.types.html">elfpy.types</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.utils.html">elfpy.utils</a><ul class="current">

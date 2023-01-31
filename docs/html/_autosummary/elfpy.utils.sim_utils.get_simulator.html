@@ -42,18 +42,18 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.sim_utils.get_simulator">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">get_simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_sim_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.sim_utils.get_simulator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs a simulator with sane defaults and initializes the simulator
-with an initial LP.</p>
+<dd><p>Construct and initialize a simulator with sane defaults</p>
+<p>The simulated market is initialized with an initial LP.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>config</strong> (<a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><em>Config</em></a>) – the simulator config</p></li>
-<li><p><strong>agents</strong> (<em>list</em><em>[</em><a class="reference internal" href="../api.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a><em>]</em>) – the agents to that should be used in the simulator</p></li>
-<li><p><strong>random_sim_vars</strong> (<a class="reference internal" href="../api.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><em>RandomSimulationVariables</em></a>) – dataclass that contains variables for initiating and running simulations</p></li>
+<li><p><strong>agents</strong> (<em>list</em><em>[</em><a class="reference internal" href="elfpy.agent.Agent.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a><em>]</em>) – the agents to that should be used in the simulator</p></li>
+<li><p><strong>random_sim_vars</strong> (<a class="reference internal" href="elfpy.types.RandomSimulationVariables.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><em>RandomSimulationVariables</em></a>) – dataclass that contains variables for initiating and running simulations</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.simulators.Simulator</span></code></a></p>
+<dd class="field-even"><p><a class="reference internal" href="elfpy.simulators.Simulator.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.simulators.Simulator</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -81,6 +81,7 @@ with an initial LP.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.types.html">elfpy.types</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.utils.html">elfpy.utils</a><ul class="current">

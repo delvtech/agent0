@@ -1,0 +1,43 @@
+elfpy.pricing\_models.base.PricingModel
+=======================================
+
+.. currentmodule:: elfpy.pricing_models.base
+
+.. autoclass:: PricingModel
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PricingModel.__init__
+      ~PricingModel.calc_apr_from_reserves
+      ~PricingModel.calc_bond_reserves
+      ~PricingModel.calc_in_given_out
+      ~PricingModel.calc_liquidity
+      ~PricingModel.calc_lp_in_given_tokens_out
+      ~PricingModel.calc_lp_out_given_tokens_in
+      ~PricingModel.calc_out_given_in
+      ~PricingModel.calc_share_reserves
+      ~PricingModel.calc_spot_price_from_reserves
+      ~PricingModel.calc_time_stretch
+      ~PricingModel.calc_tokens_out_given_lp_in
+      ~PricingModel.calc_total_liquidity_from_reserves_and_price
+      ~PricingModel.check_input_assertions
+      ~PricingModel.check_output_assertions
+      ~PricingModel.get_max_long
+      ~PricingModel.get_max_short
+      ~PricingModel.model_name
+      ~PricingModel.model_type
+   
+   
+
+   
+   
+   

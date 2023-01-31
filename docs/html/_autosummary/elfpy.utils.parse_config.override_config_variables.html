@@ -42,19 +42,19 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.override_config_variables">
 <span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">override_config_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.override_config_variables" title="Permalink to this definition">¶</a></dt>
-<dd><p>Replace existing member &amp; config variables with ones defined in override_dict
-:type config: <a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.utils.config.Config</span></code></a>
-:param config: config object, as defined in elfpy.utils.config
-:type config: Config
-:type override_dict: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>
-:param override_dict: dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
-:type override_dict: dict</p>
+<dd><p>Replace existing member &amp; config variables with ones defined in override_dict</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>same dataclass as the config input, but with fields specified by override_dict changed</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><em>Config</em></a>) – config object, as defined in elfpy.utils.config</p></li>
+<li><p><strong>override_dict</strong> (<em>dict</em>) – dictionary containing keys that correspond to member fields of the RandomSimulationVariables class</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>same dataclass as the config input, but with fields specified by override_dict changed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -82,6 +82,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.types.html">elfpy.types</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.utils.html">elfpy.utils</a><ul class="current">

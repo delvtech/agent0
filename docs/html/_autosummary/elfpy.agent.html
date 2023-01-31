@@ -43,7 +43,7 @@
 <p class="rubric">Classes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Agent</span></code></a>(wallet_address, budget)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="elfpy.agent.Agent.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Agent</span></code></a>(wallet_address, budget)</p></td>
 <td><p>Agent class for conducting trades on the market</p></td>
 </tr>
 </tbody>
@@ -61,7 +61,7 @@ date value is an inte with how many tokens they have for that date.</p>
 <dd><p>Market object that this Agent will be trading on.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market">elfpy.markets.Market</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market">elfpy.markets.Market</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -127,103 +127,11 @@ date value is an inte with how many tokens they have for that date.</p>
 <dd><p>Wallet object which tracks the agent’s asset balances</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet">elfpy.wallet.Wallet</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.wallet.Wallet.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet">elfpy.wallet.Wallet</a></p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.create_agent_action">
-<span class="sig-name descname"><span class="pre">create_agent_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><span class="pre">MarketActionType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">MarketAction</span></a></span></span><a class="headerlink" href="#elfpy.agent.Agent.create_agent_action" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates and returns a MarketAction object which represents a trade that this agent can make</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.action">
-<span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">MarketAction</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.agent.Agent.action" title="Permalink to this definition">¶</a></dt>
-<dd><p>Execute the MarketAction implemented by a specific policy</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_long">
-<span class="sig-name descname"><span class="pre">get_max_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_max_long" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an approximation of the maximum amoun of base that the agent can long given current market conditions</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_short">
-<span class="sig-name descname"><span class="pre">get_max_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_max_short" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an approximation of the maximum amount of base that the agent can short given current market conditions</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.get_trade_list">
-<span class="sig-name descname"><span class="pre">get_trade_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">MarketAction</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_trade_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Helper function for computing a agent trade</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.update_spend">
-<span class="sig-name descname"><span class="pre">update_spend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.update_spend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Track over time the agent’s weighted average spend, for return calculation</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.update_wallet">
-<span class="sig-name descname"><span class="pre">update_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wallet_deltas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">Wallet</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.update_wallet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the agent’s wallet</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.get_liquidation_trades">
-<span class="sig-name descname"><span class="pre">get_liquidation_trades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">MarketAction</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_liquidation_trades" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get final trades for liquidating positions</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.log_status_report">
-<span class="sig-name descname"><span class="pre">log_status_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.log_status_report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Logs user state</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="elfpy.agent.Agent.log_final_report">
-<span class="sig-name descname"><span class="pre">log_final_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.log_final_report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Logs a report of the agent’s state</p>
-</dd></dl>
-
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#id1" title="elfpy.agent.Agent.action"><code class="xref py py-obj docutils literal notranslate"><span class="pre">action</span></code></a>(market)</p></td>
-<td><p>Abstract method meant to be implemented by the specific policy</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#id0" title="elfpy.agent.Agent.create_agent_action"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_agent_action</span></code></a>(action_type, trade_amount)</p></td>
-<td><p>Creates and returns a MarketAction object which represents a trade that this agent can make</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#id5" title="elfpy.agent.Agent.get_liquidation_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_liquidation_trades</span></code></a>(market)</p></td>
-<td><p>Get final trades for liquidating positions</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#id2" title="elfpy.agent.Agent.get_max_long"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_long</span></code></a>(market)</p></td>
-<td><p>Gets an approximation of the maximum amount of base the agent can use</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#id3" title="elfpy.agent.Agent.get_max_short"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_max_short</span></code></a>(market)</p></td>
-<td><p>Gets an approximation of the maximum amount of bonds the agent can short.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.agent.Agent.get_trades" title="elfpy.agent.Agent.get_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_trades</span></code></a>(market)</p></td>
-<td><p>Helper function for computing a agent trade</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#id7" title="elfpy.agent.Agent.log_final_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_final_report</span></code></a>(market)</p></td>
-<td><p>Logs a report of the agent's state</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#id6" title="elfpy.agent.Agent.log_status_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_status_report</span></code></a>()</p></td>
-<td><p>Logs the current user state</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#id4" title="elfpy.agent.Agent.update_wallet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_wallet</span></code></a>(wallet_deltas, market)</p></td>
-<td><p>Update the agent's wallet</p></td>
-</tr>
-</tbody>
-</table>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -233,13 +141,13 @@ date value is an inte with how many tokens they have for that date.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">create_agent_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.create_agent_action">
+<span class="sig-name descname"><span class="pre">create_agent_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.create_agent_action" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates and returns a MarketAction object which represents a trade that this agent can make</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>action_type</strong> (<a class="reference internal" href="../api.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><em>MarketActionType</em></a>) – Type of action this function will execute. Must be one of the supported MarketActionTypes</p></li>
+<li><p><strong>action_type</strong> (<a class="reference internal" href="elfpy.types.MarketActionType.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><em>MarketActionType</em></a>) – Type of action this function will execute. Must be one of the supported MarketActionTypes</p></li>
 <li><p><strong>trade_amount</strong> (<em>float</em>) – Amount of assets that the agent will trade</p></li>
 <li><p><strong>mint_time</strong> (<em>float</em>) – Time relative to the market at which the tokens relevant to this trade were minted, in yearfracs</p></li>
 </ul>
@@ -248,37 +156,37 @@ date value is an inte with how many tokens they have for that date.</p>
 <dd class="field-even"><p>The MarketAction object that contains the details about the action to execute in the market</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.action">
+<span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.action" title="Permalink to this definition">¶</a></dt>
 <dd><p>Abstract method meant to be implemented by the specific policy</p>
 <p>Specify action from the policy</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of actions to execute in the market</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
+<dd class="field-odd"><p>list[<a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">get_max_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_long">
+<span class="sig-name descname"><span class="pre">get_max_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.get_max_long" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets an approximation of the maximum amount of base the agent can use</p>
 <p>Typically would be called to determine how much to enter into a long position.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Maximum amount the agent can use to open a long</p>
@@ -290,12 +198,12 @@ date value is an inte with how many tokens they have for that date.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">get_max_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_short">
+<span class="sig-name descname"><span class="pre">get_max_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.get_max_short" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets an approximation of the maximum amount of bonds the agent can short.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Amount of base that the agent can short in the current market</p>
@@ -323,8 +231,8 @@ we spend what we have to spend, and get what we get.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
-<li><p><strong>pricing_model</strong> (<em>PricingModel</em>) – The pricing model in use for this simulated market</p></li>
+<li><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
+<li><p><strong>pricing_model</strong> (<a class="reference internal" href="elfpy.pricing_models.base.PricingModel.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><em>PricingModel</em></a>) – The pricing model in use for this simulated market</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -337,14 +245,14 @@ we spend what we have to spend, and get what we get.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">update_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_deltas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.update_wallet">
+<span class="sig-name descname"><span class="pre">update_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_deltas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.update_wallet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the agent’s wallet</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>wallet_deltas</strong> (<a class="reference internal" href="../api.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><em>Wallet</em></a>) – The agent’s wallet that tracks the amount of assets this agent holds</p></li>
-<li><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
+<li><p><strong>wallet_deltas</strong> (<a class="reference internal" href="elfpy.wallet.Wallet.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><em>Wallet</em></a>) – The agent’s wallet that tracks the amount of assets this agent holds</p></li>
+<li><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -354,25 +262,25 @@ we spend what we have to spend, and get what we get.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">get_liquidation_trades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_liquidation_trades">
+<span class="sig-name descname"><span class="pre">get_liquidation_trades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.get_liquidation_trades" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get final trades for liquidating positions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades or liquidations (MarketActions)</p>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades or liquidations (MarketActions)</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of trades to execute in order to liquidate positions where applicable</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[<a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
+<dd class="field-odd"><p>list[<a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">log_status_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.log_status_report">
+<span class="sig-name descname"><span class="pre">log_status_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.log_status_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Logs the current user state</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -382,12 +290,12 @@ we spend what we have to spend, and get what we get.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">log_final_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="elfpy.agent.Agent.log_final_report">
+<span class="sig-name descname"><span class="pre">log_final_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent.log_final_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Logs a report of the agent’s state</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent can execute trades (MarketActions)</p>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent can execute trades (MarketActions)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -432,26 +340,17 @@ we spend what we have to spend, and get what we get.</p>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.action"><code class="docutils literal notranslate"><span class="pre">Agent.action()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_max_long"><code class="docutils literal notranslate"><span class="pre">Agent.get_max_long()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_max_short"><code class="docutils literal notranslate"><span class="pre">Agent.get_max_short()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_trade_list"><code class="docutils literal notranslate"><span class="pre">Agent.get_trade_list()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.update_spend"><code class="docutils literal notranslate"><span class="pre">Agent.update_spend()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_trades"><code class="docutils literal notranslate"><span class="pre">Agent.get_trades()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.update_wallet"><code class="docutils literal notranslate"><span class="pre">Agent.update_wallet()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_liquidation_trades"><code class="docutils literal notranslate"><span class="pre">Agent.get_liquidation_trades()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.log_status_report"><code class="docutils literal notranslate"><span class="pre">Agent.log_status_report()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.log_final_report"><code class="docutils literal notranslate"><span class="pre">Agent.log_final_report()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Agent.create_agent_action()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Agent.action()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Agent.get_max_long()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Agent.get_max_short()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#elfpy.agent.Agent.get_trades"><code class="docutils literal notranslate"><span class="pre">Agent.get_trades()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">Agent.update_wallet()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Agent.get_liquidation_trades()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Agent.log_status_report()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">Agent.log_final_report()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.types.html">elfpy.types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.utils.html">elfpy.utils</a></li>

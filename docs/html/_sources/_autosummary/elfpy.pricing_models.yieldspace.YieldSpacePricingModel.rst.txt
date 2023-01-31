@@ -1,0 +1,43 @@
+elfpy.pricing\_models.yieldspace.YieldSpacePricingModel
+=======================================================
+
+.. currentmodule:: elfpy.pricing_models.yieldspace
+
+.. autoclass:: YieldSpacePricingModel
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~YieldSpacePricingModel.__init__
+      ~YieldSpacePricingModel.calc_apr_from_reserves
+      ~YieldSpacePricingModel.calc_bond_reserves
+      ~YieldSpacePricingModel.calc_in_given_out
+      ~YieldSpacePricingModel.calc_liquidity
+      ~YieldSpacePricingModel.calc_lp_in_given_tokens_out
+      ~YieldSpacePricingModel.calc_lp_out_given_tokens_in
+      ~YieldSpacePricingModel.calc_out_given_in
+      ~YieldSpacePricingModel.calc_share_reserves
+      ~YieldSpacePricingModel.calc_spot_price_from_reserves
+      ~YieldSpacePricingModel.calc_time_stretch
+      ~YieldSpacePricingModel.calc_tokens_out_given_lp_in
+      ~YieldSpacePricingModel.calc_total_liquidity_from_reserves_and_price
+      ~YieldSpacePricingModel.check_input_assertions
+      ~YieldSpacePricingModel.check_output_assertions
+      ~YieldSpacePricingModel.get_max_long
+      ~YieldSpacePricingModel.get_max_short
+      ~YieldSpacePricingModel.model_name
+      ~YieldSpacePricingModel.model_type
+   
+   
+
+   
+   
+   
