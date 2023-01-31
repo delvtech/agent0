@@ -25,6 +25,8 @@ python -m pip install stochastic --ignore-requires-python
 python -m pip install -r requirements.txt
 ```
 
+If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
+
 Then install the elfpy package with `python3 -m pip install -e .` from the git directory root.
 
 ### Docker
