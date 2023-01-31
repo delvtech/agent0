@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 
 
 def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
-    """Converts the simulator output dictionary to a pandas dataframe
+    r"""Converts the simulator output dictionary to a pandas dataframe
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulation_state : SimulationState
         simulation_state, which is a member variable of the Simulator class
 
@@ -28,10 +28,10 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
 
 
 def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
-    """Converts the simulator output dictionary to a pandas dataframe and computes derived variables
+    r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulation_state : SimulationState
         simulation_state, which is a member variable of the Simulator class
 
@@ -73,10 +73,10 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate trades dataframe by computing means
+    r"""Aggregate trades dataframe by computing means
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
 

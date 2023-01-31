@@ -1,6 +1,4 @@
-"""
-Helper functions for delivering simulation outputs
-"""
+"""Helper functions for delivering simulation outputs"""
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 import os
@@ -26,16 +24,15 @@ if TYPE_CHECKING:
 
 ## Plotting
 def plot_market_lp_reserves(simulator: Simulator) -> Figure:
-    """
-    Plot the simulator market LP reserves per day
+    r"""Plot the simulator market LP reserves per day
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
 
     Returns
-    ---------
+    -------
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
@@ -49,16 +46,15 @@ def plot_market_lp_reserves(simulator: Simulator) -> Figure:
 
 
 def plot_market_spot_price(simulator: Simulator) -> Figure:
-    """
-    Plot the simulator market APR per day
+    r"""Plot the simulator market APR per day
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
 
     Returns
-    ---------
+    -------
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
@@ -72,16 +68,15 @@ def plot_market_spot_price(simulator: Simulator) -> Figure:
 
 
 def plot_pool_apr(simulator: Simulator) -> Figure:
-    """
-    Plot the simulator market APR per day
+    r"""Plot the simulator market APR per day
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
 
     Returns
-    ---------
+    -------
     Figure
     """
     state_df = post_processing.compute_derived_variables(simulator)
@@ -95,11 +90,10 @@ def plot_pool_apr(simulator: Simulator) -> Figure:
 
 
 def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
-    """
-    Plot the total market longs & shorts over time
+    r"""Plot the total market longs & shorts over time
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
 
@@ -107,7 +101,7 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
 
     Returns
-    ---------
+    -------
     Figure
     """
     nrows = 1
@@ -134,11 +128,10 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
 
 
 def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
-    """
-    Plot the wallet base asset and LP token quantities over time
+    r"""Plot the wallet base asset and LP token quantities over time
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
 
@@ -146,7 +139,7 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, 
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
 
     Returns
-    ---------
+    -------
     Figure
     """
     nrows = 1
@@ -173,10 +166,10 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, 
 
 
 def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, Axes, GridSpec]:
-    """Setup a figure with axes that have reasonable spacing
+    r"""Setup a figure with axes that have reasonable spacing
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     nrows : int
        number of rows in the figure
     ncols : int
@@ -185,7 +178,7 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
         optional keyword arguments to be supplied to matplotlib.gridspec.GridSpec()
 
     Returns
-    ---------
+    -------
     tuple[Figure, Axes, GridSpec]
         a tuple containing the relevant figure objects
     """
@@ -198,18 +191,17 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
 
 
 def clear_axis(axis: Axes, spines: str = "none") -> Axes:
-    """
-    Clear spines & tick labels from proplot axis object
+    r"""Clear spines & tick labels from proplot axis object
 
-    Arguments
-    ---------
+    Parameters
+    ----------
         axis : matplotlib axis object
            axis to be cleared
         spines : str
            any matplotlib color, defaults to "none" which makes the spines invisible
 
     Returns
-    ---------
+    -------
         axis : matplotlib axis object
     """
     for ax_loc in ["top", "bottom", "left", "right"]:
@@ -223,17 +215,17 @@ def clear_axis(axis: Axes, spines: str = "none") -> Axes:
 
 
 def clear_axes(axes: list[Axes], spines: str = "none") -> list:
-    """
-    Calls clear_axis iteratively for each axis in axes
-    Arguments
-    ---------
+    r"""Calls clear_axis iteratively for each axis in axes
+
+    Parameters
+    ----------
         axes : list of matplotlib axis objects
            axes to be cleared
         spines : str
            any matplotlib color, defaults to "none" which makes the spines invisible
 
     Returns
-    ---------
+    -------
         axes : list of matplotlib axis objects
     """
     for axis in axes:
@@ -244,7 +236,7 @@ def clear_axes(axes: list[Axes], spines: str = "none") -> list:
 def format_axis(
     axis_handle, xlabel="", fontsize=18, linestyle="--", linewidth="1", color="grey", which="both", axis="y"
 ):
-    """Formats the axis"""
+    r"""Formats the axis"""
     # pylint: disable=too-many-arguments
     axis_handle.set_xlabel(xlabel)
     axis_handle.tick_params(axis="both", labelsize=fontsize)
@@ -255,7 +247,7 @@ def format_axis(
 
 
 def annotate(axis_handle, text, major_offset, minor_offset, val):
-    """Adds legend-like labels"""
+    r"""Adds legend-like labels"""
     annotation_handle = axis_handle.annotate(
         text,
         xy=(
@@ -277,7 +269,7 @@ def annotate(axis_handle, text, major_offset, minor_offset, val):
 
 ## Logging
 def delete_log_file() -> None:
-    """If the logger's handler if a file handler, delete the underlying file."""
+    r"""If the logger's handler if a file handler, delete the underlying file."""
     handler = logging.getLogger().handlers[0]
     if isinstance(handler, logging.FileHandler):
         os.remove(handler.baseFilename)
@@ -289,7 +281,7 @@ def setup_logging(
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
 ) -> None:
-    """Setup logging and handlers with default settings"""
+    r"""Setup logging and handlers with default settings"""
     if log_filename is None:
         handler = logging.StreamHandler(sys.stdout)
     else:
@@ -303,7 +295,7 @@ def setup_logging(
 
 
 def close_logging(delete_logs=True):
-    """Close logging and handlers for the test"""
+    r"""Close logging and handlers for the test"""
     logging.shutdown()
     if delete_logs:
         for handler in logging.getLogger().handlers:
@@ -316,10 +308,10 @@ def close_logging(delete_logs=True):
 
 
 class CustomEncoder(json.JSONEncoder):
-    """Custom encoder for JSON string dumps"""
+    r"""Custom encoder for JSON string dumps"""
 
     def default(self, o):
-        """Override default behavior"""
+        r"""Override default behavior"""
         match o:
             case np.integer():
                 return int(o)

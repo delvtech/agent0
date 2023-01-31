@@ -42,23 +42,17 @@
 <dt class="sig sig-object py" id="elfpy.wallet.Wallet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.wallet.</span></span><span class="sig-name descname"><span class="pre">Wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_tokens=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longs=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shorts=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fees_paid=0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.wallet.Wallet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Stores what’s in the agent’s wallet</p>
+<p>Stores what is in the agent’s wallet</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>address</strong> (<em>int</em>) – The trader’s address.</p></li>
 <li><p><strong>base</strong> (<em>float</em>) – The base assets that held by the trader.</p></li>
 <li><p><strong>lp_tokens</strong> (<em>float</em>) – The LP tokens held by the trader.</p></li>
-<li><p><strong>longs</strong> (<em>Dict</em><em>[</em><em>float</em><em>, </em><a class="reference internal" href="../api.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><em>Long</em></a><em>]</em>) – The long positions held by the trader.</p></li>
-<li><p><strong>shorts</strong> (<em>Dict</em><em>[</em><em>float</em><em>, </em><a class="reference internal" href="../api.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><em>Short</em></a><em>]</em>) – The short positions held by the trader.</p></li>
+<li><p><strong>longs</strong> (<em>Dict</em><em>[</em><em>float</em><em>, </em><a class="reference internal" href="elfpy.wallet.Long.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><em>Long</em></a><em>]</em>) – The long positions held by the trader.</p></li>
+<li><p><strong>shorts</strong> (<em>Dict</em><em>[</em><em>float</em><em>, </em><a class="reference internal" href="elfpy.wallet.Short.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><em>Short</em></a><em>]</em>) – The short positions held by the trader.</p></li>
 <li><p><strong>fees_paid</strong> (<em>float</em>) – The fees paid by the wallet.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Attributes<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.state" title="elfpy.wallet.Wallet.state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code></a></dt><dd><p>The wallet’s current state of public variables</p>
-</dd>
-</dl>
 </dd>
 </dl>
 <dl class="py method">
@@ -70,8 +64,8 @@
 <li><p><strong>address</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
 <li><p><strong>base</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
 <li><p><strong>lp_tokens</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
-<li><p><strong>longs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <a class="reference internal" href="../api.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Long</span></code></a>]) – </p></li>
-<li><p><strong>shorts</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <a class="reference internal" href="../api.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Short</span></code></a>]) – </p></li>
+<li><p><strong>longs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <a class="reference internal" href="elfpy.wallet.Long.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Long</span></code></a>]) – </p></li>
+<li><p><strong>shorts</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <a class="reference internal" href="elfpy.wallet.Short.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Short</span></code></a>]) – </p></li>
 <li><p><strong>fees_paid</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
 </ul>
 </dd>
@@ -89,25 +83,25 @@
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.base" title="elfpy.wallet.Wallet.base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.base" title="elfpy.wallet.Wallet.base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.fees_paid" title="elfpy.wallet.Wallet.fees_paid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fees_paid</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.fees_paid" title="elfpy.wallet.Wallet.fees_paid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fees_paid</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.lp_tokens" title="elfpy.wallet.Wallet.lp_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lp_tokens</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.lp_tokens" title="elfpy.wallet.Wallet.lp_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lp_tokens</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.state" title="elfpy.wallet.Wallet.state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code></a></p></td>
-<td><p>The wallet's current state of public variables TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.state" title="elfpy.wallet.Wallet.state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code></a></p></td>
+<td><p>The wallet's current state of public variables</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.address" title="elfpy.wallet.Wallet.address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">address</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.address" title="elfpy.wallet.Wallet.address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">address</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.longs" title="elfpy.wallet.Wallet.longs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">longs</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.longs" title="elfpy.wallet.Wallet.longs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">longs</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.wallet.Wallet.shorts" title="elfpy.wallet.Wallet.shorts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shorts</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.wallet.Wallet.shorts" title="elfpy.wallet.Wallet.shorts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shorts</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -129,12 +123,12 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="elfpy.wallet.Wallet.longs">
-<span class="sig-name descname"><span class="pre">longs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">,</span> <a class="reference internal" href="../api.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Long</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#elfpy.wallet.Wallet.longs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">longs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">,</span> <a class="reference internal" href="elfpy.wallet.Long.html#elfpy.wallet.Long" title="elfpy.wallet.Long"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Long</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#elfpy.wallet.Wallet.longs" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="elfpy.wallet.Wallet.shorts">
-<span class="sig-name descname"><span class="pre">shorts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">,</span> <a class="reference internal" href="../api.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Short</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#elfpy.wallet.Wallet.shorts" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">shorts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">typing.Dict</span></code><span class="pre">[</span><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code><span class="pre">,</span> <a class="reference internal" href="elfpy.wallet.Short.html#elfpy.wallet.Short" title="elfpy.wallet.Short"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.wallet.Short</span></code></a><span class="pre">]</span></em><a class="headerlink" href="#elfpy.wallet.Wallet.shorts" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -145,8 +139,8 @@
 <dl class="py property">
 <dt class="sig sig-object py" id="elfpy.wallet.Wallet.state">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#elfpy.wallet.Wallet.state" title="Permalink to this definition">¶</a></dt>
-<dd><p>The wallet’s current state of public variables
-TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state</p>
+<dd><p>The wallet’s current state of public variables</p>
+<p>TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state</p>
 </dd></dl>
 
 </dd></dl>
@@ -174,6 +168,7 @@ TODO: Set this up as a dataclass instead of a dict, which then needs to be conve
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.types.html">elfpy.types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.utils.html">elfpy.utils</a></li>

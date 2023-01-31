@@ -1,4 +1,4 @@
-"""Market simulators store state information when interfacing AMM pricing models with users"""
+"""Market simulators store state information when interfacing AMM pricing models with users."""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
@@ -27,7 +27,6 @@ class Market:
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
-
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
     """
@@ -90,17 +89,23 @@ class Market:
             )
 
     def trade_and_update(self, agent_action: MarketAction) -> Wallet:
-        r"""Execute a trade in the simulated market.
+        r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
+
         open_long
+
         close_long
+
         open_short
+
         close_short
+
         add_liquidity
             pricing model computes new market deltas
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
+
         remove_liquidity
             market figures out how much the user has contributed (calcualtes their fee weighting)
             market resolves fees, adds this to the agent_action (optional function, to check AMM logic)
@@ -205,7 +210,8 @@ class Market:
         - the max value you cover with base deposted from your wallet (1-p)
         these two components are both priced in base, yet happily add up to 1.0 units of bonds
         so we have the following identity:
-            total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
+        total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
+
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
@@ -323,7 +329,7 @@ class Market:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
-            will be conditional on the pricing model
+        will be conditional on the pricing model
         """
         # TODO: Why are we clamping elsewhere but we don't apply the trade at all here?
         if trade_amount <= self.market_state.bond_reserves:
@@ -375,7 +381,7 @@ class Market:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
-            will be conditional on the pricing model
+        will be conditional on the pricing model
         """
 
         # Compute the time remaining given the mint time.

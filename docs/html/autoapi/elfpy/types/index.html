@@ -1,0 +1,716 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>elfpy.types &#8212; elfpy v0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-elfpy.types">
+<span id="elfpy-types"></span><h1><a class="reference internal" href="#module-elfpy.types" title="elfpy.types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a><a class="headerlink" href="#module-elfpy.types" title="Permalink to this heading">¶</a></h1>
+<p>A set of common types used throughtout the simulation codebase.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.TokenType" title="elfpy.types.TokenType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TokenType</span></code></a></p></td>
+<td><p>A type of token</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MarketActionType</span></code></a></p></td>
+<td><p>The descriptor of an action in a market</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.Quantity" title="elfpy.types.Quantity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a></p></td>
+<td><p>An amount with a unit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StretchedTime</span></code></a></p></td>
+<td><p>A stretched time value with the time stretch</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MarketAction</span></code></a></p></td>
+<td><p>Market action specification</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MarketDeltas</span></code></a></p></td>
+<td><p>Specifies changes to values in the market</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState" title="elfpy.types.MarketState"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MarketState</span></code></a></p></td>
+<td><p>The state of an AMM</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.AgentTradeResult" title="elfpy.types.AgentTradeResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AgentTradeResult</span></code></a></p></td>
+<td><p>The result to a user of performing a trade</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketTradeResult" title="elfpy.types.MarketTradeResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MarketTradeResult</span></code></a></p></td>
+<td><p>The result to a market of performing a trade</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.TradeBreakdown" title="elfpy.types.TradeBreakdown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TradeBreakdown</span></code></a></p></td>
+<td><p>A granular breakdown of a trade.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TradeResult</span></code></a></p></td>
+<td><p>The result of performing a trade.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomSimulationVariables</span></code></a></p></td>
+<td><p>Random variables to be used during simulation setup &amp; execution</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.SimulationState" title="elfpy.types.SimulationState"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SimulationState</span></code></a></p></td>
+<td><p>Simulator state, updated after each trade</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.to_description" title="elfpy.types.to_description"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_description</span></code></a>(→ dict[str, str])</p></td>
+<td><p>A dataclass helper that constructs metadata containing a description.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Permalink to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.WEI" title="elfpy.types.WEI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WEI</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MAX_RESERVES_DIFFERENCE" title="elfpy.types.MAX_RESERVES_DIFFERENCE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_RESERVES_DIFFERENCE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.types.to_description">
+<span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">to_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.types.to_description" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dataclass helper that constructs metadata containing a description.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="elfpy.types.WEI">
+<span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">WEI</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-18</span></em><a class="headerlink" href="#elfpy.types.WEI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="elfpy.types.MAX_RESERVES_DIFFERENCE">
+<span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MAX_RESERVES_DIFFERENCE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20000000000.0</span></em><a class="headerlink" href="#elfpy.types.MAX_RESERVES_DIFFERENCE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.TokenType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">TokenType</span></span><a class="headerlink" href="#elfpy.types.TokenType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>A type of token</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TokenType.BASE">
+<span class="sig-name descname"><span class="pre">BASE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'base'</span></em><a class="headerlink" href="#elfpy.types.TokenType.BASE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TokenType.PT">
+<span class="sig-name descname"><span class="pre">PT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pt'</span></em><a class="headerlink" href="#elfpy.types.TokenType.PT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketActionType</span></span><a class="headerlink" href="#elfpy.types.MarketActionType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>The descriptor of an action in a market</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.OPEN_LONG">
+<span class="sig-name descname"><span class="pre">OPEN_LONG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'open_long'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.OPEN_LONG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.OPEN_SHORT">
+<span class="sig-name descname"><span class="pre">OPEN_SHORT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'open_short'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.OPEN_SHORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.CLOSE_LONG">
+<span class="sig-name descname"><span class="pre">CLOSE_LONG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'close_long'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.CLOSE_LONG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.CLOSE_SHORT">
+<span class="sig-name descname"><span class="pre">CLOSE_SHORT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'close_short'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.CLOSE_SHORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.ADD_LIQUIDITY">
+<span class="sig-name descname"><span class="pre">ADD_LIQUIDITY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'add_liquidity'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.ADD_LIQUIDITY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketActionType.REMOVE_LIQUIDITY">
+<span class="sig-name descname"><span class="pre">REMOVE_LIQUIDITY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'remove_liquidity'</span></em><a class="headerlink" href="#elfpy.types.MarketActionType.REMOVE_LIQUIDITY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.Quantity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">Quantity</span></span><a class="headerlink" href="#elfpy.types.Quantity" title="Permalink to this definition">¶</a></dt>
+<dd><p>An amount with a unit</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.Quantity.amount">
+<span class="sig-name descname"><span class="pre">amount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.Quantity.amount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.Quantity.unit">
+<span class="sig-name descname"><span class="pre">unit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#elfpy.types.TokenType" title="elfpy.types.TokenType"><span class="pre">TokenType</span></a></em><a class="headerlink" href="#elfpy.types.Quantity.unit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">StretchedTime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">days</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_stretch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.StretchedTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>A stretched time value with the time stretch</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime.days">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">days</span></span><a class="headerlink" href="#elfpy.types.StretchedTime.days" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format time as days</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime.normalized_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">normalized_time</span></span><a class="headerlink" href="#elfpy.types.StretchedTime.normalized_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format time as normalized days</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime.stretched_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stretched_time</span></span><a class="headerlink" href="#elfpy.types.StretchedTime.stretched_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format time as stretched time</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime.time_stretch">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time_stretch</span></span><a class="headerlink" href="#elfpy.types.StretchedTime.time_stretch" title="Permalink to this definition">¶</a></dt>
+<dd><p>The time stretch constant</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.StretchedTime.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.StretchedTime.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketAction</span></span><a class="headerlink" href="#elfpy.types.MarketAction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Market action specification</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction.action_type">
+<span class="sig-name descname"><span class="pre">action_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><span class="pre">MarketActionType</span></a></em><a class="headerlink" href="#elfpy.types.MarketAction.action_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction.trade_amount">
+<span class="sig-name descname"><span class="pre">trade_amount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.MarketAction.trade_amount" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction.wallet_address">
+<span class="sig-name descname"><span class="pre">wallet_address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#elfpy.types.MarketAction.wallet_address" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction.mint_time">
+<span class="sig-name descname"><span class="pre">mint_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketAction.mint_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketAction.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketAction.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a description of the Action</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketDeltas</span></span><a class="headerlink" href="#elfpy.types.MarketDeltas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies changes to values in the market</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_base_asset">
+<span class="sig-name descname"><span class="pre">d_base_asset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_base_asset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_token_asset">
+<span class="sig-name descname"><span class="pre">d_token_asset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_token_asset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_base_buffer">
+<span class="sig-name descname"><span class="pre">d_base_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_base_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_bond_buffer">
+<span class="sig-name descname"><span class="pre">d_bond_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_bond_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_lp_reserves">
+<span class="sig-name descname"><span class="pre">d_lp_reserves</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_lp_reserves" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.d_share_price">
+<span class="sig-name descname"><span class="pre">d_share_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#elfpy.types.MarketDeltas.d_share_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketDeltas.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketDeltas.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketDeltas.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketDeltas.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.MarketState">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketState</span></span><a class="headerlink" href="#elfpy.types.MarketState" title="Permalink to this definition">¶</a></dt>
+<dd><p>The state of an AMM</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.share_reserves">
+<span class="sig-name descname"><span class="pre">share_reserves</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.share_reserves" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.bond_reserves">
+<span class="sig-name descname"><span class="pre">bond_reserves</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.bond_reserves" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.base_buffer">
+<span class="sig-name descname"><span class="pre">base_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.base_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.bond_buffer">
+<span class="sig-name descname"><span class="pre">bond_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.bond_buffer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.lp_reserves">
+<span class="sig-name descname"><span class="pre">lp_reserves</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.lp_reserves" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.vault_apr">
+<span class="sig-name descname"><span class="pre">vault_apr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.vault_apr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.share_price">
+<span class="sig-name descname"><span class="pre">share_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.share_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.init_share_price">
+<span class="sig-name descname"><span class="pre">init_share_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#elfpy.types.MarketState.init_share_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.apply_delta">
+<span class="sig-name descname"><span class="pre">apply_delta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">MarketDeltas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.types.MarketState.apply_delta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a delta to the market state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.MarketState.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketState.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return str(self).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.AgentTradeResult">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">AgentTradeResult</span></span><a class="headerlink" href="#elfpy.types.AgentTradeResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>The result to a user of performing a trade</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.AgentTradeResult.d_base">
+<span class="sig-name descname"><span class="pre">d_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.AgentTradeResult.d_base" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.AgentTradeResult.d_bonds">
+<span class="sig-name descname"><span class="pre">d_bonds</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.AgentTradeResult.d_bonds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.MarketTradeResult">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketTradeResult</span></span><a class="headerlink" href="#elfpy.types.MarketTradeResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>The result to a market of performing a trade</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketTradeResult.d_base">
+<span class="sig-name descname"><span class="pre">d_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.MarketTradeResult.d_base" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.MarketTradeResult.d_bonds">
+<span class="sig-name descname"><span class="pre">d_bonds</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.MarketTradeResult.d_bonds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.TradeBreakdown">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">TradeBreakdown</span></span><a class="headerlink" href="#elfpy.types.TradeBreakdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>A granular breakdown of a trade.</p>
+<p>This includes information relating to fees and slippage.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeBreakdown.without_fee_or_slippage">
+<span class="sig-name descname"><span class="pre">without_fee_or_slippage</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.TradeBreakdown.without_fee_or_slippage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeBreakdown.with_fee">
+<span class="sig-name descname"><span class="pre">with_fee</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.TradeBreakdown.with_fee" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeBreakdown.without_fee">
+<span class="sig-name descname"><span class="pre">without_fee</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.TradeBreakdown.without_fee" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeBreakdown.fee">
+<span class="sig-name descname"><span class="pre">fee</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.TradeBreakdown.fee" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.TradeResult">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">TradeResult</span></span><a class="headerlink" href="#elfpy.types.TradeResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>The result of performing a trade.</p>
+<p>This includes granular information about the trade details,
+including the amount of fees collected and the total delta.
+Additionally, breakdowns for the updates that should be applied
+to the user and the market are computed.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeResult.user_result">
+<span class="sig-name descname"><span class="pre">user_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#elfpy.types.AgentTradeResult" title="elfpy.types.AgentTradeResult"><span class="pre">AgentTradeResult</span></a></em><a class="headerlink" href="#elfpy.types.TradeResult.user_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeResult.market_result">
+<span class="sig-name descname"><span class="pre">market_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#elfpy.types.MarketTradeResult" title="elfpy.types.MarketTradeResult"><span class="pre">MarketTradeResult</span></a></em><a class="headerlink" href="#elfpy.types.TradeResult.market_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.TradeResult.breakdown">
+<span class="sig-name descname"><span class="pre">breakdown</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#elfpy.types.TradeBreakdown" title="elfpy.types.TradeBreakdown"><span class="pre">TradeBreakdown</span></a></em><a class="headerlink" href="#elfpy.types.TradeResult.breakdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">RandomSimulationVariables</span></span><a class="headerlink" href="#elfpy.types.RandomSimulationVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Random variables to be used during simulation setup &amp; execution</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.target_liquidity">
+<span class="sig-name descname"><span class="pre">target_liquidity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.target_liquidity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.target_pool_apr">
+<span class="sig-name descname"><span class="pre">target_pool_apr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.target_pool_apr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.fee_percent">
+<span class="sig-name descname"><span class="pre">fee_percent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.fee_percent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.vault_apr">
+<span class="sig-name descname"><span class="pre">vault_apr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.vault_apr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.init_vault_age">
+<span class="sig-name descname"><span class="pre">init_vault_age</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.init_vault_age" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.init_share_price">
+<span class="sig-name descname"><span class="pre">init_share_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.init_share_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.RandomSimulationVariables.__post_init__">
+<span class="sig-name descname"><span class="pre">__post_init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.RandomSimulationVariables.__post_init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>init_share_price is a function of other random variables</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">SimulationState</span></span><a class="headerlink" href="#elfpy.types.SimulationState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulator state, updated after each trade</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.model_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.run_number">
+<span class="sig-name descname"><span class="pre">run_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.run_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.simulation_start_time">
+<span class="sig-name descname"><span class="pre">simulation_start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.simulation_start_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.day">
+<span class="sig-name descname"><span class="pre">day</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.day" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.block_number">
+<span class="sig-name descname"><span class="pre">block_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.block_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.daily_block_number">
+<span class="sig-name descname"><span class="pre">daily_block_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.daily_block_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.block_timestamp">
+<span class="sig-name descname"><span class="pre">block_timestamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.block_timestamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.current_market_datetime">
+<span class="sig-name descname"><span class="pre">current_market_datetime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.current_market_datetime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.current_market_yearfrac">
+<span class="sig-name descname"><span class="pre">current_market_yearfrac</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.current_market_yearfrac" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.run_trade_number">
+<span class="sig-name descname"><span class="pre">run_trade_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.run_trade_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.market_step_size">
+<span class="sig-name descname"><span class="pre">market_step_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.market_step_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.position_duration">
+<span class="sig-name descname"><span class="pre">position_duration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.position_duration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.target_liquidity">
+<span class="sig-name descname"><span class="pre">target_liquidity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.target_liquidity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.fee_percent">
+<span class="sig-name descname"><span class="pre">fee_percent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.fee_percent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.floor_fee">
+<span class="sig-name descname"><span class="pre">floor_fee</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.floor_fee" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.init_vault_age">
+<span class="sig-name descname"><span class="pre">init_vault_age</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.init_vault_age" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.base_asset_price">
+<span class="sig-name descname"><span class="pre">base_asset_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.base_asset_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.pool_apr">
+<span class="sig-name descname"><span class="pre">pool_apr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.pool_apr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.num_trading_days">
+<span class="sig-name descname"><span class="pre">num_trading_days</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.num_trading_days" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.num_blocks_per_day">
+<span class="sig-name descname"><span class="pre">num_blocks_per_day</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.num_blocks_per_day" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.spot_price">
+<span class="sig-name descname"><span class="pre">spot_price</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#elfpy.types.SimulationState.spot_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.update_market_state">
+<span class="sig-name descname"><span class="pre">update_market_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">MarketState</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.types.SimulationState.update_market_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update each entry in the SimulationState’s copy for the market state
+by appending to the list for each key, or creating a new key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>market_state</strong> (<a class="reference internal" href="#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The state variable for the Market class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.update_agent_wallet">
+<span class="sig-name descname"><span class="pre">update_agent_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><span class="pre">elfpy.agent.Agent</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.types.SimulationState.update_agent_wallet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update each entry in the SimulationState’s copy for the agent wallet state
+by appending to the list for each key, or creating a new key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>agent</strong> (<a class="reference internal" href="../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a>) – An instantiated Agent object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.SimulationState.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get object attribute referenced by <cite>key</cite></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.types.SimulationState.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.SimulationState.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set object attribute referenced by <cite>key</cite> to <cite>value</cite></p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">elfpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/elfpy.html">elfpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy; 2023, Element Finance.
+      
+      |
+      <a href="../../../_sources/autoapi/elfpy/types/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

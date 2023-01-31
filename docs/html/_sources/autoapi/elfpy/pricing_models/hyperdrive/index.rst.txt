@@ -1,0 +1,222 @@
+:py:mod:`elfpy.pricing_models.hyperdrive`
+=========================================
+
+.. py:module:: elfpy.pricing_models.hyperdrive
+
+.. autoapi-nested-parse::
+
+   The Hyperdrive pricing model.
+
+   ..
+       !! processed by numpydoc !!
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   elfpy.pricing_models.hyperdrive.HyperdrivePricingModel
+
+
+
+
+.. py:class:: HyperdrivePricingModel
+
+   Bases: :py:obj:`elfpy.pricing_models.yieldspace.YieldSpacePricingModel`
+
+   
+   Hyperdrive Pricing Model
+
+   This pricing model uses a combination of a constant sum invariant and a
+   YieldSpace invariant with modifications to enable the base reserves to be
+   deposited into yield bearing vaults
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+   .. py:method:: model_name() -> str
+
+      
+      Unique name given to the model, can be based on member variable states
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: model_type() -> str
+
+      
+      Unique identifier given to the model, should be lower snake_cased name
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+
+      
+      Calculates the amount of an asset that must be provided to receive a
+      specified amount of the other asset given the current AMM reserves.
+
+      The input is calculated as:
+
+      .. math::
+          in' =
+          \begin{cases}
+          c (\frac{1}{\mu} (
+          \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
+          + \Delta y \cdot (1 - \tau),
+          &\text{ if } token\_in = \text{"base"} \\
+          (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
+          - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
+          &\text{ if } token\_in = \text{"pt"}
+          \end{cases} \\
+          f =
+          \begin{cases}
+          (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
+          (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
+          \end{cases} \\
+          in = in' + f
+
+      :param out: The quantity of tokens that the user wants to receive (the amount
+                  and the unit of the tokens).
+      :type out: Quantity
+      :param market_state: The state of the AMM's reserves and share prices.
+      :type market_state: MarketState
+      :param fee_percent: The percentage of the difference between the amount paid without
+                          slippage and the amount received that will be added to the input
+                          as a fee.
+      :type fee_percent: float
+      :param time_remaining: The time remaining for the asset (incorporates time stretch).
+      :type time_remaining: StretchedTime
+
+      :returns: * *float* -- The amount the user pays without fees or slippage. The units
+                  are always in terms of bonds or base.
+                * *float* -- The amount the user pays with fees and slippage. The units are
+                  always in terms of bonds or base.
+                * *float* -- The amount the user pays with slippage and no fees. The units are
+                  always in terms of bonds or base.
+                * *float* -- The fee the user pays. The units are always in terms of bonds or
+                  base.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+
+      
+      Calculates the amount of an asset that must be provided to receive a
+      specified amount of the other asset given the current AMM reserves.
+
+      The output is calculated as:
+
+      .. math::
+          out' =
+          \begin{cases}
+          c (z - \frac{1}{\mu} (
+          \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
+          + \Delta y \cdot (1 - \tau),
+          &\text{ if } token\_out = \text{"base"} \\
+          2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
+          + c \cdot \Delta z \cdot (1 - \tau),
+          &\text{ if } token\_out = \text{"pt"}
+          \end{cases} \\
+          f =
+          \begin{cases}
+          (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
+          (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+          \end{cases} \\
+          out = out' + f
+
+      :param in_: The quantity of tokens that the user wants to pay (the amount
+                  and the unit of the tokens).
+      :type in_: Quantity
+      :param market_state: The state of the AMM's reserves and share prices.
+      :type market_state: MarketState
+      :param fee_percent: The percentage of the difference between the amount paid without
+                          slippage and the amount received that will be added to the input
+                          as a fee.
+      :type fee_percent: float
+      :param time_remaining: The time remaining for the asset (incorporates time stretch).
+      :type time_remaining: StretchedTime
+
+      :returns: The result of performing the trade.
+      :rtype: TradeResult
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+

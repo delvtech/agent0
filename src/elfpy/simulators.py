@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 
 class Simulator:
-    """
-    Stores environment variables & market simulation outputs for AMM experimentation
+    r"""Stores environment variables & market simulation outputs for AMM experimentation
 
     Member variables include input settings, random variable ranges, and simulation outputs.
     To be used in conjunction with the Market and PricingModel classes
@@ -36,9 +35,6 @@ class Simulator:
         market: Market,
         random_simulation_variables: Optional[RandomSimulationVariables] = None,
     ):
-        # pylint: disable=too-many-arguments
-        # pylint: disable=too-many-statements
-
         # User specified variables
         self.config = config
         self.log_config_variables()
@@ -63,7 +59,7 @@ class Simulator:
         self.simulation_state = SimulationState()
 
     def check_vault_apr(self) -> None:
-        """Verify that the vault_apr is the right length"""
+        r"""Verify that the vault_apr is the right length"""
         if not len(self.random_variables.vault_apr) == self.config.simulator.num_trading_days:
             raise ValueError(
                 "vault_apr must have len equal to num_trading_days = "
@@ -72,11 +68,11 @@ class Simulator:
             )
 
     def set_rng(self, rng: Generator) -> None:
-        """Assign the internal random number generator to a new instantiation
+        r"""Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         rng : Generator
             Random number generator, constructed using np.random.default_rng(seed)
         """
@@ -85,16 +81,16 @@ class Simulator:
         self.rng = rng
 
     def log_config_variables(self) -> None:
-        """Prints all variables that are in config"""
+        r"""Prints all variables that are in config"""
         # cls arg tells json how to handle numpy objects and nested dataclasses
         config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
         logging.info(config_string)
 
     def get_simulation_state_string(self) -> str:
-        """Returns a formatted string containing all of the Simulation class member variables
+        r"""Returns a formatted string containing all of the Simulation class member variables
 
         Returns
-        ---------
+        -------
         state_string : str
             Simulator class member variables (keys & values in self.__dict__) cast to a string, separated by a new line
         """
@@ -106,10 +102,10 @@ class Simulator:
         return state_string
 
     def market_step_size(self) -> float:
-        """Returns minimum time increment
+        r"""Returns minimum time increment
 
         Returns
-        ---------
+        -------
         float
             time between blocks, which is computed as 1 / blocks_per_year
         """
@@ -117,14 +113,14 @@ class Simulator:
         return 1 / blocks_per_year
 
     def add_agents(self, agent_list: list[Agent]) -> None:
-        """Append the agents and simulation_state member variables
+        r"""Append the agents and simulation_state member variables
 
         If trades have already happened (as indicated by self.run_trade_number), then empty wallet states are
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
         a pandas dataframe.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_list : list[Agent]
             A list of instantiated Agent objects
         """
@@ -134,10 +130,10 @@ class Simulator:
                 setattr(self.simulation_state, key, [None] * self.run_trade_number)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
-        """Get trades from the agent list, execute them, and update states
+        r"""Get trades from the agent list, execute them, and update states
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         last_block_in_sim : bool
             If True, indicates if the current set of trades are occuring on the final block in the simulation
         """
@@ -168,10 +164,10 @@ class Simulator:
         self.execute_trades(trades)
 
     def collect_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
-        """Collect trades from a set of provided agent IDs.
+        r"""Collect trades from a set of provided agent IDs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_ids : Any
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
@@ -184,10 +180,10 @@ class Simulator:
         return [(agent_id, self.agents[agent_id].get_trades(self.market)) for agent_id in agent_ids]
 
     def collect_liquidation_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
-        """Collect liquidation trades from a set of provided agent IDs.
+        r"""Collect liquidation trades from a set of provided agent IDs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_ids : Any
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
@@ -200,10 +196,10 @@ class Simulator:
         return [(agent_id, self.agents[agent_id].get_liquidation_trades(self.market)) for agent_id in agent_ids]
 
     def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:
-        """Execute a list of trades associated with agents in the simulator.
+        r"""Execute a list of trades associated with agents in the simulator.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
@@ -223,8 +219,8 @@ class Simulator:
                 self.run_trade_number += 1
 
     def run_simulation(self) -> None:
-        r"""
-        Run the trade simulation and update the output state dictionary
+        r"""Run the trade simulation and update the output state dictionary
+
         This is the primary function of the Simulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
@@ -269,7 +265,7 @@ class Simulator:
             agent.log_final_report(self.market)
 
     def update_simulation_state(self) -> None:
-        """Increment the list for each key in the simulation_state output variable"""
+        r"""Increment the list for each key in the simulation_state output variable"""
         # pylint: disable=too-many-statements
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)

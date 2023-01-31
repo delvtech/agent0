@@ -8,8 +8,7 @@ import numpy as np
 
 
 def current_datetime() -> datetime:
-    """
-    Returns the current time
+    r"""Returns the current time
 
     Returns
     -------
@@ -20,11 +19,10 @@ def current_datetime() -> datetime:
 
 
 def block_number_to_datetime(start_time: datetime, block_number: float, time_between_blocks: float) -> datetime:
-    """
-    Converts the current block number to a datetime based on the start datetime of the simulation
+    r"""Converts the current block number to a datetime based on the start datetime of the simulation
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     start_time : datetime
         Timestamp at which the simulation started
     block_number : int
@@ -42,11 +40,10 @@ def block_number_to_datetime(start_time: datetime, block_number: float, time_bet
 
 
 def yearfrac_as_datetime(start_time: datetime, yearfrac: float) -> datetime:
-    """
-    Returns a yearfrac (e.g. the current market time) in datetime format
+    r"""Returns a yearfrac (e.g. the current market time) in datetime format
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     start_time : datetime
         Timestamp at which the simulation started
     yearfrac : float
@@ -64,11 +61,10 @@ def yearfrac_as_datetime(start_time: datetime, yearfrac: float) -> datetime:
 
 
 def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration: float) -> float:
-    """
-    Get the year fraction remaining on a token
+    r"""Get the year fraction remaining on a token
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     market_time : float
         Time that has elapsed in the given market, in fractions of a year
     mint_time : float
@@ -92,11 +88,10 @@ def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration:
 
 
 def norm_days(days: float, normalizing_constant: float = 365) -> float:
-    """
-    Returns days normalized, with a default assumption of a year-long scale
+    r"""Returns days normalized, with a default assumption of a year-long scale
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     days : float
         Amount of days to normalize
     normalizing_constant : float
@@ -111,11 +106,10 @@ def norm_days(days: float, normalizing_constant: float = 365) -> float:
 
 
 def stretch_time(time: float, time_stretch: float = 1.0) -> float:
-    """
-    Returns stretched time values
+    r"""Returns stretched time values
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     time : float
         Time that needs to be stretched for calculations, in terms of the normalizing constant
     time_stretch : float
@@ -131,11 +125,10 @@ def stretch_time(time: float, time_stretch: float = 1.0) -> float:
 
 
 def unnorm_days(normed_days: float, normalizing_constant: float = 365) -> float:
-    """
-    Returns days from a value between 0 and 1
+    r"""Returns days from a value between 0 and 1
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     normed_days : float
         Normalized amount of days, according to a normalizing constant
     normalizing_constant : float
@@ -150,11 +143,10 @@ def unnorm_days(normed_days: float, normalizing_constant: float = 365) -> float:
 
 
 def unstretch_time(stretched_time: float, time_stretch: float = 1) -> float:
-    """
-    Returns unstretched time value, which should be between 0 and 1
+    r"""Returns unstretched time value, which should be between 0 and 1
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     stretched_time : float
         Time that has been stretched using the time_stretch factor
     time_stretch : float
@@ -170,11 +162,10 @@ def unstretch_time(stretched_time: float, time_stretch: float = 1) -> float:
 
 
 def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
-    """
-    Converts remaining pool length in days to normalized and stretched time
+    r"""Converts remaining pool length in days to normalized and stretched time
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     days_remaining : float
         Time left until term maturity, in days
     time_stretch : float
@@ -195,11 +186,10 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
 
 
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
-    """
-    Converts normalized and stretched time remaining in pool to days
+    r"""Converts normalized and stretched time remaining in pool to days
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     time_remaining : float
         Time left until term maturity, in normalized and stretched time
     time_stretch : float

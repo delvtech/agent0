@@ -115,8 +115,8 @@ def setup_vault_apr(config: Config):
     """Construct the vault_apr list
     Note: callable type option would allow for infinite num_trading_days after small modifications
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     config : Config
         config object, as defined in elfpy.utils.config
 
@@ -165,8 +165,8 @@ def setup_vault_apr(config: Config):
 def get_random_variables(config: Config):
     """Use random number generator to assign initial simulation parameter values
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     config : Config
         config object, as defined in elfpy.utils.config
 

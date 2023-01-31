@@ -12,10 +12,10 @@ if TYPE_CHECKING:
 
 @dataclass
 class Long:
-    """An open long position.
+    r"""An open long position.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     balance : float
         The amount of bonds that the position is long.
     """
@@ -28,10 +28,10 @@ class Long:
 
 @dataclass
 class Short:
-    """An open short position.
+    r"""An open short position.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     balance : float
         The amount of bonds that the position is short.
     margin : float
@@ -47,11 +47,10 @@ class Short:
 
 @dataclass(frozen=False)
 class Wallet:
-    """
-    Stores what's in the agent's wallet
+    r"""Stores what is in the agent's wallet
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     address : int
         The trader's address.
     base : float
@@ -107,8 +106,9 @@ class Wallet:
 
     @property
     def state(self) -> dict:
-        """The wallet's current state of public variables
-        TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state
+        r"""The wallet's current state of public variables
+
+        .. todo:: TODO: Set this up as a dataclass instead of a dict & convert when adding to the state
         """
         return {
             f"agent_{self.address}_base": self.base,

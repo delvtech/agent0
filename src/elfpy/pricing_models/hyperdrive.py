@@ -62,8 +62,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             \end{cases} \\
             in = in' + f
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         out : Quantity
             The quantity of tokens that the user wants to receive (the amount
             and the unit of the tokens).
@@ -196,8 +196,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             \end{cases} \\
             out = out' + f
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         in_ : Quantity
             The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).

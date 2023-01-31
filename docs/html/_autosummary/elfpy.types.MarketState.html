@@ -43,16 +43,8 @@
 <dt class="sig sig-object py" id="elfpy.types.MarketState">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.types.</span></span><span class="sig-name descname"><span class="pre">MarketState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">share_reserves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_reserves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_reserves</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vault_apr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_price</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_share_price</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.types.MarketState" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>The state of an AMM
-TODO: We can add class methods for computing common quantities like bond_reserves + total_supply</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.apply_delta" title="elfpy.types.MarketState.apply_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_delta</span></code></a>(delta)</p></td>
-<td><p>Applies a delta to the market state.</p></td>
-</tr>
-</tbody>
-</table>
+<p>The state of an AMM</p>
+<p>TODO: We can add class methods for computing common quantities like bond_reserves + total_supply</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -92,7 +84,7 @@ TODO: We can add class methods for computing common quantities like bond_reserve
 <tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState.__init__" title="elfpy.types.MarketState.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([share_reserves, bond_reserves, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.apply_delta" title="elfpy.types.MarketState.apply_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_delta</span></code></a>(delta)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketState.apply_delta" title="elfpy.types.MarketState.apply_delta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_delta</span></code></a>(delta)</p></td>
 <td><p>Applies a delta to the market state.</p></td>
 </tr>
 </tbody>
@@ -100,28 +92,28 @@ TODO: We can add class methods for computing common quantities like bond_reserve
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.base_buffer" title="elfpy.types.MarketState.base_buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_buffer</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState.base_buffer" title="elfpy.types.MarketState.base_buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">base_buffer</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.bond_buffer" title="elfpy.types.MarketState.bond_buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_buffer</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketState.bond_buffer" title="elfpy.types.MarketState.bond_buffer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_buffer</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.bond_reserves" title="elfpy.types.MarketState.bond_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_reserves</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState.bond_reserves" title="elfpy.types.MarketState.bond_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bond_reserves</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.init_share_price" title="elfpy.types.MarketState.init_share_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_share_price</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketState.init_share_price" title="elfpy.types.MarketState.init_share_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_share_price</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.lp_reserves" title="elfpy.types.MarketState.lp_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lp_reserves</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState.lp_reserves" title="elfpy.types.MarketState.lp_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lp_reserves</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.share_price" title="elfpy.types.MarketState.share_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_price</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketState.share_price" title="elfpy.types.MarketState.share_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_price</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.share_reserves" title="elfpy.types.MarketState.share_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_reserves</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.types.MarketState.share_reserves" title="elfpy.types.MarketState.share_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_reserves</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.types.MarketState.vault_apr" title="elfpy.types.MarketState.vault_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vault_apr</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.types.MarketState.vault_apr" title="elfpy.types.MarketState.vault_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vault_apr</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -172,7 +164,7 @@ TODO: We can add class methods for computing common quantities like bond_reserve
 <dd><p>Applies a delta to the market state.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>delta</strong> (<a class="reference internal" href="../api.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.MarketDeltas</span></code></a>) – </p>
+<dd class="field-odd"><p><strong>delta</strong> (<a class="reference internal" href="elfpy.types.MarketDeltas.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.MarketDeltas</span></code></a>) – </p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -205,6 +197,7 @@ TODO: We can add class methods for computing common quantities like bond_reserve
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.types.html">elfpy.types</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="elfpy.types.to_description.html">elfpy.types.to_description</a></li>

@@ -37,30 +37,6 @@ copyright = f" {datetime.date.today().year}, {organization}"
 version = str(pkg_meta["version"])
 # The full version, including alpha/beta/rc tags.
 release = version
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-extensions = [
-    "sphinx.ext.napoleon",  # enables Sphinx to understand docstrings in Google format
-    "numpydoc",  # enables NumPy docstring format
-    "sphinx.ext.duration",  # gives reading length summaries at build time
-    "sphinx.ext.todo",  # support for todo items
-    "sphinx.ext.doctest",  # allows one to test code snippets against the python code to ensure synchrony
-    "sphinx.ext.autodoc",  # allows rendering of docs automatically from the python code
-    "sphinx.ext.autosummary",  # generates documents that contain all the necessary autodoc directives
-    "sphinx_autodoc_typehints",  # insert typehints into the final docs
-    "myst_parser",  # include .md files
-    "sphinx.ext.coverage",  # collect documentation coverage stats
-    "autodocsumm",  # display a list of all class methods in table format
-    "nbsphinx",  # to showcase Jupyter notebooks
-]
-
-templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-autodoc_default_options = {"autosummary": True}
-autosummary_generate = True
-
 github_url = "https://github.com"
 github_repo_org = "element-fi"
 github_repo_name = "elf-simulations"
@@ -75,6 +51,25 @@ extlinks = {
 # The master toctree document.
 master_doc = "index"
 
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+
+extensions = [
+    "sphinx.ext.napoleon",  # enables Sphinx to understand docstrings in Google format
+    "numpydoc",  # enables NumPy docstring format
+    "nbsphinx",  # to showcase Jupyter notebooks
+    "myst_parser",  # include .md files
+    "sphinx.ext.duration",  # gives reading length summaries at build time
+    "sphinx.ext.todo",  # support for todo items
+    "sphinx.ext.doctest",  # allows one to test code snippets against the python code to ensure synchrony
+    "sphinx.ext.autodoc",  # allows rendering of docs automatically from the python code
+    "sphinx.ext.autosummary",  # generates documents that contain all the necessary autodoc directives
+    "sphinx_autodoc_typehints",  # insert typehints into the final docs
+    "autodocsumm",  # display a list of all class methods in table format
+    "autoapi.extension",  # auto generates API reference by recursion
+    "sphinx.ext.coverage",  # collect documentation coverage stats
+]
+
 # -- Options for autodocs -------------------------------------------------
 autoclass_content = "class"
 autodoc_member_order = "bysource"
@@ -87,7 +82,12 @@ autodoc_default_options = {
 set_type_checking_flag = True
 always_document_param_types = True
 typehints_fully_qualified = True
-
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+autoapi_dirs = ["../../src"]
+# autodoc_default_options = {"autosummary": True}
+# autosummary_generate = True
+# numpydoc_show_class_members = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

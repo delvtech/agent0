@@ -110,8 +110,8 @@ class PricingModel(ABC):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         share_reserves : float
@@ -130,7 +130,7 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
 
-        TODO: Write a test for this function
+        .. todo:: TODO: Write a test for this function
         """
         # TODO: Package up some of these arguments into market_state
         # pylint: disable=too-many-arguments
@@ -150,8 +150,8 @@ class PricingModel(ABC):
         """Returns the assumed share (i.e. base asset) reserve amounts given
         the bond (i.e. token asset) reserves and APR
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         bond_reserves : float
@@ -195,8 +195,8 @@ class PricingModel(ABC):
         total_liquidity = in base terms, used to target liquidity as passed in
         total_reserves  = in arbitrary units (AU), used for yieldspace math
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state : MarketState
             the state of the market
         target_liquidity_usd : float
@@ -244,8 +244,8 @@ class PricingModel(ABC):
     def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
         """Returns the total liquidity in the pool in terms of base
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         MarketState : MarketState
             The following member variables are used:
                 share_reserves : float
@@ -260,7 +260,7 @@ class PricingModel(ABC):
         float
             Total liquidity in the pool in terms of base, calculated from the provided parameters
 
-        TODO: Write a test for this function
+        .. todo:: TODO: Write a test for this function
         """
         return market_state.share_reserves * share_price
 
@@ -279,8 +279,8 @@ class PricingModel(ABC):
             p = (\frac{2y + cz}{\mu z})^{-\tau}
             \end{align}
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state: MarketState
             The reserves and share prices of the pool.
         time_remaining : StretchedTime
@@ -311,8 +311,8 @@ class PricingModel(ABC):
             p = (\frac{2y + cz}{\mu z})^{-\tau}
             \end{align}
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state: MarketState
             The reserves and share prices of the pool.
         time_remaining : StretchedTime
@@ -346,10 +346,7 @@ class PricingModel(ABC):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> float:
-        # TODO: Update this comment so that it matches the style of the other comments.
-        """
-        Returns the apr given reserve amounts
-        """
+        """Returns the apr given reserve amounts"""
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
             time_remaining,
@@ -370,8 +367,8 @@ class PricingModel(ABC):
         Calculates the maximum long the market can support using the bisection
         method.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state : MarketState
             The reserves and share prices of the pool.
         fee_percent : float
@@ -463,8 +460,8 @@ class PricingModel(ABC):
         Calculates the maximum short the market can support using the bisection
         method.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state : MarketState
             The reserves and share prices of the pool.
         fee_percent : float

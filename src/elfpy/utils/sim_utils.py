@@ -27,11 +27,12 @@ if TYPE_CHECKING:
 def get_simulator(
     config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
 ) -> Simulator:
-    """Constructs a simulator with sane defaults and initializes the simulator
-    with an initial LP.
+    r"""Construct and initialize a simulator with sane defaults
 
-    Arguments
-    ---------
+    The simulated market is initialized with an initial LP.
+
+    Parameters
+    ----------
     config : Config
         the simulator config
     agents : list[Agent]
@@ -89,7 +90,7 @@ def get_init_lp_agent(
     fee_percent: float,
     seed_liquidity: float = 1,
 ) -> Agent:
-    """Calculate the required deposit amounts and instantiate the LP agent
+    r"""Calculate the required deposit amounts and instantiate the LP agent
 
     The required deposit amounts are computed iteratively to determine market reserve levels that achieve
     the target liquidity and APR. To hit the desired ratio, the agent opens a small LP, then a short,
@@ -98,8 +99,8 @@ def get_init_lp_agent(
     since it is accounting for diminishing additions to the market share reserves. A more detailed description
     is here: https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     market : Market
         empty market object
     target_liquidity : float
@@ -208,10 +209,10 @@ def get_market(
     vault_apr: list,
     init_share_price: float,
 ) -> Market:
-    """Setup market
+    r"""Setup market
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     pricing_model : PricingModel
         instantiated pricing model
     target_pool_apr : float
@@ -220,7 +221,6 @@ def get_market(
         or the share & bond reserves are explicitly set
     fee_percent : float
         portion of outputs to be collected as fees for LPers, expressed as a decimal
-        TODO: Rename this variable so that it doesn't use "percent"
     token_duration : float
         how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
     vault_apr : list
@@ -233,6 +233,7 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
 
+    .. todo:: TODO: Rename the fee_percent variable so that it doesn't use "percent"
     """
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments
@@ -252,10 +253,10 @@ def get_market(
 
 
 def get_pricing_model(model_name: str) -> PricingModel:
-    """Get a PricingModel object from the config passed in
+    r"""Get a PricingModel object from the config passed in
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     model_name : str
         name of the desired pricing_model; can be "hyperdrive", or "yieldspace"
 
@@ -278,10 +279,10 @@ def override_random_variables(
     random_variables: RandomSimulationVariables,
     override_dict: dict[str, Any],
 ) -> RandomSimulationVariables:
-    """Override the random simulation variables with targeted values, as specified by the keys
+    r"""Override the random simulation variables with targeted values, as specified by the keys
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     random_variables : RandomSimulationVariables
         dataclass that contains variables for initiating and running simulations
     override_dict : dict

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 def to_description(description: str) -> dict[str, str]:
-    """A dataclass helper that constructs metadata containing a description."""
+    r"""A dataclass helper that constructs metadata containing a description."""
     return {"description": description}
 
 
@@ -28,14 +28,14 @@ MAX_RESERVES_DIFFERENCE = 2e10
 
 
 class TokenType(Enum):
-    """A type of token"""
+    r"""A type of token"""
 
     BASE = "base"
     PT = "pt"
 
 
 class MarketActionType(Enum):
-    """The descriptor of an action in a market"""
+    r"""The descriptor of an action in a market"""
 
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
@@ -49,14 +49,14 @@ class MarketActionType(Enum):
 
 @dataclass
 class Quantity:
-    """An amount with a unit"""
+    r"""An amount with a unit"""
 
     amount: float
     unit: TokenType
 
 
 class StretchedTime:
-    """A stretched time value with the time stretch"""
+    r"""A stretched time value with the time stretch"""
 
     # TODO: Improve this constructor so that StretchedTime can be constructed
     # from yearfracs.
@@ -67,22 +67,22 @@ class StretchedTime:
 
     @property
     def days(self):
-        """Format time as days."""
+        r"""Format time as days"""
         return self._days
 
     @property
     def normalized_time(self):
-        """Format time as normalized days."""
+        r"""Format time as normalized days"""
         return time_utils.norm_days(self._days)
 
     @property
     def stretched_time(self):
-        """Format time as stretched time."""
+        r"""Format time as stretched time"""
         return self._stretched_time
 
     @property
     def time_stretch(self):
-        """The time stretch constant."""
+        r"""The time stretch constant"""
         return self._time_stretch
 
     def __str__(self):
@@ -98,7 +98,7 @@ class StretchedTime:
 
 @dataclass
 class MarketAction:
-    """market action specification"""
+    r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
@@ -109,7 +109,7 @@ class MarketAction:
     mint_time: float = 0
 
     def __str__(self):
-        """Return a description of the Action"""
+        r"""Return a description of the Action"""
         output_string = f"AGENT ACTION:\nagent #{self.wallet_address}"
         for key, value in self.__dict__.items():
             if key == "action_type":
@@ -123,7 +123,7 @@ class MarketAction:
 
 @dataclass(frozen=False)
 class MarketDeltas:
-    """Specifies changes to values in the market"""
+    r"""Specifies changes to values in the market"""
 
     # TODO: Create our own dataclass decorator that is always mutable and includes dict set/get syntax
     # pylint: disable=duplicate-code
@@ -164,8 +164,9 @@ class MarketDeltas:
 
 @dataclass
 class MarketState:
-    """The state of an AMM
-    TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    r"""The state of an AMM
+
+    .. todo:: TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
     """
 
     # dataclasses can have many attributes
@@ -188,7 +189,7 @@ class MarketState:
     init_share_price: float = 1.0
 
     def apply_delta(self, delta: MarketDeltas) -> None:
-        """Applies a delta to the market state."""
+        r"""Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
         self.base_buffer += delta.d_base_buffer
@@ -215,7 +216,7 @@ class MarketState:
 
 @dataclass
 class AgentTradeResult:
-    """The result to a user of performing a trade."""
+    r"""The result to a user of performing a trade"""
 
     d_base: float
     d_bonds: float
@@ -223,7 +224,7 @@ class AgentTradeResult:
 
 @dataclass
 class MarketTradeResult:
-    """The result to a market of performing a trade."""
+    r"""The result to a market of performing a trade"""
 
     d_base: float
     d_bonds: float
@@ -231,9 +232,9 @@ class MarketTradeResult:
 
 @dataclass
 class TradeBreakdown:
-    """
-    A granular breakdown of a trade. This includes information relating to fees
-    and slippage.
+    r"""A granular breakdown of a trade.
+
+    This includes information relating to fees and slippage.
     """
 
     without_fee_or_slippage: float
@@ -244,11 +245,12 @@ class TradeBreakdown:
 
 @dataclass
 class TradeResult:
-    """
-    The result of performing a trade. This includes granular information about
-    the trade details including the amount of fees collected and the total
-    delta. Additionally, breakdowns for the updates that should be applied to
-    the user and the market are computed.
+    r"""The result of performing a trade.
+
+    This includes granular information about the trade details,
+    including the amount of fees collected and the total delta.
+    Additionally, breakdowns for the updates that should be applied
+    to the user and the market are computed.
     """
 
     user_result: AgentTradeResult
@@ -258,7 +260,7 @@ class TradeResult:
 
 @dataclass()
 class RandomSimulationVariables:
-    """Random variables to be used during simulation setup & execution"""
+    r"""Random variables to be used during simulation setup & execution"""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -274,14 +276,14 @@ class RandomSimulationVariables:
     )
 
     def __post_init__(self):
-        """init_share_price is a function of other random variables"""
+        r"""init_share_price is a function of other random variables"""
         if self.init_share_price is None:
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
 
 @dataclass
 class SimulationState:
-    """Simulator state, updated after each trade"""
+    r"""Simulator state, updated after each trade"""
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -334,11 +336,11 @@ class SimulationState:
     spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
     def update_market_state(self, market_state: MarketState) -> None:
-        """Update each entry in the SimulationState's copy for the market state
+        r"""Update each entry in the SimulationState's copy for the market state
         by appending to the list for each key, or creating a new key.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state: MarketState
             The state variable for the Market class
         """
@@ -351,11 +353,11 @@ class SimulationState:
                 setattr(self, key, [val])
 
     def update_agent_wallet(self, agent: Agent) -> None:
-        """Update each entry in the SimulationState's copy for the agent wallet state
+        r"""Update each entry in the SimulationState's copy for the agent wallet state
         by appending to the list for each key, or creating a new key.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent: Agent
             An instantiated Agent object
         """
@@ -368,9 +370,9 @@ class SimulationState:
                 setattr(self, key, [value])
 
     def __getitem__(self, key):
-        """Get object attribute referenced by `key`"""
+        r"""Get object attribute referenced by `key`"""
         return getattr(self, key)
 
     def __setitem__(self, key, value):
-        """Set object attribute referenced by `key` to `value`"""
+        r"""Set object attribute referenced by `key` to `value`"""
         setattr(self, key, value)

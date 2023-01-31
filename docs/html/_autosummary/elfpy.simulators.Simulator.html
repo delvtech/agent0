@@ -46,53 +46,12 @@
 <p>Stores environment variables &amp; market simulation outputs for AMM experimentation</p>
 <p>Member variables include input settings, random variable ranges, and simulation outputs.
 To be used in conjunction with the Market and PricingModel classes</p>
-<p class="rubric">Methods</p>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.add_agents" title="elfpy.simulators.Simulator.add_agents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_agents</span></code></a>(agent_list)</p></td>
-<td><p>Append the agents and simulation_state member variables</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.check_vault_apr" title="elfpy.simulators.Simulator.check_vault_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_vault_apr</span></code></a>()</p></td>
-<td><p>Verify that the vault_apr is the right length</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_and_execute_trades" title="elfpy.simulators.Simulator.collect_and_execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_and_execute_trades</span></code></a>([last_block_in_sim])</p></td>
-<td><p>Get trades from the agent list, execute them, and update states</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_liquidation_trades" title="elfpy.simulators.Simulator.collect_liquidation_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_liquidation_trades</span></code></a>(agent_ids)</p></td>
-<td><p>Collect liquidation trades from a set of provided agent IDs.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_trades" title="elfpy.simulators.Simulator.collect_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_trades</span></code></a>(agent_ids)</p></td>
-<td><p>Collect trades from a set of provided agent IDs.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.execute_trades" title="elfpy.simulators.Simulator.execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">execute_trades</span></code></a>(trades)</p></td>
-<td><p>Execute a list of trades associated with agents in the simulator.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.get_simulation_state_string" title="elfpy.simulators.Simulator.get_simulation_state_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulation_state_string</span></code></a>()</p></td>
-<td><p>Returns a formatted string containing all of the Simulation class member variables</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.log_config_variables" title="elfpy.simulators.Simulator.log_config_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_config_variables</span></code></a>()</p></td>
-<td><p>Prints all variables that are in config</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.market_step_size" title="elfpy.simulators.Simulator.market_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">market_step_size</span></code></a>()</p></td>
-<td><p>Returns minimum time increment</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.run_simulation" title="elfpy.simulators.Simulator.run_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_simulation</span></code></a>()</p></td>
-<td><p>Run the trade simulation and update the output state dictionary This is the primary function of the Simulator class.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.set_rng" title="elfpy.simulators.Simulator.set_rng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_rng</span></code></a>(rng)</p></td>
-<td><p>Assign the internal random number generator to a new instantiation This function is useful for forcing identical trade volume and directions across simulation runs</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.update_simulation_state" title="elfpy.simulators.Simulator.update_simulation_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_simulation_state</span></code></a>()</p></td>
-<td><p>Increment the list for each key in the simulation_state output variable</p></td>
-</tr>
-</tbody>
-</table>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>config</strong> (<a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.utils.config.Config</span></code></a>) – </p></li>
-<li><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.markets.Market</span></code></a>) – </p></li>
-<li><p><strong>random_simulation_variables</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">typing.Optional</span></code>[<a class="reference internal" href="../api.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.RandomSimulationVariables</span></code></a>]) – </p></li>
+<li><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.markets.Market</span></code></a>) – </p></li>
+<li><p><strong>random_simulation_variables</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">typing.Optional</span></code>[<a class="reference internal" href="elfpy.types.RandomSimulationVariables.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.RandomSimulationVariables</span></code></a>]) – </p></li>
 </ul>
 </dd>
 </dl>
@@ -103,8 +62,8 @@ To be used in conjunction with the Market and PricingModel classes</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>config</strong> (<a class="reference internal" href="elfpy.utils.config.Config.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.utils.config.Config</span></code></a>) – </p></li>
-<li><p><strong>market</strong> (<a class="reference internal" href="../api.html#elfpy.markets.Market" title="elfpy.markets.Market"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.markets.Market</span></code></a>) – </p></li>
-<li><p><strong>random_simulation_variables</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">typing.Optional</span></code>[<a class="reference internal" href="../api.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.RandomSimulationVariables</span></code></a>]) – </p></li>
+<li><p><strong>market</strong> (<a class="reference internal" href="elfpy.markets.Market.html#elfpy.markets.Market" title="elfpy.markets.Market"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.markets.Market</span></code></a>) – </p></li>
+<li><p><strong>random_simulation_variables</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">typing.Optional</span></code>[<a class="reference internal" href="elfpy.types.RandomSimulationVariables.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">elfpy.types.RandomSimulationVariables</span></code></a>]) – </p></li>
 </ul>
 </dd>
 </dl>
@@ -116,40 +75,40 @@ To be used in conjunction with the Market and PricingModel classes</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.__init__" title="elfpy.simulators.Simulator.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(config, market[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.add_agents" title="elfpy.simulators.Simulator.add_agents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_agents</span></code></a>(agent_list)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.add_agents" title="elfpy.simulators.Simulator.add_agents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_agents</span></code></a>(agent_list)</p></td>
 <td><p>Append the agents and simulation_state member variables</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.check_vault_apr" title="elfpy.simulators.Simulator.check_vault_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_vault_apr</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.check_vault_apr" title="elfpy.simulators.Simulator.check_vault_apr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_vault_apr</span></code></a>()</p></td>
 <td><p>Verify that the vault_apr is the right length</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_and_execute_trades" title="elfpy.simulators.Simulator.collect_and_execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_and_execute_trades</span></code></a>([last_block_in_sim])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.collect_and_execute_trades" title="elfpy.simulators.Simulator.collect_and_execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_and_execute_trades</span></code></a>([last_block_in_sim])</p></td>
 <td><p>Get trades from the agent list, execute them, and update states</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_liquidation_trades" title="elfpy.simulators.Simulator.collect_liquidation_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_liquidation_trades</span></code></a>(agent_ids)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.collect_liquidation_trades" title="elfpy.simulators.Simulator.collect_liquidation_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_liquidation_trades</span></code></a>(agent_ids)</p></td>
 <td><p>Collect liquidation trades from a set of provided agent IDs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.collect_trades" title="elfpy.simulators.Simulator.collect_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_trades</span></code></a>(agent_ids)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.collect_trades" title="elfpy.simulators.Simulator.collect_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect_trades</span></code></a>(agent_ids)</p></td>
 <td><p>Collect trades from a set of provided agent IDs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.execute_trades" title="elfpy.simulators.Simulator.execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">execute_trades</span></code></a>(trades)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.execute_trades" title="elfpy.simulators.Simulator.execute_trades"><code class="xref py py-obj docutils literal notranslate"><span class="pre">execute_trades</span></code></a>(trades)</p></td>
 <td><p>Execute a list of trades associated with agents in the simulator.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.get_simulation_state_string" title="elfpy.simulators.Simulator.get_simulation_state_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulation_state_string</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.get_simulation_state_string" title="elfpy.simulators.Simulator.get_simulation_state_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulation_state_string</span></code></a>()</p></td>
 <td><p>Returns a formatted string containing all of the Simulation class member variables</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.log_config_variables" title="elfpy.simulators.Simulator.log_config_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_config_variables</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.log_config_variables" title="elfpy.simulators.Simulator.log_config_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_config_variables</span></code></a>()</p></td>
 <td><p>Prints all variables that are in config</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.market_step_size" title="elfpy.simulators.Simulator.market_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">market_step_size</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.market_step_size" title="elfpy.simulators.Simulator.market_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">market_step_size</span></code></a>()</p></td>
 <td><p>Returns minimum time increment</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.run_simulation" title="elfpy.simulators.Simulator.run_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_simulation</span></code></a>()</p></td>
-<td><p>Run the trade simulation and update the output state dictionary This is the primary function of the Simulator class.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.run_simulation" title="elfpy.simulators.Simulator.run_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_simulation</span></code></a>()</p></td>
+<td><p>Run the trade simulation and update the output state dictionary</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.set_rng" title="elfpy.simulators.Simulator.set_rng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_rng</span></code></a>(rng)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.set_rng" title="elfpy.simulators.Simulator.set_rng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_rng</span></code></a>(rng)</p></td>
 <td><p>Assign the internal random number generator to a new instantiation This function is useful for forcing identical trade volume and directions across simulation runs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../api.html#elfpy.simulators.Simulator.update_simulation_state" title="elfpy.simulators.Simulator.update_simulation_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_simulation_state</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.simulators.Simulator.update_simulation_state" title="elfpy.simulators.Simulator.update_simulation_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_simulation_state</span></code></a>()</p></td>
 <td><p>Increment the list for each key in the simulation_state output variable</p></td>
 </tr>
 </tbody>
@@ -228,7 +187,7 @@ prepended to the simulation_state for each new agent so that the state can still
 a pandas dataframe.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>agent_list</strong> (<em>list</em><em>[</em><a class="reference internal" href="../api.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a><em>]</em>) – A list of instantiated Agent objects</p>
+<dd class="field-odd"><p><strong>agent_list</strong> (<em>list</em><em>[</em><a class="reference internal" href="elfpy.agent.Agent.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a><em>]</em>) – A list of instantiated Agent objects</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -263,7 +222,7 @@ registered in the simulator.</p>
 <dd class="field-even"><p>A list of trades associated with specific agents.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[tuple[int, list[<a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]]]</p>
+<dd class="field-odd"><p>list[tuple[int, list[<a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -281,7 +240,7 @@ registered in the simulator.</p>
 <dd class="field-even"><p>A list of liquidation trades associated with specific agents.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[tuple[int, list[<a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]]]</p>
+<dd class="field-odd"><p>list[tuple[int, list[<a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -292,7 +251,7 @@ registered in the simulator.</p>
 <dd><p>Execute a list of trades associated with agents in the simulator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>trades</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>int</em><em>, </em><em>list</em><em>[</em><a class="reference internal" href="../api.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><em>MarketAction</em></a><em>]</em><em>]</em><em>]</em>) – A list of agent trades. These will be executed in order.</p>
+<dd class="field-odd"><p><strong>trades</strong> (<em>list</em><em>[</em><em>tuple</em><em>[</em><em>int</em><em>, </em><em>list</em><em>[</em><a class="reference internal" href="elfpy.types.MarketAction.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><em>MarketAction</em></a><em>]</em><em>]</em><em>]</em>) – A list of agent trades. These will be executed in order.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -303,8 +262,8 @@ registered in the simulator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="elfpy.simulators.Simulator.run_simulation">
 <span class="sig-name descname"><span class="pre">run_simulation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.simulators.Simulator.run_simulation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run the trade simulation and update the output state dictionary
-This is the primary function of the Simulator class.
+<dd><p>Run the trade simulation and update the output state dictionary</p>
+<p>This is the primary function of the Simulator class.
 The PricingModel and Market objects will be constructed.
 A loop will execute a group of trades with random volumes and directions for each day,
 up to <cite>self.config.simulator.num_trading_days</cite> days.</p>
@@ -351,6 +310,7 @@ up to <cite>self.config.simulator.num_trading_days</cite> days.</p>
 <li class="toctree-l1 current"><a class="reference internal" href="elfpy.html">elfpy</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="elfpy.agent.html">elfpy.agent</a></li>
 <li class="toctree-l2"><a class="reference internal" href="elfpy.markets.html">elfpy.markets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="elfpy.pricing_models.html">elfpy.pricing_models</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="elfpy.simulators.html">elfpy.simulators</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">elfpy.simulators.Simulator</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#elfpy.simulators.Simulator"><code class="docutils literal notranslate"><span class="pre">Simulator</span></code></a><ul>
