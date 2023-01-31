@@ -14,18 +14,34 @@ Within the [virtualenv](https://github.com/pyenv/pyenv-virtualenv), upgrade pip 
 
 for Python 3.10, this is sufficient:
 
-```
+```bash
 python -m pip install -r requirements.txt
 ```
 
 for Python 3.11, an extra step is required:
 
-```
+```bash
 python -m pip install stochastic --ignore-requires-python
 python -m pip install -r requirements.txt
 ```
 
+If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
+
 Then install the elfpy package with `python3 -m pip install -e .` from the git directory root.
+
+### Docker
+
+To install a docker development environment which may be more reliable to install project dependencies:
+
+``` bash
+docker build -t elf-simulations-dev .
+```
+
+Then to create an isolated shell environment which observes file changes run:
+
+``` bash
+docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host elf-simulations-dev:latest bash
+```
 
 ## Testing
 
@@ -41,7 +57,7 @@ We will follow the Rebase workflow that is used by the Element frontend team.
 Commits to `main` should **only** be made in the form of squash merges from pull requests.
 For example,
 
-```
+```bash
 git checkout feature-branch
 git add [files to be committed]
 git commit -m 'Complete change summary'
@@ -49,7 +65,7 @@ git commit -m 'Complete change summary'
 
 _later, some new commits show up in main, so we rebase our branch_
 
-```
+```bash
 git pull --rebase origin main
 git push feature-branch
 ```
