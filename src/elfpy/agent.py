@@ -107,7 +107,7 @@ class Agent:
         """
         (max_long, _) = market.pricing_model.get_max_long(
             market_state=market.market_state,
-            fee_percent=market.fee_percent,
+            trade_fee_percent=market.fee_percent,
             time_remaining=market.position_duration,
         )
         return min(

@@ -182,7 +182,8 @@ def get_random_variables(config: Config):
         target_pool_apr=config.simulator.rng.uniform(
             low=config.amm.min_pool_apr, high=config.amm.max_pool_apr
         ),  # starting fixed apr as a decimal
-        fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
+        trade_fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
+        redemption_fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
         vault_apr=setup_vault_apr(config),
         init_vault_age=config.simulator.rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
     )

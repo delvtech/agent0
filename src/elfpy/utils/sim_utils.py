@@ -51,7 +51,8 @@ def get_simulator(
     market = get_market(
         pricing_model,
         random_variables.target_pool_apr,
-        random_variables.fee_percent,
+        random_variables.trade_fee_percent,
+        random_variables.trade_fee_percent,
         config.simulator.token_duration,
         random_variables.vault_apr,
         random_variables.init_share_price,
@@ -63,7 +64,7 @@ def get_simulator(
             market,
             random_variables.target_liquidity,
             random_variables.target_pool_apr,
-            random_variables.fee_percent,
+            random_variables.trade_fee_percent,
         )
     ]
 
@@ -87,7 +88,7 @@ def get_init_lp_agent(
     market: Market,
     target_liquidity: float,
     target_pool_apr: float,
-    fee_percent: float,
+    trade_fee_percent: float,
     seed_liquidity: float = 1,
 ) -> Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -139,7 +140,9 @@ def get_init_lp_agent(
                 share_price=market.market_state.share_price,
                 init_share_price=market.market_state.init_share_price,
             ),
-            trade_fee_percent=fee_percent,
+            trade_fee_percent=trade_fee_percent,
+            # no redemption fee when initializing pool
+            redemption_fee_percent=0,
             time_remaining=market.position_duration,
         )
         prev_delta_shares = delta_shares
@@ -204,7 +207,8 @@ def get_init_lp_agent(
 def get_market(
     pricing_model: PricingModel,
     target_pool_apr: float,
-    fee_percent: float,
+    trade_fee_percent: float,
+    redemption_fee_percent: float,
     position_duration: float,
     vault_apr: list,
     init_share_price: float,
@@ -247,7 +251,8 @@ def get_market(
         position_duration=StretchedTime(
             days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apr)
         ),
-        fee_percent=fee_percent,  # g
+        trade_fee_percent=trade_fee_percent,  # g
+        redemption_fee_percent=redemption_fee_percent,  # g
     )
     return market
 

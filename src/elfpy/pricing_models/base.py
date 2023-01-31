@@ -552,7 +552,8 @@ class PricingModel(ABC):
         self,
         quantity: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
@@ -579,8 +580,13 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
-        assert 1 >= fee_percent >= 0, (
-            "pricing_models.calc_in_given_out: ERROR: " f"expected 1 >= fee_percent >= 0, not {fee_percent}!"
+        assert 1 >= trade_fee_percent >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: "
+            f"expected 1 >= trade_fee_percent >= 0, not {trade_fee_percent}!"
+        )
+        assert 1 >= redemption_fee_percent >= 0, (
+            "pricing_models.calc_in_given_out: ERROR: "
+            f"expected 1 >= redemption_fee_percent >= 0, not {redemption_fee_percent}!"
         )
         assert 1 > time_remaining.stretched_time >= 0, (
             "pricing_models.calc_in_given_out: ERROR: "

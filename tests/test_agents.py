@@ -68,7 +68,7 @@ class TestAgent(unittest.TestCase):
         market = Market(
             pricing_model=pricing_model,
             market_state=market_state,
-            fee_percent=fee_percent,
+            trade_fee_perfect=fee_percent,
             position_duration=time_remaining,
         )
 
@@ -207,7 +207,7 @@ class TestAgent(unittest.TestCase):
                 market = Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
-                    fee_percent=test_case.fee_percent,
+                    trade_fee_perfect=test_case.fee_percent,
                     position_duration=test_case.time_remaining,
                 )
 
@@ -220,7 +220,7 @@ class TestAgent(unittest.TestCase):
                     self.assertGreaterEqual(agent.wallet.base, max_long)
                     (market_max_long, _) = market.pricing_model.get_max_long(
                         market_state=market.market_state,
-                        fee_percent=market.fee_percent,
+                        trade_fee_percent=market.fee_percent,
                         time_remaining=market.position_duration,
                     )
                     self.assertLessEqual(

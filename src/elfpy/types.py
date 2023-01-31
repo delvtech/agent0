@@ -266,7 +266,8 @@ class RandomSimulationVariables:
     # pylint: disable=too-many-instance-attributes
     target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
     target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
-    fee_percent: float = field(metadata=to_description("percent to charge for LPer fees"))
+    trade_fee_percent: float = field(metadata=to_description("LP fee percent to charge for trades"))
+    redemption_fee_percent: float = field(metadata=to_description("LP fee percent to charge for redemption"))
     vault_apr: list = field(metadata=to_description("yield bearing source APR"))
     init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
     # NOTE: We ignore the type error since the value will never be None after
