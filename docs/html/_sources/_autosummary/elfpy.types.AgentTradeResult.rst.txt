@@ -1,0 +1,32 @@
+elfpy.types.AgentTradeResult
+============================
+
+.. currentmodule:: elfpy.types
+
+.. autoclass:: AgentTradeResult
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AgentTradeResult.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AgentTradeResult.d_base
+      ~AgentTradeResult.d_bonds
+   
+   

@@ -1,0 +1,6 @@
+elfpy.utils.time.yearfrac\_as\_datetime
+=======================================
+
+.. currentmodule:: elfpy.utils.time
+
+.. autofunction:: yearfrac_as_datetime

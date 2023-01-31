@@ -1,0 +1,39 @@
+elfpy.types.MarketState
+=======================
+
+.. currentmodule:: elfpy.types
+
+.. autoclass:: MarketState
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MarketState.__init__
+      ~MarketState.apply_delta
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MarketState.base_buffer
+      ~MarketState.bond_buffer
+      ~MarketState.bond_reserves
+      ~MarketState.init_share_price
+      ~MarketState.lp_reserves
+      ~MarketState.share_price
+      ~MarketState.share_reserves
+      ~MarketState.vault_apr
+   
+   

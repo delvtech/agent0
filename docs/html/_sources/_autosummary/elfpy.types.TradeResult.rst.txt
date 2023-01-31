@@ -1,0 +1,33 @@
+elfpy.types.TradeResult
+=======================
+
+.. currentmodule:: elfpy.types
+
+.. autoclass:: TradeResult
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TradeResult.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TradeResult.user_result
+      ~TradeResult.market_result
+      ~TradeResult.breakdown
+   
+   

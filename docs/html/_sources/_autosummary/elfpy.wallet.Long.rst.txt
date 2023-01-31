@@ -1,0 +1,31 @@
+elfpy.wallet.Long
+=================
+
+.. currentmodule:: elfpy.wallet
+
+.. autoclass:: Long
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Long.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Long.balance
+   
+   

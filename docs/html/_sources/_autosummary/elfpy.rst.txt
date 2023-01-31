@@ -1,0 +1,37 @@
+﻿elfpy
+=====
+
+.. automodule:: elfpy
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst                 
+   :recursive:
+
+   elfpy.agent
+   elfpy.markets
+   elfpy.simulators
+   elfpy.types
+   elfpy.utils
+   elfpy.wallet
+

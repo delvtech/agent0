@@ -1,0 +1,6 @@
+elfpy.utils.outputs.setup\_logging
+==================================
+
+.. currentmodule:: elfpy.utils.outputs
+
+.. autofunction:: setup_logging

@@ -1,0 +1,6 @@
+elfpy.utils.config.get\_random\_variables
+=========================================
+
+.. currentmodule:: elfpy.utils.config
+
+.. autofunction:: get_random_variables

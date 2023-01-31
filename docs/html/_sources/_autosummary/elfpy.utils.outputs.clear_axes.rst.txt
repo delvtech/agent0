@@ -1,0 +1,6 @@
+elfpy.utils.outputs.clear\_axes
+===============================
+
+.. currentmodule:: elfpy.utils.outputs
+
+.. autofunction:: clear_axes

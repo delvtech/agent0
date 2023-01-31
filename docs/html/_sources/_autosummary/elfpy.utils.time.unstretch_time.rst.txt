@@ -1,0 +1,6 @@
+elfpy.utils.time.unstretch\_time
+================================
+
+.. currentmodule:: elfpy.utils.time
+
+.. autofunction:: unstretch_time

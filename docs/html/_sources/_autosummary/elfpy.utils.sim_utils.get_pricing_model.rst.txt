@@ -1,0 +1,6 @@
+elfpy.utils.sim\_utils.get\_pricing\_model
+==========================================
+
+.. currentmodule:: elfpy.utils.sim_utils
+
+.. autofunction:: get_pricing_model

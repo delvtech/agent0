@@ -1,0 +1,6 @@
+elfpy.utils.post\_processing.aggregate\_trade\_data
+===================================================
+
+.. currentmodule:: elfpy.utils.post_processing
+
+.. autofunction:: aggregate_trade_data

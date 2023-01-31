@@ -1,0 +1,6 @@
+elfpy.utils.time.days\_to\_time\_remaining
+==========================================
+
+.. currentmodule:: elfpy.utils.time
+
+.. autofunction:: days_to_time_remaining

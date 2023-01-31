@@ -1,0 +1,32 @@
+elfpy.wallet.Short
+==================
+
+.. currentmodule:: elfpy.wallet
+
+.. autoclass:: Short
+   :members:                                    
+   :show-inheritance:                           
+   :inherited-members:                          
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Short.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Short.balance
+      ~Short.margin
+   
+   

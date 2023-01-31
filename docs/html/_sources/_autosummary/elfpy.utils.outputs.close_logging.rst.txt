@@ -1,0 +1,6 @@
+elfpy.utils.outputs.close\_logging
+==================================
+
+.. currentmodule:: elfpy.utils.outputs
+
+.. autofunction:: close_logging
