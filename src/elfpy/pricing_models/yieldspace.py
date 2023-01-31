@@ -292,7 +292,9 @@ class YieldSpacePricingModel(PricingModel):
         self,
         out: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        # pylint: disable-next=unused-argument
+        redemption_fee_percent: float,  # redemption fee not used for yieldspace in calc_in_given_out
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -359,7 +361,7 @@ class YieldSpacePricingModel(PricingModel):
             time_remaining,
         )
         out_amount = Decimal(out.amount)
-        _fee_percent = Decimal(fee_percent)
+        _fee_percent = Decimal(trade_fee_percent)
 
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
@@ -514,7 +516,9 @@ class YieldSpacePricingModel(PricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        # pylint: disable-next=unused-argument
+        redemption_fee_percent: float,  # redemption fee not used for yieldspace in calc_out_given_in
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -581,7 +585,7 @@ class YieldSpacePricingModel(PricingModel):
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
-        _fee_percent = Decimal(fee_percent)
+        _fee_percent = Decimal(trade_fee_percent)
 
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:

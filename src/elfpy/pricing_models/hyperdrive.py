@@ -35,7 +35,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         out: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -120,10 +121,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_in_given_out(
             out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
             market_state=market_state,
-            fee_percent=fee_percent,
+            trade_fee_percent=trade_fee_percent,
             # TODO: don't hardcode days to 365, initialize to term length
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
+
+        # Compute flat part with fee
+        flat_without_fee = out_amount * (1 - _time_remaining)
+        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
+        flat_with_fee = flat_without_fee + redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         flat = out_amount * (1 - _time_remaining)
@@ -155,10 +161,10 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=TradeBreakdown(
-                without_fee_or_slippage=float(flat + Decimal(curve.breakdown.without_fee_or_slippage)),
-                without_fee=float(flat + Decimal(curve.breakdown.without_fee)),
-                fee=curve.breakdown.fee,
-                with_fee=float(flat + Decimal(curve.breakdown.with_fee)),
+                without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
+                without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
+                fee=float(Decimal(curve.breakdown.fee) + redemption_fee),
+                with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
             ),
         )
 
@@ -169,7 +175,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -244,7 +251,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_out_given_in(
             in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
-            fee_percent=fee_percent,
+            trade_fee_percent=trade_fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
