@@ -1,0 +1,8 @@
+# documentation
+sphinx>=5.3
+sphinx_autodoc_typehints>=1.21.8
+myst-parser>=0.18.1
+numpydoc>=1.5.0
+sphinxcontrib-napoleon>=0.7
+autodocsumm>=0.2.10
+nbsphinx>=0.8.12
