@@ -190,7 +190,7 @@ class TestGetMax(unittest.TestCase):
                 # Get the max short.
                 (_, max_short) = pricing_model.get_max_short(
                     market_state=test_case.market_state,
-                    fee_percent=test_case.trade_fee_percent,
+                    trade_fee_percent=test_case.trade_fee_percent,
                     time_remaining=test_case.time_remaining,
                 )
 

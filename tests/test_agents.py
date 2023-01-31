@@ -62,13 +62,15 @@ class TestAgent(unittest.TestCase):
             init_share_price=1,
             share_price=1,
         )
-        fee_percent = 0.1
+        trade_fee_percent = 0.1
+        redemption_fee_percent = 0.1
         time_remaining = StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05))
 
         market = Market(
             pricing_model=pricing_model,
             market_state=market_state,
-            trade_fee_perfect=fee_percent,
+            trade_fee_percent=trade_fee_percent,
+            redemption_fee_percent=redemption_fee_percent,
             position_duration=time_remaining,
         )
 
@@ -207,7 +209,8 @@ class TestAgent(unittest.TestCase):
                 market = Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
-                    trade_fee_perfect=test_case.fee_percent,
+                    trade_fee_percent=test_case.fee_percent,
+                    redemption_fee_percent=test_case.fee_percent,
                     position_duration=test_case.time_remaining,
                 )
 
@@ -220,7 +223,7 @@ class TestAgent(unittest.TestCase):
                     self.assertGreaterEqual(agent.wallet.base, max_long)
                     (market_max_long, _) = market.pricing_model.get_max_long(
                         market_state=market.market_state,
-                        trade_fee_percent=market.fee_percent,
+                        trade_fee_percent=market.trade_fee_percent,
                         time_remaining=market.position_duration,
                     )
                     self.assertLessEqual(
@@ -233,14 +236,15 @@ class TestAgent(unittest.TestCase):
                     trade_result = market.pricing_model.calc_out_given_in(
                         in_=Quantity(amount=max_short, unit=TokenType.PT),
                         market_state=market.market_state,
-                        trade_fee_percent=market.fee_percent,
+                        trade_fee_percent=market.trade_fee_percent,
+                        redemption_fee_percent=market.redemption_fee_percent,
                         time_remaining=market.position_duration,
                     )
                     max_loss = max_short - trade_result.user_result.d_base
                     self.assertGreaterEqual(agent.wallet.base, max_loss)
                     (_, market_max_short) = market.pricing_model.get_max_short(
                         market_state=market.market_state,
-                        fee_percent=market.fee_percent,
+                        trade_fee_percent=market.trade_fee_percent,
                         time_remaining=market.position_duration,
                     )
                     self.assertLessEqual(

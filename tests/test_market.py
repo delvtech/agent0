@@ -43,7 +43,8 @@ class BaseMarketTest(unittest.TestCase):
         override_dict = {
             "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6,
-            "fee_percent": 0.1,
+            "trade_fee_percent": 0.1,
+            "redemption_fee_percent": 0.1,
             "target_pool_apr": 0.05,
             "vault_apr": {"type": "constant", "value": 0.05},
             # minimal simulation steps, we only care to investigate the first day's trades

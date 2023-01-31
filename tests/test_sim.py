@@ -96,7 +96,10 @@ class BaseSimTest(unittest.TestCase):
         config_file = "config/example_config.toml"
         override_list = [
             {},
-            {"fee_percent": 0.1},
+            {
+                "trade_fee_percent": 0.1,
+                "redemption_fee_percent": 0.1,
+            },
             {
                 "num_trading_days": 3,
                 "vault_apr": {"type": "Constant", "value": 0.05},
