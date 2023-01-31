@@ -261,7 +261,7 @@ Classes
       :type share_price: float
 
       :returns: * *float* -- The expected amount of bonds (token asset) in the pool, given the inputs
-                * **TODO** (*Write a test for this function*)
+                * **.. todo:: TODO** (*Write a test for this function*)
 
 
 
@@ -376,7 +376,7 @@ Classes
       :type share_price: float
 
       :returns: * *float* -- Total liquidity in the pool in terms of base, calculated from the provided parameters
-                * **TODO** (*Write a test for this function*)
+                * **.. todo:: TODO** (*Write a test for this function*)
 
 
 

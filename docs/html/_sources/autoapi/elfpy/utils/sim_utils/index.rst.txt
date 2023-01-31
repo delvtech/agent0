@@ -116,7 +116,6 @@ Functions
                            or the share & bond reserves are explicitly set
    :type target_pool_apr: float
    :param fee_percent: portion of outputs to be collected as fees for LPers, expressed as a decimal
-                       TODO: Rename this variable so that it doesn't use "percent"
    :type fee_percent: float
    :param token_duration: how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
    :type token_duration: float
@@ -125,8 +124,8 @@ Functions
    :param init_share_price: the initial price of the yield bearing vault shares
    :type init_share_price: float
 
-   :returns: instantiated market without any liquidity (i.e. no shares or bonds)
-   :rtype: Market
+   :returns: * *Market* -- instantiated market without any liquidity (i.e. no shares or bonds)
+             * **.. todo:: TODO** (*Rename the fee_percent variable so that it doesn't use "percent"*)
 
 
 
