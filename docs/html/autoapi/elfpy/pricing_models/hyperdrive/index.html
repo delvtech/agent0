@@ -79,7 +79,7 @@ deposited into yield bearing vaults</p>
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The input is calculated as:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}in' =
+\[ \begin{align}\begin{aligned}\begin{split}in' =
 \begin{cases}
 c (\frac{1}{\mu} (
 \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
@@ -88,15 +88,11 @@ c (\frac{1}{\mu} (
 (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
 - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
 &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[\begin{split}f =
+\end{cases}\end{split}\\\begin{split}f =
 \begin{cases}
 (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
 (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[in = in' + f\]</div>
+\end{cases}\end{split}\\in = in' + f\end{aligned}\end{align} \]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

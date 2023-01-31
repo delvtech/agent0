@@ -101,21 +101,17 @@ y = frac{(z - Delta z)(mu cdot (frac{1}{1 + r cdot t(d)})^{frac{1}{tau(d_b)}} - 
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The input is calculated as:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}in' =
+\[ \begin{align}\begin{aligned}\begin{split}in' =
 \begin{cases}
 c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z),
 &amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
 (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz),
 &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[\begin{split}f =
+\end{cases}\end{split}\\\begin{split}f =
 \begin{cases}
 (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
 (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[in = in' + f\]</div>
+\end{cases}\end{split}\\in = in' + f\end{aligned}\end{align} \]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -151,21 +147,17 @@ base.</p></li>
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The output is calculated as:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}out' =
+\[ \begin{align}\begin{aligned}\begin{split}out' =
 \begin{cases}
 c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}}),
 &amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
 2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}},
 &amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[\begin{split}f =
+\end{cases}\end{split}\\\begin{split}f =
 \begin{cases}
 (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
 (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases}\end{split}\]</div>
-<div class="math notranslate nohighlight">
-\[out = out' + f\]</div>
+\end{cases}\end{split}\\out = out' + f\end{aligned}\end{align} \]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

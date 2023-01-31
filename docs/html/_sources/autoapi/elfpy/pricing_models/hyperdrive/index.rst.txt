@@ -117,14 +117,12 @@ Classes
           &\text{ if } token\_in = \text{"pt"}
           \end{cases}
 
-      .. math::
           f =
           \begin{cases}
           (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
           (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
           \end{cases}
 
-      .. math::
           in = in' + f
 
       :param out: The quantity of tokens that the user wants to receive (the amount
