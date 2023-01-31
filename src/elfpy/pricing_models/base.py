@@ -34,7 +34,8 @@ class PricingModel(ABC):
         self,
         out: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -45,7 +46,8 @@ class PricingModel(ABC):
         self,
         in_: Quantity,
         market_state: MarketState,
-        fee_percent: float,
+        trade_fee_percent: float,
+        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
@@ -393,7 +395,7 @@ class PricingModel(ABC):
             trade_result = self.calc_in_given_out(
                 out=Quantity(amount=available_bonds * bond_percent, unit=TokenType.PT),
                 market_state=market_state,
-                fee_percent=fee_percent,
+                trade_fee_percent=fee_percent,
                 time_remaining=time_remaining,
             )
             maybe_max_long = trade_result.breakdown.with_fee
@@ -414,7 +416,7 @@ class PricingModel(ABC):
                 trade_result = self.calc_out_given_in(
                     in_=Quantity(amount=maybe_max_long, unit=TokenType.BASE),
                     market_state=market_state,
-                    fee_percent=fee_percent,
+                    trade_fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
                 d_bonds = trade_result.breakdown.with_fee
@@ -490,7 +492,7 @@ class PricingModel(ABC):
                 trade_result = self.calc_out_given_in(
                     in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
                     market_state=market_state,
-                    fee_percent=fee_percent,
+                    trade_fee_percent=fee_percent,
                     time_remaining=time_remaining,
                 )
                 maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
