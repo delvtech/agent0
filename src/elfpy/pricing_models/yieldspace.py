@@ -316,8 +316,8 @@ class YieldSpacePricingModel(PricingModel):
             \end{cases} \\
             in = in' + f
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         out : Quantity
             The quantity of tokens that the user wants to receive (the amount
             and the unit of the tokens).
@@ -538,8 +538,8 @@ class YieldSpacePricingModel(PricingModel):
             \end{cases} \\
             out = out' + f
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         in_ : Quantity
             The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).
@@ -710,8 +710,8 @@ class YieldSpacePricingModel(PricingModel):
         """
         Returns the 'k' constant variable for trade mathematics
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state : MarketState
             The state of the AMM
         time_remaining : StretchedTime

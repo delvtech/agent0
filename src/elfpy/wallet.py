@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class Long:
     """An open long position.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     balance : float
         The amount of bonds that the position is long.
     """
@@ -30,8 +30,8 @@ class Long:
 class Short:
     """An open short position.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     balance : float
         The amount of bonds that the position is short.
     margin : float
@@ -50,8 +50,8 @@ class Wallet:
     """
     Stores what's in the agent's wallet
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     address : int
         The trader's address.
     base : float

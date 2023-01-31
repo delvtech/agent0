@@ -337,8 +337,8 @@ class SimulationState:
         """Update each entry in the SimulationState's copy for the market state
         by appending to the list for each key, or creating a new key.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market_state: MarketState
             The state variable for the Market class
         """
@@ -354,8 +354,8 @@ class SimulationState:
         """Update each entry in the SimulationState's copy for the agent wallet state
         by appending to the list for each key, or creating a new key.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent: Agent
             An instantiated Agent object
         """

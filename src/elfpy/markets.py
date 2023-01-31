@@ -1,4 +1,4 @@
-"""Market simulators store state information when interfacing AMM pricing models with users"""
+"""Market simulators store state information when interfacing AMM pricing models with users."""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
@@ -27,7 +27,6 @@ class Market:
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
-
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
     """

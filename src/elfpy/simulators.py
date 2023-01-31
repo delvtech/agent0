@@ -75,8 +75,8 @@ class Simulator:
         """Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         rng : Generator
             Random number generator, constructed using np.random.default_rng(seed)
         """
@@ -123,8 +123,8 @@ class Simulator:
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
         a pandas dataframe.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_list : list[Agent]
             A list of instantiated Agent objects
         """
@@ -136,8 +136,8 @@ class Simulator:
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
         """Get trades from the agent list, execute them, and update states
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         last_block_in_sim : bool
             If True, indicates if the current set of trades are occuring on the final block in the simulation
         """
@@ -170,8 +170,8 @@ class Simulator:
     def collect_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
         """Collect trades from a set of provided agent IDs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_ids : Any
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
@@ -186,8 +186,8 @@ class Simulator:
     def collect_liquidation_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
         """Collect liquidation trades from a set of provided agent IDs.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         agent_ids : Any
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
@@ -202,8 +202,8 @@ class Simulator:
     def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:
         """Execute a list of trades associated with agents in the simulator.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
