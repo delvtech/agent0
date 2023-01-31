@@ -221,7 +221,6 @@ def get_market(
         or the share & bond reserves are explicitly set
     fee_percent : float
         portion of outputs to be collected as fees for LPers, expressed as a decimal
-        TODO: Rename this variable so that it doesn't use "percent"
     token_duration : float
         how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
     vault_apr : list
@@ -234,6 +233,7 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
 
+    .. todo:: TODO: Rename the fee_percent variable so that it doesn't use "percent"
     """
     # Wrapper functions are expected to have a lot of arguments
     # pylint: disable=too-many-arguments

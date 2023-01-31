@@ -166,7 +166,7 @@ class MarketDeltas:
 class MarketState:
     r"""The state of an AMM
 
-    TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    .. todo:: TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
     """
 
     # dataclasses can have many attributes

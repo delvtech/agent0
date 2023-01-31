@@ -108,7 +108,7 @@ class Wallet:
     def state(self) -> dict:
         r"""The wallet's current state of public variables
 
-        TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state
+        .. todo:: TODO: Set this up as a dataclass instead of a dict, which then needs to be converted when adding to the state
         """
         return {
             f"agent_{self.address}_base": self.base,

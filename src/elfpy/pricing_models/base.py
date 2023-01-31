@@ -130,7 +130,7 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
 
-        TODO: Write a test for this function
+        .. todo:: TODO: Write a test for this function
         """
         # TODO: Package up some of these arguments into market_state
         # pylint: disable=too-many-arguments
@@ -260,7 +260,7 @@ class PricingModel(ABC):
         float
             Total liquidity in the pool in terms of base, calculated from the provided parameters
 
-        TODO: Write a test for this function
+        .. todo:: TODO: Write a test for this function
         """
         return market_state.share_reserves * share_price
 
@@ -346,10 +346,7 @@ class PricingModel(ABC):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> float:
-        # TODO: Update this comment so that it matches the style of the other comments.
-        """
-        Returns the apr given reserve amounts
-        """
+        """Returns the apr given reserve amounts"""
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
             time_remaining,
