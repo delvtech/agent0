@@ -15,13 +15,13 @@ if TYPE_CHECKING:
 
 
 class Agent:
-    """
+    r"""Agent class for conducting trades on the market
+
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
-    date value is an inte with how many tokens they have for that date
+    date value is an inte with how many tokens they have for that date.
 
     Attributes
     ----------
-
     market : elfpy.markets.Market
         Market object that this Agent will be trading on.
     rng : numpy.random._generator.Generator
@@ -59,13 +59,10 @@ class Agent:
         Logs user state
     log_final_report(self, market: Market) -> None
         Logs a report of the agent's state
-
     """
 
     def __init__(self, wallet_address: int, budget: float):
-        """
-        Set up initial conditions
-        """
+        """Set up initial conditions"""
         self.budget: float = budget
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
@@ -75,11 +72,10 @@ class Agent:
     def create_agent_action(
         self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
     ) -> MarketAction:
-        """
-        Creates and returns a MarketAction object which represents a trade that this agent can make
+        r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         action_type : MarketActionType
             Type of action this function will execute. Must be one of the supported MarketActionTypes
         trade_amount : float
@@ -103,13 +99,12 @@ class Agent:
         return agent_action
 
     def action(self, market: Market) -> list[MarketAction]:
-        """
-        Abstract method meant to be implemented by the specific policy
+        r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
 
@@ -121,9 +116,19 @@ class Agent:
         raise NotImplementedError
 
     def get_max_long(self, market: Market) -> float:
-        """
-        Gets an approximation of the maximum amount of base the agent can use to
-        enter into a long position.
+        """Gets an approximation of the maximum amount of base the agent can use
+
+        Typically would be called to determine how much to enter into a long position.
+
+        Parameters
+        ----------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        float
+            Maximum amount the agent can use to open a long
         """
         (max_long, _) = market.pricing_model.get_max_long(
             market_state=market.market_state,
@@ -136,11 +141,10 @@ class Agent:
         )
 
     def get_max_short(self, market: Market) -> float:
-        """
-        Gets an approximation of the maximum amount of bonds the agent can short.
+        """Gets an approximation of the maximum amount of bonds the agent can short.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
 
@@ -189,19 +193,19 @@ class Agent:
         return last_maybe_max_short
 
     def get_trades(self, market: Market) -> list:
-        """
-        Helper function for computing a agent trade
-        direction is chosen based on this logic:
-        when entering a trade (open long or short),
-        we use calcOutGivenIn because we know how much we want to spend,
-        and care less about how much we get for it.
-        when exiting a trade (close long or short),
-        we use calcInGivenOut because we know how much we want to get,
-        and care less about how much we have to spend.
-        we spend what we have to spend, and get what we get.
+        """Helper function for computing a agent trade
 
-        Arguments
-        ---------
+        direction is chosen based on this logic:
+            when entering a trade (open long or short),
+            we use calcOutGivenIn because we know how much we want to spend,
+            and care less about how much we get for it.
+            when exiting a trade (close long or short),
+            we use calcInGivenOut because we know how much we want to get,
+            and care less about how much we have to spend.
+            we spend what we have to spend, and get what we get.
+
+        Parameters
+        ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
         pricing_model : PricingModel
@@ -221,16 +225,17 @@ class Agent:
         return actions
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
-        """
-        Update the agent's wallet
+        """Update the agent's wallet
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         wallet_deltas : Wallet
             The agent's wallet that tracks the amount of assets this agent holds
         market : Market
             The market on which this agent will be executing trades (MarketActions)
 
+        Returns
+        -------
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
@@ -262,11 +267,10 @@ class Agent:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
-        """
-        Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         shorts : Iterable[tuple[float, Short]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative mint time
@@ -289,11 +293,10 @@ class Agent:
                 del self.wallet.longs[mint_time]
 
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
-        """
-        Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         shorts : Iterable[tuple[float, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
@@ -314,11 +317,10 @@ class Agent:
                     self.wallet.shorts.update({mint_time: short})
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
-        """
-        Get final trades for liquidating positions
+        """Get final trades for liquidating positions
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market : Market
             The market on which this agent will be executing trades or liquidations (MarketActions)
 
@@ -368,11 +370,10 @@ class Agent:
         )
 
     def log_final_report(self, market: Market) -> None:
-        """
-        Logs a report of the agent's state
+        """Logs a report of the agent's state
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         market : Market
             The market on which this agent can execute trades (MarketActions)
         """

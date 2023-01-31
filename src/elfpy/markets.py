@@ -24,7 +24,8 @@ if TYPE_CHECKING:
 
 
 class Market:
-    """
+    r"""Market state simulator
+
     Holds state variables for market simulation and executes trades.
 
     The Market class executes trades by updating market variables according to the given pricing model.
@@ -55,14 +56,18 @@ class Market:
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
-        """Ensure that the agent action is an allowed action for this market
+        r"""Ensure that the agent action is an allowed action for this market
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         action_type : MarketActionType
             See MarketActionType for all acceptable actions that can be performed on this market
         pricing_model_name : str
             The name of the pricing model, must be "hyperdrive" or "yieldspace"
+
+        Returns
+        -------
+        None
         """
         if pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
             allowed_actions = [
@@ -85,8 +90,7 @@ class Market:
             )
 
     def trade_and_update(self, agent_action: MarketAction) -> Wallet:
-        """
-        Execute a trade in the simulated market.
+        r"""Execute a trade in the simulated market.
 
         check which of 6 action types are being executed, and handles each case:
         open_long
@@ -148,9 +152,7 @@ class Market:
         return agent_deltas
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
-        """
-        Increments member variables to reflect current market conditions
-        """
+        """Increments member variables to reflect current market conditions"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
@@ -420,9 +422,7 @@ class Market:
         wallet_address: int,
         trade_amount: float,
     ) -> tuple[MarketDeltas, Wallet]:
-        """
-        Computes new deltas for bond & share reserves after liquidity is added
-        """
+        """Computes new deltas for bond & share reserves after liquidity is added"""
         # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
         if (
             self.market_state.share_reserves == 0 and self.market_state.bond_reserves == 0
@@ -453,9 +453,7 @@ class Market:
         wallet_address: int,
         trade_amount: float,
     ) -> tuple[MarketDeltas, Wallet]:
-        """
-        Computes new deltas for bond & share reserves after liquidity is removed
-        """
+        """Computes new deltas for bond & share reserves after liquidity is removed"""
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
             rate=self.rate,

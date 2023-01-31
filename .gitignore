@@ -121,7 +121,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# documentation
+/docs/source/_autosummary
+/docs/source/generated
+/docs/build
 /site
 
 # mypy
@@ -132,8 +135,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# OSX files
 .DS_Store
-*.csv
 
 # VScode
 .vscode

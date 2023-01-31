@@ -2,9 +2,13 @@
 name = "elfpy"
 version = "0.0.1"
 authors = [
-  { name="Dylan Paiton", email="dpaiton@element.fi" },
+  { name="Dylan Paiton", email="dylan@element.fi" },
   { name="Jonny Rhea", email="jonny@element.fi" },
   { name="Mihai Cosma", email="mihai@element.fi" },
+  { name="Alex Towle", email="alex@element.fi" },
+  { name="Matthew Brown", email="matt@element.fi" },
+  { name="Giovanni Effio", email="mazygio@element.fi" },
+  { name="Patrick Morris", email="patrick@element.fi" },
   { name="Violet Vienhage", email="violet@element.fi" },
 ]
 description = "Experiment management and market simulators by Element Finance"
