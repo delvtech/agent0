@@ -52,7 +52,7 @@ def get_simulator(
         pricing_model,
         random_variables.target_pool_apr,
         random_variables.trade_fee_percent,
-        random_variables.trade_fee_percent,
+        random_variables.redemption_fee_percent,
         config.simulator.token_duration,
         random_variables.vault_apr,
         random_variables.init_share_price,

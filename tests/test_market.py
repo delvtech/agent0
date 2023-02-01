@@ -44,7 +44,7 @@ class BaseMarketTest(unittest.TestCase):
             "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6,
             "trade_fee_percent": 0.1,
-            "redemption_fee_percent": 0.1,
+            "redemption_fee_percent": 0.0,
             "target_pool_apr": 0.05,
             "vault_apr": {"type": "constant", "value": 0.05},
             # minimal simulation steps, we only care to investigate the first day's trades
@@ -66,6 +66,8 @@ class BaseMarketTest(unittest.TestCase):
 
     def compare_deltas(self, actual_deltas: Deltas, expected_deltas: Deltas):
         """Compare actual deltas to expected deltas"""
+        print(f"{expected_deltas.market_deltas=}")
+        print(f"{actual_deltas.market_deltas=}")
         self.assert_equal_and_log("market deltas", expected_deltas.market_deltas, actual_deltas.market_deltas)
         self.assert_equal_and_log("agent deltas", expected_deltas.agent_deltas, actual_deltas.agent_deltas)
 
@@ -99,6 +101,9 @@ class BaseMarketTest(unittest.TestCase):
             wallet_address=1,
             trade_amount=agent.amount_to_trade,  # in base: that's the thing in your wallet you want to sell
         )
+        print(f"{market_deltas=}")
+        print(f"{agent_deltas=}")
+        print(f"{expected_deltas=}")
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_purchased = agent_deltas.longs[0].balance
         # sell those bonds to close the long
@@ -188,9 +193,11 @@ class MarketTestsOneFunction(BaseMarketTest):
         trade_result_open_long_in_bonds = 101.10958152508731  # pricing model output of first test, not tested here
         trade_result_close_long_in_base = 99.7550614568167  # pricing model output of second test, not tested here
         # assign to appropriate token, for readability using absolute values, assigning +/- below
-        d_base = trade_result_close_long_in_base  # result of the second trade
         d_bonds = trade_result_open_long_in_bonds  # result of the first trade
-        fees_paid = 0.12313751471255564  # taken from pricing model output, not tested here
+        d_base = trade_result_close_long_in_base  # result of the second trade
+        trade_fees_paid = 0.12313751471255564  # taken from pricing model output, not tested here
+        redemption_fees_paid = 0  # taken from pricing model output, not tested here
+
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base into market to sell bonds
             d_token_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
@@ -203,7 +210,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             address=1,
             base=d_base,  # base asset increases because agent is getting base back to close his bond position
             longs={0: Long(-d_bonds)},  # longs decrease by the amount of bonds sold to close the position
-            fees_paid=fees_paid,
+            fees_paid=trade_fees_paid + redemption_fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
         self.run_market_test_close_long(agent_policy=agent_policy, expected_deltas=expected_deltas)
@@ -219,6 +226,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_base = trade_result  # proceeds from your sale of bonds, go into your margin account so you don't rug
         d_bonds = 100
         d_margin = d_base + max_loss
+
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
             d_token_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base

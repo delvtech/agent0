@@ -54,7 +54,7 @@ class TestCaseCalcInGivenOutFailure:
     trade_fee_percent: float
     redemption_fee_percent: float
     time_remaining: StretchedTime
-    exception_type: Type[BaseException]
+    exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
     __test__ = False  # pytest: don't test this class
 

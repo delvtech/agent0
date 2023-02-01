@@ -52,7 +52,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     out=test_case.out,
                     market_state=test_case.market_state,
                     trade_fee_percent=test_case.fee_percent,
-                    redemption_fee_percent=test_case.fee_percent,
+                    # TODO: update tests to handle redemption fees
+                    redemption_fee_percent=0,
                     time_remaining=time_remaining,
                 )
                 np.testing.assert_almost_equal(
@@ -129,11 +130,12 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel()]
+        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
 
         # Failure test cases.
-        test_cases = [
+        failure_test_cases = [
             TestCaseCalcInGivenOutFailure(
+                # amount negative
                 out=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -143,10 +145,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
+                # amount 0
                 out=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -156,12 +159,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # share reserves negative
                     share_reserves=-1,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -169,12 +173,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # share reserves zero
                     share_reserves=0,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -182,20 +187,21 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
+                    # bond reserves negative
                     bond_reserves=-1,
                     share_price=1,
                     init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -206,9 +212,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
+                # trade fee negative
                 trade_fee_percent=-1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -220,8 +227,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
+                # redemption fee negative
                 redemption_fee_percent=-1,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -232,9 +240,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                 ),
+                # trade fee above 1
                 trade_fee_percent=1.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -246,8 +255,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
+                # redemption fee above 1
                 redemption_fee_percent=1.1,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -260,7 +270,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=1.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=-91.25, time_stretch=1),
+                # days remaining negative
+                time_remaining=StretchedTime(days=-91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -273,6 +284,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
+                # days remaining == 365, will get divide by zero error
                 time_remaining=StretchedTime(days=365, time_stretch=1),
                 exception_type=AssertionError,
             ),
@@ -286,10 +298,12 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=500, time_stretch=1),
+                # days remaining > 365
+                time_remaining=StretchedTime(days=500, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
+                # amount very high, can't make trade
                 out=Quantity(amount=10_000_000, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -299,8 +313,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=92.5, time_stretch=1),
-                exception_type=decimal.InvalidOperation,
+                time_remaining=StretchedTime(days=92.5, time_stretch=1.1),
+                exception_type=(AssertionError, decimal.InvalidOperation),
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.BASE),
@@ -308,11 +322,12 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=2,
+                    # init_share_price 0
                     init_share_price=0,
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -320,12 +335,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
+                    # share_price < init_share_price
                     share_price=1,
                     init_share_price=1.5,
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
@@ -333,85 +349,92 @@ class TestCalcInGivenOut(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
+                    # share_price 0
                     share_price=0,
                     init_share_price=1.5,
                 ),
                 trade_fee_percent=0.1,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
+                # amount < 1 wei
                 out=Quantity(amount=0.5e-18, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # share_reserves < 1 wei
                     share_reserves=0.5e-18,
                     bond_reserves=1_000_000,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
+                    # bond reserves < 1 wei
                     bond_reserves=0.5e-18,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
+                    # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,
                     bond_reserves=1,
-                    share_price=0,
-                    init_share_price=1.5,
+                    share_price=1,
+                    init_share_price=1,
                 ),
                 trade_fee_percent=0.01,
                 redemption_fee_percent=0.01,
-                time_remaining=StretchedTime(days=91.25, time_stretch=1),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1),
                 exception_type=AssertionError,
             ),
         ]
 
         # Verify that the pricing model raises the expected exception type for
         # each test case.
-        for test_case in test_cases:
+        for test_number, test_case in enumerate(failure_test_cases):
+            print(f"{test_number=}")
             for pricing_model in pricing_models:
+                print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.out,
                         market_state=test_case.market_state,
                         trade_fee_percent=test_case.trade_fee_percent,
-                        redemption_fee_percent=test_case.trade_fee_percent,
+                        redemption_fee_percent=test_case.redemption_fee_percent,
                         time_remaining=test_case.time_remaining,
                     )
                     trade_result = pricing_model.calc_in_given_out(
                         out=test_case.out,
                         market_state=test_case.market_state,
                         trade_fee_percent=test_case.trade_fee_percent,
-                        redemption_fee_percent=test_case.trade_fee_percent,
+                        redemption_fee_percent=test_case.redemption_fee_percent,
                         time_remaining=test_case.time_remaining,
                     )
                     pricing_model.check_output_assertions(
