@@ -6,7 +6,7 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.utils.config import Config, get_random_variables
+from elfpy.utils.config import get_random_variables
 from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
@@ -22,6 +22,7 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
+    from elfpy.utils.config import Config
 
 
 def get_simulator(
@@ -39,13 +40,17 @@ def get_simulator(
         the agents to that should be used in the simulator
     random_sim_vars : RandomSimulationVariables
         dataclass that contains variables for initiating and running simulations
+
+    Returns
+    -------
+    simulator : Simulator
+        instantiated simulator class
     """
     # Sample the random simulation arguments.
     if random_sim_vars is None:
         random_variables = get_random_variables(config)
     else:
         random_variables = random_sim_vars
-
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
     market = get_market(
@@ -57,7 +62,6 @@ def get_simulator(
         random_variables.vault_apr,
         random_variables.init_share_price,
     )
-
     # Instantiate the initial LP agent.
     init_agents = [
         get_init_lp_agent(
@@ -67,7 +71,6 @@ def get_simulator(
             random_variables.trade_fee_percent,
         )
     ]
-
     # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
@@ -76,11 +79,9 @@ def get_simulator(
     )
     simulator.add_agents(init_agents)
     simulator.collect_and_execute_trades()
-
     # Add the remaining agents.
-    if not agents is None:
+    if agents is not None:
         simulator.add_agents(agents)
-
     return simulator
 
 

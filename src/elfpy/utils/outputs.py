@@ -293,7 +293,7 @@ def setup_logging(
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().addHandler(handler)  # assign handler to logging
+    logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
 
 
 def close_logging(delete_logs=True):

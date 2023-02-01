@@ -193,6 +193,7 @@ class Simulator:
         list[tuple[int, list[MarketAction]]]
             A list of liquidation trades associated with specific agents.
         """
+        logging.debug("Collecting liquiditation trades for market closure")
         return [(agent_id, self.agents[agent_id].get_liquidation_trades(self.market)) for agent_id in agent_ids]
 
     def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:

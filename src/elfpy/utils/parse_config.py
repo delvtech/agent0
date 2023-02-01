@@ -6,7 +6,7 @@ import tomli
 from elfpy.utils.config import AMMConfig, Config, MarketConfig, SimulatorConfig
 
 
-def load_and_parse_config_file(config_file):
+def load_and_parse_config_file(config_file: str) -> Config:
     r"""Wrapper function for loading a toml config file and parsing it.
 
     Parameters
@@ -22,7 +22,7 @@ def load_and_parse_config_file(config_file):
     return parse_simulation_config(load_config_file(config_file))
 
 
-def load_config_file(config_file):
+def load_config_file(config_file: str) -> dict:
     r"""Load a config file as a dictionary
 
     Parameters
@@ -40,7 +40,7 @@ def load_config_file(config_file):
     return config_dict
 
 
-def parse_simulation_config(config_dict):
+def parse_simulation_config(config_dict: dict) -> Config:
     r"""Parse the TOML config file and return a config object
 
     Parameters

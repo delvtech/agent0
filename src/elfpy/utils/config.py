@@ -140,17 +140,17 @@ def setup_vault_apr(config: Config):
             case "geometricbrownianmotion":
                 # the n argument is number of steps, so the number of points is n+1
                 vault_apr = (
-                    GeometricBrownianMotion(rng=config.simulator.rng)
-                    .sample(n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"])
-                    .tolist()
-                )
+                    GeometricBrownianMotion(rng=config.simulator.rng).sample(
+                        n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"]
+                    )
+                ).tolist()
             case _:
                 raise ValueError(
                     f"{config.market.vault_apr['type']=} not one of \"constant\","
                     f'"uniform", or "geometricbrownianmotion"'
                 )
     elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
-        vault_apr = [config.market.vault_apr() for _ in range(config.simulator.num_trading_days)]
+        vault_apr = list(config.market.vault_apr())
     elif isinstance(config.market.vault_apr, list):  # user-defined list of values
         vault_apr = config.market.vault_apr
     elif isinstance(config.market.vault_apr, float):  # single constant value to be cast to a float
