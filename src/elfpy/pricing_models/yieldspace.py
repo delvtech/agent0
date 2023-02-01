@@ -325,7 +325,7 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        fee_percent : float
+        trade_fee_percent : float
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.
@@ -549,7 +549,7 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        fee_percent : float
+        trade_fee_percent : float
             The percentage of the difference between the amount paid without
             slippage and the amount received that will be added to the input
             as a fee.

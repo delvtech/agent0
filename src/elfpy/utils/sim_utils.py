@@ -298,14 +298,12 @@ def override_random_variables(
     RandomSimulationVariables
         same dataclass as the random_variables input, but with fields specified by override_dict changed
     """
-    allowed_keys = [
-        "target_liquidity",
-        "target_pool_apr",
-        "fee_percent",
-        "init_vault_age",
-    ]
+
+    # allowed keys are all of the random_variable attributes, except vault_apre, which overrides
+    # config instead
+    allowed_keys = [key for key in random_variables.__dict__.keys() if key not in ["vault_apr"]]
+
     for key, value in override_dict.items():
-        if hasattr(random_variables, key):
-            if key in allowed_keys:
-                setattr(random_variables, key, value)
+        if hasattr(random_variables, key) and key in allowed_keys:
+            setattr(random_variables, key, value)
     return random_variables

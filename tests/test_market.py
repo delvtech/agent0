@@ -44,7 +44,8 @@ class BaseMarketTest(unittest.TestCase):
             "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6,
             "trade_fee_percent": 0.1,
-            "redemption_fee_percent": 0.0,
+            # our model currently has no redemption fee for yieldspace, if added these tests will break
+            "redemption_fee_percent": 0.1,
             "target_pool_apr": 0.05,
             "vault_apr": {"type": "constant", "value": 0.05},
             # minimal simulation steps, we only care to investigate the first day's trades
@@ -169,6 +170,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_base = 100
         d_bonds = trade_result
         fees_paid = 0.12328767123287677  # taken from pricing model output, not tested here
+
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base,  # base asset increases because agent is selling base into market to buy bonds
             d_token_asset=-d_bonds,  # token asset increases because agent is buying bonds from market to sell base
