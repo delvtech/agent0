@@ -4,6 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
+from decimal import Decimal
 
 import elfpy.utils.time as time_utils
 
@@ -18,7 +19,7 @@ def to_description(description: str) -> dict[str, str]:
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
-WEI = 1e-18
+WEI = 1e-18  # smallest denomination of ether
 
 # The maximum allowed difference between the base reserves and bond reserves.
 # This value was calculated using trial and error and is close to the maximum
@@ -86,14 +87,14 @@ class StretchedTime:
         return self._time_stretch
 
     def __str__(self):
-        out_str = (
+        output_string = (
             "Time components:"
             f" {self.days=};"
             f" {self.normalized_time=};"
             f" {self.stretched_time=};"
             f" {self.time_stretch=};"
         )
-        return out_str
+        return output_string
 
 
 @dataclass
@@ -146,19 +147,16 @@ class MarketDeltas:
         setattr(self, key, value)
 
     def __str__(self):
-        output_string = ""
-        for key, value in vars(self).items():
-            if value:  #  check if object exists
-                if value != 0:
-                    output_string += f" {key}: "
-                    if isinstance(value, float):
-                        output_string += f"{value}"
-                    elif isinstance(value, list):
-                        output_string += "[" + ", ".join(list(value)) + "]"
-                    elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
-                    else:
-                        output_string += f"{value}"
+        output_string = (
+            "MarketDeltas(\n"
+            f"\t{self.d_base_asset=},\n"
+            f"\t{self.d_token_asset=},\n"
+            f"\t{self.d_base_buffer=},\n"
+            f"\t{self.d_bond_buffer=},\n"
+            f"\t{self.d_lp_reserves=},\n"
+            f"\t{self.d_share_price=},\n"
+            ")"
+        )
         return output_string
 
 
@@ -216,6 +214,20 @@ class MarketState:
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
+        # new_share_reserves = Decimal(self.share_reserves) + Decimal(delta.d_base_asset / self.share_price)
+        # new_bond_reserves = Decimal(self.bond_reserves) + Decimal(delta.d_token_asset)
+        # new_base_buffer = Decimal(self.base_buffer) + Decimal(delta.d_base_buffer)
+        # new_bond_buffer = Decimal(self.bond_buffer) + Decimal(delta.d_bond_buffer)
+        # new_lp_reserves = Decimal(self.lp_reserves) + Decimal(delta.d_lp_reserves)
+        # new_share_price = Decimal(self.share_price) + Decimal(delta.d_share_price)
+
+        # self.share_reserves = float(new_share_reserves)
+        # self.bond_reserves = float(new_bond_reserves)
+        # self.base_buffer = float(new_base_buffer)
+        # self.bond_buffer = float(new_bond_buffer)
+        # self.lp_reserves = float(new_lp_reserves)
+        # self.share_price = float(new_share_price)
+
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
         self.base_buffer += delta.d_base_buffer
@@ -224,20 +236,27 @@ class MarketState:
         self.share_price += delta.d_share_price
 
     def __str__(self):
-        out_str = (
-            "Trading reserves:\n"
-            f"\t{self.share_reserves=}\n"
-            f"\t{self.bond_reserves=}\n"
-            "Trading buffers:\n"
-            f"\t{self.base_buffer=}\n"
-            f"\t{self.bond_buffer=}\n"
-            "LP reserves:\n"
-            f"\t{self.lp_reserves=}\n"
-            "Share price:\n"
-            f"\t{self.share_price=}\n"
-            f"\t{self.init_share_price=}"
+        output_string = (
+            "MarketState(\n"
+            "\ttrading_reserves(\n"
+            f"\t\t{self.share_reserves=},\n"
+            f"\t\t{self.bond_reserves=},\n"
+            "\t),\n"
+            "\ttrading_buffers(\n"
+            f"\t\t{self.base_buffer=},\n"
+            f"\t\t{self.bond_buffer=},\n"
+            "\t),\n"
+            "\tlp_reserves(\n"
+            f"\t\t{self.lp_reserves=},\n"
+            "\t),\n"
+            "\tunderlying_vault((\n"
+            f"\t\t{self.vault_apr=},\n"
+            f"\t\t{self.share_price=},\n"
+            f"\t\t{self.init_share_price=},\n"
+            "\t)\n"
+            ")"
         )
-        return out_str
+        return output_string
 
 
 @dataclass
@@ -282,6 +301,27 @@ class TradeResult:
     user_result: AgentTradeResult
     market_result: MarketTradeResult
     breakdown: TradeBreakdown
+
+    def __str__(self):
+        output_string = (
+            "TradeResult(\n"
+            "\tuser_results(\n"
+            f"\t\t{self.user_result.d_base=},\n"
+            f"\t\t{self.user_result.d_bonds=},\n"
+            "\t),\n"
+            "\tmarket_result(\n"
+            f"\t\t{self.market_result.d_base=},\n"
+            f"\t\t{self.market_result.d_bonds=},\n"
+            "\t),\n"
+            "\tbreakdown(\n"
+            f"\t\t{self.breakdown.without_fee_or_slippage=},\n"
+            f"\t\t{self.breakdown.with_fee=},\n"
+            f"\t\t{self.breakdown.without_fee=},\n"
+            f"\t\t{self.breakdown.fee=},\n"
+            "\t)\n"
+            ")"
+        )
+        return output_string
 
 
 @dataclass()

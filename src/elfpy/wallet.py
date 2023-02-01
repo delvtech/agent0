@@ -89,19 +89,24 @@ class Wallet:
         setattr(self, key, value)
 
     def __str__(self) -> str:
-        output_string = ""
-        for key, value in vars(self).items():
-            if value:  #  check if object exists
-                if value != 0:
-                    output_string += f" {key}: "
-                    if isinstance(value, float):
-                        output_string += f"{value}"
-                    elif isinstance(value, list):
-                        output_string += "[" + ", ".join(list(value)) + "]"
-                    elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
-                    else:
-                        output_string += f"{value}"
+        long_string = "\tlongs={\n"
+        for key, value in self.longs.items():
+            long_string += f"\t\t{key}: {value}\n"
+        long_string += "\t}"
+        short_string = "\tshorts={\n"
+        for key, value in self.shorts.items():
+            short_string += f"\t\t{key}: {value}\n"
+        short_string += "\t}"
+        output_string = (
+            "Wallet(\n"
+            f"\t{self.address=},\n"
+            f"\t{self.base=},\n"
+            f"\t{self.lp_tokens=},\n"
+            f"\t{self.lp_tokens=},\n"
+            f"{long_string},\n"
+            f"{short_string},\n"
+            ")"
+        )
         return output_string
 
     @property
@@ -115,4 +120,6 @@ class Wallet:
             f"agent_{self.address}_lp_tokens": self.lp_tokens,
             f"agent_{self.address}_total_longs": sum((long.balance for long in self.longs.values())),
             f"agent_{self.address}_total_shorts": sum((short.balance for short in self.shorts.values())),
+            f"agent_{self.address}_longs": self.longs,
+            f"agent_{self.address}_shorts": self.shorts,
         }
