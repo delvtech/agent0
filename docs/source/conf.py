@@ -101,12 +101,11 @@ typehints_fully_qualified = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-def setup(app):
-    app.add_css_file("custom.css")
-
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_style = "css/custom.css"
+
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
