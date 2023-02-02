@@ -35,8 +35,6 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         out: Quantity,
         market_state: MarketState,
-        trade_fee_percent: float,
-        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -70,12 +68,6 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        trade_fee_percent : float
-            The percentage of the difference between the amount paid without slippage and the amount
-            received that will be added to the input as a fee.  Applied to the curve portion of the
-            equation.
-        redemption_fee_percent : float
-            A flat fee applied to the output.  Applied to the flat portion of the equation.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
@@ -123,15 +115,13 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_in_given_out(
             out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
             market_state=market_state,
-            trade_fee_percent=trade_fee_percent,
-            redemption_fee_percent=redemption_fee_percent,
             # TODO: don't hardcode days to 365, initialize to term length
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
         # Compute flat part with fee
         flat_without_fee = out_amount * (1 - _time_remaining)
-        redemption_fee = flat_without_fee * Decimal(redemption_fee_percent)
+        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         flat_with_fee = flat_without_fee + redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
@@ -177,8 +167,6 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        trade_fee_percent: float,
-        redemption_fee_percent: float,
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -212,12 +200,6 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        trade_fee_percent : float
-            The percentage of the difference between the amount paid without slippage and the amount
-            received that will be added to the input as a fee.  Applied to the curve portion of the
-            equation.
-        redemption_fee_percent : float
-            A flat fee applied to the output.  Applied to the flat portion of the equation.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
@@ -255,14 +237,12 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_out_given_in(
             in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
-            trade_fee_percent=trade_fee_percent,
-            redemption_fee_percent=redemption_fee_percent,
             time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
         )
 
         # Compute flat part with fee
         flat_without_fee = in_amount * (1 - _time_remaining)
-        redemption_fee = flat_without_fee * Decimal(redemption_fee_percent)
+        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         flat_with_fee = flat_without_fee - redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.

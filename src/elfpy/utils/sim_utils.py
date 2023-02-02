@@ -139,10 +139,10 @@ def get_init_lp_agent(
                 bond_reserves=0,
                 share_price=market.market_state.share_price,
                 init_share_price=market.market_state.init_share_price,
+                trade_fee_percent=trade_fee_percent,
+                # no redemption fee when initializing pool
+                redemption_fee_percent=0,
             ),
-            trade_fee_percent=trade_fee_percent,
-            # no redemption fee when initializing pool
-            redemption_fee_percent=0,
             time_remaining=market.position_duration,
         )
         prev_delta_shares = delta_shares
@@ -247,12 +247,12 @@ def get_market(
             init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
             vault_apr=vault_apr[0],  # yield bearing source apr
+            trade_fee_percent=trade_fee_percent,  # g
+            redemption_fee_percent=redemption_fee_percent,  # g
         ),
         position_duration=StretchedTime(
             days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apr)
         ),
-        trade_fee_percent=trade_fee_percent,  # g
-        redemption_fee_percent=redemption_fee_percent,  # g
     )
     return market
 

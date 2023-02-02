@@ -292,9 +292,6 @@ class YieldSpacePricingModel(PricingModel):
         self,
         out: Quantity,
         market_state: MarketState,
-        trade_fee_percent: float,
-        # pylint: disable-next=unused-argument
-        redemption_fee_percent: float,  # redemption fee not used for yieldspace in calc_in_given_out
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -325,12 +322,6 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        trade_fee_percent : float
-            The percentage of the difference between the amount paid without
-            slippage and the amount received that will be added to the input
-            as a fee.
-        redemption_fee_percent : float
-            A flat fee applied to the output.  Not used in this equation for Yieldspace.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
@@ -363,7 +354,7 @@ class YieldSpacePricingModel(PricingModel):
             time_remaining,
         )
         out_amount = Decimal(out.amount)
-        _fee_percent = Decimal(trade_fee_percent)
+        trade_fee_percent = Decimal(market_state.trade_fee_percent)
 
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
@@ -406,14 +397,14 @@ class YieldSpacePricingModel(PricingModel):
             # This can also be expressed as:
             #
             # fee = ((1 / p) - 1) * phi * c * d_z
-            fee = ((1 / spot_price) - 1) * _fee_percent * share_price * d_shares
+            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
             logging.debug(
                 (
                     "fee = ((1 / spot_price) - 1) * _fee_percent * share_price * d_shares = "
                     "((1 / %g) - 1) * %g * %g * %g = %g"
                 ),
                 spot_price,
-                _fee_percent,
+                trade_fee_percent,
                 share_price,
                 d_shares,
                 fee,
@@ -471,11 +462,11 @@ class YieldSpacePricingModel(PricingModel):
             # percentage. This can also be expressed as:
             #
             # fee = (1 - p) * phi * d_y
-            fee = (1 - spot_price) * _fee_percent * d_bonds
+            fee = (1 - spot_price) * trade_fee_percent * d_bonds
             logging.debug(
                 ("fee = (1 - spot_price) * _fee_percent * d_bonds = (1 - %g) * %g * %g = %g"),
                 spot_price,
-                _fee_percent,
+                trade_fee_percent,
                 d_bonds,
                 fee,
             )
@@ -518,9 +509,6 @@ class YieldSpacePricingModel(PricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        trade_fee_percent: float,
-        # pylint: disable-next=unused-argument
-        redemption_fee_percent: float,  # redemption fee not used for yieldspace in calc_out_given_in
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
@@ -589,7 +577,7 @@ class YieldSpacePricingModel(PricingModel):
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
-        _fee_percent = Decimal(trade_fee_percent)
+        trade_fee_percent = Decimal(market_state.trade_fee_percent)
 
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
@@ -627,7 +615,7 @@ class YieldSpacePricingModel(PricingModel):
             # percentage. This can also be expressed as:
             #
             # ((1 / p) - 1) * phi * c * d_z
-            fee = ((1 / spot_price) - 1) * _fee_percent * share_price * d_shares
+            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
@@ -681,7 +669,7 @@ class YieldSpacePricingModel(PricingModel):
             # This can also be expressed as:
             #
             # fee = (1 - p) * phi * d_y
-            fee = (1 - spot_price) * _fee_percent * d_bonds
+            fee = (1 - spot_price) * trade_fee_percent * d_bonds
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less

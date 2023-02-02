@@ -188,6 +188,10 @@ class MarketState:
     share_price: float = 1.0
     init_share_price: float = 1.0
 
+    # fee percents
+    trade_fee_percent: float = 0.0
+    redemption_fee_percent: float = 0.0
+
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
