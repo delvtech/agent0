@@ -1,6 +1,0 @@
-elfpy.utils.outputs.plot\_longs\_and\_shorts
-============================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: plot_longs_and_shorts

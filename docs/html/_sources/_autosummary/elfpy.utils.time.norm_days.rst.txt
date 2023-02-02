@@ -1,6 +1,0 @@
-elfpy.utils.time.norm\_days
-===========================
-
-.. currentmodule:: elfpy.utils.time
-
-.. autofunction:: norm_days

@@ -1,49 +1,139 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
-
-    <title>elfpy.utils.parse_config &#8212; elfpy v0.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css" />
-    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
-    <script src="../../../../_static/jquery.js"></script>
-    <script src="../../../../_static/underscore.js"></script>
-    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../../../../_static/doctools.js"></script>
-    <script src="../../../../_static/sphinx_highlight.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>elfpy.utils.parse_config &mdash; elfpy v0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
-   
-  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+    <link rel="next" title="elfpy.utils.post_processing" href="../post_processing/index.html" />
+    <link rel="prev" title="elfpy.utils.outputs" href="../outputs/index.html" /> 
+</head>
 
-  </head><body>
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> elfpy
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Quick Install</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../policies/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.policies</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../pricing_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../config/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../outputs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.outputs</span></code></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.parse_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.post_processing</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../price/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.price</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sim_utils/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.sim_utils</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../time/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.time</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../agent/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../markets/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simulators/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.simulators</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../types/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../wallet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">elfpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.parse_config</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/elfpy/utils/parse_config/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   
+<style>
+/* CSS overrides for sphinx_rtd_theme */
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
 
-          <div class="body" role="main">
-            
-  <section id="module-elfpy.utils.parse_config">
-<span id="elfpy-utils-parse-config"></span><h1><a class="reference internal" href="#module-elfpy.utils.parse_config" title="elfpy.utils.parse_config"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.parse_config</span></code></a><a class="headerlink" href="#module-elfpy.utils.parse_config" title="Permalink to this heading">¶</a></h1>
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-elfpy.utils.parse_config">
+<span id="elfpy-utils-parse-config"></span><h1><a class="reference internal" href="#module-elfpy.utils.parse_config" title="elfpy.utils.parse_config"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.parse_config</span></code></a><a class="headerlink" href="#module-elfpy.utils.parse_config" title="Permalink to this heading"></a></h1>
 <p>Utilities for parsing &amp; loading user config TOML files</p>
 <section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
 <section id="functions">
-<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h3>
 <table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.parse_config.load_and_parse_config_file" title="elfpy.utils.parse_config.load_and_parse_config_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_and_parse_config_file</span></code></a>(config_file)</p></td>
 <td><p>Wrapper function for loading a toml config file and parsing it.</p></td>
@@ -64,16 +154,16 @@
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.load_and_parse_config_file">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_and_parse_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_and_parse_config_file" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_and_parse_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_and_parse_config_file" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper function for loading a toml config file and parsing it.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>config_file</strong> (<em>str</em>) – Absolute path to a toml config file.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
@@ -81,16 +171,16 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.load_config_file">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_config_file" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">load_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.load_config_file" title="Permalink to this definition"></a></dt>
 <dd><p>Load a config file as a dictionary</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>config_file</strong> (<em>str</em>) – Absolute path to a toml config file.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>config_dict</strong> – Nested dictionary containing the market, amm, and simulator config dicts</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>dictionary</p>
 </dd>
 </dl>
@@ -98,16 +188,16 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.parse_simulation_config">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">parse_simulation_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.parse_simulation_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">parse_simulation_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.utils.parse_config.parse_simulation_config" title="Permalink to this definition"></a></dt>
 <dd><p>Parse the TOML config file and return a config object</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>config_dict</strong> (<em>dictionary</em>) – Nested dictionary containing the market, amm, and simulator config dicts</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>config</strong> – Nested dataclass with member classes MarketConfig, AMMConfig, and SimulatorConfig</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
@@ -115,16 +205,16 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.text_to_logging_level">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">text_to_logging_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logging_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#elfpy.utils.parse_config.text_to_logging_level" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">text_to_logging_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logging_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#elfpy.utils.parse_config.text_to_logging_level" title="Permalink to this definition"></a></dt>
 <dd><p>Converts logging level description to an integer</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>logging_text</strong> (<em>str</em>) – String description of the logging level; must be in [“debug”, “info”, “warning”, “error”, “critical”]</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p>Logging level integer corresponding to the string input</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>int</p>
 </dd>
 </dl>
@@ -132,19 +222,19 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.parse_config.override_config_variables">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">override_config_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><span class="pre">elfpy.utils.config.Config</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><span class="pre">elfpy.utils.config.Config</span></a></span></span><a class="headerlink" href="#elfpy.utils.parse_config.override_config_variables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.parse_config.</span></span><span class="sig-name descname"><span class="pre">override_config_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><span class="pre">elfpy.utils.config.Config</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><span class="pre">elfpy.utils.config.Config</span></a></span></span><a class="headerlink" href="#elfpy.utils.parse_config.override_config_variables" title="Permalink to this definition"></a></dt>
 <dd><p>Replace existing member &amp; config variables with ones defined in override_dict</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>config</strong> (<a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><em>Config</em></a>) – config object, as defined in elfpy.utils.config</p></li>
 <li><p><strong>override_dict</strong> (<em>dict</em>) – dictionary containing keys that correspond to member fields of the RandomSimulationVariables class</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p>same dataclass as the config input, but with fields specified by override_dict changed</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config">Config</a></p>
 </dd>
 </dl>
@@ -155,66 +245,34 @@
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../outputs/index.html" class="btn btn-neutral float-left" title="elfpy.utils.outputs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../post_processing/index.html" class="btn btn-neutral float-right" title="elfpy.utils.post_processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright  2023, Element Finance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../../../index.html">elfpy</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/elfpy.html">elfpy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../index.html">API Reference</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../../../index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>document.getElementById('searchbox').style.display = "block"</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy; 2023, Element Finance.
-      
-      |
-      <a href="../../../../_sources/autoapi/elfpy/utils/parse_config/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>

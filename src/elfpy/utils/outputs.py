@@ -263,7 +263,7 @@ def annotate(axis_handle, text, major_offset, minor_offset, val):
         alpha=val["alpha"],
     )
     annotation_handle.set_bbox(
-        dict(facecolor="white", edgecolor="black", alpha=val["alpha"], linewidth=0, boxstyle="round,pad=0.1")
+        {"facecolor": "white", "edgecolor": "black", "alpha": val["alpha"], "linewidth": 0, "boxstyle": "round,pad=0.1"}
     )
 
 

@@ -1,6 +1,0 @@
-elfpy.utils.outputs.get\_gridspec\_subplots
-===========================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: get_gridspec_subplots

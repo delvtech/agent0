@@ -1,6 +1,0 @@
-elfpy.utils.parse\_config.text\_to\_logging\_level
-==================================================
-
-.. currentmodule:: elfpy.utils.parse_config
-
-.. autofunction:: text_to_logging_level

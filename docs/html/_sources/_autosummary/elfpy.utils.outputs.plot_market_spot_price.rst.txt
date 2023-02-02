@@ -1,6 +1,0 @@
-elfpy.utils.outputs.plot\_market\_spot\_price
-=============================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: plot_market_spot_price

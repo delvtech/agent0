@@ -78,7 +78,7 @@ class TestAgent(unittest.TestCase):
     def get_implemented_policies() -> list[str]:
         """Get a list of all implemented agent policies in elfpy/policies directory"""
 
-        policies_path = f"{policies.__path__[0]}/policies"
+        policies_path = f"{list(policies.__path__)[0]}/policies"
         filenames = next(walk(policies_path), (None, None, []))[2]
         agent_policies = [path.splitext(filename)[0] for filename in filenames]
 

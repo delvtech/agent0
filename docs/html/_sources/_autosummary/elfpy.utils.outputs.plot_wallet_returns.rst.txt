@@ -1,6 +1,0 @@
-elfpy.utils.outputs.plot\_wallet\_returns
-=========================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: plot_wallet_returns

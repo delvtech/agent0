@@ -1,6 +1,0 @@
-elfpy.utils.outputs.plot\_pool\_apr
-===================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: plot_pool_apr

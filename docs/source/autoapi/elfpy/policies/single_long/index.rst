@@ -1,0 +1,75 @@
+:py:mod:`elfpy.policies.single_long`
+====================================
+
+.. py:module:: elfpy.policies.single_long
+
+.. autoapi-nested-parse::
+
+   User strategy that opens a long position and then closes it after a certain amount of time has passed
+
+   ..
+       !! processed by numpydoc !!
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   elfpy.policies.single_long.Policy
+
+
+
+
+.. py:class:: Policy(wallet_address, budget=1000)
+
+   Bases: :py:obj:`elfpy.agent.Agent`
+
+   
+   simple long
+   only has one long open at a time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+   .. py:method:: action(market: elfpy.markets.Market)
+
+      
+      Specify action
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+

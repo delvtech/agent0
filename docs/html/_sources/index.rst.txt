@@ -3,10 +3,16 @@
 Welcome to elfpy's documentation!
 =================================
 
-.. autosummary::
-   :toctree: _autosummary
+.. toctree::
+   :caption: Documentation
 
-   elfpy
+   installation
+
+.. toctree::
+   :titlesonly:
+   :caption: API
+
+   /autoapi/elfpy/index
 
 
 Indices and tables
