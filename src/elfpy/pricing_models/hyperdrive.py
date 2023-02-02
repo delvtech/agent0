@@ -70,10 +70,12 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        fee_percent : float
-            The percentage of the difference between the amount paid without
-            slippage and the amount received that will be added to the input
-            as a fee.
+        trade_fee_percent : float
+            The percentage of the difference between the amount paid without slippage and the amount
+            received that will be added to the input as a fee.  Applied to the curve portion of the
+            equation.
+        redemption_fee_percent : float
+            A flat fee applied to the output.  Applied to the flat portion of the equation.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
@@ -180,8 +182,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         time_remaining: StretchedTime,
     ) -> TradeResult:
         r"""
-        Calculates the amount of an asset that must be provided to receive a
-        specified amount of the other asset given the current AMM reserves.
+        Calculates the amount of an asset that must be provided to receive a specified amount of the
+        other asset given the current AMM reserves.
 
         The output is calculated as:
 
@@ -206,14 +208,16 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         Parameters
         ----------
         in_ : Quantity
-            The quantity of tokens that the user wants to pay (the amount
-            and the unit of the tokens).
+            The quantity of tokens that the user wants to pay (the amount and the unit of the
+            tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        fee_percent : float
-            The percentage of the difference between the amount paid without
-            slippage and the amount received that will be added to the input
-            as a fee.
+        trade_fee_percent : float
+            The percentage of the difference between the amount paid without slippage and the amount
+            received that will be added to the input as a fee.  Applied to the curve portion of the
+            equation.
+        redemption_fee_percent : float
+            A flat fee applied to the output.  Applied to the flat portion of the equation.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 

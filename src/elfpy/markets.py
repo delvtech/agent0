@@ -52,8 +52,8 @@ class Market:
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
-        self.trade_fee_percent: float = trade_fee_percent  # g
-        self.redemption_fee_percent: float = redemption_fee_percent  # g
+        self.trade_fee_percent: float = trade_fee_percent  # phi
+        self.redemption_fee_percent: float = redemption_fee_percent
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
