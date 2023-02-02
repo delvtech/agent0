@@ -296,7 +296,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             breakdown=TradeBreakdown(
                 without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
                 without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
-                fee=curve.breakdown.fee + float(redemption_fee),
+                fee=float(Decimal(curve.breakdown.fee) + redemption_fee),
                 with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
             ),
         )
