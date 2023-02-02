@@ -223,8 +223,10 @@ def get_market(
         target apr, used for calculating the time stretch
         NOTE: the market apr will not have this target value until the init_lp agent trades,
         or the share & bond reserves are explicitly set
-    fee_percent : float
-        portion of outputs to be collected as fees for LPers, expressed as a decimal
+    trade_fee_percent : float
+        portion of trades to be collected as fees for LPers, expressed as a decimal
+    redemption_fee_percent : float
+        portion of redemptions to be collected as fees for LPers, expressed as a decimal
     token_duration : float
         how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
     vault_apr : list
