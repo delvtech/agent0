@@ -539,12 +539,6 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        trade_fee_percent : float
-            The percentage of the difference between the amount paid without
-            slippage and the amount received that will be added to the input
-            as a fee.
-        redemption_fee_percent : float
-            A flat fee applied to the output.  Not used in this equation for Yieldspace.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 

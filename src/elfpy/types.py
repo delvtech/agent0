@@ -166,7 +166,28 @@ class MarketDeltas:
 class MarketState:
     r"""The state of an AMM
 
-    .. todo:: TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    Implements a class for all that that an AMM smart contract would hold or would have access to
+    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
+    likely be accessible through the AMM as well.
+
+    Attributes
+    ----------
+    share_reserves: float
+        TODO: fill this in
+    bond_reserves: float
+        TODO: fill this in
+    base_buffer: float
+        TODO: fill this in
+    bond_buffer: float
+        TODO: fill this in
+    lp_reserves: float
+        TODO: fill this in
+    trade_fee_percent : float
+        The percentage of the difference between the amount paid without
+        slippage and the amount received that will be added to the input
+        as a fee.
+    redemption_fee_percent : float
+        A flat fee applied to the output.  Not used in this equation for Yieldspace.
     """
 
     # dataclasses can have many attributes
@@ -189,6 +210,7 @@ class MarketState:
     init_share_price: float = 1.0
 
     # fee percents
+
     trade_fee_percent: float = 0.0
     redemption_fee_percent: float = 0.0
 
