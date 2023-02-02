@@ -284,6 +284,9 @@ class Agent:
                     self.wallet.shorts[mint_time].margin += short.margin
                 else:
                     self.wallet.shorts.update({mint_time: short})
+            if self.wallet.shorts[mint_time].balance == 0:
+                # Remove the empty short from the wallet.
+                del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """Get final trades for liquidating positions

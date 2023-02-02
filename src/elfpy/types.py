@@ -4,7 +4,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
-from decimal import Decimal
 
 import elfpy.utils.time as time_utils
 
@@ -214,20 +213,6 @@ class MarketState:
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
-        # new_share_reserves = Decimal(self.share_reserves) + Decimal(delta.d_base_asset / self.share_price)
-        # new_bond_reserves = Decimal(self.bond_reserves) + Decimal(delta.d_token_asset)
-        # new_base_buffer = Decimal(self.base_buffer) + Decimal(delta.d_base_buffer)
-        # new_bond_buffer = Decimal(self.bond_buffer) + Decimal(delta.d_bond_buffer)
-        # new_lp_reserves = Decimal(self.lp_reserves) + Decimal(delta.d_lp_reserves)
-        # new_share_price = Decimal(self.share_price) + Decimal(delta.d_share_price)
-
-        # self.share_reserves = float(new_share_reserves)
-        # self.bond_reserves = float(new_bond_reserves)
-        # self.base_buffer = float(new_base_buffer)
-        # self.bond_buffer = float(new_bond_buffer)
-        # self.lp_reserves = float(new_lp_reserves)
-        # self.share_price = float(new_share_price)
-
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_token_asset
         self.base_buffer += delta.d_base_buffer

@@ -111,8 +111,8 @@ def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = Tr
             dict_key = f"agent_{address}"
             _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_longs", label=f"0x{address}", ax=axes[0])
             _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_shorts", label=f"0x{address}", ax=axes[1])
-    axes[0].set_ylabel("Total longs")
-    axes[1].set_ylabel("Total shorts")
+    axes[0].set_ylabel("Total long balances")
+    axes[1].set_ylabel("Total short balances")
     axes[0].legend()
     trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step]
     for axis in axes:

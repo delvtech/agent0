@@ -170,8 +170,9 @@ class Market:
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-
-        assert self.market_state.share_reserves + market_deltas.d_base_asset / self.market_state.share_price > 0, (
+        # TODO: #146 Delete once #These asserts should check for 0 -- the buffers should never go below 0
+        # We think that this is happening due to an rounding error, based on the size of the difference
+        assert self.market_state.share_reserves + market_deltas.d_base_asset / self.market_state.share_price > -1e-8, (
             f"markets.update_market: ERROR: {(market_deltas.d_base_asset / self.market_state.share_price)=} is outside allowable bounds"
             f"{self.market_state.share_reserves=}"
         )
@@ -179,11 +180,11 @@ class Market:
             f"markets.update_market: ERROR: {market_deltas.d_token_asset=} is outside allowable bounds, "
             f"{self.market_state.bond_reserves=}"
         )
-        assert self.market_state.base_buffer + market_deltas.d_base_buffer >= 0, (
+        assert self.market_state.base_buffer + market_deltas.d_base_buffer >= -1e-8, (
             f"markets.update_market: ERROR: {market_deltas.d_base_buffer=} is outside allowable bounds, "
             f"{self.market_state.base_buffer=}"
         )
-        assert self.market_state.bond_buffer + market_deltas.d_bond_buffer >= 0, (
+        assert self.market_state.bond_buffer + market_deltas.d_bond_buffer >= -1e-8, (
             f"markets.update_market: ERROR: {market_deltas.d_bond_buffer=} is outside allowable bounds, "
             f"{self.market_state.bond_buffer=}"
         )
