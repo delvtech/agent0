@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>elfpy.markets &mdash; elfpy v0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="elfpy.simulators" href="../simulators/index.html" />
+    <link rel="prev" title="elfpy.agent" href="../agent/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> elfpy
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Quick Install</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../policies/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.policies</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pricing_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../agent/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulators/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.simulators</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../types/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../wallet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">elfpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/elfpy/markets/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-elfpy.markets">
+<span id="elfpy-markets"></span><h1><a class="reference internal" href="#module-elfpy.markets" title="elfpy.markets"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a><a class="headerlink" href="#module-elfpy.markets" title="Permalink to this heading"></a></h1>
+<p>Market simulators store state information when interfacing AMM pricing models with users.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.markets.Market" title="elfpy.markets.Market"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Market</span></code></a></p></td>
+<td><p>Market state simulator</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.markets.Market">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.markets.</span></span><span class="sig-name descname"><span class="pre">Market</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pricing_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><span class="pre">elfpy.pricing_models.base.PricingModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">MarketState(share_reserves=0,</span> <span class="pre">bond_reserves=0,</span> <span class="pre">base_buffer=0,</span> <span class="pre">bond_buffer=0,</span> <span class="pre">lp_reserves=0,</span> <span class="pre">vault_apr=0,</span> <span class="pre">share_price=1,</span> <span class="pre">init_share_price=1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">StretchedTime(365,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.markets.Market" title="Permalink to this definition"></a></dt>
+<dd><p>Market state simulator</p>
+<p>Holds state variables for market simulation and executes trades.
+The Market class executes trades by updating market variables according to the given pricing model.
+It also has some helper variables for assessing pricing model values given market conditions.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.markets.Market.rate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rate</span></span><a class="headerlink" href="#elfpy.markets.Market.rate" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the current market apr</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="elfpy.markets.Market.spot_price">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">spot_price</span></span><a class="headerlink" href="#elfpy.markets.Market.spot_price" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the current market price of the share reserves</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.check_action_type">
+<span class="sig-name descname"><span class="pre">check_action_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><span class="pre">elfpy.types.MarketActionType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pricing_model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.markets.Market.check_action_type" title="Permalink to this definition"></a></dt>
+<dd><p>Ensure that the agent action is an allowed action for this market</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>action_type</strong> (<a class="reference internal" href="../types/index.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><em>MarketActionType</em></a>) – See MarketActionType for all acceptable actions that can be performed on this market</p></li>
+<li><p><strong>pricing_model_name</strong> (<em>str</em>) – The name of the pricing model, must be “hyperdrive” or “yieldspace”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.trade_and_update">
+<span class="sig-name descname"><span class="pre">trade_and_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">elfpy.types.MarketAction</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a></span></span><a class="headerlink" href="#elfpy.markets.Market.trade_and_update" title="Permalink to this definition"></a></dt>
+<dd><p>Execute a trade in the simulated market</p>
+<p>check which of 6 action types are being executed, and handles each case:</p>
+<p>open_long</p>
+<p>close_long</p>
+<p>open_short</p>
+<p>close_short</p>
+<dl class="simple">
+<dt>add_liquidity</dt><dd><p>pricing model computes new market deltas
+market updates its “liquidity pool” wallet, which stores each trade’s mint time and user address
+LP tokens are also stored in user wallet as fungible amounts, for ease of use</p>
+</dd>
+<dt>remove_liquidity</dt><dd><p>market figures out how much the user has contributed (calcualtes their fee weighting)
+market resolves fees, adds this to the agent_action (optional function, to check AMM logic)
+pricing model computes new market deltas
+market updates its “liquidity pool” wallet, which stores each trade’s mint time and user address
+LP tokens are also stored in user wallet as fungible amounts, for ease of use</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.update_market">
+<span class="sig-name descname"><span class="pre">update_market</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_deltas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.markets.Market.update_market" title="Permalink to this definition"></a></dt>
+<dd><p>Increments member variables to reflect current market conditions</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.get_market_state_string">
+<span class="sig-name descname"><span class="pre">get_market_state_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#elfpy.markets.Market.get_market_state_string" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a formatted string containing all of the Market class member variables</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.tick">
+<span class="sig-name descname"><span class="pre">tick</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.markets.Market.tick" title="Permalink to this definition"></a></dt>
+<dd><p>Increments the time member variable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.open_short">
+<span class="sig-name descname"><span class="pre">open_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.open_short" title="Permalink to this definition"></a></dt>
+<dd><p>shorts need their margin account to cover the worst case scenario (p=1)
+margin comes from 2 sources:
+- the proceeds from your short sale (p)
+- the max value you cover with base deposted from your wallet (1-p)
+these two components are both priced in base, yet happily add up to 1.0 units of bonds
+so we have the following identity:
+total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)</p>
+<p>this guarantees that bonds in the system are always fully backed by an equal amount of base</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.close_short">
+<span class="sig-name descname"><span class="pre">close_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.close_short" title="Permalink to this definition"></a></dt>
+<dd><p>when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
+the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
+at the same time, margin in their account is drained to pay for the bonds being bought back
+so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
+that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
+for more on short accounting, see the open short method</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.open_long">
+<span class="sig-name descname"><span class="pre">open_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.open_long" title="Permalink to this definition"></a></dt>
+<dd><p>take trade spec &amp; turn it into trade details
+compute wallet update spec with specific details
+will be conditional on the pricing model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.close_long">
+<span class="sig-name descname"><span class="pre">close_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.close_long" title="Permalink to this definition"></a></dt>
+<dd><p>take trade spec &amp; turn it into trade details
+compute wallet update spec with specific details
+will be conditional on the pricing model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.add_liquidity">
+<span class="sig-name descname"><span class="pre">add_liquidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.add_liquidity" title="Permalink to this definition"></a></dt>
+<dd><p>Computes new deltas for bond &amp; share reserves after liquidity is added</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.remove_liquidity">
+<span class="sig-name descname"><span class="pre">remove_liquidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketDeltas" title="elfpy.types.MarketDeltas"><span class="pre">elfpy.types.MarketDeltas</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.markets.Market.remove_liquidity" title="Permalink to this definition"></a></dt>
+<dd><p>Computes new deltas for bond &amp; share reserves after liquidity is removed</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.markets.Market.log_market_step_string">
+<span class="sig-name descname"><span class="pre">log_market_step_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.markets.Market.log_market_step_string" title="Permalink to this definition"></a></dt>
+<dd><p>Logs the current market step</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../agent/index.html" class="btn btn-neutral float-left" title="elfpy.agent" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../simulators/index.html" class="btn btn-neutral float-right" title="elfpy.simulators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright  2023, Element Finance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

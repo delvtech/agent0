@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>elfpy.agent &mdash; elfpy v0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="elfpy.markets" href="../markets/index.html" />
+    <link rel="prev" title="elfpy.utils.time" href="../utils/time/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> elfpy
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Quick Install</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../policies/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.policies</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pricing_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../markets/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../simulators/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.simulators</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../types/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../wallet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">elfpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/autoapi/elfpy/agent/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-elfpy.agent">
+<span id="elfpy-agent"></span><h1><a class="reference internal" href="#module-elfpy.agent" title="elfpy.agent"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a><a class="headerlink" href="#module-elfpy.agent" title="Permalink to this heading"></a></h1>
+<p>Implements abstract classes that control agent behavior</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.agent.Agent" title="elfpy.agent.Agent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Agent</span></code></a></p></td>
+<td><p>Agent class for conducting trades on the market</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.agent.Agent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.agent.</span></span><span class="sig-name descname"><span class="pre">Agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">budget</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.agent.Agent" title="Permalink to this definition"></a></dt>
+<dd><p>Agent class for conducting trades on the market</p>
+<p>Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
+date value is an inte with how many tokens they have for that date.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.market">
+<span class="sig-name descname"><span class="pre">market</span></span><a class="headerlink" href="#elfpy.agent.Agent.market" title="Permalink to this definition"></a></dt>
+<dd><p>Market object that this Agent will be trading on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market">elfpy.markets.Market</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.rng">
+<span class="sig-name descname"><span class="pre">rng</span></span><a class="headerlink" href="#elfpy.agent.Agent.rng" title="Permalink to this definition"></a></dt>
+<dd><p>Random number generator used for various simulation functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>numpy.random._generator.Generator</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.wallet_address">
+<span class="sig-name descname"><span class="pre">wallet_address</span></span><a class="headerlink" href="#elfpy.agent.Agent.wallet_address" title="Permalink to this definition"></a></dt>
+<dd><p>Random ID used to identify this specific agent in the simulation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.budget">
+<span class="sig-name descname"><span class="pre">budget</span></span><a class="headerlink" href="#elfpy.agent.Agent.budget" title="Permalink to this definition"></a></dt>
+<dd><p>Amount of assets that this agent has available for spending in the simulation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.last_update_spend">
+<span class="sig-name descname"><span class="pre">last_update_spend</span></span><a class="headerlink" href="#elfpy.agent.Agent.last_update_spend" title="Permalink to this definition"></a></dt>
+<dd><p>Time relative to the market, in yearfracs, when this agent last made a trade. This is used to track PnL</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.product_of_time_and_base">
+<span class="sig-name descname"><span class="pre">product_of_time_and_base</span></span><a class="headerlink" href="#elfpy.agent.Agent.product_of_time_and_base" title="Permalink to this definition"></a></dt>
+<dd><p>Helper attribute used to track how an agent spends their assets over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.wallet">
+<span class="sig-name descname"><span class="pre">wallet</span></span><a class="headerlink" href="#elfpy.agent.Agent.wallet" title="Permalink to this definition"></a></dt>
+<dd><p>Wallet object which tracks the agent’s asset balances</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet">elfpy.wallet.Wallet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.create_agent_action">
+<span class="sig-name descname"><span class="pre">create_agent_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../types/index.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><span class="pre">elfpy.types.MarketActionType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trade_amount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">elfpy.types.MarketAction</span></a></span></span><a class="headerlink" href="#elfpy.agent.Agent.create_agent_action" title="Permalink to this definition"></a></dt>
+<dd><p>Creates and returns a MarketAction object which represents a trade that this agent can make</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>action_type</strong> (<a class="reference internal" href="../types/index.html#elfpy.types.MarketActionType" title="elfpy.types.MarketActionType"><em>MarketActionType</em></a>) – Type of action this function will execute. Must be one of the supported MarketActionTypes</p></li>
+<li><p><strong>trade_amount</strong> (<em>float</em>) – Amount of assets that the agent will trade</p></li>
+<li><p><strong>mint_time</strong> (<em>float</em>) – Time relative to the market at which the tokens relevant to this trade were minted, in yearfracs</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The MarketAction object that contains the details about the action to execute in the market</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.action">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">elfpy.types.MarketAction</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.agent.Agent.action" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract method meant to be implemented by the specific policy</p>
+<p>Specify action from the policy</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of actions to execute in the market</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_long">
+<span class="sig-name descname"><span class="pre">get_max_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_max_long" title="Permalink to this definition"></a></dt>
+<dd><p>Gets an approximation of the maximum amount of base the agent can use</p>
+<p>Typically would be called to determine how much to enter into a long position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Maximum amount the agent can use to open a long</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_max_short">
+<span class="sig-name descname"><span class="pre">get_max_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_max_short" title="Permalink to this definition"></a></dt>
+<dd><p>Gets an approximation of the maximum amount of bonds the agent can short.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Amount of base that the agent can short in the current market</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_trades">
+<span class="sig-name descname"><span class="pre">get_trades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_trades" title="Permalink to this definition"></a></dt>
+<dd><p>Helper function for computing a agent trade</p>
+<dl class="simple">
+<dt>direction is chosen based on this logic:</dt><dd><p>when entering a trade (open long or short),
+we use calcOutGivenIn because we know how much we want to spend,
+and care less about how much we get for it.
+when exiting a trade (close long or short),
+we use calcInGivenOut because we know how much we want to get,
+and care less about how much we have to spend.
+we spend what we have to spend, and get what we get.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
+<li><p><strong>pricing_model</strong> (<a class="reference internal" href="../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><em>PricingModel</em></a>) – The pricing model in use for this simulated market</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of MarketAction objects that represent the trades to be made by this agent</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.update_wallet">
+<span class="sig-name descname"><span class="pre">update_wallet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wallet_deltas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><span class="pre">elfpy.wallet.Wallet</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.update_wallet" title="Permalink to this definition"></a></dt>
+<dd><p>Update the agent’s wallet</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wallet_deltas</strong> (<a class="reference internal" href="../wallet/index.html#elfpy.wallet.Wallet" title="elfpy.wallet.Wallet"><em>Wallet</em></a>) – The agent’s wallet that tracks the amount of assets this agent holds</p></li>
+<li><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades (MarketActions)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>This method has no returns. It updates the Agent’s Wallet according to the passed parameters</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.get_liquidation_trades">
+<span class="sig-name descname"><span class="pre">get_liquidation_trades</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction"><span class="pre">elfpy.types.MarketAction</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.agent.Agent.get_liquidation_trades" title="Permalink to this definition"></a></dt>
+<dd><p>Get final trades for liquidating positions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent will be executing trades or liquidations (MarketActions)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of trades to execute in order to liquidate positions where applicable</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[<a class="reference internal" href="../types/index.html#elfpy.types.MarketAction" title="elfpy.types.MarketAction">MarketAction</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.log_status_report">
+<span class="sig-name descname"><span class="pre">log_status_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.log_status_report" title="Permalink to this definition"></a></dt>
+<dd><p>Logs the current user state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.agent.Agent.log_final_report">
+<span class="sig-name descname"><span class="pre">log_final_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#elfpy.agent.Agent.log_final_report" title="Permalink to this definition"></a></dt>
+<dd><p>Logs a report of the agent’s state</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>market</strong> (<a class="reference internal" href="../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – The market on which this agent can execute trades (MarketActions)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../utils/time/index.html" class="btn btn-neutral float-left" title="elfpy.utils.time" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../markets/index.html" class="btn btn-neutral float-right" title="elfpy.markets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright  2023, Element Finance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

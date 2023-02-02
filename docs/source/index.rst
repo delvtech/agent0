@@ -4,9 +4,16 @@ Welcome to elfpy's documentation!
 =================================
 
 .. toctree::
-   :maxdepth: 2
+   :caption: Documentation
 
-   /API/index
+   installation
+
+.. toctree::
+   :titlesonly:
+   :caption: API
+
+   /autoapi/elfpy/index
+
 
 Indices and tables
 ==================

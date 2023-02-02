@@ -75,7 +75,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for API document generation -------------------------------------------------
 
-autoapi_dirs = ["../../src"]
+autoapi_dirs = ["../../src/elfpy"]
 autoapi_type = "python"
 autoapi_template_dir = "_templates/autoapi"
 autoapi_options = [
@@ -86,7 +86,7 @@ autoapi_options = [
     "imported-members",
 ]
 autoapi_keep_files = True
-autoapi_root = "API"
+# autoapi_root = "API"
 autoapi_add_toctree_entry = True
 
 autodoc_typehints = "signature"

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>elfpy.utils.sim_utils &mdash; elfpy v0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="elfpy.utils.time" href="../time/index.html" />
+    <link rel="prev" title="elfpy.utils.price" href="../price/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> elfpy
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Quick Install</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../policies/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.policies</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../pricing_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../config/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../outputs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.outputs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parse_config/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.parse_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../post_processing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.post_processing</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../price/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.price</span></code></a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.sim_utils</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../time/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.time</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../agent/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../markets/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simulators/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.simulators</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../types/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../wallet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">elfpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.sim_utils</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/elfpy/utils/sim_utils/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-elfpy.utils.sim_utils">
+<span id="elfpy-utils-sim-utils"></span><h1><a class="reference internal" href="#module-elfpy.utils.sim_utils" title="elfpy.utils.sim_utils"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils.sim_utils</span></code></a><a class="headerlink" href="#module-elfpy.utils.sim_utils" title="Permalink to this heading"></a></h1>
+<p>Implements helper functions for setting up a simulation</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.sim_utils.get_simulator" title="elfpy.utils.sim_utils.get_simulator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulator</span></code></a>(→ elfpy.simulators.Simulator)</p></td>
+<td><p>Construct and initialize a simulator with sane defaults</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.sim_utils.get_init_lp_agent" title="elfpy.utils.sim_utils.get_init_lp_agent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_init_lp_agent</span></code></a>(→ elfpy.agent.Agent)</p></td>
+<td><p>Calculate the required deposit amounts and instantiate the LP agent</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.sim_utils.get_market" title="elfpy.utils.sim_utils.get_market"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_market</span></code></a>(→ elfpy.markets.Market)</p></td>
+<td><p>Setup market</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.sim_utils.get_pricing_model" title="elfpy.utils.sim_utils.get_pricing_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_pricing_model</span></code></a>(→ elfpy.pricing_models.base.PricingModel)</p></td>
+<td><p>Get a PricingModel object from the config passed in</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.sim_utils.override_random_variables" title="elfpy.utils.sim_utils.override_random_variables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">override_random_variables</span></code></a>(...)</p></td>
+<td><p>Override the random simulation variables with targeted values, as specified by the keys</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.sim_utils.get_simulator">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">get_simulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><span class="pre">elfpy.utils.config.Config</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">agents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><span class="pre">elfpy.agent.Agent</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_sim_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><span class="pre">elfpy.types.RandomSimulationVariables</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></span><a class="headerlink" href="#elfpy.utils.sim_utils.get_simulator" title="Permalink to this definition"></a></dt>
+<dd><p>Construct and initialize a simulator with sane defaults</p>
+<p>The simulated market is initialized with an initial LP.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<a class="reference internal" href="../config/index.html#elfpy.utils.config.Config" title="elfpy.utils.config.Config"><em>Config</em></a>) – the simulator config</p></li>
+<li><p><strong>agents</strong> (<em>list</em><em>[</em><a class="reference internal" href="../../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><em>Agent</em></a><em>]</em>) – the agents to that should be used in the simulator</p></li>
+<li><p><strong>random_sim_vars</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><em>RandomSimulationVariables</em></a>) – dataclass that contains variables for initiating and running simulations</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.sim_utils.get_init_lp_agent">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">get_init_lp_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_liquidity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pool_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed_liquidity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent"><span class="pre">elfpy.agent.Agent</span></a></span></span><a class="headerlink" href="#elfpy.utils.sim_utils.get_init_lp_agent" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the required deposit amounts and instantiate the LP agent</p>
+<p>The required deposit amounts are computed iteratively to determine market reserve levels that achieve
+the target liquidity and APR. To hit the desired ratio, the agent opens a small LP, then a short,
+then a larger LP. Each iteration estimates the slippage due to the short and adjusts the first LP amount
+to account for it. The difference in slippage from one iteration to the next monotonically decreases,
+since it is accounting for diminishing additions to the market share reserves. A more detailed description
+is here: <a class="reference external" href="https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764">https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market</strong> (<a class="reference internal" href="../../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><em>Market</em></a>) – empty market object</p></li>
+<li><p><strong>target_liquidity</strong> (<em>float</em>) – target total liquidity for LPer to provide (bonds+shares)
+the result will be within 1e-15% of the target</p></li>
+<li><p><strong>target_pool_apr</strong> (<em>float</em>) – target pool apr for the market
+the result will be within 1e-13% of the target</p></li>
+<li><p><strong>fee_percent</strong> (<em>float</em>) – how much the LPer will collect in fees</p></li>
+<li><p><strong>seed_liquidity</strong> (<em>float</em>) – initial (small) liquidity amount for setting the market APR</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>init_lp_agent</strong> – Agent class that will perform the lp initialization action</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../agent/index.html#elfpy.agent.Agent" title="elfpy.agent.Agent">Agent</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.sim_utils.get_market">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">get_market</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pricing_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><span class="pre">elfpy.pricing_models.base.PricingModel</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pool_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vault_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_share_price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../markets/index.html#elfpy.markets.Market" title="elfpy.markets.Market"><span class="pre">elfpy.markets.Market</span></a></span></span><a class="headerlink" href="#elfpy.utils.sim_utils.get_market" title="Permalink to this definition"></a></dt>
+<dd><p>Setup market</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pricing_model</strong> (<a class="reference internal" href="../../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><em>PricingModel</em></a>) – instantiated pricing model</p></li>
+<li><p><strong>target_pool_apr</strong> (<em>float</em>) – target apr, used for calculating the time stretch
+NOTE: the market apr will not have this target value until the init_lp agent trades,
+or the share &amp; bond reserves are explicitly set</p></li>
+<li><p><strong>fee_percent</strong> (<em>float</em>) – portion of outputs to be collected as fees for LPers, expressed as a decimal</p></li>
+<li><p><strong>token_duration</strong> (<em>float</em>) – how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)</p></li>
+<li><p><strong>vault_apr</strong> (<em>list</em>) – valut apr per day for the duration of the simulation</p></li>
+<li><p><strong>init_share_price</strong> (<em>float</em>) – the initial price of the yield bearing vault shares</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>Market</em> – instantiated market without any liquidity (i.e. no shares or bonds)</p></li>
+<li><p><strong>.. todo:: TODO</strong> (<em>Rename the fee_percent variable so that it doesn’t use “percent”</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.sim_utils.get_pricing_model">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">get_pricing_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><span class="pre">elfpy.pricing_models.base.PricingModel</span></a></span></span><a class="headerlink" href="#elfpy.utils.sim_utils.get_pricing_model" title="Permalink to this definition"></a></dt>
+<dd><p>Get a PricingModel object from the config passed in</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model_name</strong> (<em>str</em>) – name of the desired pricing_model; can be “hyperdrive”, or “yieldspace”</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>instantiated pricing model matching the input argument</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../pricing_models/base/index.html#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel">PricingModel</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.sim_utils.override_random_variables">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.sim_utils.</span></span><span class="sig-name descname"><span class="pre">override_random_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">random_variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><span class="pre">elfpy.types.RandomSimulationVariables</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><span class="pre">elfpy.types.RandomSimulationVariables</span></a></span></span><a class="headerlink" href="#elfpy.utils.sim_utils.override_random_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Override the random simulation variables with targeted values, as specified by the keys</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>random_variables</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables"><em>RandomSimulationVariables</em></a>) – dataclass that contains variables for initiating and running simulations</p></li>
+<li><p><strong>override_dict</strong> (<em>dict</em>) – dictionary containing keys that correspond to member fields of the RandomSimulationVariables class</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>same dataclass as the random_variables input, but with fields specified by override_dict changed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../types/index.html#elfpy.types.RandomSimulationVariables" title="elfpy.types.RandomSimulationVariables">RandomSimulationVariables</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../price/index.html" class="btn btn-neutral float-left" title="elfpy.utils.price" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../time/index.html" class="btn btn-neutral float-right" title="elfpy.utils.time" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright  2023, Element Finance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
