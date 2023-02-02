@@ -34,8 +34,8 @@ class BaseTradeTest(unittest.TestCase):
         override_dict = {
             "pricing_model_name": "Yieldspace",
             "target_liquidity": 10e6 if not target_liquidity else target_liquidity,
-            # "trade_fee_percent": 0.1,
-            # "redemtption_fee_percent": 0.0,
+            "trade_fee_percent": 0.1,
+            "redemtption_fee_percent": 0.0,
             "target_pool_apr": 0.05 if not target_pool_apr else target_pool_apr,
             "vault_apr": {"type": "constant", "value": 0.05},
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing

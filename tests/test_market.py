@@ -67,8 +67,6 @@ class BaseMarketTest(unittest.TestCase):
 
     def compare_deltas(self, actual_deltas: Deltas, expected_deltas: Deltas):
         """Compare actual deltas to expected deltas"""
-        print(f"{expected_deltas.market_deltas=}")
-        print(f"{actual_deltas.market_deltas=}")
         self.assert_equal_and_log("market deltas", expected_deltas.market_deltas, actual_deltas.market_deltas)
         self.assert_equal_and_log("agent deltas", expected_deltas.agent_deltas, actual_deltas.agent_deltas)
 
@@ -102,9 +100,6 @@ class BaseMarketTest(unittest.TestCase):
             wallet_address=1,
             trade_amount=agent.amount_to_trade,  # in base: that's the thing in your wallet you want to sell
         )
-        print(f"{market_deltas=}")
-        print(f"{agent_deltas=}")
-        print(f"{expected_deltas=}")
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_purchased = agent_deltas.longs[0].balance
         # sell those bonds to close the long
