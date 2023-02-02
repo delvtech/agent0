@@ -1,6 +1,0 @@
-elfpy.utils.outputs.annotate
-============================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: annotate

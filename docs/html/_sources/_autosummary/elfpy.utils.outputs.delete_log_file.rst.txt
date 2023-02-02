@@ -1,6 +1,0 @@
-elfpy.utils.outputs.delete\_log\_file
-=====================================
-
-.. currentmodule:: elfpy.utils.outputs
-
-.. autofunction:: delete_log_file

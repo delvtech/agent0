@@ -1,6 +1,0 @@
-elfpy.utils.time.stretch\_time
-==============================
-
-.. currentmodule:: elfpy.utils.time
-
-.. autofunction:: stretch_time

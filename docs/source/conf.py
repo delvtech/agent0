@@ -70,24 +70,34 @@ extensions = [
     "sphinx.ext.coverage",  # collect documentation coverage stats
 ]
 
-# -- Options for autodocs -------------------------------------------------
-autoclass_content = "class"
-autodoc_member_order = "bysource"
-autodoc_default_options = {
-    "members": True,
-    "undoc-members": True,
-    # "exclude-members": "__dict__,__weakref__",
-    "show-inheritance": True,
-}
-set_type_checking_flag = True
-always_document_param_types = True
-typehints_fully_qualified = True
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+# -- Options for API document generation -------------------------------------------------
+
 autoapi_dirs = ["../../src"]
-# autodoc_default_options = {"autosummary": True}
-# autosummary_generate = True
-# numpydoc_show_class_members = False
+autoapi_type = "python"
+autoapi_template_dir = "_templates/autoapi"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+]
+autoapi_keep_files = True
+autoapi_root = "API"
+autoapi_add_toctree_entry = True
+
+autodoc_typehints = "signature"
+autodoc_member_order = "bysource"
+autoclass_content = "class"
+
+
+set_type_checking_flag = True
+numpydoc_show_class_members = False
+always_document_param_types = True
+typehints_fully_qualified = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -95,16 +105,8 @@ def setup(app):
     app.add_css_file("custom.css")
 
 
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-html_theme_options = {
-    "sidebar_collapse": True,
-    "show_powered_by": False,
-}
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

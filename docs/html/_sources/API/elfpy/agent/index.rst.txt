@@ -1,0 +1,358 @@
+:py:mod:`elfpy.agent`
+=====================
+
+.. py:module:: elfpy.agent
+
+.. autoapi-nested-parse::
+
+   Implements abstract classes that control agent behavior
+
+   ..
+       !! processed by numpydoc !!
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   elfpy.agent.Agent
+
+
+
+
+.. py:class:: Agent(wallet_address: int, budget: float)
+
+   
+   Agent class for conducting trades on the market
+
+   Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
+   date value is an inte with how many tokens they have for that date.
+
+   .. attribute:: market
+
+      Market object that this Agent will be trading on.
+
+      :type: elfpy.markets.Market
+
+   .. attribute:: rng
+
+      Random number generator used for various simulation functions
+
+      :type: numpy.random._generator.Generator
+
+   .. attribute:: wallet_address
+
+      Random ID used to identify this specific agent in the simulation
+
+      :type: int
+
+   .. attribute:: budget
+
+      Amount of assets that this agent has available for spending in the simulation
+
+      :type: float
+
+   .. attribute:: last_update_spend
+
+      Time relative to the market, in yearfracs, when this agent last made a trade. This is used to track PnL
+
+      :type: float
+
+   .. attribute:: product_of_time_and_base
+
+      Helper attribute used to track how an agent spends their assets over time
+
+      :type: float
+
+   .. attribute:: wallet
+
+      Wallet object which tracks the agent's asset balances
+
+      :type: elfpy.wallet.Wallet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+   .. py:method:: create_agent_action(action_type: elfpy.types.MarketActionType, trade_amount: float, mint_time: float = 0) -> elfpy.types.MarketAction
+
+      
+      Creates and returns a MarketAction object which represents a trade that this agent can make
+
+      :param action_type: Type of action this function will execute. Must be one of the supported MarketActionTypes
+      :type action_type: MarketActionType
+      :param trade_amount: Amount of assets that the agent will trade
+      :type trade_amount: float
+      :param mint_time: Time relative to the market at which the tokens relevant to this trade were minted, in yearfracs
+      :type mint_time: float
+
+      :returns: The MarketAction object that contains the details about the action to execute in the market
+      :rtype: MarketAction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: action(market: elfpy.markets.Market) -> list[elfpy.types.MarketAction]
+      :abstractmethod:
+
+      
+      Abstract method meant to be implemented by the specific policy
+
+      Specify action from the policy
+
+      :param market: The market on which this agent will be executing trades (MarketActions)
+      :type market: Market
+
+      :returns: List of actions to execute in the market
+      :rtype: list[MarketAction]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: get_max_long(market: elfpy.markets.Market) -> float
+
+      
+      Gets an approximation of the maximum amount of base the agent can use
+
+      Typically would be called to determine how much to enter into a long position.
+
+      :param market: The market on which this agent will be executing trades (MarketActions)
+      :type market: Market
+
+      :returns: Maximum amount the agent can use to open a long
+      :rtype: float
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: get_max_short(market: elfpy.markets.Market) -> float
+
+      
+      Gets an approximation of the maximum amount of bonds the agent can short.
+
+      :param market: The market on which this agent will be executing trades (MarketActions)
+      :type market: Market
+
+      :returns: Amount of base that the agent can short in the current market
+      :rtype: float
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: get_trades(market: elfpy.markets.Market) -> list
+
+      
+      Helper function for computing a agent trade
+
+      direction is chosen based on this logic:
+          when entering a trade (open long or short),
+          we use calcOutGivenIn because we know how much we want to spend,
+          and care less about how much we get for it.
+          when exiting a trade (close long or short),
+          we use calcInGivenOut because we know how much we want to get,
+          and care less about how much we have to spend.
+          we spend what we have to spend, and get what we get.
+
+      :param market: The market on which this agent will be executing trades (MarketActions)
+      :type market: Market
+      :param pricing_model: The pricing model in use for this simulated market
+      :type pricing_model: PricingModel
+
+      :returns: List of MarketAction objects that represent the trades to be made by this agent
+      :rtype: list
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: update_wallet(wallet_deltas: elfpy.wallet.Wallet, market: elfpy.markets.Market) -> None
+
+      
+      Update the agent's wallet
+
+      :param wallet_deltas: The agent's wallet that tracks the amount of assets this agent holds
+      :type wallet_deltas: Wallet
+      :param market: The market on which this agent will be executing trades (MarketActions)
+      :type market: Market
+
+      :rtype: This method has no returns. It updates the Agent's Wallet according to the passed parameters
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: get_liquidation_trades(market: elfpy.markets.Market) -> list[elfpy.types.MarketAction]
+
+      
+      Get final trades for liquidating positions
+
+      :param market: The market on which this agent will be executing trades or liquidations (MarketActions)
+      :type market: Market
+
+      :returns: List of trades to execute in order to liquidate positions where applicable
+      :rtype: list[MarketAction]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: log_status_report() -> None
+
+      
+      Logs the current user state
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+   .. py:method:: log_final_report(market: elfpy.markets.Market) -> None
+
+      
+      Logs a report of the agent's state
+
+      :param market: The market on which this agent can execute trades (MarketActions)
+      :type market: Market
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      ..
+          !! processed by numpydoc !!
+
+

@@ -3,11 +3,10 @@
 Welcome to elfpy's documentation!
 =================================
 
-.. autosummary::
-   :toctree: _autosummary
+.. toctree::
+   :maxdepth: 2
 
-   elfpy
-
+   /API/index
 
 Indices and tables
 ==================

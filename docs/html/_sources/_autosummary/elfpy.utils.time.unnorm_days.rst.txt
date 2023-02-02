@@ -1,6 +1,0 @@
-elfpy.utils.time.unnorm\_days
-=============================
-
-.. currentmodule:: elfpy.utils.time
-
-.. autofunction:: unnorm_days

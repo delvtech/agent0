@@ -1,6 +1,0 @@
-elfpy.utils.price.calc\_apr\_from\_spot\_price
-==============================================
-
-.. currentmodule:: elfpy.utils.price
-
-.. autofunction:: calc_apr_from_spot_price

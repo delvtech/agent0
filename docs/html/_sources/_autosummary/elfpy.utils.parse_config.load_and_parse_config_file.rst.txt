@@ -1,6 +1,0 @@
-elfpy.utils.parse\_config.load\_and\_parse\_config\_file
-========================================================
-
-.. currentmodule:: elfpy.utils.parse_config
-
-.. autofunction:: load_and_parse_config_file
