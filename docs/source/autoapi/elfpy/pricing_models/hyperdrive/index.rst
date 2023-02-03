@@ -111,10 +111,12 @@ Classes
           \begin{cases}
           \\
           \text{ if $token\_in$ = "base", }\\
-          \quad\quad\quad c \big(\mu^{-1} \big(\big(k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big) ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
+          \quad\quad\quad c \big(\mu^{-1} \big(\big(k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big)
+          ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
           \\\\
           \text{ if $token\_in$ = "pt", }\\
-          \quad\quad\quad k - \big(c \cdot \mu^{-1} \cdot\big(\mu \cdot\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big) + c \cdot \Delta z \cdot\big(1 - \tau\big)
+          \quad\quad\quad k - \big(c \cdot \mu^{-1} \cdot\big(\mu \cdot\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)
+          ^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big) + c \cdot \Delta z \cdot\big(1 - \tau\big)
           \\\\
           \end{cases}
           \\\\
