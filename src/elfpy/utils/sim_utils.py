@@ -47,32 +47,35 @@ def get_simulator(
         instantiated simulator class
     """
     # Sample the random simulation arguments.
-    random_sim_vars = get_random_variables(config) if random_sim_vars is None else random_sim_vars
+    if random_sim_vars is None:
+        set_random_sim_vars = get_random_variables(config)
+    else:
+        set_random_sim_vars = random_sim_vars
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
     market = get_market(
         pricing_model,
-        random_sim_vars.target_pool_apr,
-        random_sim_vars.trade_fee_percent,
-        random_sim_vars.redemption_fee_percent,
+        set_random_sim_vars.target_pool_apr,
+        set_random_sim_vars.trade_fee_percent,
+        set_random_sim_vars.redemption_fee_percent,
         config.simulator.token_duration,
-        random_sim_vars.vault_apr,
-        random_sim_vars.init_share_price,
+        set_random_sim_vars.vault_apr,
+        set_random_sim_vars.init_share_price,
     )
     # Instantiate the initial LP agent.
     init_agents = [
         get_init_lp_agent(
             market,
-            random_sim_vars.target_liquidity,
-            random_sim_vars.target_pool_apr,
-            random_sim_vars.trade_fee_percent,
+            set_random_sim_vars.target_liquidity,
+            set_random_sim_vars.target_pool_apr,
+            set_random_sim_vars.trade_fee_percent,
         )
     ]
     # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
         market=market,
-        random_simulation_variables=random_sim_vars,
+        random_simulation_variables=set_random_sim_vars,
     )
     simulator.add_agents(init_agents)
     simulator.collect_and_execute_trades()
