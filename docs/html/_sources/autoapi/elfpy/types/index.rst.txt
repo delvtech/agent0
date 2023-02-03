@@ -432,7 +432,53 @@ Attributes
    
    The state of an AMM
 
-   .. todo:: TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+   Implements a class for all that that an AMM smart contract would hold or would have access to
+   For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
+   likely be accessible through the AMM as well.
+
+   .. attribute:: share_reserves
+
+      TODO: fill this in
+
+      :type: float
+
+   .. attribute:: bond_reserves
+
+      TODO: fill this in
+
+      :type: float
+
+   .. attribute:: base_buffer
+
+      TODO: fill this in
+
+      :type: float
+
+   .. attribute:: bond_buffer
+
+      TODO: fill this in
+
+      :type: float
+
+   .. attribute:: lp_reserves
+
+      TODO: fill this in
+
+      :type: float
+
+   .. attribute:: trade_fee_percent
+
+      The percentage of the difference between the amount paid without
+      slippage and the amount received that will be added to the input
+      as a fee.
+
+      :type: float
+
+   .. attribute:: redemption_fee_percent
+
+      A flat fee applied to the output.  Not used in this equation for Yieldspace.
+
+      :type: float
 
 
 
@@ -495,6 +541,18 @@ Attributes
    .. py:attribute:: init_share_price
       :type: float
       :value: 1.0
+
+      
+
+   .. py:attribute:: trade_fee_percent
+      :type: float
+      :value: 0.0
+
+      
+
+   .. py:attribute:: redemption_fee_percent
+      :type: float
+      :value: 0.0
 
       
 
@@ -706,7 +764,12 @@ Attributes
 
       
 
-   .. py:attribute:: fee_percent
+   .. py:attribute:: trade_fee_percent
+      :type: float
+
+      
+
+   .. py:attribute:: redemption_fee_percent
       :type: float
 
       
@@ -814,7 +877,12 @@ Attributes
 
       
 
-   .. py:attribute:: fee_percent
+   .. py:attribute:: trade_fee_percent
+      :type: list
+
+      
+
+   .. py:attribute:: redemption_fee_percent
       :type: list
 
       

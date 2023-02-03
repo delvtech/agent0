@@ -24,7 +24,7 @@ Classes
 
 
 
-.. py:class:: Market(pricing_model: elfpy.pricing_models.base.PricingModel, market_state: elfpy.types.MarketState = MarketState(share_reserves=0, bond_reserves=0, base_buffer=0, bond_buffer=0, lp_reserves=0, vault_apr=0, share_price=1, init_share_price=1), position_duration: elfpy.types.StretchedTime = StretchedTime(365, 1), fee_percent: float = 0)
+.. py:class:: Market(pricing_model: elfpy.pricing_models.base.PricingModel, market_state: elfpy.types.MarketState = MarketState(share_reserves=0, bond_reserves=0, base_buffer=0, bond_buffer=0, lp_reserves=0, vault_apr=0, share_price=1, init_share_price=1, trade_fee_percent=0, redemption_fee_percent=0), position_duration: elfpy.types.StretchedTime = StretchedTime(365, 1))
 
    
    Market state simulator

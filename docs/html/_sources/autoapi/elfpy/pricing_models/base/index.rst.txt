@@ -49,7 +49,7 @@ Classes
 
    ..
        !! processed by numpydoc !!
-   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
       :abstractmethod:
 
       
@@ -73,7 +73,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
       :abstractmethod:
 
       
@@ -431,7 +431,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: get_max_long(market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> tuple[float, float]
+   .. py:method:: get_max_long(market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> tuple[float, float]
 
       
       Calculates the maximum long the market can support using the bisection
@@ -464,7 +464,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: get_max_short(market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> tuple[float, float]
+   .. py:method:: get_max_short(market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> tuple[float, float]
 
       
       Calculates the maximum short the market can support using the bisection
@@ -520,7 +520,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: check_input_assertions(quantity: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime)
+   .. py:method:: check_input_assertions(quantity: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime)
 
       
       Applies a set of assertions to the input of a trading function.

@@ -97,7 +97,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
       Calculates the amount of an asset that must be provided to receive a
@@ -128,10 +128,6 @@ Classes
       :type out: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 
@@ -161,41 +157,35 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
-      Calculates the amount of an asset that must be provided to receive a
-      specified amount of the other asset given the current AMM reserves.
+      Calculates the amount of an asset that must be provided to receive a specified amount of the
+      other asset given the current AMM reserves.
 
       The output is calculated as:
 
       .. math::
           out' =
           \begin{cases}
-          c (z - \frac{1}{\mu} (
-          \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-          + \Delta y \cdot (1 - \tau),
-          &\text{ if } token\_out = \text{"base"} \\
-          2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-          + c \cdot \Delta z \cdot (1 - \tau),
-          &\text{ if } token\_out = \text{"pt"}
+          c \Bigg(z - \dfrac{1}{\mu} \Bigg(
+          \dfrac{k - \big(2y + cz + \Delta y \cdot t\Bigg)^{1 - \tau}}{\dfrac{c}{\mu}}\big)^{\dfrac{1}{1 - \tau}}\Bigg)
+          + \Delta y \cdot (1 - \tau) & \text{if $token\_in$ = "base"} \\
+          2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}}
+          + c \cdot \Delta z \cdot \big(1 - \tau\big)
+          & \text{if $token\_in$ = "pt"}
           \end{cases} \\
-          f =
-          \begin{cases}
-          (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-          (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+          f = \begin{cases}
+          \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y, &\text{ if } token\_out = \text{"base"} \\
+          \Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big), &\text{ if } token\_out = \text{"pt"}
           \end{cases} \\
           out = out' + f
 
-      :param in_: The quantity of tokens that the user wants to pay (the amount
-                  and the unit of the tokens).
+      :param in_: The quantity of tokens that the user wants to pay (the amount and the unit of the
+                  tokens).
       :type in_: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 

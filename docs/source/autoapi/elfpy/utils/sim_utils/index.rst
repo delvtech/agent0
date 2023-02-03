@@ -59,7 +59,7 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: get_init_lp_agent(market: elfpy.markets.Market, target_liquidity: float, target_pool_apr: float, fee_percent: float, seed_liquidity: float = 1) -> elfpy.agent.Agent
+.. py:function:: get_init_lp_agent(market: elfpy.markets.Market, target_liquidity: float, target_pool_apr: float, trade_fee_percent: float, seed_liquidity: float = 1) -> elfpy.agent.Agent
 
    
    Calculate the required deposit amounts and instantiate the LP agent
@@ -104,7 +104,7 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: get_market(pricing_model: elfpy.pricing_models.base.PricingModel, target_pool_apr: float, fee_percent: float, position_duration: float, vault_apr: list, init_share_price: float) -> elfpy.markets.Market
+.. py:function:: get_market(pricing_model: elfpy.pricing_models.base.PricingModel, target_pool_apr: float, trade_fee_percent: float, redemption_fee_percent: float, position_duration: float, vault_apr: list, init_share_price: float) -> elfpy.markets.Market
 
    
    Setup market
@@ -115,8 +115,10 @@ Functions
                            NOTE: the market apr will not have this target value until the init_lp agent trades,
                            or the share & bond reserves are explicitly set
    :type target_pool_apr: float
-   :param fee_percent: portion of outputs to be collected as fees for LPers, expressed as a decimal
-   :type fee_percent: float
+   :param trade_fee_percent: portion of trades to be collected as fees for LPers, expressed as a decimal
+   :type trade_fee_percent: float
+   :param redemption_fee_percent: portion of redemptions to be collected as fees for LPers, expressed as a decimal
+   :type redemption_fee_percent: float
    :param token_duration: how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
    :type token_duration: float
    :param vault_apr: valut apr per day for the duration of the simulation

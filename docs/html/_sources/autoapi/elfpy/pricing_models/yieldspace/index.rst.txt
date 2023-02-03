@@ -170,7 +170,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
       Calculates the amount of an asset that must be provided to receive a
@@ -198,10 +198,6 @@ Classes
       :type out: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 
@@ -231,7 +227,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
       Calculates the amount of an asset that must be provided to receive a
@@ -259,10 +255,6 @@ Classes
       :type in_: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 
