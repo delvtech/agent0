@@ -47,8 +47,7 @@ def get_simulator(
         instantiated simulator class
     """
     # Sample the random simulation arguments.
-    if random_sim_vars is None:
-        random_sim_vars = get_random_variables(config)
+    random_sim_vars = get_random_variables(config) if random_sim_vars is None else random_sim_vars
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
     market = get_market(
