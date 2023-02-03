@@ -36,7 +36,6 @@ def plot_market_lp_reserves(state_df: pd.DataFrame) -> Figure:
     -------
     Figure
     """
-    # state_df = post_processing.compute_derived_variables(simulator)
     fig, axes, _ = get_gridspec_subplots()
     axis = state_df.plot(x="day", y="lp_reserves", ax=axes[0])
     axis.get_legend().remove()
@@ -58,7 +57,6 @@ def plot_market_spot_price(state_df: pd.DataFrame) -> Figure:
     -------
     Figure
     """
-    # state_df = post_processing.compute_derived_variables(simulator)
     fig, axes, _ = get_gridspec_subplots()
     axis = state_df.plot(x="day", y="spot_price", ax=axes[0])
     axis.get_legend().remove()
