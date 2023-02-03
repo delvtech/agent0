@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from matplotlib.gridspec import GridSpec
     from matplotlib.pyplot import Axes
 
+# pylint: disable=too-many-locals
+
 
 ## Plotting
 def plot_market_lp_reserves(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> Figure:

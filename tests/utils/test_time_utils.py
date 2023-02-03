@@ -63,30 +63,30 @@ class TestTimeUtils(unittest.TestCase):
             )
             assert block_time == test_case["expected_result"], f"unexpected time value {block_time}"
 
-    def test_yearfrac_as_datetime(self):
-        """Unit tests for the yearfrac_as_datetime function"""
+    def test_year_as_datetime(self):
+        """Unit tests for the year_as_datetime function"""
 
         # Choose an arbitrary date as start_time
         start_time = datetime.datetime.strptime("28/03/1990 05:30:42", "%d/%m/%Y %H:%M:%S")
 
         test_cases = [
-            # test 1: yearfrac = 6 months
+            # test 1: year = 6 months
             {
                 "start_time": start_time,  # arbitrarily chosen date
-                "yearfrac": 0.50,  # 6 months
+                "year": 0.50,  # 6 months
                 "expected_result": "26/09/1990 17:30:42",
             }
         ]
 
         for test_case in test_cases:
-            yearfrac_time = time_utils.yearfrac_as_datetime(test_case["start_time"], test_case["yearfrac"])
+            year_time = time_utils.year_as_datetime(test_case["start_time"], test_case["year"])
 
             assert (
-                datetime.datetime.strftime(yearfrac_time, "%d/%m/%Y %H:%M:%S") == test_case["expected_result"]
-            ), f"unexpected time value {yearfrac_time}"
+                datetime.datetime.strftime(year_time, "%d/%m/%Y %H:%M:%S") == test_case["expected_result"]
+            ), f"unexpected time value {year_time}"
 
-    def test_get_yearfrac_remaining(self):
-        """Unit tests for the get_yearfrac_remaining function"""
+    def test_get_year_remaining(self):
+        """Unit tests for the get_year_remaining function"""
 
         test_cases = [
             # test 1: 6mo duration, minted at term start
