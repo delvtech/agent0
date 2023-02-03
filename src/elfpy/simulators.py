@@ -236,7 +236,6 @@ class Simulator:
         for day in range(0, self.config.simulator.num_trading_days):
             self.day = day
             self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
-            print(f"{self.market.market_state.vault_apr=}")
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 if self.config.simulator.compound_vault_apr:  # Apply return to latest price (full compounding)
