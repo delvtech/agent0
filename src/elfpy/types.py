@@ -166,7 +166,28 @@ class MarketDeltas:
 class MarketState:
     r"""The state of an AMM
 
-    .. todo:: TODO: We can add class methods for computing common quantities like bond_reserves + total_supply
+    Implements a class for all that that an AMM smart contract would hold or would have access to
+    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
+    likely be accessible through the AMM as well.
+
+    Attributes
+    ----------
+    share_reserves: float
+        TODO: fill this in
+    bond_reserves: float
+        TODO: fill this in
+    base_buffer: float
+        TODO: fill this in
+    bond_buffer: float
+        TODO: fill this in
+    lp_reserves: float
+        TODO: fill this in
+    trade_fee_percent : float
+        The percentage of the difference between the amount paid without
+        slippage and the amount received that will be added to the input
+        as a fee.
+    redemption_fee_percent : float
+        A flat fee applied to the output.  Not used in this equation for Yieldspace.
     """
 
     # dataclasses can have many attributes
@@ -187,6 +208,11 @@ class MarketState:
     vault_apr: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
+
+    # fee percents
+
+    trade_fee_percent: float = 0.0
+    redemption_fee_percent: float = 0.0
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
@@ -266,7 +292,8 @@ class RandomSimulationVariables:
     # pylint: disable=too-many-instance-attributes
     target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
     target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
-    fee_percent: float = field(metadata=to_description("percent to charge for LPer fees"))
+    trade_fee_percent: float = field(metadata=to_description("LP fee percent to charge for trades"))
+    redemption_fee_percent: float = field(metadata=to_description("LP fee percent to charge for redemption"))
     vault_apr: list = field(metadata=to_description("yield bearing source APR"))
     init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
     # NOTE: We ignore the type error since the value will never be None after
@@ -322,8 +349,11 @@ class SimulationState:
     target_liquidity: list = field(
         default_factory=list, metadata=to_description("amount of liquidity the market should stop with")
     )
-    fee_percent: list = field(
+    trade_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
+    )
+    redemption_fee_percent: list = field(
+        default_factory=list, metadata=to_description("the percentage of redemption outputs to be collected as fees")
     )
     floor_fee: list = field(default_factory=list, metadata=to_description(" minimum fee we take"))
     init_vault_age: list = field(default_factory=list, metadata=to_description("the age of the underlying vault"))

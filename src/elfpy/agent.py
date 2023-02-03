@@ -107,7 +107,6 @@ class Agent:
         """
         (max_long, _) = market.pricing_model.get_max_long(
             market_state=market.market_state,
-            fee_percent=market.fee_percent,
             time_remaining=market.position_duration,
         )
         return min(
@@ -131,7 +130,6 @@ class Agent:
         # Get the market level max short.
         (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
             market_state=market.market_state,
-            fee_percent=market.fee_percent,
             time_remaining=market.position_duration,
         )
 
@@ -149,7 +147,6 @@ class Agent:
             trade_result = market.pricing_model.calc_out_given_in(
                 in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
                 market_state=market.market_state,
-                fee_percent=market.fee_percent,
                 time_remaining=market.position_duration,
             )
 

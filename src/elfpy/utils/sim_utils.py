@@ -51,7 +51,8 @@ def get_simulator(
     market = get_market(
         pricing_model,
         random_variables.target_pool_apr,
-        random_variables.fee_percent,
+        random_variables.trade_fee_percent,
+        random_variables.redemption_fee_percent,
         config.simulator.token_duration,
         random_variables.vault_apr,
         random_variables.init_share_price,
@@ -63,7 +64,7 @@ def get_simulator(
             market,
             random_variables.target_liquidity,
             random_variables.target_pool_apr,
-            random_variables.fee_percent,
+            random_variables.trade_fee_percent,
         )
     ]
 
@@ -87,7 +88,7 @@ def get_init_lp_agent(
     market: Market,
     target_liquidity: float,
     target_pool_apr: float,
-    fee_percent: float,
+    trade_fee_percent: float,
     seed_liquidity: float = 1,
 ) -> Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -138,8 +139,10 @@ def get_init_lp_agent(
                 bond_reserves=0,
                 share_price=market.market_state.share_price,
                 init_share_price=market.market_state.init_share_price,
+                trade_fee_percent=trade_fee_percent,
+                # no redemption fee when initializing pool
+                redemption_fee_percent=0,
             ),
-            fee_percent=fee_percent,
             time_remaining=market.position_duration,
         )
         prev_delta_shares = delta_shares
@@ -204,7 +207,8 @@ def get_init_lp_agent(
 def get_market(
     pricing_model: PricingModel,
     target_pool_apr: float,
-    fee_percent: float,
+    trade_fee_percent: float,
+    redemption_fee_percent: float,
     position_duration: float,
     vault_apr: list,
     init_share_price: float,
@@ -219,8 +223,10 @@ def get_market(
         target apr, used for calculating the time stretch
         NOTE: the market apr will not have this target value until the init_lp agent trades,
         or the share & bond reserves are explicitly set
-    fee_percent : float
-        portion of outputs to be collected as fees for LPers, expressed as a decimal
+    trade_fee_percent : float
+        portion of trades to be collected as fees for LPers, expressed as a decimal
+    redemption_fee_percent : float
+        portion of redemptions to be collected as fees for LPers, expressed as a decimal
     token_duration : float
         how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
     vault_apr : list
@@ -243,11 +249,12 @@ def get_market(
             init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
             vault_apr=vault_apr[0],  # yield bearing source apr
+            trade_fee_percent=trade_fee_percent,  # g
+            redemption_fee_percent=redemption_fee_percent,  # g
         ),
         position_duration=StretchedTime(
             days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apr)
         ),
-        fee_percent=fee_percent,  # g
     )
     return market
 
@@ -293,14 +300,12 @@ def override_random_variables(
     RandomSimulationVariables
         same dataclass as the random_variables input, but with fields specified by override_dict changed
     """
-    allowed_keys = [
-        "target_liquidity",
-        "target_pool_apr",
-        "fee_percent",
-        "init_vault_age",
-    ]
+
+    # allowed keys are all of the random_variable attributes, except vault_apre, which overrides
+    # config instead
+    allowed_keys = [key for key in random_variables.__dict__.keys() if key not in ["vault_apr"]]
+
     for key, value in override_dict.items():
-        if hasattr(random_variables, key):
-            if key in allowed_keys:
-                setattr(random_variables, key, value)
+        if hasattr(random_variables, key) and key in allowed_keys:
+            setattr(random_variables, key, value)
     return random_variables

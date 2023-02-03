@@ -14,7 +14,6 @@ class TestCaseCalcInGivenOutSuccess:
 
     out: Quantity
     market_state: MarketState
-    fee_percent: float
     days_remaining: float
     time_stretch_apy: float
 
@@ -44,6 +43,8 @@ class TestResultCalcInGivenOutSuccessByModel:
     yieldspace: TestResultCalcInGivenOutSuccess
     hyperdrive: TestResultCalcInGivenOutSuccess
 
+    __test__ = False  # pytest: don't test this class
+
 
 @dataclass
 class TestCaseCalcInGivenOutFailure:
@@ -51,9 +52,8 @@ class TestCaseCalcInGivenOutFailure:
 
     out: Quantity
     market_state: MarketState
-    fee_percent: float
     time_remaining: StretchedTime
-    exception_type: Type[BaseException]
+    exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
     __test__ = False  # pytest: don't test this class
 
@@ -69,6 +69,8 @@ class TestResultCalcInGivenOutFailureByModel:
     yieldspace: TestCaseCalcInGivenOutFailure
     hyperdrive: TestCaseCalcInGivenOutFailure
 
+    __test__ = False  # pytest: don't test this class
+
 
 @dataclass
 class TestCaseCalcOutGivenInSuccess:
@@ -76,7 +78,6 @@ class TestCaseCalcOutGivenInSuccess:
 
     in_: Quantity
     market_state: MarketState
-    fee_percent: float
     days_remaining: float
     time_stretch_apy: float
 
@@ -106,6 +107,8 @@ class TestResultCalcOutGivenInSuccessByModel:
     yieldspace: TestResultCalcOutGivenInSuccess
     hyperdrive: TestResultCalcOutGivenInSuccess
 
+    __test__ = False  # pytest: don't test this class
+
 
 @dataclass
 class TestCaseCalcOutGivenInFailure:
@@ -113,7 +116,6 @@ class TestCaseCalcOutGivenInFailure:
 
     in_: Quantity
     market_state: MarketState
-    fee_percent: float
     time_remaining: StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
@@ -130,3 +132,5 @@ class TestCaseCalcOutGivenInFailureByModel:
 
     yieldspace: TestCaseCalcOutGivenInFailure
     hyperdrive: TestCaseCalcOutGivenInFailure
+
+    __test__ = False  # pytest: don't test this class

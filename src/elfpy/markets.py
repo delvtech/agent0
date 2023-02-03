@@ -43,15 +43,15 @@ class Market:
             vault_apr=0,
             share_price=1,
             init_share_price=1,
+            trade_fee_percent=0,
+            redemption_fee_percent=0,
         ),
         position_duration: StretchedTime = StretchedTime(365, 1),
-        fee_percent: float = 0,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
-        self.fee_percent: float = fee_percent  # g
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
@@ -219,13 +219,11 @@ class Market:
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=self.position_duration,
         )
         trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=self.position_duration,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -288,13 +286,11 @@ class Market:
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         trade_result = self.pricing_model.calc_in_given_out(
             out=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -338,13 +334,11 @@ class Market:
             self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
-                fee_percent=self.fee_percent,
                 time_remaining=self.position_duration,
             )
             trade_result = self.pricing_model.calc_out_given_in(
                 in_=trade_quantity,
                 market_state=self.market_state,
-                fee_percent=self.fee_percent,
                 time_remaining=self.position_duration,
             )
             self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -395,13 +389,11 @@ class Market:
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         trade_result = self.pricing_model.calc_out_given_in(
             in_=trade_quantity,
             market_state=self.market_state,
-            fee_percent=self.fee_percent,
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
