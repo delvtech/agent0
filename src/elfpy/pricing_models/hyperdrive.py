@@ -45,20 +45,30 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & in' = \;\;
-            \begin{cases}\\
-            \;\;\text{ if $token\_in$ = "base"} \;\; \mid \;\; c \cdot \bigg(\dfrac{1}{\mu} \Bigg(
-            \dfrac{k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1-\tau}} - z\bigg)
-            + \Delta y \cdot \big(1 - \tau\big) \\\\
-            \;\;\text{ if $token\_in$ "pt"} \;\;\;\;\;\;\;\;\; \mid \;\; \bigg(k - \dfrac{c}{\mu} \Big(\mu * \big(z - \Delta z \cdot t\big)\Big)^{1 - \tau}\bigg)^{\dfrac{1}{1 - \tau}}
-            - \big(2y + cz\big) + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\
-            \end{cases} \\\\
-            & f = \;\;\;\;
-            \begin{cases}\\\\\
-            \;\;\text{ if $token\_in$ = "base"} \;\; \mid \;\; \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg)\; \phi\; \Delta y \\\\\\
-            \;\;\text{ if $token\_in$ = "pt"} \;\;\;\;\;\; \mid \;\; \bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\bigg)\; \phi\; (c \cdot \Delta z) \\\\\
-            \end{cases} \\\\\\
-            & in = in' + f\\
+            & in' \;\;\:  = \;\;\:
+            \begin{cases}
+            \\
+            \text{ if $token\_in$ = "base", }\\
+            \quad\quad\quad c \big(\mu^{-1} \big(\big(k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big) ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
+            \\\\
+            \text{ if $token\_in$ = "pt", }\\
+            \quad\quad\quad k - \big(c \cdot \mu^{-1} \cdot\big(\mu \cdot\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big) + c \cdot \Delta z \cdot\big(1 - \tau\big)
+            \\\\
+            \end{cases}
+            \\\\
+            & f \;\;\;\; = \;\;\;\;
+            \begin{cases}
+            \\
+            \text{ if $token\_in$ = "base", }\\\\
+            \quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
+            \\\\
+            \text{ if $token\_in$ = "pt", }\\\\
+            \quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+            \\\\
+            \end{cases}
+            \\\\\\
+            & in = in' + f
+            \\
             \end{align*}
 
         Parameters
@@ -177,16 +187,30 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & out' =\;\;\;\; \begin{cases}\\
-            \;\;\text{if $token\_out$ = "base"} \;\; \mid \;\;
-            c \Bigg(z - \dfrac{1}{\mu} \bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) \\\\
-            \;\;\text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; 2y + cz - \bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\\
-            \end{cases} \\\\\\
-            & f = \;\;\;\;\;\;\;\; \begin{cases}\\
-            \;\;\text{if $token\_out$ = "base"} \;\; \mid \;\; \Big(1 - \dfrac{1}{\Big(\dfrac{2y + cz}{\mu z}\Big)^{\tau}}\Big) \; \phi \; \Delta y \\\\
-            \;\;\text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; \Big(\Big(\dfrac{2y + cz}{\mu z}\Big)^{\tau} - 1\Big) \; \phi \; \Big(c \cdot \Delta z\Big) \\\\
-            \end{cases} \\\\\\
+            & out'\;\; = \;\;
+            \begin{cases}
+            \\
+            \text{ if $token\_out$ = "base", }\\
+            \quad\quad\quad c \big(z - \mu^{-1} \big(\big(k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
+            \\\\
+            \text{ if $token\_out$ = "pt", }\\
+            \quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
+            \\\\
+            \end{cases}
+            \\\\
+            & f \;\;\;\; = \;\;\;\;
+            \begin{cases}
+            \\
+            \text{ if $token\_out$ = "base", }\\\\
+            \quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
+            \\\\
+            \text{ if $token\_out$ = "pt", }\\\\
+            \quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+            \\\\
+            \end{cases}
+            \\\\\\
             & out = out' + f
+            \\
             \end{align*}
 
         Parameters
