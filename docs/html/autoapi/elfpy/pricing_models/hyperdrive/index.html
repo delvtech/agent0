@@ -214,13 +214,14 @@ other asset given the current AMM reserves.</p>
 <p>The output is calculated as:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align*}
-&amp; out' =\;\;\;\; \begin{cases}
-c \Bigg(z - \dfrac{1}{\mu} \Bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) &amp; \text{if $token\_in$ = &quot;base&quot;}\\
-2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) &amp; \text{if $token\_in$ = &quot;pt&quot;}\\
+&amp; out' =\;\;\;\; \begin{cases}\\
+\text{if $token\_out$ = &quot;base&quot;} \;\; \mid \;\;
+c \Bigg(z - \dfrac{1}{\mu} \Bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) \\\\
+\text{if $token\_out$ = &quot;pt&quot;} \;\;\;\;\; \mid \;\; 2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\\
 \end{cases} \\\\\\
-&amp; f = \;\;\;\;\;\;\;\; \begin{cases}
-\Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y, &amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
-\Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big), &amp;\text{ if } token\_out = \text{&quot;pt&quot;}
+&amp; f = \;\;\;\;\;\;\;\; \begin{cases}\\
+\text{if $token\_out$ = &quot;base&quot;} \;\; \mid \;\; \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y \\\\
+\text{if $token\_out$ = &quot;pt&quot;} \;\;\;\;\; \mid \;\; \Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big) \\\\
 \end{cases} \\\\\\
 &amp; out = out' + f
 \end{align*}\end{split}\]</div>
