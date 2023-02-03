@@ -16,6 +16,7 @@ from elfpy.utils import post_processing
 
 if TYPE_CHECKING:
     from typing import Optional, Any
+    import pandas as pd
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
     from matplotlib.pyplot import Axes
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 
 
 ## Plotting
-def plot_market_lp_reserves(simulator: Simulator) -> Figure:
+def plot_market_lp_reserves(state_df: pd.DataFrame) -> Figure:
     r"""Plot the simulator market LP reserves per day
 
     Parameters
@@ -35,9 +36,9 @@ def plot_market_lp_reserves(simulator: Simulator) -> Figure:
     -------
     Figure
     """
-    state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="lp_reserves", ax=axis[0])
+    # state_df = post_processing.compute_derived_variables(simulator)
+    fig, axes, _ = get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="lp_reserves", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market liquidity provider reserves")
     axis.set_ylabel("LP reserves")
@@ -45,21 +46,21 @@ def plot_market_lp_reserves(simulator: Simulator) -> Figure:
     return fig
 
 
-def plot_market_spot_price(simulator: Simulator) -> Figure:
+def plot_market_spot_price(state_df: pd.DataFrame) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
+    state_df : DataFrame
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
 
     Returns
     -------
     Figure
     """
-    state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="spot_price", ax=axis[0])
+    # state_df = post_processing.compute_derived_variables(simulator)
+    fig, axes, _ = get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="spot_price", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market spot price")
     axis.set_ylabel("Spot price of principle tokens")
@@ -67,21 +68,20 @@ def plot_market_spot_price(simulator: Simulator) -> Figure:
     return fig
 
 
-def plot_pool_apr(simulator: Simulator) -> Figure:
+def plot_pool_apr(state_df: pd.DataFrame) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
+    state_df : DataFrame
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
 
     Returns
     -------
     Figure
     """
-    state_df = post_processing.compute_derived_variables(simulator)
-    fig, axis, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="pool_apr_percent", ax=axis[0])
+    fig, axes, _ = get_gridspec_subplots()
+    axis = state_df.plot(x="day", y="pool_apr_percent", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market pool APR")
     axis.set_ylabel("APR (%)")
@@ -89,14 +89,13 @@ def plot_pool_apr(simulator: Simulator) -> Figure:
     return fig
 
 
-def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
+def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
     r"""Plot the total market longs & shorts over time
 
     Parameters
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
-
+    state_df : DataFrame
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     exclude_first_agent : bool
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
 
@@ -104,18 +103,22 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
     -------
     Figure
     """
-    nrows = 1
-    ncols = 2
-    fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.4)
-    for address in simulator.agents:
+    fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
+    addresses = []
+    for column in state_df.columns:
+        splits = column.split("_")
+        if splits[0] == "agent":
+            addresses.append(int(splits[1]))
+    agents = set(addresses)
+    for address in agents:
         if (exclude_first_agent and address > 0) or (not exclude_first_agent):
             dict_key = f"agent_{address}"
-            axes[0].plot(simulator.simulation_state[dict_key + "_total_longs"])
-            axes[1].plot(simulator.simulation_state[dict_key + "_total_shorts"])
+            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_longs", label=f"0x{address}", ax=axes[0])
+            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_shorts", label=f"0x{address}", ax=axes[1])
     axes[0].set_ylabel("Total longs")
     axes[1].set_ylabel("Total shorts")
     axes[0].legend()
-    trade_labels = simulator.simulation_state.run_trade_number[::xtick_step]
+    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step]
     for axis in axes:
         axis.set_xlabel("Trade number")
         axis.set_xticks(trade_labels)
@@ -127,14 +130,13 @@ def plot_longs_and_shorts(simulator: Simulator, exclude_first_agent: bool = True
     return fig
 
 
-def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
+def plot_wallet_reserves(state_df: pd.DataFrame, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
     r"""Plot the wallet base asset and LP token quantities over time
 
     Parameters
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
-
+    state_df : DataFrame
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     exclude_first_agent : bool
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
 
@@ -142,18 +144,22 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, 
     -------
     Figure
     """
-    nrows = 1
-    ncols = 2
-    fig, axes, _ = get_gridspec_subplots(nrows, ncols, wspace=0.5)
-    for address in simulator.agents:
+    fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
+    addresses = []
+    for column in state_df.columns:
+        splits = column.split("_")
+        if splits[0] == "agent":
+            addresses.append(int(splits[1]))
+    agents = set(addresses)
+    for address in agents:
         if (exclude_first_agent and address > 0) or (not exclude_first_agent):
             dict_key = f"agent_{address}"
-            axes[0].plot(simulator.simulation_state[dict_key + "_base"])
-            axes[1].plot(simulator.simulation_state[dict_key + "_lp_tokens"])
+            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_base", label=f"0x{address}", ax=axes[0])
+            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_lp_tokens", label=f"0x{address}", ax=axes[1])
     axes[0].set_ylabel("Base asset in wallet")
     axes[1].set_ylabel("LP tokens in wallet")
     axes[0].legend()
-    trade_labels = simulator.simulation_state.run_trade_number[::xtick_step]
+    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step]
     for axis in axes:
         axis.set_xlabel("Trade number")
         axis.set_xticks(trade_labels)
@@ -161,7 +167,7 @@ def plot_wallet_returns(simulator: Simulator, exclude_first_agent: bool = True, 
         axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
     fig.set_size_inches([2 * fig_size[0], fig_size[1]])
-    _ = fig.suptitle("Agent profitability", y=0.90)
+    _ = fig.suptitle("Agent wallet reserves", y=0.90)
     return fig
 
 
