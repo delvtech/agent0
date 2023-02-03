@@ -132,12 +132,10 @@ class Agent:
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
-
         # If the Agent's base balance can cover the max loss of the maximum
         # short, we can simply return the maximum short.
         if self.wallet.base >= max_short_max_loss:
             return max_short
-
         last_maybe_max_short = 0
         bond_percent = 1
         for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
@@ -149,7 +147,6 @@ class Agent:
                 market_state=market.market_state,
                 time_remaining=market.position_duration,
             )
-
             # If the max loss is greater than the wallet's base, we need to
             # decrease the bond percentage. Otherwise, we may have found the
             # max short, and we should increase the bond percentage.
@@ -161,7 +158,6 @@ class Agent:
                 if bond_percent == 1:
                     return last_maybe_max_short
                 bond_percent += step_size
-
         return last_maybe_max_short
 
     def get_trades(self, market: Market) -> list:
@@ -194,6 +190,7 @@ class Agent:
                 action.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
+        # agent wallet Long and Short balances should not be able to be negative
         return actions
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
@@ -287,6 +284,9 @@ class Agent:
                     self.wallet.shorts[mint_time].margin += short.margin
                 else:
                     self.wallet.shorts.update({mint_time: short})
+            if self.wallet.shorts[mint_time].balance == 0:
+                # Remove the empty short from the wallet.
+                del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: Market) -> list[MarketAction]:
         """Get final trades for liquidating positions
@@ -323,6 +323,7 @@ class Agent:
                     )
                 )
         if self.wallet.lp_tokens > 0:
+            logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp_tokens)
             action_list.append(
                 self.create_agent_action(
                     action_type=MarketActionType.REMOVE_LIQUIDITY,
@@ -335,7 +336,7 @@ class Agent:
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
-            "agent %g base = %1g and fees_paid = %1g",
+            "agent #%g base = %1g and fees_paid = %1g",
             self.wallet.address,
             self.wallet.base,
             self.wallet.fees_paid if self.wallet.fees_paid else 0,

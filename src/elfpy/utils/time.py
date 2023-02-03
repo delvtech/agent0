@@ -39,28 +39,28 @@ def block_number_to_datetime(start_time: datetime, block_number: float, time_bet
     return start_time + delta_time
 
 
-def yearfrac_as_datetime(start_time: datetime, yearfrac: float) -> datetime:
-    r"""Returns a yearfrac (e.g. the current market time) in datetime format
+def year_as_datetime(start_time: datetime, year: float) -> datetime:
+    r"""Returns a year (e.g. the current market time) in datetime format
 
     Parameters
     ----------
     start_time : datetime
         Timestamp at which the simulation started
-    yearfrac : float
+    year : float
         Fraction of a year since start_time to convert into datetime
 
     Returns
     -------
     datetime
-        Timestamp for the provided start_time plus the provided yearfrac
+        Timestamp for the provided start_time plus the provided year
     """
 
-    dayfrac = yearfrac * 365
+    dayfrac = year * 365
     delta_time = timedelta(days=dayfrac)
     return start_time + delta_time
 
 
-def get_yearfrac_remaining(market_time: float, mint_time: float, token_duration: float) -> float:
+def get_years_remaining(market_time: float, mint_time: float, token_duration: float) -> float:
     r"""Get the year fraction remaining on a token
 
     Parameters

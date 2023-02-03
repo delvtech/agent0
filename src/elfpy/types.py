@@ -18,7 +18,7 @@ def to_description(description: str) -> dict[str, str]:
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
-WEI = 1e-18
+WEI = 1e-18  # smallest denomination of ether
 
 # The maximum allowed difference between the base reserves and bond reserves.
 # This value was calculated using trial and error and is close to the maximum
@@ -86,14 +86,14 @@ class StretchedTime:
         return self._time_stretch
 
     def __str__(self):
-        out_str = (
+        output_string = (
             "Time components:"
             f" {self.days=};"
             f" {self.normalized_time=};"
             f" {self.stretched_time=};"
             f" {self.time_stretch=};"
         )
-        return out_str
+        return output_string
 
 
 @dataclass
@@ -146,19 +146,16 @@ class MarketDeltas:
         setattr(self, key, value)
 
     def __str__(self):
-        output_string = ""
-        for key, value in vars(self).items():
-            if value:  #  check if object exists
-                if value != 0:
-                    output_string += f" {key}: "
-                    if isinstance(value, float):
-                        output_string += f"{value}"
-                    elif isinstance(value, list):
-                        output_string += "[" + ", ".join(list(value)) + "]"
-                    elif isinstance(value, dict):
-                        output_string += "{" + ", ".join([f"{k}: {v}" for k, v in value.items()]) + "}"
-                    else:
-                        output_string += f"{value}"
+        output_string = (
+            "MarketDeltas(\n"
+            f"\t{self.d_base_asset=},\n"
+            f"\t{self.d_token_asset=},\n"
+            f"\t{self.d_base_buffer=},\n"
+            f"\t{self.d_bond_buffer=},\n"
+            f"\t{self.d_lp_reserves=},\n"
+            f"\t{self.d_share_price=},\n"
+            ")"
+        )
         return output_string
 
 
@@ -224,20 +221,27 @@ class MarketState:
         self.share_price += delta.d_share_price
 
     def __str__(self):
-        out_str = (
-            "Trading reserves:\n"
-            f"\t{self.share_reserves=}\n"
-            f"\t{self.bond_reserves=}\n"
-            "Trading buffers:\n"
-            f"\t{self.base_buffer=}\n"
-            f"\t{self.bond_buffer=}\n"
-            "LP reserves:\n"
-            f"\t{self.lp_reserves=}\n"
-            "Share price:\n"
-            f"\t{self.share_price=}\n"
-            f"\t{self.init_share_price=}"
+        output_string = (
+            "MarketState(\n"
+            "\ttrading_reserves(\n"
+            f"\t\t{self.share_reserves=},\n"
+            f"\t\t{self.bond_reserves=},\n"
+            "\t),\n"
+            "\ttrading_buffers(\n"
+            f"\t\t{self.base_buffer=},\n"
+            f"\t\t{self.bond_buffer=},\n"
+            "\t),\n"
+            "\tlp_reserves(\n"
+            f"\t\t{self.lp_reserves=},\n"
+            "\t),\n"
+            "\tunderlying_vault((\n"
+            f"\t\t{self.vault_apr=},\n"
+            f"\t\t{self.share_price=},\n"
+            f"\t\t{self.init_share_price=},\n"
+            "\t)\n"
+            ")"
         )
-        return out_str
+        return output_string
 
 
 @dataclass
@@ -282,6 +286,27 @@ class TradeResult:
     user_result: AgentTradeResult
     market_result: MarketTradeResult
     breakdown: TradeBreakdown
+
+    def __str__(self):
+        output_string = (
+            "TradeResult(\n"
+            "\tuser_results(\n"
+            f"\t\t{self.user_result.d_base=},\n"
+            f"\t\t{self.user_result.d_bonds=},\n"
+            "\t),\n"
+            "\tmarket_result(\n"
+            f"\t\t{self.market_result.d_base=},\n"
+            f"\t\t{self.market_result.d_bonds=},\n"
+            "\t),\n"
+            "\tbreakdown(\n"
+            f"\t\t{self.breakdown.without_fee_or_slippage=},\n"
+            f"\t\t{self.breakdown.with_fee=},\n"
+            f"\t\t{self.breakdown.without_fee=},\n"
+            f"\t\t{self.breakdown.fee=},\n"
+            "\t)\n"
+            ")"
+        )
+        return output_string
 
 
 @dataclass()
@@ -334,8 +359,8 @@ class SimulationState:
     current_market_datetime: list = field(
         default_factory=list, metadata=to_description(" float, current market time as a datetime")
     )
-    current_market_yearfrac: list = field(
-        default_factory=list, metadata=to_description(" float, current market time as a yearfrac")
+    current_market_time: list = field(
+        default_factory=list, metadata=to_description(" float, current market time in years")
     )
     run_trade_number: list = field(
         default_factory=list, metadata=to_description(" integer, trade number in a given simulation")

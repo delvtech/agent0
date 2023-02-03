@@ -20,22 +20,27 @@ if TYPE_CHECKING:
     from matplotlib.gridspec import GridSpec
     from matplotlib.pyplot import Axes
 
+# pylint: disable=too-many-locals
+
 
 ## Plotting
-def plot_market_lp_reserves(state_df: pd.DataFrame) -> Figure:
+def plot_market_lp_reserves(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> Figure:
     r"""Plot the simulator market LP reserves per day
 
     Parameters
     ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot
 
     Returns
     -------
     Figure
     """
     fig, axes, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="lp_reserves", ax=axes[0])
+    start_idx = 1 if exclude_first_trade else 0
+    axis = state_df.iloc[start_idx:].plot(x="day", y="lp_reserves", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market liquidity provider reserves")
     axis.set_ylabel("LP reserves")
@@ -43,20 +48,23 @@ def plot_market_lp_reserves(state_df: pd.DataFrame) -> Figure:
     return fig
 
 
-def plot_market_spot_price(state_df: pd.DataFrame) -> Figure:
+def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot
 
     Returns
     -------
     Figure
     """
     fig, axes, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="spot_price", ax=axes[0])
+    start_idx = 1 if exclude_first_trade else 0
+    axis = state_df.iloc[start_idx:].plot(x="day", y="spot_price", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market spot price")
     axis.set_ylabel("Spot price of principle tokens")
@@ -64,20 +72,23 @@ def plot_market_spot_price(state_df: pd.DataFrame) -> Figure:
     return fig
 
 
-def plot_pool_apr(state_df: pd.DataFrame) -> Figure:
+def plot_pool_apr(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot
 
     Returns
     -------
     Figure
     """
     fig, axes, _ = get_gridspec_subplots()
-    axis = state_df.plot(x="day", y="pool_apr_percent", ax=axes[0])
+    start_idx = 1 if exclude_first_trade else 0
+    axis = state_df.iloc[start_idx:].plot(x="day", y="pool_apr_percent", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market pool APR")
     axis.set_ylabel("APR (%)")
@@ -85,7 +96,12 @@ def plot_pool_apr(state_df: pd.DataFrame) -> Figure:
     return fig
 
 
-def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
+def plot_longs_and_shorts(
+    state_df: pd.DataFrame,
+    exclude_first_agent: bool = True,
+    exclude_first_trade: bool = True,
+    xtick_step: int = 10,
+) -> Figure:
     r"""Plot the total market longs & shorts over time
 
     Parameters
@@ -94,12 +110,15 @@ def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = Tr
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     exclude_first_agent : bool
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot
 
     Returns
     -------
     Figure
     """
     fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
+    start_idx = 1 if exclude_first_trade else 0
     addresses = []
     for column in state_df.columns:
         splits = column.split("_")
@@ -109,12 +128,16 @@ def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = Tr
     for address in agents:
         if (exclude_first_agent and address > 0) or (not exclude_first_agent):
             dict_key = f"agent_{address}"
-            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_longs", label=f"0x{address}", ax=axes[0])
-            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_total_shorts", label=f"0x{address}", ax=axes[1])
-    axes[0].set_ylabel("Total longs")
-    axes[1].set_ylabel("Total shorts")
+            _ = state_df.iloc[start_idx:].plot(
+                x="run_trade_number", y=f"{dict_key}_total_longs", label=f"0x{address}", ax=axes[0]
+            )
+            _ = state_df.iloc[start_idx:].plot(
+                x="run_trade_number", y=f"{dict_key}_total_shorts", label=f"0x{address}", ax=axes[1]
+            )
+    axes[0].set_ylabel("Total long balances")
+    axes[1].set_ylabel("Total short balances")
     axes[0].legend()
-    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step]
+    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step][:start_idx:]
     for axis in axes:
         axis.set_xlabel("Trade number")
         axis.set_xticks(trade_labels)
@@ -126,7 +149,12 @@ def plot_longs_and_shorts(state_df: pd.DataFrame, exclude_first_agent: bool = Tr
     return fig
 
 
-def plot_wallet_reserves(state_df: pd.DataFrame, exclude_first_agent: bool = True, xtick_step: int = 10) -> Figure:
+def plot_wallet_reserves(
+    state_df: pd.DataFrame,
+    exclude_first_agent: bool = True,
+    exclude_first_trade: bool = True,
+    xtick_step: int = 10,
+) -> Figure:
     r"""Plot the wallet base asset and LP token quantities over time
 
     Parameters
@@ -135,12 +163,15 @@ def plot_wallet_reserves(state_df: pd.DataFrame, exclude_first_agent: bool = Tru
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     exclude_first_agent : bool
         If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot
 
     Returns
     -------
     Figure
     """
     fig, axes, _ = get_gridspec_subplots(nrows=1, ncols=2, wspace=0.5)
+    start_idx = 1 if exclude_first_trade else 0
     addresses = []
     for column in state_df.columns:
         splits = column.split("_")
@@ -150,16 +181,20 @@ def plot_wallet_reserves(state_df: pd.DataFrame, exclude_first_agent: bool = Tru
     for address in agents:
         if (exclude_first_agent and address > 0) or (not exclude_first_agent):
             dict_key = f"agent_{address}"
-            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_base", label=f"0x{address}", ax=axes[0])
-            _ = state_df.plot(x="run_trade_number", y=f"{dict_key}_lp_tokens", label=f"0x{address}", ax=axes[1])
+            _ = state_df.iloc[start_idx:].plot(
+                x="run_trade_number", y=f"{dict_key}_base", label=f"0x{address}", ax=axes[0]
+            )
+            _ = state_df.iloc[start_idx:].plot(
+                x="run_trade_number", y=f"{dict_key}_lp_tokens", label=f"0x{address}", ax=axes[1]
+            )
     axes[0].set_ylabel("Base asset in wallet")
     axes[1].set_ylabel("LP tokens in wallet")
     axes[0].legend()
-    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step]
+    trade_labels = state_df.loc[:, "run_trade_number"][::xtick_step][start_idx:]
     for axis in axes:
         axis.set_xlabel("Trade number")
-        axis.set_xticks(trade_labels)
-        axis.set_xticklabels([str(x + 1) for x in trade_labels])
+        axis.set_xticks(trade_labels[start_idx:])
+        axis.set_xticklabels([str(x + 1) for x in trade_labels][start_idx:])
         axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
     fig.set_size_inches([2 * fig_size[0], fig_size[1]])
@@ -293,7 +328,7 @@ def setup_logging(
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
-    logging.getLogger().addHandler(handler)  # assign handler to logging
+    logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
 
 
 def close_logging(delete_logs=True):

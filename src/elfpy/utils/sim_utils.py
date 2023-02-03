@@ -6,7 +6,7 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.utils.config import Config, get_random_variables
+from elfpy.utils.config import get_random_variables
 from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
@@ -22,6 +22,7 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
+    from elfpy.utils.config import Config
 
 
 def get_simulator(
@@ -39,48 +40,48 @@ def get_simulator(
         the agents to that should be used in the simulator
     random_sim_vars : RandomSimulationVariables
         dataclass that contains variables for initiating and running simulations
+
+    Returns
+    -------
+    simulator : Simulator
+        instantiated simulator class
     """
     # Sample the random simulation arguments.
     if random_sim_vars is None:
-        random_variables = get_random_variables(config)
+        set_random_sim_vars = get_random_variables(config)
     else:
-        random_variables = random_sim_vars
-
+        set_random_sim_vars = random_sim_vars
     # Instantiate the market.
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
     market = get_market(
         pricing_model,
-        random_variables.target_pool_apr,
-        random_variables.trade_fee_percent,
-        random_variables.redemption_fee_percent,
+        set_random_sim_vars.target_pool_apr,
+        set_random_sim_vars.trade_fee_percent,
+        set_random_sim_vars.redemption_fee_percent,
         config.simulator.token_duration,
-        random_variables.vault_apr,
-        random_variables.init_share_price,
+        set_random_sim_vars.vault_apr,
+        set_random_sim_vars.init_share_price,
     )
-
     # Instantiate the initial LP agent.
     init_agents = [
         get_init_lp_agent(
             market,
-            random_variables.target_liquidity,
-            random_variables.target_pool_apr,
-            random_variables.trade_fee_percent,
+            set_random_sim_vars.target_liquidity,
+            set_random_sim_vars.target_pool_apr,
+            set_random_sim_vars.trade_fee_percent,
         )
     ]
-
     # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
         market=market,
-        random_simulation_variables=random_sim_vars,
+        random_simulation_variables=set_random_sim_vars,
     )
     simulator.add_agents(init_agents)
     simulator.collect_and_execute_trades()
-
     # Add the remaining agents.
-    if not agents is None:
+    if agents is not None:
         simulator.add_agents(agents)
-
     return simulator
 
 

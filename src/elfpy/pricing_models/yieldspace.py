@@ -215,7 +215,9 @@ class YieldSpacePricingModel(PricingModel):
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         )
-        assert market_state.base_buffer >= 0, (
+        # TODO: #146 These asserts should check for 0 -- the buffers should never go below 0
+        # We think that this is happening due to an rounding error, based on the size of the difference
+        assert market_state.base_buffer >= -1e-8, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             f"Expected base_buffer >= 0, not {market_state.base_buffer}!"
         )

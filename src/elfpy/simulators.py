@@ -193,6 +193,7 @@ class Simulator:
         list[tuple[int, list[MarketAction]]]
             A list of liquidation trades associated with specific agents.
         """
+        logging.debug("Collecting liquiditation trades for market closure")
         return [(agent_id, self.agents[agent_id].get_liquidation_trades(self.market)) for agent_id in agent_ids]
 
     def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:
@@ -207,12 +208,12 @@ class Simulator:
             agent = self.agents[agent_id]
             for trade in agent_trades:
                 agent_deltas = self.market.trade_and_update(trade)
-                agent.update_wallet(agent_deltas, self.market)
                 logging.debug(
-                    "agent #%g wallet deltas = \n%s",
+                    "agent #%g wallet deltas:\n%s",
                     agent.wallet.address,
-                    agent_deltas.__dict__,
+                    agent_deltas,
                 )
+                agent.update_wallet(agent_deltas, self.market)
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
                 self.update_simulation_state()
@@ -279,9 +280,9 @@ class Simulator:
             else "None"
         )
         self.simulation_state.current_market_datetime.append(
-            time_utils.yearfrac_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
+            time_utils.year_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
         )
-        self.simulation_state.current_market_yearfrac.append(self.market.time)
+        self.simulation_state.current_market_time.append(self.market.time)
         self.simulation_state.run_trade_number.append(self.run_trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size())
         self.simulation_state.position_duration.append(self.market.position_duration)

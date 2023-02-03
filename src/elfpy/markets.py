@@ -150,14 +150,23 @@ class Market:
             )
         else:
             raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
-        # update market state
+        logging.debug(
+            "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
+            agent_action,
+            market_deltas,
+            agent_deltas,
+            self.market_state,
+        )
         self.update_market(market_deltas)
-        logging.info(agent_action)
-        logging.debug("market deltas = %s", market_deltas)
         return agent_deltas
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
-        """Increments member variables to reflect current market conditions"""
+        """
+        Increments member variables to reflect current market conditions
+
+        .. todo:: This order is weird. We should move everything in apply_update to update_market,
+            and then make a new function called check_update that runs these checks
+        """
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
@@ -227,10 +236,6 @@ class Market:
             time_remaining=self.position_duration,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-        # Log the trade result.
-        logging.debug("opening short: trade_result = %s", trade_result)
-
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -277,7 +282,7 @@ class Market:
 
         # Compute the time remaining given the mint time.
         time_remaining = StretchedTime(
-            days=time_utils.get_yearfrac_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
+            days=time_utils.get_years_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
             time_stretch=self.position_duration.time_stretch,
         )
 
@@ -294,10 +299,6 @@ class Market:
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-        # Log the trade result.
-        logging.debug("closing short: trade_result = %s", trade_result)
-
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -342,13 +343,6 @@ class Market:
                 time_remaining=self.position_duration,
             )
             self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-            # Log the trade result.
-            logging.debug(
-                "opening long: trade_result %s",
-                trade_result,
-            )
-
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
@@ -380,7 +374,7 @@ class Market:
 
         # Compute the time remaining given the mint time.
         time_remaining = StretchedTime(
-            days=time_utils.get_yearfrac_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
+            days=time_utils.get_years_remaining(self.time, mint_time, self.position_duration.normalized_time) * 365,
             time_stretch=self.position_duration.time_stretch,
         )
 
@@ -397,10 +391,6 @@ class Market:
             time_remaining=time_remaining,
         )
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-        # Log the trade result.
-        logging.debug("closing long: trade_result = %s", trade_result)
-
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
