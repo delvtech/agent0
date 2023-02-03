@@ -44,22 +44,22 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The input is calculated as:
 
         .. math::
-            in' =
-            \begin{cases}
-            c (\frac{1}{\mu} (
-            \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
-            + \Delta y \cdot (1 - \tau),
-            &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            f =
-            \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            in = in' + f
+            \begin{align*}
+            & in' = \;\;
+            \begin{cases}\\
+            \;\;\text{ if $token\_in$ = "base"} \;\; \mid \;\; c \cdot \bigg(\dfrac{1}{\mu} \Bigg(
+            \dfrac{k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1-\tau}} - z\bigg)
+            + \Delta y \cdot \big(1 - \tau\big) \\\\
+            \;\;\text{ if $token\_in$ "pt"} \;\;\;\;\;\;\;\;\; \mid \;\; \bigg(k - \dfrac{c}{\mu} \Big(\mu * \big(z - \Delta z \cdot t\big)\Big)^{1 - \tau}\bigg)^{\dfrac{1}{1 - \tau}}
+            - \big(2y + cz\big) + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\
+            \end{cases} \\\\
+            & f = \;\;\;\;
+            \begin{cases}\\\\\
+            \;\;\text{ if $token\_in$ = "base"} \;\; \mid \;\; \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg)\; \phi\; \Delta y \\\\\\
+            \;\;\text{ if $token\_in$ = "pt"} \;\;\;\;\;\; \mid \;\; \bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\bigg)\; \phi\; (c \cdot \Delta z) \\\\\
+            \end{cases} \\\\\\
+            & in = in' + f\\
+            \end{align*}
 
         Parameters
         ----------
@@ -178,13 +178,13 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         .. math::
             \begin{align*}
             & out' =\;\;\;\; \begin{cases}\\
-            \text{if $token\_out$ = "base"} \;\; \mid \;\;
-            c \Bigg(z - \dfrac{1}{\mu} \Bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) \\\\
-            \text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; 2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\\
+            \;\;\text{if $token\_out$ = "base"} \;\; \mid \;\;
+            c \Bigg(z - \dfrac{1}{\mu} \bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) \\\\
+            \;\;\text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; 2y + cz - \bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) \\\\
             \end{cases} \\\\\\
             & f = \;\;\;\;\;\;\;\; \begin{cases}\\
-            \text{if $token\_out$ = "base"} \;\; \mid \;\; \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y \\\\
-            \text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; \Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big) \\\\
+            \;\;\text{if $token\_out$ = "base"} \;\; \mid \;\; \Big(1 - \dfrac{1}{\Big(\dfrac{2y + cz}{\mu z}\Big)^{\tau}}\Big) \; \phi \; \Delta y \\\\
+            \;\;\text{if $token\_out$ = "pt"} \;\;\;\;\; \mid \;\; \Big(\Big(\dfrac{2y + cz}{\mu z}\Big)^{\tau} - 1\Big) \; \phi \; \Big(c \cdot \Delta z\Big) \\\\
             \end{cases} \\\\\\
             & out = out' + f
             \end{align*}
