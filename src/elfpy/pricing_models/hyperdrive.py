@@ -20,8 +20,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     """
     Hyperdrive Pricing Model
 
-    This pricing model uses a combination of the Constant Sum and Yield Space invariants with modifications to the Yield Space invariant 
-    that enable the base reserves to be deposited into yield bearing vaults
+    This pricing model uses a combination of the Constant Sum and Yield Space
+    invariants with modifications to the Yield Space invariant that enable the
+    base reserves to be deposited into yield bearing vaults
     """
 
     def model_name(self) -> str:
