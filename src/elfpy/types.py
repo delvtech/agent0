@@ -359,8 +359,8 @@ class SimulationState:
     current_market_datetime: list = field(
         default_factory=list, metadata=to_description(" float, current market time as a datetime")
     )
-    current_market_yearfrac: list = field(
-        default_factory=list, metadata=to_description(" float, current market time as a yearfrac")
+    current_market_time: list = field(
+        default_factory=list, metadata=to_description(" float, current market time in years")
     )
     run_trade_number: list = field(
         default_factory=list, metadata=to_description(" integer, trade number in a given simulation")

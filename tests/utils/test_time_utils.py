@@ -126,11 +126,11 @@ class TestTimeUtils(unittest.TestCase):
         for test_case in test_cases:
             if test_case["is_error_case"]:
                 with self.assertRaises(test_case["expected_result"]):
-                    time_remaining = time_utils.get_yearfrac_remaining(
+                    time_remaining = time_utils.get_years_remaining(
                         test_case["market_time"], test_case["mint_time"], test_case["token_duration"]
                     )
             else:
-                time_remaining = time_utils.get_yearfrac_remaining(
+                time_remaining = time_utils.get_years_remaining(
                     test_case["market_time"], test_case["mint_time"], test_case["token_duration"]
                 )
                 np.testing.assert_almost_equal(
