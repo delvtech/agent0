@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import elfpy
-from elfpy.utils import post_processing
 
 if TYPE_CHECKING:
     from typing import Optional, Any
@@ -20,7 +19,6 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
     from matplotlib.gridspec import GridSpec
     from matplotlib.pyplot import Axes
-    from elfpy.simulators import Simulator
 
 
 ## Plotting
