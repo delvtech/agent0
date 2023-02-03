@@ -149,7 +149,7 @@ def plot_longs_and_shorts(
     return fig
 
 
-def plot_wallet_returns(
+def plot_wallet_reserves(
     state_df: pd.DataFrame,
     exclude_first_agent: bool = True,
     exclude_first_trade: bool = True,
