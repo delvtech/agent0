@@ -179,20 +179,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The output is calculated as:
 
         .. math::
-            out' =
-            \begin{cases}
-            c (z - \frac{1}{\mu} (
-            \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-            + \Delta y \cdot (1 - \tau),
-            &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_out = \text{"pt"}
+            out' = \begin{cases}
+            c \Bigg(z - \dfrac{1}{\mu} \Bigg(
+            \dfrac{k - \big(2y + cz + \Delta y \cdot t\Bigg)^{1 - \tau}}{\dfrac{c}{\mu}}\big)^{\dfrac{1}{1 - \tau}}\Bigg)
+            + \Delta y \cdot (1 - \tau) & \text{if $token\_in$ = "base"} \\
+            2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}}
+            + c \cdot \Delta z \cdot \big(1 - \tau\big)
+            & \text{if $token\_in$ = "pt"}
             \end{cases} \\
-            f =
-            \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
+            f = \begin{cases}
+            \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y, &\text{ if } token\_out = \text{"base"} \\
+            \Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big), &\text{ if } token\_out = \text{"pt"}
             \end{cases} \\
             out = out' + f
 
