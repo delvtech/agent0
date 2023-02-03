@@ -166,20 +166,17 @@ Classes
       The output is calculated as:
 
       .. math::
-          out' =
-          \begin{cases}
-          c \Bigg(z - \dfrac{1}{\mu} \Bigg(
-          \dfrac{k - \big(2y + cz + \Delta y \cdot t\Bigg)^{1 - \tau}}{\dfrac{c}{\mu}}\big)^{\dfrac{1}{1 - \tau}}\Bigg)
-          + \Delta y \cdot (1 - \tau) & \text{if $token\_in$ = "base"} \\
-          2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}}
-          + c \cdot \Delta z \cdot \big(1 - \tau\big)
-          & \text{if $token\_in$ = "pt"}
-          \end{cases} \\
-          f = \begin{cases}
+          \begin{align*}
+          & out' =\;\;\;\; \begin{cases}
+          c \Bigg(z - \dfrac{1}{\mu} \Bigg(\dfrac{k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1 - \tau}}\Bigg) + \Delta y \cdot (1 - \tau) & \text{if $token\_in$ = "base"}\\
+          2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot \big(1 - \tau\big) & \text{if $token\_in$ = "pt"}\\
+          \end{cases} \\\\\\
+          & f = \;\;\;\;\;\;\;\; \begin{cases}
           \Bigg(1 - \dfrac{1}{\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau}}\Bigg) \; \phi \; \Delta y, &\text{ if } token\_out = \text{"base"} \\
           \Bigg(\bigg(\dfrac{2y + cz}{\mu z}\bigg)^{\tau} - 1\Bigg) \; \phi \; \Big(c \cdot \Delta z\Big), &\text{ if } token\_out = \text{"pt"}
-          \end{cases} \\
-          out = out' + f
+          \end{cases} \\\\\\
+          & out = out' + f
+          \end{align*}
 
       :param in_: The quantity of tokens that the user wants to pay (the amount and the unit of the
                   tokens).
