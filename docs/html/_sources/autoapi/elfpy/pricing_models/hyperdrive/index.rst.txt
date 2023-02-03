@@ -172,7 +172,7 @@ Classes
       .. math::
           out' = \begin{cases}
           c \Bigg(z - \dfrac{1}{\mu} \Bigg(
-          \dfrac{k - \Bigg(2y + cz + \Delta y \cdot t\Bigg)^{1 - \tau}}{\dfrac{c}{\mu}}\Bigg)^{\dfrac{1}{1 - \tau}}\Bigg)
+          \dfrac{k - \big(2y + cz + \Delta y \cdot t\Bigg)^{1 - \tau}}{\dfrac{c}{\mu}}\big)^{\dfrac{1}{1 - \tau}}\Bigg)
           + \Delta y \cdot (1 - \tau) & \text{if $token\_in$ = "base"} \\
           2y + cz - \Bigg(k - \dfrac{c}{\mu} \Big(\mu \big(z + \Delta z \cdot t\big)\Big)^{1 - \tau}\Bigg)^{\dfrac{1}{1 - \tau}}
           + c \cdot \Delta z \cdot \big(1 - \tau\big)
