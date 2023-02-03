@@ -72,6 +72,31 @@ def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_trade: bool = T
     return fig
 
 
+def plot_agent_pnl(state_df: pd.DataFrame) -> Figure:
+    r"""Plot the simulator market APR per day
+
+    Parameters
+    ----------
+    simulator : Simulator
+        An instantiated simulator that has run trades with agents
+
+    Returns
+    -------
+    Figure
+    """
+
+    num_agents = len([col for col in state_df if col.startswith("agent") and col.endswith("pnl")])
+    fig, axes, _ = get_gridspec_subplots()
+    axis = axes[0]
+    for agent_id in range(1, num_agents):
+        axis = state_df.plot(x="run_trade_number", y=f"agent_{agent_id}_pnl", ax=axis)
+    axis.set_title("Agent PNL Over Time")
+    axis.set_ylabel("PNL")
+    axis.set_xlabel("Day")
+
+    return fig
+
+
 def plot_pool_apr(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
@@ -202,7 +227,7 @@ def plot_wallet_reserves(
     return fig
 
 
-def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, Axes, GridSpec]:
+def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, list[Axes], GridSpec]:
     r"""Setup a figure with axes that have reasonable spacing
 
     Parameters
