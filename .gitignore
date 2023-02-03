@@ -140,3 +140,6 @@ dmypy.json
 
 # VScode
 .vscode
+
+# python virutalenv
+elf-env
