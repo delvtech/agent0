@@ -135,7 +135,7 @@ class PricingModel(ABC):
         bond_reserves = (share_reserves / 2) * (
             init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
             - share_price
-        )  # y = x/2 * (mu * (1 + rt)**(1/tau) - c)
+        )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
 
     def calc_share_reserves(

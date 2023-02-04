@@ -32,7 +32,7 @@ class BaseTradeTest(unittest.TestCase):
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
         # load default config
         override_dict = {
-            "pricing_model_name": "Yieldspace",
+            "pricing_model_name": "Yieldspace",  # TODO: lp agent market initialization does not work with hyperdrive
             "target_liquidity": 10e6 if not target_liquidity else target_liquidity,
             "trade_fee_percent": 0.1,
             "redemtption_fee_percent": 0.0,

@@ -38,6 +38,8 @@ class TokenType(Enum):
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""
 
+    # TODO: Add this in INITIALIZE_MARKET = "initialize_market"
+
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
 
@@ -60,7 +62,7 @@ class StretchedTime:
     r"""A stretched time value with the time stretch"""
 
     # TODO: Improve this constructor so that StretchedTime can be constructed
-    # from yearfracs.
+    # from years.
     def __init__(self, days: float, time_stretch: float):
         self._days = days
         self._time_stretch = time_stretch
