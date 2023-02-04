@@ -76,13 +76,13 @@ def add_pnl_columns(trades_df: pd.DataFrame) -> None:
     """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
     num_agents = len([col for col in trades_df if col.startswith("agent") and col.endswith("base")])
     for agent_id in range(num_agents):
-        trades_df[f"agent_{agent_id}_pnl"] = trades_df.apply(
-            lambda row: row[f"agent_{agent_id}_base"]
-            + row[f"agent_{agent_id}_lp_tokens"]
-            + row[f"agent_{agent_id}_total_longs"]
-            + row[f"agent_{agent_id}_total_shorts"],
-            axis=1,
-        )
+        wallet_values_in_base = [
+            f"agent_{agent_id}_base",
+            f"agent_{agent_id}_lp_tokens",
+            f"agent_{agent_id}_total_longs",
+            f"agent_{agent_id}_total_shorts",
+        ]
+        trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].sum(axis=1)
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:

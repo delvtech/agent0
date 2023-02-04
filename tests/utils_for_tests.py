@@ -20,7 +20,6 @@ def setup_simulation_entities(config_file, override_dict, agent_policies) -> Sim
     # Instantiate the config.
     config = config_utils.override_config_variables(config_utils.load_and_parse_config_file(config_file), override_dict)
     random_sim_vars = sim_utils.override_random_variables(sim_utils.get_random_variables(config), override_dict)
-
     # Create the agents.
     agents = []
     for agent_id, policy_instruction in enumerate(agent_policies):
@@ -40,10 +39,8 @@ def setup_simulation_entities(config_file, override_dict, agent_policies) -> Sim
                 raise AttributeError(f"Policy {policy_name} does not have parameter {key}")
         agent.log_status_report()
         agents += [agent]
-
     # Initialize the simulator.
     simulator = sim_utils.get_simulator(config, agents, random_sim_vars)
-
     return simulator
 
 
