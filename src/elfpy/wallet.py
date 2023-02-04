@@ -111,7 +111,10 @@ class Wallet:
         return output_string
 
     def get_state(self, market: Market) -> dict:
-        r"""The wallet's current state of public variables"""
+        r"""The wallet's current state of public variables
+
+        .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
+        """
         lp_token_value = market.remove_liquidity(self.address, self.lp_tokens)[1].base if self.lp_tokens > 0 else 0.0
         share_reserves = market.market_state.share_reserves
         # compute long values in units of base

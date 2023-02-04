@@ -69,6 +69,7 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     trades_df["share_price_total_return_percent_annualized"] = scale * trades_df["share_price_total_return_percent"]
     # create explicit column that increments per trade
     add_pnl_columns(trades_df)
+    trades_df = trades_df.reset_index()
     return trades_df
 
 
