@@ -9,8 +9,11 @@ from dataclasses import dataclass
 from importlib import import_module
 from os import walk, path
 
-# TODO: Investigate why this raises a type issue in pyright.
-from elfpy import policies  # type: ignore
+import numpy as np
+
+import utils_for_tests as test_utils  # utilities for testing
+
+from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
@@ -76,12 +79,24 @@ class TestAgent(unittest.TestCase):
     @staticmethod
     def get_implemented_policies() -> list[str]:
         """Get a list of all implemented agent policies in elfpy/policies directory"""
-
         policies_path = f"{list(policies.__path__)[0]}/policies"
         filenames = next(walk(policies_path), (None, None, []))[2]
         agent_policies = [path.splitext(filename)[0] for filename in filenames]
-
         return agent_policies
+
+    def test_wallet_keys(self):
+        """Tests that an agent wallet has the right keys"""
+        # get the list of policies in the elfpy/policies directory
+        agent_policies = self.get_implemented_policies()
+        # setup a simulation environment
+        config_file = "config/example_config.toml"
+        override_dict = {}
+        simulator = test_utils.setup_simulation_entities(config_file, override_dict, agent_policies)
+        simulator.collect_and_execute_trades()
+        for agent in simulator.agents.values():
+            wallet_state = agent.wallet.get_state(simulator.market)
+            wallet_keys = agent.wallet.get_state_keys()
+            assert np.all(list(wallet_state.keys()) == wallet_keys)
 
     def test_get_max_safety(self):
         """

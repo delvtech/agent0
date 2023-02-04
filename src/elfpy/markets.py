@@ -272,7 +272,7 @@ class Market:
             logging.warning(
                 (
                     "markets._close_short: WARNING: trade amount = %g"
-                    "is greater than bond reserves = %g."
+                    "is greater than bond reserves = %g. "
                     "Adjusting to allowable amount."
                 ),
                 trade_amount,

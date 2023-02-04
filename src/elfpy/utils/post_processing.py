@@ -68,8 +68,22 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     trades_df["price_total_return_percent_annualized"] = scale * trades_df["price_total_return_percent"]
     trades_df["share_price_total_return_percent_annualized"] = scale * trades_df["share_price_total_return_percent"]
     # create explicit column that increments per trade
+    add_pnl_columns(trades_df)
     trades_df = trades_df.reset_index()
     return trades_df
+
+
+def add_pnl_columns(trades_df: pd.DataFrame) -> None:
+    """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
+    num_agents = len([col for col in trades_df if col.startswith("agent") and col.endswith("base")])
+    for agent_id in range(num_agents):
+        wallet_values_in_base = [
+            f"agent_{agent_id}_base",
+            f"agent_{agent_id}_lp_tokens",
+            f"agent_{agent_id}_total_longs",
+            f"agent_{agent_id}_total_shorts",
+        ]
+        trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].sum(axis=1)
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:

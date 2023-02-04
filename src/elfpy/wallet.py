@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
+    from elfpy.markets import Market
     from typing import Any
 
 
@@ -109,17 +110,43 @@ class Wallet:
         )
         return output_string
 
-    @property
-    def state(self) -> dict:
+    def get_state(self, market: Market) -> dict:
         r"""The wallet's current state of public variables
 
-        .. todo:: TODO: Set this up as a dataclass instead of a dict & convert when adding to the state
+        .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
         """
+        lp_token_value = market.remove_liquidity(self.address, self.lp_tokens)[1].base if self.lp_tokens > 0 else 0.0
+        share_reserves = market.market_state.share_reserves
+        # compute long values in units of base
+        longs_value = 0
+        for (mint_time, long) in self.longs.items():
+            base = (
+                market.close_long(self.address, long.balance, mint_time)[1].base
+                if long.balance > 0 and share_reserves
+                else 0.0
+            )
+            longs_value += base
+        # compute short values in units of base
+        shorts_value = 0
+        for (mint_time, short) in self.shorts.items():
+            base = (
+                market.close_short(self.address, short.balance, mint_time)[1].base
+                if short.balance > 0 and share_reserves
+                else 0.0
+            )
+            shorts_value += base
         return {
             f"agent_{self.address}_base": self.base,
-            f"agent_{self.address}_lp_tokens": self.lp_tokens,
-            f"agent_{self.address}_total_longs": sum((long.balance for long in self.longs.values())),
-            f"agent_{self.address}_total_shorts": sum((short.balance for short in self.shorts.values())),
-            f"agent_{self.address}_longs": self.longs,
-            f"agent_{self.address}_shorts": self.shorts,
+            f"agent_{self.address}_lp_tokens": lp_token_value,
+            f"agent_{self.address}_total_longs": longs_value,
+            f"agent_{self.address}_total_shorts": shorts_value,
         }
+
+    def get_state_keys(self) -> list:
+        """Get state keys for a wallet."""
+        return [
+            f"agent_{self.address}_base",
+            f"agent_{self.address}_lp_tokens",
+            f"agent_{self.address}_total_longs",
+            f"agent_{self.address}_total_shorts",
+        ]

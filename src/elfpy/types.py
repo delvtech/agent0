@@ -9,6 +9,7 @@ import elfpy.utils.time as time_utils
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
+    from elfpy.markets import Market
 
 
 def to_description(description: str) -> dict[str, str]:
@@ -407,7 +408,7 @@ class SimulationState:
             else:
                 setattr(self, key, [val])
 
-    def update_agent_wallet(self, agent: Agent) -> None:
+    def update_agent_wallet(self, agent: Agent, market: Market) -> None:
         r"""Update each entry in the SimulationState's copy for the agent wallet state
         by appending to the list for each key, or creating a new key.
 
@@ -416,7 +417,7 @@ class SimulationState:
         agent: Agent
             An instantiated Agent object
         """
-        for key, value in agent.wallet.state.items():
+        for key, value in agent.wallet.get_state(market).items():
             if hasattr(self, key):
                 key_list = getattr(self, key)
                 key_list.append(value)
