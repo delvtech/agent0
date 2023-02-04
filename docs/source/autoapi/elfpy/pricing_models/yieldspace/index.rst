@@ -257,13 +257,15 @@ Classes
 
       .. math::
           \begin{align*}
+          & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+          \\
           & out'\;\; = \;\;
           \begin{cases}
           \\
           \text{ if $token\_out$ = "base", }\\
           \quad\quad\quad c \big(z - \mu^{-1}
-          \big(\big(k - \big(2y + cz + \Delta y\big)
-          ^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)
+          \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y\big)
+          ^{1 - \tau}\big)\big)
           ^{\tfrac{1}{1 - \tau}}\big)
           \\\\
           \text{ if $token\_out$ = "pt", }\\
@@ -277,14 +279,10 @@ Classes
           \begin{cases}
           \\
           \text{ if $token\_out$ = "base", }\\\\
-          \quad\quad\quad 1 -
-          \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-          ^{-\tau} \phi\;\; \Delta y
+          \quad\quad\quad (1 - p) \phi\;\; \Delta y
           \\\\
           \text{ if $token\_out$ = "pt", }\\\\
-          \quad\quad\quad -1 +
-          \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1}
-          \enspace \phi \enspace (c \cdot \Delta z)
+          \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
           \\\\
           \end{cases}
           \\\\\\

@@ -253,13 +253,15 @@ specified amount of the other asset given the current AMM reserves.</p>
 <p>The output is calculated as:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{align*}
+&amp; p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+\\
 &amp; out'\;\; = \;\;
 \begin{cases}
 \\
 \text{ if $token\_out$ = &quot;base&quot;, }\\
 \quad\quad\quad c \big(z - \mu^{-1}
-\big(\big(k - \big(2y + cz + \Delta y\big)
-^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)
+\big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y\big)
+^{1 - \tau}\big)\big)
 ^{\tfrac{1}{1 - \tau}}\big)
 \\\\
 \text{ if $token\_out$ = &quot;pt&quot;, }\\
@@ -273,14 +275,10 @@ specified amount of the other asset given the current AMM reserves.</p>
 \begin{cases}
 \\
 \text{ if $token\_out$ = &quot;base&quot;, }\\\\
-\quad\quad\quad 1 -
-\Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-^{-\tau} \phi\;\; \Delta y
+\quad\quad\quad (1 - p) \phi\;\; \Delta y
 \\\\
 \text{ if $token\_out$ = &quot;pt&quot;, }\\\\
-\quad\quad\quad -1 +
-\Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1}
-\enspace \phi \enspace (c \cdot \Delta z)
+\quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
 \\\\
 \end{cases}
 \\\\\\
