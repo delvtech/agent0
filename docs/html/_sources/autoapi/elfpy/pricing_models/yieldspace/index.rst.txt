@@ -102,8 +102,7 @@ Classes
       Computes the amount of LP tokens to be minted for a given amount of base asset
 
       .. math::
-
-      y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+          y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
 
 
@@ -126,9 +125,9 @@ Classes
 
       
       Computes the amount of LP tokens to be minted for a given amount of base asset
-      .. math::
-      y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
+      .. math::
+          y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
 
 
@@ -170,7 +169,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_in_given_out(out: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
       Calculates the amount of an asset that must be provided to receive a
@@ -179,29 +178,46 @@ Classes
       The input is calculated as:
 
       .. math::
-          in' =
+          \begin{align*}
+          & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+          \\
+          & in' \;\;\:  = \;\;\:
           \begin{cases}
-          c (\frac{1}{\mu} (\frac{k - (2y + cz - \Delta y)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z),
-          &\text{ if } token\_in = \text{"base"} \\
-          (k - \frac{c}{\mu} (\mu * (z - \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}} - (2y + cz),
-          &\text{ if } token\_in = \text{"pt"}
-          \end{cases} \\
-          f =
+          \\
+          \text{ if $token\_in$ = "base", }\\
+          \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1} \big(k -
+          \big(2y + cz - \Delta y\big)
+          ^{1-\tau}\big)\big)
+          ^ {\tfrac{1}{1-\tau}} - z\big)
+          \\\\
+          \text{ if $token\_in$ = "pt", }\\
+          \quad\quad\quad (k -
+          \big(c \cdot \mu^{-1} \cdot
+          \big(\mu \cdot\big(z - \Delta z \big)\big)
+          ^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}}) - \big(2y + cz\big)
+          \\\\
+          \end{cases}
+          \\\\
+          & f \;\;\;\; = \;\;\;\;
           \begin{cases}
-          (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
-          (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
-          \end{cases} \\
-          in = in' + f
+          \\
+          \text{ if $token\_in$ = "base", }\\\\
+          \quad\quad\quad (1 - p) \phi\;\; \Delta y
+          \\\\
+          \text{ if $token\_in$ = "pt", }\\\\
+          \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+          \\\\
+          \end{cases}
+          \\\\\\
+          & in = in' + f
+          \\
+          \end{align*}
 
       :param out: The quantity of tokens that the user wants to receive (the amount
                   and the unit of the tokens).
       :type out: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 
@@ -231,7 +247,7 @@ Classes
       ..
           !! processed by numpydoc !!
 
-   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, fee_percent: float, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
+   .. py:method:: calc_out_given_in(in_: elfpy.types.Quantity, market_state: elfpy.types.MarketState, time_remaining: elfpy.types.StretchedTime) -> elfpy.types.TradeResult
 
       
       Calculates the amount of an asset that must be provided to receive a
@@ -240,29 +256,45 @@ Classes
       The output is calculated as:
 
       .. math::
-          out' =
+          \begin{align*}
+          & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+          \\
+          & out'\;\; = \;\;
           \begin{cases}
-          c (z - \frac{1}{\mu} (\frac{k - (2y + cz + \Delta y)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}}),
-          &\text{ if } token\_out = \text{"base"} \\
-          2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z))^{1 - \tau})^{\frac{1}{1 - \tau}},
-          &\text{ if } token\_out = \text{"pt"}
-          \end{cases} \\
-          f =
+          \\
+          \text{ if $token\_out$ = "base", }\\
+          \quad\quad\quad c \big(z - \mu^{-1}
+          \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y\big)
+          ^{1 - \tau}\big)\big)
+          ^{\tfrac{1}{1 - \tau}}\big)
+          \\\\
+          \text{ if $token\_out$ = "pt", }\\
+          \quad\quad\quad 2y + cz - (k - c \cdot
+          \mu^{-1} \cdot (\mu (z + \Delta z))^{1 - \tau})
+          ^{\tfrac{1}{(1 - \tau)}}
+          \\\\
+          \end{cases}
+          \\\\
+          & f \;\;\;\; = \;\;\;\;
           \begin{cases}
-          (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-          (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
-          \end{cases} \\
-          out = out' + f
+          \\
+          \text{ if $token\_out$ = "base", }\\\\
+          \quad\quad\quad (1 - p) \phi\;\; \Delta y
+          \\\\
+          \text{ if $token\_out$ = "pt", }\\\\
+          \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+          \\\\
+          \end{cases}
+          \\\\\\
+          & out = out' + f
+          \\
+          \end{align*}
 
       :param in_: The quantity of tokens that the user wants to pay (the amount
                   and the unit of the tokens).
       :type in_: Quantity
       :param market_state: The state of the AMM's reserves and share prices.
       :type market_state: MarketState
-      :param fee_percent: The percentage of the difference between the amount paid without
-                          slippage and the amount received that will be added to the input
-                          as a fee.
-      :type fee_percent: float
       :param time_remaining: The time remaining for the asset (incorporates time stretch).
       :type time_remaining: StretchedTime
 

@@ -19,7 +19,7 @@
         <script src="../../../../_static/doctools.js"></script>
         <script src="../../../../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script>window.MathJax = {"chtml": {"displayAlign": "left"}, "tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -143,9 +143,9 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.pricing_models.hyperdrive.</span></span><span class="sig-name descname"><span class="pre">HyperdrivePricingModel</span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../yieldspace/index.html#elfpy.pricing_models.yieldspace.YieldSpacePricingModel" title="elfpy.pricing_models.yieldspace.YieldSpacePricingModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elfpy.pricing_models.yieldspace.YieldSpacePricingModel</span></code></a></p>
 <p>Hyperdrive Pricing Model</p>
-<p>This pricing model uses a combination of a constant sum invariant and a
-YieldSpace invariant with modifications to enable the base reserves to be
-deposited into yield bearing vaults</p>
+<p>This pricing model uses a combination of the Constant Sum and Yield Space
+invariants with modifications to the Yield Space invariant that enable the
+base reserves to be deposited into yield bearing vaults</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.model_name">
 <span class="sig-name descname"><span class="pre">model_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.model_name" title="Permalink to this definition"></a></dt>
@@ -160,36 +160,52 @@ deposited into yield bearing vaults</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_in_given_out">
-<span class="sig-name descname"><span class="pre">calc_in_given_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_in_given_out" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">calc_in_given_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_in_given_out" title="Permalink to this definition"></a></dt>
 <dd><p>Calculates the amount of an asset that must be provided to receive a
 specified amount of the other asset given the current AMM reserves.</p>
 <p>The input is calculated as:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}in' =
+\[\begin{split}\begin{align*}
+&amp; p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+\\
+&amp; in' \;\;\:  = \;\;\:
 \begin{cases}
-c (\frac{1}{\mu} (
-\frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
-+ \Delta y \cdot (1 - \tau),
-&amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
-(k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-- (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
-&amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases} \\
-f =
+\\
+\text{ if $token\_in$ = &quot;base&quot;, }\\
+\quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1}
+\big(k - \big(2y + cz - \Delta y \cdot t\big)
+^{1-\tau}\big)\big)
+^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
+\\\\
+\text{ if $token\_in$ = &quot;pt&quot;, }\\
+\quad\quad\quad (k - \big(
+c \cdot \mu^{-1} \cdot\big(\mu \cdot
+\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big))
+^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
++ c \cdot \Delta z \cdot\big(1 - \tau\big)
+\\\\
+\end{cases}
+\\\\
+&amp; f \;\;\;\; = \;\;\;\;
 \begin{cases}
-(1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_in = \text{&quot;base&quot;} \\
-(\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_in = \text{&quot;pt&quot;}
-\end{cases} \\
-in = in' + f\end{split}\]</div>
+\\
+\text{ if $token\_in$ = &quot;base&quot;, }\\\\
+\quad\quad\quad (1 - p) \phi\;\; \Delta y
+\\\\
+\text{ if $token\_in$ = &quot;pt&quot;, }\\\\
+\quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+\\\\
+\end{cases}
+\\\\\\
+&amp; in = in' + f
+\\
+\end{align*}\end{split}\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>out</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><em>Quantity</em></a>) – The quantity of tokens that the user wants to receive (the amount
 and the unit of the tokens).</p></li>
 <li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The state of the AMM’s reserves and share prices.</p></li>
-<li><p><strong>fee_percent</strong> (<em>float</em>) – The percentage of the difference between the amount paid without
-slippage and the amount received that will be added to the input
-as a fee.</p></li>
 <li><p><strong>time_remaining</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><em>StretchedTime</em></a>) – The time remaining for the asset (incorporates time stretch).</p></li>
 </ul>
 </dd>
@@ -211,36 +227,50 @@ base.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_out_given_in">
-<span class="sig-name descname"><span class="pre">calc_out_given_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fee_percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_out_given_in" title="Permalink to this definition"></a></dt>
-<dd><p>Calculates the amount of an asset that must be provided to receive a
-specified amount of the other asset given the current AMM reserves.</p>
+<span class="sig-name descname"><span class="pre">calc_out_given_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.calc_out_given_in" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the amount of an asset that must be provided to receive a specified amount of the
+other asset given the current AMM reserves.</p>
 <p>The output is calculated as:</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}out' =
+\[\begin{split}\begin{align*}
+&amp; p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+\\
+&amp; out'\;\; = \;\;
 \begin{cases}
-c (z - \frac{1}{\mu} (
-\frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-+ \Delta y \cdot (1 - \tau),
-&amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
-2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-+ c \cdot \Delta z \cdot (1 - \tau),
-&amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases} \\
-f =
+\\
+\text{ if $token\_out$ = &quot;base&quot;, }\\
+\quad\quad\quad c \big(z - \mu^{-1}
+\big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y \cdot t\big)
+^{1 - \tau}\big)\big)
+^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
+\\\\
+\text{ if $token\_out$ = &quot;pt&quot;, }\\
+\quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot
+(\mu (z + \Delta z \cdot t))^{1 - \tau})
+^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
+\\\\
+\end{cases}
+\\\\
+&amp; f \;\;\;\; = \;\;\;\;
 \begin{cases}
-(1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &amp;\text{ if } token\_out = \text{&quot;base&quot;} \\
-(\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &amp;\text{ if } token\_out = \text{&quot;pt&quot;}
-\end{cases} \\
-out = out' + f\end{split}\]</div>
+\\
+\text{ if $token\_out$ = &quot;base&quot;, }\\\\
+\quad\quad\quad (1 - p) \phi\;\; \Delta y
+\\\\
+\text{ if $token\_out$ = &quot;pt&quot;, }\\\\
+\quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+\\\\
+\end{cases}
+\\\\\\
+&amp; out = out' + f
+\\
+\end{align*}\end{split}\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>in</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><em>Quantity</em></a>) – The quantity of tokens that the user wants to pay (the amount
-and the unit of the tokens).</p></li>
+<li><p><strong>in</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><em>Quantity</em></a>) – The quantity of tokens that the user wants to pay (the amount and the unit of the
+tokens).</p></li>
 <li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The state of the AMM’s reserves and share prices.</p></li>
-<li><p><strong>fee_percent</strong> (<em>float</em>) – The percentage of the difference between the amount paid without
-slippage and the amount received that will be added to the input
-as a fee.</p></li>
 <li><p><strong>time_remaining</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><em>StretchedTime</em></a>) – The time remaining for the asset (incorporates time stretch).</p></li>
 </ul>
 </dd>

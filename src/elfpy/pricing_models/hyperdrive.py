@@ -44,22 +44,41 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The input is calculated as:
 
         .. math::
-            in' =
+            \begin{align*}
+            & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            \\
+            & in' \;\;\:  = \;\;\:
             \begin{cases}
-            c (\frac{1}{\mu} (
-            \frac{k - (2y + cz - \Delta y \cdot t)^{1-\tau}}{\frac{c}{\mu}})^{\frac{1}{1-\tau}} - z)
-            + \Delta y \cdot (1 - \tau),
-            &\text{ if } token\_in = \text{"base"} \\
-            (k - \frac{c}{\mu} (\mu * (z - \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            - (2y + cz) + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            f =
+            \\
+            \text{ if $token\_in$ = "base", }\\
+            \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1}
+            \big(k - \big(2y + cz - \Delta y \cdot t\big)
+            ^{1-\tau}\big)\big)
+            ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
+            \\\\
+            \text{ if $token\_in$ = "pt", }\\
+            \quad\quad\quad (k - \big(
+            c \cdot \mu^{-1} \cdot\big(\mu \cdot
+            \big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big))
+            ^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
+            + c \cdot \Delta z \cdot\big(1 - \tau\big)
+            \\\\
+            \end{cases}
+            \\\\
+            & f \;\;\;\; = \;\;\;\;
             \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_in = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_in = \text{"pt"}
-            \end{cases} \\
-            in = in' + f
+            \\
+            \text{ if $token\_in$ = "base", }\\\\
+            \quad\quad\quad (1 - p) \phi\;\; \Delta y
+            \\\\
+            \text{ if $token\_in$ = "pt", }\\\\
+            \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+            \\\\
+            \end{cases}
+            \\\\\\
+            & in = in' + f
+            \\
+            \end{align*}
 
         Parameters
         ----------
@@ -176,22 +195,39 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         The output is calculated as:
 
         .. math::
-            out' =
+            \begin{align*}
+            & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            \\
+            & out'\;\; = \;\;
             \begin{cases}
-            c (z - \frac{1}{\mu} (
-            \frac{k - (2y + cz + \Delta y \cdot t)^{1 - \tau}}{\frac{c}{\mu}})^{\frac{1}{1 - \tau}})
-            + \Delta y \cdot (1 - \tau),
-            &\text{ if } token\_out = \text{"base"} \\
-            2y + cz - (k - \frac{c}{\mu} (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\frac{1}{1 - \tau}}
-            + c \cdot \Delta z \cdot (1 - \tau),
-            &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
-            f =
+            \\
+            \text{ if $token\_out$ = "base", }\\
+            \quad\quad\quad c \big(z - \mu^{-1}
+            \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y \cdot t\big)
+            ^{1 - \tau}\big)\big)
+            ^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
+            \\\\
+            \text{ if $token\_out$ = "pt", }\\
+            \quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot
+            (\mu (z + \Delta z \cdot t))^{1 - \tau})
+            ^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
+            \\\\
+            \end{cases}
+            \\\\
+            & f \;\;\;\; = \;\;\;\;
             \begin{cases}
-            (1 - \frac{1}{(\frac{2y + cz}{\mu z})^{\tau}}) \phi \Delta y, &\text{ if } token\_out = \text{"base"} \\
-            (\frac{2y + cz}{\mu z})^{\tau} - 1) \phi (c \Delta z), &\text{ if } token\_out = \text{"pt"}
-            \end{cases} \\
-            out = out' + f
+            \\
+            \text{ if $token\_out$ = "base", }\\\\
+            \quad\quad\quad (1 - p) \phi\;\; \Delta y
+            \\\\
+            \text{ if $token\_out$ = "pt", }\\\\
+            \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
+            \\\\
+            \end{cases}
+            \\\\\\
+            & out = out' + f
+            \\
+            \end{align*}
 
         Parameters
         ----------

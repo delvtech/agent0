@@ -70,6 +70,8 @@ extensions = [
     "sphinx.ext.coverage",  # collect documentation coverage stats
 ]
 
+mathjax3_config = {"chtml": {"displayAlign": "left"}}
+
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

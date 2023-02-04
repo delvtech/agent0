@@ -28,7 +28,7 @@ Functions
 
 
 
-.. py:function:: load_and_parse_config_file(config_file)
+.. py:function:: load_and_parse_config_file(config_file: str) -> elfpy.utils.config.Config
 
    
    Wrapper function for loading a toml config file and parsing it.
@@ -56,7 +56,7 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: load_config_file(config_file)
+.. py:function:: load_config_file(config_file: str) -> dict
 
    
    Load a config file as a dictionary
@@ -84,7 +84,7 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: parse_simulation_config(config_dict)
+.. py:function:: parse_simulation_config(config_dict: dict) -> elfpy.utils.config.Config
 
    
    Parse the TOML config file and return a config object
