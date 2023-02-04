@@ -4,7 +4,6 @@ from elfpy.markets import Market
 from elfpy.types import MarketActionType
 
 # pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
 
 
 class Policy(Agent):
