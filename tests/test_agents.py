@@ -11,15 +11,15 @@ from os import walk, path
 
 import numpy as np
 
-# TODO: Investigate why this raises a type issue in pyright.
-from elfpy import policies  # type: ignore
+import utils_for_tests as test_utils  # utilities for testing
+
+from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-import utils_for_tests as test_utils  # utilities for testing
 
 
 class TestErrorPolicy(Agent):
