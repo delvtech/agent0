@@ -375,15 +375,13 @@ class CustomEncoder(json.JSONEncoder):
 
     def default(self, o):
         r"""Override default behavior"""
-        match o:
-            case np.integer():
-                return int(o)
-            case np.floating():
-                return float(o)
-            case np.ndarray():
-                return o.tolist()
-            case _:
-                try:
-                    return o.__dict__
-                except AttributeError:
-                    return repr(o)
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        try:
+            return o.__dict__
+        except AttributeError:
+            return repr(o)
