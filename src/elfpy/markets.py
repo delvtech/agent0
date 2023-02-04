@@ -93,7 +93,7 @@ class Market:
 
         check which of 6 action types are being executed, and handles each case:
 
-        initialize_market
+        TODO: initialize_market
 
         open_long
 
@@ -118,15 +118,16 @@ class Market:
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
-        if agent_action.action_type == MarketActionType.INITIALIZE_MARKET:
-            market_deltas, agent_deltas = self.initialize_market(
-                wallet_address=agent_action.wallet_address,
-                contribution=agent_action.trade_amount,
-                # TODO: The agent should be able to specify the APR. We can
-                # also do this at construction which may be preferable.
-                target_apr=0.05,
-            )
-        elif agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
+        # TODO:
+        # if agent_action.action_type == MarketActionType.INITIALIZE_MARKET:
+        #    market_deltas, agent_deltas = self.initialize_market(
+        #        wallet_address=agent_action.wallet_address,
+        #        contribution=agent_action.trade_amount,
+        #        # TODO: The agent should be able to specify the APR. We can
+        #        # also do this at construction which may be preferable.
+        #        target_apr=0.05,
+        #    )
+        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
