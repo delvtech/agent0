@@ -122,7 +122,7 @@ class Market:
             market_deltas, agent_deltas = self.initialize_market(
                 wallet_address=agent_action.wallet_address,
                 contribution=agent_action.trade_amount,
-                # FIXME: The agent should be able to specify the APR. We can
+                # TODO: The agent should be able to specify the APR. We can
                 # also do this at construction which may be preferable.
                 target_apr=0.05,
             )
