@@ -84,7 +84,6 @@ def plot_agent_pnl(state_df: pd.DataFrame) -> Figure:
     -------
     Figure
     """
-
     num_agents = len([col for col in state_df if col.startswith("agent") and col.endswith("pnl")])
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
@@ -93,7 +92,6 @@ def plot_agent_pnl(state_df: pd.DataFrame) -> Figure:
     axis.set_title("Agent PNL Over Time")
     axis.set_ylabel("PNL")
     axis.set_xlabel("Day")
-
     return fig
 
 
