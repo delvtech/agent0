@@ -26,7 +26,10 @@ if TYPE_CHECKING:
 
 
 def get_simulator(
-    config: Config, agents: Optional[list[Agent]] = None, random_sim_vars: Optional[RandomSimulationVariables] = None
+    config: Config,
+    agents: Optional[list[Agent]] = None,
+    random_sim_vars: Optional[RandomSimulationVariables] = None,
+    override_dict: Optional[dict[str, Any]] = None,
 ) -> Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
@@ -40,6 +43,8 @@ def get_simulator(
         the agents to that should be used in the simulator
     random_sim_vars : RandomSimulationVariables
         dataclass that contains variables for initiating and running simulations
+    override_dict : dict
+        dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
 
     Returns
     -------
@@ -49,6 +54,8 @@ def get_simulator(
     # Sample the random simulation arguments.
     if random_sim_vars is None:
         set_random_sim_vars = get_random_variables(config)
+        if override_dict is not None:
+            set_random_sim_vars = override_random_variables(set_random_sim_vars, override_dict)
     else:
         set_random_sim_vars = random_sim_vars
     # Instantiate the market.
@@ -177,7 +184,7 @@ def get_init_lp_agent(
         + init_bond_reserves
         - (delta_shares * market.market_state.share_price)  # delta_base
     )  # budget needs to account for max_loss, which will be deducted from the agent's wallet
-    init_lp_agent = import_module("elfpy.policies.init_lp").Policy(  # construct the agent with desired amounts
+    init_lp_agent = get_policy("init_lp")(  # construct the agent with desired amounts
         wallet_address=0,
         budget=budget,
         first_base_to_lp=first_base_to_lp,
@@ -310,3 +317,19 @@ def override_random_variables(
         if hasattr(random_variables, key) and key in allowed_keys:
             setattr(random_variables, key, value)
     return random_variables
+
+
+def get_policy(agent_type: str) -> Agent:
+    """Returns an uninstantiated agent
+
+    Parameters
+    ----------
+    agent_type : str
+        The agent type must correspond to one of the files in src/elfpy/policies
+
+    Returns
+    -------
+    Uninstantiated agent policy
+
+    """
+    return import_module(f"elfpy.policies.{agent_type}").Policy
