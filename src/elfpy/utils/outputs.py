@@ -72,22 +72,25 @@ def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_trade: bool = T
     return fig
 
 
-def plot_agent_pnl(state_df: pd.DataFrame) -> Figure:
+def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
     ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
+    exclude_first_agent : bool
+        If true, excludes the first agent from the plot
 
     Returns
     -------
     Figure
     """
     num_agents = len([col for col in state_df if col.startswith("agent") and col.endswith("pnl")])
+    start_idx = 1 if exclude_first_agent else 0
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
-    for agent_id in range(1, num_agents):
+    for agent_id in range(start_idx, num_agents):
         axis = state_df.plot(x="run_trade_number", y=f"agent_{agent_id}_pnl", ax=axis)
     axis.set_title("Agent PNL Over Time")
     axis.set_ylabel("PNL")
