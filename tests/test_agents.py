@@ -1,8 +1,5 @@
-"""
-Unit tests for the core Agent API.
-"""
-
-# pylint: disable=abstract-method
+"""Unit tests for the core Agent API"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 from dataclasses import dataclass
@@ -23,9 +20,10 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 
 class TestErrorPolicy(Agent):
-    """
-    This class was made for testing purposes. It does not implement the required self.action() method
-    """
+    """This class was made for testing purposes. It does not implement the required self.action() method"""
+
+    # Purposefully incorrectly implemented
+    ### pylint: disable=abstract-method
 
     def __init__(self, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""

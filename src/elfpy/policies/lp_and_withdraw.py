@@ -1,12 +1,10 @@
-"""
-User strategy that adds liquidity and then removes it when enough time has passed
-"""
-# pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
-
+"""User strategy that adds liquidity and then removes it when enough time has passed"""
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.types import MarketActionType
+
+# pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 
 class Policy(Agent):

@@ -1,12 +1,9 @@
-"""
-User strategy that opens a single short and doesn't close until liquidation
-"""
-# pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
-
+"""User strategy that opens a single short and doesn't close until liquidation"""
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.types import MarketActionType
+
+# pylint: disable=duplicate-code
 
 
 class Policy(Agent):

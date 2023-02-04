@@ -1,7 +1,6 @@
 """Implements helper functions for setting up a simulation"""
-
-
 from __future__ import annotations  # types will be strings by default in 3.11
+
 from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging

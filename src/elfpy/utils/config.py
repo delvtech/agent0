@@ -1,17 +1,15 @@
-"""
-Config structure
-"""
-# dataclasses can have many attributes
-# pylint: disable=too-many-instance-attributes
-
-
+"""Config structure"""
 from dataclasses import dataclass, field
 from typing import Callable, Union
+
 import numpy as np
 from numpy.random import Generator
 from stochastic.processes import GeometricBrownianMotion
 
 from elfpy.types import RandomSimulationVariables
+
+# dataclasses can have many attributes
+# pylint: disable=too-many-instance-attributes
 
 
 @dataclass

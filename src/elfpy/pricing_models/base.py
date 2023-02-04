@@ -1,4 +1,5 @@
-"""The base pricing model."""
+"""The base pricing model"""
+from __future__ import annotations  # types will be strings by default in 3.11
 
 from abc import ABC, abstractmethod
 import copy

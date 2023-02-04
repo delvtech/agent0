@@ -1,11 +1,5 @@
-"""
-Testing for the ElfPy package modules
-"""
-
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
+"""Testing for the ElfPy package modules"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 from dataclasses import dataclass
 import unittest

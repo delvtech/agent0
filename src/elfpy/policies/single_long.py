@@ -1,11 +1,10 @@
-"""
-User strategy that opens a long position and then closes it after a certain amount of time has passed
-"""
-# pylint: disable=too-many-arguments
+"""User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.types import MarketActionType
+
+# pylint: disable=too-many-arguments
 
 
 class Policy(Agent):

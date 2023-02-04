@@ -1,4 +1,5 @@
-"""The YieldSpace pricing model."""
+"""The YieldSpace pricing model"""
+from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
 import logging

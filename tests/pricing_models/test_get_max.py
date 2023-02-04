@@ -1,12 +1,5 @@
-"""
-Testing for the get_max_long function of the pricing models.
-"""
-
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=duplicate-code
+"""Testing for the get_max_long function of the pricing models"""
+from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
@@ -16,6 +9,8 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketDeltas, MarketState, Quantity, StretchedTime, TokenType, TradeResult
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+
+# pylint: disable=duplicate-code
 
 
 @dataclass

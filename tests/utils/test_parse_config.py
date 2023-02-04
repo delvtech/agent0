@@ -1,11 +1,5 @@
-"""
-Testing for the parsing of the Market, AMM and Simulator configs from a TOML file
-"""
-
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
+"""Testing for the parsing of the Market, AMM and Simulator configs from a TOML file"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 

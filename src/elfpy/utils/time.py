@@ -1,6 +1,5 @@
 """Helper functions for converting time units"""
 
-
 from datetime import datetime, timedelta
 import pytz
 

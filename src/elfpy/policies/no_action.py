@@ -1,9 +1,9 @@
-"""
-Base policy class
+"""Base policy class
 
 Policies inherit from Users (thus each policy is assigned to a user)
 subclasses of BasicPolicy will implement trade actions
 """
+from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.markets import Market
 from elfpy.agent import Agent

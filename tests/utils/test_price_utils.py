@@ -1,11 +1,5 @@
-"""
-Testing for price utilities found in src/elfpy/utils/price.py
-"""
-
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
+"""Testing for price utilities found in src/elfpy/utils/price.py"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 import numpy as np

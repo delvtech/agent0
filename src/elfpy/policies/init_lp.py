@@ -1,14 +1,15 @@
-"""
+"""Initializer agent
+
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
-# pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
-
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketActionType
+
+# pylint: disable=duplicate-code
+# pylint: disable=too-many-arguments
 
 
 class Policy(Agent):

@@ -1,4 +1,4 @@
-"""A set of common types used throughtout the simulation codebase."""
+"""A set of common types used throughtout the simulation codebase"""
 
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING

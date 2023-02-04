@@ -1,8 +1,6 @@
-"""
-Implements abstract classes that control user behavior
-"""
-
+"""Implements abstract classes that control user behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
+
 from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass, field
 

@@ -1,10 +1,5 @@
 """ Implements functions that are useful for testing """
-# TODO: review these helper functions for inclusion into the package under src/elfpy/utils
-# left to be reviewed when we add new examples that will live inside the package
-# if those examples use these functions, then we should move them into the package
-
-# pylint: disable=too-many-locals
-# pylint: disable=duplicate-code
+from __future__ import annotations  # types are strings by default in 3.11
 
 import logging
 from importlib import import_module
@@ -12,6 +7,11 @@ from importlib import import_module
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
 import elfpy.utils.parse_config as config_utils
+
+
+# TODO: review these helper functions for inclusion into the package under src/elfpy/utils
+# left to be reviewed when we add new examples that will live inside the package
+# if those examples use these functions, then we should move them into the package
 
 
 @staticmethod

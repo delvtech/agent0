@@ -1,14 +1,10 @@
 """Utilities for price calculations"""
-
-
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.types import StretchedTime
 
 
 ### Spot Price and APR ###
-
-
 def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
