@@ -22,8 +22,8 @@ Functions
 
    elfpy.utils.time.current_datetime
    elfpy.utils.time.block_number_to_datetime
-   elfpy.utils.time.yearfrac_as_datetime
-   elfpy.utils.time.get_yearfrac_remaining
+   elfpy.utils.time.year_as_datetime
+   elfpy.utils.time.get_years_remaining
    elfpy.utils.time.norm_days
    elfpy.utils.time.stretch_time
    elfpy.utils.time.unnorm_days
@@ -90,17 +90,17 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: yearfrac_as_datetime(start_time: datetime.datetime, yearfrac: float) -> datetime.datetime
+.. py:function:: year_as_datetime(start_time: datetime.datetime, year: float) -> datetime.datetime
 
    
-   Returns a yearfrac (e.g. the current market time) in datetime format
+   Returns a year (e.g. the current market time) in datetime format
 
    :param start_time: Timestamp at which the simulation started
    :type start_time: datetime
-   :param yearfrac: Fraction of a year since start_time to convert into datetime
-   :type yearfrac: float
+   :param year: Fraction of a year since start_time to convert into datetime
+   :type year: float
 
-   :returns: Timestamp for the provided start_time plus the provided yearfrac
+   :returns: Timestamp for the provided start_time plus the provided year
    :rtype: datetime
 
 
@@ -120,7 +120,7 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: get_yearfrac_remaining(market_time: float, mint_time: float, token_duration: float) -> float
+.. py:function:: get_years_remaining(market_time: float, mint_time: float, token_duration: float) -> float
 
    
    Get the year fraction remaining on a token

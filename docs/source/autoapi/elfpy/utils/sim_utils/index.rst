@@ -42,6 +42,9 @@ Functions
    :param random_sim_vars: dataclass that contains variables for initiating and running simulations
    :type random_sim_vars: RandomSimulationVariables
 
+   :returns: **simulator** -- instantiated simulator class
+   :rtype: Simulator
+
 
 
 

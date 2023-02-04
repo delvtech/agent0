@@ -141,10 +141,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.time.block_number_to_datetime" title="elfpy.utils.time.block_number_to_datetime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_number_to_datetime</span></code></a>(→ datetime.datetime)</p></td>
 <td><p>Converts the current block number to a datetime based on the start datetime of the simulation</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.time.yearfrac_as_datetime" title="elfpy.utils.time.yearfrac_as_datetime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">yearfrac_as_datetime</span></code></a>(→ datetime.datetime)</p></td>
-<td><p>Returns a yearfrac (e.g. the current market time) in datetime format</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.time.year_as_datetime" title="elfpy.utils.time.year_as_datetime"><code class="xref py py-obj docutils literal notranslate"><span class="pre">year_as_datetime</span></code></a>(→ datetime.datetime)</p></td>
+<td><p>Returns a year (e.g. the current market time) in datetime format</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.time.get_yearfrac_remaining" title="elfpy.utils.time.get_yearfrac_remaining"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_yearfrac_remaining</span></code></a>(→ float)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.time.get_years_remaining" title="elfpy.utils.time.get_years_remaining"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_years_remaining</span></code></a>(→ float)</p></td>
 <td><p>Get the year fraction remaining on a token</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.time.norm_days" title="elfpy.utils.time.norm_days"><code class="xref py py-obj docutils literal notranslate"><span class="pre">norm_days</span></code></a>(→ float)</p></td>
@@ -203,18 +203,18 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.time.yearfrac_as_datetime">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.time.</span></span><span class="sig-name descname"><span class="pre">yearfrac_as_datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yearfrac</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime.datetime</span></span></span><a class="headerlink" href="#elfpy.utils.time.yearfrac_as_datetime" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a yearfrac (e.g. the current market time) in datetime format</p>
+<dt class="sig sig-object py" id="elfpy.utils.time.year_as_datetime">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.time.</span></span><span class="sig-name descname"><span class="pre">year_as_datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime.datetime</span></span></span><a class="headerlink" href="#elfpy.utils.time.year_as_datetime" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a year (e.g. the current market time) in datetime format</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>start_time</strong> (<em>datetime</em>) – Timestamp at which the simulation started</p></li>
-<li><p><strong>yearfrac</strong> (<em>float</em>) – Fraction of a year since start_time to convert into datetime</p></li>
+<li><p><strong>year</strong> (<em>float</em>) – Fraction of a year since start_time to convert into datetime</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Timestamp for the provided start_time plus the provided yearfrac</p>
+<dd class="field-even"><p>Timestamp for the provided start_time plus the provided year</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>datetime</p>
@@ -223,8 +223,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.time.get_yearfrac_remaining">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.time.</span></span><span class="sig-name descname"><span class="pre">get_yearfrac_remaining</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.utils.time.get_yearfrac_remaining" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="elfpy.utils.time.get_years_remaining">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.time.</span></span><span class="sig-name descname"><span class="pre">get_years_remaining</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mint_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.utils.time.get_years_remaining" title="Permalink to this definition"></a></dt>
 <dd><p>Get the year fraction remaining on a token</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

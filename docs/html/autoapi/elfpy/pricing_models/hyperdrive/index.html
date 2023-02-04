@@ -143,9 +143,9 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.pricing_models.hyperdrive.</span></span><span class="sig-name descname"><span class="pre">HyperdrivePricingModel</span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../yieldspace/index.html#elfpy.pricing_models.yieldspace.YieldSpacePricingModel" title="elfpy.pricing_models.yieldspace.YieldSpacePricingModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elfpy.pricing_models.yieldspace.YieldSpacePricingModel</span></code></a></p>
 <p>Hyperdrive Pricing Model</p>
-<p>This pricing model uses a combination of a constant sum invariant and a
-YieldSpace invariant with modifications to enable the base reserves to be
-deposited into yield bearing vaults</p>
+<p>This pricing model uses a combination of the Constant Sum and Yield Space
+invariants with modifications to the Yield Space invariant that enable the
+base reserves to be deposited into yield bearing vaults</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.model_name">
 <span class="sig-name descname"><span class="pre">model_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#elfpy.pricing_models.hyperdrive.HyperdrivePricingModel.model_name" title="Permalink to this definition"></a></dt>
@@ -170,12 +170,17 @@ specified amount of the other asset given the current AMM reserves.</p>
 \begin{cases}
 \\
 \text{ if $token\_in$ = &quot;base&quot;, }\\
-\quad\quad\quad c \big(\mu^{-1} \big(\big(k - \big(2y + cz - \Delta y \cdot t\big)^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big)
+\quad\quad\quad c \big(\mu^{-1} \big(
+\big(k - \big(2y + cz - \Delta y \cdot t\big)
+^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big)
 ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
 \\\\
 \text{ if $token\_in$ = &quot;pt&quot;, }\\
-\quad\quad\quad k - \big(c \cdot \mu^{-1} \cdot\big(\mu \cdot\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)
-^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big) + c \cdot \Delta z \cdot\big(1 - \tau\big)
+\quad\quad\quad k - \big(
+c \cdot \mu^{-1} \cdot\big(\mu \cdot
+\big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)
+^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
++ c \cdot \Delta z \cdot\big(1 - \tau\big)
 \\\\
 \end{cases}
 \\\\
@@ -183,10 +188,12 @@ specified amount of the other asset given the current AMM reserves.</p>
 \begin{cases}
 \\
 \text{ if $token\_in$ = &quot;base&quot;, }\\\\
-\quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
+\quad\quad\quad 1 -
+\Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
 \\\\
 \text{ if $token\_in$ = &quot;pt&quot;, }\\\\
-\quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+\quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
+^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
 \\\\
 \end{cases}
 \\\\\\
@@ -230,10 +237,15 @@ other asset given the current AMM reserves.</p>
 \begin{cases}
 \\
 \text{ if $token\_out$ = &quot;base&quot;, }\\
-\quad\quad\quad c \big(z - \mu^{-1} \big(\big(k - \big(2y + cz + \Delta y \cdot t\big)^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
+\quad\quad\quad c \big(z - \mu^{-1}
+\big(\big(k - \big(2y + cz + \Delta y \cdot t\big)
+^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)
+^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
 \\\\
 \text{ if $token\_out$ = &quot;pt&quot;, }\\
-\quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot (\mu (z + \Delta z \cdot t))^{1 - \tau})^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
+\quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot
+(\mu (z + \Delta z \cdot t))^{1 - \tau})
+^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
 \\\\
 \end{cases}
 \\\\
@@ -241,10 +253,12 @@ other asset given the current AMM reserves.</p>
 \begin{cases}
 \\
 \text{ if $token\_out$ = &quot;base&quot;, }\\\\
-\quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
+\quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
+^{-\tau} \phi\;\; \Delta y
 \\\\
 \text{ if $token\_out$ = &quot;pt&quot;, }\\\\
-\quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+\quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
+^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
 \\\\
 \end{cases}
 \\\\\\

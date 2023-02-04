@@ -852,7 +852,7 @@ Attributes
 
       
 
-   .. py:attribute:: current_market_yearfrac
+   .. py:attribute:: current_market_time
       :type: list
 
       

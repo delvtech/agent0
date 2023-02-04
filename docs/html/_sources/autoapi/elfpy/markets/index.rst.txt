@@ -173,6 +173,8 @@ Classes
       
       Increments member variables to reflect current market conditions
 
+      .. todo:: This order is weird. We should move everything in apply_update to update_market,
+          and then make a new function called check_update that runs these checks
 
 
 

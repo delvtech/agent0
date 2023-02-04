@@ -32,7 +32,7 @@ Functions
    elfpy.utils.outputs.plot_market_spot_price
    elfpy.utils.outputs.plot_pool_apr
    elfpy.utils.outputs.plot_longs_and_shorts
-   elfpy.utils.outputs.plot_wallet_returns
+   elfpy.utils.outputs.plot_wallet_reserves
    elfpy.utils.outputs.get_gridspec_subplots
    elfpy.utils.outputs.clear_axis
    elfpy.utils.outputs.clear_axes
@@ -44,13 +44,15 @@ Functions
 
 
 
-.. py:function:: plot_market_lp_reserves(simulator: elfpy.simulators.Simulator) -> matplotlib.figure.Figure
+.. py:function:: plot_market_lp_reserves(state_df: pandas.DataFrame, exclude_first_trade: bool = True) -> matplotlib.figure.Figure
 
    
    Plot the simulator market LP reserves per day
 
    :param simulator: An instantiated simulator that has run trades with agents
    :type simulator: Simulator
+   :param exclude_first_trade: If true, excludes the first day from the plot
+   :type exclude_first_trade: bool
 
    :rtype: Figure
 
@@ -71,13 +73,15 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: plot_market_spot_price(simulator: elfpy.simulators.Simulator) -> matplotlib.figure.Figure
+.. py:function:: plot_market_spot_price(state_df: pandas.DataFrame, exclude_first_trade: bool = True) -> matplotlib.figure.Figure
 
    
    Plot the simulator market APR per day
 
-   :param simulator: An instantiated simulator that has run trades with agents
-   :type simulator: Simulator
+   :param state_df: Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+   :type state_df: DataFrame
+   :param exclude_first_trade: If true, excludes the first day from the plot
+   :type exclude_first_trade: bool
 
    :rtype: Figure
 
@@ -98,13 +102,15 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: plot_pool_apr(simulator: elfpy.simulators.Simulator) -> matplotlib.figure.Figure
+.. py:function:: plot_pool_apr(state_df: pandas.DataFrame, exclude_first_trade: bool = True) -> matplotlib.figure.Figure
 
    
    Plot the simulator market APR per day
 
-   :param simulator: An instantiated simulator that has run trades with agents
-   :type simulator: Simulator
+   :param state_df: Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+   :type state_df: DataFrame
+   :param exclude_first_trade: If true, excludes the first day from the plot
+   :type exclude_first_trade: bool
 
    :rtype: Figure
 
@@ -125,15 +131,17 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: plot_longs_and_shorts(simulator: elfpy.simulators.Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> matplotlib.figure.Figure
+.. py:function:: plot_longs_and_shorts(state_df: pandas.DataFrame, exclude_first_agent: bool = True, exclude_first_trade: bool = True, xtick_step: int = 10) -> matplotlib.figure.Figure
 
    
    Plot the total market longs & shorts over time
 
-   :param simulator: An instantiated simulator that has run trades with agents
-   :type simulator: Simulator
+   :param state_df: Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+   :type state_df: DataFrame
    :param exclude_first_agent: If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
    :type exclude_first_agent: bool
+   :param exclude_first_trade: If true, excludes the first day from the plot
+   :type exclude_first_trade: bool
 
    :rtype: Figure
 
@@ -154,15 +162,17 @@ Functions
    ..
        !! processed by numpydoc !!
 
-.. py:function:: plot_wallet_returns(simulator: elfpy.simulators.Simulator, exclude_first_agent: bool = True, xtick_step: int = 10) -> matplotlib.figure.Figure
+.. py:function:: plot_wallet_reserves(state_df: pandas.DataFrame, exclude_first_agent: bool = True, exclude_first_trade: bool = True, xtick_step: int = 10) -> matplotlib.figure.Figure
 
    
    Plot the wallet base asset and LP token quantities over time
 
-   :param simulator: An instantiated simulator that has run trades with agents
-   :type simulator: Simulator
+   :param state_df: Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+   :type state_df: DataFrame
    :param exclude_first_agent: If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)
    :type exclude_first_agent: bool
+   :param exclude_first_trade: If true, excludes the first day from the plot
+   :type exclude_first_trade: bool
 
    :rtype: Figure
 

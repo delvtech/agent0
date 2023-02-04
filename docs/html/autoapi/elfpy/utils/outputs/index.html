@@ -161,7 +161,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.outputs.plot_longs_and_shorts" title="elfpy.utils.outputs.plot_longs_and_shorts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_longs_and_shorts</span></code></a>(→ matplotlib.figure.Figure)</p></td>
 <td><p>Plot the total market longs &amp; shorts over time</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.outputs.plot_wallet_returns" title="elfpy.utils.outputs.plot_wallet_returns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_wallet_returns</span></code></a>(→ matplotlib.figure.Figure)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.utils.outputs.plot_wallet_reserves" title="elfpy.utils.outputs.plot_wallet_reserves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_wallet_reserves</span></code></a>(→ matplotlib.figure.Figure)</p></td>
 <td><p>Plot the wallet base asset and LP token quantities over time</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#elfpy.utils.outputs.get_gridspec_subplots" title="elfpy.utils.outputs.get_gridspec_subplots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_gridspec_subplots</span></code></a>(...)</p></td>
@@ -192,55 +192,13 @@
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="elfpy.utils.outputs.plot_market_lp_reserves">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_market_lp_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_market_lp_reserves" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_market_lp_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_trade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_market_lp_reserves" title="Permalink to this definition"></a></dt>
 <dd><p>Plot the simulator market LP reserves per day</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>simulator</strong> (<a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><em>Simulator</em></a>) – An instantiated simulator that has run trades with agents</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Figure</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_market_spot_price">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_market_spot_price</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_market_spot_price" title="Permalink to this definition"></a></dt>
-<dd><p>Plot the simulator market APR per day</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>simulator</strong> (<a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><em>Simulator</em></a>) – An instantiated simulator that has run trades with agents</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Figure</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_pool_apr">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_pool_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_pool_apr" title="Permalink to this definition"></a></dt>
-<dd><p>Plot the simulator market APR per day</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>simulator</strong> (<a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><em>Simulator</em></a>) – An instantiated simulator that has run trades with agents</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Figure</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_longs_and_shorts">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_longs_and_shorts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtick_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_longs_and_shorts" title="Permalink to this definition"></a></dt>
-<dd><p>Plot the total market longs &amp; shorts over time</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>simulator</strong> (<a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><em>Simulator</em></a>) – An instantiated simulator that has run trades with agents</p></li>
-<li><p><strong>exclude_first_agent</strong> (<em>bool</em>) – If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)</p></li>
+<li><p><strong>exclude_first_trade</strong> (<em>bool</em>) – If true, excludes the first day from the plot</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -250,14 +208,67 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_wallet_returns">
-<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_wallet_returns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simulator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><span class="pre">elfpy.simulators.Simulator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtick_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_wallet_returns" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_market_spot_price">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_market_spot_price</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_trade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_market_spot_price" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the simulator market APR per day</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_df</strong> (<em>DataFrame</em>) – Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns</p></li>
+<li><p><strong>exclude_first_trade</strong> (<em>bool</em>) – If true, excludes the first day from the plot</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_pool_apr">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_pool_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_trade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_pool_apr" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the simulator market APR per day</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_df</strong> (<em>DataFrame</em>) – Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns</p></li>
+<li><p><strong>exclude_first_trade</strong> (<em>bool</em>) – If true, excludes the first day from the plot</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_longs_and_shorts">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_longs_and_shorts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_trade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtick_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_longs_and_shorts" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the total market longs &amp; shorts over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_df</strong> (<em>DataFrame</em>) – Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns</p></li>
+<li><p><strong>exclude_first_agent</strong> (<em>bool</em>) – If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)</p></li>
+<li><p><strong>exclude_first_trade</strong> (<em>bool</em>) – If true, excludes the first day from the plot</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="elfpy.utils.outputs.plot_wallet_reserves">
+<span class="sig-prename descclassname"><span class="pre">elfpy.utils.outputs.</span></span><span class="sig-name descname"><span class="pre">plot_wallet_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_first_trade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xtick_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.figure.Figure</span></span></span><a class="headerlink" href="#elfpy.utils.outputs.plot_wallet_reserves" title="Permalink to this definition"></a></dt>
 <dd><p>Plot the wallet base asset and LP token quantities over time</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>simulator</strong> (<a class="reference internal" href="../../simulators/index.html#elfpy.simulators.Simulator" title="elfpy.simulators.Simulator"><em>Simulator</em></a>) – An instantiated simulator that has run trades with agents</p></li>
+<li><p><strong>state_df</strong> (<em>DataFrame</em>) – Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns</p></li>
 <li><p><strong>exclude_first_agent</strong> (<em>bool</em>) – If true, exclude the first agent in simulator.agents (this is usually the init_lp agent)</p></li>
+<li><p><strong>exclude_first_trade</strong> (<em>bool</em>) – If true, excludes the first day from the plot</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>

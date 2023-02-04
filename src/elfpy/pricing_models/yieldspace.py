@@ -305,20 +305,22 @@ class YieldSpacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
+            & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            \\
             & in' \;\;\:  = \;\;\:
             \begin{cases}
             \\
             \text{ if $token\_in$ = "base", }\\
-            \quad\quad\quad c \big(\mu^{-1} \big(\big(k -
+            \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1} \big(k -
             \big(2y + cz - \Delta y\big)
-            ^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big)
+            ^{1-\tau}\big)\big)
             ^ {\tfrac{1}{1-\tau}} - z\big)
             \\\\
             \text{ if $token\_in$ = "pt", }\\
-            \quad\quad\quad k -
+            \quad\quad\quad (k -
             \big(c \cdot \mu^{-1} \cdot
             \big(\mu \cdot\big(z - \Delta z \big)\big)
-            ^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
+            ^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}}) - \big(2y + cz\big)
             \\\\
             \end{cases}
             \\\\
@@ -326,12 +328,10 @@ class YieldSpacePricingModel(PricingModel):
             \begin{cases}
             \\
             \text{ if $token\_in$ = "base", }\\\\
-            \quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-            ^{-\tau} \phi\;\; \Delta y
+            \quad\quad\quad (1 - p) \phi\;\; \Delta y
             \\\\
             \text{ if $token\_in$ = "pt", }\\\\
-            \quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-            ^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+            \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
             \\\\
             \end{cases}
             \\\\\\
