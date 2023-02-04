@@ -38,6 +38,8 @@ class TokenType(Enum):
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""
 
+    INITIALIZE_MARKET = "initialize_market"
+
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
 

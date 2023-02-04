@@ -93,6 +93,8 @@ class Market:
 
         check which of 6 action types are being executed, and handles each case:
 
+        initialize_market
+
         open_long
 
         close_long
@@ -116,7 +118,15 @@ class Market:
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
-        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
+        if agent_action.action_type == MarketActionType.INITIALIZE_MARKET:
+            market_deltas, agent_deltas = self.initialize_market(
+                wallet_address=agent_action.wallet_address,
+                contribution=agent_action.trade_amount,
+                # FIXME: The agent should be able to specify the APR. We can
+                # also do this at construction which may be preferable.
+                target_apr=0.05,
+            )
+        elif agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
@@ -404,6 +414,32 @@ class Market:
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
+
+    def initialize_market(
+        self,
+        wallet_address: int,
+        contribution: float,
+        target_apr: float,
+    ) -> tuple[MarketDeltas, Wallet]:
+        """Allows an LP to initialize the market"""
+        share_reserves = contribution / self.market_state.share_price
+        bond_reserves = self.pricing_model.calc_bond_reserves(
+            target_apr=target_apr,
+            share_reserves=share_reserves,
+            time_remaining=self.position_duration,
+            init_share_price=self.market_state.init_share_price,
+            share_price=self.market_state.share_price,
+        )
+        market_deltas = MarketDeltas(
+            d_base_asset=contribution,
+            d_token_asset=bond_reserves,
+        )
+        agent_deltas = Wallet(
+            address=wallet_address,
+            base=-contribution,
+            lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
+        )
+        return (market_deltas, agent_deltas)
 
     def add_liquidity(
         self,
