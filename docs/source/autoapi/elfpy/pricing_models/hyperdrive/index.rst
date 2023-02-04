@@ -107,19 +107,21 @@ Classes
 
       .. math::
           \begin{align*}
+          & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+          \\
           & in' \;\;\:  = \;\;\:
           \begin{cases}
           \\
           \text{ if $token\_in$ = "base", }\\
-          \quad\quad\quad c \big(\mu^{-1} \big(
+          \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1}
           \big(k - \big(2y + cz - \Delta y \cdot t\big)
-          ^{1-\tau}\big)\cdot \mu \cdot c^{-1}\big)
+          ^{1-\tau}\big)\big)
           ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
           \\\\
           \text{ if $token\_in$ = "pt", }\\
-          \quad\quad\quad k - \big(
+          \quad\quad\quad (k - \big(
           c \cdot \mu^{-1} \cdot\big(\mu \cdot
-          \big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big)
+          \big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big))
           ^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
           + c \cdot \Delta z \cdot\big(1 - \tau\big)
           \\\\
@@ -129,12 +131,10 @@ Classes
           \begin{cases}
           \\
           \text{ if $token\_in$ = "base", }\\\\
-          \quad\quad\quad 1 -
-          \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau} \phi\;\; \Delta y
+          \quad\quad\quad (1 - p) \phi\;\; \Delta y
           \\\\
           \text{ if $token\_in$ = "pt", }\\\\
-          \quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-          ^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+          \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
           \\\\
           \end{cases}
           \\\\\\
@@ -186,13 +186,15 @@ Classes
 
       .. math::
           \begin{align*}
+          & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+          \\
           & out'\;\; = \;\;
           \begin{cases}
           \\
           \text{ if $token\_out$ = "base", }\\
           \quad\quad\quad c \big(z - \mu^{-1}
-          \big(\big(k - \big(2y + cz + \Delta y \cdot t\big)
-          ^{1 - \tau}\big)\cdot c \cdot \mu^{-1}\big)
+          \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y \cdot t\big)
+          ^{1 - \tau}\big)\big)
           ^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
           \\\\
           \text{ if $token\_out$ = "pt", }\\
@@ -206,12 +208,10 @@ Classes
           \begin{cases}
           \\
           \text{ if $token\_out$ = "base", }\\\\
-          \quad\quad\quad 1 - \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-          ^{-\tau} \phi\;\; \Delta y
+          \quad\quad\quad (1 - p) \phi\;\; \Delta y
           \\\\
           \text{ if $token\_out$ = "pt", }\\\\
-          \quad\quad\quad -1 + \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)
-          ^{\tau - 1} \enspace \phi \enspace (c \cdot \Delta z)
+          \quad\quad\quad (p^{-1} - 1) \enspace \phi \enspace (c \cdot \Delta z)
           \\\\
           \end{cases}
           \\\\\\
