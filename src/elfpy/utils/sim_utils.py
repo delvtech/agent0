@@ -319,7 +319,7 @@ def override_random_variables(
     return random_variables
 
 
-def get_policy(agent_type: str) -> Agent:
+def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for output
     """Returns an uninstantiated agent
 
     Parameters
