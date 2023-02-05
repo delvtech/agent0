@@ -30,5 +30,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }} #Optional
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
-          working-directory: ./docs/public
           github-comment: true
