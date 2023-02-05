@@ -1,0 +1,10 @@
+{
+    "version": 2,
+    "public": false,
+    "github": {
+        "enabled": false
+    },
+    "builds": [
+        { "src": "./docs/public", "use": "@vercel/static" }
+    ]
+}
