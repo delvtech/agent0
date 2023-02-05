@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>elfpy.pricing_models.base &mdash; elfpy v0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"chtml": {"displayAlign": "left"}, "tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="elfpy.pricing_models.hyperdrive" href="../hyperdrive/index.html" />
+    <link rel="prev" title="elfpy.pricing_models" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> elfpy
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Quick Install</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../policies/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.policies</span></code></a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models.base</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hyperdrive/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models.hyperdrive</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../yieldspace/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models.yieldspace</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.utils</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../agent/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.agent</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../markets/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.markets</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simulators/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.simulators</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../types/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.types</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../wallet/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.wallet</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">elfpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy</span></code></a></li>
+          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models</span></code></a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models.base</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/elfpy/pricing_models/base/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-elfpy.pricing_models.base">
+<span id="elfpy-pricing-models-base"></span><h1><a class="reference internal" href="#module-elfpy.pricing_models.base" title="elfpy.pricing_models.base"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elfpy.pricing_models.base</span></code></a><a class="headerlink" href="#module-elfpy.pricing_models.base" title="Permalink to this heading"></a></h1>
+<p>The base pricing model</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading"></a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading"></a></h3>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#elfpy.pricing_models.base.PricingModel" title="elfpy.pricing_models.base.PricingModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PricingModel</span></code></a></p></td>
+<td><p>Contains functions for calculating AMM variables</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">elfpy.pricing_models.base.</span></span><span class="sig-name descname"><span class="pre">PricingModel</span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Contains functions for calculating AMM variables</p>
+<p>Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_in_given_out">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_in_given_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_in_given_out" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate fees and asset quantity adjustments</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_out_given_in">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_out_given_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_out_given_in" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate fees and asset quantity adjustments</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_lp_out_given_tokens_in">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_lp_out_given_tokens_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_lp_out_given_tokens_in" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the amount of LP tokens to be minted for a given amount of base asset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_lp_in_given_tokens_out">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_lp_in_given_tokens_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_lp_in_given_tokens_out" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the amount of LP tokens to be minted for a given amount of base asset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_tokens_out_given_lp_in">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_tokens_out_given_lp_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lp_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_tokens_out_given_lp_in" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate how many tokens should be returned for a given lp addition</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.model_name">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.model_name" title="Permalink to this definition"></a></dt>
+<dd><p>Unique name given to the model, can be based on member variable states</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.model_type">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.model_type" title="Permalink to this definition"></a></dt>
+<dd><p>Unique identifier given to the model, should be lower snake_cased name</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_bond_reserves">
+<span class="sig-name descname"><span class="pre">calc_bond_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_reserves</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_share_price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_bond_reserves" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the assumed bond (i.e. token asset) reserve amounts given
+the share (i.e. base asset) reserves and APR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_apr</strong> (<em>float</em>) – Target fixed APR in decimal units (for example, 5% APR would be 0.05)</p></li>
+<li><p><strong>share_reserves</strong> (<em>float</em>) – base asset reserves in the pool</p></li>
+<li><p><strong>days_remaining</strong> (<em>float</em>) – Amount of days left until bond maturity</p></li>
+<li><p><strong>time_stretch</strong> (<em>float</em>) – Time stretch parameter, in years</p></li>
+<li><p><strong>init_share_price</strong> (<em>float</em>) – Original share price when the pool started</p></li>
+<li><p><strong>share_price</strong> (<em>float</em>) – Current share price</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>float</em> – The expected amount of bonds (token asset) in the pool, given the inputs</p></li>
+<li><p><strong>.. todo:: TODO</strong> (<em>Write a test for this function</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_share_reserves">
+<span class="sig-name descname"><span class="pre">calc_share_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_reserves</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_share_price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_share_reserves" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the assumed share (i.e. base asset) reserve amounts given
+the bond (i.e. token asset) reserves and APR</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_apr</strong> (<em>float</em>) – Target fixed APR in decimal units (for example, 5% APR would be 0.05)</p></li>
+<li><p><strong>bond_reserves</strong> (<em>float</em>) – token asset (pt) reserves in the pool</p></li>
+<li><p><strong>days_remaining</strong> (<em>float</em>) – Amount of days left until bond maturity</p></li>
+<li><p><strong>time_stretch</strong> (<em>float</em>) – Time stretch parameter, in years</p></li>
+<li><p><strong>init_share_price</strong> (<em>float</em>) – Original share price when the pool started</p></li>
+<li><p><strong>share_price</strong> (<em>float</em>) – Current share price</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The expected amount of base asset in the pool, calculated from the provided parameters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_liquidity">
+<span class="sig-name descname"><span class="pre">calc_liquidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_liquidity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position_duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_liquidity" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the reserve volumes and total supply</p>
+<p>The scaling factor ensures bond_reserves and share_reserves add
+up to target_liquidity, while keeping their ratio constant (preserves apr).</p>
+<p>total_liquidity = in base terms, used to target liquidity as passed in
+total_reserves  = in arbitrary units (AU), used for yieldspace math</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – the state of the market</p></li>
+<li><p><strong>target_liquidity_usd</strong> (<em>float</em>) – amount of liquidity that the simulation is trying to achieve in a given market</p></li>
+<li><p><strong>target_apr</strong> (<em>float</em>) – desired APR for the seeded market</p></li>
+<li><p><strong>position_duration</strong> (<em>float</em>) – the duration of positions in this market</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tuple that contains (share_reserves, bond_reserves)
+calculated from the provided parameters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(float, float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_total_liquidity_from_reserves_and_price">
+<span class="sig-name descname"><span class="pre">calc_total_liquidity_from_reserves_and_price</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_total_liquidity_from_reserves_and_price" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the total liquidity in the pool in terms of base</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>MarketState</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – <dl class="simple">
+<dt>The following member variables are used:</dt><dd><dl class="simple">
+<dt>share_reserves<span class="classifier">float</span></dt><dd><p>Base asset reserves in the pool</p>
+</dd>
+<dt>bond_reserves<span class="classifier">float</span></dt><dd><p>Token asset (pt) reserves in the pool</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>share_price</strong> (<em>float</em>) – Variable (underlying) yield source price</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>float</em> – Total liquidity in the pool in terms of base, calculated from the provided parameters</p></li>
+<li><p><strong>.. todo:: TODO</strong> (<em>Write a test for this function</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_spot_price_from_reserves">
+<span class="sig-name descname"><span class="pre">calc_spot_price_from_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_spot_price_from_reserves" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the spot price of base in terms of bonds.</p>
+<p>The spot price is defined as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{align}
+p = (\frac{2y + cz}{\mu z})^{-\tau}
+\end{align}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The reserves and share prices of the pool.</p></li>
+<li><p><strong>time_remaining</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><em>StretchedTime</em></a>) – The time remaining for the asset (incorporates time stretch).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The spot price of principal tokens.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_apr_from_reserves">
+<span class="sig-name descname"><span class="pre">calc_apr_from_reserves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_apr_from_reserves" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the apr given reserve amounts</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.get_max_long">
+<span class="sig-name descname"><span class="pre">get_max_long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.get_max_long" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the maximum long the market can support using the bisection
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The reserves and share prices of the pool.</p></li>
+<li><p><strong>fee_percent</strong> (<em>float</em>) – The fee percent charged by the market.</p></li>
+<li><p><strong>time_remaining</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><em>StretchedTime</em></a>) – The time remaining for the asset (incorporates time stretch).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The maximum amount of base that can be used to purchase bonds.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.get_max_short">
+<span class="sig-name descname"><span class="pre">get_max_short</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.get_max_short" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the maximum short the market can support using the bisection
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>market_state</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><em>MarketState</em></a>) – The reserves and share prices of the pool.</p></li>
+<li><p><strong>fee_percent</strong> (<em>float</em>) – The fee percent charged by the market.</p></li>
+<li><p><strong>time_remaining</strong> (<a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><em>StretchedTime</em></a>) – The time remaining for the asset (incorporates time stretch).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>float</em> – The maximum amount of base that can be used to short bonds.</p></li>
+<li><p><em>float</em> – The maximum amount of bonds that can be shorted.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.calc_time_stretch">
+<span class="sig-name descname"><span class="pre">calc_time_stretch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.calc_time_stretch" title="Permalink to this definition"></a></dt>
+<dd><p>Returns fixed time-stretch value based on current apr (as a decimal)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.check_input_assertions">
+<span class="sig-name descname"><span class="pre">check_input_assertions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.Quantity" title="elfpy.types.Quantity"><span class="pre">elfpy.types.Quantity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">market_state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.MarketState" title="elfpy.types.MarketState"><span class="pre">elfpy.types.MarketState</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_remaining</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.StretchedTime" title="elfpy.types.StretchedTime"><span class="pre">elfpy.types.StretchedTime</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.check_input_assertions" title="Permalink to this definition"></a></dt>
+<dd><p>Applies a set of assertions to the input of a trading function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="elfpy.pricing_models.base.PricingModel.check_output_assertions">
+<span class="sig-name descname"><span class="pre">check_output_assertions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trade_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../types/index.html#elfpy.types.TradeResult" title="elfpy.types.TradeResult"><span class="pre">elfpy.types.TradeResult</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#elfpy.pricing_models.base.PricingModel.check_output_assertions" title="Permalink to this definition"></a></dt>
+<dd><p>Applies a set of assertions to a trade result.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="elfpy.pricing_models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../hyperdrive/index.html" class="btn btn-neutral float-right" title="elfpy.pricing_models.hyperdrive" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright  2023, Element Finance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-FROM matthewfeickert/docker-python3-ubuntu:latest
+FROM matthewfeickert/docker-python3-ubuntu:3.8.7
 WORKDIR /app/
 COPY . ./
 RUN pip install --upgrade pip
