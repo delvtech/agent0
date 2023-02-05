@@ -1,3 +1,5 @@
+python --version
+which python
 python -m ensurepip
 python -m pip install --upgrade pip
 # repository dependencies
