@@ -44,8 +44,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
-            \\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            \\\\
             & in' \;\;\:  = \;\;\:
             \begin{cases}
             \\
@@ -195,8 +195,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & p = \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
-            \\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            \\\\
             & out'\;\; = \;\;
             \begin{cases}
             \\

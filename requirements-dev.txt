@@ -1,4 +1,5 @@
 # documentation
+tomli>=2.0.1
 sphinx>=5.3
 sphinx_autodoc_typehints>=1.21.8
 sphinx-autoapi>=2.0.1
