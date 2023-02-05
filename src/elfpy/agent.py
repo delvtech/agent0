@@ -140,7 +140,8 @@ class Agent:
             return max_short
         last_maybe_max_short = 0
         bond_percent = 1
-        for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
+        num_iters = 25
+        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
             # Compute the amount of base returned by selling the specified
             # amount of bonds.
             maybe_max_short = max_short * bond_percent
