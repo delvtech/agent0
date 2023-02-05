@@ -1,4 +1,4 @@
-rm -rf build ../html source/autoapi
+rm -rf build public source/autoapi
 make html
-cp -r build/html/ ..
+cp -r build/html public
 rm -rf build

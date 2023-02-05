@@ -144,6 +144,5 @@ dmypy.json
 # python virutalenv
 elf-env
 
-docs/build
-docs/html
-html
+/docs/build
+/docs/public
