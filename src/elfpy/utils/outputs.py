@@ -123,6 +123,35 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> F
     return fig
 
 
+def plot_pool_volume(
+    trades_agg: pd.DataFrame, exclude_first_trade: bool = True, exclude_last_trade: bool = True
+) -> Figure:
+    r"""Plot the simulator market APR per day
+
+    Parameters
+    ----------
+    trades : DataFrame
+        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+    exclude_first_trade : bool
+        If true, excludes the first day from the plot (default = True)
+    exclude_last_trade : bool
+        If true, excludes the last day from the plot (default = True)
+
+    Returns
+    -------
+    Figure
+    """
+    fig, axes, _ = get_gridspec_subplots()
+    start_idx = 1 if exclude_first_trade else 0
+    end_idx = -1 if exclude_last_trade else None
+    axis = trades_agg.iloc[start_idx:end_idx].plot(x="day", y="delta_base_abs_sum", ax=axes[0], kind="bar")
+    axis.get_legend().remove()
+    axis.set_title("Market Volume")
+    axis.set_ylabel("Base")
+    axis.set_xlabel("Day")
+    return fig
+
+
 def plot_longs_and_shorts(
     state_df: pd.DataFrame,
     exclude_first_agent: bool = True,

@@ -40,6 +40,14 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     """
     trades_df = get_simulation_state_df(simulator)
+    # calculate changes in reserves, corresponding to latest trade
+    trades_df["delta_shares"] = trades_df.share_reserves.diff()
+    trades_df["delta_base"] = trades_df.share_reserves.diff() * trades_df.share_price
+    trades_df["delta_bonds"] = trades_df.bond_reserves.diff()
+    # same thing but with absolute values for plotting
+    trades_df["delta_shares_abs"] = trades_df.delta_shares.abs()
+    trades_df["delta_base_abs"] = trades_df.delta_base.abs()
+    trades_df["delta_bonds_abs"] = trades_df.delta_bonds.abs()
     # calculate derived variables across runs
     trades_df["pool_apr_percent"] = trades_df.pool_apr * 100
     trades_df["vault_apr_percent"] = trades_df.vault_apr * 100
@@ -110,6 +118,7 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     trades_agg = trades.groupby(keep_columns).agg(
         {
             "spot_price": ["mean"],
+            "delta_base_abs": ["sum"],
         }
     )
     trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
