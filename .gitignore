@@ -126,6 +126,7 @@ venv.bak/
 /docs/source/generated
 /docs/build
 /site
+/public
 
 # mypy
 .mypy_cache/
