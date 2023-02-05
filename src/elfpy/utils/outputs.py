@@ -122,9 +122,10 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_trade: bool = True) -> F
     axis.set_xlabel("Day")
     return fig
 
-def plot_pool_volume(trades_agg: pd.DataFrame,
-    exclude_first_trade: bool = True,
-    exclude_last_trade: bool = True) -> Figure:
+
+def plot_pool_volume(
+    trades_agg: pd.DataFrame, exclude_first_trade: bool = True, exclude_last_trade: bool = True
+) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
@@ -149,7 +150,6 @@ def plot_pool_volume(trades_agg: pd.DataFrame,
     axis.set_ylabel("Base")
     axis.set_xlabel("Day")
     return fig
-
 
 
 def plot_longs_and_shorts(
