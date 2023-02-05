@@ -1,4 +1,5 @@
-rm -rf build html docs/source/autoapi
+rm -rf public docs/source/autoapi
+mkdir public
 cd docs
 make html
-cp -r build/html/ ../static/
+cp -r build/html/ ../public/
