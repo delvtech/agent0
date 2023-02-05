@@ -92,7 +92,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True) -> 
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
     for agent_id in range(start_idx, num_agents):
-        axis = state_df.plot(x="run_trade_number", y=f"agent_{agent_id}_pnl", ax=axis)
+        axis = state_df.plot(x="day", y=f"agent_{agent_id}_pnl", ax=axis)
     axis.set_title("Agent PNL Over Time")
     axis.set_ylabel("PNL")
     axis.set_xlabel("Day")
