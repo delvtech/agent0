@@ -14,7 +14,6 @@ import elfpy.utils.parse_config as config_utils
 # if those examples use these functions, then we should move them into the package
 
 
-@staticmethod
 def setup_simulation_entities(config_file, override_dict, agent_policies) -> Simulator:
     """Construct and run the simulator"""
     # Instantiate the config.
@@ -44,7 +43,6 @@ def setup_simulation_entities(config_file, override_dict, agent_policies) -> Sim
     return simulator
 
 
-@staticmethod
 def validate_custom_parameters(policy_instruction):
     """
     separate the policy name from the policy arguments and validate the arguments
