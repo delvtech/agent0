@@ -1,4 +1,4 @@
-name: Vercel Preview Deployment
+name: docs
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -7,7 +7,7 @@ on:
     branches-ignore:
       - main
 jobs:
-  Deploy-Preview:
+  preview:
     runs-on: ubuntu-latest
     strategy:
       matrix:
