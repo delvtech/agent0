@@ -24,9 +24,10 @@ jobs:
           python -m pip install -r requirements-dev.txt
       - name: Build docs
         run: cd docs && ./make.sh && cd ..
-      - uses: amondnet/vercel-action@v20
+      - uses: ngduc/vercel-deploy-action@master
         with:
+          vercel-cli: vercel
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID}}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID}}
-          working-directory: ./docs/public
+          #working-directory: ./docs/public
