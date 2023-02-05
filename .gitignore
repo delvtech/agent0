@@ -146,3 +146,5 @@ elf-env
 
 /docs/build
 /docs/public
+
+.vercel
