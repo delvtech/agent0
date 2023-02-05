@@ -114,8 +114,8 @@ def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day = True) -> Figure:
     ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
-    exclude_first_agent : bool
-        If true, excludes the first agent from the plot
+    exclude_last_day : bool
+        If true, excludes the last day from the plot
 
     Returns
     -------
@@ -123,10 +123,11 @@ def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day = True) -> Figure:
     """
     num_agents = 1
     start_idx = 0
+    end_idx = len(state_df)-1 if exclude_last_day else len(state_df)
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
     for agent_id in range(start_idx, num_agents):
-        axis = state_df.plot(x="day", y=f"agent_{agent_id}_pnl", ax=axis)
+        axis = state_df.iloc[start_idx:end_idx].plot(x="day", y=f"agent_{agent_id}_pnl", ax=axis)
     axis.set_title("LP PNL Over Time")
     axis.set_ylabel("PNL")
     axis.set_xlabel("Day")
