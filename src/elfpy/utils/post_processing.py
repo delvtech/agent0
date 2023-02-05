@@ -93,6 +93,19 @@ def add_pnl_columns(trades_df: pd.DataFrame) -> None:
         trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].sum(axis=1)
 
 
+def get_pnl(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("base")]
+    return trades_df[cols_to_return]
+
+
+def get_pnl_excluding_agent_0(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent except for agent 0 from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("base")]
+    cols_to_return.remove("agent_0_base")
+    return trades_df[cols_to_return]
+
+
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     r"""Aggregate trades dataframe by computing means
 
