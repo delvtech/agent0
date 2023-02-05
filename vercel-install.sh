@@ -1,10 +1,10 @@
-python --version
-which python
-python -m ensurepip
-python -m pip install --upgrade pip
+python3 --version
+which python3
+python3 -m ensurepip
+python3 -m pip install --upgrade pip
 # repository dependencies
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 # extra dependencies for the docs
-python -m pip install -r requirements-dev.txt
+python3 -m pip install -r requirements-dev.txt
 # intstall elfpy package
-python -m pip install -e .
+python3 -m pip install -e .
