@@ -1,6 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
-
 from __future__ import annotations  # types will be strings by default in 3.11
+
 from typing import TYPE_CHECKING
 import logging
 

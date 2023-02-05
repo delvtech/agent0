@@ -1,4 +1,6 @@
 """A minimum viable simulation"""
+from __future__ import annotations  # types will be strings by default in 3.11
+
 # stdlib
 import argparse
 from typing import Any

@@ -1,8 +1,5 @@
-"""
-Testing for logging in the ElfPy package modules
-"""
-
-# pylint: disable=duplicate-code
+"""Testing for logging in the ElfPy package modules"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 import logging

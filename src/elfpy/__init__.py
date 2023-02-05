@@ -1,6 +1,4 @@
-"""
-Elfpy package
-"""
+"""Elfpy package"""
 
 import shutil
 import logging

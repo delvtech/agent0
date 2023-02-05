@@ -1,10 +1,11 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
-
 from __future__ import annotations  # types will be strings by default in 3.11
+
 from typing import Any, Optional, TYPE_CHECKING
 import datetime
 import json
 import logging
+
 import numpy as np
 from numpy.random._generator import Generator
 

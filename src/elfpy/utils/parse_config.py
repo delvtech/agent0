@@ -1,5 +1,4 @@
 """Utilities for parsing & loading user config TOML files"""
-
 import logging
 import tomli
 
@@ -74,21 +73,20 @@ def text_to_logging_level(logging_text: str) -> int:
     int
         Logging level integer corresponding to the string input
     """
-    match logging_text.lower():
-        case "notset":
-            level = logging.NOTSET
-        case "debug":
-            level = logging.DEBUG
-        case "info":
-            level = logging.INFO
-        case "warning":
-            level = logging.WARNING
-        case "error":
-            level = logging.ERROR
-        case "critical":
-            level = logging.CRITICAL
-        case _:
-            raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
+    if logging_text.lower() == "notset":
+        level = logging.NOTSET
+    elif logging_text.lower() == "debug":
+        level = logging.DEBUG
+    elif logging_text.lower() == "info":
+        level = logging.INFO
+    elif logging_text.lower() == "warning":
+        level = logging.WARNING
+    elif logging_text.lower() == "error":
+        level = logging.ERROR
+    elif logging_text.lower() == "critical":
+        level = logging.CRITICAL
+    else:
+        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
     return level
 
 

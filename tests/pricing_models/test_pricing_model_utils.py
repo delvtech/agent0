@@ -1,13 +1,4 @@
-"""
-Testing for the utility methods in the pricing models
-"""
-
-# pylint: disable=protected-access
-# pylint: disable=too-many-lines
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-locals
-# pylint: disable=attribute-defined-outside-init
-
+"""Testing for the utility methods in the pricing models"""
 import unittest
 import numpy as np
 
@@ -24,22 +15,22 @@ class BasePricingModelUtilsTest(unittest.TestCase):
         """Unit tests for the pricing model calc_liquidity function
 
         Example check for the test:
-            # test 1: 5M target_liquidity; 5% APR;
-            #   6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
-            l = target_liquidity = 5_000_000
-            r = target_apr = 0.05
-            days = 182.5
-            time_stretch = 3.09396 / (0.02789 * r * 100)
-            t = days / 365
-            T = t / time_stretch
-            u = init_share_price = 1
-            c = share_price = 1  # share price of the LP in the yield source; c = 1
-            z = share_reserves = l / c
-            y = bond_reserves = (z / 2) * (u * (1 + r * t) ** (1 / T) - c)
-            p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
-            final_apr = (1 - p) / (p * t)
-            total_liquidity = c * z
+            test 1: 5M target_liquidity; 5% APR;
+            6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
+            1 init share price; 1 share price
+                l = target_liquidity = 5_000_000
+                r = target_apr = 0.05
+                days = 182.5
+                time_stretch = 3.09396 / (0.02789 * r * 100)
+                t = days / 365
+                T = t / time_stretch
+                u = init_share_price = 1
+                c = share_price = 1  # share price of the LP in the yield source; c = 1
+                z = share_reserves = l / c
+                y = bond_reserves = (z / 2) * (u * (1 + r * t) ** (1 / T) - c)
+                p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
+                final_apr = (1 - p) / (p * t)
+                total_liquidity = c * z
         """
 
         test_cases = [
@@ -281,7 +272,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
                     k = float(
-                        pricing_model._calc_k_const(
+                        pricing_model._calc_k_const(  # pylint: disable=protected-access
                             market_state=test_case["market_state"],
                             time_remaining=StretchedTime(
                                 days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1
@@ -292,7 +283,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # If test was not supposed to fail, continue normal execution
             else:
                 k = float(
-                    pricing_model._calc_k_const(
+                    pricing_model._calc_k_const(  # pylint: disable=protected-access
                         market_state=test_case["market_state"],
                         time_remaining=StretchedTime(
                             days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1

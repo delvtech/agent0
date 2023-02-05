@@ -1,6 +1,5 @@
-"""
-Testing for the ElfPy package modules
-"""
+"""Testing for the ElfPy package modules"""
+from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 import logging

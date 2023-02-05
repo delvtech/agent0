@@ -1,5 +1,4 @@
-"""The Hyperdrive pricing model."""
-
+"""The Hyperdrive pricing model"""
 import copy
 from decimal import Decimal
 
