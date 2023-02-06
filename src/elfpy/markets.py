@@ -49,7 +49,7 @@ class Market:
         position_duration: StretchedTime = StretchedTime(365, 1),
     ):
         # market state variables
-        self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.time: float = 0  # t: years unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
@@ -294,11 +294,13 @@ class Market:
             trade_amount = self.market_state.bond_reserves
 
         # Compute the time remaining given the mint time.
+        years_remaining = time_utils.get_years_remaining(
+            market_time=self.time,
+            mint_time=mint_time,
+            position_duration_years=self.position_duration.normalized_time,
+        )  # all args in units of years
         time_remaining = StretchedTime(
-            days=time_utils.get_years_remaining(
-                market_time=self.time, mint_time=mint_time, num_position_days=self.position_duration.normalized_time
-            )
-            * self.position_duration.normalizing_constant,
+            days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
