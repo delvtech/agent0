@@ -64,7 +64,7 @@ def get_simulator(
         set_random_sim_vars.target_pool_apr,
         set_random_sim_vars.trade_fee_percent,
         set_random_sim_vars.redemption_fee_percent,
-        config.simulator.token_duration,
+        config.simulator.num_position_days,
         set_random_sim_vars.vault_apr,
         set_random_sim_vars.init_share_price,
     )
@@ -216,7 +216,7 @@ def get_market(
     target_pool_apr: float,
     trade_fee_percent: float,
     redemption_fee_percent: float,
-    position_duration: float,
+    num_position_days: int,
     vault_apr: list,
     init_share_price: float,
 ) -> Market:
@@ -234,8 +234,8 @@ def get_market(
         portion of trades to be collected as fees for LPers, expressed as a decimal
     redemption_fee_percent : float
         portion of redemptions to be collected as fees for LPers, expressed as a decimal
-    token_duration : float
-        how much time between token minting and expiry, in fractions of a year (e.g. 0.5 is 6 months)
+    num_position_days : int
+        how much time between token minting and expiry, in days
     vault_apr : list
         valut apr per day for the duration of the simulation
     init_share_price : float
@@ -260,7 +260,9 @@ def get_market(
             redemption_fee_percent=redemption_fee_percent,  # g
         ),
         position_duration=StretchedTime(
-            days=position_duration * 365, time_stretch=pricing_model.calc_time_stretch(target_pool_apr)
+            days=num_position_days,
+            time_stretch=pricing_model.calc_time_stretch(target_pool_apr),
+            normalizing_constant=num_position_days,
         ),
     )
     return market

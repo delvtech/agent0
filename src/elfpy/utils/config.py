@@ -60,9 +60,7 @@ class SimulatorConfig:
     # durations
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
-    token_duration: float = field(
-        default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
-    )
+    num_position_days: int = field(default=90, metadata={"hint": "time lapse between token mint and expiry as days"})
 
     # users
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
