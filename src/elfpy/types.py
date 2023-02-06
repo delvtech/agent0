@@ -66,7 +66,9 @@ class StretchedTime:
     def __init__(self, days: float, time_stretch: float, normalizing_constant: float = 365):
         self._days = days
         self._time_stretch = time_stretch
-        self._stretched_time = time_utils.days_to_time_remaining(self._days, self._time_stretch)
+        self._stretched_time = time_utils.days_to_time_remaining(
+            self._days, self._time_stretch, normalizing_constant=normalizing_constant
+        )
         self.normalizing_constant = normalizing_constant
 
     @property
