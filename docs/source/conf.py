@@ -107,10 +107,7 @@ typehints_fully_qualified = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_style = "css/custom.css"
-html_theme_options = {
-    "logo_only": True,
-    "display_version": True
-}
+html_theme_options = {"logo_only": True, "display_version": True}
 html_short_title = "Documentation"
 html_logo = "_static/logo.svg"
 html_favicon = "_static/favicon.ico"
