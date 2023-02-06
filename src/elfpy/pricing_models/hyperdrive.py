@@ -276,7 +276,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
             time_remaining=StretchedTime(
-                days=time_remaining.days,
+                days=time_remaining.normalizing_constant,
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
             ),
