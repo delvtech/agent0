@@ -295,9 +295,7 @@ class Market:
 
         # Compute the time remaining given the mint time.
         years_remaining = time_utils.get_years_remaining(
-            market_time=self.time,
-            mint_time=mint_time,
-            position_duration_years=self.position_duration.normalized_time,
+            market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
         time_remaining = StretchedTime(
             days=years_remaining * 365,  # converting years to days
@@ -396,7 +394,7 @@ class Market:
         years_remaining = time_utils.get_years_remaining(
             market_time=self.time,
             mint_time=mint_time,
-            position_duration_years=self.position_duration.normalized_time,
+            position_duration_years=self.position_duration.days / 365,
         )  # all args in units of years
         time_remaining = StretchedTime(
             days=years_remaining * 365,
