@@ -144,6 +144,7 @@ class YieldSpacePricingModel(PricingModel):
         )
         return lp_out, d_base, d_bonds
 
+    # TODO: Delete this function from here & base? not used or tested.
     def calc_lp_in_given_tokens_out(
         self,
         d_base: float,
@@ -158,7 +159,6 @@ class YieldSpacePricingModel(PricingModel):
             y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
         """
-        # TODO: Delete this from here & base? not used or tested.
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
         assert market_state.share_reserves >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
@@ -349,7 +349,7 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns
@@ -577,7 +577,7 @@ class YieldSpacePricingModel(PricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns
@@ -734,7 +734,7 @@ class YieldSpacePricingModel(PricingModel):
         ----------
         market_state : MarketState
             The state of the AMM
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             Time until expiry for the current token
 
         Returns

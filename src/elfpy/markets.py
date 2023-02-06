@@ -186,7 +186,7 @@ class Market:
         self.market_state.apply_delta(market_deltas)
 
     @property
-    def rate(self):
+    def rate(self) -> float:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -201,7 +201,7 @@ class Market:
         return rate
 
     @property
-    def spot_price(self):
+    def spot_price(self) -> float:
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         # TODO: Negative values should never happen, but do because of rounding errors.
