@@ -24,6 +24,7 @@ class BaseParameterTest(unittest.TestCase):
         override_dict = {
             "num_trading_days": 3,  # sim 3 days to keep it fast for testing
             "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
+            "num_position_days": 90,
         }
         simulator = test_utils.setup_simulation_entities(
             config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
