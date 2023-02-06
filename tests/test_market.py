@@ -44,6 +44,7 @@ class BaseMarketTest(unittest.TestCase):
             "vault_apr": {"type": "constant", "value": 0.05},
             # minimal simulation steps, we only care to investigate the first day's trades
             "num_trading_days": 10,
+            "num_position_days": 90,
             "num_blocks_per_day": 3,
             "shuffle_users": False,  # make it deterministic
         }
