@@ -126,7 +126,7 @@ class BaseMarketTest(unittest.TestCase):
         market_deltas, agent_deltas = simulator.market.close_short(
             mint_time=mint_time,
             wallet_address=1,
-            open_share_price=agent.wallet.shorts[mint_time].open_share_price,
+            open_share_price=agent_deltas.shorts[mint_time].open_share_price,
             trade_amount=trade_amount,  # in bonds: that's the thing you owe, and need to buy back
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
@@ -219,6 +219,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_base = trade_result  # proceeds from your sale of bonds, go into your margin account so you don't rug
         d_bonds = 100
         d_margin = d_base + max_loss
+        open_share_price = 1.0086194128439765
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
@@ -235,7 +236,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             # margin is the amount of base asset that is in the agent's margin account
             # it is composed of two parts: proceeds from sale of bonds (d_base)
             # and the additional base deposited by the agent to cover the worst case scenario (max_loss)
-            shorts={0: Short(balance=d_bonds, open_share_price=1)},
+            shorts={0: Short(balance=d_bonds, open_share_price=open_share_price)},
             fees_paid=fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
