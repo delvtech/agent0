@@ -218,7 +218,6 @@ class MarketTestsOneFunction(BaseMarketTest):
         # assign to appropriate token, for readability using absolute values, assigning +/- below
         d_base = trade_result  # proceeds from your sale of bonds, go into your margin account so you don't rug
         d_bonds = 100
-        d_margin = d_base + max_loss
         open_share_price = 1.0086194128439765
 
         expected_market_deltas = MarketDeltas(
@@ -250,7 +249,6 @@ class MarketTestsOneFunction(BaseMarketTest):
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 100
-        d_margin = d_bonds  # reducing the margin in your account by the total amount put up (covering worst case)
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.12178619756427611  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
@@ -280,7 +278,6 @@ class MarketTestsOneFunction(BaseMarketTest):
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 100
-        d_margin = d_bonds  # reducing the margin in your account by the total amount put up (covering worst case)
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.12133788526308154  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
@@ -314,7 +311,6 @@ class MarketTestsOneFunction(BaseMarketTest):
         # calculate the improvement in your max loss (worst case scenario - cost to close the short)
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
-        d_margin = d_bonds  # reducing the margin in your account by the trade face value (covering worst case)
         fees_paid = 0.060893098782138055  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
@@ -347,7 +343,6 @@ class MarketTestsOneFunction(BaseMarketTest):
         # calculate the improvement in your max loss (worst case scenario - cost to close the short)
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
-        d_margin = d_bonds  # reducing the margin in your account by the trade face value (covering worst case)
         fees_paid = 0.06066894263154077  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
