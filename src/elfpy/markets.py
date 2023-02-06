@@ -148,6 +148,7 @@ class Market:
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                 mint_time=agent_action.mint_time,
+                open_share_price=agent_action.open_share_price,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(
@@ -258,7 +259,7 @@ class Market:
         agent_deltas = Wallet(
             address=wallet_address,
             base=-max_loss,
-            shorts={self.time: Short(balance=trade_amount, margin=trade_amount)},
+            shorts={self.time: Short(balance=trade_amount, open_share_price=self.market_state.share_price)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -266,6 +267,7 @@ class Market:
     def close_short(
         self,
         wallet_address: int,
+        open_share_price: float,
         trade_amount: float,
         mint_time: float,
     ) -> tuple[MarketDeltas, Wallet]:
@@ -318,11 +320,12 @@ class Market:
         )
         agent_deltas = Wallet(
             address=wallet_address,
-            base=trade_amount + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
+            base=(self.market_state.share_price / open_share_price) * trade_amount
+            + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
             shorts={
                 mint_time: Short(
                     balance=-trade_amount,
-                    margin=-trade_amount,
+                    open_share_price=0,
                 )
             },
             fees_paid=trade_result.breakdown.fee,
