@@ -133,8 +133,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_in_given_out(
             out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
             market_state=market_state,
-            # TODO: don't hardcode days to 365, initialize to term length
-            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(
+                days=time_remaining.days,
+                time_stretch=time_remaining.time_stretch,
+                normalizing_constant=time_remaining.normalizing_constant,
+            ),
         )
 
         # Compute flat part with fee
@@ -272,7 +275,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_out_given_in(
             in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
             market_state=market_state,
-            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(
+                days=time_remaining.days,
+                time_stretch=time_remaining.time_stretch,
+                normalizing_constant=time_remaining.normalizing_constant,
+            ),
         )
 
         # Compute flat part with fee
