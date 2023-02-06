@@ -18,14 +18,20 @@ class PostProcessingTests(unittest.TestCase):
             "agent_0_lp_tokens": [trade_balance] * num_trades,
             "agent_0_total_longs": [trade_balance] * num_trades,
             "agent_0_total_shorts": [trade_balance] * num_trades,
+            "agent_0_total_longs_no_mock": [trade_balance] * num_trades,
+            "agent_0_total_shorts_no_mock": [trade_balance] * num_trades,
             "agent_1_base": [trade_balance] * num_trades,
             "agent_1_lp_tokens": [trade_balance] * num_trades,
             "agent_1_total_longs": [trade_balance] * num_trades,
             "agent_1_total_shorts": [trade_balance] * num_trades,
+            "agent_1_total_longs_no_mock": [trade_balance] * num_trades,
+            "agent_1_total_shorts_no_mock": [trade_balance] * num_trades,
             "agent_2_base": [trade_balance] * num_trades,
             "agent_2_lp_tokens": [trade_balance] * num_trades,
             "agent_2_total_longs": [trade_balance] * num_trades,
             "agent_2_total_shorts": [trade_balance] * num_trades,
+            "agent_2_total_longs_no_mock": [trade_balance] * num_trades,
+            "agent_2_total_shorts_no_mock": [trade_balance] * num_trades,
         }
         test_df = pd.DataFrame.from_dict(wallet_values_in_base)
         post_processing.add_pnl_columns(test_df)
