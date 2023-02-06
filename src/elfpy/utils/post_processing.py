@@ -90,7 +90,40 @@ def add_pnl_columns(trades_df: pd.DataFrame) -> None:
             f"agent_{agent_id}_total_longs",
             f"agent_{agent_id}_total_shorts",
         ]
+        wallet_values_in_base_no_mock = [
+            f"agent_{agent_id}_base",
+            f"agent_{agent_id}_lp_tokens",
+            f"agent_{agent_id}_total_longs_no_mock",
+            f"agent_{agent_id}_total_shorts_no_mock",
+        ]
         trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].sum(axis=1)
+        trades_df[f"agent_{agent_id}_pnl_no_mock"] = trades_df[wallet_values_in_base_no_mock].sum(axis=1)
+
+
+def get_pnl(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("pnl")]
+    return trades_df[cols_to_return]
+
+
+def get_pnl_no_mock(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("pnl_no_mock")]
+    return trades_df[cols_to_return]
+
+
+def get_pnl_excluding_agent_0(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent except for agent 0 from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("pnl")]
+    cols_to_return.remove("agent_0_pnl")
+    return trades_df[cols_to_return]
+
+
+def get_pnl_excluding_agent_0_no_mock(trades_df: pd.DataFrame) -> pd.DataFrame:
+    """Returns Profit and Loss Column for every agent except for agent 0 from post-processing"""
+    cols_to_return = [col for col in trades_df if col.startswith("agent") and col.endswith("pnl_no_mock")]
+    cols_to_return.remove("agent_0_pnl_no_mock")
+    return trades_df[cols_to_return]
 
 
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:

@@ -123,27 +123,35 @@ class Wallet:
         share_reserves = market.market_state.share_reserves
         # compute long values in units of base
         longs_value = 0
-        for (mint_time, long) in self.longs.items():
+        longs_value_no_mock = 0
+        for mint_time, long in self.longs.items():
             base = (
                 market.close_long(self.address, long.balance, mint_time)[1].base
                 if long.balance > 0 and share_reserves
                 else 0.0
             )
+            base_no_mock = long.balance * market.spot_price
             longs_value += base
+            longs_value_no_mock += base_no_mock
         # compute short values in units of base
         shorts_value = 0
-        for (mint_time, short) in self.shorts.items():
+        shorts_value_no_mock = 0
+        for mint_time, short in self.shorts.items():
             base = (
                 market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].base
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
+            base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value += base
+            shorts_value_no_mock += base_no_mock
         return {
             f"agent_{self.address}_base": self.base,
             f"agent_{self.address}_lp_tokens": lp_token_value,
             f"agent_{self.address}_total_longs": longs_value,
             f"agent_{self.address}_total_shorts": shorts_value,
+            f"agent_{self.address}_total_longs_no_mock": longs_value_no_mock,
+            f"agent_{self.address}_total_shorts_no_mock": shorts_value_no_mock,
         }
 
     def get_state_keys(self) -> list:
@@ -153,4 +161,6 @@ class Wallet:
             f"agent_{self.address}_lp_tokens",
             f"agent_{self.address}_total_longs",
             f"agent_{self.address}_total_shorts",
+            f"agent_{self.address}_total_longs_no_mock",
+            f"agent_{self.address}_total_shorts_no_mock",
         ]

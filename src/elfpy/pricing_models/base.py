@@ -385,7 +385,8 @@ class PricingModel(ABC):
 
         last_maybe_max_long = 0, 0
         bond_percent = 1
-        for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
+        num_iters = 25
+        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
             # Compute the amount of base needed to purchase the specified amount
             # of bonds.
             trade_result = self.calc_in_given_out(
@@ -477,7 +478,8 @@ class PricingModel(ABC):
 
         last_maybe_max_short = 0, 0
         bond_percent = 1
-        for step_size in [1 / (2 ** (x + 1)) for x in range(0, 25)]:
+        num_iters = 25
+        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
             try:
                 # Compute the amount of base returned by selling the specified
                 # amount of bonds.
@@ -573,6 +575,7 @@ class PricingModel(ABC):
             "pricing_models.calc_in_given_out: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
+        # TODO: convert this to a check for 1>=time and fix tests as necessary
         assert 1 > time_remaining.stretched_time >= 0, (
             "pricing_models.calc_in_given_out: ERROR: "
             f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
