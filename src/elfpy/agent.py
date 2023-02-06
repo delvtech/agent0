@@ -290,7 +290,7 @@ class Agent:
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
                     # opened for the same account in the same block.  if the balance is negative, we
-                    # don't want to updat the open_short_price
+                    # don't want to update the open_short_price
                     if short.balance > 0:
                         self.wallet.shorts[mint_time].open_share_price = (
                             short.open_share_price * short.balance + old_share_price * old_balance
