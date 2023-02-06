@@ -25,7 +25,9 @@ if TYPE_CHECKING:
 
 
 ## Plotting
-def plot_market_lp_reserves(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
+def plot_market_lp_reserves(
+    state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
+) -> Figure:
     r"""Plot the simulator market LP reserves per day
 
     Parameters
@@ -43,7 +45,7 @@ def plot_market_lp_reserves(state_df: pd.DataFrame, exclude_first_day: bool = Tr
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df)-1 if exclude_last_day else len(state_df)
+    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="lp_reserves", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market liquidity provider reserves")
@@ -52,7 +54,9 @@ def plot_market_lp_reserves(state_df: pd.DataFrame, exclude_first_day: bool = Tr
     return fig
 
 
-def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
+def plot_market_spot_price(
+    state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True
+) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
@@ -70,7 +74,7 @@ def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_day: bool = Tru
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df)-1 if exclude_last_day else len(state_df)
+    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="spot_price", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market spot price")
@@ -79,7 +83,7 @@ def plot_market_spot_price(state_df: pd.DataFrame, exclude_first_day: bool = Tru
     return fig
 
 
-def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exclude_first_day = True) -> Figure:
+def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exclude_first_day=True) -> Figure:
     r"""Plot the agent pnl
 
     Parameters
@@ -107,7 +111,8 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
     axis.set_xlabel("Day")
     return fig
 
-def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day = True) -> Figure:
+
+def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day=True) -> Figure:
     r"""Plot the lp pnl
 
     Parameters
@@ -123,7 +128,7 @@ def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day = True) -> Figure:
     """
     num_agents = 1
     start_idx = 0
-    end_idx = len(state_df)-1 if exclude_last_day else len(state_df)
+    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
     for agent_id in range(start_idx, num_agents):
@@ -152,7 +157,7 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclud
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df)-1 if exclude_last_day else len(state_df)
+    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="pool_apr_percent", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market pool APR")
