@@ -1,7 +1,8 @@
-FROM matthewfeickert/docker-python3-ubuntu:latest
-WORKDIR /app/
+FROM python:3.8.16-bullseye
+WORKDIR /app
 COPY . ./
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-dev.txt
-RUN pip install -e .
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements-dev.txt
+RUN python -m pip install -e .
+RUN python -m pip install jupyter
