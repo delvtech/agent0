@@ -40,7 +40,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-                time_remaining = StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch)
+                time_remaining = StretchedTime(
+                    days=test_case.days_remaining,
+                    time_stretch=time_stretch,
+                )
 
                 expected_result = results_by_model[model_type]
 
@@ -53,23 +56,23 @@ class TestCalcInGivenOut(unittest.TestCase):
                 np.testing.assert_almost_equal(
                     trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
-                    err_msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
+                    err_msg=f"{model_name} test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 np.testing.assert_almost_equal(
                     trade_result.breakdown.without_fee,
                     expected_result.without_fee,
-                    err_msg=f"test {test_number + 1} unexpected without_fee",
+                    err_msg=f"{model_name} test {test_number + 1} unexpected without_fee",
                 )
                 if model_type in {"yieldspace", "hyperdrive"}:
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.fee,
                         expected_result.fee,
-                        err_msg=f"test {test_number + 1} unexpected yieldspace fee",
+                        err_msg=f"{model_name} test {test_number + 1} unexpected yieldspace fee",
                     )
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.with_fee,
                         expected_result.with_fee,
-                        err_msg=f"test {test_number + 1} unexpected yieldspace with_fee",
+                        err_msg=f"{model_name} test {test_number + 1} unexpected yieldspace with_fee",
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be or "YieldSpace", not {model_name}')

@@ -1311,8 +1311,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
             for pricing_model in pricing_models:
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
-
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
+                time_remaining = StretchedTime(
+                    days=test_case.days_remaining,
+                    time_stretch=time_stretch,
+                )
 
                 expected_result = results_by_model[model_type]
 
@@ -1320,7 +1323,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=test_case.in_,
                     market_state=test_case.market_state,
-                    time_remaining=StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch),
+                    time_remaining=time_remaining,
                 )
                 np.testing.assert_almost_equal(
                     trade_result.breakdown.without_fee_or_slippage,
