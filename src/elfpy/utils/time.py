@@ -172,14 +172,14 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to 1
     normalizing_constant : float
-        Amount of days to use as a normalization factor. Defaults to 365
+        Amount of days to use as a normalization factor
+        Defaults to 365
 
     Returns
     -------
     float
         Time remaining until term maturity, in normalized and stretched time
     """
-
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
     time_remaining = stretch_time(normed_days_remaining, time_stretch)
     return time_remaining
@@ -203,7 +203,6 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     float
         Time remaining until term maturity, in days
     """
-
     normed_days_remaining = unstretch_time(time_remaining, time_stretch)
     days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
     return days_remaining

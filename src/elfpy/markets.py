@@ -11,6 +11,7 @@ from elfpy.types import (
     MarketActionType,
     MarketDeltas,
     StretchedTime,
+    FrozenStretchedTime,
     Quantity,
     TokenType,
 )
@@ -46,13 +47,13 @@ class Market:
             trade_fee_percent=0,
             redemption_fee_percent=0,
         ),
-        position_duration: StretchedTime = StretchedTime(365, 1),
+        position_duration: FrozenStretchedTime = FrozenStretchedTime(365, 1, 365),
     ):
         # market state variables
         self.time: float = 0  # t: years unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
-        self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
+        self.position_duration: FrozenStretchedTime = position_duration  # how long do positions take to mature
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -193,19 +194,24 @@ class Market:
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
-            rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.position_duration)
+            rate = price_utils.calc_apr_from_spot_price(
+                price=self.spot_price,
+                time_remaining=self.position_duration,
+            )
         return rate
 
     @property
     def spot_price(self):
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
+        # TODO: Negative values should never happen, but do because of rounding errors.
+        #       Write checks to remedy this in the market.
         if self.market_state.share_reserves == 0:  # market is empty
             spot_price = np.nan
         else:
             spot_price = self.pricing_model.calc_spot_price_from_reserves(
                 market_state=self.market_state,
-                time_remaining=self.position_duration,
+                position_duration=self.position_duration,
             )
         return spot_price
 

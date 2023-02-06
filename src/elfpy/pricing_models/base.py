@@ -13,6 +13,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    FrozenStretchedTime,
     TokenType,
     TradeResult,
 )
@@ -35,7 +36,7 @@ class PricingModel(ABC):
         self,
         out: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -45,7 +46,7 @@ class PricingModel(ABC):
         self,
         in_: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -56,7 +57,7 @@ class PricingModel(ABC):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -67,7 +68,7 @@ class PricingModel(ABC):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -78,7 +79,7 @@ class PricingModel(ABC):
         lp_in: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -102,7 +103,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         share_reserves: float,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
         init_share_price: float = 1,
         share_price: float = 1,
     ):
@@ -184,7 +185,7 @@ class PricingModel(ABC):
         # TODO: Fields like position_duration and fee_percent could arguably be
         # wrapped up into a "MarketContext" value that includes the state as
         # one of its fields.
-        position_duration: StretchedTime,
+        position_duration: FrozenStretchedTime,
     ) -> tuple[float, float]:
         """Returns the reserve volumes and total supply
 
@@ -266,7 +267,7 @@ class PricingModel(ABC):
     def calc_spot_price_from_reserves(
         self,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        position_duration: FrozenStretchedTime,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -282,8 +283,8 @@ class PricingModel(ABC):
         ----------
         market_state: MarketState
             The reserves and share prices of the pool.
-        time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch).
+        position_duration : FrozenStretchedTime
+            The time until expiry for the asset (uses time stretched duration)
 
         Returns
         -------
@@ -291,17 +292,19 @@ class PricingModel(ABC):
             The spot price of principal tokens.
         """
         return float(
-            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
+            self._calc_spot_price_from_reserves_high_precision(
+                market_state=market_state, position_duration=position_duration
+            )
         )
 
     def _calc_spot_price_from_reserves_high_precision(
         self,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        position_duration: FrozenStretchedTime,
     ) -> Decimal:
         r"""
-        Calculates the spot price of base in terms of bonds. This variant returns
-        the result in a high precision format.
+        Calculates the current market spot price of base in terms of bonds.
+        This variant returns the result in a high precision format.
 
         The spot price is defined as:
 
@@ -314,8 +317,8 @@ class PricingModel(ABC):
         ----------
         market_state: MarketState
             The reserves and share prices of the pool.
-        time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch).
+        position_duration : FrozenStretchedTime
+            The time until expiry for the asset (uses time stretched duration)
 
         Returns
         -------
@@ -326,18 +329,16 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-
         # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
         # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
         )
-        # p = ((y + s)/(mu*z))^(-tau)
-        # p = ((2y + cz)/(mu*z))^(-tau)
+        # p = ((y + s)/(mu*z))^(-tau) = ((2y + cz)/(mu*z))^(-tau)
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
-        ) ** Decimal(-time_remaining.stretched_time)
+        ) ** Decimal(-position_duration.stretched_time)
         return spot_price
 
     def calc_apr_from_reserves(
@@ -359,7 +360,7 @@ class PricingModel(ABC):
     def get_max_long(
         self,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum long the market can support using the bisection
@@ -450,7 +451,7 @@ class PricingModel(ABC):
     def get_max_short(
         self,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum short the market can support using the bisection
@@ -462,7 +463,7 @@ class PricingModel(ABC):
             The reserves and share prices of the pool.
         fee_percent : float
             The fee percent charged by the market.
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns
@@ -541,7 +542,7 @@ class PricingModel(ABC):
         self,
         quantity: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
 

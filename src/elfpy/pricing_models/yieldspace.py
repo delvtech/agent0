@@ -10,6 +10,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    FrozenStretchedTime,
     TokenType,
     TradeBreakdown,
     TradeResult,
@@ -42,7 +43,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -148,7 +149,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float, float]:
         r"""
         Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -157,6 +158,7 @@ class YieldSpacePricingModel(PricingModel):
             y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
 
         """
+        # TODO: Delete this from here & base? not used or tested.
         assert d_base > 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected d_base > 0, not {d_base}!"
         assert market_state.share_reserves >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
@@ -534,7 +536,7 @@ class YieldSpacePricingModel(PricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a

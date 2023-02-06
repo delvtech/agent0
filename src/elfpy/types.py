@@ -58,41 +58,53 @@ class Quantity:
     unit: TokenType
 
 
+@dataclass
 class StretchedTime:
     r"""A stretched time value with the time stretch"""
+    days: float
+    time_stretch: float
+    normalizing_constant: float
 
-    # TODO: Improve this constructor so that StretchedTime can be constructed
-    # from years.
-    def __init__(self, days: float, time_stretch: float, normalizing_constant: float = 365):
-        self._days = days
-        self._time_stretch = time_stretch
-        self._stretched_time = time_utils.days_to_time_remaining(
-            self._days, self._time_stretch, normalizing_constant=normalizing_constant
-        )
-        self.normalizing_constant = normalizing_constant
-
-    @property
-    def days(self):
-        r"""Format time as days"""
-        return self._days
+    def __post_init__(self):
+        self.stretched_time = time_utils.days_to_time_remaining(self.days, self.time_stretch, self.normalizing_constant)
 
     @property
     def normalized_time(self):
         r"""Format time as normalized days"""
         return time_utils.norm_days(
-            self._days,
+            self.days,
             self.normalizing_constant,
         )
 
-    @property
-    def stretched_time(self):
-        r"""Format time as stretched time"""
-        return self._stretched_time
+    def __str__(self):
+        output_string = (
+            "Time components:"
+            f" {self.days=};"
+            f" {self.normalized_time=};"
+            f" {self.stretched_time=};"
+            f" {self.time_stretch=};"
+        )
+        return output_string
+
+
+@dataclass(frozen=True)
+class FrozenStretchedTime:
+    r"""A stretched time value with the time stretch"""
+    days: float
+    time_stretch: float
+    normalizing_constant: float
+
+    def __post_init__(self):
+        assert self.days == self.normalizing_constant
+        self.stretched_time = time_utils.days_to_time_remaining(self.days, self.time_stretch, self.normalizing_constant)
 
     @property
-    def time_stretch(self):
-        r"""The time stretch constant"""
-        return self._time_stretch
+    def normalized_time(self):
+        r"""Format time as normalized days"""
+        return time_utils.norm_days(
+            self.days,
+            self.normalizing_constant,
+        )
 
     def __str__(self):
         output_string = (
