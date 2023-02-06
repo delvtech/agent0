@@ -175,9 +175,9 @@ class YieldSpacePricingModel(PricingModel):
             f"Expected lp_reserves >= 0, not {market_state.lp_reserves}!"
         )
         assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
-        assert 1 > time_remaining.normalized_time >= 0, (
+        assert 1 >= time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+            f"expected 1 >= time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
         assert time_remaining.stretched_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "

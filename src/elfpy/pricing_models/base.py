@@ -575,9 +575,9 @@ class PricingModel(ABC):
             "pricing_models.calc_in_given_out: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
-        assert 1 > time_remaining.stretched_time >= 0, (
+        assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.calc_in_given_out: ERROR: "
-            f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+            f"expected 1 >= time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.
