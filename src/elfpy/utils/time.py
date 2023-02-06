@@ -59,7 +59,7 @@ def year_as_datetime(start_time: datetime, year: float) -> datetime:
     return start_time + delta_time
 
 
-def get_years_remaining(market_time: float, mint_time: float, token_duration: float) -> float:
+def get_years_remaining(market_time: float, mint_time: float, num_position_days: float) -> float:
     r"""Get the year fraction remaining on a token
 
     Parameters
@@ -69,7 +69,7 @@ def get_years_remaining(market_time: float, mint_time: float, token_duration: fl
     mint_time : float
         Time at which the token in question was minted, relative to market_time,
         in fractions of a year. Should be less than market_time.
-    token_duration : float
+    num_position_days : float
         Total duration of the token's term, in fractions of a year
 
     Returns
@@ -82,7 +82,7 @@ def get_years_remaining(market_time: float, mint_time: float, token_duration: fl
             f"elfpy.utils.time.get_yearfrac_remaining: ERROR: {mint_time=} must be less than {market_time=}."
         )
     yearfrac_elapsed = market_time - mint_time
-    time_remaining = np.maximum(token_duration - yearfrac_elapsed, 0)
+    time_remaining = np.maximum(num_position_days - yearfrac_elapsed, 0)
     return time_remaining
 
 

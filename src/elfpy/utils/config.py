@@ -67,7 +67,7 @@ class SimulatorConfig:
     agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
 
-    token_duration: int = field(default=365, metadata={"hint": "asdf"})
+    num_position_days: int = field(default=365, metadata={"hint": "Term length in days of a position"})
 
     # vault
     compound_vault_apr: bool = field(
