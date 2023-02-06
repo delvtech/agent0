@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import unittest
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
-from elfpy.types import MarketDeltas, MarketState, Quantity, FrozenStretchedTime, TokenType, TradeResult
+from elfpy.types import MarketDeltas, MarketState, Quantity, StretchedTime, FrozenStretchedTime, TokenType, TradeResult
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
@@ -18,7 +18,7 @@ class TestCaseGetMax:
     """Dataclass for get_max_long test cases"""
 
     market_state: MarketState
-    time_remaining: FrozenStretchedTime
+    time_remaining: StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -48,7 +48,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -63,7 +63,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -78,7 +78,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -93,7 +93,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -108,7 +108,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -123,7 +123,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -138,7 +138,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.5,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -153,7 +153,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -168,7 +168,7 @@ class TestGetMax(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
                 ),
-                time_remaining=FrozenStretchedTime(
+                time_remaining=StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365
                 ),
             ),
@@ -243,7 +243,12 @@ class TestGetMax(unittest.TestCase):
 
         # Ensure that the pool is in a valid state after the trade.
         apr = pricing_model.calc_apr_from_reserves(
-            market_state=market_state, position_duration=test_case.time_remaining
+            market_state=market_state,
+            position_duration=FrozenStretchedTime(
+                days=test_case.time_remaining.normalizing_constant,
+                time_stretch=test_case.time_remaining.time_stretch,
+                normalizing_constant=test_case.time_remaining.normalizing_constant,
+            ),
         )
         self.assertGreaterEqual(apr, 0.0)
         self.assertGreaterEqual(
