@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 
 from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime, FrozenStretchedTime, TokenType
+from elfpy.types import MarketState, Quantity, FrozenStretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -40,7 +40,7 @@ class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
     market_state: MarketState
-    time_remaining: FrozenStretchedTime
+    position_duration: FrozenStretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -116,7 +116,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -130,7 +130,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -144,7 +144,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -158,7 +158,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -172,7 +172,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -186,7 +186,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -200,7 +200,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -214,7 +214,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=91
                 ),
             ),
@@ -228,7 +228,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                position_duration=StretchedTime(
+                position_duration=FrozenStretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=91
                 ),
             ),

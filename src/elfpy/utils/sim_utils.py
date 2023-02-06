@@ -10,7 +10,7 @@ from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
-    StretchedTime,
+    FrozenStretchedTime,
     TokenType,
     RandomSimulationVariables,
 )
@@ -259,7 +259,7 @@ def get_market(
             trade_fee_percent=trade_fee_percent,  # g
             redemption_fee_percent=redemption_fee_percent,  # g
         ),
-        position_duration=StretchedTime(
+        position_duration=FrozenStretchedTime(
             days=num_position_days,
             time_stretch=pricing_model.calc_time_stretch(target_pool_apr),
             normalizing_constant=num_position_days,

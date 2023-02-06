@@ -96,7 +96,11 @@ class FrozenStretchedTime:
 
     def __post_init__(self):
         assert self.days == self.normalizing_constant
-        self.stretched_time = time_utils.days_to_time_remaining(self.days, self.time_stretch, self.normalizing_constant)
+
+    @property
+    def stretched_time(self):
+        r"""Returns days / normalizing_constant / time_stretch"""
+        return time_utils.days_to_time_remaining(self.days, self.time_stretch, self.normalizing_constant)
 
     @property
     def normalized_time(self):

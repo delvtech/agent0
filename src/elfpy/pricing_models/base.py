@@ -344,19 +344,16 @@ class PricingModel(ABC):
     def calc_apr_from_reserves(
         self,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        position_duration: FrozenStretchedTime,
     ) -> float:
         """Returns the apr given reserve amounts"""
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
-            time_remaining,
+            position_duration,
         )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
+        apr = price_utils.calc_apr_from_spot_price(spot_price, position_duration)
         return apr
 
-    # TODO: This needs to be tested more rigorously. Some of these conditionals
-    # seem unnecessary. If they aren't document why they aren't. Otherwise,
-    # remove them.
     def get_max_long(
         self,
         market_state: MarketState,
@@ -379,6 +376,11 @@ class PricingModel(ABC):
         -------
         float
             The maximum amount of base that can be used to purchase bonds.
+
+        .. todo:: This needs to be tested more rigorously.
+            Some of these conditionals seem unnecessary.
+            If they aren't document why they aren't.
+            Otherwise, remove them.
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
@@ -433,7 +435,14 @@ class PricingModel(ABC):
                 # proceed with bisection with larger bond purchases.
                 if (
                     market_state.bond_reserves < d_bonds
-                    or self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining)
+                    or self.calc_apr_from_reserves(
+                        market_state=market_state_post_trade,
+                        position_duration=FrozenStretchedTime(
+                            days=time_remaining.normalizing_constant,
+                            time_stretch=time_remaining.time_stretch,
+                            normalizing_constant=time_remaining.normalizing_constant,
+                        ),
+                    )
                     < 0
                     or market_state_post_trade.share_price * market_state_post_trade.share_reserves
                     < market_state_post_trade.base_buffer
@@ -519,7 +528,15 @@ class PricingModel(ABC):
                 # we've found a new max short amount, so we store that value and
                 # proceed with bisection with larger bond purchases.
                 if (
-                    self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining) < 0
+                    self.calc_apr_from_reserves(
+                        market_state=market_state_post_trade,
+                        position_duration=FrozenStretchedTime(
+                            days=time_remaining.normalizing_constant,
+                            time_stretch=time_remaining.time_stretch,
+                            normalizing_constant=time_remaining.normalizing_constant,
+                        ),
+                    )
+                    < 0
                     or market_state_post_trade.share_price * market_state_post_trade.share_reserves
                     < market_state_post_trade.base_buffer
                     or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer
@@ -533,7 +550,7 @@ class PricingModel(ABC):
 
         return last_maybe_max_short
 
-    def calc_time_stretch(self, apr):
+    def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
         apr_percent = apr * 100  # bounded between 0 and 100
         return 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
