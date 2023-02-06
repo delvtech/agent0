@@ -120,11 +120,13 @@ class BaseMarketTest(unittest.TestCase):
         amount_of_bonds_sold = agent_deltas.shorts[0].balance
         # sell those bonds to close the short (partial is the amount of the short to close, 1.0 by default)
         trade_amount = amount_of_bonds_sold * partial
+        mint_time = 0
         if tick_time:
             simulator.market.tick(simulator.market_step_size())
         market_deltas, agent_deltas = simulator.market.close_short(
-            mint_time=0,
+            mint_time=mint_time,
             wallet_address=1,
+            open_share_price=agent.wallet.shorts[mint_time].open_share_price,
             trade_amount=trade_amount,  # in bonds: that's the thing you owe, and need to buy back
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
@@ -233,7 +235,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             # margin is the amount of base asset that is in the agent's margin account
             # it is composed of two parts: proceeds from sale of bonds (d_base)
             # and the additional base deposited by the agent to cover the worst case scenario (max_loss)
-            shorts={0: Short(balance=d_bonds, margin=d_margin)},
+            shorts={0: Short(balance=d_bonds, open_share_price=1)},
             fees_paid=fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
@@ -262,7 +264,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             address=1,
             base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, margin=-d_margin)
+                0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -292,7 +294,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             address=1,
             base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, margin=-d_margin)
+                0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -325,7 +327,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             address=1,
             base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, margin=-d_margin)
+                0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -358,7 +360,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             address=1,
             base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, margin=-d_margin)
+                0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )

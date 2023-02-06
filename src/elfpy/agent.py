@@ -46,7 +46,7 @@ class Agent:
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0, open_share_price=0.0
     ) -> MarketAction:
         r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
@@ -71,6 +71,7 @@ class Agent:
             # next two variables are set automatically by the basic agent class
             wallet_address=self.wallet.address,
             mint_time=mint_time,
+            open_share_price=open_share_price,
         )
         return agent_action
 
@@ -282,7 +283,18 @@ class Agent:
                 )
                 if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
                     self.wallet.shorts[mint_time].balance += short.balance
-                    self.wallet.shorts[mint_time].margin += short.margin
+
+                    old_balance = self.wallet.shorts[mint_time].balance
+                    old_share_price = self.wallet.shorts[mint_time].open_share_price
+
+                    # if the balance is positive, we are opening a short, therefore do a weighted
+                    # mean for the open share price.  this covers an edge case where two shorts are
+                    # opened for the same account in the same block.  if the balance is negative, we
+                    # don't want to updat the open_short_price
+                    if short.balance > 0:
+                        self.wallet.shorts[mint_time].open_share_price = (
+                            short.open_share_price * short.balance + old_share_price * old_balance
+                        ) / (short.balance + old_balance)
                 else:
                     self.wallet.shorts.update({mint_time: short})
             if self.wallet.shorts[mint_time].balance == 0:
@@ -321,6 +333,7 @@ class Agent:
                         action_type=MarketActionType.CLOSE_SHORT,
                         trade_amount=short.balance,
                         mint_time=mint_time,
+                        open_share_price=short.open_share_price,
                     )
                 )
         if self.wallet.lp_tokens > 0:
@@ -363,7 +376,15 @@ class Agent:
 
         # Calculate the total pnl of the trader.
         longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
-        shorts_value = sum(short.margin - short.balance * price for short in shorts) if len(shorts) > 0 else 0
+        shorts_value = (
+            sum(
+                # take the interest from the margin and subtract the bonds shorted at the current price
+                (market.market_state.share_price / short.open_share_price) * short.balance - price * short.balance
+                for short in shorts
+            )
+            if len(shorts) > 0
+            else 0
+        )
         total_value = base + longs_value + shorts_value
         profit_and_loss = total_value - self.budget
 

@@ -106,8 +106,11 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     trade_amount: float
+    # TODO: pass in the entire wallet instead of wallet_address and the open_share_price
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
+    # the share price when a short was created
+    open_share_price: float
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: float = 0
 

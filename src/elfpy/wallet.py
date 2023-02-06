@@ -33,15 +33,15 @@ class Short:
     ----------
     balance : float
         The amount of bonds that the position is short.
-    margin : float
-        The amount of margin the short position has.
+    open_share_price: float
+        The share price at the time the short was opened.
     """
 
     balance: float
-    margin: float
+    open_share_price: float
 
     def __str__(self):
-        return f"Short(balance: {self.balance}, margin: {self.margin})"
+        return f"Short(balance: {self.balance}, margin: {self.open_share_price})"
 
 
 @dataclass(frozen=False)
@@ -134,7 +134,7 @@ class Wallet:
         shorts_value = 0
         for (mint_time, short) in self.shorts.items():
             base = (
-                market.close_short(self.address, short.balance, mint_time)[1].base
+                market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].base
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
