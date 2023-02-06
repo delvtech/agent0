@@ -41,7 +41,7 @@ class Short:
     open_share_price: float
 
     def __str__(self):
-        return f"Short(balance: {self.balance}, margin: {self.open_share_price})"
+        return f"Short(balance: {self.balance}, open_share_price: {self.open_share_price})"
 
 
 @dataclass(frozen=False)

@@ -110,7 +110,7 @@ class MarketAction:
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
     # the share price when a short was created
-    open_share_price: float
+    open_share_price: float = 1
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: float = 0
 
