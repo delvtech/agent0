@@ -133,8 +133,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_in_given_out(
             out=Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
             market_state=market_state,
-            time_remaining=StretchedTime(
-                days=time_remaining.normalizing_constant,
+            time_remaining=StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+                days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
             ),
@@ -275,8 +275,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_out_given_in(
             in_=Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
             market_state=market_state,
-            time_remaining=StretchedTime(
-                days=time_remaining.normalizing_constant,
+            time_remaining=StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+                days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
             ),
