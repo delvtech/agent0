@@ -535,8 +535,8 @@ class PricingModel(ABC):
 
     def calc_time_stretch(self, apr):
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
-        apr_percent = apr * 100
-        return 3.09396 / (0.02789 * apr_percent)
+        apr_percent = apr * 100  # bounded between 0 and 100
+        return 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
 
     def check_input_assertions(
         self,
