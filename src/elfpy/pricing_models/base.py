@@ -17,7 +17,6 @@ from elfpy.types import (
     TradeResult,
 )
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
