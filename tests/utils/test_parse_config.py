@@ -66,7 +66,7 @@ class TestParseSimulationConfig(unittest.TestCase):
             "simulator": {
                 "num_trading_days": 180,
                 "num_blocks_per_day": 7200,
-                "token_duration": 180,
+                "num_position_days": 180,
                 "agent_policies": ["single_long"],
                 "random_seed": 123,
                 "shuffle_users": True,
