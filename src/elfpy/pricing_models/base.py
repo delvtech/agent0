@@ -17,6 +17,7 @@ from elfpy.types import (
     TradeResult,
 )
 import elfpy.utils.price as price_utils
+import elfpy.utils.time as time_utils
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
@@ -133,9 +134,10 @@ class PricingModel(ABC):
         """
         # TODO: Package up some of these arguments into market_state
         # pylint: disable=too-many-arguments
+        time_remaining_ = time_utils.norm_days(time_remaining.days)
+        stretched_time_remaining = time_remaining_ / time_remaining.time_stretch
         bond_reserves = (share_reserves / 2) * (
-            init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
-            - share_price
+            init_share_price * (1 + target_apr * time_remaining_) ** (1 / stretched_time_remaining) - share_price
         )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
 
@@ -171,8 +173,10 @@ class PricingModel(ABC):
 
         """
         # TODO: Write a test for this function
+        time_remaining_ = time_utils.norm_days(time_remaining.days)
+        stretched_time_remaining = time_remaining_ / time_remaining.time_stretch
         share_reserves = bond_reserves / (
-            init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            init_share_price * (1 - target_apr * time_remaining_) ** (1 / stretched_time_remaining)
         )  # z = y / (mu * (1 - rt)**(1/tau))
         return share_reserves
 
