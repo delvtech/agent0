@@ -113,7 +113,7 @@ html_theme_options = {
 }
 html_short_title = "Documentation"
 html_logo = "_static/logo.svg"
-html_favicon = '_static/favicon.ico'
+html_favicon = "_static/favicon.ico"
 html_title = f"{project} v{release} documentation"
 
 language = "en"
