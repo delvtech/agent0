@@ -144,6 +144,7 @@ html_title = f"{project} v{release} documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 html_short_title = "Documentation"
+html_logo = "_static/logo.svg"
 
 # -- Options for todo extension ----------------------------------------------
 
