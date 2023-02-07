@@ -41,7 +41,7 @@ class BaseLogTest(unittest.TestCase):
             logging.CRITICAL,  # 50
         ]
         handler_types = ["file", "stream"]
-        for (level, handler_type) in itertools.product(logging_levels, handler_types):
+        for level, handler_type in itertools.product(logging_levels, handler_types):
             if handler_type == "file":
                 log_name = f"test_logging_level-{level}.log"
                 handler = logging.FileHandler(os.path.join(log_dir, log_name), "w")
