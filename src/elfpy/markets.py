@@ -46,7 +46,7 @@ class Market:
             trade_fee_percent=0,
             redemption_fee_percent=0,
         ),
-        position_duration: StretchedTime = StretchedTime(365, 1),
+        position_duration: StretchedTime = StretchedTime(365, 1, 365),
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
@@ -185,7 +185,7 @@ class Market:
         self.market_state.apply_delta(market_deltas)
 
     @property
-    def rate(self):
+    def rate(self) -> float:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -193,11 +193,11 @@ class Market:
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
-            rate = price_utils.calc_apr_from_spot_price(self.spot_price, self.position_duration)
+            rate = price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
         return rate
 
     @property
-    def spot_price(self):
+    def spot_price(self) -> float:
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
