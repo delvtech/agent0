@@ -205,8 +205,7 @@ class Market:
             spot_price = np.nan
         else:
             spot_price = self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self.market_state,
-                position_duration=self.position_duration,
+                market_state=self.market_state, time_remaining=self.position_duration
             )
         return spot_price
 

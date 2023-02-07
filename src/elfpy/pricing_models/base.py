@@ -95,7 +95,7 @@ class PricingModel(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime | FrozenStretchedTime) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError
 
@@ -182,10 +182,10 @@ class PricingModel(ABC):
         market_state: MarketState,
         target_liquidity: float,
         target_apr: float,
-        # TODO: Fields like position_duration and fee_percent could arguably be
+        # TODO: Fields like time_remaining and fee_percent could arguably be
         # wrapped up into a "MarketContext" value that includes the state as
         # one of its fields.
-        position_duration: StretchedTime | FrozenStretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> tuple[float, float]:
         """Returns the reserve volumes and total supply
 
@@ -203,7 +203,7 @@ class PricingModel(ABC):
             Amount of liquidity that the simulation is trying to achieve in a given market
         target_apr : float
             Desired APR for the seeded market
-        position_duration : float
+        time_remaining : StretchedTime | FrozenStretchedTime
             The duration of bond positions in this market
 
         Returns
@@ -217,7 +217,7 @@ class PricingModel(ABC):
         bond_reserves = self.calc_bond_reserves(
             target_apr,
             share_reserves,
-            position_duration,
+            time_remaining,
             market_state.init_share_price,
             market_state.share_price,
         )
@@ -267,7 +267,7 @@ class PricingModel(ABC):
     def calc_spot_price_from_reserves(
         self,
         market_state: MarketState,
-        position_duration: FrozenStretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -283,7 +283,7 @@ class PricingModel(ABC):
         ----------
         market_state: MarketState
             The reserves and share prices of the pool.
-        position_duration : FrozenStretchedTime
+        time_remaining : StretchedTime
             The time until expiry for the bond asset (uses time stretched duration).
 
         Returns
@@ -292,15 +292,13 @@ class PricingModel(ABC):
             The spot price of principal tokens.
         """
         return float(
-            self._calc_spot_price_from_reserves_high_precision(
-                market_state=market_state, position_duration=position_duration
-            )
+            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
         )
 
     def _calc_spot_price_from_reserves_high_precision(
         self,
         market_state: MarketState,
-        position_duration: FrozenStretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> Decimal:
         r"""
         Calculates the current marketspot price of base in terms of bonds.
@@ -317,7 +315,7 @@ class PricingModel(ABC):
         ----------
         market_state: MarketState
             The reserves and share prices of the pool.
-        position_duration : FrozenStretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time until expiry for the asset (uses time stretched duration).
 
         Returns
@@ -338,13 +336,13 @@ class PricingModel(ABC):
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
-        ) ** Decimal(-position_duration.stretched_time)
+        ) ** Decimal(-time_remaining.stretched_time)
         return spot_price
 
     def calc_apr_from_reserves(
         self,
         market_state: MarketState,
-        position_duration: FrozenStretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> float:
         r"""Returns the apr given reserve amounts
 
@@ -352,14 +350,14 @@ class PricingModel(ABC):
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
-        position_duration : FrozenStretchedTime
+        time_remaining : StretchedTime
             The expiry time for the asset
         """
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
-            position_duration,
+            time_remaining,
         )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, position_duration)
+        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
         return apr
 
     def get_max_long(
@@ -442,14 +440,7 @@ class PricingModel(ABC):
                 # proceed with bisection with larger bond purchases.
                 if (
                     market_state.bond_reserves < d_bonds
-                    or self.calc_apr_from_reserves(
-                        market_state=market_state_post_trade,
-                        position_duration=FrozenStretchedTime(
-                            days=time_remaining.normalizing_constant,
-                            time_stretch=time_remaining.time_stretch,
-                            normalizing_constant=time_remaining.normalizing_constant,
-                        ),
-                    )
+                    or self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining)
                     < 0
                     or market_state_post_trade.share_price * market_state_post_trade.share_reserves
                     < market_state_post_trade.base_buffer
@@ -535,15 +526,7 @@ class PricingModel(ABC):
                 # we've found a new max short amount, so we store that value and
                 # proceed with bisection with larger bond purchases.
                 if (
-                    self.calc_apr_from_reserves(
-                        market_state=market_state_post_trade,
-                        position_duration=FrozenStretchedTime(
-                            days=time_remaining.normalizing_constant,
-                            time_stretch=time_remaining.time_stretch,
-                            normalizing_constant=time_remaining.normalizing_constant,
-                        ),
-                    )
-                    < 0
+                    self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining) < 0
                     or market_state_post_trade.share_price * market_state_post_trade.share_reserves
                     < market_state_post_trade.base_buffer
                     or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer

@@ -242,14 +242,7 @@ class TestGetMax(unittest.TestCase):
         market_state.apply_delta(delta=delta)
 
         # Ensure that the pool is in a valid state after the trade.
-        apr = pricing_model.calc_apr_from_reserves(
-            market_state=market_state,
-            position_duration=FrozenStretchedTime(
-                days=test_case.time_remaining.normalizing_constant,
-                time_stretch=test_case.time_remaining.time_stretch,
-                normalizing_constant=test_case.time_remaining.normalizing_constant,
-            ),
-        )
+        apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
         self.assertGreaterEqual(apr, 0.0)
         self.assertGreaterEqual(
             market_state.share_price * market_state.share_reserves,

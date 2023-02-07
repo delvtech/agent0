@@ -376,20 +376,11 @@ class YieldSpacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            position_duration=FrozenStretchedTime(
-                days=time_remaining.normalizing_constant,
-                time_stretch=time_remaining.time_stretch,
-                normalizing_constant=time_remaining.normalizing_constant,
-            ),
-        )
+        spot_price = self._calc_spot_price_from_reserves_high_precision(market_state, time_remaining)
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
         if out.unit == TokenType.BASE:
             in_reserves = bond_reserves + total_reserves
@@ -604,20 +595,11 @@ class YieldSpacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_reserves = share_price * share_reserves + bond_reserves
-        spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            position_duration=FrozenStretchedTime(
-                days=time_remaining.normalizing_constant,
-                time_stretch=time_remaining.time_stretch,
-                normalizing_constant=time_remaining.normalizing_constant,
-            ),
-        )
+        spot_price = self._calc_spot_price_from_reserves_high_precision(market_state, time_remaining)
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
         if in_.unit == TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
@@ -731,12 +713,16 @@ class YieldSpacePricingModel(PricingModel):
         """
         Returns the 'k' constant variable for trade mathematics
 
+
+        .. math::
+            k = \frac{c / mu} (mu z)^{1 - \tau} + (2y + c z)^(1 - \tau)
+
         Parameters
         ----------
         market_state : MarketState
             The state of the AMM
-        time_remaining : StretchedTime | FrozenStretchedTime
-            Time until expiry for the current token
+        time_remaining : StretchedTime
+            Time until expiry for the token
 
         Returns
         -------

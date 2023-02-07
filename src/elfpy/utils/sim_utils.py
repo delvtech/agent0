@@ -133,7 +133,7 @@ def get_init_lp_agent(
         market_state=market.market_state,
         target_liquidity=seed_liquidity,  # tiny seed amount ($1)
         target_apr=target_pool_apr,
-        position_duration=market.position_duration,
+        time_remaining=market.position_duration,
     )[:2]
     delta_shares = seed_liquidity
     prev_delta_shares = 0

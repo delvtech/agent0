@@ -117,7 +117,7 @@ class SingleTradeTests(BaseTradeTest):
                     market_state=simulator.market.market_state,  # used only for share_price and init_share_price
                     target_liquidity=target_liquidity,
                     target_apr=target_pool_apr,
-                    position_duration=simulator.market.position_duration,
+                    time_remaining=simulator.market.position_duration,
                 )
                 market_direct = Market(
                     pricing_model=simulator.market.pricing_model,

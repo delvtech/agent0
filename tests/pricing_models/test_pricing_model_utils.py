@@ -148,7 +148,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         ),
                         target_liquidity=test_case["target_liquidity"],
                         target_apr=test_case["target_apr"],
-                        position_duration=test_case["time_remaining"],
+                        time_remaining=test_case["time_remaining"],
                     )
             # If test was not supposed to fail, continue normal execution
             else:
@@ -159,7 +159,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     ),
                     target_liquidity=test_case["target_liquidity"],
                     target_apr=test_case["target_apr"],
-                    position_duration=test_case["time_remaining"],
+                    time_remaining=test_case["time_remaining"],
                 )
                 np.testing.assert_almost_equal(
                     test_case["expected_share_reserves"],
