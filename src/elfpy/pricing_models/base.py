@@ -101,10 +101,8 @@ class PricingModel(ABC):
     def calc_bond_reserves(
         self,
         target_apr: float,
-        share_reserves: float,
         time_remaining: StretchedTime,
-        init_share_price: float = 1,
-        share_price: float = 1,
+        market_state: MarketState,
     ):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -113,16 +111,16 @@ class PricingModel(ABC):
         ----------
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
-        share_reserves : float
-            Base asset reserves in the pool
         time_remaining : StretchedTime
             Amount of time left until bond maturity
-        time_stretch : float
-            Time stretch parameter, in years
-        init_share_price : float
-            Original share price when the pool started
-        share_price : float
-            Current share price
+        market_state : MarketState
+            MarketState object; the following attributes are used:
+                share_reserves : float
+                    Base asset reserves in the pool
+                init_share_price : float
+                    Original share price when the pool started
+                share_price : float
+                    Current share price
 
         Returns
         -------
@@ -131,11 +129,10 @@ class PricingModel(ABC):
 
         .. todo:: TODO: Write a test for this function
         """
-        # TODO: Package up some of these arguments into market_state
-        # pylint: disable=too-many-arguments
-        bond_reserves = (share_reserves / 2) * (
-            init_share_price * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
-            - share_price
+        bond_reserves = (market_state.share_reserves / 2) * (
+            market_state.init_share_price
+            * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
         )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
 
@@ -214,13 +211,14 @@ class PricingModel(ABC):
         share_reserves = target_liquidity / market_state.share_price
         # guarantees only that it hits target_apr
         bond_reserves = self.calc_bond_reserves(
-            target_apr,
-            share_reserves,
-            position_duration,
-            market_state.init_share_price,
-            market_state.share_price,
+            target_apr=target_apr,
+            time_remaining=position_duration,
+            market_state=MarketState(
+                share_reserves=share_reserves,
+                init_share_price=market_state.init_share_price,
+                share_price=market_state.share_price,
+            ),
         )
-        price = market_state.share_price
         total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
             MarketState(
                 share_reserves=share_reserves,
@@ -231,7 +229,7 @@ class PricingModel(ABC):
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             ),
-            price,
+            market_state.share_price,
         )
         # compute scaling factor to adjust reserves so that they match the target liquidity
         scaling_factor = target_liquidity / total_liquidity  # both in token units
