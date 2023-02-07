@@ -96,7 +96,7 @@ class SingleTradeTests(BaseTradeTest):
     def test_compare_agent_to_calc_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
-            for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1):
+            for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 1.1):
                 logging.debug(
                     (
                         "test_compare_agent_to_calc_liquidit:run_base_trade_test"

@@ -13,7 +13,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     ----------
     price : float
         Spot price of bonds in terms of base
-    normalized_time_remaining : StretchedTime
+    time_remaining : StretchedTime
         Time remaining until bond maturity, in yearfracs
 
     Returns

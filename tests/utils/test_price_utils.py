@@ -23,6 +23,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.95) / 0.95 / 0.5
                 #     = 0.1052631579
@@ -34,6 +35,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.99) / 0.99 / 0.5
                 #     = 0.0202020202
@@ -45,6 +47,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 1) / 1 / 0.5
                 #     = 0
@@ -56,6 +59,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.95) / 0.95 / 0.25
                 #     = 0.2105263158
@@ -67,6 +71,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=365,  # 12 months = 1 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.95) / 0.95 / 1
                 #     = 0.05263157895
@@ -78,6 +83,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
@@ -91,6 +97,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
@@ -106,6 +113,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=-91.25,  # -3 months = -0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
@@ -120,6 +128,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # APR = (1 - 1.50) / 1.50 / 0.25
                 #     = -1.333333333
@@ -156,6 +165,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0.10 * 0.5)
                 #     = 0.1052631579
@@ -167,6 +177,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0.02 * 0.5)
                 #     = 0.9900990099
@@ -178,6 +189,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0 * 0.5)
                 #     = 1
@@ -189,6 +201,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0.21 * 0.25)
                 #     = 0.2105263158
@@ -200,6 +213,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=365,  # 12 months = 1 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0.05 * 1)
                 #     = 0.05263157895
@@ -211,6 +225,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 36 * 0.25)
                 #     = 0.1
@@ -222,6 +237,7 @@ class BasePriceTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
+                    normalizing_constant=365,
                 ),
                 # price = 1 / (1 + 0 * 0.25)
                 #     = 0
@@ -231,9 +247,10 @@ class BasePriceTest(unittest.TestCase):
             {
                 "apr": 5,  # 500% apr
                 "time_remaining": StretchedTime(
-                    days=0,  # 0 months = 0 years
+                    days=0,
                     time_stretch=1,
-                ),
+                    normalizing_constant=365,
+                ),  # 0 months = 0 years
                 # price = 1 / (1 + 5 * 0)
                 #     = 0
                 "expected_result": 1.00,

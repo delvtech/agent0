@@ -114,9 +114,9 @@ class PricingModel(ABC):
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         share_reserves : float
-            base asset reserves in the pool
-        days_remaining : float
-            Amount of days left until bond maturity
+            Base asset reserves in the pool
+        time_remaining : StretchedTime
+            Amount of time left until bond maturity
         time_stretch : float
             Time stretch parameter, in years
         init_share_price : float
@@ -154,7 +154,7 @@ class PricingModel(ABC):
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         bond_reserves : float
-            token asset (pt) reserves in the pool
+            Token asset (pt) reserves in the pool
         days_remaining : float
             Amount of days left until bond maturity
         time_stretch : float
@@ -197,13 +197,13 @@ class PricingModel(ABC):
         Parameters
         ----------
         market_state : MarketState
-            the state of the market
+            The state of the market
         target_liquidity_usd : float
-            amount of liquidity that the simulation is trying to achieve in a given market
+            Amount of liquidity that the simulation is trying to achieve in a given market
         target_apr : float
-            desired APR for the seeded market
-        position_duration : float
-            the duration of positions in this market
+            Desired APR for the seeded market
+        position_duration : StretchedTime
+            The duration of bond positions in this market
 
         Returns
         -------
@@ -283,7 +283,7 @@ class PricingModel(ABC):
         market_state: MarketState
             The reserves and share prices of the pool.
         time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch).
+            The time remaining for the asset (uses time stretch).
 
         Returns
         -------
@@ -300,8 +300,8 @@ class PricingModel(ABC):
         time_remaining: StretchedTime,
     ) -> Decimal:
         r"""
-        Calculates the spot price of base in terms of bonds. This variant returns
-        the result in a high precision format.
+        Calculates the current market spot price of base in terms of bonds.
+        This variant returns the result in a high precision format.
 
         The spot price is defined as:
 
@@ -326,14 +326,12 @@ class PricingModel(ABC):
             "pricing_models.calc_spot_price_from_reserves: ERROR: "
             f"expected share_reserves > 0, not {market_state.share_reserves}!",
         )
-
         # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
         # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
         )
-        # p = ((y + s)/(mu*z))^(-tau)
-        # p = ((2y + cz)/(mu*z))^(-tau)
+        # p = ((y + s)/(mu*z))^(-tau) = ((2y + cz)/(mu*z))^(-tau)
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
@@ -345,7 +343,15 @@ class PricingModel(ABC):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> float:
-        """Returns the apr given reserve amounts"""
+        r"""Returns the apr given reserve amounts
+
+        Parameters
+        ----------
+        market_state : MarketState
+            The reserves and share prices of the pool
+        time_remaining : StretchedTime
+            The expiry time for the asset
+        """
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
             time_remaining,
@@ -353,9 +359,6 @@ class PricingModel(ABC):
         apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
         return apr
 
-    # TODO: This needs to be tested more rigorously. Some of these conditionals
-    # seem unnecessary. If they aren't document why they aren't. Otherwise,
-    # remove them.
     def get_max_long(
         self,
         market_state: MarketState,
@@ -368,21 +371,25 @@ class PricingModel(ABC):
         Parameters
         ----------
         market_state : MarketState
-            The reserves and share prices of the pool.
+            The reserves and share prices of the pool
         fee_percent : float
-            The fee percent charged by the market.
+            The fee percent charged by the market
         time_remaining : StretchedTime
-            The time remaining for the asset (incorporates time stretch).
+            The time remaining for the asset (incorporates time stretch)
 
         Returns
         -------
         float
-            The maximum amount of base that can be used to purchase bonds.
+            The maximum amount of base that can be used to purchase bonds
+
+        .. todo:: This needs to be tested more rigorously.
+            Some of these conditionals seem unnecessary.
+            If they aren't document why they aren't.
+            Otherwise, remove them.
         """
         available_bonds = market_state.bond_reserves - market_state.bond_buffer
         if available_bonds <= 0:
             return 0, 0
-
         last_maybe_max_long = 0, 0
         bond_percent = 1
         num_iters = 25
@@ -532,10 +539,10 @@ class PricingModel(ABC):
 
         return last_maybe_max_short
 
-    def calc_time_stretch(self, apr):
+    def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
-        apr_percent = apr * 100
-        return 3.09396 / (0.02789 * apr_percent)
+        apr_percent = apr * 100  # bounded between 0 and 100
+        return 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
 
     def check_input_assertions(
         self,
