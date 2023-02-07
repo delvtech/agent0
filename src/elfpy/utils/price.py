@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.types import StretchedTime
-from elfpy.utils import time as time_utils
 
 
 ### Spot Price and APR ###
