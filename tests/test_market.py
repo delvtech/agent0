@@ -43,8 +43,8 @@ class BaseMarketTest(unittest.TestCase):
             "target_pool_apr": 0.05,
             "vault_apr": {"type": "constant", "value": 0.05},
             # minimal simulation steps, we only care to investigate the first day's trades
-            "num_trading_days": 10,
-            "num_position_days": 90,
+            "num_trading_days": 90,
+            "num_position_days": 365,
             "num_blocks_per_day": 3,
             "shuffle_users": False,  # make it deterministic
         }
@@ -157,11 +157,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open long of 100 bonds"""
         agent_policy = "single_long:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result = 101.10958152508731  # taken from pricing model output, not tested here
+        trade_result = 104.49996792100823  # taken from pricing model output, not tested here
+
         # assign to appropriate token, for readability using absolute values, assigning +/- below
         d_base = 100
         d_bonds = trade_result
-        fees_paid = 0.12328767123287677  # taken from pricing model output, not tested here
+        fees_paid = 0.5000000000000006  # taken from pricing model output, not tested here
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base,  # base asset increases because agent is selling base into market to buy bonds
@@ -184,12 +185,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open long of 100 bonds, close long of 100 bonds"""
         agent_policy = "single_long:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result_open_long_in_bonds = 101.10958152508731  # pricing model output of first test, not tested here
-        trade_result_close_long_in_base = 99.7550614568167  # pricing model output of second test, not tested here
+        trade_result_open_long_in_bonds = 104.49996792100823  # pricing model output of first test, not tested here
+        trade_result_close_long_in_base = 99.02612981627104  # pricing model output of second test, not tested here
         # assign to appropriate token, for readability using absolute values, assigning +/- below
         d_bonds = trade_result_open_long_in_bonds  # result of the first trade
         d_base = trade_result_close_long_in_base  # result of the second trade
-        trade_fees_paid = 0.12313751471255564  # taken from pricing model output, not tested here
+        trade_fees_paid = 0.4976188948619445  # taken from pricing model output, not tested here
         redemption_fees_paid = 0  # taken from pricing model output, not tested here
 
         expected_market_deltas = MarketDeltas(
@@ -213,9 +214,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open short of 100 bonds"""
         agent_policy = "single_short:amount_to_trade=100"
         # agent wants to go short 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result = 98.66034458202579  # taken from pricing model output, not tested here
+        trade_result = 94.76187705075156  # taken from pricing model output, not tested here
         max_loss = 100 - trade_result  # worst case scenario: price goes up, forced to buy back at 100
-        fees_paid = 0.12178619756427611  # taken from pricing model output, not tested here
+        fees_paid = 0.47619047619047666  # taken from pricing model output, not tested here
         # assign to appropriate token, for readability using absolute values, assigning +/- below
         d_base = trade_result  # proceeds from your sale of bonds, go into your margin account so you don't rug
         d_bonds = 100
@@ -246,12 +247,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open short of 100 bonds, close short of 100 bonds"""
         agent_policy = "single_short:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result_close_short_in_base = 98.90393146665825  # pricing model output of second test, not tested here
+        trade_result_close_short_in_base = 95.71431342534422  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
-        fees_paid = 0.12178619756427611  # taken from pricing model output, not tested here
+        fees_paid = 0.47619047619047666  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
@@ -275,12 +276,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open short of 100 bonds, close short of 100 bonds"""
         agent_policy = "single_short:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result_close_short_in_base = 98.9079662511094  # pricing model output of second test, not tested here
+        trade_result_close_short_in_base = 95.71813267820151  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
-        fees_paid = 0.12133788526308154  # taken from pricing model output, not tested here
+        fees_paid = 0.47576611218819087  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
@@ -304,7 +305,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open short of 100 bonds, close short of 50 bonds"""
         agent_policy = "single_short:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result_close_short_in_base = 49.451963922146845  # pricing model output of second test, not tested here
+        trade_result_close_short_in_base = 47.8571497849134  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 50  # face value
@@ -312,7 +313,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         # calculate the improvement in your max loss (worst case scenario - cost to close the short)
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
-        fees_paid = 0.060893098782138055  # taken from pricing model output, not tested here
+        fees_paid = 0.23809523809523833  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
@@ -336,7 +337,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
         agent_policy = "single_short:amount_to_trade=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
-        trade_result_close_short_in_base = 49.45398132093731  # pricing model output of second test, not tested here
+        trade_result_close_short_in_base = 47.85905941713286  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
         d_base_market = trade_result_close_short_in_base  # result of the second trade
         d_bonds = 50  # face value
@@ -344,7 +345,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         # calculate the improvement in your max loss (worst case scenario - cost to close the short)
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
-        fees_paid = 0.06066894263154077  # taken from pricing model output, not tested here
+        fees_paid = 0.23788305609409544  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
