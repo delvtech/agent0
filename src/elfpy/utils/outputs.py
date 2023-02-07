@@ -45,7 +45,8 @@ def plot_market_lp_reserves(
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
+    first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
+    end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="lp_reserves", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market liquidity provider reserves")
@@ -74,7 +75,8 @@ def plot_market_spot_price(
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
+    first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
+    end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="spot_price", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market spot price")
@@ -101,7 +103,8 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
     """
     num_agents = len([col for col in state_df if col.startswith("agent") and col.endswith("pnl")])
     agent_start_idx = 1 if exclude_first_agent else 0
-    day_start_idx = 1 if exclude_first_day else 0
+    first_trade_that_is_on_second_day = min(state_df.index[state_df.day == min(state_df.day) + 1])
+    day_start_idx = first_trade_that_is_on_second_day if exclude_first_day is True else 0
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
     for agent_id in range(agent_start_idx, num_agents):
@@ -112,13 +115,13 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
     return fig
 
 
-def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day=True) -> Figure:
+def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
     r"""Plot the lp pnl
 
     Parameters
     ----------
-    simulator : Simulator
-        An instantiated simulator that has run trades with agents
+    trades_agg : DataFrame
+        Pandas dataframe containing the aggregated simulation_state keys as columns, as well as some computed columns
     exclude_last_day : bool
         If true, excludes the last day from the plot
 
@@ -128,11 +131,12 @@ def plot_lp_pnl(state_df: pd.DataFrame, exclude_last_day=True) -> Figure:
     """
     num_agents = 1
     start_idx = 0
-    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
+    first_trade_that_is_on_last_day = min(trades_agg.index[trades_agg.day == max(trades_agg.day)])
+    end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(trades_agg)
     fig, axes, _ = get_gridspec_subplots()
     axis = axes[0]
     for agent_id in range(start_idx, num_agents):
-        axis = state_df.iloc[start_idx:end_idx].plot(x="day", y=f"agent_{agent_id}_pnl", ax=axis)
+        axis = trades_agg.iloc[start_idx:end_idx].plot(x="day", y=f"agent_{agent_id}_pnl_mean", ax=axis)
     axis.set_title("LP PNL Over Time")
     axis.set_ylabel("PNL")
     axis.set_xlabel("Day")
@@ -157,7 +161,8 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclud
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_day else 0
-    end_idx = len(state_df) - 1 if exclude_last_day else len(state_df)
+    first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
+    end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="pool_apr_percent", ax=axes[0])
     axis.get_legend().remove()
     axis.set_title("Market pool APR")
@@ -173,8 +178,8 @@ def plot_pool_volume(
 
     Parameters
     ----------
-    trades : DataFrame
-        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
+    trades_agg : DataFrame
+        Pandas dataframe containing the aggregated simulation_state keys as columns, as well as some computed columns
     exclude_first_trade : bool
         If true, excludes the first day from the plot (default = True)
     exclude_last_trade : bool
@@ -186,7 +191,7 @@ def plot_pool_volume(
     """
     fig, axes, _ = get_gridspec_subplots()
     start_idx = 1 if exclude_first_trade else 0
-    end_idx = -1 if exclude_last_trade else None
+    end_idx = -1 if exclude_last_trade is True else None
     axis = trades_agg.iloc[start_idx:end_idx].plot(x="day", y="delta_base_abs_sum", ax=axes[0], kind="bar")
     axis.get_legend().remove()
     axis.set_title("Market Volume")
