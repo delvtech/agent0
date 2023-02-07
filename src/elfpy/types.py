@@ -58,15 +58,15 @@ class Quantity:
     unit: TokenType
 
 
+@dataclass
 class StretchedTime:
-    r"""A stretched time value with the time stretch"""
+    r"""Stores time in units of days, as well as normalized & stretched variants
 
-    # TODO: Improve this constructor so that StretchedTime can be constructed
-    # from years.
-    def __init__(self, days: float, time_stretch: float, normalizing_constant: float):
-        self.days = days
-        self.time_stretch = time_stretch
-        self.normalizing_constant = normalizing_constant
+    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
+    """
+    days: float
+    time_stretch: float
+    normalizing_constant: float
 
     @property
     def stretched_time(self):
@@ -85,11 +85,13 @@ class StretchedTime:
 
     def __str__(self):
         output_string = (
-            "Time components:"
-            f" {self.days=};"
-            f" {self.normalized_time=};"
-            f" {self.stretched_time=};"
-            f" {self.time_stretch=};"
+            "StretchedTime(\n"
+            f"\t{self.days=},\n"
+            f"\t{self.normalized_time=},\n"
+            f"\t{self.stretched_time=},\n"
+            f"\t{self.time_stretch=},\n"
+            f"\t{self.normalizing_constant=},\n"
+            ")"
         )
         return output_string
 
