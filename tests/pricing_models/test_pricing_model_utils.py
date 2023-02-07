@@ -43,6 +43,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50,
                     time_stretch=22.186877016851916,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
@@ -58,6 +59,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50
                     time_stretch=55.467192542129794,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
@@ -73,6 +75,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50
                     time_stretch=13.866798135532449,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
@@ -88,6 +91,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months remaining; t = 0.25
                     time_stretch=36.97812836141987,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1.5,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
@@ -103,6 +107,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=273.75,  # 9 months remaining; t = 0.75
                     time_stretch=36.97812836141987,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1.3,  # original share price when pool started
                 "share_price": 1.5,  # share price of the LP in the yield source
@@ -119,6 +124,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 "time_remaining": StretchedTime(
                     days=91.25,  # 3 months remaining; t = 0.25
                     time_stretch=36.97812836141986,
+                    normalizing_constant=365,
                 ),
                 "init_share_price": 1,  # original share price when pool started
                 "share_price": 1,  # share price of the LP in the yield source
@@ -275,7 +281,9 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         pricing_model._calc_k_const(  # pylint: disable=protected-access
                             market_state=test_case["market_state"],
                             time_remaining=StretchedTime(
-                                days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1
+                                days=time_to_days_remaining(1 - test_case["time_elapsed"]),
+                                time_stretch=1,
+                                normalizing_constant=365,
                             ),
                         )
                     )
@@ -286,7 +294,9 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     pricing_model._calc_k_const(  # pylint: disable=protected-access
                         market_state=test_case["market_state"],
                         time_remaining=StretchedTime(
-                            days=time_to_days_remaining(1 - test_case["time_elapsed"]), time_stretch=1
+                            days=time_to_days_remaining(1 - test_case["time_elapsed"]),
+                            time_stretch=1,
+                            normalizing_constant=365,
                         ),
                     )
                 )

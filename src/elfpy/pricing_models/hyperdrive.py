@@ -1,4 +1,6 @@
 """The Hyperdrive pricing model"""
+from __future__ import annotations
+
 import copy
 from decimal import Decimal
 
@@ -8,6 +10,7 @@ from elfpy.types import (
     Quantity,
     MarketState,
     StretchedTime,
+    FrozenStretchedTime,
     TokenType,
     TradeBreakdown,
     TradeResult,
@@ -34,7 +37,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         out: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -86,7 +89,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns
@@ -188,7 +191,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         in_: Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: StretchedTime | FrozenStretchedTime,
     ) -> TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a specified amount of the
@@ -238,7 +241,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
-        time_remaining : StretchedTime
+        time_remaining : StretchedTime | FrozenStretchedTime
             The time remaining for the asset (incorporates time stretch).
 
         Returns

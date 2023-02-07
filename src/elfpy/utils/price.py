@@ -1,11 +1,11 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from elfpy.types import StretchedTime
+from elfpy.types import StretchedTime, FrozenStretchedTime
 
 
 ### Spot Price and APR ###
-def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
+def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime | FrozenStretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
@@ -13,8 +13,8 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     ----------
     price : float
         Spot price of bonds in terms of base
-    normalized_time_remaining : StretchedTime
-        Time remaining until bond maturity, in yearfracs
+    time_remaining : StretchedTime | NormalizedStretchedTime
+        Time remaining until bond maturity, in years
 
     Returns
     -------

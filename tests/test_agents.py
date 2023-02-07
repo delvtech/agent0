@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 
 from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.types import MarketState, Quantity, FrozenStretchedTime, StretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -40,7 +40,7 @@ class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
     market_state: MarketState
-    time_remaining: StretchedTime
+    position_duration: FrozenStretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -51,7 +51,6 @@ class TestAgent(unittest.TestCase):
     @staticmethod
     def setup_market() -> Market:
         """Instantiates a market object for testing purposes"""
-
         # Give an initial market state
         pricing_model = HyperdrivePricingModel()
         market_state = MarketState(
@@ -64,14 +63,14 @@ class TestAgent(unittest.TestCase):
             trade_fee_percent=0.1,
             redemption_fee_percent=0.1,
         )
-        time_remaining = StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05))
-
+        position_duration = FrozenStretchedTime(
+            days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
+        )
         market = Market(
             pricing_model=pricing_model,
             market_state=market_state,
-            position_duration=time_remaining,
+            position_duration=position_duration,
         )
-
         return market
 
     @staticmethod
@@ -114,7 +113,9 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -126,7 +127,9 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -138,7 +141,9 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -150,7 +155,9 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -162,7 +169,9 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -174,7 +183,9 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -186,7 +197,9 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                 ),
-                time_remaining=StretchedTime(days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -198,7 +211,9 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05)),
+                position_duration=FrozenStretchedTime(
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=91
+                ),
             ),
             TestCaseGetMax(
                 market_state=MarketState(
@@ -210,18 +225,18 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25)),
+                position_duration=FrozenStretchedTime(
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=91
+                ),
             ),
         ]
-
         for test_case in test_cases:
             for pricing_model in pricing_models:
                 market = Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
-                    position_duration=test_case.time_remaining,
+                    position_duration=test_case.position_duration,
                 )
-
                 # Ensure safety for Agents with different budgets.
                 for budget in (1e-3 * 10 ** (3 * x) for x in range(0, 5)):
                     agent = Agent(wallet_address=0, budget=budget)
@@ -292,10 +307,8 @@ class TestAgent(unittest.TestCase):
 
         # instantiate the market
         market = self.setup_market()
-
         # Get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
-
         # Instantiate an agent for each policy, with a variety of budgets
         budget_list = [10, 1_000, 1_000_000, 100_000_000]
         agent_list = []
@@ -307,7 +320,6 @@ class TestAgent(unittest.TestCase):
                         wallet_address=wallet_address, budget=agent_budget
                     )
                 )
-
         # For each agent policy, call their action() method
         for agent in agent_list:
             actions_list = agent.get_trade_list(market)
