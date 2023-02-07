@@ -26,9 +26,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
-
         success_test_cases = base_in_test_cases + pt_in_test_cases
-
         for (
             test_number,
             (
@@ -41,9 +39,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
                 time_remaining = StretchedTime(days=test_case.days_remaining, time_stretch=time_stretch)
-
                 expected_result = results_by_model[model_type]
-
                 # Ensure we get the expected results from the pricing model.
                 trade_result = pricing_model.calc_in_given_out(
                     out=test_case.out,
@@ -80,7 +76,6 @@ class TestCalcInGivenOut(unittest.TestCase):
         such as extremely small inputs with extremely large reserves.
         """
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
-
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # out is in base, in is in bonds
@@ -101,7 +96,6 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_remaining=time_remaining,
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
-
                 # out is in bonds, in is in base
                 trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
                 market_state = MarketState(
@@ -125,7 +119,6 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
-
         # Failure test cases.
         failure_test_cases = [
             TestCaseCalcInGivenOutFailure(
@@ -409,7 +402,6 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
         ]
-
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):

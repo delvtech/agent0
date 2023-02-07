@@ -1311,11 +1311,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
             for pricing_model in pricing_models:
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
-
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-
                 expected_result = results_by_model[model_type]
-
                 # Ensure we get the expected results from the pricing model.
                 trade_result = pricing_model.calc_out_given_in(
                     in_=test_case.in_,

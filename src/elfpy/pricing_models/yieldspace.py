@@ -730,7 +730,7 @@ class YieldSpacePricingModel(PricingModel):
         market_state : MarketState
             The state of the AMM
         time_remaining : StretchedTime
-            Amount of time that remains in the current market
+            Time until expiry for the token
 
         Returns
         -------

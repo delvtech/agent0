@@ -51,7 +51,6 @@ class TestAgent(unittest.TestCase):
     @staticmethod
     def setup_market() -> Market:
         """Instantiates a market object for testing purposes"""
-
         # Give an initial market state
         pricing_model = HyperdrivePricingModel()
         market_state = MarketState(
@@ -65,13 +64,11 @@ class TestAgent(unittest.TestCase):
             redemption_fee_percent=0.1,
         )
         time_remaining = StretchedTime(days=365, time_stretch=pricing_model.calc_time_stretch(0.05))
-
         market = Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time_remaining,
         )
-
         return market
 
     @staticmethod
@@ -213,7 +210,6 @@ class TestAgent(unittest.TestCase):
                 time_remaining=StretchedTime(days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25)),
             ),
         ]
-
         for test_case in test_cases:
             for pricing_model in pricing_models:
                 market = Market(
@@ -221,11 +217,9 @@ class TestAgent(unittest.TestCase):
                     market_state=test_case.market_state,
                     position_duration=test_case.time_remaining,
                 )
-
                 # Ensure safety for Agents with different budgets.
                 for budget in (1e-3 * 10 ** (3 * x) for x in range(0, 5)):
                     agent = Agent(wallet_address=0, budget=budget)
-
                     # Ensure that get_max_long is safe.
                     max_long = agent.get_max_long(market)
                     self.assertGreaterEqual(agent.wallet.base, max_long)
@@ -237,7 +231,6 @@ class TestAgent(unittest.TestCase):
                         max_long,
                         market_max_long,
                     )
-
                     # Ensure that get_max_short is safe.
                     max_short = agent.get_max_short(market)
                     trade_result = market.pricing_model.calc_out_given_in(
@@ -259,19 +252,14 @@ class TestAgent(unittest.TestCase):
     # Test agent instantiation
     def test_init(self):
         """Tests for Agent instantiation"""
-
         # Instantiate a test market
         market = self.setup_market()
-
         # Instantiate a wrongly implemented agent policy
         agent = TestErrorPolicy(wallet_address=1)
-
         with self.assertRaises(NotImplementedError):
             agent.action(market)
-
         # Get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
-
         # Instantiate an agent for each policy
         agent_list = []
         for agent_id, policy_name in enumerate(agent_policies):
@@ -289,13 +277,10 @@ class TestAgent(unittest.TestCase):
         Does a basic check to ensure the implemented action() doesn't call for
         invalid trades
         """
-
         # instantiate the market
         market = self.setup_market()
-
         # Get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
-
         # Instantiate an agent for each policy, with a variety of budgets
         budget_list = [10, 1_000, 1_000_000, 100_000_000]
         agent_list = []
@@ -307,7 +292,6 @@ class TestAgent(unittest.TestCase):
                         wallet_address=wallet_address, budget=agent_budget
                     )
                 )
-
         # For each agent policy, call their action() method
         for agent in agent_list:
             actions_list = agent.get_trade_list(market)
