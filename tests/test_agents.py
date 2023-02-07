@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 
 from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, FrozenStretchedTime, StretchedTime, TokenType
+from elfpy.types import MarketState, Quantity, FrozenStretchedTime, TokenType
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel

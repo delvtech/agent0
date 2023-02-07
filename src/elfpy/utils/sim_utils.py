@@ -10,7 +10,6 @@ from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
-    StretchedTime,
     FrozenStretchedTime,
     TokenType,
     RandomSimulationVariables,
