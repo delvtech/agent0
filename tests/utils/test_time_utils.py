@@ -87,7 +87,7 @@ class TestTimeUtils(unittest.TestCase):
             {
                 "market_time": 0,  # same time as market initialization
                 "mint_time": 0,  # minted at time of market initialization
-                "token_duration": 0.50,  # 6 months duration
+                "num_position_days": 0.50,  # 6 months duration
                 "expected_result": 0.50,  # the entire duration remaining
                 "is_error_case": False,
             },
@@ -95,7 +95,7 @@ class TestTimeUtils(unittest.TestCase):
             {
                 "market_time": 0.50,  # 0.50 years = 6 months elapsed since market initialization
                 "mint_time": 0.25,  # minted at 0.25 years = 3 months after market initialization
-                "token_duration": 0.50,  # 6 months duration
+                "num_position_days": 0.50,  # 6 months duration
                 "expected_result": 0.25,  # 3 months remaining
                 "is_error_case": False,
             },
@@ -103,7 +103,7 @@ class TestTimeUtils(unittest.TestCase):
             {
                 "market_time": 0.75,  # 0.75 years = 9 months elapsed since market initialization
                 "mint_time": 0,  # minted at time of market initialization
-                "token_duration": 0.50,  # 6 months duration
+                "num_position_days": 0.50,  # 6 months duration
                 "expected_result": 0,  # bond has matured. No time remaining (not negative)
                 "is_error_case": False,
             },
@@ -111,7 +111,7 @@ class TestTimeUtils(unittest.TestCase):
             {
                 "market_time": 0.50,  # 0.50 years = 6 months elapsed since market initialization
                 "mint_time": 0.75,  # minted at 0.75 = 9 months elapsed since market initialization
-                "token_duration": 1.00,  # 1 year duration
+                "num_position_days": 1.00,  # 1 year duration
                 "expected_result": ValueError,  # bond was minted in the future
                 "is_error_case": True,
             },
@@ -121,11 +121,11 @@ class TestTimeUtils(unittest.TestCase):
             if test_case["is_error_case"]:
                 with self.assertRaises(test_case["expected_result"]):
                     time_remaining = time_utils.get_years_remaining(
-                        test_case["market_time"], test_case["mint_time"], test_case["token_duration"]
+                        test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                     )
             else:
                 time_remaining = time_utils.get_years_remaining(
-                    test_case["market_time"], test_case["mint_time"], test_case["token_duration"]
+                    test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                 )
                 np.testing.assert_almost_equal(
                     time_remaining, test_case["expected_result"], err_msg=f"unexpected time remaining {time_remaining}"

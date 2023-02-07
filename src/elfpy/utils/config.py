@@ -60,14 +60,14 @@ class SimulatorConfig:
     # durations
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
-    token_duration: float = field(
-        default=90 / 365, metadata={"hint": "time lapse between token mint and expiry as a yearfrac"}
-    )
+    num_position_days: int = field(default=90, metadata={"hint": "time lapse between token mint and expiry as days"})
 
     # users
     shuffle_users: bool = field(default=True, metadata={"hint": "shuffle order of action (as if random gas paid)"})
     agent_policies: list = field(default_factory=list, metadata={"hint": "List of strings naming user policies"})
     init_lp: bool = field(default=True, metadata={"hint": "use initial LP to seed pool"})
+
+    num_position_days: int = field(default=365, metadata={"hint": "Term length in days of a position"})
 
     # vault
     compound_vault_apr: bool = field(

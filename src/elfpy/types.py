@@ -63,10 +63,13 @@ class StretchedTime:
 
     # TODO: Improve this constructor so that StretchedTime can be constructed
     # from years.
-    def __init__(self, days: float, time_stretch: float):
+    def __init__(self, days: float, time_stretch: float, normalizing_constant: float = 365):
         self._days = days
         self._time_stretch = time_stretch
-        self._stretched_time = time_utils.days_to_time_remaining(self._days, self._time_stretch)
+        self._stretched_time = time_utils.days_to_time_remaining(
+            self._days, self._time_stretch, normalizing_constant=normalizing_constant
+        )
+        self.normalizing_constant = normalizing_constant
 
     @property
     def days(self):
@@ -76,7 +79,10 @@ class StretchedTime:
     @property
     def normalized_time(self):
         r"""Format time as normalized days"""
-        return time_utils.norm_days(self._days)
+        return time_utils.norm_days(
+            self._days,
+            self.normalizing_constant,
+        )
 
     @property
     def stretched_time(self):

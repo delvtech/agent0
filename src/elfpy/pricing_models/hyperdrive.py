@@ -107,9 +107,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Calculate some common values up front
         out_amount = Decimal(out.amount)
-        _time_remaining = Decimal(time_remaining.normalized_time)
+        normalized_time = Decimal(time_remaining.normalized_time)
         share_price = Decimal(market_state.share_price)
-        d_bonds = out_amount * (1 - _time_remaining)
+        d_bonds = out_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
 
         # TODO: Verify that this is needed.
@@ -131,14 +131,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=Quantity(amount=float(out_amount * _time_remaining), unit=out.unit),
+            out=Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
             market_state=market_state,
-            # TODO: don't hardcode days to 365, initialize to term length
-            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+                days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
+                time_stretch=time_remaining.time_stretch,
+                normalizing_constant=time_remaining.normalizing_constant,
+            ),
         )
 
         # Compute flat part with fee
-        flat_without_fee = out_amount * (1 - _time_remaining)
+        flat_without_fee = out_amount * (1 - normalized_time)
         redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         flat_with_fee = flat_without_fee + redemption_fee
 
@@ -173,7 +176,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             breakdown=TradeBreakdown(
                 without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
                 without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
-                fee=float(Decimal(curve.breakdown.fee) + redemption_fee),
+                fee=float(redemption_fee + Decimal(curve.breakdown.fee)),
                 with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
             ),
         )
@@ -246,9 +249,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Calculate some common values up front
         in_amount = Decimal(in_.amount)
-        _time_remaining = Decimal(time_remaining.normalized_time)
+        normalized_time = Decimal(time_remaining.normalized_time)
         share_price = Decimal(market_state.share_price)
-        d_bonds = in_amount * (1 - _time_remaining)
+        d_bonds = in_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
 
         # TODO: Verify that this is needed.
@@ -270,13 +273,17 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=Quantity(amount=float(in_amount * _time_remaining), unit=in_.unit),
+            in_=Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
             market_state=market_state,
-            time_remaining=StretchedTime(days=365, time_stretch=time_remaining.time_stretch),
+            time_remaining=StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+                days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
+                time_stretch=time_remaining.time_stretch,
+                normalizing_constant=time_remaining.normalizing_constant,
+            ),
         )
 
         # Compute flat part with fee
-        flat_without_fee = in_amount * (1 - _time_remaining)
+        flat_without_fee = in_amount * (1 - normalized_time)
         redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         flat_with_fee = flat_without_fee - redemption_fee
 
