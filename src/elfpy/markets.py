@@ -438,11 +438,11 @@ class Market:
         bond_reserves = self.pricing_model.calc_bond_reserves(
             target_apr=target_apr,
             time_remaining=self.position_duration,
-            market_state = MarketState(
+            market_state=MarketState(
                 share_reserves=share_reserves,
                 init_share_price=self.market_state.init_share_price,
                 share_price=self.market_state.share_price,
-            )
+            ),
         )
         market_deltas = MarketDeltas(
             d_base_asset=contribution,

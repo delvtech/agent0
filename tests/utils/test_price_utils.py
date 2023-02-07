@@ -137,10 +137,8 @@ class BasePriceTest(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-
             # Check if this test case is supposed to fail
             if "is_error_case" in test_case and test_case["is_error_case"]:
-
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
                     apr = price_utils.calc_apr_from_spot_price(

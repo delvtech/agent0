@@ -205,7 +205,7 @@ class Simulator:
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
-        for (agent_id, agent_trades) in trades:
+        for agent_id, agent_trades in trades:
             agent = self.agents[agent_id]
             for trade in agent_trades:
                 agent_deltas = self.market.trade_and_update(trade)
