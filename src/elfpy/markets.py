@@ -34,24 +34,17 @@ class Market:
     def __init__(
         self,
         pricing_model: PricingModel,
-        market_state: MarketState = MarketState(
-            share_reserves=0,
-            bond_reserves=0,
-            base_buffer=0,
-            bond_buffer=0,
-            lp_reserves=0,
-            vault_apr=0,
-            share_price=1,
-            init_share_price=1,
-            trade_fee_percent=0,
-            redemption_fee_percent=0,
-        ),
-        position_duration: StretchedTime = StretchedTime(365, 1, 365),
+        market_state: MarketState,
+        position_duration: StretchedTime,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
+        assert (
+            position_duration.days == position_duration.normalizing_constant
+        ), f"position_duration argument term length (days) should normalize to 1"
+        assert position_duration.frozen == True, f"position_duration must be immutable"
         self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:

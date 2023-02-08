@@ -1,7 +1,8 @@
 """A set of common types used throughtout the simulation codebase"""
-
 from __future__ import annotations  # types will be strings by default in 3.11
-from typing import TYPE_CHECKING
+
+from functools import wraps
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -15,6 +16,89 @@ if TYPE_CHECKING:
 def to_description(description: str) -> dict[str, str]:
     r"""A dataclass helper that constructs metadata containing a description."""
     return {"description": description}
+
+
+def freezable(cls: type) -> type:
+    class DecoratorClass(cls):
+        @wraps(cls, updated=())
+        def __init__(self, *args, **kwargs):
+            frozen = kwargs.pop("frozen", False)
+            super().__init__(*args, **kwargs)
+            self.frozen = frozen
+
+        def freeze(self) -> None:
+            if not self.frozen:
+                self.frozen = True
+
+        def __setattr__(self, attrib, value) -> None:
+            if attrib in self.__class__.__annotations__.keys() and self.frozen:
+                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot assign to field '{attrib}'.")
+            else:  # allow new attributes to be created even if frozen
+                setattr(self, attrib, value)
+
+    return DecoratorClass
+
+
+# def freezable(cls: type) -> type:
+#    @wraps(cls)  # FIXME: Shouldn't this inherit argument type hints?
+#    def wrapper(*args, **kwargs):
+#        # class wrapped(cls):
+#        #    def __init__(self, *args, **kwargs):
+#        #        self.frozen = kwargs.pop("frozen", False)
+#        #        super().__init__(*args, **kwargs)
+#        # self.frozen = kwargs.pop("freeze", False)
+#
+#        def __init__(self, *args, **kwargs):
+#            frozen = kwargs.pop("frozen", False)
+#            if len(args) > 0:
+#                for attrib, arg in zip(self.__class__._attribs, args):
+#                    # avoid our own __setattr__ in case it's a frozen dataclass:
+#                    self.__setattr__(self, attrib, arg)
+#            if len(kwargs) > 0:
+#                for attrib in self.__class__._attribs:
+#                    # avoid our own __setattr__ in case it's a frozen dataclass:
+#                    self.__setattr__(self, attrib, kwargs[attrib])
+#            self.__setattr__(self, "frozen", frozen)
+#            cls.__init__(self)
+#
+#        ## setattr(cls, "__init__", __init__)
+#
+#        # def my_func(self):
+#        #    print("bleh")
+#
+#        # setattr(cls, "my_func", my_func)
+#
+#        # frozen = kwargs.pop("frozen", False)
+#        # instantiated = cls(*args, **kwargs)
+#        # setattr(instantiated, "frozen", frozen)
+#
+#        frozen = kwargs.pop("frozen", False)
+#        cls.frozen = frozen
+#
+#        def __setattr__(self, attrib, value) -> None:
+#            if attrib in self.__class__.__annotations__.keys() and self.frozen:
+#                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot assign to field '{attrib}'.")
+#            else:  # allow new attributes to be created even if frozen
+#                setattr(self, attrib, value)
+#
+#        setattr(cls, "__setattr__", __setattr__)
+#
+#        def freeze(self) -> None:
+#            if not self.frozen:
+#                self.frozen = True
+#
+#        setattr(cls, "freeze", freeze)
+#
+#        # instantiated = cls(*args, **kwargs)
+#        # instantiated.frozen = frozen
+#
+#        ## frozen = kwargs.pop("frozen", False)
+#        instantiated = cls(*args, **kwargs)
+#        # setattr(instantiated, "frozen", frozen)
+#        return instantiated
+#        # return cls
+#
+#    return wrapper
 
 
 # This is the minimum allowed value to be passed into calculations to avoid
@@ -58,6 +142,7 @@ class Quantity:
     unit: TokenType
 
 
+@freezable
 @dataclass
 class StretchedTime:
     r"""Stores time in units of days, as well as normalized & stretched variants
@@ -67,6 +152,19 @@ class StretchedTime:
     days: float
     time_stretch: float
     normalizing_constant: float
+    frozen: bool = False
+
+    # def freeze(self):
+    #    """Freezes object, making it immutable"""
+
+    #    def handler(self, attrib, value):
+    #        if attrib in self.__class__.__annotations__.keys() and self.frozen:
+    #            raise AttributeError(f"{self.__class__.__name__} is frozen, cannot assign to field '{attrib}'.")
+    #        else:  # allow new attributes to be created even if frozen
+    #            setattr(self, attrib, value)
+
+    #    setattr(self, "frozen", True)
+    #    setattr(self, "__setattr__", handler)
 
     @property
     def stretched_time(self):
