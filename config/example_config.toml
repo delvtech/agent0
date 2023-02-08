@@ -1,27 +1,19 @@
 title = "example simulation config"
 
 [market]
-# random variables
-min_target_liquidity = 1e6  # in shares
-max_target_liquidity = 10e6  # in shares
-min_vault_age = 0  # fraction of a year
-max_vault_age = 1  # fraction of a year
-vault_apr = {type = "constant", value = 0.05}
-# fixed variables
+target_liquidity = {type="uniform", low=1e6, high=10e6} # in shares
+vault_age = {type="uniform", low=0, high=1} # fraction of a year
+vault_apr = {type = "constant", value = 0.05} # decimal
 base_asset_price = 1  # aka market price
 
 [amm]
 pricing_model_name = "Hyperdrive" # specify a pricing model
-# random variables
-min_fee = 0.1  # decimal that assigns fee_percent
-max_fee = 0.5  # decimal that assigns fee_percent
-min_pool_apr = 0.02  # as a decimal
-max_pool_apr = 0.9  # as a decimal
-# fixed variables
+pool_apr = {type="uniform", low=0.02, high=0.9} # decimal
+trade_fee_percent = {type="uniform", low=0.1, high=0.5} # decimal
+redemption_fee_percent = {type="uniform", low=0.1, high=0.5} # decimal
 floor_fee = 0  # minimum fee percentage (bps)
 
 [simulator]
-# fixed variables
 num_trading_days = 180  # should be <= pool_duration
 num_blocks_per_day = 7200 # 24 * 60 * 60 / 12 = 12 second block time
 num_position_days = 90 # time lapse between token mint and expiry as days

@@ -109,6 +109,55 @@ class Config:
         return getattr(self, key)
 
 
+def random_var_spec(config: Config):
+    """Convert specification from config text to generated values
+
+    Random variables are:
+        target_liquidity
+        vault_age
+        vault_apr
+        pool_apr
+        trade_fee_percent
+        redemption_fee_percent
+
+    Parameters
+    ----------
+    config : Config
+        config object, as defined in elfpy.utils.config
+
+    Returns
+    -------
+    vault_apr : list
+        list of apr values that is the same length as num_trading_days
+    """
+    random_variables = [
+        "target_liquidity",
+        "vault_age",
+        "vault_apr",
+        "pool_apr",
+        "trade_fee_percent",
+        "redemption_fee_percent",
+    ]
+    output_config = Config()
+    for config_type in ["market", "amm", "simulator"]:
+        for config_key in config[config_type].__dict__:
+            if config_key in random_variables:
+                if not isinstance(
+                    config[config_type][config_key], dict
+                ):  # dictionary specifies parameters for the callable
+                    raise TypeError("ERROR: Config specification shoudl be a dictionary")
+                if config.market.vault_apr["type"].lower() == "constant":
+                    new_value = [
+                        config.market.vault_apr["value"],
+                    ] * config.simulator.num_trading_days
+                elif config.market.vault_apr["type"].lower() == "uniform":
+                    vault_apr = config.simulator.rng.uniform(
+                        low=config.market.vault_apr["low"],
+                        high=config.market.vault_apr["high"],
+                        size=config.simulator.num_trading_days,
+                    ).tolist()
+
+
 def setup_vault_apr(config: Config):
     """Construct the vault_apr list
     Note: callable type option would allow for infinite num_trading_days after small modifications
