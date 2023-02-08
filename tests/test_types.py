@@ -7,22 +7,33 @@ import elfpy.types as elftypes
 
 
 class TestStretchedTime(unittest.TestCase):
-    def test_frozen_mutability(self):
-        frozen = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365, frozen=True)
-        frozen.new_attribute = "this is ok"
-        with self.assertRaises(AttributeError):
-            frozen.days = 10
+    """Test freezable wrapper functionality"""
 
     def test_freezability(self):
-        # using freeze method
-        unfrozen = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365, frozen=False)
-        unfrozen.days = 10  # ok to override unfrozen attrib
-        unfrozen.freeze()
+        """Test mutability of frozen objects
+
+        Tests that freezable object is mutable when not frozen and
+        throws an error when frozen and member attributes are changed
+        """
+        # make unfrozen variable & change attribute
+        freezable = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365)
+        freezable.days = 10  # ok to override unfrozen attrib
+        # freeze & try to change
+        # lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        freezable.freeze()  # pylint: disable=no-member # type: ignore
         with self.assertRaises(AttributeError):
-            unfrozen.days = 20
-        # directly setting attribute
-        unfrozen = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365, frozen=False)
-        unfrozen.days = 10
-        unfrozen.frozen = True
+            freezable.days = 20
+
+    def test_new_attribute(self):
+        """Test adding an attribute to a freezable object
+
+        Tests that freezable object can add new attributes after being frozen, but then they are immutable
+        """
+        freezable = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365)
+        # lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        freezable.freeze()  # pylint: disable=no-member # type: ignore
+        freezable.new_attrib = "This is ok."  # type: ignore
         with self.assertRaises(AttributeError):
-            unfrozen.days = 20
+            freezable.new_attrib = "This is not ok."  # type: ignore

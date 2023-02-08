@@ -263,7 +263,6 @@ def get_market(
             days=num_position_days,
             time_stretch=pricing_model.calc_time_stretch(target_pool_apr),
             normalizing_constant=num_position_days,
-            frozen=True,
         ),
     )
     return market

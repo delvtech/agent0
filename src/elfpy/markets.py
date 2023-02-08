@@ -43,9 +43,13 @@ class Market:
         self.market_state: MarketState = market_state
         assert (
             position_duration.days == position_duration.normalizing_constant
-        ), f"position_duration argument term length (days) should normalize to 1"
-        assert position_duration.frozen == True, f"position_duration must be immutable"
-        self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
+        ), "position_duration argument term length (days) should normalize to 1"
+        self.position_duration = StretchedTime(
+            position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
+        )
+        # lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         r"""Ensure that the agent action is an allowed action for this market

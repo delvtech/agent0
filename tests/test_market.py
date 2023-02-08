@@ -9,7 +9,7 @@ from typing import Any
 import utils_for_tests as test_utils  # utilities for testing
 from elfpy.types import MarketDeltas
 from elfpy.wallet import Wallet, Long, Short
-from elfpy.types import StretchedTime, MarketState, Quantity, TradeResult
+from elfpy.types import StretchedTime, MarketState
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 
@@ -30,28 +30,20 @@ class BaseMarketTest(unittest.TestCase):
     """Generic Parameter Test class"""
 
     def test_position_duration(self):
+        """Test to make sure market init fails when normalizing_constant != days"""
         pd_good = StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=365,
-            frozen=True,
         )
         pd_nonorm = StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=36,
-            frozen=True,
         )
-        pd_nofreeze = StretchedTime(
-            days=365,
-            time_stretch=1,
-            normalizing_constant=365,
-            frozen=False,
-        )
-        market = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
-        for pd_bad in [pd_nonorm, pd_nofreeze]:
-            with self.assertRaises(AssertionError):
-                market = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_bad)
+        _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
+        with self.assertRaises(AssertionError):
+            _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_nonorm)
 
     def set_up_test(
         self,
