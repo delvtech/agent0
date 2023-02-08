@@ -1,7 +1,7 @@
 """The base pricing model"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from abc import ABC  # , abstractmethod
+from abc import ABC
 import copy
 import decimal
 from decimal import Decimal
@@ -30,7 +30,6 @@ class PricingModel(ABC):
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
     """
 
-    # @abstractmethod
     def calc_in_given_out(
         self,
         out: Quantity,
@@ -40,7 +39,6 @@ class PricingModel(ABC):
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
-    # @abstractmethod
     def calc_out_given_in(
         self,
         in_: Quantity,
@@ -50,7 +48,6 @@ class PricingModel(ABC):
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
-    # @abstractmethod
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,
@@ -61,7 +58,6 @@ class PricingModel(ABC):
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
 
-    # @abstractmethod
     def calc_lp_in_given_tokens_out(
         self,
         d_base: float,
@@ -72,7 +68,6 @@ class PricingModel(ABC):
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
 
-    # @abstractmethod
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
@@ -83,17 +78,14 @@ class PricingModel(ABC):
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
 
-    # @abstractmethod
     def model_name(self) -> str:
         """Unique name given to the model, can be based on member variable states"""
         raise NotImplementedError
 
-    # @abstractmethod
     def model_type(self) -> str:
         """Unique identifier given to the model, should be lower snake_cased name"""
         raise NotImplementedError
 
-    # @abstractmethod
     def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError

@@ -117,9 +117,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -133,9 +131,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -149,9 +145,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -165,9 +159,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -181,9 +173,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -197,9 +187,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -213,9 +201,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.5,
                 ),
                 time_remaining=StretchedTime(
-                    days=365,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=365,
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -229,9 +215,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=91,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.05),
-                    normalizing_constant=91,
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=91
                 ),
             ),
             TestCaseGetMax(
@@ -245,9 +229,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=91,
-                    time_stretch=pricing_models[0].calc_time_stretch(0.25),
-                    normalizing_constant=91,
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=91
                 ),
             ),
         ]
