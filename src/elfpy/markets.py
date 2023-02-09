@@ -47,7 +47,7 @@ class Market:
         self.position_duration = StretchedTime(
             position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
         )
-        # lint error false positives: This message may report object members that are created dynamically,
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
 

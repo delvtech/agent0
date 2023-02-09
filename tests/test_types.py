@@ -19,7 +19,7 @@ class TestStretchedTime(unittest.TestCase):
         freezable = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365)
         freezable.days = 10  # ok to override unfrozen attrib
         # freeze & try to change
-        # lint error false positives: This message may report object members that are created dynamically,
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         freezable.freeze()  # pylint: disable=no-member # type: ignore
         with self.assertRaises(AttributeError):
@@ -31,7 +31,7 @@ class TestStretchedTime(unittest.TestCase):
         Tests that freezable object can add new attributes after being frozen, but then they are immutable
         """
         freezable = elftypes.StretchedTime(days=365, time_stretch=1, normalizing_constant=365)
-        # lint error false positives: This message may report object members that are created dynamically,
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         freezable.freeze()  # pylint: disable=no-member # type: ignore
         freezable.new_attrib = "This is ok."  # type: ignore
