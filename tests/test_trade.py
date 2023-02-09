@@ -8,43 +8,39 @@ import numpy as np
 import utils_for_tests as test_utils  # utilities for testing
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
-from elfpy.types import MarketState
+from elfpy.types import MarketState, Config
 from elfpy.markets import Market
 
+# because we're testing lots of stuff here!
+# pylint: disable=too-many-arguments
 
-class BaseTradeTest(unittest.TestCase):
-    """Generic Trade Test class"""
 
-    # pylint: disable=too-many-arguments
-    # because we're testing lots of stuff here!
+class SingleTradeTests(unittest.TestCase):
+    """
+    Tests for the SingeLong policy
+    TODO: In a followup PR, loop over pricing model types & rerun tests
+    """
+
     def run_base_trade_test(
         self,
         agent_policies,
-        config_file="config/example_config.toml",
         delete_logs=True,
-        additional_overrides=None,
         target_liquidity=None,
         target_pool_apr=None,
         init_only=False,
     ):
         """Assigns member variables that are useful for many tests"""
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
-        # load default config
-        override_dict = {
-            "pricing_model_name": "Yieldspace",  # TODO: lp agent market initialization does not work with hyperdrive
-            "target_liquidity": 10e6 if not target_liquidity else target_liquidity,
-            "trade_fee_percent": 0.1,
-            "redemtption_fee_percent": 0.0,
-            "target_pool_apr": 0.05 if not target_pool_apr else target_pool_apr,
-            "vault_apr": {"type": "constant", "value": 0.05},
-            "num_trading_days": 3,  # sim 3 days to keep it fast for testing
-            "num_blocks_per_day": 3,  # 3 block a day, keep it fast for testing
-        }
-        if additional_overrides:
-            override_dict.update(additional_overrides)
-        simulator = test_utils.setup_simulation_entities(
-            config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
-        )
+        config = Config()
+        config.pricing_model_name = "Yieldspace"  # TODO: lp agent market initialization does not work with hyperdrive
+        config.target_liquidity = 10e6 if not target_liquidity else target_liquidity
+        config.trade_fee_percent = 0.1
+        config.redemption_fee_percent = 0.0
+        config.target_pool_apr = 0.05 if not target_pool_apr else target_pool_apr
+        config.num_trading_days = 3  # sim 3 days to keep it fast for testing
+        config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
+        config.vault_apr = [0.05] * config.num_trading_days
+        simulator = test_utils.setup_simulation_entities(config, agent_policies)
         if target_pool_apr:
             market_apr = simulator.market.rate
             # use rtol here because liquidity spans 2 orders of magnitude
@@ -82,16 +78,6 @@ class BaseTradeTest(unittest.TestCase):
             simulator.run_simulation()
         output_utils.close_logging(delete_logs=delete_logs)
         return simulator
-
-
-class SingleTradeTests(BaseTradeTest):
-    """
-    Tests for the SingeLong policy
-    TODO: In a followup PR, loop over pricing model types & rerun tests
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def test_compare_agent_to_calc_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""

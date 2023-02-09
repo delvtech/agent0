@@ -7,9 +7,8 @@ import logging
 from typing import Any
 
 import utils_for_tests as test_utils  # utilities for testing
-from elfpy.types import MarketDeltas
 from elfpy.wallet import Wallet, Long, Short
-from elfpy.types import StretchedTime, MarketState
+from elfpy.types import MarketDeltas, StretchedTime, MarketState, Config
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 
@@ -48,28 +47,22 @@ class BaseMarketTest(unittest.TestCase):
     def set_up_test(
         self,
         agent_policies,
-        config_file="config/example_config.toml",
     ):
         """Create base structure for future tests"""
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
-        # load default config
-        override_dict = {
-            "pricing_model_name": "Yieldspace",
-            "target_liquidity": 10e6,
-            "trade_fee_percent": 0.1,
-            # our model currently has no redemption fee for yieldspace, if added these tests will break
-            "redemption_fee_percent": 0.1,
-            "target_pool_apr": 0.05,
-            "vault_apr": {"type": "constant", "value": 0.05},
-            # minimal simulation steps, we only care to investigate the first day's trades
-            "num_trading_days": 90,
-            "num_position_days": 365,
-            "num_blocks_per_day": 3,
-            "shuffle_users": False,  # make it deterministic
-        }
-        simulator = test_utils.setup_simulation_entities(
-            config_file=config_file, override_dict=override_dict, agent_policies=agent_policies
-        )
+        config = Config()
+        config.pricing_model_name = "Yieldspace"
+        config.target_liquidity = 10e6
+        config.trade_fee_percent = 0.1
+        # our model currently has no redemption fee for yieldspace, if added these tests will break
+        config.redemption_fee_percent = 0.1
+        config.target_pool_apr = 0.05
+        config.num_trading_days = 9  # minimal simulation steps
+        config.vault_apr = [0.05] * config.num_trading_days
+        config.num_position_days = 365
+        config.num_blocks_per_day = 3
+        config.shuffle_users = False  # make it deterministic
+        simulator = test_utils.setup_simulation_entities(config, agent_policies=agent_policies)
         return simulator
 
     def assert_equal_and_log(self, descriptor: str, expected: Any, actual: Any):
