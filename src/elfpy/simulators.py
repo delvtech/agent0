@@ -143,7 +143,8 @@ class Simulator:
                 agent_ids = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 )
-                agent_ids = np.append(agent_ids, 0)  # add init_lp so that they're always last
+                if self.config.simulator.init_lp:
+                    agent_ids = np.append(agent_ids, 0)  # add init_lp so that they're always last
             else:
                 agent_ids = self.rng.permutation(
                     list(self.agents)

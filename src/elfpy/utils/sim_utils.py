@@ -68,22 +68,24 @@ def get_simulator(
         set_random_sim_vars.vault_apr,
         set_random_sim_vars.init_share_price,
     )
-    # Instantiate the initial LP agent.
-    init_agents = [
-        get_init_lp_agent(
-            market,
-            set_random_sim_vars.target_liquidity,
-            set_random_sim_vars.target_pool_apr,
-            set_random_sim_vars.trade_fee_percent,
-        )
-    ]
     # Initialize the simulator using only the initial LP.
     simulator = Simulator(
         config=config,
         market=market,
         random_simulation_variables=set_random_sim_vars,
     )
-    simulator.add_agents(init_agents)
+    # Instantiate and add the initial LP agent, if desired
+    if config.simulator.init_lp is True:
+        simulator.add_agents(
+            [
+                get_init_lp_agent(
+                    market,
+                    set_random_sim_vars.target_liquidity,
+                    set_random_sim_vars.target_pool_apr,
+                    set_random_sim_vars.trade_fee_percent,
+                )
+            ]
+        )
     simulator.collect_and_execute_trades()
     # Add the remaining agents.
     if agents is not None:
