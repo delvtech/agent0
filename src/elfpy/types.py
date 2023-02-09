@@ -259,7 +259,7 @@ class MarketState:
                 )
                 setattr(self, key, 0)
             else:
-                assert value >= 0, "MarketState values must be non-negative"
+                assert value >= 0, f"MarketState values must be non-negative but instead {key} is {value}"
 
     def __str__(self):
         output_string = (
