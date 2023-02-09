@@ -2,7 +2,7 @@
 import logging
 import tomli
 
-from elfpy.utils.config import Config
+from elfpy.types import Config
 
 
 def load_and_parse_config_file(config_file: str) -> Config:

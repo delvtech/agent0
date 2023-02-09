@@ -21,7 +21,7 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
-    from elfpy.utils.config import Config
+    from elfpy.types import Config
 
 
 def get_simulator(

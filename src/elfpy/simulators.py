@@ -17,7 +17,7 @@ from elfpy.utils import config as config_utils
 if TYPE_CHECKING:
     from elfpy.agent import Agent
     from elfpy.markets import Market
-    from elfpy.utils.config import Config
+    from elfpy.types import Config
 
 
 class Simulator:

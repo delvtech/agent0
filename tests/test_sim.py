@@ -8,7 +8,7 @@ import numpy as np
 from numpy.random import RandomState
 
 from elfpy.simulators import Simulator
-from elfpy.utils.config import Config
+from elfpy.types import Config
 from elfpy.utils.parse_config import load_and_parse_config_file
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
