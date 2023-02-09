@@ -12,51 +12,45 @@ from elfpy.types import RandomSimulationVariables
 # pylint: disable=too-many-instance-attributes
 
 
+# TODO: Make freezable
+# @freezable
 @dataclass
-class MarketConfig:
-    """config parameters specific to the market"""
+class Config:
+    """Data object for storing user simulation config parameters"""
 
+    # Market
     min_target_liquidity: float = field(default=1e6, metadata={"hint": "shares"})
     max_target_liquidity: float = field(default=10e6, metadata={"hint": "shares"})
+    target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
     min_target_volume: float = field(default=0.001, metadata={"hint": "fraction of pool liquidity"})
     max_target_volume: float = field(default=0.01, metadata={"hint": "fraction of pool liquidity"})
     min_vault_age: int = field(default=0, metadata={"hint": "fraction of a year"})
     max_vault_age: int = field(default=1, metadata={"hint": "fraction of a year"})
+    init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
     vault_apr: Union[Callable, dict] = field(
         default_factory=lambda: {"type": "constant", "value": 0.3},
         metadata={"hint": "the underlying (variable) vault apr at each time step"},
     )
+    vault_apr: list = field(metadata=to_description("yield bearing source APR"))
     base_asset_price: float = field(default=2e3, metadata={"hint": "market price"})
+    # NOTE: We ignore the type error since the value will never be None after
+    # initialization, and we don't want the value to be set to None downstream.
+    init_share_price: float = field(
+        default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
+    )
 
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-
-@dataclass
-class AMMConfig:
-    """config parameters specific to the amm"""
-
+    # AMM
     pricing_model_name: str = field(default="Hyperdrive", metadata={"hint": 'Must be "Hyperdrive", or "YieldSpace"'})
     min_fee: float = field(default=0.1, metadata={"hint": "decimal that assignes fee_percent"})
     max_fee: float = field(default=0.5, metadata={"hint": "decimal that assignes fee_percent"})
+    trade_fee_percent: float = field(metadata=to_description("LP fee percent to charge for trades"))
+    redemption_fee_percent: float = field(metadata=to_description("LP fee percent to charge for redemption"))
     min_pool_apr: float = field(default=0.02, metadata={"hint": "as a decimal"})
     max_pool_apr: float = field(default=0.9, metadata={"hint": "as a decimal"})
+    target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
     floor_fee: float = field(default=0, metadata={"hint": "minimum fee percentage (bps)"})
 
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-
-@dataclass
-class SimulatorConfig:
-    """config parameters specific to the simulator"""
-
+    # Simulation
     # durations
     num_trading_days: int = field(default=180, metadata={"hint": "in days; should be <= pool_duration"})
     num_blocks_per_day: int = field(default=7_200, metadata={"hint": "int"})
@@ -88,149 +82,10 @@ class SimulatorConfig:
     )
 
     def __post_init__(self):
+        r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
+        if self.init_share_price is None:
+            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
     def __getitem__(self, key):
         return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-
-@dataclass
-class Config:
-    """Data object for storing user simulation config parameters"""
-
-    market: MarketConfig = field(default_factory=MarketConfig)
-    amm: AMMConfig = field(default_factory=AMMConfig)
-    simulator: SimulatorConfig = field(default_factory=SimulatorConfig)
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-
-def random_var_spec(config: Config):
-    """Convert specification from config text to generated values
-
-    Random variables are:
-        target_liquidity
-        vault_age
-        vault_apr
-        pool_apr
-        trade_fee_percent
-        redemption_fee_percent
-
-    Parameters
-    ----------
-    config : Config
-        config object, as defined in elfpy.utils.config
-
-    Returns
-    -------
-    vault_apr : list
-        list of apr values that is the same length as num_trading_days
-    """
-    random_variables = [
-        "target_liquidity",
-        "vault_age",
-        "vault_apr",
-        "pool_apr",
-        "trade_fee_percent",
-        "redemption_fee_percent",
-    ]
-    output_config = Config()
-    for config_type in ["market", "amm", "simulator"]:
-        for config_key in config[config_type].__dict__:
-            if config_key in random_variables:
-                if not isinstance(
-                    config[config_type][config_key], dict
-                ):  # dictionary specifies parameters for the callable
-                    raise TypeError("ERROR: Config specification shoudl be a dictionary")
-                if config.market.vault_apr["type"].lower() == "constant":
-                    new_value = [
-                        config.market.vault_apr["value"],
-                    ] * config.simulator.num_trading_days
-                elif config.market.vault_apr["type"].lower() == "uniform":
-                    vault_apr = config.simulator.rng.uniform(
-                        low=config.market.vault_apr["low"],
-                        high=config.market.vault_apr["high"],
-                        size=config.simulator.num_trading_days,
-                    ).tolist()
-
-
-def setup_vault_apr(config: Config):
-    """Construct the vault_apr list
-    Note: callable type option would allow for infinite num_trading_days after small modifications
-
-    Parameters
-    ----------
-    config : Config
-        config object, as defined in elfpy.utils.config
-
-    Returns
-    -------
-    vault_apr : list
-        list of apr values that is the same length as num_trading_days
-    """
-    if isinstance(config.market.vault_apr, dict):  # dictionary specifies parameters for the callable
-        if config.market.vault_apr["type"].lower() == "constant":
-            vault_apr = [
-                config.market.vault_apr["value"],
-            ] * config.simulator.num_trading_days
-        elif config.market.vault_apr["type"].lower() == "uniform":
-            vault_apr = config.simulator.rng.uniform(
-                low=config.market.vault_apr["low"],
-                high=config.market.vault_apr["high"],
-                size=config.simulator.num_trading_days,
-            ).tolist()
-        elif config.market.vault_apr["type"].lower() == "geometricbrownianmotion":
-            # the n argument is number of steps, so the number of points is n+1
-            vault_apr = (
-                GeometricBrownianMotion(rng=config.simulator.rng).sample(
-                    n=config.simulator.num_trading_days - 1, initial=config.market.vault_apr["initial"]
-                )
-            ).tolist()
-        else:
-            raise ValueError(
-                f"{config.market.vault_apr['type']=} not one of \"constant\","
-                f'"uniform", or "geometricbrownianmotion"'
-            )
-    elif isinstance(config.market.vault_apr, Callable):  # callable (optionally generator) function
-        vault_apr = list(config.market.vault_apr())
-    elif isinstance(config.market.vault_apr, list):  # user-defined list of values
-        vault_apr = config.market.vault_apr
-    elif isinstance(config.market.vault_apr, float):  # single constant value to be cast to a float
-        vault_apr = [float(config.market.vault_apr)] * config.simulator.num_trading_days
-    else:
-        raise TypeError(
-            f"config.market.vault_apr must be an int, list, dict, or callable, not {type(config.market.vault_apr)}"
-        )
-    return vault_apr
-
-
-def get_random_variables(config: Config):
-    """Use random number generator to assign initial simulation parameter values
-
-    Parameters
-    ----------
-    config : Config
-        config object, as defined in elfpy.utils.config
-
-    Returns
-    -------
-    RandomSimulationVariables
-        dataclass that contains variables for initiating and running simulations
-    """
-    random_vars = RandomSimulationVariables(
-        target_liquidity=config.simulator.rng.uniform(
-            low=config.market.min_target_liquidity, high=config.market.max_target_liquidity
-        ),
-        target_pool_apr=config.simulator.rng.uniform(
-            low=config.amm.min_pool_apr, high=config.amm.max_pool_apr
-        ),  # starting fixed apr as a decimal
-        trade_fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        redemption_fee_percent=config.simulator.rng.uniform(low=config.amm.min_fee, high=config.amm.max_fee),
-        vault_apr=setup_vault_apr(config),
-        init_vault_age=config.simulator.rng.uniform(low=config.market.min_vault_age, high=config.market.max_vault_age),
-    )
-    return random_vars

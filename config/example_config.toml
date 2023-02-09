@@ -2,15 +2,15 @@ title = "example simulation config"
 
 [market]
 target_liquidity = {type="uniform", low=1e6, high=10e6} # in shares
-vault_age = {type="uniform", low=0, high=1} # fraction of a year
-vault_apr = {type = "constant", value = 0.05} # decimal
+init_vault_age = {type="uniform", low=0, high=1} # fraction of a year
+vault_apr = {type="constant", value=0.05} # decimal
 base_asset_price = 1  # aka market price
 
 [amm]
 pricing_model_name = "Hyperdrive" # specify a pricing model
 pool_apr = {type="uniform", low=0.02, high=0.9} # decimal
 trade_fee_percent = {type="uniform", low=0.1, high=0.5} # decimal
-redemption_fee_percent = {type="uniform", low=0.1, high=0.5} # decimal
+redemption_fee_percent = {type="constant", value=0.01} # decimal
 floor_fee = 0  # minimum fee percentage (bps)
 
 [simulator]

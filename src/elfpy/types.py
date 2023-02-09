@@ -353,22 +353,6 @@ class RandomSimulationVariables:
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
-    target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
-    trade_fee_percent: float = field(metadata=to_description("LP fee percent to charge for trades"))
-    redemption_fee_percent: float = field(metadata=to_description("LP fee percent to charge for redemption"))
-    vault_apr: list = field(metadata=to_description("yield bearing source APR"))
-    init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
-    # NOTE: We ignore the type error since the value will never be None after
-    # initialization, and we don't want the value to be set to None downstream.
-    init_share_price: float = field(
-        default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
-    )
-
-    def __post_init__(self):
-        r"""init_share_price is a function of other random variables"""
-        if self.init_share_price is None:
-            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
 
 @dataclass
