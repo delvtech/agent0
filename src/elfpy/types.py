@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from functools import wraps
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
@@ -445,6 +445,7 @@ class Config:
     .. todo:: TODO: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
     """
 
+    # lots of configs!
     # pylint: disable=too-many-instance-attributes
 
     # Market
@@ -456,19 +457,18 @@ class Config:
     base_asset_price: float = field(default=2e3, metadata=to_description("market price"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
-    vault_apr: Optional[list] = field(
-        default=None, metadata=to_description("the underlying (variable) vault APR at each time step")
+    vault_apr: list[float] = field(
+        default_factory=lambda: [-1],
+        metadata=to_description("the underlying (variable) vault APR at each time step"),
     )
-    init_share_price: Optional[float] = field(
-        default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
+    init_share_price: float = field(
+        default=-1, metadata=to_description("initial market share price for the vault asset")  # type: ignore
     )
 
     # AMM
     pricing_model_name: str = field(
         default="Hyperdrive", metadata=to_description('Must be "Hyperdrive", or "YieldSpace"')
     )
-    min_fee: float = field(default=0.1, metadata={"hint": "decimal that assignes fee_percent"})
-    max_fee: float = field(default=0.5, metadata={"hint": "decimal that assignes fee_percent"})
     trade_fee_percent: float = field(
         default=0.05, metadata=to_description("LP fee factor (decimal) to charge for trades")
     )
@@ -515,18 +515,43 @@ class Config:
         init=False, compare=False, metadata=to_description("random number generator used in the simulation")
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
-        if self.vault_apr is None:
+        if self.vault_apr == [-1]:
             self.vault_apr = [0.05] * self.num_trading_days
-        if self.init_share_price is None:
+        if self.init_share_price == -1:
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> None:
         return getattr(self, key)
 
-    def __str__(self):
+    def __setattr__(self, attrib, value) -> None:
+        if attrib == "vault_apr":
+            self.check_vault_apr()
+            super().__setattr__("vault_apr", value)
+        elif attrib == "init_share_price":
+            if self.init_share_price < 0:
+                raise ValueError("ERROR: init_share_price must be positive")
+            super().__setattr__("init_share_price", value)
+        else:
+            super().__setattr__(attrib, value)
+
+    def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
         config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
         return config_string
+
+    def check_vault_apr(self) -> None:
+        r"""Verify that the vault_apr is the right length"""
+        if not isinstance(self.vault_apr, list):
+            raise TypeError(
+                f"ERROR: vault_apr must be of type list, not {type(self.vault_apr)}."
+                f"\nhint: it must be set after Config is initialized."
+            )
+        if len(self.vault_apr) != self.num_trading_days:
+            raise ValueError(
+                "ERROR: vault_apr must have len equal to num_trading_days = "
+                + f"{self.num_trading_days},"
+                + f" not {len(self.vault_apr)}"
+            )

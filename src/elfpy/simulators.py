@@ -37,7 +37,10 @@ class Simulator:
         logging.info("%s", self.config)
         self.market = market
         self.set_rng(config.rng)
-        self.check_vault_apr()
+        self.config.check_vault_apr()
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        self.config.freeze()  # pylint: disable=no-member # type: ignore
         self.agents = {}
 
         # Simulation variables
@@ -50,15 +53,6 @@ class Simulator:
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
         self.simulation_state = SimulationState()
-
-    def check_vault_apr(self) -> None:
-        r"""Verify that the vault_apr is the right length"""
-        if not len(self.config.vault_apr) == self.config.num_trading_days:
-            raise ValueError(
-                "vault_apr must have len equal to num_trading_days = "
-                + f"{self.config.num_trading_days},"
-                + f" not {len(self.config.vault_apr)}"
-            )
 
     def set_rng(self, rng: Generator) -> None:
         r"""Assign the internal random number generator to a new instantiation
