@@ -5,15 +5,14 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import argparse
 from typing import Any
 
+# outside libs
+import numpy as np
+
 # elfpy core repo
 import elfpy
-
-# elfpy core classes
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.types import MarketActionType
-
-# elfpy utils
+from elfpy.types import MarketActionType, Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.parse_config as config_utils
 import elfpy.utils.outputs as output_utils
@@ -84,7 +83,7 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--log_level",
         help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default uses the config.',
-        default=None,
+        default="DEBUG",
         type=str,
     )
     parser.add_argument(
@@ -104,28 +103,16 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    config = config_utils.load_and_parse_config_file(args.config)
-    override_dict = {}
-    if args.num_trading_days is not None:
-        override_dict["num_trading_days"] = args.num_trading_days
-    if args.blocks_per_day is not None:
-        override_dict["num_blocks_per_day"] = args.blocks_per_day
-    override_dict["pricing_model_name"] = args.pricing_model
-    override_dict["vault_apr"] = {
-        "type": "uniform",
-        "low": 0.001,
-        "high": 0.9,
-    }
-    config = config_utils.override_config_variables(config, override_dict)
-    if args.log_level is not None:
-        config.simulator.logging_level = args.log_level
+    config = Config()
+    config.num_trading_days = args.num_trading_days
+    config.num_blocks_per_day = args.blocks_per_day
+    config.pricing_model_name = args.pricing_model
+    config.vault_apr = config.rng.uniform(low=0.001, high=0.9)
+    config.logging_level = sim_utils.text_to_logging_level(args.log_level)
+    config.freeze()
 
     # Define root logging parameters.
-    output_utils.setup_logging(
-        log_filename=args.output,
-        max_bytes=args.max_bytes,
-        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
-    )
+    output_utils.setup_logging(log_filename=args.output, max_bytes=args.max_bytes, log_level=config.logging_level)
 
     # Initialize the simulator.
     simulator = sim_utils.get_simulator(config, get_example_agents(new_agents=args.num_agents, existing_agents=1))

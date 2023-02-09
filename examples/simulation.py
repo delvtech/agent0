@@ -142,7 +142,7 @@ if __name__ == "__main__":
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
-        log_level=config_utils.text_to_logging_level(config.simulator.logging_level),
+        log_level=sim_utils.text_to_logging_level(config.simulator.logging_level),
     )
 
     # Initialize the simulator.

@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 
+import numpy as np
+from numpy.random import Generator
+
 import elfpy.utils.time as time_utils
 from elfpy import PRECISION_THRESHOLD
 
@@ -450,7 +453,10 @@ class SimulationState:
 @freezable
 @dataclass
 class Config:
-    """Data object for storing user simulation config parameters"""
+    """Data object for storing user simulation config parameters
+
+    .. todo:: TODO: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    """
 
     # Market
     target_liquidity: float = field(

@@ -4,6 +4,7 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 
 from elfpy.utils import parse_config as config_utils
+from elfpy.utils import sim_utils
 
 
 class TestParseSimulationConfig(unittest.TestCase):
@@ -90,7 +91,7 @@ class TestParseSimulationConfig(unittest.TestCase):
         logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
         logging_constants = [0, 10, 20, 30, 40, 50]
         for level_str, level_int in zip(logging_levels, logging_constants):
-            func_level = config_utils.text_to_logging_level(level_str)
+            func_level = sim_utils.text_to_logging_level(level_str)
             assert level_int == func_level
 
     def test_override_config_variables(self):
