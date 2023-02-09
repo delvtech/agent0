@@ -469,8 +469,8 @@ class PricingModel(ABC):
         float
             The maximum amount of bonds that can be shorted.
         """
-        available_bonds = market_state.bond_reserves - market_state.bond_buffer
-        if available_bonds <= 0:
+        available_shares = market_state.share_reserves - market_state.base_buffer / market_state.share_price
+        if available_shares <= 0:
             return 0, 0
 
         last_maybe_max_short = 0, 0
@@ -480,7 +480,7 @@ class PricingModel(ABC):
             try:
                 # Compute the amount of base returned by selling the specified
                 # amount of bonds.
-                maybe_max_short_bonds = available_bonds * bond_percent
+                maybe_max_short_bonds = available_shares / market_state.share_price * bond_percent
                 trade_result = self.calc_out_given_in(
                     in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
                     market_state=market_state,
