@@ -47,8 +47,12 @@ def get_simulator(
         instantiated simulator class
     """
     # Instantiate the market.
+<<<<<<< HEAD
     pricing_model = get_pricing_model(config.amm.pricing_model_name)
 
+=======
+    pricing_model = get_pricing_model(config.pricing_model_name)
+>>>>>>> afde323 (further fixing lint errors)
     market = get_market(pricing_model, config)
     simulator = Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired

@@ -1,8 +1,9 @@
 """A set of common types used throughtout the simulation codebase"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+import logging
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
@@ -407,7 +408,18 @@ class SimulationState:
     )
     spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
-    def add_dict_entries(self, dictionary) -> None:
+    def add_dict_entries(self, dictionary: dict) -> None:
+        r"""Adds keys & values of input ditionary to the simulation state
+
+        The simulation state is an ever-growing list,
+        so each item in this dict is appended to the attribute with a corresponding key.
+        If no attribute exists for that key, a new list containing the value is assigned to the attribute
+
+        Parameters
+        ----------
+        dictionary : dict
+            items to be added
+        """
         for key, val in dictionary.items():
             if hasattr(self, key):
                 attribute_state = getattr(self, key)
@@ -433,6 +445,8 @@ class Config:
     .. todo:: TODO: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     # Market
     target_liquidity: float = field(
         default=1e6, metadata=to_description("total size of the market pool (bonds + shares)")
@@ -442,10 +456,10 @@ class Config:
     base_asset_price: float = field(default=2e3, metadata=to_description("market price"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
-    vault_apr: list = field(
+    vault_apr: Optional[list] = field(
         default=None, metadata=to_description("the underlying (variable) vault APR at each time step")
     )
-    init_share_price: float = field(
+    init_share_price: Optional[float] = field(
         default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
     )
 
@@ -488,7 +502,9 @@ class Config:
     init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
 
     # logging
-    logging_level: str = field(default="info", metadata=to_description("Logging level, as defined by stdlib logging"))
+    logging_level: int = field(
+        default=logging.INFO, metadata=to_description("Logging level, as defined by stdlib logging")
+    )
 
     # numerical
     precision: int = field(default=64, metadata=to_description("precision of calculations; max is 64"))
@@ -512,5 +528,5 @@ class Config:
 
     def __str__(self):
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
+        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
         return config_string

@@ -5,16 +5,12 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import argparse
 from typing import Any
 
-# outside libs
-import numpy as np
-
 # elfpy core repo
 import elfpy
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.types import MarketActionType, Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
-import elfpy.utils.parse_config as config_utils
 import elfpy.utils.outputs as output_utils
 
 
@@ -87,9 +83,6 @@ def get_argparser() -> argparse.ArgumentParser:
         type=str,
     )
     parser.add_argument(
-        "--config", help="Config file. Default uses the example config.", default="config/example_config.toml", type=str
-    )
-    parser.add_argument(
         "--num_agents", help="Integer specifying how many agents you want to simulate.", default=1, type=int
     )
     parser.add_argument(
@@ -107,9 +100,11 @@ if __name__ == "__main__":
     config.num_trading_days = args.num_trading_days
     config.num_blocks_per_day = args.blocks_per_day
     config.pricing_model_name = args.pricing_model
-    config.vault_apr = config.rng.uniform(low=0.001, high=0.9)
+    config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
     config.logging_level = sim_utils.text_to_logging_level(args.log_level)
-    config.freeze()
+    # NOTE: lint error false positives: This message may report object members that are created dynamically,
+    # but exist at the time they are accessed.
+    config.freeze()  # pylint: disable=no-member # type: ignore
 
     # Define root logging parameters.
     output_utils.setup_logging(log_filename=args.output, max_bytes=args.max_bytes, log_level=config.logging_level)

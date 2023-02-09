@@ -57,7 +57,7 @@ class Simulator:
             raise ValueError(
                 "vault_apr must have len equal to num_trading_days = "
                 + f"{self.config.num_trading_days},"
-                + f" not {len(self.vault_apr)}"
+                + f" not {len(self.config.vault_apr)}"
             )
 
     def set_rng(self, rng: Generator) -> None:

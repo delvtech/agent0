@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 from numpy.random import RandomState
 
-from elfpy.simulators import Simulator
 from elfpy.types import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils

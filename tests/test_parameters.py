@@ -17,7 +17,6 @@ class BaseParameterTest(unittest.TestCase):
     def run_base_trade_test(
         self,
         agent_policies,
-        config_file="config/example_config.toml",
         delete_logs=True,
     ):
         """Assigns member variables that are useful for many tests"""

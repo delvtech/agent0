@@ -7,6 +7,7 @@ from typing import Any
 
 # external imports
 from numpy.random import Generator
+from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
@@ -14,10 +15,11 @@ import elfpy
 # elfpy core classes
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.types import MarketAction, MarketActionType
+from elfpy.types import MarketAction, MarketActionType, Config
 
 # elfpy utils
-from elfpy.utils import sim_utils, parse_config as config_utils, outputs as output_utils
+from elfpy.utils import sim_utils
+from elfpy.utils import outputs as output_utils
 from elfpy.wallet import Long
 
 
@@ -111,9 +113,6 @@ def get_argparser() -> argparse.ArgumentParser:
         type=str,
     )
     parser.add_argument(
-        "--config", help="Config file. Default uses the example config.", default="config/example_config.toml", type=str
-    )
-    parser.add_argument(
         "--num_agents", help="Integer specifying how many agents you want to simulate.", default=1, type=int
     )
     parser.add_argument(
@@ -127,27 +126,28 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    override_dict = {}
-    if args.trading_days is not None:
-        override_dict["num_trading_days"] = args.trading_days
-    if args.blocks_per_day is not None:
-        override_dict["num_blocks_per_day"] = args.blocks_per_day
-    if args.log_level is not None:
-        override_dict["logging_level"] = args.log_level
-    override_dict["pricing_model_name"] = args.pricing_model
-    override_dict["vault_apr"] = {"type": "GeometricBrownianMotion", "initial": 0.05}
-    config = config_utils.override_config_variables(config_utils.load_and_parse_config_file(args.config), override_dict)
+    config = Config()
+    config.num_trading_days = args.num_trading_days
+    config.num_blocks_per_day = args.blocks_per_day
+    config.pricing_model_name = args.pricing_model
+    config.vault_apr = (
+        GeometricBrownianMotion(rng=config.rng).sample(n=config.num_trading_days - 1, initial=0.05)
+    ).tolist()
+    config.logging_level = sim_utils.text_to_logging_level(args.log_level)
+    # NOTE: lint error false positives: This message may report object members that are created dynamically,
+    # but exist at the time they are accessed.
+    config.freeze()  # pylint: disable=no-member # type: ignore
 
     # Define root logging parameters.
     output_utils.setup_logging(
         log_filename=args.output,
         max_bytes=args.max_bytes,
-        log_level=sim_utils.text_to_logging_level(config.simulator.logging_level),
+        log_level=config.logging_level,
     )
 
     # Initialize the simulator.
     simulator = sim_utils.get_simulator(
-        config, get_example_agents(rng=config.simulator.rng, new_agents=args.num_agents, existing_agents=1)
+        config, get_example_agents(rng=config.rng, new_agents=args.num_agents, existing_agents=1)
     )
 
     # Run the simulation.
