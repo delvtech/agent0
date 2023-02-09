@@ -247,7 +247,7 @@ class MarketState:
         # when they are. issue #146 tracks this.
         # TODO: #146
         for key, value in self.__dict__.items():
-            if 0 > value > PRECISION_THRESHOLD:
+            if 0 > value > -PRECISION_THRESHOLD:
                 logging.debug(
                     ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
                     key,
