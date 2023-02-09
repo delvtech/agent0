@@ -114,7 +114,9 @@ class Wallet:
         .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
         """
         share_of_pool = self.lp_tokens / market.market_state.lp_reserves if market.market_state.lp_reserves > 0 else 0.0
-        pool_value = market.market_state.bond_reserves * 0.96  # market.spot_price  # in base
+        spot_price = 0.96
+        # spot_price = market.spot_price
+        pool_value = market.market_state.bond_reserves * spot_price  # market.spot_price  # in base
         pool_value += market.market_state.share_reserves * market.market_state.share_price  # in base
         lp_token_value = pool_value * share_of_pool  # in base
         share_reserves = market.market_state.share_reserves
