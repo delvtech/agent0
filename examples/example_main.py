@@ -5,6 +5,9 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import argparse
 from typing import Any
 
+# external
+from stochastic.processes import GeometricBrownianMotion
+
 # elfpy core repo
 import elfpy
 from elfpy.agent import Agent
@@ -68,7 +71,9 @@ def get_argparser() -> argparse.ArgumentParser:
         description="Example execution script for running simulations using Elfpy",
         epilog="See the README on https://github.com/element-fi/elf-simulations/ for more implementation details",
     )
-    parser.add_argument("--output", help="Optional output filename for logging", default=None, type=str)
+    parser.add_argument(
+        "--output", help="Optional output filename for logging", default="../.logging/example_main.log", type=str
+    )
     parser.add_argument(
         "--max_bytes",
         help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes."
@@ -88,8 +93,14 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pricing_model", help="Pricing model to be used in the simulation", default="Hyperdrive", type=str
     )
-    parser.add_argument("--num_trading_days", help="Number of simulated trading days", default=None, type=int)
-    parser.add_argument("--blocks_per_day", help="Number of simulated trading blocks per day", default=None, type=int)
+    parser.add_argument("--num_trading_days", help="Number of simulated trading days", default=5, type=int)
+    parser.add_argument("--blocks_per_day", help="Number of simulated trading blocks per day", default=5, type=int)
+    parser.add_argument(
+        "--vault_apr_type",
+        help="Distribution type for the vault apr; must be 'uniform' or 'brownian'.",
+        default="uniform",
+        type=str,
+    )
     return parser
 
 
@@ -100,7 +111,14 @@ if __name__ == "__main__":
     config.num_trading_days = args.num_trading_days
     config.num_blocks_per_day = args.blocks_per_day
     config.pricing_model_name = args.pricing_model
-    config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
+    if args.vault_apr_type == "brownian":
+        config.vault_apr = (
+            GeometricBrownianMotion(rng=config.rng).sample(n=config.num_trading_days - 1, initial=0.05)
+        ).tolist()
+    elif args.vault_apr_type == "uniform":
+        config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
+    else:
+        assert False, f"vault_apr_type argument must be 'uniform' or 'brownian', not {args.vault_apr_type}"
     config.logging_level = sim_utils.text_to_logging_level(args.log_level)
     # NOTE: lint error false positives: This message may report object members that are created dynamically,
     # but exist at the time they are accessed.

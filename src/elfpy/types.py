@@ -43,7 +43,7 @@ def freezable(cls: Type) -> Type:
             .. todo::  resolve why pylint throws a no-member error on freezable wrapped
                 classes when instantiated_class.freeze() is called
             """
-            setattr(self, "frozen", True)
+            super().__setattr__("frozen", True)
 
     return FrozenClass
 

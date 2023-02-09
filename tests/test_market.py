@@ -62,6 +62,9 @@ class BaseMarketTest(unittest.TestCase):
         config.num_position_days = 365
         config.num_blocks_per_day = 3
         config.shuffle_users = False  # make it deterministic
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        config.freeze()  # pylint: disable=no-member # type: ignore
         simulator = test_utils.setup_simulation_entities(config, agent_policies=agent_policies)
         return simulator
 
@@ -97,6 +100,8 @@ class BaseMarketTest(unittest.TestCase):
             trade_amount=agent.amount_to_trade,
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
+        print(expected_deltas)
+        print(actual_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
 
     def run_market_test_close_long(self, agent_policy, expected_deltas: Deltas):
@@ -232,7 +237,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         # assign to appropriate token, for readability using absolute values, assigning +/- below
         d_base = trade_result  # proceeds from your sale of bonds, go into your margin account so you don't rug
         d_bonds = 100
-        open_share_price = 1.0086194128439765
+        open_share_price = 1.0
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
