@@ -6,9 +6,11 @@ import copy
 import decimal
 from decimal import Decimal
 
-from elfpy.types import (
+from elfpy import (
     MAX_RESERVES_DIFFERENCE,
     WEI,
+)
+from elfpy.types import (
     MarketDeltas,
     Quantity,
     MarketState,

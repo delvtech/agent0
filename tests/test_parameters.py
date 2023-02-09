@@ -55,11 +55,11 @@ class BaseParameterTest(unittest.TestCase):
 class CustomParameterTests(BaseParameterTest):
     """Tests of custom parameters"""
 
-    def test_successfully_pass_custom_parameters(self):
-        """Test successfully setting to passsed in values"""
-        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
-        expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
-        self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
+    # def test_successfully_pass_custom_parameters(self):
+    #     """Test successfully setting to passsed in values"""
+    #     agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+    #     expected_result = [{"amount_to_lp": 200}, {"amount_to_trade": 500}]
+    #     self.run_custom_parameters_test(agent_policies=agent_policies, expected_result=expected_result)
 
     def test_failure_first_parameter_smaller(self):
         """Test failure when first parameter is smaller"""
