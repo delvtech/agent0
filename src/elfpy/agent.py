@@ -161,6 +161,20 @@ class Agent:
                 if bond_percent == 1:
                     return last_maybe_max_short
                 bond_percent += step_size
+
+        # do one more iteration at the last step size in case the bisection method was stuck
+        # approaching a max_short value with slightly more base than an agent has.
+        trade_result = market.pricing_model.calc_out_given_in(
+            in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
+            market_state=market.market_state,
+            time_remaining=market.position_duration,
+        )
+        max_loss = last_maybe_max_short - trade_result.user_result.d_base
+        last_step_size = 1 / (2**num_iters + 1)
+        if max_loss > self.wallet.base:
+            bond_percent -= last_step_size
+            last_maybe_max_short = max_short * bond_percent
+
         return last_maybe_max_short
 
     def get_trades(self, market: Market) -> list:

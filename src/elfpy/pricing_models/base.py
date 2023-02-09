@@ -474,6 +474,7 @@ class PricingModel(ABC):
         last_maybe_max_short = 0, 0
         bond_percent = 1
         num_iters = 25
+        market_state_post_trade = copy.copy(market_state)
         for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
             try:
                 # Compute the amount of base returned by selling the specified
@@ -524,6 +525,22 @@ class PricingModel(ABC):
                     if bond_percent == 1:
                         return last_maybe_max_short
                     bond_percent += step_size
+
+        # do one more iteration at the last step size if the bisection method was stuck approaching
+        # a max_short value that used more reserve shares than the market had available.
+        if market_state_post_trade.share_reserves < market_state.base_buffer:
+            last_step_size = 1 / (2 ** (num_iters + 1))
+            bond_percent -= last_step_size
+            maybe_max_short_bonds = available_shares / market_state.share_price * bond_percent
+
+            trade_result = self.calc_out_given_in(
+                in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
+                market_state=market_state,
+                time_remaining=time_remaining,
+            )
+            maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
+
+            last_maybe_max_short = (maybe_max_short_base, maybe_max_short_bonds)
 
         return last_maybe_max_short
 
