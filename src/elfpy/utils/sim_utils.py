@@ -273,7 +273,7 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
     return import_module(f"elfpy.policies.{agent_type}").Policy
 
 
-def text_to_logging_level(logging_text: str) -> int:
+def text_to_log_level(logging_text: str) -> int:
     r"""Converts logging level description to an integer
 
     Parameters
