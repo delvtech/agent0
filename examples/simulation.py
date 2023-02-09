@@ -11,13 +11,9 @@ from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
-
-# elfpy core classes
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.types import MarketAction, MarketActionType, Config
-
-# elfpy utils
 from elfpy.utils import sim_utils
 from elfpy.utils import outputs as output_utils
 from elfpy.wallet import Long
