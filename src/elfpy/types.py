@@ -347,14 +347,6 @@ class TradeResult:
         return output_string
 
 
-@dataclass()
-class RandomSimulationVariables:
-    r"""Random variables to be used during simulation setup & execution"""
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-
 @dataclass
 class SimulationState:
     r"""Simulator state, updated after each trade"""
