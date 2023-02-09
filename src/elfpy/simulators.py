@@ -187,8 +187,12 @@ class Simulator:
             A list of agent trades. These will be executed in order.
         """
         for agent_id, agent_trades in trades:
+            if len(agent_trades) == 0:
+                continue
+            print(f"Executing trades at {self.day=} and {self.daily_block_number=}")
             agent = self.agents[agent_id]
             for trade in agent_trades:
+                print(f"Executing {self.run_trade_number=} for {agent_id=}: {trade=}")
                 agent_deltas = self.market.trade_and_update(trade)
                 logging.debug(
                     "agent #%g wallet deltas:\n%s",
@@ -199,6 +203,7 @@ class Simulator:
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
                 self.update_simulation_state()
+                print(f"{self.simulation_state.__dict__['share_reserves']=}")
                 self.run_trade_number += 1
 
     def run_simulation(self) -> None:

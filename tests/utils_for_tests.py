@@ -16,6 +16,8 @@ from elfpy.utils import sim_utils
 def setup_simulation_entities(config, agent_policies) -> Simulator:
     """Construct and run the simulator"""
     # Create the agents.
+    print(f"{agent_policies=}")
+    print(f"{len(agent_policies)=}")
     agents = []
     for agent_id, policy_instruction in enumerate(agent_policies):
         if ":" in policy_instruction:  # we have custom parameters

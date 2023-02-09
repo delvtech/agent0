@@ -481,8 +481,10 @@ class PricingModel(ABC):
         last_maybe_max_short = 0, 0
         bond_percent = 1
         num_iters = 25
+        iteration = 0
         market_state_post_trade = copy.copy(market_state)
         for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
+            iteration += 1
             try:
                 # Compute the amount of base returned by selling the specified
                 # amount of bonds.
@@ -525,11 +527,13 @@ class PricingModel(ABC):
                     or market_state_post_trade.share_price * market_state_post_trade.share_reserves
                     < market_state_post_trade.base_buffer
                     or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer
+                    or market_state_post_trade.share_reserves < 0
                 ):
                     bond_percent -= step_size
                 else:
                     last_maybe_max_short = (maybe_max_short_base, maybe_max_short_bonds)
                     if bond_percent == 1:
+                        print(f"we can short it all! {last_maybe_max_short=}")
                         return last_maybe_max_short
                     bond_percent += step_size
 
