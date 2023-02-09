@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.types import StretchedTime
-
+import elfpy.utils.time as time_utils
 
 ### Spot Price and APR ###
 def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
@@ -29,7 +29,8 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    return (1 - price) / (price * time_remaining.normalized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
+    renormalized_time = time_utils.norm_days(time_remaining.days, 365)
+    return (1 - price) / (price * renormalized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
@@ -47,4 +48,5 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
     float
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
-    return 1 / (1 + apr * time_remaining.normalized_time)  # price = 1 / (1 + r * t)
+    renormalized_time = time_utils.norm_days(time_remaining.days, 365)
+    return 1 / (1 + apr * renormalized_time)  # price = 1 / (1 + r * t)
