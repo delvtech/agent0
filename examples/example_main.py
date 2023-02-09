@@ -72,7 +72,7 @@ def get_argparser() -> argparse.ArgumentParser:
         epilog="See the README on https://github.com/element-fi/elf-simulations/ for more implementation details",
     )
     parser.add_argument(
-        "--output", help="Optional output filename for logging", default="../.logging/example_main.log", type=str
+        "--log_filename", help="Optional output filename for logging", default="../.logging/example_main.log", type=str
     )
     parser.add_argument(
         "--max_bytes",
@@ -119,13 +119,14 @@ if __name__ == "__main__":
         config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
     else:
         assert False, f"vault_apr_type argument must be 'uniform' or 'brownian', not {args.vault_apr_type}"
-    config.logging_level = sim_utils.text_to_logging_level(args.log_level)
+    config.log_level = sim_utils.text_to_log_level(args.log_level)
+    config.log_filename = args.log_filename
     # NOTE: lint error false positives: This message may report object members that are created dynamically,
     # but exist at the time they are accessed.
     config.freeze()  # pylint: disable=no-member # type: ignore
 
     # Define root logging parameters.
-    output_utils.setup_logging(log_filename=args.output, max_bytes=args.max_bytes, log_level=config.logging_level)
+    output_utils.setup_logging(log_filename=config.log_filename, max_bytes=args.max_bytes, log_level=config.log_level)
 
     # Initialize the simulator.
     simulator = sim_utils.get_simulator(config, get_example_agents(new_agents=args.num_agents, existing_agents=1))

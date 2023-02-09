@@ -474,6 +474,7 @@ class Config:
 
     # Simulation
     # durations
+    title: str = field(default="elfpy simulation", metadata=to_description("Text description of the simulation"))
     num_trading_days: int = field(default=180, metadata=to_description("in days; should be <= pool_duration"))
     num_blocks_per_day: int = field(default=7_200, metadata=to_description("int; agents execute trades each block"))
     num_position_days: int = field(
@@ -496,9 +497,8 @@ class Config:
     # init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
 
     # logging
-    logging_level: int = field(
-        default=logging.INFO, metadata=to_description("Logging level, as defined by stdlib logging")
-    )
+    log_level: int = field(default=logging.INFO, metadata=to_description("Logging level, as defined by stdlib logging"))
+    log_filename: str = field(default="simulation.log", metadata=to_description("filename for output logs"))
 
     # numerical
     precision: int = field(default=64, metadata=to_description("precision of calculations; max is 64"))
