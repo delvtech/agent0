@@ -18,7 +18,8 @@ from elfpy.markets import Market
 class SingleTradeTests(unittest.TestCase):
     """
     Tests for the SingeLong policy
-    TODO: In a followup PR, loop over pricing model types & rerun tests
+
+    .. todo:: In a followup PR, loop over pricing model types & rerun tests
     """
 
     def run_base_trade_test(
