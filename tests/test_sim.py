@@ -80,5 +80,10 @@ class TestSimulator(unittest.TestCase):
                 for key in simulator.simulation_state.__dict__
                 if len(simulator.simulation_state[key]) != goal_writes
             ]
-            raise AssertionError(f"ERROR: Analysis keys have too many entries: {bad_keys}") from exc
+            raise AssertionError(
+                "ERROR: Analysis keys have an incorrect number of entries:"
+                f"\n\t{bad_keys}"
+                f"\n\tlengths={[len(simulator.simulation_state[key]) for key in bad_keys]}"
+                f"\n\t{goal_writes=}"
+            ) from exc
         output_utils.close_logging()

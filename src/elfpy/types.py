@@ -353,7 +353,10 @@ class TradeResult:
 
 @dataclass
 class SimulationState:
-    r"""Simulator state, updated after each trade"""
+    r"""Simulator state, updated after each trade
+
+    MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
+    """
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -389,23 +392,14 @@ class SimulationState:
     position_duration: list = field(
         default_factory=list, metadata=to_description(" time lapse between token mint and expiry as a yearfrac")
     )
-    target_liquidity: list = field(
-        default_factory=list, metadata=to_description("amount of liquidity the market should stop with")
-    )
     trade_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
     )
     redemption_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of redemption outputs to be collected as fees")
     )
-    floor_fee: list = field(default_factory=list, metadata=to_description(" minimum fee we take"))
-    init_vault_age: list = field(default_factory=list, metadata=to_description("the age of the underlying vault"))
-    base_asset_price: list = field(default_factory=list, metadata=to_description("the market price of the shares"))
+    current_vault_apr: list = field(default_factory=list, metadata=to_description("vault apr on a given day"))
     pool_apr: list = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
-    num_trading_days: list = field(default_factory=list, metadata=to_description(" number of days in a simulation"))
-    num_blocks_per_day: list = field(
-        default_factory=list, metadata=to_description(" number of blocks in a day, simulates time between blocks")
-    )
     spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
     def add_dict_entries(self, dictionary: dict) -> None:
@@ -457,11 +451,11 @@ class Config:
     base_asset_price: float = field(default=2e3, metadata=to_description("market price"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
-    vault_apr: list[float] = field(
+    vault_apr: list[float] = field(  # default is overridden in __post_init__
         default_factory=lambda: [-1],
         metadata=to_description("the underlying (variable) vault APR at each time step"),
     )
-    init_share_price: float = field(
+    init_share_price: float = field(  # default is overridden in __post_init__
         default=-1, metadata=to_description("initial market share price for the vault asset")  # type: ignore
     )
 
@@ -499,7 +493,7 @@ class Config:
         default=True,
         metadata=to_description("Whether or not to use compounding revenue for the underlying yield source"),
     )
-    init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
+    # init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
 
     # logging
     logging_level: int = field(
@@ -518,9 +512,9 @@ class Config:
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
-        if self.vault_apr == [-1]:
+        if self.vault_apr == [-1]:  # defaults to [-1] so this should happen right after init
             self.vault_apr = [0.05] * self.num_trading_days
-        if self.init_share_price == -1:
+        if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
 
     def __getitem__(self, key) -> None:
@@ -528,11 +522,10 @@ class Config:
 
     def __setattr__(self, attrib, value) -> None:
         if attrib == "vault_apr":
-            self.check_vault_apr()
+            if hasattr(self, "vault_apr"):
+                self.check_vault_apr()
             super().__setattr__("vault_apr", value)
         elif attrib == "init_share_price":
-            if self.init_share_price < 0:
-                raise ValueError("ERROR: init_share_price must be positive")
             super().__setattr__("init_share_price", value)
         else:
             super().__setattr__(attrib, value)
@@ -549,7 +542,7 @@ class Config:
                 f"ERROR: vault_apr must be of type list, not {type(self.vault_apr)}."
                 f"\nhint: it must be set after Config is initialized."
             )
-        if len(self.vault_apr) != self.num_trading_days:
+        if not hasattr(self, "num_trading_days") and len(self.vault_apr) != self.num_trading_days:
             raise ValueError(
                 "ERROR: vault_apr must have len equal to num_trading_days = "
                 + f"{self.num_trading_days},"

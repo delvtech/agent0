@@ -269,7 +269,9 @@ class Simulator:
         self.simulation_state.market_step_size.append(self.market_step_size())
         self.simulation_state.position_duration.append(self.market.position_duration)
         self.simulation_state.pool_apr.append(self.market.rate)
-        self.simulation_state.add_dict_entries(self.config.__dict__)
+        self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
+        # bad_config_keys = ["vault_apr", "trade_fee_percent", "redemption_fee_percent", "init_share_price"]
+        self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
             self.simulation_state.add_dict_entries(agent.wallet.get_state(self.market))
