@@ -6,6 +6,5 @@ pyright>=1.1.288
 black>=22.8.0
 scipy>=1.9.1
 pandas>=1.5.0
-plotly>=5.10.0
 tomli>=2.0.1
 stochastic>=0.6.0

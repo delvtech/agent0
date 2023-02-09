@@ -6,30 +6,16 @@ import logging
 import itertools
 import os
 import sys
-from typing import Any
 
-from elfpy.utils.parse_config import load_and_parse_config_file
+from elfpy.types import Config
 from elfpy.utils import sim_utils, outputs as output_utils  # utilities for setting up a simulation
-import elfpy.utils.parse_config as config_utils
 
 
-class BaseLogTest(unittest.TestCase):
-    """Generic test class"""
+class TestLogging(unittest.TestCase):
+    """Run the logging tests"""
 
-    @staticmethod
-    def setup_and_run_simulator(config_file, override_dict: dict[str, Any]):
-        """Construct and run the simulator"""
-        # Initialize the simulator.
-        config = config_utils.override_config_variables(load_and_parse_config_file(config_file), override_dict)
-        simulator = sim_utils.get_simulator(config)
-
-        # Run the simulation.
-        simulator.run_simulation()
-
-    def run_logging_test(self, delete_logs=True):
-        """
-        For each logging level, run the simulator and check the logs
-        """
+    def test_logging(self):
+        """Tests logging"""
         log_dir = ".logging"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -57,21 +43,30 @@ class BaseLogTest(unittest.TestCase):
                 handler,
             ]
 
-            config_file = "config/example_config.toml"
-            override_dict = {
-                "pricing_model_name": "Yieldspace",
-                "num_trading_days": 10,
-                "num_blocks_per_day": 3,  # 1 block a day, keep it fast for testing
-            }
-            self.setup_and_run_simulator(config_file, override_dict)
+            config = Config()
+            config.pricing_model_name = "Yieldspace"
+            config.num_trading_days = 10
+            config.num_blocks_per_day = 3  # keep it fast for testing
+            simulator = sim_utils.get_simulator(config)  # initialize
+            simulator.run_simulation()  # run
             self.assertLogs(level=level)
-            if delete_logs and handler_type == "file":
+            if handler_type == "file":
                 output_utils.delete_log_file()
 
+    def test_log_config_variables(self):
+        """Verfies that the config variables are successfully logged"""
+        log_filename = ".logging/test_sim.log"
+        output_utils.setup_logging(log_filename, log_level=logging.INFO)
+        config = Config()
+        logging.info("%s", config)
+        self.assertLogs(level=logging.INFO)
+        output_utils.close_logging()
 
-class TestLogging(BaseLogTest):
-    """Run the logging tests"""
-
-    def test_logging(self):
-        """Tests logging"""
-        self.run_logging_test(delete_logs=True)
+    def test_text_to_logging_level(self):
+        """Test that logging level strings result in the correct integera amounts"""
+        # change up case to test .lower()
+        logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
+        logging_constants = [0, 10, 20, 30, 40, 50]
+        for level_str, level_int in zip(logging_levels, logging_constants):
+            func_level = sim_utils.text_to_log_level(level_str)
+            assert level_int == func_level

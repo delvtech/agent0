@@ -6,7 +6,6 @@ from importlib import import_module
 
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
-import elfpy.utils.parse_config as config_utils
 
 
 # TODO: review these helper functions for inclusion into the package under src/elfpy/utils
@@ -14,11 +13,8 @@ import elfpy.utils.parse_config as config_utils
 # if those examples use these functions, then we should move them into the package
 
 
-def setup_simulation_entities(config_file, override_dict, agent_policies) -> Simulator:
+def setup_simulation_entities(config, agent_policies) -> Simulator:
     """Construct and run the simulator"""
-    # Instantiate the config.
-    config = config_utils.override_config_variables(config_utils.load_and_parse_config_file(config_file), override_dict)
-    random_sim_vars = sim_utils.override_random_variables(sim_utils.get_random_variables(config), override_dict)
     # Create the agents.
     agents = []
     for agent_id, policy_instruction in enumerate(agent_policies):
@@ -38,8 +34,7 @@ def setup_simulation_entities(config_file, override_dict, agent_policies) -> Sim
                 raise AttributeError(f"Policy {policy_name} does not have parameter {key}")
         agent.log_status_report()
         agents += [agent]
-    # Initialize the simulator.
-    simulator = sim_utils.get_simulator(config, agents, random_sim_vars)
+    simulator = sim_utils.get_simulator(config, agents)  # initialize the simulator
     return simulator
 
 

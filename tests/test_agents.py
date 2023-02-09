@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 
 from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.types import MarketState, Quantity, StretchedTime, TokenType, Config
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -89,9 +89,7 @@ class TestAgent(unittest.TestCase):
         # get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
         # setup a simulation environment
-        config_file = "config/example_config.toml"
-        override_dict = {}
-        simulator = test_utils.setup_simulation_entities(config_file, override_dict, agent_policies)
+        simulator = test_utils.setup_simulation_entities(Config(), agent_policies)
         simulator.collect_and_execute_trades()
         for agent in simulator.agents.values():
             wallet_state = agent.wallet.get_state(simulator.market)

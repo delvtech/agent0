@@ -1,19 +1,22 @@
 """A set of common types used throughtout the simulation codebase"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+import logging
 from functools import wraps
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
+import json
 
-import elfpy.utils.time as time_utils
+import numpy as np
+from numpy.random import Generator
+
 from elfpy import PRECISION_THRESHOLD
+import elfpy.utils.time as time_utils
+from elfpy.utils.outputs import CustomEncoder
 
 if TYPE_CHECKING:
     from typing import Type, Any
-    from elfpy.agent import Agent
-    from elfpy.markets import Market
 
 
 def to_description(description: str) -> dict[str, str]:
@@ -39,7 +42,7 @@ def freezable(cls: Type) -> Type:
             .. todo::  resolve why pylint throws a no-member error on freezable wrapped
                 classes when instantiated_class.freeze() is called
             """
-            setattr(self, "frozen", True)
+            super().__setattr__("frozen", True)
 
     return FrozenClass
 
@@ -347,33 +350,12 @@ class TradeResult:
         return output_string
 
 
-@dataclass()
-class RandomSimulationVariables:
-    r"""Random variables to be used during simulation setup & execution"""
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-    target_liquidity: float = field(metadata=to_description("total size of the market pool (bonds + shares)"))
-    target_pool_apr: float = field(metadata=to_description("desired fixed apr for as a decimal"))
-    trade_fee_percent: float = field(metadata=to_description("LP fee percent to charge for trades"))
-    redemption_fee_percent: float = field(metadata=to_description("LP fee percent to charge for redemption"))
-    vault_apr: list = field(metadata=to_description("yield bearing source APR"))
-    init_vault_age: float = field(metadata=to_description("fraction of a year since the vault was opened"))
-    # NOTE: We ignore the type error since the value will never be None after
-    # initialization, and we don't want the value to be set to None downstream.
-    init_share_price: float = field(
-        default=None, metadata=to_description("initial market share price for the vault asset")  # type: ignore
-    )
-
-    def __post_init__(self):
-        r"""init_share_price is a function of other random variables"""
-        if self.init_share_price is None:
-            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
-
-
 @dataclass
 class SimulationState:
-    r"""Simulator state, updated after each trade"""
+    r"""Simulator state, updated after each trade
+
+    MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
+    """
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -409,58 +391,35 @@ class SimulationState:
     position_duration: list = field(
         default_factory=list, metadata=to_description(" time lapse between token mint and expiry as a yearfrac")
     )
-    target_liquidity: list = field(
-        default_factory=list, metadata=to_description("amount of liquidity the market should stop with")
-    )
     trade_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
     )
     redemption_fee_percent: list = field(
         default_factory=list, metadata=to_description("the percentage of redemption outputs to be collected as fees")
     )
-    floor_fee: list = field(default_factory=list, metadata=to_description(" minimum fee we take"))
-    init_vault_age: list = field(default_factory=list, metadata=to_description("the age of the underlying vault"))
-    base_asset_price: list = field(default_factory=list, metadata=to_description("the market price of the shares"))
+    current_vault_apr: list = field(default_factory=list, metadata=to_description("vault apr on a given day"))
     pool_apr: list = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
-    num_trading_days: list = field(default_factory=list, metadata=to_description(" number of days in a simulation"))
-    num_blocks_per_day: list = field(
-        default_factory=list, metadata=to_description(" number of blocks in a day, simulates time between blocks")
-    )
     spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
-    def update_market_state(self, market_state: MarketState) -> None:
-        r"""Update each entry in the SimulationState's copy for the market state
-        by appending to the list for each key, or creating a new key.
+    def add_dict_entries(self, dictionary: dict) -> None:
+        r"""Adds keys & values of input ditionary to the simulation state
+
+        The simulation state is an ever-growing list,
+        so each item in this dict is appended to the attribute with a corresponding key.
+        If no attribute exists for that key, a new list containing the value is assigned to the attribute
 
         Parameters
         ----------
-        market_state: MarketState
-            The state variable for the Market class
+        dictionary : dict
+            items to be added
         """
-        for key, val in market_state.__dict__.items():
+        for key, val in dictionary.items():
             if hasattr(self, key):
                 attribute_state = getattr(self, key)
                 attribute_state.append(val)
                 setattr(self, key, attribute_state)
             else:
                 setattr(self, key, [val])
-
-    def update_agent_wallet(self, agent: Agent, market: Market) -> None:
-        r"""Update each entry in the SimulationState's copy for the agent wallet state
-        by appending to the list for each key, or creating a new key.
-
-        Parameters
-        ----------
-        agent: Agent
-            An instantiated Agent object
-        """
-        for key, value in agent.wallet.get_state(market).items():
-            if hasattr(self, key):
-                key_list = getattr(self, key)
-                key_list.append(value)
-                setattr(self, key, key_list)
-            else:
-                setattr(self, key, [value])
 
     def __getitem__(self, key):
         r"""Get object attribute referenced by `key`"""
@@ -469,3 +428,122 @@ class SimulationState:
     def __setitem__(self, key, value):
         r"""Set object attribute referenced by `key` to `value`"""
         setattr(self, key, value)
+
+
+@freezable
+@dataclass
+class Config:
+    """Data object for storing user simulation config parameters
+
+    .. todo:: TODO: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    """
+
+    # lots of configs!
+    # pylint: disable=too-many-instance-attributes
+
+    # Market
+    target_liquidity: float = field(
+        default=1e6, metadata=to_description("total size of the market pool (bonds + shares)")
+    )
+    target_volume: float = field(default=0.01, metadata=to_description("fraction of pool liquidity"))
+    init_vault_age: float = field(default=0, metadata=to_description("fraction of a year since the vault was opened"))
+    base_asset_price: float = field(default=2e3, metadata=to_description("market price"))
+    # NOTE: We ignore the type error since the value will never be None after
+    # initialization, and we don't want the value to be set to None downstream.
+    vault_apr: list[float] = field(  # default is overridden in __post_init__
+        default_factory=lambda: [-1],
+        metadata=to_description("the underlying (variable) vault APR at each time step"),
+    )
+    init_share_price: float = field(  # default is overridden in __post_init__
+        default=-1, metadata=to_description("initial market share price for the vault asset")  # type: ignore
+    )
+
+    # AMM
+    pricing_model_name: str = field(
+        default="Hyperdrive", metadata=to_description('Must be "Hyperdrive", or "YieldSpace"')
+    )
+    trade_fee_percent: float = field(
+        default=0.05, metadata=to_description("LP fee factor (decimal) to charge for trades")
+    )
+    redemption_fee_percent: float = field(
+        default=0.05, metadata=to_description("LP fee factor (decimal) to charge for redemption")
+    )
+    target_pool_apr: float = field(default=0.1, metadata=to_description("desired fixed apr for as a decimal"))
+    floor_fee: float = field(default=0, metadata=to_description("minimum fee percentage (bps)"))
+
+    # Simulation
+    # durations
+    title: str = field(default="elfpy simulation", metadata=to_description("Text description of the simulation"))
+    num_trading_days: int = field(default=180, metadata=to_description("in days; should be <= pool_duration"))
+    num_blocks_per_day: int = field(default=7_200, metadata=to_description("int; agents execute trades each block"))
+    num_position_days: int = field(
+        default=90, metadata=to_description("time lapse between token mint and expiry as days")
+    )
+
+    # users
+    shuffle_users: bool = field(
+        default=True, metadata=to_description("Shuffle order of action (as if random gas paid)")
+    )
+    agent_policies: list = field(default_factory=list, metadata=to_description("List of strings naming user policies"))
+    init_lp: bool = field(default=True, metadata=to_description("If True, use an initial LP agent to seed pool"))
+    num_position_days: int = field(default=365, metadata=to_description("Term length in days of a position"))
+
+    # vault
+    compound_vault_apr: bool = field(
+        default=True,
+        metadata=to_description("Whether or not to use compounding revenue for the underlying yield source"),
+    )
+    # init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
+
+    # logging
+    log_level: int = field(default=logging.INFO, metadata=to_description("Logging level, as defined by stdlib logging"))
+    log_filename: str = field(default="simulation.log", metadata=to_description("filename for output logs"))
+
+    # numerical
+    precision: int = field(default=64, metadata=to_description("precision of calculations; max is 64"))
+
+    # random
+    random_seed: int = field(default=1, metadata=to_description("int to be used for the random seed"))
+    rng: Generator = field(
+        init=False, compare=False, metadata=to_description("random number generator used in the simulation")
+    )
+
+    def __post_init__(self) -> None:
+        r"""init_share_price & rng are a function of other random variables"""
+        self.rng = np.random.default_rng(self.random_seed)
+        if self.vault_apr == [-1]:  # defaults to [-1] so this should happen right after init
+            self.vault_apr = [0.05] * self.num_trading_days
+        if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
+            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
+
+    def __getitem__(self, key) -> None:
+        return getattr(self, key)
+
+    def __setattr__(self, attrib, value) -> None:
+        if attrib == "vault_apr":
+            if hasattr(self, "vault_apr"):
+                self.check_vault_apr()
+            super().__setattr__("vault_apr", value)
+        elif attrib == "init_share_price":
+            super().__setattr__("init_share_price", value)
+        else:
+            super().__setattr__(attrib, value)
+
+    def __str__(self) -> str:
+        # cls arg tells json how to handle numpy objects and nested dataclasses
+        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
+        return config_string
+
+    def check_vault_apr(self) -> None:
+        r"""Verify that the vault_apr is the right length"""
+        if not isinstance(self.vault_apr, list):
+            raise TypeError(
+                f"ERROR: vault_apr must be of type list, not {type(self.vault_apr)}."
+                f"\nhint: it must be set after Config is initialized."
+            )
+        if not hasattr(self, "num_trading_days") and len(self.vault_apr) != self.num_trading_days:
+            raise ValueError(
+                "ERROR: vault_apr must have len equal to num_trading_days = "
+                + f"{self.num_trading_days},"
+                + f" not {len(self.vault_apr)}"
+            )

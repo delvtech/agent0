@@ -5,14 +5,12 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.utils.config import get_random_variables
 from elfpy.simulators import Simulator
 from elfpy.types import (
     MarketState,
     Quantity,
     StretchedTime,
     TokenType,
-    RandomSimulationVariables,
 )
 from elfpy.markets import Market
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -21,14 +19,12 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agent import Agent
-    from elfpy.utils.config import Config
+    from elfpy.types import Config
 
 
 def get_simulator(
     config: Config,
     agents: Optional[list[Agent]] = None,
-    random_sim_vars: Optional[RandomSimulationVariables] = None,
-    override_dict: Optional[dict[str, Any]] = None,
 ) -> Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
@@ -50,42 +46,17 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
-    # Sample the random simulation arguments.
-    if random_sim_vars is None:
-        set_random_sim_vars = get_random_variables(config)
-        if override_dict is not None:
-            set_random_sim_vars = override_random_variables(set_random_sim_vars, override_dict)
-    else:
-        set_random_sim_vars = random_sim_vars
     # Instantiate the market.
-    pricing_model = get_pricing_model(config.amm.pricing_model_name)
-    market = get_market(
-        pricing_model,
-        set_random_sim_vars.target_pool_apr,
-        set_random_sim_vars.trade_fee_percent,
-        set_random_sim_vars.redemption_fee_percent,
-        config.simulator.num_position_days,
-        set_random_sim_vars.vault_apr,
-        set_random_sim_vars.init_share_price,
-    )
-    # Initialize the simulator using only the initial LP.
-    simulator = Simulator(
-        config=config,
-        market=market,
-        random_simulation_variables=set_random_sim_vars,
-    )
+    pricing_model = get_pricing_model(config.pricing_model_name)
+    market = get_market(pricing_model, config)
+    simulator = Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired
-    if config.simulator.init_lp is True:
-        simulator.add_agents(
-            [
-                get_init_lp_agent(
-                    market,
-                    set_random_sim_vars.target_liquidity,
-                    set_random_sim_vars.target_pool_apr,
-                    set_random_sim_vars.trade_fee_percent,
-                )
-            ]
-        )
+    if config.init_lp is True:
+        init_agents = [
+            get_init_lp_agent(market, config.target_liquidity, config.target_pool_apr, config.trade_fee_percent)
+        ]
+        simulator.add_agents(init_agents)
+    # Initialize the simulator using only the initial LP.
     simulator.collect_and_execute_trades()
     # Add the remaining agents.
     if agents is not None:
@@ -215,12 +186,7 @@ def get_init_lp_agent(
 
 def get_market(
     pricing_model: PricingModel,
-    target_pool_apr: float,
-    trade_fee_percent: float,
-    redemption_fee_percent: float,
-    num_position_days: int,
-    vault_apr: list,
-    init_share_price: float,
+    config: Config,
 ) -> Market:
     r"""Setup market
 
@@ -228,43 +194,41 @@ def get_market(
     ----------
     pricing_model : PricingModel
         instantiated pricing model
-    target_pool_apr : float
-        target apr, used for calculating the time stretch
-        NOTE: the market apr will not have this target value until the init_lp agent trades,
-        or the share & bond reserves are explicitly set
-    trade_fee_percent : float
-        portion of trades to be collected as fees for LPers, expressed as a decimal
-    redemption_fee_percent : float
-        portion of redemptions to be collected as fees for LPers, expressed as a decimal
-    num_position_days : int
-        how much time between token minting and expiry, in days
-    vault_apr : list
-        valut apr per day for the duration of the simulation
-    init_share_price : float
-        the initial price of the yield bearing vault shares
+    config: Config
+        instantiated config object. The following attributes are used:
+            target_pool_apr : float
+                target apr, used for calculating the time stretch
+                NOTE: the market apr will not have this target value until the init_lp agent trades,
+                or the share & bond reserves are explicitly set
+            trade_fee_percent : float
+                portion of trades to be collected as fees for LPers, expressed as a decimal
+            redemption_fee_percent : float
+                portion of redemptions to be collected as fees for LPers, expressed as a decimal
+            num_position_days : int
+                how much time between token minting and expiry, in days
+            vault_apr : list
+                valut apr per day for the duration of the simulation
+            init_share_price : float
+                the initial price of the yield bearing vault shares
 
     Returns
     -------
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
-
-    .. todo:: TODO: Rename the fee_percent variable so that it doesn't use "percent"
     """
-    # Wrapper functions are expected to have a lot of arguments
-    # pylint: disable=too-many-arguments
     market = Market(
         pricing_model=pricing_model,
         market_state=MarketState(
-            init_share_price=init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            share_price=init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            vault_apr=vault_apr[0],  # yield bearing source apr
-            trade_fee_percent=trade_fee_percent,  # g
-            redemption_fee_percent=redemption_fee_percent,  # g
+            init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+            share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
+            vault_apr=config.vault_apr[0],  # yield bearing source apr
+            trade_fee_percent=config.trade_fee_percent,  # g
+            redemption_fee_percent=config.redemption_fee_percent,  # g
         ),
         position_duration=StretchedTime(
-            days=num_position_days,
-            time_stretch=pricing_model.calc_time_stretch(target_pool_apr),
-            normalizing_constant=num_position_days,
+            days=config.num_position_days,
+            time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
+            normalizing_constant=config.num_position_days,
         ),
     )
     return market
@@ -293,35 +257,6 @@ def get_pricing_model(model_name: str) -> PricingModel:
     return pricing_model
 
 
-def override_random_variables(
-    random_variables: RandomSimulationVariables,
-    override_dict: dict[str, Any],
-) -> RandomSimulationVariables:
-    r"""Override the random simulation variables with targeted values, as specified by the keys
-
-    Parameters
-    ----------
-    random_variables : RandomSimulationVariables
-        dataclass that contains variables for initiating and running simulations
-    override_dict : dict
-        dictionary containing keys that correspond to member fields of the RandomSimulationVariables class
-
-    Returns
-    -------
-    RandomSimulationVariables
-        same dataclass as the random_variables input, but with fields specified by override_dict changed
-    """
-
-    # allowed keys are all of the random_variable attributes, except vault_apre, which overrides
-    # config instead
-    allowed_keys = [key for key in random_variables.__dict__.keys() if key not in ["vault_apr"]]
-
-    for key, value in override_dict.items():
-        if hasattr(random_variables, key) and key in allowed_keys:
-            setattr(random_variables, key, value)
-    return random_variables
-
-
 def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for output
     """Returns an uninstantiated agent
 
@@ -336,3 +271,33 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
 
     """
     return import_module(f"elfpy.policies.{agent_type}").Policy
+
+
+def text_to_log_level(logging_text: str) -> int:
+    r"""Converts logging level description to an integer
+
+    Parameters
+    ----------
+    logging_text : str
+        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
+
+    Returns
+    -------
+    int
+        Logging level integer corresponding to the string input
+    """
+    if logging_text.lower() == "notset":
+        level = logging.NOTSET
+    elif logging_text.lower() == "debug":
+        level = logging.DEBUG
+    elif logging_text.lower() == "info":
+        level = logging.INFO
+    elif logging_text.lower() == "warning":
+        level = logging.WARNING
+    elif logging_text.lower() == "error":
+        level = logging.ERROR
+    elif logging_text.lower() == "critical":
+        level = logging.CRITICAL
+    else:
+        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
+    return level
