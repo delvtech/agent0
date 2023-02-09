@@ -52,6 +52,10 @@ class BaseParameterTest(unittest.TestCase):
 class CustomParameterTests(BaseParameterTest):
     """Tests of custom parameters"""
 
+    def test_max_short(self):
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+        self.run_base_trade_test(agent_policies=agent_policies, delete_logs=True)
+
     def test_successfully_pass_custom_parameters(self):
         """Test successfully setting to passsed in values"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
