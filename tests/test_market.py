@@ -100,8 +100,6 @@ class BaseMarketTest(unittest.TestCase):
             trade_amount=agent.amount_to_trade,
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
-        print(expected_deltas)
-        print(actual_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
 
     def run_market_test_close_long(self, agent_policy, expected_deltas: Deltas):
