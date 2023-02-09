@@ -122,8 +122,10 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
 
-        .. todo:: TODO: Write a test for this function
+        .. todo:: Write a test for this function
         """
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
         renormalized_time = time_utils.norm_days(time_remaining.days, 365)
         bond_reserves = (market_state.share_reserves / 2) * (
             market_state.init_share_price * (1 + target_apr * renormalized_time) ** (1 / time_remaining.stretched_time)
@@ -161,8 +163,11 @@ class PricingModel(ABC):
         float
             The expected amount of base asset in the pool, calculated from the provided parameters
 
+        .. todo:: Write a test for this function
         """
-        # TODO: Write a test for this function
+
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
         renormalized_time = time_utils.norm_days(time_remaining.days, 365)
         share_reserves = bond_reserves / (
             init_share_price * (1 - target_apr * renormalized_time) ** (1 / time_remaining.stretched_time)
@@ -253,7 +258,7 @@ class PricingModel(ABC):
         float
             Total liquidity in the pool in terms of base, calculated from the provided parameters
 
-        .. todo:: TODO: Write a test for this function
+        .. todo:: Write a test for this function
         """
         return market_state.share_reserves * share_price
 
