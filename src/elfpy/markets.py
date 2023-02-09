@@ -34,25 +34,22 @@ class Market:
     def __init__(
         self,
         pricing_model: PricingModel,
-        market_state: MarketState = MarketState(
-            share_reserves=0,
-            bond_reserves=0,
-            base_buffer=0,
-            bond_buffer=0,
-            lp_reserves=0,
-            vault_apr=0,
-            share_price=1,
-            init_share_price=1,
-            trade_fee_percent=0,
-            redemption_fee_percent=0,
-        ),
-        position_duration: StretchedTime = StretchedTime(365, 1, 365),
+        market_state: MarketState,
+        position_duration: StretchedTime,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.pricing_model = pricing_model
         self.market_state: MarketState = market_state
-        self.position_duration: StretchedTime = position_duration  # how long do positions take to mature
+        assert (
+            position_duration.days == position_duration.normalizing_constant
+        ), "position_duration argument term length (days) should normalize to 1"
+        self.position_duration = StretchedTime(
+            position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
+        )
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         r"""Ensure that the agent action is an allowed action for this market

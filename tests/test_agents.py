@@ -66,6 +66,9 @@ class TestAgent(unittest.TestCase):
         time_remaining = StretchedTime(
             days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
         )
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        time_remaining.freeze()  # pylint: disable=no-member # type: ignore
         market = Market(
             pricing_model=pricing_model,
             market_state=market_state,
@@ -212,7 +215,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=91
                 ),
             ),
             TestCaseGetMax(
@@ -226,7 +229,7 @@ class TestAgent(unittest.TestCase):
                     trade_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365
+                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=91
                 ),
             ),
         ]

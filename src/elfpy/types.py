@@ -1,6 +1,7 @@
 """A set of common types used throughtout the simulation codebase"""
-
 from __future__ import annotations  # types will be strings by default in 3.11
+
+from functools import wraps
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
@@ -8,6 +9,7 @@ from enum import Enum
 import elfpy.utils.time as time_utils
 
 if TYPE_CHECKING:
+    from typing import Type, Any
     from elfpy.agent import Agent
     from elfpy.markets import Market
 
@@ -15,6 +17,29 @@ if TYPE_CHECKING:
 def to_description(description: str) -> dict[str, str]:
     r"""A dataclass helper that constructs metadata containing a description."""
     return {"description": description}
+
+
+def freezable(cls: Type) -> Type:
+    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
+
+    @wraps(cls, updated=())
+    class FrozenClass(cls):
+        """Subclass cls to add frozen check & freeze function"""
+
+        def __setattr__(self, attrib: str, value: Any) -> None:
+            if hasattr(self, attrib) and hasattr(self, "frozen") and getattr(self, "frozen"):
+                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot assign to field '{attrib}'.")
+            super().__setattr__(attrib, value)
+
+        def freeze(self) -> None:
+            """Sets frozen member attribute to true
+
+            .. todo::  resolve why pylint throws a no-member error on freezable wrapped
+                classes when instantiated_class.freeze() is called
+            """
+            setattr(self, "frozen", True)
+
+    return FrozenClass
 
 
 # This is the minimum allowed value to be passed into calculations to avoid
@@ -36,9 +61,11 @@ class TokenType(Enum):
 
 
 class MarketActionType(Enum):
-    r"""The descriptor of an action in a market"""
+    r"""
+    The descriptor of an action in a market
 
-    # TODO: Add this in INITIALIZE_MARKET = "initialize_market"
+    .. todo:: Add INITIALIZE_MARKET = "initialize_market"
+    """
 
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
@@ -58,6 +85,7 @@ class Quantity:
     unit: TokenType
 
 
+@freezable
 @dataclass
 class StretchedTime:
     r"""Stores time in units of days, as well as normalized & stretched variants
