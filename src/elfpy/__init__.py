@@ -8,6 +8,22 @@ import matplotlib as mpl
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
+# This is the minimum allowed value to be passed into calculations to avoid
+# problems with sign flips that occur when the floating point range is exceeded.
+WEI = 1e-18  # smallest denomination of ether
+
+# The maximum allowed difference between the base reserves and bond reserves.
+# This value was calculated using trial and error and is close to the maximum
+# difference between the reserves that will not result in a sign flip when a
+# small trade is put on.
+MAX_RESERVES_DIFFERENCE = 2e10
+
+# The maximum allowed precision error.
+# This value was selected based on one test not passing without it.
+# apply_delta() below checks if reserves are negative within the threshold,
+# and sets them to 0 if so.
+PRECISION_THRESHOLD = 1e-9
+
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
 DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"

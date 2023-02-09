@@ -5,8 +5,10 @@ from functools import wraps
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
 
 import elfpy.utils.time as time_utils
+from elfpy import PRECISION_THRESHOLD
 
 if TYPE_CHECKING:
     from typing import Type, Any
@@ -40,17 +42,6 @@ def freezable(cls: Type) -> Type:
             setattr(self, "frozen", True)
 
     return FrozenClass
-
-
-# This is the minimum allowed value to be passed into calculations to avoid
-# problems with sign flips that occur when the floating point range is exceeded.
-WEI = 1e-18  # smallest denomination of ether
-
-# The maximum allowed difference between the base reserves and bond reserves.
-# This value was calculated using trial and error and is close to the maximum
-# difference between the reserves that will not result in a sign flip when a
-# small trade is put on.
-MAX_RESERVES_DIFFERENCE = 2e10
 
 
 class TokenType(Enum):
@@ -250,6 +241,22 @@ class MarketState:
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
         self.share_price += delta.d_share_price
+
+        # this is an imperfect solution to rounding errors, but it works for now
+        # ideally we'd find a more thorough solution than just catching errors
+        # when they are. issue #146 tracks this.
+        # TODO: #146
+        for key, value in self.__dict__.items():
+            if 0 > value > -PRECISION_THRESHOLD:
+                logging.debug(
+                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                    key,
+                    value,
+                    PRECISION_THRESHOLD,
+                )
+                setattr(self, key, 0)
+            else:
+                assert value >= 0, "MarketState values must be non-negative"
 
     def __str__(self):
         output_string = (

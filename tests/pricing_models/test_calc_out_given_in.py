@@ -1566,7 +1566,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
-                exception_type=(AssertionError, decimal.InvalidOperation),
+                exception_type=(decimal.InvalidOperation, decimal.DivisionByZero),
             ),
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
