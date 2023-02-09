@@ -6,14 +6,13 @@ from functools import wraps
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
 import json
 
 import numpy as np
 from numpy.random import Generator
 
-import elfpy.utils.time as time_utils
 from elfpy import PRECISION_THRESHOLD
+import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
 
 if TYPE_CHECKING:
