@@ -47,12 +47,7 @@ def get_simulator(
         instantiated simulator class
     """
     # Instantiate the market.
-<<<<<<< HEAD
-    pricing_model = get_pricing_model(config.amm.pricing_model_name)
-
-=======
     pricing_model = get_pricing_model(config.pricing_model_name)
->>>>>>> afde323 (further fixing lint errors)
     market = get_market(pricing_model, config)
     simulator = Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired
@@ -278,7 +273,7 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
     return import_module(f"elfpy.policies.{agent_type}").Policy
 
 
-def text_to_log_level(logging_text: str) -> int:
+def text_to_logging_level(logging_text: str) -> int:
     r"""Converts logging level description to an integer
 
     Parameters
