@@ -1,18 +1,15 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 import datetime
-import json
 import logging
 
 import numpy as np
 from numpy.random._generator import Generator
 
 import elfpy.utils.time as time_utils
-from elfpy.utils.outputs import CustomEncoder
-from elfpy.types import MarketAction, MarketDeltas, RandomSimulationVariables, SimulationState
-from elfpy.utils import config as config_utils
+from elfpy.types import MarketAction, MarketDeltas, SimulationState
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
@@ -34,17 +31,12 @@ class Simulator:
         self,
         config: Config,
         market: Market,
-        random_simulation_variables: Optional[RandomSimulationVariables] = None,
     ):
         # User specified variables
         self.config = config
-        self.log_config_variables()
+        logging.info("%s", self.config)
         self.market = market
-        self.set_rng(config.simulator.rng)
-        if random_simulation_variables is None:
-            self.random_variables = config_utils.get_random_variables(self.config)
-        else:
-            self.random_variables = random_simulation_variables
+        self.set_rng(config.rng)
         self.check_vault_apr()
         self.agents = {}
 
@@ -54,18 +46,18 @@ class Simulator:
         self.block_number = 0
         self.daily_block_number = 0
         seconds_in_a_day = 86400
-        self.time_between_blocks = seconds_in_a_day / self.config.simulator.num_blocks_per_day
+        self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.run_trade_number = 0
         self.start_time: datetime.datetime | None = None
         self.simulation_state = SimulationState()
 
     def check_vault_apr(self) -> None:
         r"""Verify that the vault_apr is the right length"""
-        if not len(self.random_variables.vault_apr) == self.config.simulator.num_trading_days:
+        if not len(self.config.vault_apr) == self.config.num_trading_days:
             raise ValueError(
                 "vault_apr must have len equal to num_trading_days = "
-                + f"{self.config.simulator.num_trading_days},"
-                + f" not {len(self.random_variables.vault_apr)}"
+                + f"{self.config.num_trading_days},"
+                + f" not {len(self.vault_apr)}"
             )
 
     def set_rng(self, rng: Generator) -> None:
@@ -80,12 +72,6 @@ class Simulator:
         if not isinstance(rng, Generator):
             raise TypeError(f"rng type must be a random number generator, not {type(rng)}.")
         self.rng = rng
-
-    def log_config_variables(self) -> None:
-        r"""Prints all variables that are in config"""
-        # cls arg tells json how to handle numpy objects and nested dataclasses
-        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
-        logging.info(config_string)
 
     def get_simulation_state_string(self) -> str:
         r"""Returns a formatted string containing all of the Simulation class member variables
@@ -110,7 +96,7 @@ class Simulator:
         float
             time between blocks, which is computed as 1 / blocks_per_year
         """
-        blocks_per_year = 365 * self.config.simulator.num_blocks_per_day
+        blocks_per_year = 365 * self.config.num_blocks_per_day
         return 1 / blocks_per_year
 
     def add_agents(self, agent_list: list[Agent]) -> None:
@@ -138,7 +124,7 @@ class Simulator:
         last_block_in_sim : bool
             If True, indicates if the current set of trades are occuring on the final block in the simulation
         """
-        if self.config.simulator.shuffle_users:
+        if self.config.shuffle_users:
             if last_block_in_sim:
                 agent_ids = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
@@ -227,7 +213,7 @@ class Simulator:
         This is the primary function of the Simulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
-        up to `self.config.simulator.num_trading_days` days.
+        up to `self.config.num_trading_days` days.
 
         Returns
         -------
@@ -235,12 +221,12 @@ class Simulator:
         """
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
-        for day in range(0, self.config.simulator.num_trading_days):
+        for day in range(0, self.config.num_trading_days):
             self.day = day
-            self.market.market_state.vault_apr = self.random_variables.vault_apr[self.day]
+            self.market.market_state.vault_apr = self.config.vault_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                if self.config.simulator.compound_vault_apr:  # Apply return to latest price (full compounding)
+                if self.config.compound_vault_apr:  # Apply return to latest price (full compounding)
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
@@ -252,10 +238,10 @@ class Simulator:
                     )
                 )
                 self.market.update_market(delta)
-            for daily_block_number in range(self.config.simulator.num_blocks_per_day):
+            for daily_block_number in range(self.config.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
-                last_block_in_sim = (self.day == self.config.simulator.num_trading_days - 1) and (
-                    self.daily_block_number == self.config.simulator.num_blocks_per_day - 1
+                last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
+                    self.daily_block_number == self.config.num_blocks_per_day - 1
                 )
                 self.collect_and_execute_trades(last_block_in_sim)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
@@ -288,16 +274,11 @@ class Simulator:
         self.simulation_state.run_trade_number.append(self.run_trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size())
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.target_liquidity.append(self.random_variables.target_liquidity)
-        self.simulation_state.floor_fee.append(self.config.amm.floor_fee)
-        self.simulation_state.init_vault_age.append(self.random_variables.init_vault_age)
-        self.simulation_state.base_asset_price.append(self.config.market.base_asset_price)
         self.simulation_state.pool_apr.append(self.market.rate)
-        self.simulation_state.num_trading_days.append(self.config.simulator.num_trading_days)
-        self.simulation_state.num_blocks_per_day.append(self.config.simulator.num_blocks_per_day)
-        self.simulation_state.update_market_state(self.market.market_state)
+        self.simulation_state.add_dict_entries(self.config.__dict__)
+        self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
-            self.simulation_state.update_agent_wallet(agent, self.market)
+            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.market))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market

@@ -6,17 +6,17 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
+import json
 
 import numpy as np
 from numpy.random import Generator
 
 import elfpy.utils.time as time_utils
 from elfpy import PRECISION_THRESHOLD
+from elfpy.utils.outputs import CustomEncoder
 
 if TYPE_CHECKING:
     from typing import Type, Any
-    from elfpy.agent import Agent
-    from elfpy.markets import Market
 
 
 def to_description(description: str) -> dict[str, str]:
@@ -407,39 +407,14 @@ class SimulationState:
     )
     spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
 
-    def update_market_state(self, market_state: MarketState) -> None:
-        r"""Update each entry in the SimulationState's copy for the market state
-        by appending to the list for each key, or creating a new key.
-
-        Parameters
-        ----------
-        market_state: MarketState
-            The state variable for the Market class
-        """
-        for key, val in market_state.__dict__.items():
+    def add_dict_entries(self, dictionary) -> None:
+        for key, val in dictionary.items():
             if hasattr(self, key):
                 attribute_state = getattr(self, key)
                 attribute_state.append(val)
                 setattr(self, key, attribute_state)
             else:
                 setattr(self, key, [val])
-
-    def update_agent_wallet(self, agent: Agent, market: Market) -> None:
-        r"""Update each entry in the SimulationState's copy for the agent wallet state
-        by appending to the list for each key, or creating a new key.
-
-        Parameters
-        ----------
-        agent: Agent
-            An instantiated Agent object
-        """
-        for key, value in agent.wallet.get_state(market).items():
-            if hasattr(self, key):
-                key_list = getattr(self, key)
-                key_list.append(value)
-                setattr(self, key, key_list)
-            else:
-                setattr(self, key, [value])
 
     def __getitem__(self, key):
         r"""Get object attribute referenced by `key`"""
@@ -534,3 +509,8 @@ class Config:
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+    def __str__(self):
+        # cls arg tells json how to handle numpy objects and nested dataclasses
+        config_string = json.dumps(self.config.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
+        return config_string
