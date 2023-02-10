@@ -1,5 +1,8 @@
 numpy
 matplotlib
+ipython
+nbconvert
+astunparse
 pytest
 pylint
 pyright

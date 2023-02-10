@@ -4,6 +4,9 @@ pytest==3.6.4
 scipy==1.7.3
 pandas==1.3.5
 tomli==2.0.1
+ipython~=8.9
+nbconvert~=7.2
+astunparse~=1.6
 stochastic>=0.6.0
 pylint>=2.15.10
 pyright>=1.1.288
