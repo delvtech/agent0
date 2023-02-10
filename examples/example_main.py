@@ -119,7 +119,7 @@ if __name__ == "__main__":
         config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
     else:
         assert False, f"vault_apr_type argument must be 'uniform' or 'brownian', not {args.vault_apr_type}"
-    config.log_level = sim_utils.text_to_log_level(args.log_level)
+    config.log_level = output_utils.text_to_log_level(args.log_level)
     config.log_filename = args.log_filename
     # NOTE: lint error false positives: This message may report object members that are created dynamically,
     # but exist at the time they are accessed.
