@@ -68,5 +68,5 @@ class TestLogging(unittest.TestCase):
         logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
         logging_constants = [0, 10, 20, 30, 40, 50]
         for level_str, level_int in zip(logging_levels, logging_constants):
-            func_level = sim_utils.text_to_log_level(level_str)
+            func_level = output_utils.text_to_log_level(level_str)
             assert level_int == func_level

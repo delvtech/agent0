@@ -448,6 +448,36 @@ def close_logging(delete_logs=True):
             handler.close()
 
 
+def text_to_log_level(logging_text: str) -> int:
+    r"""Converts logging level description to an integer
+
+    Parameters
+    ----------
+    logging_text : str
+        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
+
+    Returns
+    -------
+    int
+        Logging level integer corresponding to the string input
+    """
+    if logging_text.lower() == "notset":
+        level = logging.NOTSET
+    elif logging_text.lower() == "debug":
+        level = logging.DEBUG
+    elif logging_text.lower() == "info":
+        level = logging.INFO
+    elif logging_text.lower() == "warning":
+        level = logging.WARNING
+    elif logging_text.lower() == "error":
+        level = logging.ERROR
+    elif logging_text.lower() == "critical":
+        level = logging.CRITICAL
+    else:
+        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
+    return level
+
+
 class CustomEncoder(json.JSONEncoder):
     r"""Custom encoder for JSON string dumps"""
 
