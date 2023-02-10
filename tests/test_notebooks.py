@@ -1,4 +1,10 @@
 """Testing for example notebooks"""
+import matplotlib
+
+matplotlib.use("Agg")  # headless backend so that plots won't render
+
+# pylint: disable=wrong-import-order
+# pylint: disable=wrong-import-position
 import unittest
 import os
 import pathlib
@@ -9,9 +15,6 @@ from contextlib import redirect_stdout, redirect_stderr
 import astunparse
 from IPython.core.inputtransformer2 import TransformerManager
 import nbformat
-import matplotlib
-
-matplotlib.use("Agg")  # headless backend so that plots won't render
 
 
 class TestNotebook(unittest.TestCase):
@@ -59,7 +62,7 @@ class TestNotebook(unittest.TestCase):
                 obj = target.value.id  # object being modified
                 attrib = target.attr  # attribute of object
                 if obj == "config" and attrib in ["num_trading_days", "num_blocks_per_day"]:
-                    test_value = 1  # one trading day and one block on that day
+                    test_value = 2  # one trading day and one block on that day
                     tree.body[node_idx] = ast.Assign(
                         targets=[target],
                         value=ast.Constant(value=test_value, kind=None),
