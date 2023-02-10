@@ -11,6 +11,7 @@ from elfpy.wallet import Wallet, Long, Short
 from elfpy.types import MarketDeltas, StretchedTime, MarketState, Config
 from elfpy.markets import Market
 from elfpy.pricing_models.base import PricingModel
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
@@ -381,3 +382,27 @@ class MarketTestsOneFunction(BaseMarketTest):
         self.run_market_test_close_short(
             agent_policy=agent_policy, expected_deltas=expected_deltas, partial=0.5, tick_time=True
         )
+
+    def test_apr(self):
+        """open short of 100 bonds, close short of 50 bonds, one tick later"""
+        pricing_model = HyperdrivePricingModel()
+        position_duration = StretchedTime(
+            days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
+        )
+        share_reserves = 1_000
+        target_aprs = [0.001, 0.01, 0.2, 0.123456789, 1]
+
+        for target_apr in target_aprs:
+            market = Market(
+                pricing_model,
+                MarketState(
+                    share_reserves=share_reserves,
+                    bond_reserves=pricing_model.calc_bond_reserves(
+                        target_apr, position_duration, MarketState(share_reserves=share_reserves)
+                    ),
+                ),
+                position_duration,
+            )
+
+            # TODO have this be exact once we fix #146
+            self.assertAlmostEqual(market.rate, target_apr, 12)

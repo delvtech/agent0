@@ -19,6 +19,7 @@ from elfpy.types import (
     TradeResult,
 )
 import elfpy.utils.price as price_utils
+import elfpy.utils.time as time_utils
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
@@ -121,11 +122,13 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
 
-        .. todo:: TODO: Write a test for this function
+        .. todo:: Write a test for this function
         """
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         bond_reserves = (market_state.share_reserves / 2) * (
-            market_state.init_share_price
-            * (1 + target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
@@ -160,10 +163,14 @@ class PricingModel(ABC):
         float
             The expected amount of base asset in the pool, calculated from the provided parameters
 
+        .. todo:: Write a test for this function
         """
-        # TODO: Write a test for this function
+
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         share_reserves = bond_reserves / (
-            init_share_price * (1 - target_apr * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
         )  # z = y / (mu * (1 - rt)**(1/tau))
         return share_reserves
 
@@ -251,7 +258,7 @@ class PricingModel(ABC):
         float
             Total liquidity in the pool in terms of base, calculated from the provided parameters
 
-        .. todo:: TODO: Write a test for this function
+        .. todo:: Write a test for this function
         """
         return market_state.share_reserves * share_price
 
