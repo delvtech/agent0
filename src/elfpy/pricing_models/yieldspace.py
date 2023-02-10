@@ -258,16 +258,15 @@ class YieldSpacePricingModel(PricingModel):
         ) - market_state.bond_reserves
         logging.debug(
             (
-                "inputs: lp_in=%g, share_reserves=%d, "
-                "bond_reserves=%d, base_buffer=%g, "
-                "init_share_price=%g, share_price=%g, lp_reserves=%g, "
-                "rate=%g, time_remaining=%g, stretched_time_remaining=%g"
-                "  d_shares=%g (d_base / share_price = %g / %g)"
-                "  d_bonds=%g\n"
-                "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) "
+                "inputs:\n\tlp_in=%g,\n\tshare_reserves=%d, "
+                "bond_reserves=%d,\n\tbase_buffer=%g, "
+                "init_share_price=%g,\n\tshare_price=%g,\n\tlp_reserves=%g,\n\t"
+                "rate=%g,\n\ttime_remaining=%g,\n\tstretched_time_remaining=%g\n\t"
+                "\n\td_shares=%g\n\t(d_base / share_price = %g / %g)"
+                "\n\td_bonds=%g"
+                "\n\t((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) "
                 "** (1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                "(%g + %g) / 2 * (%g * (1 + %g * %g) "
-                "** (1 / %g) - %g) - %g)"
+                "\n\t(%g + %g) / 2 * (%g * (1 + %g * %g) ** (1 / %g) - %g) - %g)"
             ),
             lp_in,
             market_state.share_reserves,
