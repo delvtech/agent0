@@ -457,7 +457,11 @@ class SimulationState:
 class Config:
     """Data object for storing user simulation config parameters
 
-    .. todo::  Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    <<<<<<< HEAD
+        .. todo::  Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    =======
+        .. todo:: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    >>>>>>> 4c0ad12 (tests & lint pass)
     """
 
     # lots of configs!
@@ -496,9 +500,11 @@ class Config:
     # Simulation
     # durations
     title: str = field(default="elfpy simulation", metadata=to_description("Text description of the simulation"))
-    num_trading_days: int = field(default=180, metadata=to_description("in days; should be <= pool_duration"))
-    num_blocks_per_day: int = field(default=7_200, metadata=to_description("int; agents execute trades each block"))
-    num_position_days: int = field(default=365, metadata=to_description("Term length in days of a position"))
+    num_trading_days: int = field(default=3, metadata=to_description("in days; should be <= pool_duration"))
+    num_blocks_per_day: int = field(default=3, metadata=to_description("int; agents execute trades each block"))
+    num_position_days: int = field(
+        default=90, metadata=to_description("time lapse between token mint and expiry as days")
+    )
 
     # users
     shuffle_users: bool = field(

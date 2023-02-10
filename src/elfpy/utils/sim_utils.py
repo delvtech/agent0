@@ -46,6 +46,7 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
+    config.check_vault_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     market = get_market(pricing_model, config)
