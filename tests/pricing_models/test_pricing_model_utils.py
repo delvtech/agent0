@@ -173,7 +173,10 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 )
 
     def run_calc_k_const_test(self, pricing_model: PricingModel):
-        """Unit tests for calc_k_const function"""
+        """Unit tests for calc_k_const function
+
+        .. todo:: fix comments to actually reflect test case values
+        """
 
         test_cases = [
             # test 1: 500k share_reserves; 500k bond_reserves
