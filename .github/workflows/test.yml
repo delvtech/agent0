@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint pytest nose
           python -m pip install stochastic --ignore-requires-python
-          python -m pip install -r requirements${{ matrix.python-version }}.txt
+          python -m pip install -r requirements-${{ matrix.python-version }}.txt
           python -m pip install .
       - name: Running package tests
         run: python -m pytest .
