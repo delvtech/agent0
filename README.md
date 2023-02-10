@@ -19,20 +19,21 @@ source elf-env/bin/activate
 
 Once this is done, check that your version is correct when you run `python --version`. Within the virtualenv, upgrade pip with `python -m pip install --upgrade pip` and then install the required packages.
 
+For Python 3.8.16:
+
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-3.8.txt
+python -m pip install -e .
 ```
 
-for Python 3.11, an extra step is required because of the `stochastic` package dependency:
+for Python 3.11:
 
 ```bash
-python -m pip install stochastic --ignore-requires-python
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-3.11.txt
+python -m pip install -e .
 ```
 
 If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
-
-Finally, install the elfpy package with `python -m pip install -e .` from the git directory root.
 
 ### Docker
 

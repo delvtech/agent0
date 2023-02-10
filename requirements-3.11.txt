@@ -1,0 +1,10 @@
+numpy
+matplotlib
+pytest
+pylint
+pyright
+black
+scipy
+pandas
+tomli
+stochastic

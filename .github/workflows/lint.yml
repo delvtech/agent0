@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install black~=22.0 pylint
           python -m pip install stochastic --ignore-requires-python
-          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-${{ matrix.python-version }}.txt
       - name: Analyzing code with black
         run: python -m black --check --diff .
       - name: Analysing code with pylint
