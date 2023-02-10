@@ -1,6 +1,4 @@
-# base.calc_spot_price_from_reserves
-# utils.price.calc_spot_price_from_apr
-
+"""Testing for spot price calculations in Pricing Models and Price utils"""
 import unittest
 
 import numpy as np
@@ -8,6 +6,9 @@ import numpy as np
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.price as price_utils
 from elfpy.types import MarketState, StretchedTime
+
+
+# pylint: disable=duplicate-code
 
 
 class TestSpotPriceCalculations(unittest.TestCase):
@@ -96,6 +97,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             )
 
     def test_calc_spot_price_from_apr(self):
+        """Test the price utils function for calculating spot price"""
         test_cases = [
             # test 1: r = 0.05; d=90
             {
@@ -160,6 +162,13 @@ class TestSpotPriceCalculations(unittest.TestCase):
             )
 
     def test_calc_spot_price_consistency(self):
+        """Test consistency of spot price calculations
+
+        compute spot price from reserves using pricing model
+        compute apr from reserves using pricing model
+        compute spot price from apr using price utils
+        compare spot price calculations
+        """
         test_cases = [
             # test 1: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price

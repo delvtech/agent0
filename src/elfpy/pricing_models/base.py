@@ -126,9 +126,9 @@ class PricingModel(ABC):
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        renormalized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         bond_reserves = (market_state.share_reserves / 2) * (
-            market_state.init_share_price * (1 + target_apr * renormalized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return bond_reserves
@@ -168,9 +168,9 @@ class PricingModel(ABC):
 
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        renormalized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         share_reserves = bond_reserves / (
-            init_share_price * (1 - target_apr * renormalized_time) ** (1 / time_remaining.stretched_time)
+            init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
         )  # z = y / (mu * (1 - rt)**(1/tau))
         return share_reserves
 

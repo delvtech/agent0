@@ -5,6 +5,7 @@ from decimal import Decimal
 import logging
 
 from elfpy.pricing_models.base import PricingModel
+import elfpy.utils.time as time_utils
 from elfpy.types import (
     MarketTradeResult,
     Quantity,
@@ -209,7 +210,10 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        """Calculate how many tokens should be returned for a given lp addition"""
+        """Calculate how many tokens should be returned for a given lp addition
+
+        .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
+        """
         assert lp_in > 0, f"pricing_models.calc_lp_out_given_tokens_in: ERROR: expected lp_in > 0, not {lp_in}!"
         assert market_state.share_reserves >= 0, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
@@ -251,9 +255,9 @@ class YieldSpacePricingModel(PricingModel):
         )
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
-            market_state.init_share_price
-            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
         logging.debug(
@@ -264,7 +268,7 @@ class YieldSpacePricingModel(PricingModel):
                 "rate=%g,\n\ttime_remaining=%g,\n\tstretched_time_remaining=%g\n\t"
                 "\n\td_shares=%g\n\t(d_base / share_price = %g / %g)"
                 "\n\td_bonds=%g"
-                "\n\t((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) "
+                "\n\t((share_reserves + d_shares) / 2 * (init_share_price * (1 + rate * time_remaining) "
                 "** (1 / stretched_time_remaining) - share_price) - bond_reserves = "
                 "\n\t(%g + %g) / 2 * (%g * (1 + %g * %g) ** (1 / %g) - %g) - %g)"
             ),
