@@ -180,7 +180,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   1 share price; 1 init_share_price; 3mo elapsed
             {
                 "market_state": MarketState(
-                    share_reserves=500000,  # x = 500000
+                    share_reserves=500000,  # z = 500000
                     bond_reserves=500000,  # y = 500000
                     share_price=1,  # c = 1
                     init_share_price=1,  # u = 1
@@ -217,8 +217,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 ),
                 "time_elapsed": 0.50,  # t = 0.50
                 # k = c/u * (u*y)**t + (2y+c*x)**t
-                #     = 1/1 * (1*5000000)**0.50 + (2*5000000+1*5000000)**0.50
-                #     = 61.587834600530776
+                #     = 2/1.5 * (1.5*5000000)**0.50 + (2*5000000+2*5000000)**0.50
+                #     = 8123.619671700687
                 "expected_result": 8123.619671700687,
             },
             # test 4: 0M share_reserves; 5M bond_reserves
