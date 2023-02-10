@@ -29,8 +29,8 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    renormalized_time = time_utils.norm_days(time_remaining.days, 365)
-    return (1 - price) / (price * renormalized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
+    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
 def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
@@ -48,5 +48,5 @@ def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
     float
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
-    renormalized_time = time_utils.norm_days(time_remaining.days, 365)
-    return 1 / (1 + apr * renormalized_time)  # price = 1 / (1 + r * t)
+    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    return 1 / (1 + apr * annualized_time)  # price = 1 / (1 + r * t)
