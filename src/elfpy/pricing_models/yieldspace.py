@@ -269,9 +269,10 @@ class YieldSpacePricingModel(PricingModel):
                 "rate=%g,\n\ttime_remaining=%g,\n\tstretched_time_remaining=%g\n\t"
                 "\n\td_shares=%g\n\t(d_base / share_price = %g / %g)"
                 "\n\td_bonds=%g"
-                "\n\t((share_reserves + d_shares) / 2 * (init_share_price * (1 + rate * time_remaining) "
+                "\n\t((share_reserves - d_shares) / 2 * (init_share_price * (1 + apr * annualized_time) "
                 "** (1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                "\n\t(%g + %g) / 2 * (%g * (1 + %g * %g) ** (1 / %g) - %g) - %g)"
+                "\n\t((%g - %g) / 2 * (%g * (1 + %g * %g) "
+                "** (1 / %g) - %g) - %g =\n\t%g"
             ),
             lp_in,
             market_state.share_reserves,
@@ -291,10 +292,11 @@ class YieldSpacePricingModel(PricingModel):
             d_shares,
             market_state.init_share_price,
             rate,
-            time_remaining.normalized_time,
+            annualized_time,
             time_remaining.stretched_time,
             market_state.share_price,
             market_state.bond_reserves,
+            d_bonds,
         )
         return lp_in, d_base, d_bonds
 
