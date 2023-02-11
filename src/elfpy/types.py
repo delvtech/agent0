@@ -29,20 +29,33 @@ def freezable(cls: Type) -> Type:
 
     @wraps(cls, updated=())
     class FrozenClass(cls):
-        """Subclass cls to add frozen check & freeze function"""
+        """Subclass cls to add frozen check & freeze function
+
+        TODO: resolve why pylint throws a no-member error on freezable wrapped
+        classes when instantiated_class.freeze() is called
+        """
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.frozen = False
+            self.no_new_attribs = False
+            super().__init__(*args, **kwargs)
 
         def __setattr__(self, attrib: str, value: Any) -> None:
             if hasattr(self, attrib) and hasattr(self, "frozen") and getattr(self, "frozen"):
-                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot assign to field '{attrib}'.")
+                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot change attribute '{attrib}'.")
+            if not hasattr(self, attrib) and hasattr(self, "no_new_attribs") and getattr(self, "no_new_attribs"):
+                raise AttributeError(
+                    f"{self.__class__.__name__} has no_new_attribs set, cannot add attribute '{attrib}'."
+                )
             super().__setattr__(attrib, value)
 
         def freeze(self) -> None:
-            """Sets frozen member attribute to true
-
-            .. todo::  resolve why pylint throws a no-member error on freezable wrapped
-                classes when instantiated_class.freeze() is called
-            """
+            """disallows changing existing members"""
             super().__setattr__("frozen", True)
+
+        def disable_new_attribs(self) -> None:
+            """disallows adding new members"""
+            super().__setattr__("no_new_attribs", True)
 
     return FrozenClass
 
@@ -476,9 +489,7 @@ class Config:
     title: str = field(default="elfpy simulation", metadata=to_description("Text description of the simulation"))
     num_trading_days: int = field(default=180, metadata=to_description("in days; should be <= pool_duration"))
     num_blocks_per_day: int = field(default=7_200, metadata=to_description("int; agents execute trades each block"))
-    num_position_days: int = field(
-        default=90, metadata=to_description("time lapse between token mint and expiry as days")
-    )
+    num_position_days: int = field(default=365, metadata=to_description("Term length in days of a position"))
 
     # users
     shuffle_users: bool = field(
@@ -486,7 +497,6 @@ class Config:
     )
     agent_policies: list = field(default_factory=list, metadata=to_description("List of strings naming user policies"))
     init_lp: bool = field(default=True, metadata=to_description("If True, use an initial LP agent to seed pool"))
-    num_position_days: int = field(default=365, metadata=to_description("Term length in days of a position"))
 
     # vault
     compound_vault_apr: bool = field(
@@ -515,6 +525,7 @@ class Config:
             self.vault_apr = [0.05] * self.num_trading_days
         if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
             self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
+        self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
     def __getitem__(self, key) -> None:
         return getattr(self, key)
