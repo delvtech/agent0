@@ -558,7 +558,10 @@ class Config:
         elif attrib == "init_share_price":
             super().__setattr__("init_share_price", value)
         else:
-            super().__setattr__(attrib, value)
+            if hasattr(self, attrib):
+                super().__setattr__(attrib, value)
+            else:
+                raise AttributeError(f"{attrib} is not a valid attribute of {self.__class__.__name__}")
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
