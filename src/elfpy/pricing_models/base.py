@@ -6,10 +6,7 @@ import copy
 import decimal
 from decimal import Decimal
 
-from elfpy import (
-    MAX_RESERVES_DIFFERENCE,
-    WEI,
-)
+from elfpy import MAX_RESERVES_DIFFERENCE
 from elfpy.types import (
     MarketDeltas,
     Quantity,
@@ -568,18 +565,6 @@ class PricingModel(ABC):
     ):
         """Applies a set of assertions to the input of a trading function."""
 
-        assert quantity.amount >= WEI, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
-        )
-        assert market_state.share_reserves >= WEI, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
-        )
-        assert market_state.bond_reserves >= WEI or market_state.bond_reserves == 0, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
-        )
         assert market_state.share_price >= market_state.init_share_price >= 1, (
             f"pricing_models.check_input_assertions: ERROR: "
             f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
