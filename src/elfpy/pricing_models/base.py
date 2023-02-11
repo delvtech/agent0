@@ -533,7 +533,6 @@ class PricingModel(ABC):
                 else:
                     last_maybe_max_short = (maybe_max_short_base, maybe_max_short_bonds)
                     if bond_percent == 1:
-                        print(f"we can short it all! {last_maybe_max_short=}")
                         return last_maybe_max_short
                     bond_percent += step_size
 
