@@ -62,13 +62,13 @@ class TestNotebook(unittest.TestCase):
                 obj = target.value.id  # object being modified
                 attrib = target.attr  # attribute of object
                 if obj == "config" and attrib in ["num_trading_days", "num_blocks_per_day"]:
-                    test_value = 2  # one trading day and one block on that day
+                    test_value = 2  # reduces the total number of trades to keep things fast
                     tree.body[node_idx] = ast.Assign(
                         targets=[target],
                         value=ast.Constant(value=test_value, kind=None),
                         type_comment=node.type_comment,
                     )
-            tree = ast.fix_missing_locations(tree)  # modified nodes will have missing newlines
+            tree = ast.fix_missing_locations(tree)  # adds newlines to modified nodes
             # decompile ast into source, write to a fake file, execute the file
             # writing to a fake file (as opposed to just directly executing the source)
             # allows us to hold an environment state (e.g. import aliases) throughout execution
