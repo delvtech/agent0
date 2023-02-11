@@ -203,7 +203,6 @@ class Simulator:
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
                 self.update_simulation_state()
-                print(f"{self.simulation_state.__dict__['share_reserves']=}")
                 self.run_trade_number += 1
 
     def run_simulation(self) -> None:
