@@ -9,7 +9,7 @@ from elfpy.types import MarketActionType
 class Policy(Agent):
     """simple short thatonly has one long open at a time"""
 
-    def __init__(self, wallet_address, budget=100):
+    def __init__(self, wallet_address, budget=99999):
         """call basic policy init then add custom stuff"""
         self.amount_to_trade = 100
         super().__init__(wallet_address, budget)
@@ -22,8 +22,10 @@ class Policy(Agent):
         action_list = []
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any(short.balance > 0 for short in shorts))
-        if not has_opened_short:
-            can_open_short = self.get_max_short(market) >= self.amount_to_trade
+        if has_opened_short is False:
+            max_short = self.get_max_short(market)
+            can_open_short = max_short >= self.amount_to_trade
+            print(f"can_open_short: {can_open_short} {max_short=} {self.amount_to_trade=}")
             if can_open_short:
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.amount_to_trade)

@@ -45,12 +45,23 @@ class GetMaxShortTests(BaseParameterTest):
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         self.run_base_trade_test(agent_policies=agent_policies)
 
-    def test_max_short_with_init_shuffle_users(self):
+    # this exact scenario causes a precision error with share_reserves = -9.313225746154785e-10
+    def test_max_short_500_with_init_shuffle_users(self):
         """set up a short that will attempt to trade more than possible, but with init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True})
 
-    def test_max_short_with_init_deterministic(self):
+    def test_max_short_500_with_init_deterministic(self):
         """set up a short that will attempt to trade more than possible, but with init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True, "shuffle_users": False})
+
+    def test_max_short_5000_with_init_shuffle_users(self):
+        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True})
+
+    def test_max_short_5000_with_init_deterministic(self):
+        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True, "shuffle_users": False})

@@ -186,13 +186,15 @@ class Simulator:
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
-        for agent_id, agent_trades in trades:
-            if len(agent_trades) == 0:
-                continue
+        number_of_trades = sum([len(agent_trades) for _, agent_trades in trades])
+        if number_of_trades == 0:
+            return
+        else:
             print(f"Executing trades at {self.day=} and {self.daily_block_number=}")
+        for agent_id, agent_trades in trades:
             agent = self.agents[agent_id]
             for trade in agent_trades:
-                print(f"Executing {self.run_trade_number=} for {agent_id=}: {trade=}")
+                print(f"  trade #{self.run_trade_number} for agent #{agent_id:03.0f}: {trade=}")
                 agent_deltas = self.market.trade_and_update(trade)
                 logging.debug(
                     "agent #%g wallet deltas:\n%s",
