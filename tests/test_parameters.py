@@ -26,7 +26,6 @@ class BaseParameterTest(unittest.TestCase):
         config.num_blocks_per_day = 3
         config.num_position_days = 90
         simulator = test_utils.setup_simulation_entities(config, agent_policies)
-        simulator.run_simulation()
         output_utils.close_logging(delete_logs=delete_logs)
         return simulator
 
