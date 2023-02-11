@@ -6,7 +6,6 @@ from functools import wraps
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
 import json
 
 import numpy as np
@@ -61,13 +60,6 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
         return FrozenClass
 
     return decorator
-
-
-# The maximum allowed precision error.
-# This value was selected based on one test not passing without it.
-# apply_delta() below checks if reserves are negative within the threshold,
-# and sets them to 0 if so.
-PRECISION_THRESHOLD = 1e-9
 
 
 class TokenType(Enum):

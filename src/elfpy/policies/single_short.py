@@ -28,4 +28,4 @@ class Policy(Agent):
                 action_list.append(
                     self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.amount_to_trade)
                 )
-            return action_list
+        return action_list
