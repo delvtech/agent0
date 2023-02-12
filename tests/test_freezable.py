@@ -4,7 +4,7 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 
-from elfpy.types import freezable
+from elfpy.types import freezable, Config
 
 
 @dataclass
