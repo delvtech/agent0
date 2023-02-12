@@ -49,6 +49,7 @@ class TestResultCalcInGivenOutSuccessByModel:
 class TestCaseCalcInGivenOutFailure:
     """Dataclass for calc_in_given_out test cases"""
 
+    name: str
     out: Quantity
     market_state: MarketState
     time_remaining: StretchedTime
@@ -113,6 +114,7 @@ class TestResultCalcOutGivenInSuccessByModel:
 class TestCaseCalcOutGivenInFailure:
     """Dataclass for calc_out_given_in failure test cases"""
 
+    name: str
     in_: Quantity
     market_state: MarketState
     time_remaining: StretchedTime
