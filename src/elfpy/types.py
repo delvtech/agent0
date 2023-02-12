@@ -494,7 +494,6 @@ class Config:
     pricing_model_name: str = field(
         default="Hyperdrive", metadata=to_description('Must be "Hyperdrive", or "YieldSpace"')
     )
-    pricing_model = None  # placeholder to let user fill it in
     trade_fee_percent: float = field(
         default=0.05, metadata=to_description("LP fee factor (decimal) to charge for trades")
     )
@@ -515,7 +514,7 @@ class Config:
     shuffle_users: bool = field(
         default=True, metadata=to_description("Shuffle order of action (as if random gas paid)")
     )
-    agent_policies: list = field(init=False, metadata=to_description("List of strings naming user policies"))
+    agent_policies: list = field(default_factory=list, metadata=to_description("List of strings naming user policies"))
     init_lp: bool = field(default=True, metadata=to_description("If True, use an initial LP agent to seed pool"))
 
     # vault
