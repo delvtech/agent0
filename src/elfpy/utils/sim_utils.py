@@ -1,6 +1,7 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from decimal import Decimal
 from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
@@ -105,7 +106,9 @@ def get_init_lp_agent(
     init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
         market_state=market.market_state,
         target_liquidity=seed_liquidity,  # tiny seed amount ($1)
-        target_apr=target_pool_apr,
+        # The annual rate will be scaled if the position days is not == 365,
+        # so we want to adjust the "target" to be scaled wrt the position duration
+        target_apr=float(Decimal(target_pool_apr) * Decimal(market.position_duration.days) / Decimal(365)),
         position_duration=market.position_duration,
     )[:2]
     delta_shares = seed_liquidity
@@ -167,7 +170,8 @@ def get_init_lp_agent(
     logging.info(
         (
             "Init LP agent #%g statistics:\n\t"
-            "target_apr = %g\n\t"
+            "target_pool_apr = %g\n\t"
+            "adjusted_target_pool_apr = %g\n\t"
             "target_liquidity = %g\n\t"
             "budget = %g\n\t"
             "first_base_to_lp = %g\n\t"
@@ -176,6 +180,7 @@ def get_init_lp_agent(
         ),
         init_lp_agent.wallet.address,
         target_pool_apr,
+        float(Decimal(target_pool_apr) * Decimal(market.position_duration.days) / Decimal(365)),
         target_liquidity,
         budget,
         first_base_to_lp,
