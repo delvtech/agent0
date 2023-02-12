@@ -485,10 +485,8 @@ class PricingModel(ABC):
         last_maybe_max_short = 0, 0
         bond_percent = 1
         num_iters = 25
-        iteration = 0
         market_state_post_trade = copy.copy(market_state)
         for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
-            iteration += 1
             try:
                 # Compute the amount of base returned by selling the specified
                 # amount of bonds.
