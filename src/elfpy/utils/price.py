@@ -4,6 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from elfpy.types import StretchedTime
 import elfpy.utils.time as time_utils
 
+
 ### Spot Price and APR ###
 def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     r"""
@@ -22,8 +23,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
         APR (decimal) calculated from the provided parameters
     """
     assert price > 0, (
-        "utils.price.calc_apr_from_spot_price: ERROR: "
-        f"Price argument should be greater or equal to zero, not {price}"
+        "utils.price.calc_apr_from_spot_price: ERROR: " f"Price argument should be greater than zero, not {price}"
     )
     assert time_remaining.normalized_time > 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
