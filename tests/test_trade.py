@@ -46,7 +46,7 @@ class SingleTradeTests(unittest.TestCase):
             market_apr = simulator.market.rate
             # use rtol here because liquidity spans 2 orders of magnitude
             assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-13), (
-                f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
+                f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=} "
                 f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
             )
             logging.debug(

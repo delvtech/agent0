@@ -172,8 +172,9 @@ class MarketDeltas:
     # pylint: disable=too-many-instance-attributes
 
     # .. todo::  Use better naming for these values:
-    # - "d_base_asset" => "d_share_reserves" .. todo::  Is there some reason this is base instead of shares?
-    # - "d_token_asset" => "d_bond_reserves"
+    #     - "d_base_asset" => "d_share_reserves"
+    # .. todo::  Is there some reason this is base instead of shares?
+    #     - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
     d_token_asset: float = 0
     d_base_buffer: float = 0
@@ -457,11 +458,7 @@ class SimulationState:
 class Config:
     """Data object for storing user simulation config parameters
 
-    <<<<<<< HEAD
-        .. todo::  Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
-    =======
-        .. todo:: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
-    >>>>>>> 4c0ad12 (tests & lint pass)
+    .. todo:: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
     """
 
     # lots of configs!
