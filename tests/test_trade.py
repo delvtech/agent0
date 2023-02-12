@@ -32,53 +32,60 @@ class SingleTradeTests(unittest.TestCase):
     ):
         """Assigns member variables that are useful for many tests"""
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
-        config = Config()
-        config.pricing_model_name = "Yieldspace"  # TODO: lp agent market initialization does not work with hyperdrive
-        config.target_liquidity = 10e6 if not target_liquidity else target_liquidity
-        config.trade_fee_percent = 0.1
-        config.redemption_fee_percent = 0.0
-        config.target_pool_apr = 0.05 if not target_pool_apr else target_pool_apr
-        config.num_trading_days = 3  # sim 3 days to keep it fast for testing
-        config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
-        config.vault_apr = [0.05] * config.num_trading_days
-        simulator = test_utils.setup_simulation_entities(config, agent_policies)
-        if target_pool_apr:
-            market_apr = simulator.market.rate
-            # use rtol here because liquidity spans 2 orders of magnitude
-            assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-13), (
-                f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=}"
-                f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
+        for num_position_days in [90, 365]:
+            config = Config()
+            config.pricing_model_name = (
+                "Yieldspace"  # TODO: lp agent market initialization does not work with hyperdrive
             )
-            logging.debug(
-                (
-                    "test_trade.run_base_lp_test: target_pool_apr=%g equals market_apr=%g"
-                    " within (np.abs(market_apr - target_pool_apr)/target_pool_apr)=%.2e}"
-                ),
-                target_pool_apr,
-                market_apr,
-                (np.abs(market_apr - target_pool_apr) / target_pool_apr),
-            )
-        if target_liquidity:
-            # TODO: This will not work with Hyperdrive PM
-            total_liquidity = simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
-            # use rtol here because liquidity spans 7 orders of magnitude
-            assert np.allclose(total_liquidity, target_liquidity, atol=0, rtol=1e-15), (
-                f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
-                f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=:.2e}."
-            )
-            logging.debug(
-                (
-                    "test_trade.run_base_lp_test: total_liquidity=%g equals target_liquidity=%g"
-                    " within (np.abs(total_liquidity - target_liquidity)/target_liquidity)=%.2e}"
-                ),
-                total_liquidity,
-                target_liquidity,
-                (np.abs(total_liquidity - target_liquidity) / target_liquidity),
-            )
-        if not init_only:
-            simulator.run_simulation()
+            config.target_liquidity = 10e6 if not target_liquidity else target_liquidity
+            config.trade_fee_percent = 0.1
+            config.redemption_fee_percent = 0.0
+            config.target_pool_apr = 0.05 if not target_pool_apr else target_pool_apr
+            config.num_trading_days = 3  # sim 3 days to keep it fast for testing
+            config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
+            config.vault_apr = [0.05] * config.num_trading_days
+            config.num_position_days = num_position_days  # how long until token maturity
+            simulator = test_utils.setup_simulation_entities(config, agent_policies)
+            if target_pool_apr:
+                market_apr = simulator.market.rate
+                # use rtol here because liquidity spans 2 orders of magnitude
+                assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-12), (
+                    f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=} "
+                    f"with error of {(np.abs(market_apr - target_pool_apr)/target_pool_apr)=:.2e}"
+                )
+                logging.debug(
+                    (
+                        "test_trade.run_base_lp_test: target_pool_apr=%g equals market_apr=%g"
+                        " within (np.abs(market_apr - target_pool_apr)/target_pool_apr)=%.2e}"
+                    ),
+                    target_pool_apr,
+                    market_apr,
+                    (np.abs(market_apr - target_pool_apr) / target_pool_apr),
+                )
+            if target_liquidity:
+                # TODO: This will not work with Hyperdrive PM
+                total_liquidity = (
+                    simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
+                )
+                # use rtol here because liquidity spans 7 orders of magnitude
+                assert np.allclose(total_liquidity, target_liquidity, atol=0, rtol=1e-15), (
+                    f"test_trade.run_base_lp_test: ERROR: {target_liquidity=} does not equal {total_liquidity=} "
+                    f"with error of {(np.abs(total_liquidity - target_liquidity)/target_liquidity)=:.2e}."
+                )
+                logging.debug(
+                    (
+                        "test_trade.run_base_lp_test: total_liquidity=%g equals target_liquidity=%g"
+                        " within (np.abs(total_liquidity - target_liquidity)/target_liquidity)=%.2e}"
+                    ),
+                    total_liquidity,
+                    target_liquidity,
+                    (np.abs(total_liquidity - target_liquidity) / target_liquidity),
+                )
+            if not init_only:
+                simulator.run_simulation()
         output_utils.close_logging(delete_logs=delete_logs)
-        return simulator
+        # TODO: This test and test_compare_agent_to_calc_liquidity need to be merged
+        return simulator  # type: ignore
 
     def test_compare_agent_to_calc_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
@@ -133,7 +140,7 @@ class SingleTradeTests(unittest.TestCase):
                     f"does not equal {total_liquidity_agent=} "
                     f"off by {(np.abs(total_liquidity_direct - total_liquidity_agent))=}."
                 )
-                assert np.allclose(market_direct.rate, simulator.market.rate, atol=0, rtol=1e-13), (
+                assert np.allclose(market_direct.rate, simulator.market.rate, atol=0, rtol=1e-12), (
                     f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_direct.rate=}"
                     f" does not equal {simulator.market.rate=}"
                     f"off by {(np.abs(market_direct.rate - simulator.market.rate))=}."

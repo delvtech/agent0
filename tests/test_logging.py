@@ -8,7 +8,8 @@ import os
 import sys
 
 from elfpy.types import Config
-from elfpy.utils import sim_utils, outputs as output_utils  # utilities for setting up a simulation
+from elfpy.utils import sim_utils
+import elfpy.utils.outputs as output_utils  # utilities for setting up a simulation
 
 
 class TestLogging(unittest.TestCase):
@@ -47,6 +48,7 @@ class TestLogging(unittest.TestCase):
             config.pricing_model_name = "Yieldspace"
             config.num_trading_days = 10
             config.num_blocks_per_day = 3  # keep it fast for testing
+            config.vault_apr = [0.05] * config.num_trading_days
             simulator = sim_utils.get_simulator(config)  # initialize
             simulator.run_simulation()  # run
             self.assertLogs(level=level)
@@ -68,5 +70,5 @@ class TestLogging(unittest.TestCase):
         logging_levels = ["notset", "debug", "info", "Warning", "Error", "CRITICAL"]
         logging_constants = [0, 10, 20, 30, 40, 50]
         for level_str, level_int in zip(logging_levels, logging_constants):
-            func_level = sim_utils.text_to_log_level(level_str)
+            func_level = output_utils.text_to_log_level(level_str)
             assert level_int == func_level

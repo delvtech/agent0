@@ -1,6 +1,7 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from decimal import Decimal
 from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
@@ -46,6 +47,7 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
+    config.check_vault_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     market = get_market(pricing_model, config)
@@ -104,7 +106,9 @@ def get_init_lp_agent(
     init_share_reserves, init_bond_reserves = market.pricing_model.calc_liquidity(
         market_state=market.market_state,
         target_liquidity=seed_liquidity,  # tiny seed amount ($1)
-        target_apr=target_pool_apr,
+        # The annual rate will be scaled if the position days is not == 365,
+        # so we want to adjust the "target" to be scaled wrt the position duration
+        target_apr=float(Decimal(target_pool_apr) * Decimal(market.position_duration.days) / Decimal(365)),
         position_duration=market.position_duration,
     )[:2]
     delta_shares = seed_liquidity
@@ -166,7 +170,8 @@ def get_init_lp_agent(
     logging.info(
         (
             "Init LP agent #%g statistics:\n\t"
-            "target_apr = %g\n\t"
+            "target_pool_apr = %g\n\t"
+            "adjusted_target_pool_apr = %g\n\t"
             "target_liquidity = %g\n\t"
             "budget = %g\n\t"
             "first_base_to_lp = %g\n\t"
@@ -175,6 +180,7 @@ def get_init_lp_agent(
         ),
         init_lp_agent.wallet.address,
         target_pool_apr,
+        float(Decimal(target_pool_apr) * Decimal(market.position_duration.days) / Decimal(365)),
         target_liquidity,
         budget,
         first_base_to_lp,
@@ -271,33 +277,3 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
 
     """
     return import_module(f"elfpy.policies.{agent_type}").Policy
-
-
-def text_to_log_level(logging_text: str) -> int:
-    r"""Converts logging level description to an integer
-
-    Parameters
-    ----------
-    logging_text : str
-        String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
-
-    Returns
-    -------
-    int
-        Logging level integer corresponding to the string input
-    """
-    if logging_text.lower() == "notset":
-        level = logging.NOTSET
-    elif logging_text.lower() == "debug":
-        level = logging.DEBUG
-    elif logging_text.lower() == "info":
-        level = logging.INFO
-    elif logging_text.lower() == "warning":
-        level = logging.WARNING
-    elif logging_text.lower() == "error":
-        level = logging.ERROR
-    elif logging_text.lower() == "critical":
-        level = logging.CRITICAL
-    else:
-        raise ValueError(f'{logging_text=} must be in ["debug", "info", "warning", "error", "critical"]')
-    return level
