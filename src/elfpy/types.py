@@ -37,7 +37,6 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
 
             def __init__(self, *args, frozen=frozen, no_new_attribs=no_new_attribs, **kwargs) -> None:
                 super().__init__(*args, **kwargs)
-                print(f"FreezableClass.__init__(class={cls.__name__},{frozen=}, {no_new_attribs=})")
                 super().__setattr__("frozen", frozen)
                 super().__setattr__("no_new_attribs", no_new_attribs)
 
