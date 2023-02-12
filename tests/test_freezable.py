@@ -4,16 +4,38 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 
-from elfpy.types import freezable
+from elfpy.types import freezable, Config
 
 
-@freezable
 @dataclass
-class FreezableClass:
-    """Freezable class for testing"""
+class ClassWithOneAttribute:
+    """Class with one attribute"""
 
-    def __init__(self):
-        self.existing_attrib = 1
+    existing_attrib = 1
+
+
+@freezable(frozen=False, no_new_attribs=False)
+@dataclass
+class FreezableClass(ClassWithOneAttribute):
+    """Freezable class unfrozen by default"""
+
+
+@freezable(frozen=True, no_new_attribs=False)
+@dataclass
+class FreezableClassFrozenByDefault(ClassWithOneAttribute):
+    """Freezable class frozen by default"""
+
+
+@freezable(frozen=False, no_new_attribs=True)
+@dataclass
+class FreezableClassNoNewAttribsByDefault(ClassWithOneAttribute):
+    """Freezable class with no_new_attribs set by default"""
+
+
+@freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class FreezableClassFrozenNoNewAttribsByDefault(ClassWithOneAttribute):
+    """Freezable class frozen and with no_new_attribs set by default"""
 
 
 class TestFreezability(unittest.TestCase):
@@ -23,6 +45,7 @@ class TestFreezability(unittest.TestCase):
     2. frozen
     3. not frozen, but with "no_new_attribs" set
     4. frozen, and with "no_new_attribs" set
+    the last 3 cases are set manually and by default in the decorator, for a total of 7 tests
 
     NOTE: pylint and pyright throw false positives due to difficulty checking members that are added dynamically
     """
@@ -47,6 +70,16 @@ class TestFreezability(unittest.TestCase):
             freezable_object.existing_attrib = 2
         freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
 
+    def test_freezable_when_frozen_is_set_by_default(self):
+        """
+        freezable object when not frozen IS set, but no_new_attribs is NOT set
+        desired behavior is: can NOT change attributes, but CAN add attributes
+        """
+        freezable_object = FreezableClassFrozenByDefault()
+        with self.assertRaises(AttributeError):
+            freezable_object.existing_attrib = 2
+        freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
+
     def test_freezable_when_no_new_attribs_is_set(self):
         """
         freezable object when not frozen is NOT set, but no_new_attribs IS set
@@ -54,6 +87,16 @@ class TestFreezability(unittest.TestCase):
         """
         freezable_object = FreezableClass()
         freezable_object.disable_new_attribs()  # pylint: disable=no-member # type: ignore
+        freezable_object.existing_attrib = 2
+        with self.assertRaises(AttributeError):
+            freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
+
+    def test_freezable_when_no_new_attribs_is_set_by_default(self):
+        """
+        freezable object when not frozen is NOT set, but no_new_attribs IS set
+        desired behavior is: CAN change attributes, but can NOT add attributes
+        """
+        freezable_object = FreezableClassNoNewAttribsByDefault()
         freezable_object.existing_attrib = 2
         with self.assertRaises(AttributeError):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
@@ -70,3 +113,22 @@ class TestFreezability(unittest.TestCase):
             freezable_object.existing_attrib = 2
         with self.assertRaises(AttributeError):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
+
+    def test_freezable_when_frozen_is_set_and_no_new_attribs_is_set_by_default(self):
+        """
+        freezable object when not frozen is NOT set, but no_new_attribs IS set
+        desired behavior is: CAN change attributes, but can NOT add attributes
+        """
+        freezable_object = FreezableClassFrozenNoNewAttribsByDefault()
+        with self.assertRaises(AttributeError):
+            freezable_object.existing_attrib = 2
+        with self.assertRaises(AttributeError):
+            freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
+
+    def test_config_cant_add_new_attribs(self):
+        """
+        config object can't add new attributes after it's initialized
+        """
+        config = Config()
+        with self.assertRaises(AttributeError):
+            config.new_attrib = 1

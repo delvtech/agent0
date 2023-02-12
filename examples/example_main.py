@@ -123,7 +123,7 @@ if __name__ == "__main__":
     config.log_filename = args.log_filename
     # NOTE: lint error false positives: This message may report object members that are created dynamically,
     # but exist at the time they are accessed.
-    config.freeze()  # pylint: disable=no-member # type: ignore
+    config.freeze()  # type: ignore
 
     # Define root logging parameters.
     output_utils.setup_logging(log_filename=config.log_filename, max_bytes=args.max_bytes, log_level=config.log_level)

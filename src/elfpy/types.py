@@ -24,40 +24,43 @@ def to_description(description: str) -> dict[str, str]:
     return {"description": description}
 
 
-def freezable(cls: Type) -> Type:
+def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
-    @wraps(cls, updated=())
-    class FrozenClass(cls):
-        """Subclass cls to add frozen check & freeze function
+    def decorator(cls: Type) -> Type:
+        @wraps(wrapped=cls, updated=())
+        class FrozenClass(cls):
+            """Subclass cls to enable freezing of attributes
 
-        TODO: resolve why pylint throws a no-member error on freezable wrapped
-        classes when instantiated_class.freeze() is called
-        """
+            .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
+            """
 
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            self.frozen = False
-            self.no_new_attribs = False
-            super().__init__(*args, **kwargs)
+            def __init__(self, *args, frozen=frozen, no_new_attribs=no_new_attribs, **kwargs) -> None:
+                super().__init__(*args, **kwargs)
+                print(f"FreezableClass.__init__(class={cls.__name__},{frozen=}, {no_new_attribs=})")
+                super().__setattr__("frozen", frozen)
+                super().__setattr__("no_new_attribs", no_new_attribs)
 
-        def __setattr__(self, attrib: str, value: Any) -> None:
-            if hasattr(self, attrib) and hasattr(self, "frozen") and getattr(self, "frozen"):
-                raise AttributeError(f"{self.__class__.__name__} is frozen, cannot change attribute '{attrib}'.")
-            if not hasattr(self, attrib) and hasattr(self, "no_new_attribs") and getattr(self, "no_new_attribs"):
-                raise AttributeError(
-                    f"{self.__class__.__name__} has no_new_attribs set, cannot add attribute '{attrib}'."
-                )
-            super().__setattr__(attrib, value)
+            def __setattr__(self, attrib: str, value: Any) -> None:
+                if hasattr(self, attrib) and hasattr(self, "frozen") and getattr(self, "frozen"):
+                    raise AttributeError(f"{self.__class__.__name__} is frozen, cannot change attribute '{attrib}'.")
+                if not hasattr(self, attrib) and hasattr(self, "no_new_attribs") and getattr(self, "no_new_attribs"):
+                    raise AttributeError(
+                        f"{self.__class__.__name__} has no_new_attribs set, cannot add attribute '{attrib}'."
+                    )
+                super().__setattr__(attrib, value)
 
-        def freeze(self) -> None:
-            """disallows changing existing members"""
-            super().__setattr__("frozen", True)
+            def freeze(self) -> None:
+                """disallows changing existing members"""
+                super().__setattr__("frozen", True)
 
-        def disable_new_attribs(self) -> None:
-            """disallows adding new members"""
-            super().__setattr__("no_new_attribs", True)
+            def disable_new_attribs(self) -> None:
+                """disallows adding new members"""
+                super().__setattr__("no_new_attribs", True)
 
-    return FrozenClass
+        return FrozenClass
+
+    return decorator
 
 
 class TokenType(Enum):
@@ -92,7 +95,7 @@ class Quantity:
     unit: TokenType
 
 
-@freezable
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class StretchedTime:
     r"""Stores time in units of days, as well as normalized & stretched variants
@@ -131,6 +134,7 @@ class StretchedTime:
         return output_string
 
 
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketAction:
     r"""Market action specification"""
@@ -138,7 +142,7 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     trade_amount: float
-    # TODO: pass in the entire wallet instead of wallet_address and the open_share_price
+    # .. todo::  pass in the entire wallet instead of wallet_address and the open_share_price
     # wallet_address is always set automatically by the basic agent class
     wallet_address: int
     # the share price when a short was created
@@ -159,16 +163,17 @@ class MarketAction:
         return output_string
 
 
-@dataclass(frozen=False)
+@freezable(frozen=True, no_new_attribs=True)
+@dataclass
 class MarketDeltas:
     r"""Specifies changes to values in the market"""
 
-    # TODO: Create our own dataclass decorator that is always mutable and includes dict set/get syntax
+    # .. todo::  Create our own dataclass decorator that is always mutable and includes dict set/get syntax
     # pylint: disable=duplicate-code
     # pylint: disable=too-many-instance-attributes
 
-    # TODO: Use better naming for these values:
-    # - "d_base_asset" => "d_share_reserves" TODO: Is there some reason this is base instead of shares?
+    # .. todo::  Use better naming for these values:
+    # - "d_base_asset" => "d_share_reserves" .. todo::  Is there some reason this is base instead of shares?
     # - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
     d_token_asset: float = 0
@@ -197,6 +202,7 @@ class MarketDeltas:
         return output_string
 
 
+@freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class MarketState:
     r"""The state of an AMM
@@ -208,15 +214,15 @@ class MarketState:
     Attributes
     ----------
     share_reserves: float
-        TODO: fill this in
+        .. todo::  fill this in
     bond_reserves: float
-        TODO: fill this in
+        .. todo::  fill this in
     base_buffer: float
-        TODO: fill this in
+        .. todo::  fill this in
     bond_buffer: float
-        TODO: fill this in
+        .. todo::  fill this in
     lp_reserves: float
-        TODO: fill this in
+        .. todo::  fill this in
     trade_fee_percent : float
         The percentage of the difference between the amount paid without
         slippage and the amount received that will be added to the input
@@ -261,7 +267,7 @@ class MarketState:
         # this is an imperfect solution to rounding errors, but it works for now
         # ideally we'd find a more thorough solution than just catching errors
         # when they are. issue #146 tracks this.
-        # TODO: #146
+        # .. todo::  #146
         for key, value in self.__dict__.items():
             if 0 > value > -PRECISION_THRESHOLD:
                 logging.debug(
@@ -298,6 +304,7 @@ class MarketState:
         return output_string
 
 
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentTradeResult:
     r"""The result to a user of performing a trade"""
@@ -306,6 +313,7 @@ class AgentTradeResult:
     d_bonds: float
 
 
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketTradeResult:
     r"""The result to a market of performing a trade"""
@@ -314,6 +322,7 @@ class MarketTradeResult:
     d_bonds: float
 
 
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class TradeBreakdown:
     r"""A granular breakdown of a trade.
@@ -327,6 +336,7 @@ class TradeBreakdown:
     fee: float
 
 
+@freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class TradeResult:
     r"""The result of performing a trade.
@@ -443,12 +453,12 @@ class SimulationState:
         setattr(self, key, value)
 
 
-@freezable
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class Config:
     """Data object for storing user simulation config parameters
 
-    .. todo:: TODO: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    .. todo::  Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
     """
 
     # lots of configs!
