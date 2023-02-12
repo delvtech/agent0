@@ -84,7 +84,8 @@ class SingleTradeTests(unittest.TestCase):
             if not init_only:
                 simulator.run_simulation()
         output_utils.close_logging(delete_logs=delete_logs)
-        return simulator
+        # TODO: This test and test_compare_agent_to_calc_liquidity need to be merged
+        return simulator  # type: ignore
 
     def test_compare_agent_to_calc_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
