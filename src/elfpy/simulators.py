@@ -195,7 +195,6 @@ class Simulator:
         for agent_id, agent_trades in trades:
             agent = self.agents[agent_id]
             for trade in agent_trades:
-                print(f"  trade #{self.run_trade_number} for agent #{agent_id:03.0f}: {trade=}")
                 agent_deltas = self.market.trade_and_update(trade)
                 logging.debug(
                     "agent #%g wallet deltas:\n%s",
