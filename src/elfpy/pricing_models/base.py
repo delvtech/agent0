@@ -331,9 +331,6 @@ class PricingModel(ABC):
             market_state.share_reserves
         )
         # p = ((y + s)/(mu*z))^(-tau) = ((2y + cz)/(mu*z))^(-tau)
-        assert market_state.init_share_price != 0, "init_share_price cannot be zero"
-        if market_state.share_reserves == 0:
-            return Decimal(np.inf)
         spot_price = (
             (Decimal(market_state.bond_reserves) + total_reserves)
             / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
