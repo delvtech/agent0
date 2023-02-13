@@ -269,17 +269,6 @@ class MarketState:
         self.bond_buffer += delta.d_bond_buffer
         self.lp_reserves += delta.d_lp_reserves
         self.share_price += delta.d_share_price
-        for key, value in self.__dict__.items():
-            if 0 > value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert value >= 0, "MarketState values must be non-negative"
 
         # this is an imperfect solution to rounding errors, but it works for now
         # ideally we'd find a more thorough solution than just catching errors
