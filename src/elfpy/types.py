@@ -62,13 +62,6 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     return decorator
 
 
-# The maximum allowed precision error.
-# This value was selected based on one test not passing without it.
-# apply_delta() below checks if reserves are negative within the threshold,
-# and sets them to 0 if so.
-PRECISION_THRESHOLD = 1e-9
-
-
 class TokenType(Enum):
     r"""A type of token"""
 
@@ -284,7 +277,9 @@ class MarketState:
                 )
                 setattr(self, key, 0)
             else:
-                assert value >= 0, f"MarketState values must be non-negative. Error on {key} = {value}"
+                assert (
+                    value > -PRECISION_THRESHOLD
+                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
 
     def __str__(self):
         output_string = (

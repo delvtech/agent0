@@ -11,10 +11,13 @@ import pathlib
 import ast
 import tempfile
 from contextlib import redirect_stdout, redirect_stderr
+import logging
 
 import astunparse
 from IPython.core.inputtransformer2 import TransformerManager
 import nbformat
+
+import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 
 class TestNotebook(unittest.TestCase):
@@ -24,6 +27,7 @@ class TestNotebook(unittest.TestCase):
         """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error"""
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
+        output_utils.setup_logging(log_filename=".logging/test_notebooks.log", log_level=logging.DEBUG)
         isp = TransformerManager()  # module for converting jupyter cell into source code
         notebook_location = os.path.join(
             os.path.dirname(pathlib.Path(__file__).parent.resolve()),
@@ -32,6 +36,7 @@ class TestNotebook(unittest.TestCase):
         for file in os.listdir(notebook_location):
             if not file.endswith(".ipynb"):
                 continue
+            logging.debug("Testing notebook: %s", file)
             # Read the notebook cell by cell, grab the code & add it to a string
             notebook = nbformat.read(os.path.join(notebook_location, file), as_version=4)
             file_source = ""
