@@ -16,7 +16,8 @@ import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
 
 if TYPE_CHECKING:
-    from typing import Type, Any
+    from datetime import datetime
+    from typing import Type, Any, Optional
 
 
 def to_description(description: str) -> dict[str, str]:
@@ -214,15 +215,15 @@ class MarketState:
     Attributes
     ----------
     share_reserves: float
-        .. todo::  fill this in
+        Quantity of shares stored in the market
     bond_reserves: float
-        .. todo::  fill this in
+        Quantity of bonds stored in the market
     base_buffer: float
-        .. todo::  fill this in
+        Base amount set aside to account for open longs
     bond_buffer: float
-        .. todo::  fill this in
+        Bond amount set aside to account for open shorts
     lp_reserves: float
-        .. todo::  fill this in
+        Amount of lp tokens
     trade_fee_percent : float
         The percentage of the difference between the amount paid without
         slippage and the amount received that will be added to the input
@@ -378,51 +379,47 @@ class SimulationState:
     r"""Simulator state, updated after each trade
 
     MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
+
+    .. todo:: change attribute type hints to indicate what list contents should be
     """
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    model_name: list = field(
+    model_name: list[str] = field(
         default_factory=list, metadata=to_description("the name of the pricing model that is used in simulation")
     )
-    run_number: list = field(default_factory=list, metadata=to_description("simulation index"))
-    simulation_start_time: list = field(
+    run_number: list[int] = field(default_factory=list, metadata=to_description("simulation index"))
+    day: list[int] = field(default_factory=list, metadata=to_description("day index in a given simulation"))
+    block_number: list[int] = field(
+        default_factory=list, metadata=to_description("integer, block index in a given simulation")
+    )
+    daily_block_number: list[int] = field(
+        default_factory=list, metadata=to_description("integer, block index in a given day")
+    )
+    simulation_start_time: list[Optional[datetime]] = field(
         default_factory=list, metadata=to_description("start datetime for a given simulation")
     )
-    day: list = field(default_factory=list, metadata=to_description("day index in a given simulation"))
-    block_number: list = field(
-        default_factory=list, metadata=to_description(" integer, block index in a given simulation")
+    block_timestamp: list[Optional[datetime]] = field(
+        default_factory=list, metadata=to_description("datetime of a given block's creation")
     )
-    daily_block_number: list = field(
-        default_factory=list, metadata=to_description(" integer, block index in a given day")
+    current_market_datetime: list[Optional[datetime]] = field(
+        default_factory=list, metadata=to_description("float, current market time as a datetime")
     )
-    block_timestamp: list = field(
-        default_factory=list, metadata=to_description(" datetime of a given block's creation")
+    current_market_time: list[float] = field(
+        default_factory=list, metadata=to_description("float, current market time in years")
     )
-    current_market_datetime: list = field(
-        default_factory=list, metadata=to_description(" float, current market time as a datetime")
+    run_trade_number: list[int] = field(
+        default_factory=list, metadata=to_description("integer, trade number in a given simulation")
     )
-    current_market_time: list = field(
-        default_factory=list, metadata=to_description(" float, current market time in years")
+    market_step_size: list[float] = field(
+        default_factory=list, metadata=to_description("minimum time discretization for market time step")
     )
-    run_trade_number: list = field(
-        default_factory=list, metadata=to_description(" integer, trade number in a given simulation")
+    position_duration: list[StretchedTime] = field(
+        default_factory=list, metadata=to_description("time lapse between token mint and expiry as a yearfrac")
     )
-    market_step_size: list = field(
-        default_factory=list, metadata=to_description(" minimum time discretization for market time step")
-    )
-    position_duration: list = field(
-        default_factory=list, metadata=to_description(" time lapse between token mint and expiry as a yearfrac")
-    )
-    trade_fee_percent: list = field(
-        default_factory=list, metadata=to_description("the percentage of trade outputs to be collected as fees")
-    )
-    redemption_fee_percent: list = field(
-        default_factory=list, metadata=to_description("the percentage of redemption outputs to be collected as fees")
-    )
-    current_vault_apr: list = field(default_factory=list, metadata=to_description("vault apr on a given day"))
-    pool_apr: list = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
-    spot_price: list = field(default_factory=list, metadata=to_description("price of shares"))
+    current_vault_apr: list[float] = field(default_factory=list, metadata=to_description("vault apr on a given day"))
+    pool_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
+    spot_price: list[float] = field(default_factory=list, metadata=to_description("price of shares"))
 
     def add_dict_entries(self, dictionary: dict) -> None:
         r"""Adds keys & values of input ditionary to the simulation state
