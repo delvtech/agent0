@@ -22,9 +22,9 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     float
         APR (decimal) calculated from the provided parameters
     """
-    assert price > 0, (
-        "utils.price.calc_apr_from_spot_price: ERROR: " f"Price argument should be greater than zero, not {price}"
-    )
+    assert (
+        price > 0
+    ), f"utils.price.calc_apr_from_spot_price: ERROR: Price argument should be greater than zero, not {price}"
     assert time_remaining.normalized_time > 0, (
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
