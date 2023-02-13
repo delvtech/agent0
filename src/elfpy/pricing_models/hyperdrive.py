@@ -113,7 +113,14 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         d_shares = d_bonds / share_price
 
         # this is needed to not modify the actual market state, as this is a mock only
-        market_state = copy.copy(market_state)
+        market_state = MarketState(
+            share_reserves=market_state.share_reserves,
+            bond_reserves=market_state.bond_reserves,
+            share_price=market_state.share_price,
+            init_share_price=market_state.init_share_price,
+            trade_fee_percent=market_state.trade_fee_percent,
+            redemption_fee_percent=market_state.redemption_fee_percent,
+        )
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.

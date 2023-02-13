@@ -1,4 +1,6 @@
-"""Testing for the ElfPy package modules"""
+"""
+tests that attempting to 500 and 5000 PTs against liquidity of $200 is scaled down properly, with and without init_lp
+"""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
@@ -40,28 +42,43 @@ class BaseParameterTest(unittest.TestCase):
 class GetMaxShortTests(BaseParameterTest):
     """Tests of custom parameters"""
 
-    def test_max_short_without_init(self):
-        """set up a short that will attempt to trade more than possible"""
-        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
-        self.run_base_trade_test(agent_policies=agent_policies)
-
     # this exact scenario causes a precision error with share_reserves = -9.313225746154785e-10
     def test_max_short_500_with_init_shuffle_users(self):
-        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        """set up a short that will attempt to trade more than possible, WITH init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True})
 
     def test_max_short_500_with_init_deterministic(self):
-        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        """set up a short that will attempt to trade more than possible, WITH init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True, "shuffle_users": False})
 
     def test_max_short_5000_with_init_shuffle_users(self):
-        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        """set up a short that will attempt to trade more than possible, WITH init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True})
 
     def test_max_short_5000_with_init_deterministic(self):
-        """set up a short that will attempt to trade more than possible, but with init_lp"""
+        """set up a short that will attempt to trade more than possible, WITH init_lp"""
         agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
         self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": True, "shuffle_users": False})
+
+    def test_max_short_500_with_init_shuffle_users_without_init_lp(self):
+        """set up a short that will attempt to trade more than possible, WITHOUT init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": False})
+
+    def test_max_short_500_with_init_deterministic_without_init_lp(self):
+        """set up a short that will attempt to trade more than possible, WITHOUT init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=500"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": False, "shuffle_users": False})
+
+    def test_max_short_5000_with_init_shuffle_users_without_init_lp(self):
+        """set up a short that will attempt to trade more than possible, WITHOUT init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": False})
+
+    def test_max_short_5000_with_init_deterministic_without_init_lp(self):
+        """set up a short that will attempt to trade more than possible, WITHOUT init_lp"""
+        agent_policies = ["single_lp:amount_to_lp=200", "single_short:amount_to_trade=5000"]
+        self.run_base_trade_test(agent_policies=agent_policies, override={"init_lp": False, "shuffle_users": False})
