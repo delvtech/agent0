@@ -593,12 +593,11 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
-        # TODO: convert this to a check for 1>=time and fix tests as necessary
-        assert 1 > time_remaining.stretched_time >= 0, (
+        assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
         )
-        assert 1 > time_remaining.normalized_time >= 0, (
+        assert 1 >= time_remaining.normalized_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
