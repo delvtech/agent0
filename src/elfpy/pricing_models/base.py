@@ -592,11 +592,11 @@ class PricingModel(ABC):
         )
         assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+            f"expected 1 >= time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
         )
         assert 1 >= time_remaining.normalized_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+            f"expected 1 >= time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.
