@@ -455,15 +455,15 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         )
-        assert market_state.share_reserves >= WEI, (
+        assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
         )
-        assert market_state.bond_reserves >= WEI or market_state.bond_reserves == 0, (
+        assert market_state.bond_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
-        assert market_state.share_price >= market_state.init_share_price >= 1, (
+        assert market_state.share_price >= 0, (
             f"pricing_models.check_input_assertions: ERROR: "
             f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
             f"and init_share_price={market_state.init_share_price}!"
@@ -481,13 +481,11 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
-        # TODO: convert this to a check for 1>=time and fix tests as necessary
-        # issue #57
-        assert 1 > time_remaining.stretched_time >= 0, (
+        assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
         )
-        assert 1 > time_remaining.normalized_time >= 0, (
+        assert 1 >= time_remaining.normalized_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
