@@ -4,7 +4,7 @@
 
 # [Element Finance](https://element.fi) market simulation and analysis
 
-This project is a work-in-progress. All code is provided as is and without guarantee. Documentation can be found [here](elf-simulations.vercel.app).
+This project is a work-in-progress. All code is provided as is and without guarantee. Documentation can be found [here](elfpy.element.fi).
 
 ## Install
 
