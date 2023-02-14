@@ -85,7 +85,7 @@ class TestGetMax(unittest.TestCase):
             TestCaseGetMax(
                 market_state=MarketState(
                     share_reserves=1_000_000,
-                    bond_reserves=100_000_000,
+                    bond_reserves=834_954,
                     base_buffer=0,
                     bond_buffer=0,
                     init_share_price=1,
@@ -94,7 +94,7 @@ class TestGetMax(unittest.TestCase):
                     redemption_fee_percent=0.1,
                 ),
                 time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.27), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
@@ -244,10 +244,12 @@ class TestGetMax(unittest.TestCase):
         # Ensure that the pool is in a valid state after the trade.
         apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
         self.assertGreaterEqual(apr, 0.0)
+
         self.assertGreaterEqual(
             market_state.share_price * market_state.share_reserves,
             market_state.base_buffer,
         )
+
         self.assertGreaterEqual(
             market_state.bond_reserves,
             market_state.bond_buffer,

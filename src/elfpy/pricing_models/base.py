@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from abc import ABC
-import copy
 import decimal
 from decimal import Decimal
 
@@ -11,7 +10,6 @@ from elfpy import (
     WEI,
 )
 from elfpy.types import (
-    MarketDeltas,
     Quantity,
     MarketState,
     StretchedTime,
@@ -360,8 +358,13 @@ class PricingModel(ABC):
         time_remaining: StretchedTime,
     ) -> tuple[float, float]:
         r"""
-        Calculates the maximum long the market can support using the bisection
-        method.
+        Calculates the maximum long the market can support
+
+        .. math::
+            \begin{align}
+            \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
+            -c \cdot z
+            \end{align}
 
         Parameters
         ----------
@@ -375,79 +378,21 @@ class PricingModel(ABC):
         Returns
         -------
         float
-            The maximum amount of base that can be used to purchase bonds
-
-        .. todo:: This needs to be tested more rigorously.
-            Some of these conditionals seem unnecessary.
-            If they aren't document why they aren't.
-            Otherwise, remove them.
+            The maximum amount of base that can be used to purchase bonds.
+        float
+            The maximum amount of bonds that can be purchased.
         """
-        available_bonds = market_state.bond_reserves - market_state.bond_buffer
-        if available_bonds <= 0:
-            return 0, 0
-        last_maybe_max_long = 0, 0
-        bond_percent = 1
-        num_iters = 25
-        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
-            # Compute the amount of base needed to purchase the specified amount
-            # of bonds.
-            trade_result = self.calc_in_given_out(
-                out=Quantity(amount=available_bonds * bond_percent, unit=TokenType.PT),
-                market_state=market_state,
-                time_remaining=time_remaining,
-            )
-            maybe_max_long = trade_result.breakdown.with_fee
-
-            # If the max long is less than or equal to zero, we need to reduce
-            # the amount of bonds that we are attempting to purchase. Otherwise,
-            # go through the other checks for the bisection.
-            if maybe_max_long <= 0:
-                bond_percent -= step_size
-            else:
-                # TODO: Do we actually need to do this? Run some tests and see
-                # if the result that only uses calc_in_given_out is always
-                # slightly lower. If so, then just take that.
-                #
-                # Compute the amount of bonds that will be purchased with the
-                # amount of base. We feed the result of calc_in_given_out back
-                # into the pricing model as this computation is more accurate.
-                trade_result = self.calc_out_given_in(
-                    in_=Quantity(amount=maybe_max_long, unit=TokenType.BASE),
-                    market_state=market_state,
-                    time_remaining=time_remaining,
-                )
-                d_bonds = trade_result.breakdown.with_fee
-
-                # Apply the trade to the market state.
-                market_state_post_trade = copy.copy(market_state)
-                market_state_post_trade.apply_delta(
-                    delta=MarketDeltas(
-                        d_base_asset=trade_result.market_result.d_base,
-                        d_token_asset=trade_result.market_result.d_bonds,
-                        d_base_buffer=d_bonds,
-                    )
-                )
-
-                # Verify that none of the reserve invariants were broken. If
-                # the invariants were broken, reduce the bond size. Otherwise,
-                # we've found a new max long amount, so we store that value and
-                # proceed with bisection with larger bond purchases.
-                if (
-                    market_state.bond_reserves < d_bonds
-                    or self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining)
-                    < 0
-                    or market_state_post_trade.share_price * market_state_post_trade.share_reserves
-                    < market_state_post_trade.base_buffer
-                    or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer
-                ):
-                    bond_percent -= step_size
-                else:
-                    last_maybe_max_long = (maybe_max_long, d_bonds)
-                    if bond_percent == 1:
-                        return last_maybe_max_long
-                    bond_percent += step_size
-
-        return last_maybe_max_long
+        base = self.calc_in_given_out(
+            out=Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        bonds = self.calc_out_given_in(
+            in_=Quantity(amount=base, unit=TokenType.BASE),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        return (base, bonds)
 
     def get_max_short(
         self,
@@ -457,6 +402,10 @@ class PricingModel(ABC):
         r"""
         Calculates the maximum short the market can support using the bisection
         method.
+
+        \begin{align}
+        \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
+        \end{align}
 
         Parameters
         ----------
@@ -474,82 +423,19 @@ class PricingModel(ABC):
         float
             The maximum amount of bonds that can be shorted.
         """
-        available_shares = market_state.share_reserves - market_state.base_buffer / market_state.share_price
-        if available_shares <= 0:
-            return 0, 0
-
-        last_maybe_max_short = 0, 0
-        bond_percent = 1
-        num_iters = 25
-        market_state_post_trade = copy.copy(market_state)
-        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
-            try:
-                # Compute the amount of base returned by selling the specified
-                # amount of bonds.
-                maybe_max_short_bonds = available_shares / market_state.share_price * bond_percent
-                trade_result = self.calc_out_given_in(
-                    in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
-                    market_state=market_state,
-                    time_remaining=time_remaining,
-                )
-                maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
-            except decimal.InvalidOperation:
-                bond_percent -= step_size
-                continue
-
-            # If the max short base is less than or equal to zero, we need to
-            # reduce the amount of bonds that we are attempting to short.
-            # Otherwise, go through the other checks for the bisection.
-            if maybe_max_short_base <= 0:
-                bond_percent -= step_size
-            else:
-                # Apply the trade to the market state.
-                market_state_post_trade = copy.copy(market_state)
-                market_state_post_trade.apply_delta(
-                    delta=MarketDeltas(
-                        d_base_asset=trade_result.market_result.d_base,
-                        d_token_asset=trade_result.market_result.d_bonds,
-                        d_bond_buffer=maybe_max_short_bonds,
-                    )
-                )
-
-                # TODO: Some of these checks are certainly unnecessary. When
-                # writing rigorous tests these should be removed.
-                #
-                # Verify that none of the reserve invariants were broken. If
-                # the invariants were broken, reduce the bond size. Otherwise,
-                # we've found a new max short amount, so we store that value and
-                # proceed with bisection with larger bond purchases.
-                if (
-                    self.calc_apr_from_reserves(market_state=market_state_post_trade, time_remaining=time_remaining) < 0
-                    or market_state_post_trade.share_price * market_state_post_trade.share_reserves
-                    < market_state_post_trade.base_buffer
-                    or market_state_post_trade.bond_reserves < market_state_post_trade.bond_buffer
-                ):
-                    bond_percent -= step_size
-                else:
-                    last_maybe_max_short = (maybe_max_short_base, maybe_max_short_bonds)
-                    if bond_percent == 1:
-                        return last_maybe_max_short
-                    bond_percent += step_size
-
-        # do one more iteration at the last step size if the bisection method was stuck approaching
-        # a max_short value that used more reserve shares than the market had available.
-        if market_state_post_trade.share_reserves < market_state.base_buffer:
-            last_step_size = 1 / (2 ** (num_iters + 1))
-            bond_percent -= last_step_size
-            maybe_max_short_bonds = available_shares / market_state.share_price * bond_percent
-
-            trade_result = self.calc_out_given_in(
-                in_=Quantity(amount=maybe_max_short_bonds, unit=TokenType.PT),
-                market_state=market_state,
-                time_remaining=time_remaining,
-            )
-            maybe_max_short_base = maybe_max_short_bonds - trade_result.breakdown.with_fee
-
-            last_maybe_max_short = (maybe_max_short_base, maybe_max_short_bonds)
-
-        return last_maybe_max_short
+        bonds = self.calc_in_given_out(
+            out=Quantity(
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price, unit=TokenType.PT
+            ),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        base = self.calc_out_given_in(
+            in_=Quantity(amount=bonds, unit=TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
+        return (base, bonds)
 
     def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
