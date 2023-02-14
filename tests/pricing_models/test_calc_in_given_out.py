@@ -116,11 +116,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining = StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
                 )
+                time_remaining.freeze()  # pylint: disable=no-member # type: ignore
                 trade_result = pricing_model.calc_in_given_out(
                     out=trade_quantity,
                     market_state=market_state,
                     time_remaining=time_remaining,
                 )
+                trade_result.freeze()  # pylint: disable=no-member # type: ignore
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
