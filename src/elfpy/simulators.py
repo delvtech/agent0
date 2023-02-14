@@ -253,6 +253,7 @@ class Simulator:
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable"""
         # pylint: disable=too-many-statements
+        # FIXME: if self.market.pricing_modle.model_name() != self.simulation_state.model_name[-1]:
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
         self.simulation_state.simulation_start_time.append(self.start_time)

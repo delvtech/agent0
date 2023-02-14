@@ -148,6 +148,8 @@ class Wallet:
         return {
             f"agent_{self.address}_base": self.base,
             f"agent_{self.address}_lp_tokens": lp_token_value,
+            f"agent_{self.address}_num_longs": len(self.longs),
+            f"agent_{self.address}_num_shorts": len(self.shorts),
             f"agent_{self.address}_total_longs": longs_value,
             f"agent_{self.address}_total_shorts": shorts_value,
             f"agent_{self.address}_total_longs_no_mock": longs_value_no_mock,
@@ -159,6 +161,8 @@ class Wallet:
         return [
             f"agent_{self.address}_base",
             f"agent_{self.address}_lp_tokens",
+            f"agent_{self.address}_num_longs",
+            f"agent_{self.address}_num_shorts",
             f"agent_{self.address}_total_longs",
             f"agent_{self.address}_total_shorts",
             f"agent_{self.address}_total_longs_no_mock",
