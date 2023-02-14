@@ -407,7 +407,7 @@ class PricingModel(ABC):
         method.
 
         \begin{align}
-        \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}} - 2y - c \cdot z
+        \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
         \end{align}
 
         Parameters
