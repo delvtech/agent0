@@ -256,14 +256,16 @@ class Simulator:
         self.simulation_state.day.append(self.day)
         self.simulation_state.block_number.append(self.block_number)
         self.simulation_state.daily_block_number.append(self.daily_block_number)
-        self.simulation_state.block_timestamp.append(
-            time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
-            if self.start_time
-            else "None"
-        )
-        self.simulation_state.current_market_datetime.append(
-            time_utils.year_as_datetime(self.start_time, self.market.time) if self.start_time else "None"
-        )
+        if self.start_time is None:
+            self.simulation_state.block_timestamp.append(None)
+            self.simulation_state.current_market_datetime.append(None)
+        else:
+            self.simulation_state.block_timestamp.append(
+                time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            )
+            self.simulation_state.current_market_datetime.append(
+                time_utils.year_as_datetime(self.start_time, self.market.time)
+            )
         self.simulation_state.current_market_time.append(self.market.time)
         self.simulation_state.run_trade_number.append(self.run_trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size())
