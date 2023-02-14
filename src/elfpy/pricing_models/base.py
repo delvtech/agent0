@@ -388,7 +388,6 @@ class PricingModel(ABC):
                 market_state=market_state,
                 time_remaining=time_remaining,
             ).breakdown.with_fee
-            - market_state.base_buffer / market_state.share_price
         )
         bonds = self.calc_out_given_in(
             in_=Quantity(amount=base, unit=TokenType.BASE),
@@ -434,7 +433,6 @@ class PricingModel(ABC):
                 market_state=market_state,
                 time_remaining=time_remaining,
             ).breakdown.with_fee
-            - market_state.bond_buffer
         )
         base = self.calc_out_given_in(
             in_=Quantity(amount=bonds, unit=TokenType.PT),
