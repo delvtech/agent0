@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from abc import ABC
-import copy
 import decimal
 from decimal import Decimal
 
@@ -11,7 +10,6 @@ from elfpy import (
     WEI,
 )
 from elfpy.types import (
-    MarketDeltas,
     Quantity,
     MarketState,
     StretchedTime,
