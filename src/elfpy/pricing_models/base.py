@@ -362,7 +362,8 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-            \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k - (y + c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}} - c \cdot z
+            \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
+            -c \cdot z
             \end{align}
 
         Parameters
