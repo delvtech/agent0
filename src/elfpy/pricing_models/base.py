@@ -382,13 +382,11 @@ class PricingModel(ABC):
         float
             The maximum amount of bonds that can be purchased.
         """
-        base = (
-            self.calc_in_given_out(
-                out=Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=TokenType.PT),
-                market_state=market_state,
-                time_remaining=time_remaining,
-            ).breakdown.with_fee
-        )
+        base = self.calc_in_given_out(
+            out=Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=TokenType.PT),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
         bonds = self.calc_out_given_in(
             in_=Quantity(amount=base, unit=TokenType.BASE),
             market_state=market_state,
@@ -425,15 +423,13 @@ class PricingModel(ABC):
         float
             The maximum amount of bonds that can be shorted.
         """
-        bonds = (
-            self.calc_in_given_out(
-                out=Quantity(
-                    market_state.share_reserves - market_state.base_buffer / market_state.share_price, unit=TokenType.PT
-                ),
-                market_state=market_state,
-                time_remaining=time_remaining,
-            ).breakdown.with_fee
-        )
+        bonds = self.calc_in_given_out(
+            out=Quantity(
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price, unit=TokenType.PT
+            ),
+            market_state=market_state,
+            time_remaining=time_remaining,
+        ).breakdown.with_fee
         base = self.calc_out_given_in(
             in_=Quantity(amount=bonds, unit=TokenType.PT),
             market_state=market_state,
