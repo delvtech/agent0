@@ -74,7 +74,7 @@ class Wallet:
     base: float = 0
     lp_tokens: float = 0
 
-    # non-fungible (identified by mint_time, stored as dict)
+    # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Long] = field(default_factory=dict)
     shorts: Dict[float, Short] = field(default_factory=dict)
 

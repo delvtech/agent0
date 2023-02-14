@@ -29,6 +29,8 @@ class Market:
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
+
+    #FIXME: why do we call it market.rate instead of market.apr
     """
 
     def __init__(

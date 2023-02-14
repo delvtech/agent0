@@ -185,6 +185,9 @@ class Simulator:
         ----------
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
+
+        #FIXME: is trades the right var name? it's agents?
+        #FIXME: How hard is it to stop agents from liquiditating when the simulation hits num_trading_days (i.e. ends)?
         """
         for agent_id, agent_trades in trades:
             agent = self.agents[agent_id]
