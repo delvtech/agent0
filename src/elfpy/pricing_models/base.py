@@ -463,10 +463,13 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
-        assert market_state.share_price >= 0, (
+        assert market_state.share_price > 0, (
             f"pricing_models.check_input_assertions: ERROR: "
-            f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
-            f"and init_share_price={market_state.init_share_price}!"
+            f"expected share_price > 0, not share_price={market_state.share_price}"
+        )
+        assert market_state.init_share_price > 0, (
+            f"pricing_models.check_input_assertions: ERROR: "
+            f"expected init_share_price > 0, not share_price={market_state.init_share_price}"
         )
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
         assert reserves_difference < MAX_RESERVES_DIFFERENCE, (

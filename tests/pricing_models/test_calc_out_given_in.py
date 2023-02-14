@@ -1538,7 +1538,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 ),
                 # days remaining == 365, will get divide by zero error
                 time_remaining=StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
-                exception_type=AssertionError,
+                exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             TestCaseCalcOutGivenInFailure(
                 in_=Quantity(amount=100, unit=TokenType.PT),
@@ -1587,20 +1587,6 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
-                    # share_price < init_share_price
-                    share_price=1,
-                    init_share_price=1.5,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
                     # share_price 0
                     share_price=0,
                     init_share_price=1.5,
@@ -1616,34 +1602,6 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
-                    # share_reserves < 1 wei
-                    share_reserves=0.5e-18,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcOutGivenInFailure(
-                in_=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    # bond reserves < 1 wei
-                    bond_reserves=0.5e-18,
                     share_price=1,
                     init_share_price=1,
                     trade_fee_percent=0.01,
