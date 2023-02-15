@@ -96,7 +96,7 @@ class PricingModel(ABC):
         target_apr: float,
         time_remaining: StretchedTime,
         market_state: MarketState,
-    ):
+    ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
