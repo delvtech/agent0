@@ -281,6 +281,20 @@ class MarketState:
             else:
                 assert value >= 0, f"MarketState values must be non-negative. Error on {key} = {value}"
 
+    def copy(self) -> MarketState:
+        """Returns a new copy of self"""
+        return MarketState(
+            share_reserves=self.share_reserves,
+            bond_reserves=self.bond_reserves,
+            base_buffer=self.bond_buffer,
+            lp_reserves=self.lp_reserves,
+            vault_apr=self.vault_apr,
+            share_price=self.share_price,
+            init_share_price=self.init_share_price,
+            trade_fee_percent=self.trade_fee_percent,
+            redemption_fee_percent=self.redemption_fee_percent,
+        )
+
     def __str__(self):
         output_string = (
             "MarketState(\n"
