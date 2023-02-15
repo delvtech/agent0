@@ -66,8 +66,11 @@ class Agent:
         """
         if action_type == MarketActionType.CLOSE_SHORT:
             open_share_price = self.wallet.shorts[mint_time].open_share_price
+<<<<<<< HEAD
         else:
             open_share_price = None
+=======
+>>>>>>> e571fe4 (fixes up open_share_price)
         agent_action = MarketAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
