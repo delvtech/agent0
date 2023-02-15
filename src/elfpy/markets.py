@@ -51,6 +51,10 @@ class Market:
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
 
+    @property
+    def annualized_position_duration(self) -> float:
+        return self.position_duration.days / 365
+
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
