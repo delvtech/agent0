@@ -189,6 +189,10 @@ class Simulator:
         #FIXME: is trades the right var name? it's agents?
         #FIXME: How hard is it to stop agents from liquiditating when the simulation hits num_trading_days (i.e. ends)?
         """
+        # FIXME: you can run this loop over parallel processes
+        #     we're in the mempool here, so none of these trades affect market state until after this function is returned
+        #     pull update_market out of trade_and_updates, so both agent deltas & market deltas are returned
+        #     aggregate deltas in the parallel loop, then apply all at once
         for agent_id, agent_trades in trades:
             agent = self.agents[agent_id]
             for trade in agent_trades:
@@ -201,6 +205,7 @@ class Simulator:
                 agent.update_wallet(agent_deltas, self.market)
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
+                # FIXME: need to log deaggregated trade informaiton, i.e. trade_deltas
                 self.update_simulation_state()
                 self.run_trade_number += 1
 
@@ -251,7 +256,11 @@ class Simulator:
             agent.log_final_report(self.market)
 
     def update_simulation_state(self) -> None:
-        r"""Increment the list for each key in the simulation_state output variable"""
+        r"""Increment the list for each key in the simulation_state output variable
+
+        FIXME: This gets duplicated in notebooks when we make the pandas dataframe.
+            Instead, the simulation_state should be a dataframe.
+        """
         # pylint: disable=too-many-statements
         # FIXME: if self.market.pricing_modle.model_name() != self.simulation_state.model_name[-1]:
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())

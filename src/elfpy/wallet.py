@@ -130,8 +130,8 @@ class Wallet:
                 if long.balance > 0 and share_reserves
                 else 0.0
             )
-            base_no_mock = long.balance * market.spot_price
             longs_value += base
+            base_no_mock = long.balance * market.spot_price
             longs_value_no_mock += base_no_mock
         # compute short values in units of base
         shorts_value = 0
@@ -142,8 +142,8 @@ class Wallet:
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
-            base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value += base
+            base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock
         return {
             f"agent_{self.address}_base": self.base,
