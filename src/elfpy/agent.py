@@ -66,24 +66,17 @@ class Agent:
         """
         if action_type == MarketActionType.CLOSE_SHORT:
             open_share_price = self.wallet.shorts[mint_time].open_share_price
-            agent_action = MarketAction(
-                # these two variables are required to be set by the strategy
-                action_type=action_type,
-                trade_amount=trade_amount,
-                # next two variables are set automatically by the basic agent class
-                wallet_address=self.wallet.address,
-                mint_time=mint_time,
-                open_share_price=open_share_price,
-            )
         else:
-            agent_action = MarketAction(
-                # these two variables are required to be set by the strategy
-                action_type=action_type,
-                trade_amount=trade_amount,
-                # next two variables are set automatically by the basic agent class
-                wallet_address=self.wallet.address,
-                mint_time=mint_time,
-            )
+            open_share_price = None
+        agent_action = MarketAction(
+            # these two variables are required to be set by the strategy
+            action_type=action_type,
+            trade_amount=trade_amount,
+            # next two variables are set automatically by the basic agent class
+            wallet_address=self.wallet.address,
+            mint_time=mint_time,
+            open_share_price=open_share_price,
+        )
         return agent_action
 
     def action(self, market: Market) -> list[MarketAction]:
