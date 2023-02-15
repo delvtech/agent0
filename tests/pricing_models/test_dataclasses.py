@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Type
+from typing import Type, Optional
 
 from elfpy.types import MarketState, Quantity, StretchedTime
 
@@ -39,8 +39,8 @@ class TestResultCalcInGivenOutSuccessByModel:
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
-    yieldspace: TestResultCalcInGivenOutSuccess
-    hyperdrive: TestResultCalcInGivenOutSuccess
+    yieldspace: Optional[TestResultCalcInGivenOutSuccess] = None
+    hyperdrive: Optional[TestResultCalcInGivenOutSuccess] = None
 
     __test__ = False  # pytest: don't test this class
 

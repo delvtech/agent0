@@ -26,7 +26,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
-        success_test_cases = base_in_test_cases + pt_in_test_cases
+        success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
             test_number,
             (
@@ -42,7 +42,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                 )
                 expected_result = results_by_model[model_type]
+                if expected_result is None:
+                    continue
                 # Ensure we get the expected results from the pricing model.
+                print(f"attempting to trade {test_case=}")
                 trade_result = pricing_model.calc_in_given_out(
                     out=test_case.out,
                     market_state=test_case.market_state,
@@ -1206,31 +1209,49 @@ pt_in_test_cases_hyperdrive_only = [
             time_stretch_apy=1.1,  # APY of 5% used to calculate time_stretch
         ),
         # From the input, we have the following values:
-        # t_stretch = 22.1868770168519182502689135891
-        # tau = 0.0225358440315970471499308329778
-        # 1 - tau = 0.977464155968402952850069167022 (tau = 1-0.977464155968402952850069167022))
-        # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
-        #   = 1/1*(1*0)**0.9774641559684029528500691670222 + (2*1000000 + 1*0)**0.9774641559684029528500691670222
-        #   = 1442218.1821553102
+        #
+        #   in hyperdrive, half the position has matured, recycled into the market
+        #   z = 50
+        #   y = 999_950
+        #
+        #   t_stretch = 22.1868770168519182502689135891
+        #
+        #   tau = d / (365 * t_stretch)
+        #     = 182.5 / (365 * 22.1868770168519182502689135891)
+        #     = 0.022535844031597044
+        #
+        #   1 - tau = 0.977464155968403
+        #
+        #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
+        #     = (1 / 1) * (1 * 0) ** 0.977464155968403 +
+        #           (2 * 1_000_000 + 1 * 0) ** 0.977464155968403
+        #     = 1_442_218.1821553102
+        #
+        #   p = ((2 * y + c * z) / (mu * z)) ** tau
+        #     = ((2 * 999_950 + 1 * 50) / (1 * 50)) ** 0.022535844031597044
+        #     = 1.2697290664423557
         TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
-                # p = ((2*y+c*z)/(mu * z))**tau
-                #   = 1.0250671833648672
-                # without_fee_or_slippage = p * out = 102.50671833648673
-                without_fee_or_slippage=102.50671833648673,
-                # d_y' = (k - c/mu*(mu*z - mu*d_z)**(1 - tau))**(1/(1 - tau)) - y
-                #         = (302929.51067963685 - 1/1*(1*100000 - 1*100)**0.977464155968402952850069167022)
-                #           **(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
-                #         = 102.50826839753427
-                without_fee=102.50826839753427,
-                # fee is 10% of discount before slippage = (102.50671833648673-100)*0.1 = 0.2506718336486728
-                fee=0.2506718336486728,
-                # with_fee = d_y' + fee = 102.50826839753427 + 0.2506718336486728 = 102.75894023118293
-                with_fee=102.75894023118293,
-            ),
             hyperdrive=TestResultCalcInGivenOutSuccess(
-                without_fee_or_slippage=102.53971546251678,
-                without_fee=102.54051519598579,
+                # spot_price = p * delta_y * t + delta_y * (1 - t)
+                # spot_price = 1.2697290664423557 * 50 * 0.5 + 50 * 0.5
+                # spot_price = 31.743226661058895 + 25
+                # spot_price = 56.743226661058895
+                without_fee_or_slippage=56.743226661058895,
+                # yield space equation (for hyperdrive multiply d_z by t):
+                # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
+                # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
+                #
+                # note: use delta_z * t to phase the curve part out, and add delta_z * (1 - t)
+                # to phase the flat part in over the length of the term:
+                #
+                # dy' = 2*y + c*z - (k - (c / u) * (u * (z + delta_z*t))**(1 - tau_full))**(1 / (1 - tau_full))
+                #       + c * delta_z * (1 - t)
+                # dy' = 2000150.0 + 199925.0 - (1255966.2592326764 - 1.3333333333333333
+                #       * (1.5 * (99962.5 + 50.0*0.25))**(0.9549283119368059))**(1.0471990279267966)
+                #       + 2 * 50.0 * 0.75
+                without_fee=97.14941590232775,
+                # fee = ((1 / p) - 1) * phi * c * d_z
+                # fee = (1.1286948282596905 - 1) * 0.01 * 2 * 50.0
                 fee=0.25397154625167895,
                 with_fee=102.79448674223747,
             ),
