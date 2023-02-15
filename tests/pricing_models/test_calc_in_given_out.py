@@ -127,6 +127,22 @@ class TestCalcInGivenOut(unittest.TestCase):
         """Failure tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
+        failure_test_cases_yieldpsace_only = [
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    # share reserves zero
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                    trade_fee_percent=0.01,
+                    redemption_fee_percent=0.01,
+                ),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                exception_type=(AssertionError, decimal.DivisionByZero),
+            )
+        ]
         failure_test_cases = [
             TestCaseCalcInGivenOutFailure(
                 # amount negative
@@ -358,6 +374,25 @@ class TestCalcInGivenOut(unittest.TestCase):
         for test_number, test_case in enumerate(failure_test_cases):
             print(f"{test_number=}")
             for pricing_model in pricing_models:
+                print(f"{pricing_model.model_name()=}")
+                with self.assertRaises(test_case.exception_type):
+                    pricing_model.check_input_assertions(
+                        quantity=test_case.out,
+                        market_state=test_case.market_state,
+                        time_remaining=test_case.time_remaining,
+                    )
+                    trade_result = pricing_model.calc_in_given_out(
+                        out=test_case.out,
+                        market_state=test_case.market_state,
+                        time_remaining=test_case.time_remaining,
+                    )
+                    pricing_model.check_output_assertions(
+                        trade_result=trade_result,
+                    )
+        # yieldspace only failures
+        for test_number, test_case in enumerate(failure_test_cases_yieldpsace_only):
+            print(f"{test_number=}")
+            for pricing_model in [YieldSpacePricingModel()]:
                 print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
@@ -1141,3 +1176,52 @@ pt_in_test_cases = [
         ),
     ),  # end of test eight
 ]
+pt_in_test_cases_hyperdrive_only = [
+    (  # test nine, share reserves zero
+        TestCaseCalcInGivenOutSuccess(
+            out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
+            market_state=MarketState(
+                share_reserves=0,  # base reserves (in share terms) base = share * share_price
+                bond_reserves=1_000_000,  # PT reserves
+                share_price=1,  # share price of the LP in the yield source
+                init_share_price=1,  # original share price pool started
+                trade_fee_percent=0.01,  # fee percent (normally 10%)
+                redemption_fee_percent=0.01,  # fee percent (normally 10%)
+            ),
+            days_remaining=182.5,  # 6 months remaining
+            time_stretch_apy=1.1,  # APY of 5% used to calculate time_stretch
+        ),
+        # From the input, we have the following values:
+        # t_stretch = 22.1868770168519182502689135891
+        # tau = 0.0225358440315970471499308329778
+        # 1 - tau = 0.977464155968402952850069167022 (tau = 1-0.977464155968402952850069167022))
+        # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
+        #   = 1/1*(1*0)**0.9774641559684029528500691670222 + (2*1000000 + 1*0)**0.9774641559684029528500691670222
+        #   = 1442218.1821553102
+        TestResultCalcInGivenOutSuccessByModel(
+            yieldspace=TestResultCalcInGivenOutSuccess(
+                # p = ((2*y+c*z)/(mu * z))**tau
+                #   = 1.0250671833648672
+                # without_fee_or_slippage = p * out = 102.50671833648673
+                without_fee_or_slippage=102.50671833648673,
+                # d_y' = (k - c/mu*(mu*z - mu*d_z)**(1 - tau))**(1/(1 - tau)) - y
+                #         = (302929.51067963685 - 1/1*(1*100000 - 1*100)**0.977464155968402952850069167022)
+                #           **(1/0.977464155968402952850069167022) - (2*100_000 + 1*100_000)
+                #         = 102.50826839753427
+                without_fee=102.50826839753427,
+                # fee is 10% of discount before slippage = (102.50671833648673-100)*0.1 = 0.2506718336486728
+                fee=0.2506718336486728,
+                # with_fee = d_y' + fee = 102.50826839753427 + 0.2506718336486728 = 102.75894023118293
+                with_fee=102.75894023118293,
+            ),
+            hyperdrive=TestResultCalcInGivenOutSuccess(
+                without_fee_or_slippage=102.53971546251678,
+                without_fee=102.54051519598579,
+                fee=0.25397154625167895,
+                with_fee=102.79448674223747,
+            ),
+        ),
+    ),  # end of test one
+]
+
+# TODO: test the success cases

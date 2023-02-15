@@ -127,6 +127,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 f"Expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
             )
 
+        print(f"calling calc_in_given_out with {out_amount} {out.unit} {time_remaining} and {market_state}")
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
             out=Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
