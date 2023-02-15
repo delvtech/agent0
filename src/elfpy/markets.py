@@ -53,6 +53,7 @@ class Market:
 
     @property
     def annualized_position_duration(self) -> float:
+        r"""Returns the position duration in years"""
         return self.position_duration.days / 365
 
     def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
