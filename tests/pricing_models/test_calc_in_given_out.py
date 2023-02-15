@@ -127,22 +127,6 @@ class TestCalcInGivenOut(unittest.TestCase):
         """Failure tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
-        failure_test_cases_yieldpsace_only = [
-            TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
-                    # share reserves zero
-                    share_reserves=0,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=(AssertionError, decimal.DivisionByZero),
-            )
-        ]
         failure_test_cases = [
             TestCaseCalcInGivenOutFailure(
                 # amount negative
@@ -368,6 +352,22 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
+        ]
+        failure_test_cases_yieldpsace_only = [
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    # share reserves zero
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                    trade_fee_percent=0.01,
+                    redemption_fee_percent=0.01,
+                ),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                exception_type=(AssertionError, decimal.DivisionByZero),
+            )
         ]
         # Verify that the pricing model raises the expected exception type for
         # each test case.
