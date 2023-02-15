@@ -46,7 +46,7 @@ class Agent:
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0, open_share_price=0.0
+        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
     ) -> MarketAction:
         r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
@@ -64,6 +64,10 @@ class Agent:
         MarketAction
             The MarketAction object that contains the details about the action to execute in the market
         """
+        if action_type == MarketActionType.CLOSE_SHORT:
+            open_share_price = self.wallet.shorts[mint_time].open_share_price
+        else:
+            open_share_price = None
         agent_action = MarketAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
@@ -348,7 +352,6 @@ class Agent:
                         action_type=MarketActionType.CLOSE_SHORT,
                         trade_amount=short.balance,
                         mint_time=mint_time,
-                        open_share_price=short.open_share_price,
                     )
                 )
         if self.wallet.lp_tokens > 0:

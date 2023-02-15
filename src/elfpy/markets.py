@@ -141,6 +141,9 @@ class Market:
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
+            assert (
+                agent_action.open_share_price is not None
+            ), "ERROR: agent_action.open_share_price must be provided when closing a short"
             market_deltas, agent_deltas = self.close_short(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back

@@ -48,7 +48,6 @@ class CustomShorter(Agent):
                         self.create_agent_action(
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=self.pt_to_short,
-                            open_share_price=1.0,
                         )
                     )
         return action_list
