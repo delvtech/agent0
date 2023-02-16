@@ -124,7 +124,7 @@ class Simulator:
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 ).tolist()
                 if self.config.init_lp:
-                    agent_ids = np.append(agent_ids, 0)  # add init_lp so that they're always last
+                    agent_ids.append(0)  # add init_lp so that they're always last
             else:
                 agent_ids = self.rng.permutation(
                     list(self.agents)
