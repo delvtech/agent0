@@ -74,7 +74,7 @@ class Wallet:
     base: float = 0
     lp_tokens: float = 0
 
-    # non-fungible (identified by mint_time, stored as dict)
+    # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Long] = field(default_factory=dict)
     shorts: Dict[float, Short] = field(default_factory=dict)
 
@@ -130,8 +130,8 @@ class Wallet:
                 if long.balance > 0 and share_reserves
                 else 0.0
             )
-            base_no_mock = long.balance * market.spot_price
             longs_value += base
+            base_no_mock = long.balance * market.spot_price
             longs_value_no_mock += base_no_mock
         # compute short values in units of base
         shorts_value = 0
@@ -142,12 +142,14 @@ class Wallet:
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
-            base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value += base
+            base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock
         return {
             f"agent_{self.address}_base": self.base,
             f"agent_{self.address}_lp_tokens": lp_token_value,
+            f"agent_{self.address}_num_longs": len(self.longs),
+            f"agent_{self.address}_num_shorts": len(self.shorts),
             f"agent_{self.address}_total_longs": longs_value,
             f"agent_{self.address}_total_shorts": shorts_value,
             f"agent_{self.address}_total_longs_no_mock": longs_value_no_mock,
@@ -159,6 +161,8 @@ class Wallet:
         return [
             f"agent_{self.address}_base",
             f"agent_{self.address}_lp_tokens",
+            f"agent_{self.address}_num_longs",
+            f"agent_{self.address}_num_shorts",
             f"agent_{self.address}_total_longs",
             f"agent_{self.address}_total_shorts",
             f"agent_{self.address}_total_longs_no_mock",

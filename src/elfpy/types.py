@@ -224,6 +224,12 @@ class MarketState:
         Bond amount set aside to account for open shorts
     lp_reserves: float
         Amount of lp tokens
+    vault_apr: float
+        .. todo: fill this in
+    share_price: float
+        .. todo: fill this in
+    init_share_price: float
+        .. todo: fill this in
     trade_fee_percent : float
         The percentage of the difference between the amount paid without
         slippage and the amount received that will be added to the input

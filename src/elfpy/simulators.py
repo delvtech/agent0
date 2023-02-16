@@ -1,7 +1,7 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 import datetime
 import logging
 
@@ -41,7 +41,7 @@ class Simulator:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
-        self.agents = {}
+        self.agents: dict[int, Agent] = {}
 
         # Simulation variables
         self.run_number = 0
@@ -120,65 +120,57 @@ class Simulator:
         """
         if self.config.shuffle_users:
             if last_block_in_sim:
-                agent_ids = self.rng.permutation(  # shuffle wallets except init_lp
+                agent_ids: list[int] = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
-                )
+                ).tolist()
                 if self.config.init_lp:
-                    agent_ids = np.append(agent_ids, 0)  # add init_lp so that they're always last
+                    agent_ids.append(0)  # add init_lp so that they're always last
             else:
                 agent_ids = self.rng.permutation(
                     list(self.agents)
-                )  # random permutation of keys (agent wallet addresses)
+                ).tolist()  # random permutation of keys (agent wallet addresses)
         else:  # we are in a deterministic mode
             if not last_block_in_sim:
                 agent_ids = list(self.agents)  # execute in increasing order
             else:  # last block in sim
                 # close their trades in reverse order to allow withdrawing of LP tokens
                 agent_ids = list(self.agents)[::-1]
-
         # Collect trades from all of the agents.
-        if last_block_in_sim:
-            trades = self.collect_liquidation_trades(agent_ids)
-        else:
-            trades = self.collect_trades(agent_ids)
-
+        trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades.
         self.execute_trades(trades)
 
-    def collect_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
+    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, MarketAction]]:
         r"""Collect trades from a set of provided agent IDs.
 
         Parameters
         ----------
-        agent_ids : Any
+        agent_ids: list[int]
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
 
+        liquidate: bool
+            If true, have agents collect their liquidation trades. Otherwise, agents collect their normal trades.
+
+
         Returns
         -------
-        list[tuple[int, list[MarketAction]]]
+        list[tuple[int, MarketAction]]
             A list of trades associated with specific agents.
         """
-        return [(agent_id, self.agents[agent_id].get_trades(self.market)) for agent_id in agent_ids]
+        agents_and_trades = []
+        for agent_id in agent_ids:
+            agent = self.agents[agent_id]
+            if liquidate:
+                logging.debug("Collecting liquiditation trades for market closure")
+                trades = agent.get_liquidation_trades(self.market)
+            else:
+                trades = agent.get_trades(self.market)
+            for trade in trades:
+                agents_and_trades.append((agent_id, trade))
+        return agents_and_trades
 
-    def collect_liquidation_trades(self, agent_ids: Any) -> list[tuple[int, list[MarketAction]]]:
-        r"""Collect liquidation trades from a set of provided agent IDs.
-
-        Parameters
-        ----------
-        agent_ids : Any
-            A list of agent IDs. These IDs must correspond to agents that are
-            registered in the simulator.
-
-        Returns
-        -------
-        list[tuple[int, list[MarketAction]]]
-            A list of liquidation trades associated with specific agents.
-        """
-        logging.debug("Collecting liquiditation trades for market closure")
-        return [(agent_id, self.agents[agent_id].get_liquidation_trades(self.market)) for agent_id in agent_ids]
-
-    def execute_trades(self, trades: list[tuple[int, list[MarketAction]]]) -> None:
+    def execute_trades(self, agent_trades: list[tuple[int, MarketAction]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
         Parameters
@@ -186,20 +178,20 @@ class Simulator:
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
-        for agent_id, agent_trades in trades:
+        for trade in agent_trades:
+            agent_id, agent_deltas = self.market.trade_and_update(trade)
             agent = self.agents[agent_id]
-            for trade in agent_trades:
-                agent_deltas = self.market.trade_and_update(trade)
-                logging.debug(
-                    "agent #%g wallet deltas:\n%s",
-                    agent.wallet.address,
-                    agent_deltas,
-                )
-                agent.update_wallet(agent_deltas, self.market)
-                agent.log_status_report()
-                # TODO: Get simulator, market, pricing model, agent state strings and log
-                self.update_simulation_state()
-                self.run_trade_number += 1
+            logging.debug(
+                "agent #%g wallet deltas:\n%s",
+                agent.wallet.address,
+                agent_deltas,
+            )
+            agent.update_wallet(agent_deltas, self.market)
+            agent.log_status_report()
+            # TODO: Get simulator, market, pricing model, agent state strings and log
+            # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
+            self.update_simulation_state()
+            self.run_trade_number += 1
 
     def run_simulation(self) -> None:
         r"""Run the trade simulation and update the output state dictionary
@@ -248,7 +240,11 @@ class Simulator:
             agent.log_final_report(self.market)
 
     def update_simulation_state(self) -> None:
-        r"""Increment the list for each key in the simulation_state output variable"""
+        r"""Increment the list for each key in the simulation_state output variable
+
+        TODO: This gets duplicated in notebooks when we make the pandas dataframe.
+            Instead, the simulation_state should be a dataframe.
+        """
         # pylint: disable=too-many-statements
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
@@ -270,7 +266,7 @@ class Simulator:
         self.simulation_state.run_trade_number.append(self.run_trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size())
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.pool_apr.append(self.market.rate)
+        self.simulation_state.pool_apr.append(self.market.apr)
         self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)

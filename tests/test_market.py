@@ -87,7 +87,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_long(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,
+            trade_amount=agent.amount_to_trade,  # type: ignore
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
@@ -98,7 +98,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_short(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,
+            trade_amount=agent.amount_to_trade,  # type: ignore
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
@@ -109,7 +109,8 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_long(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,  # in base: that's the thing in your wallet you want to sell
+            # in base: that's the thing in your wallet you want to sell
+            trade_amount=agent.amount_to_trade,  # type: ignore
         )
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_purchased = agent_deltas.longs[0].balance
@@ -117,7 +118,8 @@ class BaseMarketTest(unittest.TestCase):
         market_deltas, agent_deltas = simulator.market.close_long(
             mint_time=0,
             wallet_address=1,
-            trade_amount=amount_of_bonds_purchased,  # in bonds: that's the thing in your wallet you want to sell
+            # in bonds: that's the thing in your wallet you want to sell
+            trade_amount=amount_of_bonds_purchased,
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
@@ -131,7 +133,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_short(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,  # in bonds: that's the thing you want to short
+            trade_amount=agent.amount_to_trade,  # type: ignore # in bonds: that's the thing you want to short
         )
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_sold = agent_deltas.shorts[0].balance
@@ -405,4 +407,4 @@ class MarketTestsOneFunction(BaseMarketTest):
             )
 
             # TODO have this be exact once we fix #146
-            self.assertAlmostEqual(market.rate, target_apr, 12)
+            self.assertAlmostEqual(market.apr, target_apr, 12)

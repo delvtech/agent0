@@ -47,7 +47,7 @@ class SingleTradeTests(unittest.TestCase):
             config.num_position_days = num_position_days  # how long until token maturity
             simulator = test_utils.setup_simulation_entities(config, agent_policies)
             if target_pool_apr:
-                market_apr = simulator.market.rate
+                market_apr = simulator.market.apr
                 # use rtol here because liquidity spans 2 orders of magnitude
                 assert np.allclose(market_apr, target_pool_apr, atol=0, rtol=1e-12), (
                     f"test_trade.run_base_lp_test: ERROR: {target_pool_apr=} does not equal {market_apr=} "
@@ -140,10 +140,10 @@ class SingleTradeTests(unittest.TestCase):
                     f"does not equal {total_liquidity_agent=} "
                     f"off by {(np.abs(total_liquidity_direct - total_liquidity_agent))=}."
                 )
-                assert np.allclose(market_direct.rate, simulator.market.rate, atol=0, rtol=1e-12), (
-                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_direct.rate=}"
-                    f" does not equal {simulator.market.rate=}"
-                    f"off by {(np.abs(market_direct.rate - simulator.market.rate))=}."
+                assert np.allclose(market_direct.apr, simulator.market.apr, atol=0, rtol=1e-12), (
+                    f"test_trade.test_compare_agent_to_calc_liquidity: ERROR: {market_direct.apr=}"
+                    f" does not equal {simulator.market.apr=}"
+                    f"off by {(np.abs(market_direct.apr - simulator.market.apr))=}."
                 )
 
     def test_single_long(self):

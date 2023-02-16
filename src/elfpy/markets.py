@@ -1,22 +1,15 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from elfpy.types import (
-    MarketState,
-    MarketActionType,
-    MarketDeltas,
-    StretchedTime,
-    Quantity,
-    TokenType,
-)
-from elfpy.wallet import Long, Short, Wallet
-import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
+import elfpy.utils.time as time_utils
+from elfpy.types import MarketActionType, MarketDeltas, MarketState, Quantity, StretchedTime, TokenType
+from elfpy.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -90,7 +83,7 @@ class Market:
                 f" model={pricing_model_name}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action: MarketAction) -> Wallet:
+    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -117,6 +110,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
+        agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
@@ -175,7 +169,7 @@ class Market:
             self.market_state,
         )
         self.update_market(market_deltas)
-        return agent_deltas
+        return (agent_id, agent_deltas)
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """
@@ -190,7 +184,7 @@ class Market:
         self.market_state.apply_delta(market_deltas)
 
     @property
-    def rate(self) -> float:
+    def apr(self) -> float:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -472,7 +466,7 @@ class Market:
         ):  # pool has not been initialized
             rate = 0
         else:
-            rate = self.rate
+            rate = self.apr
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=trade_amount,
             rate=rate,
@@ -499,7 +493,7 @@ class Market:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
-            rate=self.rate,
+            rate=self.apr,
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
@@ -524,7 +518,7 @@ class Market:
             rate = str(np.nan)
         else:
             spot_price = self.spot_price
-            rate = self.rate
+            rate = self.apr
         logging.debug(
             (
                 "t = %g"
