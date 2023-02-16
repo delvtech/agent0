@@ -174,11 +174,6 @@ class Simulator:
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
-        # FIXME: you can run this loop over parallel processes
-        #     we're in the mempool here, so none of these trades affect market state
-        #     until after this function is returned
-        #     pull update_market out of trade_and_updates, so both agent deltas & market deltas are returned
-        #     aggregate deltas in the parallel loop, then apply all at once
         for trade in agent_trades:
             agent_id, agent_deltas = self.market.trade_and_update(trade)
             agent = self.agents[agent_id]
