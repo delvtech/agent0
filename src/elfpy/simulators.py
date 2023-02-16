@@ -145,13 +145,17 @@ class Simulator:
 
         Parameters
         ----------
-        agent_ids : list[int]
+        agent_ids: list[int]
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
 
+        liquidate: bool
+            If true, have agents collect their liquidation trades. Otherwise, agents collect their normal trades.
+
+
         Returns
         -------
-        list[tuple[int, list[MarketAction]]]
+        list[tuple[int, MarketAction]]
             A list of trades associated with specific agents.
         """
         agents_and_trades = []
