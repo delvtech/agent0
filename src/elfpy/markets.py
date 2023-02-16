@@ -133,10 +133,7 @@ class Market:
         #    )
         action_type = agent_action.action_type
         trade_amount = agent_action.trade_amount
-        print(
-            f"t={self.time*365:.0f}: F:{self.rate:.3%} V:{self.market_state.vault_apr:.3%}"
-            + f"is going to {action_type} of size {trade_amount}",
-        )
+        starting_fixed_rate = self.rate
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy PT to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
@@ -185,6 +182,11 @@ class Market:
             self.market_state,
         )
         self.update_market(market_deltas)
+        print(
+            f"t={self.time*365:3.0f}: "
+            f"F:{starting_fixed_rate:3.3%}=>{self.rate:3.3%} V:{self.market_state.vault_apr:3.3%}"
+            f"agent #{agent_action.wallet_address:03.0f} is going to {action_type} of size {trade_amount}"
+        )
         return agent_deltas
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
@@ -331,8 +333,8 @@ class Market:
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
-        if minimum_amount_accepted is not None:
-            print(f"checking slippage of CLOSE SHORT, buy PTs={trade_amount} with {minimum_amount_accepted=} BASE")
+        # if minimum_amount_accepted is not None:
+        #     print(f"checking slippage of CLOSE SHORT, buy PTs={trade_amount} with {minimum_amount_accepted=} BASE")
         self.pricing_model.check_output_assertions(trade_result=trade_result)
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
@@ -387,13 +389,13 @@ class Market:
         enough_bond_reserves = trade_amount <= self.market_state.bond_reserves
         # print out a warning if slippage is not met
         if minimum_met is False:
-            print(f"OPEN_LONG SLIPPAGE NOT MET! {trade_result.breakdown.with_fee=} vs. {minimum_amount_accepted=}")
+            # print(f"OPEN_LONG SLIPPAGE NOT MET! {trade_result.breakdown.with_fee=} vs. {minimum_amount_accepted=}")
             logging.debug(
                 ("transaction doesn't meet slippage target of %s, instead getting %s!"),
                 minimum_amount_accepted,
                 trade_result.breakdown.with_fee,
             )
-        print(f"the conditions for a successful transaction are {minimum_met=} and {enough_bond_reserves=}")
+        # print(f"the conditions for a successful transaction are {minimum_met=} and {enough_bond_reserves=}")
         # determine transaction success
         if minimum_met and enough_bond_reserves:
             transaction_success = True
@@ -413,7 +415,7 @@ class Market:
         else:  # if transaction fails, return zero deltas
             market_deltas = MarketDeltas()
             agent_deltas = Wallet(address=wallet_address)
-        print(f"{transaction_success=} {market_deltas=} {agent_deltas=}")
+        # print(f"{transaction_success=} {market_deltas=} {agent_deltas=}")
         return market_deltas, agent_deltas
 
     def close_long(

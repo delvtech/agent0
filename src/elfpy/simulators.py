@@ -243,6 +243,7 @@ class Simulator:
                 )
                 self.market.update_market(delta)
             for daily_block_number in range(self.config.num_blocks_per_day):
+                print(f"=== NEW BLOCK NUMBER {self.block_number} ON DAY {self.day} ===")
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
                     self.daily_block_number == self.config.num_blocks_per_day - 1
