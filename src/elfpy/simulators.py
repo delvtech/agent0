@@ -41,7 +41,7 @@ class Simulator:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
-        self.agents = {}
+        self.agents: dict[int, Agent] = {}
 
         # Simulation variables
         self.run_number = 0
@@ -122,13 +122,13 @@ class Simulator:
             if last_block_in_sim:
                 agent_ids = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
-                )
+                ).tolist()
                 if self.config.init_lp:
                     agent_ids = np.append(agent_ids, 0)  # add init_lp so that they're always last
             else:
                 agent_ids = self.rng.permutation(
                     list(self.agents)
-                )  # random permutation of keys (agent wallet addresses)
+                ).tolist()  # random permutation of keys (agent wallet addresses)
         else:  # we are in a deterministic mode
             if not last_block_in_sim:
                 agent_ids = list(self.agents)  # execute in increasing order
