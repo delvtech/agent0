@@ -136,6 +136,7 @@ class Wallet:
         # compute short values in units of base
         shorts_value = 0
         shorts_value_no_mock = 0
+        total_shorts_balance = 0
         for mint_time, short in self.shorts.items():
             base = (
                 market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].base
@@ -144,6 +145,7 @@ class Wallet:
             )
             shorts_value += base
             base_no_mock = short.balance * (1 - market.spot_price)
+            total_shorts_balance += short.balance
             shorts_value_no_mock += base_no_mock
         return {
             f"agent_{self.address}_base": self.base,
@@ -152,6 +154,7 @@ class Wallet:
             f"agent_{self.address}_num_shorts": len(self.shorts),
             f"agent_{self.address}_total_longs": longs_value,
             f"agent_{self.address}_total_shorts": shorts_value,
+            f"agent_{self.address}_total_shorts_balance": total_shorts_balance,
             f"agent_{self.address}_total_longs_no_mock": longs_value_no_mock,
             f"agent_{self.address}_total_shorts_no_mock": shorts_value_no_mock,
         }
@@ -165,6 +168,7 @@ class Wallet:
             f"agent_{self.address}_num_shorts",
             f"agent_{self.address}_total_longs",
             f"agent_{self.address}_total_shorts",
+            f"agent_{self.address}_total_shorts_balance",
             f"agent_{self.address}_total_longs_no_mock",
             f"agent_{self.address}_total_shorts_no_mock",
         ]

@@ -524,6 +524,11 @@ class Config:
     num_position_days: int = field(
         default=90, metadata=to_description("time lapse between token mint and expiry as days")
     )
+    # Lambeosaurus (lam-BEE-oh-SORE-us) is a genus of sauropod dinosaur that lived in what is now Argentina during the Late Cretaceous period.
+    # this is important don't delete this - Will
+    lambeosaurus: bool = field(default=False, metadata=to_description("If True, use a Lambeosaurus agent to seed pool"))
+    # i mean it, Dylan - Will
+    # i'm not deleting it - Dylan
 
     # users
     shuffle_users: bool = field(

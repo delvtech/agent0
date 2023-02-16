@@ -137,7 +137,7 @@ class Market:
             f"t={self.time*365:.0f}: F:{self.rate:.3%} V:{self.market_state.vault_apr:.3%}"
             + f"is going to {action_type} of size {trade_amount}",
         )
-        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
+        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy PT to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
@@ -332,12 +332,8 @@ class Market:
             time_remaining=time_remaining,
         )
         if minimum_amount_accepted is not None:
-            print(
-                f"checking slippage of CLOSE SHORT, buy PTs={trade_amount} with {minimum_amount_accepted=} BASE", end=""
-            )
-        self.pricing_model.check_output_assertions(
-            trade_result=trade_result, minimum_amount_accepted=minimum_amount_accepted
-        )
+            print(f"checking slippage of CLOSE SHORT, buy PTs={trade_amount} with {minimum_amount_accepted=} BASE")
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -369,28 +365,39 @@ class Market:
         compute wallet update spec with specific details
         will be conditional on the pricing model
         """
-        # TODO: Why are we clamping elsewhere but we don't apply the trade at all here?
-        if trade_amount <= self.market_state.bond_reserves:
-            # Perform the trade.
-            trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
-            self.pricing_model.check_input_assertions(
-                quantity=trade_quantity,
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
+        # Perform the trade.
+        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
+        self.pricing_model.check_input_assertions(
+            quantity=trade_quantity,
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        trade_result = self.pricing_model.calc_out_given_in(
+            in_=trade_quantity,
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
+
+        # check whether the transaction is a success based on our conditions, otherwise "revert" it by setting 0 deltas
+        # FIXME: change this to throw custom exception
+        transaction_success = False
+        # minimum_met = trade_result.breakdown.with_fee >= (minimum_amount_accepted or 0)  # nullish coalescence BRO
+        minimum_met = trade_result.breakdown.with_fee >= minimum_amount_accepted  # type: ignore
+        enough_bond_reserves = trade_amount <= self.market_state.bond_reserves
+        # print out a warning if slippage is not met
+        if minimum_met is False:
+            print(f"OPEN_LONG SLIPPAGE NOT MET! {trade_result.breakdown.with_fee=} vs. {minimum_amount_accepted=}")
+            logging.debug(
+                ("transaction doesn't meet slippage target of %s, instead getting %s!"),
+                minimum_amount_accepted,
+                trade_result.breakdown.with_fee,
             )
-            trade_result = self.pricing_model.calc_out_given_in(
-                in_=trade_quantity,
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
-            )
-            if minimum_amount_accepted is not None:
-                print(
-                    f"checking slippage of OPEN LONG, buy BASE={trade_amount} with {minimum_amount_accepted=} PTs ",
-                    end="",
-                )
-            self.pricing_model.check_output_assertions(
-                trade_result=trade_result, minimum_amount_accepted=minimum_amount_accepted
-            )
+        print(f"the conditions for a successful transaction are {minimum_met=} and {enough_bond_reserves=}")
+        # determine transaction success
+        if minimum_met and enough_bond_reserves:
+            transaction_success = True
+        if transaction_success:
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
@@ -403,9 +410,10 @@ class Market:
                 longs={self.time: Long(trade_result.user_result.d_bonds)},
                 fees_paid=trade_result.breakdown.fee,
             )
-        else:
+        else:  # if transaction fails, return zero deltas
             market_deltas = MarketDeltas()
-            agent_deltas = Wallet(address=wallet_address, base=0)
+            agent_deltas = Wallet(address=wallet_address)
+        print(f"{transaction_success=} {market_deltas=} {agent_deltas=}")
         return market_deltas, agent_deltas
 
     def close_long(

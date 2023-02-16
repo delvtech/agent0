@@ -491,9 +491,11 @@ class PricingModel(ABC):
     def check_output_assertions(
         self,
         trade_result: TradeResult,
-        minimum_amount_accepted: Optional[float] = None,
     ):
-        """Applies a set of assertions to a trade result."""
+        """
+        Applies a set of assertions to a trade result.
+        Returns transaction_status of True if success and False if failure.
+        """
 
         assert isinstance(trade_result.breakdown.fee, float), (
             "pricing_models.check_output_assertions: ERROR: "
@@ -511,10 +513,3 @@ class PricingModel(ABC):
             "pricing_models.check_output_assertions: ERROR: "
             f"without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"
         )
-        if minimum_amount_accepted is not None:
-            print(f"against {trade_result.breakdown.with_fee=}")
-            assert trade_result.breakdown.with_fee >= minimum_amount_accepted, (
-                "pricing_models.check_output_assertions: ERROR: "
-                f"with_fee doesn't meet slippage target of {minimum_amount_accepted=},"
-                f" instead getting {trade_result.breakdown.with_fee}!"
-            )
