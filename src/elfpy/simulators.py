@@ -120,7 +120,7 @@ class Simulator:
         """
         if self.config.shuffle_users:
             if last_block_in_sim:
-                agent_ids = self.rng.permutation(  # shuffle wallets except init_lp
+                agent_ids: list[int] = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 ).tolist()
                 if self.config.init_lp:
