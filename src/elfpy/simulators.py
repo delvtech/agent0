@@ -238,11 +238,10 @@ class Simulator:
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable
 
-        FIXME: This gets duplicated in notebooks when we make the pandas dataframe.
+        TODO: This gets duplicated in notebooks when we make the pandas dataframe.
             Instead, the simulation_state should be a dataframe.
         """
         # pylint: disable=too-many-statements
-        # FIXME: if self.market.pricing_modle.model_name() != self.simulation_state.model_name[-1]:
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
         self.simulation_state.simulation_start_time.append(self.start_time)

@@ -96,6 +96,8 @@ class Agent:
         """
         raise NotImplementedError
 
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate below the APR when opening the long
     def get_max_long(self, market: Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
@@ -120,6 +122,8 @@ class Agent:
             max_long,
         )
 
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate above the APR when opening the short
     def get_max_short(self, market: Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
