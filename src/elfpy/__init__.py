@@ -22,7 +22,7 @@ MAX_RESERVES_DIFFERENCE = 2e10
 # This value was selected based on one test not passing without it.
 # apply_delta() below checks if reserves are negative within the threshold,
 # and sets them to 0 if so.
-PRECISION_THRESHOLD = 2e-6  # FIXME: we shouldn't have to adjsut this -- we need to reesolve rounding errors
+PRECISION_THRESHOLD = 2e-6  # TODO: we shouldn't have to adjsut this -- we need to reesolve rounding errors
 
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
