@@ -185,7 +185,7 @@ class Simulator:
             agent.update_wallet(agent_deltas, self.market)
             agent.log_status_report()
             # TODO: Get simulator, market, pricing model, agent state strings and log
-            # FIXME: need to log deaggregated trade informaiton, i.e. trade_deltas
+            # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             self.update_simulation_state()
             self.run_trade_number += 1
 
@@ -263,7 +263,7 @@ class Simulator:
         self.simulation_state.run_trade_number.append(self.run_trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size())
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.pool_apr.append(self.market.rate)
+        self.simulation_state.pool_apr.append(self.market.apr)
         self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)

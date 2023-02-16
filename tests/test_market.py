@@ -405,4 +405,4 @@ class MarketTestsOneFunction(BaseMarketTest):
             )
 
             # TODO have this be exact once we fix #146
-            self.assertAlmostEqual(market.rate, target_apr, 12)
+            self.assertAlmostEqual(market.apr, target_apr, 12)

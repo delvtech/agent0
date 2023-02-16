@@ -1,22 +1,15 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from elfpy.types import (
-    MarketState,
-    MarketActionType,
-    MarketDeltas,
-    StretchedTime,
-    Quantity,
-    TokenType,
-)
-from elfpy.wallet import Long, Short, Wallet
-import elfpy.utils.time as time_utils
 import elfpy.utils.price as price_utils
+import elfpy.utils.time as time_utils
+from elfpy.types import MarketActionType, MarketDeltas, MarketState, Quantity, StretchedTime, TokenType
+from elfpy.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -29,8 +22,6 @@ class Market:
     Holds state variables for market simulation and executes trades.
     The Market class executes trades by updating market variables according to the given pricing model.
     It also has some helper variables for assessing pricing model values given market conditions.
-
-    #FIXME: why do we call it market.rate instead of market.apr
     """
 
     def __init__(
@@ -193,7 +184,7 @@ class Market:
         self.market_state.apply_delta(market_deltas)
 
     @property
-    def rate(self) -> float:
+    def apr(self) -> float:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -475,7 +466,7 @@ class Market:
         ):  # pool has not been initialized
             rate = 0
         else:
-            rate = self.rate
+            rate = self.apr
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=trade_amount,
             rate=rate,
@@ -502,7 +493,7 @@ class Market:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
-            rate=self.rate,
+            rate=self.apr,
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
@@ -527,7 +518,7 @@ class Market:
             rate = str(np.nan)
         else:
             spot_price = self.spot_price
-            rate = self.rate
+            rate = self.apr
         logging.debug(
             (
                 "t = %g"
