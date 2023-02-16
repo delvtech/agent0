@@ -173,9 +173,6 @@ class Simulator:
         ----------
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
-
-        #FIXME: is trades the right var name? it's agents?
-        #FIXME: How hard is it to stop agents from liquiditating when the simulation hits num_trading_days (i.e. ends)?
         """
         # FIXME: you can run this loop over parallel processes
         #     we're in the mempool here, so none of these trades affect market state
