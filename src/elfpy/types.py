@@ -115,7 +115,7 @@ class StretchedTime:
 
     @property
     def normalized_time(self):
-        r"""Format time as normalized days"""
+        r"""Returns days / normalizing constant"""
         return time_utils.norm_days(
             self.days,
             self.normalizing_constant,
@@ -149,6 +149,7 @@ class MarketAction:
     open_share_price: Optional[float] = None
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: float = 0
+    minimum_amount_accepted: Optional[float] = None
 
     def __str__(self):
         r"""Return a description of the Action"""
@@ -440,6 +441,10 @@ class SimulationState:
     current_vault_apr: list[float] = field(default_factory=list, metadata=to_description("vault apr on a given day"))
     pool_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
     spot_price: list[float] = field(default_factory=list, metadata=to_description("price of shares"))
+    who_traded: list[float] = field(default_factory=list, metadata=to_description("who traded"))
+    agent_name: list[str] = field(default_factory=list, metadata=to_description("name of the agent"))
+    trade: list[MarketAction] = field(default_factory=list, metadata=to_description("trade object"))
+    agent_deltas: list[MarketDeltas] = field(default_factory=list, metadata=to_description("agent deltas"))
 
     def add_dict_entries(self, dictionary: dict) -> None:
         r"""Adds keys & values of input ditionary to the simulation state

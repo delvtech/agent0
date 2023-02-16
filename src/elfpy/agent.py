@@ -1,7 +1,7 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Optional
 import logging
 
 import numpy as np
@@ -46,7 +46,11 @@ class Agent:
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+        self,
+        action_type: MarketActionType,
+        trade_amount: float,
+        mint_time: float = 0,
+        minimum_amount_accepted: Optional[float] = None,
     ) -> MarketAction:
         r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
@@ -76,6 +80,7 @@ class Agent:
             wallet_address=self.wallet.address,
             mint_time=mint_time,
             open_share_price=open_share_price,
+            minimum_amount_accepted=minimum_amount_accepted,
         )
         return agent_action
 

@@ -1,7 +1,7 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import logging
 
 import numpy as np
@@ -131,10 +131,17 @@ class Market:
         #        # also do this at construction which may be preferable.
         #        target_apr=0.05,
         #    )
+        action_type = agent_action.action_type
+        trade_amount = agent_action.trade_amount
+        print(
+            f"t={self.time*365:.0f}: F:{self.rate:.3%} V:{self.market_state.vault_apr:.3%}"
+            + f"is going to {action_type} of size {trade_amount}",
+        )
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+                minimum_amount_accepted=agent_action.minimum_amount_accepted,
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             market_deltas, agent_deltas = self.close_long(
@@ -156,6 +163,7 @@ class Market:
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                 mint_time=agent_action.mint_time,
                 open_share_price=agent_action.open_share_price,
+                minimum_amount_accepted=agent_action.minimum_amount_accepted,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(
@@ -271,12 +279,13 @@ class Market:
         )
         return market_deltas, agent_deltas
 
-    def close_short(
+    def close_short(  # pylint: disable=too-many-arguments FUCK YOU PYLINT
         self,
         wallet_address: int,
         open_share_price: float,
         trade_amount: float,
         mint_time: float,
+        minimum_amount_accepted: Optional[float] = None,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
@@ -322,7 +331,13 @@ class Market:
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
-        self.pricing_model.check_output_assertions(trade_result=trade_result)
+        if minimum_amount_accepted is not None:
+            print(
+                f"checking slippage of CLOSE SHORT, buy PTs={trade_amount} with {minimum_amount_accepted=} BASE", end=""
+            )
+        self.pricing_model.check_output_assertions(
+            trade_result=trade_result, minimum_amount_accepted=minimum_amount_accepted
+        )
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -347,6 +362,7 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,  # in base
+        minimum_amount_accepted: Optional[float] = None,
     ) -> tuple[MarketDeltas, Wallet]:
         """
         take trade spec & turn it into trade details
@@ -367,7 +383,14 @@ class Market:
                 market_state=self.market_state,
                 time_remaining=self.position_duration,
             )
-            self.pricing_model.check_output_assertions(trade_result=trade_result)
+            if minimum_amount_accepted is not None:
+                print(
+                    f"checking slippage of OPEN LONG, buy BASE={trade_amount} with {minimum_amount_accepted=} PTs ",
+                    end="",
+                )
+            self.pricing_model.check_output_assertions(
+                trade_result=trade_result, minimum_amount_accepted=minimum_amount_accepted
+            )
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
@@ -419,6 +442,7 @@ class Market:
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
+
         self.pricing_model.check_output_assertions(trade_result=trade_result)
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(

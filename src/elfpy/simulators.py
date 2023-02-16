@@ -206,7 +206,9 @@ class Simulator:
                 agent.log_status_report()
                 # TODO: Get simulator, market, pricing model, agent state strings and log
                 # FIXME: need to log deaggregated trade informaiton, i.e. trade_deltas
-                self.update_simulation_state()
+                self.update_simulation_state(
+                    who_traded=agent_id, agent_name=self.agents[agent_id].name, trade=trade, agent_deltas=agent_deltas
+                )
                 self.run_trade_number += 1
 
     def run_simulation(self) -> None:
@@ -255,7 +257,9 @@ class Simulator:
         for agent in self.agents.values():
             agent.log_final_report(self.market)
 
-    def update_simulation_state(self) -> None:
+    def update_simulation_state(
+        self, who_traded: float, agent_name: str, trade: MarketAction, agent_deltas: MarketDeltas
+    ) -> None:
         r"""Increment the list for each key in the simulation_state output variable
 
         FIXME: This gets duplicated in notebooks when we make the pandas dataframe.
@@ -295,3 +299,7 @@ class Simulator:
             self.simulation_state.spot_price.append(self.market.spot_price)
         else:
             self.simulation_state.spot_price.append(np.nan)
+        self.simulation_state.who_traded.append(who_traded)
+        self.simulation_state.agent_name.append(agent_name)
+        self.simulation_state.trade.append(trade)
+        self.simulation_state.agent_deltas.append(agent_deltas)

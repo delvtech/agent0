@@ -1,6 +1,7 @@
 """The base pricing model"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from typing import Optional
 from abc import ABC
 import decimal
 from decimal import Decimal
@@ -490,6 +491,7 @@ class PricingModel(ABC):
     def check_output_assertions(
         self,
         trade_result: TradeResult,
+        minimum_amount_accepted: Optional[float] = None,
     ):
         """Applies a set of assertions to a trade result."""
 
@@ -509,3 +511,10 @@ class PricingModel(ABC):
             "pricing_models.check_output_assertions: ERROR: "
             f"without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"
         )
+        if minimum_amount_accepted is not None:
+            print(f"against {trade_result.breakdown.with_fee=}")
+            assert trade_result.breakdown.with_fee >= minimum_amount_accepted, (
+                "pricing_models.check_output_assertions: ERROR: "
+                f"with_fee doesn't meet slippage target of {minimum_amount_accepted=},"
+                f" instead getting {trade_result.breakdown.with_fee}!"
+            )
