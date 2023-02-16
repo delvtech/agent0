@@ -92,7 +92,7 @@ class Market:
                 f" model={pricing_model_name}, not {action_type}!"
             )
 
-    def trade_and_update(self, agent_action: MarketAction) -> Wallet:
+    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -119,6 +119,7 @@ class Market:
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
         """
+        agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
@@ -177,7 +178,7 @@ class Market:
             self.market_state,
         )
         self.update_market(market_deltas)
-        return agent_deltas
+        return (agent_id, agent_deltas)
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """
