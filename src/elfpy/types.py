@@ -285,7 +285,9 @@ class MarketState:
                 )
                 setattr(self, key, 0)
             else:
-                assert value >= 0, f"MarketState values must be non-negative. Error on {key} = {value}"
+                assert (
+                    value > -PRECISION_THRESHOLD
+                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""

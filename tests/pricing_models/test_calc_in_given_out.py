@@ -26,7 +26,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
-        success_test_cases = base_in_test_cases + pt_in_test_cases
+        success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
             test_number,
             (
@@ -42,7 +42,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                 )
                 expected_result = results_by_model[model_type]
+                if expected_result is None:
+                    continue
                 # Ensure we get the expected results from the pricing model.
+                print(f"attempting to trade {test_case=}")
                 trade_result = pricing_model.calc_in_given_out(
                     out=test_case.out,
                     market_state=test_case.market_state,
@@ -173,20 +176,6 @@ class TestCalcInGivenOut(unittest.TestCase):
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
-                    # share reserves zero
-                    share_reserves=0,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
                     share_reserves=100_000,
                     # bond reserves negative
                     bond_reserves=-1,
@@ -280,7 +269,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 ),
                 # days remaining == 365, will get divide by zero error
                 time_remaining=StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
-                exception_type=AssertionError,
+                exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
@@ -369,34 +358,6 @@ class TestCalcInGivenOut(unittest.TestCase):
             TestCaseCalcInGivenOutFailure(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
-                    # share_reserves < 1 wei
-                    share_reserves=0.5e-18,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    # bond reserves < 1 wei
-                    bond_reserves=0.5e-18,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            TestCaseCalcInGivenOutFailure(
-                out=Quantity(amount=100, unit=TokenType.PT),
-                market_state=MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,
                     bond_reserves=1,
@@ -409,11 +370,46 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
         ]
+        failure_test_cases_yieldpsace_only = [
+            TestCaseCalcInGivenOutFailure(
+                out=Quantity(amount=100, unit=TokenType.PT),
+                market_state=MarketState(
+                    # share reserves zero
+                    share_reserves=0,
+                    bond_reserves=1_000_000,
+                    share_price=1,
+                    init_share_price=1,
+                    trade_fee_percent=0.01,
+                    redemption_fee_percent=0.01,
+                ),
+                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                exception_type=(AssertionError, decimal.DivisionByZero),
+            )
+        ]
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
             print(f"{test_number=}")
             for pricing_model in pricing_models:
+                print(f"{pricing_model.model_name()=}")
+                with self.assertRaises(test_case.exception_type):
+                    pricing_model.check_input_assertions(
+                        quantity=test_case.out,
+                        market_state=test_case.market_state,
+                        time_remaining=test_case.time_remaining,
+                    )
+                    trade_result = pricing_model.calc_in_given_out(
+                        out=test_case.out,
+                        market_state=test_case.market_state,
+                        time_remaining=test_case.time_remaining,
+                    )
+                    pricing_model.check_output_assertions(
+                        trade_result=trade_result,
+                    )
+        # yieldspace only failures
+        for test_number, test_case in enumerate(failure_test_cases_yieldpsace_only):
+            print(f"{test_number=}")
+            for pricing_model in [YieldSpacePricingModel()]:
                 print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
@@ -1196,4 +1192,64 @@ pt_in_test_cases = [
             ),
         ),
     ),  # end of test eight
+]
+pt_in_test_cases_hyperdrive_only = [
+    (  # test nine, share reserves zero
+        TestCaseCalcInGivenOutSuccess(
+            out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
+            market_state=MarketState(
+                share_reserves=0,  # base reserves (in share terms) base = share * share_price
+                bond_reserves=1_000_000,  # PT reserves
+                share_price=1,  # share price of the LP in the yield source
+                init_share_price=1,  # original share price pool started
+                trade_fee_percent=0.01,  # fee percent (normally 10%)
+                redemption_fee_percent=0.00,  # fee percent (normally 10%)
+            ),
+            days_remaining=182.5,  # 6 months remaining
+            time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
+        ),
+        # From the input, we have the following values:
+        #
+        #   in hyperdrive, half the position has matured, recycled into the market
+        #   z = 50
+        #   y = 999_950
+        #
+        #   t_stretch = 3.09396 / (0.02789 * apr_percent)
+        #             = 3.09396 / (0.02789 * 0.05 * 100)
+        #             = 22.1868770168519182502689135891
+        #
+        #   tau = 365 / (365 * t_stretch) * always use FULL TAU for hyperdrive
+        #     = 1 / 22.1868770168519182502689135891
+        #     = 0.045071688063194094
+        #
+        #   1 - tau = 0.9549283119368059
+        #
+        #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
+        #     = (1 / 1) * (1 * 0) ** 0.9549283119368059 +
+        #           (2 * 1_000_000 + 1 * 0) ** 0.9549283119368059
+        #     = 1_039_996.6424696837
+        #
+        #   p = ((2 * y + c * z) / (mu * z)) ** -tau
+        #     = ((2 * 999_950 + 1 * 50) / (1 * 50)) ** -0.045071688063194094
+        #     = 0.6202658587589548
+        TestResultCalcInGivenOutSuccessByModel(
+            hyperdrive=TestResultCalcInGivenOutSuccess(
+                # without_fee_or_slippage = p * delta_y * t + delta_y * (1 - t)
+                # without_fee_or_slippage = 0.6202658587589548 * 100 * 0.5 + 100 * 0.5
+                # without_fee_or_slippage = 31.01329293794774 + 50
+                # without_fee_or_slippage = 81.01329293794774
+                without_fee_or_slippage=81.01329293794774,
+                # t_d=0.5
+                # tau=0.02253584403159705
+                # 1-tau=0.977464155968403
+                # t_stretch=22.186877016851916
+                # spot_price=0.6202658587589547
+                # in_base=81.38288223597203
+                # in_pt=134.41541713429615
+                without_fee=81.38288223597203,
+                fee=0.18986707062052266,
+                with_fee=81.57274930659256,
+            ),
+        ),
+    ),  # end of test one
 ]

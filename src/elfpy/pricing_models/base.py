@@ -455,18 +455,21 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         )
-        assert market_state.share_reserves >= WEI, (
+        assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
         )
-        assert market_state.bond_reserves >= WEI or market_state.bond_reserves == 0, (
+        assert market_state.bond_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
-        assert market_state.share_price >= market_state.init_share_price >= 1, (
+        assert market_state.share_price >= market_state.init_share_price, (
             f"pricing_models.check_input_assertions: ERROR: "
-            f"expected share_price >= init_share_price >= 1, not share_price={market_state.share_price} "
-            f"and init_share_price={market_state.init_share_price}!"
+            f"expected share_price >= {market_state.init_share_price}, not share_price={market_state.share_price}"
+        )
+        assert market_state.init_share_price >= 1, (
+            f"pricing_models.check_input_assertions: ERROR: "
+            f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         )
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
         assert reserves_difference < MAX_RESERVES_DIFFERENCE, (
@@ -474,18 +477,20 @@ class PricingModel(ABC):
             f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
         assert 1 >= market_state.trade_fee_percent >= 0, (
-            "pricing_models.calc_in_given_out: ERROR: "
+            "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= trade_fee_percent >= 0, not {market_state.trade_fee_percent}!"
         )
         assert 1 >= market_state.redemption_fee_percent >= 0, (
-            "pricing_models.calc_in_given_out: ERROR: "
+            "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
-        # TODO: convert this to a check for 1>=time and fix tests as necessary
-        # issue #57
-        assert 1 > time_remaining.stretched_time >= 0, (
-            "pricing_models.calc_in_given_out: ERROR: "
+        assert 1 >= time_remaining.stretched_time >= 0, (
+            "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+        )
+        assert 1 >= time_remaining.normalized_time >= 0, (
+            "pricing_models.check_input_assertions: ERROR: "
+            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.

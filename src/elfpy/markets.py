@@ -472,6 +472,13 @@ class Market:
             rate = 0
         else:
             rate = self.apr
+        # sanity check inputs
+        self.pricing_model.check_input_assertions(
+            quantity=Quantity(amount=trade_amount, unit=TokenType.PT),  # temporary Quantity object just for this check
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        # perform the trade
         lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=trade_amount,
             rate=rate,
@@ -496,6 +503,13 @@ class Market:
         trade_amount: float,
     ) -> tuple[MarketDeltas, Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
+        # sanity check inputs
+        self.pricing_model.check_input_assertions(
+            quantity=Quantity(amount=trade_amount, unit=TokenType.PT),  # temporary Quantity object just for this check
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        # perform the trade
         lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
             rate=self.apr,
