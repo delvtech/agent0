@@ -4,7 +4,7 @@ from __future__ import annotations
 import decimal
 import unittest
 import numpy as np
-from test_dataclasses import (
+from dataclass_testcases import (
     TestCaseCalcInGivenOutFailure,
     TestCaseCalcInGivenOutSuccess,
     TestResultCalcInGivenOutSuccess,
