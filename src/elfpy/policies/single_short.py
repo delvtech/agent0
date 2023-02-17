@@ -28,7 +28,6 @@ class Policy(Agent):
                 self.create_agent_action(
                     action_type=MarketActionType.OPEN_SHORT,
                     trade_amount=self.amount_to_trade,
-                    mint_time=market.time,
                 )
             )
         return action_list

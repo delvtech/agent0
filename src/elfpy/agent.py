@@ -65,11 +65,12 @@ class Agent:
         MarketAction
             The MarketAction object that contains the details about the action to execute in the market
         """
-        if mint_time is None and action_type in [MarketActionType.CLOSE_SHORT, MarketActionType.OPEN_SHORT]:
-            raise ValueError(f"ERROR: {action_type=} requires mint_time to be set")
-        # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-        mint_time = float(mint_time or 0)
+        # if mint_time is None and action_type in [MarketActionType.CLOSE_SHORT, MarketActionType.CLOSE_LONG]:
+        #    raise ValueError(f"ERROR: {action_type=} requires mint_time to be set")
+        # mint_time = float(mint_time or 0)
         if action_type == MarketActionType.CLOSE_SHORT:
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = float(mint_time or 0)
             open_share_price = self.wallet.shorts[mint_time].open_share_price
         else:
             open_share_price = None

@@ -43,7 +43,6 @@ class CustomShorter(Agent):
                     self.create_agent_action(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.pt_to_short,
-                        mint_time=market.time,
                     )
                 )
             elif vault_apr < market.apr:

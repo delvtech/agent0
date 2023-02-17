@@ -148,7 +148,7 @@ class MarketAction:
     # the share price when a short was created
     open_share_price: Optional[float] = None
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: float = 0
+    mint_time: Optional[float] = None
 
     def __str__(self):
         r"""Return a description of the Action"""
