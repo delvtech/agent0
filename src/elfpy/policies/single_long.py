@@ -13,34 +13,25 @@ class Policy(Agent):
     only has one long open at a time
     """
 
-    def __init__(self, wallet_address, budget=1000):
-        """call basic policy init then add custom stuff"""
-        self.amount_to_trade = 100
-        super().__init__(wallet_address, budget)
-
     def action(self, market: Market):
         """Specify action"""
-        can_open_long = (self.wallet.base >= self.amount_to_trade) and (
-            market.market_state.share_reserves >= self.amount_to_trade
-        )
         longs = list(self.wallet.longs.values())
         has_opened_long = bool(any((long.balance > 0 for long in longs)))
         action_list = []
-        mint_times = list(self.wallet["longs"].keys())
         if has_opened_long:
-            mint_time = mint_times[-1]
-            enough_time_has_passed = market.time - mint_time > 0.25
+            mint_time = list(self.wallet.longs)[-1]
+            enough_time_has_passed = market.time - mint_time > 0.01
             if enough_time_has_passed:
                 action_list.append(
                     self.create_agent_action(
                         action_type=MarketActionType.CLOSE_LONG,
-                        trade_amount=sum(long.balance for long in longs)
-                        / (market.spot_price * 0.99),  # assume 1% slippage
+                        trade_amount=longs[-1].balance,
                         mint_time=mint_time,
                     )
                 )
-        elif (not has_opened_long) and can_open_long:
+        else:
+            trade_amount = self.get_max_long(market) / 2
             action_list.append(
-                self.create_agent_action(action_type=MarketActionType.OPEN_LONG, trade_amount=self.amount_to_trade)
+                self.create_agent_action(action_type=MarketActionType.OPEN_LONG, trade_amount=trade_amount)
             )
         return action_list

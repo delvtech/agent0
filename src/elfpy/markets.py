@@ -49,47 +49,32 @@ class Market:
         r"""Returns the position duration in years"""
         return self.position_duration.days / 365
 
-    def check_action_type(self, action_type: MarketActionType, pricing_model_name: str) -> None:
+    def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
         Parameters
         ----------
         action_type : MarketActionType
             See MarketActionType for all acceptable actions that can be performed on this market
-        pricing_model_name : str
-            The name of the pricing model, must be "hyperdrive" or "yieldspace"
 
         Returns
         -------
         None
         """
-        if pricing_model_name.lower() == "hyperdrive" or pricing_model_name.lower() == "yieldspace":
-            allowed_actions = [
-                MarketActionType.OPEN_LONG,
-                MarketActionType.CLOSE_LONG,
-                MarketActionType.OPEN_SHORT,
-                MarketActionType.CLOSE_SHORT,
-                MarketActionType.ADD_LIQUIDITY,
-                MarketActionType.REMOVE_LIQUIDITY,
-            ]
-        else:
-            raise ValueError(
-                "market.check_action_type: ERROR: pricing model name should "
-                f'be in ["hyperdrive", "yieldspace"], not {pricing_model_name}'
-            )
-        if action_type not in allowed_actions:
-            raise AssertionError(
-                "markets.check_action_type: ERROR: agent_action.action_type should be an allowed action for the"
-                f" model={pricing_model_name}, not {action_type}!"
-            )
+        if agent_action.action_type in [
+            MarketActionType.CLOSE_LONG,
+            MarketActionType.CLOSE_SHORT,
+        ]:  # sell to close long
+            if agent_action.mint_time is None:
+                raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
+        if agent_action.action_type == MarketActionType.CLOSE_SHORT:  # sell to close long
+            if agent_action.open_share_price is None:
+                raise ValueError("ERROR: agent_action.open_share_price must be provided when closing a short")
 
     def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
-
-        TODO: initialize_market
-        # issue 212
 
         open_long
 
@@ -114,28 +99,20 @@ class Market:
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
-        self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
+        self.check_action(agent_action)
         # for each position, specify how to forumulate trade and then execute
-        # TODO: issue #212
-        # if agent_action.action_type == MarketActionType.INITIALIZE_MARKET:
-        #    market_deltas, agent_deltas = self.initialize_market(
-        #        wallet_address=agent_action.wallet_address,
-        #        contribution=agent_action.trade_amount,
-        #        # TODO: The agent should be able to specify the APR. We can
-        #        # also do this at construction which may be preferable.
-        #        # issue #57
-        #        target_apr=0.05,
-        #    )
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = float(agent_action.mint_time or 0)
             market_deltas, agent_deltas = self.close_long(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
-                mint_time=agent_action.mint_time,
+                mint_time=mint_time,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
@@ -143,14 +120,14 @@ class Market:
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
-            assert (
-                agent_action.open_share_price is not None
-            ), "ERROR: agent_action.open_share_price must be provided when closing a short"
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = float(agent_action.mint_time or 0)
+            open_share_price = float(agent_action.open_share_price or 0)
             market_deltas, agent_deltas = self.close_short(
                 wallet_address=agent_action.wallet_address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
-                mint_time=agent_action.mint_time,
-                open_share_price=agent_action.open_share_price,
+                mint_time=mint_time,
+                open_share_price=open_share_price,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(

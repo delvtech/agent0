@@ -4,56 +4,18 @@ Special reserved user strategy that is used to initialize a market with a desire
 """
 from elfpy.agent import Agent
 from elfpy.markets import Market
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 from elfpy.types import MarketActionType
 
 # pylint: disable=duplicate-code
-# pylint: disable=too-many-arguments
 
 
 class Policy(Agent):
-    """
-    simple LP
-    only has one LP open at a time
-    """
-
-    def __init__(
-        self,
-        wallet_address,
-        budget=1000,
-        first_base_to_lp=1,
-        pt_to_short=100,
-        second_base_to_lp=100,
-    ):
-        """call basic policy init then add custom stuff"""
-        self.first_base_to_lp = first_base_to_lp
-        self.pt_to_short = pt_to_short
-        self.second_base_to_lp = second_base_to_lp
-        super().__init__(wallet_address, budget)
+    """Adds a large LP"""
 
     def action(self, market: Market):
         """
-        implement user strategy
-        LP if you can, but only do it once
-        short if you can, but only do it once
+        User strategy adds liquidity and then takes no additional actions
         """
-        has_lp = self.wallet.lp_tokens > 0
-        if has_lp:
-            action_list = []
-        else:
-            if (market.pricing_model.model_name() == HyperdrivePricingModel().model_name()) or (
-                market.pricing_model.model_name() == YieldSpacePricingModel().model_name()
-            ):
-                action_list = [
-                    self.create_agent_action(
-                        action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.first_base_to_lp
-                    ),
-                    self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.pt_to_short),
-                    self.create_agent_action(
-                        action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.second_base_to_lp
-                    ),
-                ]
-            else:
-                raise ValueError(f"Pricing model = {market.pricing_model.model_name()} is not supported.")
-        return action_list
+        if self.wallet.lp_tokens > 0:  # has already opened the lp
+            return []
+        return [self.create_agent_action(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.budget)]
