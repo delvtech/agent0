@@ -180,6 +180,86 @@ class PricingModel(ABC):
 
         return share_reserves
 
+    def calc_base_for_target_apr(
+        self,
+        target_apr: float,
+        bond: float,
+        position_duration: StretchedTime,
+        share_price: float = 1.0,
+    ) -> float:
+        """Returns the base required to buy the given bonds at the target APR
+        For a long, this is maximum amount of base in required to get the given bonds out.
+        For a short, this is the minimum amount of base out for the given bonds in.
+
+        Parameters
+        ----------
+        target_apr : float
+            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+        bond_out: float
+            The amount of bonds to purchase
+        position_duration: StretchedTime
+            The term length of the bond
+        share_price : float
+            The current share price
+
+        Returns
+        -------
+        float
+            The base amount for a given bond at the target_apr.
+        """
+
+        # delta_z / delta_y = p = 1 - r
+        # delta_z = delta_y * (1 - r)
+        # delta_x = c * delta_y * (1 - r)
+
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
+        annualized_time = time_utils.norm_days(position_duration.days, 365)
+        base = share_price * bond * (1 - target_apr * annualized_time)
+
+        assert base >= 0, "base value negative"
+        return base
+
+    def calc_bond_for_target_apr(
+        self,
+        target_apr: float,
+        base: float,
+        position_duration: StretchedTime,
+        share_price: float = 1.0,
+    ) -> float:
+        """Returns the bonds for a given base at the target APR.
+        For a long this is the minimum amount of bonds out for a given base in.
+        For a short this is the maximum amount of base in for a given base out.
+
+        Parameters
+        ----------
+        target_apr : float
+            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+        bond_out: float
+            The amount of bonds to purchase
+        position_duration: StretchedTime
+            The term length of the bond
+        share_price : float
+            The current share price
+
+        Returns
+        -------
+        float
+            The bond amount for a given base in at the target APR
+        """
+
+        # delta_z / delta_y = p = 1 - r
+        # delta_y = delta_z / (1 - r)
+        # delta_y = (delta_x / c) / (1 - r)
+
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
+        annualized_time = time_utils.norm_days(position_duration.days, 365)
+        bond = (base / share_price) / (1 - target_apr * annualized_time)
+
+        assert bond >= 0, "bond value negative"
+        return bond
+
     def calc_liquidity(
         self,
         market_state: MarketState,
