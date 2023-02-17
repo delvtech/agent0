@@ -406,5 +406,5 @@ class MarketTestsOneFunction(BaseMarketTest):
                 position_duration,
             )
 
-            # TODO have this be exact once we fix #146
+            # TODO have this be exact once we fix issue #146
             self.assertAlmostEqual(market.apr, target_apr, 12)

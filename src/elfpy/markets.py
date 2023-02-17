@@ -89,6 +89,7 @@ class Market:
         check which of 6 action types are being executed, and handles each case:
 
         TODO: initialize_market
+        # issue 212
 
         open_long
 
@@ -112,15 +113,17 @@ class Market:
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
+        # issue 216
         self.check_action_type(agent_action.action_type, self.pricing_model.model_name())
         # for each position, specify how to forumulate trade and then execute
-        # TODO:
+        # TODO: issue #212
         # if agent_action.action_type == MarketActionType.INITIALIZE_MARKET:
         #    market_deltas, agent_deltas = self.initialize_market(
         #        wallet_address=agent_action.wallet_address,
         #        contribution=agent_action.trade_amount,
         #        # TODO: The agent should be able to specify the APR. We can
         #        # also do this at construction which may be preferable.
+        #        # issue #57
         #        target_apr=0.05,
         #    )
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
@@ -189,6 +192,7 @@ class Market:
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
         #       Write checks to remedy this in the market.
+        # issue #146
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
@@ -346,6 +350,7 @@ class Market:
         will be conditional on the pricing model
         """
         # TODO: Why are we clamping elsewhere but we don't apply the trade at all here?
+        # issue #146
         if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
             trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)

@@ -187,9 +187,10 @@ class Simulator:
                 agent_deltas,
             )
             agent.update_wallet(agent_deltas, self.market)
-            agent.log_status_report()
             # TODO: Get simulator, market, pricing model, agent state strings and log
+            agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
+            # issue #215
             self.update_simulation_state()
             self.run_trade_number += 1
 
@@ -242,8 +243,9 @@ class Simulator:
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable
 
-        TODO: This gets duplicated in notebooks when we make the pandas dataframe.
+        .. todo:: This gets duplicated in notebooks when we make the pandas dataframe.
             Instead, the simulation_state should be a dataframe.
+            issue #215
         """
         # pylint: disable=too-many-statements
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())

@@ -1,5 +1,4 @@
 """The Hyperdrive pricing model"""
-import copy
 from decimal import Decimal
 
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
@@ -112,8 +111,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         d_bonds = out_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
 
-        # TODO: Verify that this is needed.
-        market_state = copy.copy(market_state)
+        market_state = market_state.copy()
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
@@ -254,8 +252,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         d_bonds = in_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
 
-        # TODO: Verify that this is needed.
-        market_state = copy.copy(market_state)
+        market_state = market_state.copy()
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.

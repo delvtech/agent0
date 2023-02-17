@@ -34,9 +34,9 @@ class SingleTradeTests(unittest.TestCase):
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
         for num_position_days in [90, 365]:
             config = Config()
-            config.pricing_model_name = (
-                "Yieldspace"  # TODO: lp agent market initialization does not work with hyperdrive
-            )
+            # TODO: lp agent market initialization does not work with hyperdrive
+            # issue #212
+            config.pricing_model_name = "Yieldspace"
             config.target_liquidity = 10e6 if not target_liquidity else target_liquidity
             config.trade_fee_percent = 0.1
             config.redemption_fee_percent = 0.0
@@ -64,6 +64,7 @@ class SingleTradeTests(unittest.TestCase):
                 )
             if target_liquidity:
                 # TODO: This will not work with Hyperdrive PM
+                # issue #94
                 total_liquidity = (
                     simulator.market.market_state.share_reserves * simulator.market.market_state.share_price
                 )
