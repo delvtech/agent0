@@ -491,11 +491,11 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             },
         ]
 
-        for test_case in test_cases:
+        for test_case_number, test_case in enumerate(test_cases):
             # Check if this test case is supposed to fail
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
-                with self.assertRaises(test_case["expected_result"]):
+                with self.assertRaises(test_case["expected_result"], msg=f"test case {test_case_number=}"):
                     bond = float(
                         pricing_model.calc_base_for_target_apr(
                             target_apr=test_case["target_apr"],
@@ -541,8 +541,10 @@ class TestPricingModelUtils(BasePricingModelUtilsTest):
 
     def test_calc_bond_for_target_apr(self):
         """Execute the test"""
+        # this calc is pricing model agnostic, picking hyperdrive
         self.run_calc_bond_for_target_apr(sim_utils.get_pricing_model("hyperdrive"))
 
     def test_calc_base_for_target_apr(self):
         """Execute the test"""
+        # this calc is pricing model agnostic, picking hyperdrive
         self.run_calc_base_for_target_apr(sim_utils.get_pricing_model("hyperdrive"))
