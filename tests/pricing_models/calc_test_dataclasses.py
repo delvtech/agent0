@@ -16,8 +16,6 @@ class TestCaseCalcInGivenOutSuccess:
     days_remaining: float
     time_stretch_apy: float
 
-    __test__ = False  # pytest: don't test this class
-
 
 @dataclass
 class TestResultCalcInGivenOutSuccess:
@@ -27,8 +25,6 @@ class TestResultCalcInGivenOutSuccess:
     without_fee: float
     fee: float
     with_fee: float
-
-    __test__ = False  # pytest: don't test this class
 
 
 @dataclass
@@ -42,8 +38,6 @@ class TestResultCalcInGivenOutSuccessByModel:
     yieldspace: Optional[TestResultCalcInGivenOutSuccess] = None
     hyperdrive: Optional[TestResultCalcInGivenOutSuccess] = None
 
-    __test__ = False  # pytest: don't test this class
-
 
 @dataclass
 class TestCaseCalcInGivenOutFailure:
@@ -53,8 +47,6 @@ class TestCaseCalcInGivenOutFailure:
     market_state: MarketState
     time_remaining: StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
-
-    __test__ = False  # pytest: don't test this class
 
 
 @dataclass
@@ -68,8 +60,6 @@ class TestResultCalcInGivenOutFailureByModel:
     yieldspace: TestCaseCalcInGivenOutFailure
     hyperdrive: TestCaseCalcInGivenOutFailure
 
-    __test__ = False  # pytest: don't test this class
-
 
 @dataclass
 class TestCaseCalcOutGivenInSuccess:
@@ -80,8 +70,6 @@ class TestCaseCalcOutGivenInSuccess:
     days_remaining: float
     time_stretch_apy: float
 
-    __test__ = False  # pytest: don't test this class
-
 
 @dataclass
 class TestResultCalcOutGivenInSuccess:
@@ -91,8 +79,6 @@ class TestResultCalcOutGivenInSuccess:
     without_fee: float
     fee: float
     with_fee: float
-
-    __test__ = False  # pytest: don't test this class
 
 
 @dataclass
@@ -106,8 +92,6 @@ class TestResultCalcOutGivenInSuccessByModel:
     yieldspace: TestResultCalcOutGivenInSuccess
     hyperdrive: TestResultCalcOutGivenInSuccess
 
-    __test__ = False  # pytest: don't test this class
-
 
 @dataclass
 class TestCaseCalcOutGivenInFailure:
@@ -117,8 +101,6 @@ class TestCaseCalcOutGivenInFailure:
     market_state: MarketState
     time_remaining: StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
-
-    __test__ = False  # pytest: don't test this class
 
 
 @dataclass
@@ -131,5 +113,3 @@ class TestCaseCalcOutGivenInFailureByModel:
 
     yieldspace: TestCaseCalcOutGivenInFailure
     hyperdrive: TestCaseCalcOutGivenInFailure
-
-    __test__ = False  # pytest: don't test this class
