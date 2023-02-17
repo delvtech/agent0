@@ -164,12 +164,20 @@ class PricingModel(ABC):
         .. todo:: Write a test for this function
         """
 
+        # y = (z / 2) * (mu * (1 + rt)**(1/tau) - c)
+        # z = (2 * y) / (mu * (1 + rt)**(1/tau) - c)
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
         annualized_time = time_utils.norm_days(time_remaining.days, 365)
-        share_reserves = bond_reserves / (
-            init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
-        )  # z = y / (mu * (1 - rt)**(1/tau))
+        share_reserves = (
+            2
+            * bond_reserves
+            / (
+                init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+                - init_share_price
+            )
+        )
+
         return share_reserves
 
     def calc_liquidity(
