@@ -291,7 +291,6 @@ class YieldSpacePricingModel(PricingModel):
         )
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        print(f"executing calc_in_given_out with {share_reserves=} {bond_reserves=} {spot_price=} {out_amount=}")
         # We precompute the YieldSpace constant k using the current reserves and
         # share price:
         #

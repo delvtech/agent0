@@ -1203,10 +1203,10 @@ pt_in_test_cases_hyperdrive_only = [
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
                 trade_fee_percent=0.01,  # fee percent (normally 10%)
-                redemption_fee_percent=0.01,  # fee percent (normally 10%)
+                redemption_fee_percent=0.00,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
-            time_stretch_apy=1.1,  # APY of 5% used to calculate time_stretch
+            time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
         ),
         # From the input, we have the following values:
         #
@@ -1214,49 +1214,42 @@ pt_in_test_cases_hyperdrive_only = [
         #   z = 50
         #   y = 999_950
         #
-        #   t_stretch = 22.1868770168519182502689135891
+        #   t_stretch = 3.09396 / (0.02789 * apr_percent)
+        #             = 3.09396 / (0.02789 * 0.05 * 100)
+        #             = 22.1868770168519182502689135891
         #
-        #   tau = d / (365 * t_stretch)
-        #     = 182.5 / (365 * 22.1868770168519182502689135891)
-        #     = 0.022535844031597044
+        #   tau = 365 / (365 * t_stretch) * always use FULL TAU for hyperdrive
+        #     = 1 / 22.1868770168519182502689135891
+        #     = 0.045071688063194094
         #
-        #   1 - tau = 0.977464155968403
+        #   1 - tau = 0.9549283119368059
         #
         #   k = (c / mu) * (mu * z) **(1 - tau) + (2 * y + c * z)**(1 - tau)
-        #     = (1 / 1) * (1 * 0) ** 0.977464155968403 +
-        #           (2 * 1_000_000 + 1 * 0) ** 0.977464155968403
-        #     = 1_442_218.1821553102
+        #     = (1 / 1) * (1 * 0) ** 0.9549283119368059 +
+        #           (2 * 1_000_000 + 1 * 0) ** 0.9549283119368059
+        #     = 1_039_996.6424696837
         #
-        #   p = ((2 * y + c * z) / (mu * z)) ** tau
-        #     = ((2 * 999_950 + 1 * 50) / (1 * 50)) ** 0.022535844031597044
-        #     = 1.2697290664423557
+        #   p = ((2 * y + c * z) / (mu * z)) ** -tau
+        #     = ((2 * 999_950 + 1 * 50) / (1 * 50)) ** -0.045071688063194094
+        #     = 0.6202658587589548
         TestResultCalcInGivenOutSuccessByModel(
             hyperdrive=TestResultCalcInGivenOutSuccess(
-                # spot_price = p * delta_y * t + delta_y * (1 - t)
-                # spot_price = 1.2697290664423557 * 50 * 0.5 + 50 * 0.5
-                # spot_price = 31.743226661058895 + 25
-                # spot_price = 56.743226661058895
-                without_fee_or_slippage=56.743226661058895,
-                # yield space equation (for hyperdrive multiply d_z by t):
-                # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
-                # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
-                #
-                # note: use delta_z * t to phase the curve part out, and add delta_z * (1 - t)
-                # to phase the flat part in over the length of the term:
-                #
-                # dy' = 2*y + c*z - (k - (c / u) * (u * (z + delta_z*t))**(1 - tau_full))**(1 / (1 - tau_full))
-                #       + c * delta_z * (1 - t)
-                # dy' = 2000150.0 + 199925.0 - (1255966.2592326764 - 1.3333333333333333
-                #       * (1.5 * (99962.5 + 50.0*0.25))**(0.9549283119368059))**(1.0471990279267966)
-                #       + 2 * 50.0 * 0.75
-                without_fee=97.14941590232775,
-                # fee = ((1 / p) - 1) * phi * c * d_z
-                # fee = (1.1286948282596905 - 1) * 0.01 * 2 * 50.0
-                fee=0.25397154625167895,
-                with_fee=102.79448674223747,
+                # without_fee_or_slippage = p * delta_y * t + delta_y * (1 - t)
+                # without_fee_or_slippage = 0.6202658587589548 * 100 * 0.5 + 100 * 0.5
+                # without_fee_or_slippage = 31.01329293794774 + 50
+                # without_fee_or_slippage = 81.01329293794774
+                without_fee_or_slippage=81.01329293794774,
+                # t_d=0.5
+                # tau=0.02253584403159705
+                # 1-tau=0.977464155968403
+                # t_stretch=22.186877016851916
+                # spot_price=0.6202658587589547
+                # in_base=81.38288223597203
+                # in_pt=134.41541713429615
+                without_fee=81.38288223597203,
+                fee=0.18986707062052266,
+                with_fee=81.57274930659256,
             ),
         ),
     ),  # end of test one
 ]
-
-# TODO: test the success cases, #204
