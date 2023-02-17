@@ -83,7 +83,7 @@ class Market:
                 f" model={pricing_model_name}, not {action_type}!"
             )
 
-    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet]:
+    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -171,8 +171,7 @@ class Market:
             agent_deltas,
             self.market_state,
         )
-        self.update_market(market_deltas)
-        return (agent_id, agent_deltas)
+        return (agent_id, agent_deltas, market_deltas)
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """

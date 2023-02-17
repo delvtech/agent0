@@ -179,7 +179,8 @@ class Simulator:
             A list of agent trades. These will be executed in order.
         """
         for trade in agent_trades:
-            agent_id, agent_deltas = self.market.trade_and_update(trade)
+            agent_id, agent_deltas, market_deltas = self.market.trade_and_update(trade)
+            self.market.update_market(market_deltas)
             agent = self.agents[agent_id]
             logging.debug(
                 "agent #%g wallet deltas:\n%s",
