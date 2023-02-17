@@ -83,7 +83,7 @@ class Market:
                 f" model={pricing_model_name}, not {action_type}!"
             )
 
-    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet]:
+    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -171,8 +171,7 @@ class Market:
             agent_deltas,
             self.market_state,
         )
-        self.update_market(market_deltas)
-        return (agent_id, agent_deltas)
+        return (agent_id, agent_deltas, market_deltas)
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """
@@ -181,10 +180,14 @@ class Market:
         .. todo:: This order is weird. We should move everything in apply_update to update_market,
             and then make a new function called check_update that runs these checks
         """
+        self.check_market_updates(market_deltas)
+        self.market_state.apply_delta(market_deltas)
+
+    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
+        """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-        self.market_state.apply_delta(market_deltas)
 
     @property
     def apr(self) -> float:

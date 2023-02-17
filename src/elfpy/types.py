@@ -271,10 +271,10 @@ class MarketState:
         self.lp_reserves += delta.d_lp_reserves
         self.share_price += delta.d_share_price
 
+        # TODO: issue #146
         # this is an imperfect solution to rounding errors, but it works for now
         # ideally we'd find a more thorough solution than just catching errors
-        # when they are. issue #146 tracks this.
-        # .. todo::  #146
+        # when they are.
         for key, value in self.__dict__.items():
             if 0 > value > -PRECISION_THRESHOLD:
                 logging.debug(
