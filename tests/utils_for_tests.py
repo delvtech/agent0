@@ -2,7 +2,6 @@
 from __future__ import annotations  # types are strings by default in 3.11
 
 import logging
-from importlib import import_module
 
 from elfpy.simulators import Simulator
 from elfpy.utils import sim_utils
@@ -24,9 +23,9 @@ def setup_simulation_entities(config, agent_policies) -> Simulator:
             policy_name = policy_instruction
             not_kwargs = {}
         wallet_address = agent_id + 1
-        agent = import_module(f"elfpy.policies.{policy_name}").Policy(
-            wallet_address=wallet_address,  # first policy goes to init_lp_agent
-        )
+
+        policy = sim_utils.get_policy(policy_name)
+        agent = policy(wallet_address=wallet_address, budget=1000)  # first policy goes to init_lp_agent
         for key, value in not_kwargs.items():
             if hasattr(agent, key):  # check if parameter exists
                 setattr(agent, key, value)

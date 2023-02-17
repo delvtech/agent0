@@ -87,7 +87,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_long(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,  # type: ignore
+            trade_amount=agent.budget,  # type: ignore
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
@@ -98,7 +98,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_short(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,  # type: ignore
+            trade_amount=agent.budget,  # type: ignore
         )
         actual_deltas = Deltas(market_deltas=market_deltas, agent_deltas=agent_deltas)
         self.compare_deltas(actual_deltas=actual_deltas, expected_deltas=expected_deltas)
@@ -110,7 +110,7 @@ class BaseMarketTest(unittest.TestCase):
         market_deltas, agent_deltas = simulator.market.open_long(
             wallet_address=1,
             # in base: that's the thing in your wallet you want to sell
-            trade_amount=agent.amount_to_trade,  # type: ignore
+            trade_amount=agent.budget,  # type: ignore
         )
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_purchased = agent_deltas.longs[0].balance
@@ -133,7 +133,7 @@ class BaseMarketTest(unittest.TestCase):
         agent = simulator.agents[1]
         market_deltas, agent_deltas = simulator.market.open_short(
             wallet_address=1,
-            trade_amount=agent.amount_to_trade,  # type: ignore # in bonds: that's the thing you want to short
+            trade_amount=agent.budget,  # type: ignore # in bonds: that's the thing you want to short
         )
         # peek inside the agent's wallet and see how many bonds they have
         amount_of_bonds_sold = agent_deltas.shorts[0].balance
@@ -173,7 +173,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_open_long(self):
         """open long of 100 bonds"""
-        agent_policy = "single_long:amount_to_trade=100"
+        agent_policy = "single_long:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result = 104.49996792100823  # taken from pricing model output, not tested here
 
@@ -201,7 +201,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_close_long(self):
         """open long of 100 bonds, close long of 100 bonds"""
-        agent_policy = "single_long:amount_to_trade=100"
+        agent_policy = "single_long:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result_open_long_in_bonds = 104.49996792100823  # pricing model output of first test, not tested here
         trade_result_close_long_in_base = 99.02612981627104  # pricing model output of second test, not tested here
@@ -230,7 +230,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_open_short(self):
         """open short of 100 bonds"""
-        agent_policy = "single_short:amount_to_trade=100"
+        agent_policy = "single_short:budget=100"
         # agent wants to go short 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result = 94.76187705075156  # taken from pricing model output, not tested here
         max_loss = 100 - trade_result  # worst case scenario: price goes up, forced to buy back at 100
@@ -263,7 +263,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_close_short_full_right_away(self):
         """open short of 100 bonds, close short of 100 bonds"""
-        agent_policy = "single_short:amount_to_trade=100"
+        agent_policy = "single_short:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result_close_short_in_base = 95.71431342534422  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
@@ -292,7 +292,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_close_short_full_one_tick_later(self):
         """open short of 100 bonds, close short of 100 bonds"""
-        agent_policy = "single_short:amount_to_trade=100"
+        agent_policy = "single_short:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result_close_short_in_base = 95.71813267820151  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
@@ -321,7 +321,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_close_short_half_right_away(self):
         """open short of 100 bonds, close short of 50 bonds"""
-        agent_policy = "single_short:amount_to_trade=100"
+        agent_policy = "single_short:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result_close_short_in_base = 47.8571497849134  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below
@@ -353,7 +353,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_100_close_short_half_one_tick_later(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
-        agent_policy = "single_short:amount_to_trade=100"
+        agent_policy = "single_short:budget=100"
         # agent wants to go long 100 base asset so they will sell 100 base asset and buy equivalent amount of bonds
         trade_result_close_short_in_base = 47.85905941713286  # pricing model output of second test, not tested here
         # assign to appropriate token: for readability using absolute values, assigning +/- below

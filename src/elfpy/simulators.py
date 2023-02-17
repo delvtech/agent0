@@ -195,13 +195,18 @@ class Simulator:
             self.update_simulation_state()
             self.run_trade_number += 1
 
-    def run_simulation(self) -> None:
+    def run_simulation(self, liquidate_on_end: bool = True) -> None:
         r"""Run the trade simulation and update the output state dictionary
 
         This is the primary function of the Simulator class.
         The PricingModel and Market objects will be constructed.
         A loop will execute a group of trades with random volumes and directions for each day,
         up to `self.config.num_trading_days` days.
+
+        Parameters
+        ----------
+        liquidate_on_end : bool
+            if True, liquidate trades when the simulation is complete
 
         Returns
         -------
@@ -231,7 +236,8 @@ class Simulator:
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
                     self.daily_block_number == self.config.num_blocks_per_day - 1
                 )
-                self.collect_and_execute_trades(last_block_in_sim)
+                liquidate = last_block_in_sim and liquidate_on_end
+                self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
                 if not last_block_in_sim:
