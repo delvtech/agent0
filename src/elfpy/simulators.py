@@ -243,7 +243,7 @@ class Simulator:
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable
 
-        TODO: This gets duplicated in notebooks when we make the pandas dataframe.
+        .. todo:: This gets duplicated in notebooks when we make the pandas dataframe.
             Instead, the simulation_state should be a dataframe.
             issue #215
         """
