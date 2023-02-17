@@ -29,7 +29,6 @@ class SingleTradeTests(unittest.TestCase):
             for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 1.1):
                 for num_position_days in [90, 365]:
                     for pricing_model_name in ["Yieldspace", "Hyperdrive"]:
-                        # run_base_trade_test initializes a market with an LP agent
                         config = Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
@@ -58,6 +57,8 @@ class SingleTradeTests(unittest.TestCase):
                         )
                         # assign the results of the init_lp agent to explicit variables
                         # market_state is used only for share_price and init_share_price
+                        # TODO: Redo this to compute the direct reserves exactly instead of calling calc_liquidity
+                        #       this ensures that the underlying function is changed and messed up at some point
                         share_reserves_direct, bond_reserves_direct = simulator.market.pricing_model.calc_liquidity(
                             market_state=simulator.market.market_state,
                             target_liquidity=target_liquidity,
