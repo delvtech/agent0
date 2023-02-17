@@ -22,7 +22,7 @@ class SingleTradeTests(unittest.TestCase):
     .. todo:: In a followup PR, loop over pricing model types & rerun tests
     """
 
-    def test_compare_agent_to_calc_liquidity(self):
+    def test_market_init_apr_and_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
