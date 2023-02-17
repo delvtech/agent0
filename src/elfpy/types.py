@@ -134,7 +134,7 @@ class StretchedTime:
         return output_string
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketAction:
     r"""Market action specification"""

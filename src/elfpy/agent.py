@@ -1,7 +1,7 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 import logging
 
 import numpy as np
@@ -10,6 +10,7 @@ from elfpy.wallet import Long, Short, Wallet
 from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
 
 if TYPE_CHECKING:
+    from typing import Optional, Iterable
     from elfpy.markets import Market
 
 
@@ -46,7 +47,7 @@ class Agent:
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: float = 0
+        self, action_type: MarketActionType, trade_amount: float, mint_time: Optional[float] = None
     ) -> MarketAction:
         r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
@@ -64,6 +65,10 @@ class Agent:
         MarketAction
             The MarketAction object that contains the details about the action to execute in the market
         """
+        if mint_time is None and action_type in [MarketActionType.CLOSE_SHORT, MarketActionType.OPEN_SHORT]:
+            raise ValueError(f"ERROR: {action_type=} requires mint_time to be set")
+        # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+        mint_time = float(mint_time or 0)
         if action_type == MarketActionType.CLOSE_SHORT:
             open_share_price = self.wallet.shorts[mint_time].open_share_price
         else:

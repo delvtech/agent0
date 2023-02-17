@@ -25,6 +25,10 @@ class Policy(Agent):
         can_open_short = self.get_max_short(market) >= self.amount_to_trade
         if can_open_short and not has_opened_short:
             action_list.append(
-                self.create_agent_action(action_type=MarketActionType.OPEN_SHORT, trade_amount=self.amount_to_trade)
+                self.create_agent_action(
+                    action_type=MarketActionType.OPEN_SHORT,
+                    trade_amount=self.amount_to_trade,
+                    mint_time=market.time,
+                )
             )
         return action_list
