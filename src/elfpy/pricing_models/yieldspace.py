@@ -178,6 +178,7 @@ class YieldSpacePricingModel(PricingModel):
         )
         assert rate >= 0, f"pricing_models.calc_lp_in_given_tokens_out: ERROR: expected rate >= 0, not {rate}!"
         # TODO: convert this to a check for 1>=time and fix tests as necessary
+        # issue #57
         assert 1 > time_remaining.normalized_time >= 0, (
             "pricing_models.calc_lp_in_given_tokens_out: ERROR: "
             f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
@@ -223,8 +224,9 @@ class YieldSpacePricingModel(PricingModel):
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             f"Expected bond_reserves >= 0, not {market_state.bond_reserves}!"
         )
-        # TODO: #146 These asserts should check for 0 -- the buffers should never go below 0
+        # TODO: These asserts should check for 0 -- the buffers should never go below 0
         # We think that this is happening due to an rounding error, based on the size of the difference
+        # issue #146
         assert market_state.base_buffer >= -1e-8, (
             "pricing_models.calc_lp_out_given_tokens_in: ERROR: "
             f"Expected base_buffer >= 0, not {market_state.base_buffer}!"

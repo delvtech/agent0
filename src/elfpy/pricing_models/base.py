@@ -320,6 +320,7 @@ class PricingModel(ABC):
             The spot price of principal tokens.
         """
         # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
+        # issue #94
         # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
             market_state.share_reserves
@@ -481,12 +482,14 @@ class PricingModel(ABC):
             f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
         )
         # TODO: convert this to a check for 1>=time and fix tests as necessary
+        # issue #57
         assert 1 > time_remaining.stretched_time >= 0, (
             "pricing_models.calc_in_given_out: ERROR: "
             f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.
+    # issue #57
     def check_output_assertions(
         self,
         trade_result: TradeResult,

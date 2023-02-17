@@ -5,6 +5,7 @@ from elfpy.types import MarketActionType
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance
+# issue #217
 # pylint: disable=duplicate-code
 
 

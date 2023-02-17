@@ -98,6 +98,7 @@ class Agent:
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
+    # issue #213
     def get_max_long(self, market: Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
@@ -124,6 +125,7 @@ class Agent:
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
+    # issue #213
     def get_max_short(self, market: Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
@@ -216,6 +218,7 @@ class Agent:
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
+        # issue #57
         return actions
 
     def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:

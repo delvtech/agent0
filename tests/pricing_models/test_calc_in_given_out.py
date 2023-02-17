@@ -122,6 +122,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
+    # issue #57
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
