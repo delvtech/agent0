@@ -45,12 +45,11 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        r"""
+        r""".. _calc_lp_out_given_tokens_in:
         Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
             y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
-
         """
         d_shares = d_base / market_state.share_price
         if market_state.share_reserves > 0:  # normal case where we have some share reserves
@@ -121,12 +120,11 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        r"""
+        r""".. _calc_lp_in_given_tokens_out:
         Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
             y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
-
         """
         d_shares = d_base / market_state.share_price
         lp_in = (d_shares * market_state.lp_reserves) / (
@@ -147,7 +145,8 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        """Calculate how many tokens should be returned for a given lp addition
+        """.. _calc_tokens_out_given_lp_in:
+        Calculate how many tokens should be returned for a given lp addition
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
         """
@@ -218,14 +217,15 @@ class YieldSpacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & in' \;\;\:  = \;\;\:
             \begin{cases}
             \\
             \text{ if $token\_in$ = "base", }\\
             \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1} \big(k -
-            \big(2y + cz - \Delta y\big)
+            \big(y + s - \Delta y\big)
             ^{1-\tau}\big)\big)
             ^ {\tfrac{1}{1-\tau}} - z\big)
             \\\\
@@ -233,7 +233,7 @@ class YieldSpacePricingModel(PricingModel):
             \quad\quad\quad (k -
             \big(c \cdot \mu^{-1} \cdot
             \big(\mu \cdot\big(z - \Delta z \big)\big)
-            ^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}}) - \big(2y + cz\big)
+            ^{1 - \tau} \big)^{\tfrac{1}{1 - \tau}}) - \big(y + s\big)
             \\\\
             \end{cases}
             \\\\
@@ -251,6 +251,11 @@ class YieldSpacePricingModel(PricingModel):
             & in = in' + f
             \\
             \end{align*}
+
+        .. note:
+        The pool total supply is a function of the base and bond reserves,
+        and is modified in `calc_lp_in_given_tokens_out`_ `calc_tokens_out_given_lp_in`_, and `calc_lp_out_given_tokens_in`_.
+        It can be approximated as .. math:: s = y + cz
 
         Parameters
         ----------
@@ -443,19 +448,20 @@ class YieldSpacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & out'\;\; = \;\;
             \begin{cases}
             \\
             \text{ if $token\_out$ = "base", }\\
             \quad\quad\quad c \big(z - \mu^{-1}
-            \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y\big)
+            \big(c \cdot \mu^{-1} \big(k - \big(y + s + \Delta y\big)
             ^{1 - \tau}\big)\big)
             ^{\tfrac{1}{1 - \tau}}\big)
             \\\\
             \text{ if $token\_out$ = "pt", }\\
-            \quad\quad\quad 2y + cz - (k - c \cdot
+            \quad\quad\quad y + s - (k - c \cdot
             \mu^{-1} \cdot (\mu (z + \Delta z))^{1 - \tau})
             ^{\tfrac{1}{(1 - \tau)}}
             \\\\
@@ -475,6 +481,11 @@ class YieldSpacePricingModel(PricingModel):
             & out = out' + f
             \\
             \end{align*}
+
+        .. note:
+        The pool total supply is a function of the base and bond reserves,
+        and is modified in `calc_lp_in_given_tokens_out`_ `calc_tokens_out_given_lp_in`_, and `calc_lp_out_given_tokens_in`_.
+        It can be approximated as .. math:: s = y + cz
 
         Parameters
         ----------

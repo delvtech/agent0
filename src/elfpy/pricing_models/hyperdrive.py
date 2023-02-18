@@ -43,14 +43,15 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & in' \;\;\:  = \;\;\:
             \begin{cases}
             \\
             \text{ if $token\_in$ = "base", }\\
             \quad\quad\quad c \big(\mu^{-1} \big(\mu \cdot c^{-1}
-            \big(k - \big(2y + cz - \Delta y \cdot t\big)
+            \big(k - \big(y + s - \Delta y \cdot t\big)
             ^{1-\tau}\big)\big)
             ^ {\tfrac{1}{1-\tau}} - z\big) + \Delta y \cdot\big(1 - \tau\big)
             \\\\
@@ -58,7 +59,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             \quad\quad\quad (k - \big(
             c \cdot \mu^{-1} \cdot\big(\mu \cdot
             \big(z - \Delta z \cdot t\big)\big)^{1 - \tau} \big))
-            ^{\tfrac{1}{1 - \tau}} - \big(2y + cz\big)
+            ^{\tfrac{1}{1 - \tau}} - \big(y + s\big)
             + c \cdot \Delta z \cdot\big(1 - \tau\big)
             \\\\
             \end{cases}
@@ -77,6 +78,9 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             & in = in' + f
             \\
             \end{align*}
+
+        .. note:
+        The pool total supply is a function of the base and bond reserves, and is modified in [TODO: Link to add/remvoe liquidity]
 
         Parameters
         ----------
@@ -162,10 +166,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
-            raise AssertionError(
-                "pricing_models.calc_in_given_out: ERROR: "
-                f"Expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
-            )
+            raise AssertionError(f"ERROR: Expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!")
 
         return TradeResult(
             user_result=user_result,
@@ -195,19 +196,20 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. math::
             \begin{align*}
-            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{2y + cz}{\mu z}\Bigg)^{-\tau}
+            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & out'\;\; = \;\;
             \begin{cases}
             \\
             \text{ if $token\_out$ = "base", }\\
             \quad\quad\quad c \big(z - \mu^{-1}
-            \big(c \cdot \mu^{-1} \big(k - \big(2y + cz + \Delta y \cdot t\big)
+            \big(c \cdot \mu^{-1} \big(k - \big(y + s + \Delta y \cdot t\big)
             ^{1 - \tau}\big)\big)
             ^{\tfrac{1}{1 - \tau}}\big) + \Delta y \cdot (1 - \tau)
             \\\\
             \text{ if $token\_out$ = "pt", }\\
-            \quad\quad\quad 2y + cz - (k - c \cdot \mu^{-1} \cdot
+            \quad\quad\quad y + s - (k - c \cdot \mu^{-1} \cdot
             (\mu (z + \Delta z \cdot t))^{1 - \tau})
             ^{\tfrac{1}{1 - \tau}} + c \cdot \Delta z \cdot (1 - \tau)
             \\\\
@@ -227,6 +229,11 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             & out = out' + f
             \\
             \end{align*}
+
+        .. note:
+        The pool total supply is a function of the base and bond reserves,
+        and is modified in `calc_lp_in_given_tokens_out`_ `calc_tokens_out_given_lp_in`_, and `calc_lp_out_given_tokens_in`_.
+        It can be approximated as .. math:: s = y + cz
 
         Parameters
         ----------
