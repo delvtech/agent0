@@ -47,7 +47,11 @@ class Agent:
         self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
 
     def create_agent_action(
-        self, action_type: MarketActionType, trade_amount: float, mint_time: Optional[float] = None
+        self,
+        action_type: MarketActionType,
+        trade_amount: float,
+        min_amount_out: float = 0,
+        mint_time: Optional[float] = None,
     ) -> MarketAction:
         r"""Creates and returns a MarketAction object which represents a trade that this agent can make
 
@@ -65,20 +69,14 @@ class Agent:
         MarketAction
             The MarketAction object that contains the details about the action to execute in the market
         """
-        if action_type == MarketActionType.CLOSE_SHORT:
-            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-            mint_time = float(mint_time or 0)
-            open_share_price = self.wallet.shorts[mint_time].open_share_price
-        else:
-            open_share_price = None
         agent_action = MarketAction(
             # these two variables are required to be set by the strategy
             action_type=action_type,
             trade_amount=trade_amount,
+            min_amount_out=min_amount_out,
             # next two variables are set automatically by the basic agent class
-            wallet_address=self.wallet.address,
+            wallet=self.wallet,
             mint_time=mint_time,
-            open_share_price=open_share_price,
         )
         return agent_action
 
