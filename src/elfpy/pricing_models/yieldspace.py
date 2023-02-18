@@ -45,8 +45,7 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        r""".. _calc_lp_out_given_tokens_in:
-        Computes the amount of LP tokens to be minted for a given amount of base asset
+        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
             y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
@@ -120,8 +119,7 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        r""".. _calc_lp_in_given_tokens_out:
-        Computes the amount of LP tokens to be minted for a given amount of base asset
+        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
             y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
@@ -145,8 +143,7 @@ class YieldSpacePricingModel(PricingModel):
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> tuple[float, float, float]:
-        """.. _calc_tokens_out_given_lp_in:
-        Calculate how many tokens should be returned for a given lp addition
+        """Calculate how many tokens should be returned for a given lp addition
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
         """
