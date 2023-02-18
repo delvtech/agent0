@@ -81,8 +81,8 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         .. note::
            The pool total supply is a function of the base and bond reserves,
-           and is modified in :py:method:`elfpy.pricing_models.yieldspace.calc_lp_in_given_tokens_out`, :func:`calc_tokens_out_given_lp_in`,
-           and :func:`calc_lp_out_given_tokens_in`.
+           and is modified in :method:`elfpy.pricing_models.yieldspace.calc_lp_in_given_tokens_out`, :func:`elfpy.pricing_models.yieldspace.calc_tokens_out_given_lp_in`,
+           and :func:`elfpy.pricing_models.yieldspace.calc_lp_out_given_tokens_in`.
            
            It can be approximated as :math:`s = y + cz`.
 
