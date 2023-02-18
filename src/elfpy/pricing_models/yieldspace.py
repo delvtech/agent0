@@ -253,9 +253,9 @@ class YieldSpacePricingModel(PricingModel):
             \end{align*}
 
         .. note::
-        The pool total supply is a function of the base and bond reserves,
-        and is modified in `calc_lp_in_given_tokens_out`_ `calc_tokens_out_given_lp_in`_, and `calc_lp_out_given_tokens_in`_.
-        It can be approximated as .. math:: s = y + cz
+           The pool total supply is a function of the base and bond reserves,
+           and is modified in :ref:`calc_lp_in_given_tokens_out`, :ref:`calc_tokens_out_given_lp_in`, and :ref:`calc_lp_out_given_tokens_in`.
+           It can be approximated as :math:`s = y + cz`.
 
         Parameters
         ----------
@@ -483,9 +483,9 @@ class YieldSpacePricingModel(PricingModel):
             \end{align*}
 
         .. note::
-        The pool total supply is a function of the base and bond reserves,
-        and is modified in `calc_lp_in_given_tokens_out`_ `calc_tokens_out_given_lp_in`_, and `calc_lp_out_given_tokens_in`_.
-        It can be approximated as .. math:: s = y + cz
+           The pool total supply is a function of the base and bond reserves,
+           and is modified in :ref:`calc_lp_in_given_tokens_out`, :ref:`calc_tokens_out_given_lp_in`, and :ref:`calc_lp_out_given_tokens_in`.
+           It can be approximated as :math:`s = y + cz`.
 
         Parameters
         ----------
