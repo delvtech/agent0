@@ -4,14 +4,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Type, Optional
 
+from pytest import skip
+
 from elfpy.types import MarketState, Quantity, StretchedTime
+
+skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)
 
 
 @dataclass
 class TestCaseCalcInGivenOutSuccess:
     """Dataclass for calc_in_given_out test cases"""
-
-    __test__ = False
 
     out: Quantity
     market_state: MarketState
@@ -23,8 +25,6 @@ class TestCaseCalcInGivenOutSuccess:
 class TestResultCalcInGivenOutSuccess:
     """Dataclass for calc_in_given_out test results"""
 
-    __test__ = False
-
     without_fee_or_slippage: float
     without_fee: float
     fee: float
@@ -34,8 +34,6 @@ class TestResultCalcInGivenOutSuccess:
 @dataclass
 class TestResultCalcInGivenOutSuccessByModel:
     """Dataclass for calc_in_given_out test results by pricing_model"""
-
-    __test__ = False
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
@@ -49,8 +47,6 @@ class TestResultCalcInGivenOutSuccessByModel:
 class TestCaseCalcInGivenOutFailure:
     """Dataclass for calc_in_given_out test cases"""
 
-    __test__ = False
-
     out: Quantity
     market_state: MarketState
     time_remaining: StretchedTime
@@ -60,8 +56,6 @@ class TestCaseCalcInGivenOutFailure:
 @dataclass
 class TestResultCalcInGivenOutFailureByModel:
     """Dataclass for calc_in_given_out test cases by pricing_model"""
-
-    __test__ = False
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
@@ -75,8 +69,6 @@ class TestResultCalcInGivenOutFailureByModel:
 class TestCaseCalcOutGivenInSuccess:
     """Dataclass for calc_out_given_in success test cases"""
 
-    __test__ = False
-
     in_: Quantity
     market_state: MarketState
     days_remaining: float
@@ -87,8 +79,6 @@ class TestCaseCalcOutGivenInSuccess:
 class TestResultCalcOutGivenInSuccess:
     """Dataclass for calc_out_given_in test results"""
 
-    __test__ = False
-
     without_fee_or_slippage: float
     without_fee: float
     fee: float
@@ -98,8 +88,6 @@ class TestResultCalcOutGivenInSuccess:
 @dataclass
 class TestResultCalcOutGivenInSuccessByModel:
     """Dataclass for calc_out_given_in success test cases by pricing_model"""
-
-    __test__ = False
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
@@ -113,8 +101,6 @@ class TestResultCalcOutGivenInSuccessByModel:
 class TestCaseCalcOutGivenInFailure:
     """Dataclass for calc_out_given_in failure test cases"""
 
-    __test__ = False
-
     in_: Quantity
     market_state: MarketState
     time_remaining: StretchedTime
@@ -124,8 +110,6 @@ class TestCaseCalcOutGivenInFailure:
 @dataclass
 class TestCaseCalcOutGivenInFailureByModel:
     """Dataclass for calc_out_given_in failure test cases by pricing_model"""
-
-    __test__ = False
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
