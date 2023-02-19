@@ -67,9 +67,6 @@ class Market:
         ]:  # sell to close long
             if agent_action.mint_time is None:
                 raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
-        if agent_action.action_type == MarketActionType.CLOSE_SHORT:  # sell to close long
-            if agent_action.open_share_price is None:
-                raise ValueError("ERROR: agent_action.open_share_price must be provided when closing a short")
 
     def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
@@ -103,40 +100,40 @@ class Market:
         # for each position, specify how to forumulate trade and then execute
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = float(agent_action.mint_time or 0)
             market_deltas, agent_deltas = self.close_long(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                 mint_time=mint_time,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = float(agent_action.mint_time or 0)
-            open_share_price = float(agent_action.open_share_price or 0)
+            open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
             market_deltas, agent_deltas = self.close_short(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                 mint_time=mint_time,
                 open_share_price=open_share_price,
             )
         elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
             market_deltas, agent_deltas = self.add_liquidity(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,
             )
         elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
             market_deltas, agent_deltas = self.remove_liquidity(
-                wallet_address=agent_action.wallet_address,
+                wallet_address=agent_action.wallet.address,
                 trade_amount=agent_action.trade_amount,
             )
         else:
