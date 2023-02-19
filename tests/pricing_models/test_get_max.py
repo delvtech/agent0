@@ -24,15 +24,14 @@ class TestCaseGetMax:
 
 
 class TestGetMax(unittest.TestCase):
-    """Tests for the various get_max functions within the pricing model."""
+    """Tests get_max_short and get_max_long functions within the pricing model."""
 
     def test_get_max(self):
-        """Tests that get_max_long and get_max_short are safe.
-
-        These tests ensure that trades made with get_max_long and get_max_short
-        will not put the market into a pathological state (i.e. the trade amount
-        is non-negative, the bond reserves is non-negative, the buffer
-        invariants hold, and the APR is still non-negative).
+        """
+        Tests that get_max_long and get_max_short are safe, by checking
+            apr >= 0
+            share_price * market_state.share_reserves >= base_buffer
+            bond_reserves >= bond_buffer
         """
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
 

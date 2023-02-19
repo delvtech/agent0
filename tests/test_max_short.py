@@ -40,7 +40,7 @@ class BaseParameterTest(unittest.TestCase):
 
 
 class GetMaxShortTests(BaseParameterTest):
-    """Tests of custom parameters"""
+    """Tests of the get_max_short function of the agent class"""
 
     # this exact scenario causes a precision error with share_reserves = -9.313225746154785e-10
     def test_max_short_500_with_init_shuffle_users(self):
