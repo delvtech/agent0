@@ -258,7 +258,7 @@ class YieldSpacePricingModel(PricingModel):
            and :func:`calc_lp_out_given_tokens_in 
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_out_given_tokens_in>`.
            
-           It can be approximated as :math:`s = y + cz`.
+           It can be approximated as :math:`s \approx y + cz`.
 
         Parameters
         ----------
@@ -494,7 +494,7 @@ class YieldSpacePricingModel(PricingModel):
            and :func:`calc_lp_out_given_tokens_in 
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_out_given_tokens_in>`.
            
-           It can be approximated as :math:`s = y + cz`.
+           It can be approximated as :math:`s \approx y + cz`.
 
         Parameters
         ----------
