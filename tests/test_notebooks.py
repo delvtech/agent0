@@ -45,6 +45,8 @@ class TestNotebook(unittest.TestCase):
                 for line in cell_source_lines.split("\n"):  # parse line-by-line for checks
                     if line.startswith("%"):  # skip jupyter magic commands
                         continue
+                    if line.startswith("display("):  # skip display commands, as they're notebook-specific
+                        continue
                     code_lines.append(line)
                 cell_source = isp.transform_cell("\n".join(code_lines))  # recombine lines
                 file_source += cell_source + "\n"

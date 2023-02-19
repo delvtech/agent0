@@ -4,7 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Type, Optional
 
+from pytest import skip
+
 from elfpy.types import MarketState, Quantity, StretchedTime
+
+skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)
 
 
 @dataclass
