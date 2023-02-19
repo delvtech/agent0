@@ -119,7 +119,6 @@ class Market:
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = float(agent_action.mint_time or 0)
-            open_share_price = float(agent_action.mint_time or 0)
             open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
             market_deltas, agent_deltas = self.close_short(
                 wallet_address=agent_action.wallet.address,

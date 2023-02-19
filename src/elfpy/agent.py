@@ -63,6 +63,8 @@ class Agent:
             Amount of assets that the agent will trade
         mint_time : float
             Time relative to the market at which the tokens relevant to this trade were minted, in yearfracs
+        min_amount_out: float
+            The minimum amount out from a trade for the trade to be successful
 
         Returns
         -------
