@@ -14,6 +14,7 @@ from numpy.random import Generator
 from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
+from elfpy.wallet import Wallet
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -141,18 +142,18 @@ class MarketAction:
 
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
+    # amount to supply for the action
     trade_amount: float
-    # .. todo::  pass in the entire wallet instead of wallet_address and the open_share_price
-    # wallet_address is always set automatically by the basic agent class
-    wallet_address: int
-    # the share price when a short was created
-    open_share_price: Optional[float] = None
+    # min amount to receive for the action
+    min_amount_out: float
+    # the agent's wallet
+    wallet: Wallet
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
 
     def __str__(self):
         r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet_address}"
+        output_string = f"AGENT ACTION:\nagent #{self.wallet.address}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"

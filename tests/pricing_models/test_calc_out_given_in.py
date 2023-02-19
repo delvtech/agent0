@@ -5,10 +5,10 @@ import decimal
 import unittest
 import numpy as np
 from calc_test_dataclasses import (
-    TestCaseCalcOutGivenInSuccess,
-    TestResultCalcOutGivenInSuccess,
-    TestResultCalcOutGivenInSuccessByModel,
-    TestCaseCalcOutGivenInFailure,
+    CalcOutGivenInSuccessTestCase,
+    CalcOutGivenInSuccessTestResult,
+    CalcOutGivenInSuccessByModelTestResult,
+    CalcOutGivenInFailureTestCase,
 )
 
 from elfpy.pricing_models.base import PricingModel
@@ -58,7 +58,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         pt_out_test_cases = [
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -89,8 +89,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 1 * 100_000) / (1 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0250671833648672
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 100
                         #                         = 102.50671833648673
@@ -115,7 +115,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 102.48010181140738
                         with_fee=102.48010181140738,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9517182274304707) * 1 * 100.0 * 0.5 + 1 * 100.0 * 0.5
                         without_fee_or_slippage=102.53655815229496,
@@ -141,7 +141,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # High fee percentage - 20%.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -157,8 +157,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
                 # `with_fee` since the fee percentage changed.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         without_fee_or_slippage=102.50671833648673,
                         without_fee=102.50516899477225,
                         # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
@@ -168,7 +168,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 102.0038253274749
                         with_fee=102.0038253274749,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9517182274304707) * 1 * 100.0 * 0.5 + 1 * 100.0 * 0.5
                         without_fee_or_slippage=102.53655815229496,
@@ -194,7 +194,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=10_000, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -209,8 +209,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 10_000
                         #                         = 10250.671833648672
@@ -235,7 +235,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 10233.00810805784
                         with_fee=10233.00810805784,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9545075460138804) * 1 * 10000.0 * 0.5 + 1 * 10000.0 * 0.5
                         without_fee_or_slippage=10238.303270498493,
@@ -261,7 +261,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # High slippage trade - in_ is 80% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=80_000, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -277,8 +277,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
                 # `with_fee` since the fee percentage changed.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 80_000
                         #                         = 82005.37466918938
@@ -303,7 +303,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 81118.22227531018
                         with_fee=81118.22227531018,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9724844998246822) * 1 * 80000.0 * 0.5 + 1 * 80000.0 * 0.5
                         without_fee_or_slippage=81131.76097635605,
@@ -329,7 +329,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Non-trivial initial share price and share price.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     # Base in of 200 is 100 shares at the current share price.
                     in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
@@ -361,8 +361,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0223499142867662
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0223499142867662 * 200
                         #                         = 204.46998285735324
@@ -387,7 +387,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 204.42180197462204
                         with_fee=204.42180197462204,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9567876240571412) * 2 * 100.0 * 0.5 + 2 * 100.0 * 0.5
                         without_fee_or_slippage=204.51640205792188,
@@ -413,7 +413,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Very unbalanced reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -444,8 +444,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.0225358440315970471499308329778
                 #     = 1.0623907066406753
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0623907066406753 * 200
                         #                         = 212.47814132813505
@@ -470,7 +470,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 212.35073531111888
                         with_fee=212.35073531111888,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.8860171912017127) * 2 * 100.0 * 0.5 + 2 * 100.0 * 0.5
                         without_fee_or_slippage=212.86462722508705,
@@ -496,7 +496,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # A term of a quarter year.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -527,8 +527,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.011267922015798522
                 #     = 1.0307233899745727
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0307233899745727 * 200
                         #                         = 206.14467799491453
@@ -553,7 +553,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 206.08196136953168
                         with_fee=206.08196136953168,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.8860280762544887) * 2 * 100.0 * 0.25 + 2 * 100.0 * 0.75
                         without_fee_or_slippage=206.4316203289689,
@@ -579,7 +579,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # A time stretch targeting 10% APY.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=200, unit=TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -610,8 +610,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.022535844031597054
                 #     = 1.0623907066406753
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0623907066406753 * 200
                         #                         = 212.47814132813505
@@ -636,7 +636,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 212.35073531111888
                         with_fee=212.35073531111888,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.7850457519112299) * 2 * 100.0 * 0.25 + 2 * 100.0 * 0.75
                         without_fee_or_slippage=213.6905554590579,
@@ -692,7 +692,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         base_out_test_cases = [
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -723,8 +723,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 1 * 100_000) / (1 * 100_000)) ** 0.022535844031597044
                 #     = 1.0250671833648672
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 100
                         #                         = 97.55458141947516
@@ -751,7 +751,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 97.52868818138752
                         with_fee=97.52868818138752,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9516610350825238 * 100 * 0.5 + 100 * 0.5
                         without_fee_or_slippage=97.58305175412619,
@@ -777,7 +777,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # High fee percentage - 20%.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -793,8 +793,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
                 # `with_fee` since the fee percentage changed.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         without_fee_or_slippage=97.55458141947516,
                         without_fee=97.55314236719278,
                         # fee = 0.2 * (1 - (1 / p)) * 100 = 0.48908371610497
@@ -804,7 +804,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 97.0640586510878
                         with_fee=97.0640586510878,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9516610350825238 * 100 * 0.5 + 100 * 0.5
                         without_fee_or_slippage=97.58305175412619,
@@ -830,7 +830,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=10_000, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -845,8 +845,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 10_000
                         #                         = 9755.458141947514
@@ -873,7 +873,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 9738.324697337155
                         with_fee=9738.324697337155,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9487848776296056 * 10000 * 0.5 + 10000 * 0.5
                         without_fee_or_slippage=9743.924388148029,
@@ -899,7 +899,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # High slippage trade - in_ is 80% of share reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=80_000, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -914,8 +914,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 80_000
                         #                         = 78043.66513558012
@@ -942,7 +942,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 76830.58135322697
                         with_fee=76830.58135322697,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9247966553572445 * 80000 * 0.5 + 80000 * 0.5
                         without_fee_or_slippage=76991.86621428978,
@@ -968,7 +968,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Non-trivial initial share price and share price.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -993,8 +993,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.022535844031597044
                 #     = 1.0223499142867662
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0223499142867662) * 100
                         #                         = 97.813868424652
@@ -1021,7 +1021,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 97.79119247967407
                         with_fee=97.79119247967407,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9567391137793314 * 100 * 0.5 + 100 * 0.5
                         without_fee_or_slippage=97.83695568896657,
@@ -1047,7 +1047,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # Very unbalanced reserves.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -1073,8 +1073,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 1_000_000 + 2 * 100_000) / (1.5 * 100_000)) ** 0.022535844031597044
                 #     = 1.062390706640675
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0623907066406753) * 100
                         #                         = 94.1273294042681
@@ -1101,7 +1101,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 94.06805524879287
                         with_fee=94.06805524879287,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.8859845220046657 * 100 * 0.5 + 100 * 0.5
                         without_fee_or_slippage=94.29922610023328,
@@ -1127,7 +1127,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # A term of a quarter year.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -1158,8 +1158,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.011267922015798522
                 #     = 1.0307233899745727
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0307233899745727) * 100
                         #                         = 97.0192400528205
@@ -1186,7 +1186,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 96.98914241181835
                         with_fee=96.98914241181835,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.8859790750896572 * 100 * 0.25 + 100 * 0.75
                         without_fee_or_slippage=97.14947687724143,
@@ -1212,7 +1212,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             # A time stretch targetting 10% APY.
             (
-                TestCaseCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessTestCase(
                     in_=Quantity(amount=100, unit=TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
@@ -1243,8 +1243,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 #   p = ((2 * y + c * z) / (mu * z)) ** tau
                 #     = ((2 * 100_000 + 2 * 1_000_000) / (1.5 * 100_000)) ** 0.022535844031597054
                 #     = 1.0623907066406753
-                TestResultCalcOutGivenInSuccessByModel(
-                    yieldspace=TestResultCalcOutGivenInSuccess(
+                CalcOutGivenInSuccessByModelTestResult(
+                    yieldspace=CalcOutGivenInSuccessTestResult(
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0623907066406753) * 100
                         #                         = 94.1273294042681
@@ -1271,7 +1271,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #          = 94.06805524879287
                         with_fee=94.06805524879287,
                     ),
-                    hyperdrive=TestResultCalcOutGivenInSuccess(
+                    hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.7849589214967245 * 100 * 0.25 + 100 * 0.75
                         without_fee_or_slippage=94.62397303741811,
@@ -1400,7 +1400,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
         # Failure test cases.
         failure_test_cases = [
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 # amount negative
                 in_=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
@@ -1414,7 +1414,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 # amount 0
                 in_=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
@@ -1428,7 +1428,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     # share reserves negative
@@ -1442,7 +1442,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1456,7 +1456,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1470,7 +1470,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1484,7 +1484,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1498,7 +1498,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1512,7 +1512,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1526,7 +1526,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1540,7 +1540,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1554,7 +1554,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=500, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 # amount very high, can't make trade
                 in_=Quantity(amount=10_000_000, unit=TokenType.PT),
                 market_state=MarketState(
@@ -1568,7 +1568,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=(decimal.InvalidOperation, decimal.DivisionByZero),
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1582,7 +1582,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1596,7 +1596,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -1610,7 +1610,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 # amount < 1 wei
                 in_=Quantity(amount=0.5e-18, unit=TokenType.PT),
                 market_state=MarketState(
@@ -1624,7 +1624,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcOutGivenInFailure(
+            CalcOutGivenInFailureTestCase(
                 in_=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     # reserves waaaay unbalanced

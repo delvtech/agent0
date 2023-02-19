@@ -5,10 +5,10 @@ import decimal
 import unittest
 import numpy as np
 from calc_test_dataclasses import (
-    TestCaseCalcInGivenOutFailure,
-    TestCaseCalcInGivenOutSuccess,
-    TestResultCalcInGivenOutSuccess,
-    TestResultCalcInGivenOutSuccessByModel,
+    CalcInGivenOutFailureTestCase,
+    CalcInGivenOutSuccessTestCase,
+    CalcInGivenOutSuccessTestResult,
+    CalcInGivenOutSuccessByModelTestResult,
 )
 
 from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
@@ -131,7 +131,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
         failure_test_cases = [
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 # amount negative
                 out=Quantity(amount=-1, unit=TokenType.PT),
                 market_state=MarketState(
@@ -145,7 +145,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 # amount 0
                 out=Quantity(amount=0, unit=TokenType.PT),
                 market_state=MarketState(
@@ -159,7 +159,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     # share reserves negative
@@ -173,7 +173,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -187,7 +187,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -201,7 +201,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -215,7 +215,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -229,7 +229,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -243,7 +243,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -257,7 +257,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -271,7 +271,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -285,7 +285,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 # amount very high, can't make trade
                 out=Quantity(amount=10_000_000, unit=TokenType.BASE),
                 market_state=MarketState(
@@ -299,7 +299,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.InvalidOperation),
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -313,7 +313,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -327,7 +327,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -341,7 +341,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 # amount < 1 wei
                 out=Quantity(amount=0.5e-18, unit=TokenType.PT),
                 market_state=MarketState(
@@ -355,7 +355,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     # reserves waaaay unbalanced
@@ -371,7 +371,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ]
         failure_test_cases_yieldpsace_only = [
-            TestCaseCalcInGivenOutFailure(
+            CalcInGivenOutFailureTestCase(
                 out=Quantity(amount=100, unit=TokenType.PT),
                 market_state=MarketState(
                     # share reserves zero
@@ -456,7 +456,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 #    3 mo remaining
 base_in_test_cases = [
     (  ## test one, basic starting point
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -476,8 +476,8 @@ base_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**t
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = 1/p * out = 97.55458141947516
@@ -492,7 +492,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 97.55601990513969 + 0.24454185805248443 = 97.80056176319217
                 with_fee=97.80056176319218,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=97.58591137152354,
                 without_fee=97.5866001243412,
                 fee=0.24140886284764632,
@@ -501,7 +501,7 @@ base_in_test_cases = [
         ),
     ),  # end of test one
     (  ## test two, double the fee
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -521,8 +521,8 @@ base_in_test_cases = [
         # k = c/mu*(u*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = 1/p * out = 97.55458141947516
@@ -537,7 +537,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 97.55601990513969 + 0.4887960189720616 = 98.04481592411175
                 with_fee=98.04510362124466,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=97.58591137152354,
                 without_fee=97.5866001243412,
                 fee=0.48281772569529263,
@@ -546,7 +546,7 @@ base_in_test_cases = [
         ),
     ),  # end of test two
     (  ## test three, 10k out
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=10_000, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -566,8 +566,8 @@ base_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = 1/p * out = 97.55458141947516
@@ -582,7 +582,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 9769.577831379836 +  24.454185805248564 = 97.80056176319217
                 with_fee=9794.032017185085,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=9772.537730069402,
                 without_fee=9779.197793075873,
                 fee=22.746226993059782,
@@ -591,7 +591,7 @@ base_in_test_cases = [
         ),
     ),  # end of test three
     (  ## test four, 80k out
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=80_000, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -611,8 +611,8 @@ base_in_test_cases = [
         # k = c/mu*(u*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = 1/p * out = 97.55458141947516
@@ -628,7 +628,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 78866.87433323538 +  195.6334864419885 = 79062.50781967737
                 with_fee=79062.50781967737,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=78899.37999298729,
                 without_fee=79269.0508947279,
                 fee=110.06200070127115,
@@ -637,7 +637,7 @@ base_in_test_cases = [
         ),
     ),  # end of test four
     (  ## test five, change share price
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -658,8 +658,8 @@ base_in_test_cases = [
         #   = 2/1.5*((1.5*100000)**0.9774641559684029528500691670222) + (2*100000 + 2*100000)
         #     **0.9774641559684029528500691670222
         #   = 451988.7122137336
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**tau
                 #   = ((2*100000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
                 #   = 1.0223499142867662
@@ -675,7 +675,7 @@ base_in_test_cases = [
                 # with_fee = without_fee + fee = 195.63099467812572 + 0.4372263150696 = 196.06822099319533
                 with_fee=196.06822099319533,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=195.6787624057141,
                 without_fee=195.68033249810105,
                 fee=0.4321237594285876,
@@ -684,7 +684,7 @@ base_in_test_cases = [
         ),
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -705,8 +705,8 @@ base_in_test_cases = [
         #   = 2/1.5*((1.5*100000)**0.9774641559684029528500691670222) + (2*1000000 + 2*100000)
         #     **0.9774641559684029528500691670222
         #   = 1735927.3223407117
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
                 #   = 1.062390706640675
@@ -722,7 +722,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 188.2568477257446 +  1.1745341191463752 = 189.43138184489098
                 with_fee=189.43138184489098,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=188.60171912017125,
                 without_fee=188.60269388841698,
                 fee=1.1398280879828715,
@@ -731,7 +731,7 @@ base_in_test_cases = [
         ),
     ),  # end of test six
     (  ## test seven, halve the days remaining
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -751,8 +751,8 @@ base_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 2/1.5*((1.5*100000)**0.9887320779842015) + (2*1000000 + 2*100000)**0.9887320779842015
         #   = 2041060.1949973335
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.011267922015798524
                 #   = 1.0307233899745727
@@ -768,7 +768,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 194.0396397759323 + 0.5961519894358986 = 194.6357917653682
                 with_fee=194.6357917653682,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=194.30140381272443,
                 without_fee=194.30164747033268,
                 fee=0.5698596187275567,
@@ -777,7 +777,7 @@ base_in_test_cases = [
         ),
     ),  # end of test seven
     (  ## test eight, halve the APY
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -797,8 +797,8 @@ base_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 2/1.5*((1.5*100000)**0.9943660389921007) + (2*1000000 + 2*100000)**0.9943660389921007
         #   = 2213245.968723062
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z)**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.005633961007899263
                 #   = 1.015245482617171
@@ -814,7 +814,7 @@ base_in_test_cases = [
                 # with_fee = d_z' + fee = 196.9972872567596 + 0.3003309618846117 = 197.2976182186442
                 with_fee=197.2976182186442,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=197.0645321939592,
                 without_fee=197.06466894078767,
                 fee=0.2935467806040798,
@@ -825,7 +825,7 @@ base_in_test_cases = [
 ]
 pt_in_test_cases = [
     (  ## test one, basic starting point
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -845,8 +845,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = p * out = 102.50671833648673
@@ -861,7 +861,7 @@ pt_in_test_cases = [
                 # with_fee = d_y' + fee = 102.50826839753427 + 0.2506718336486728 = 102.75894023118293
                 with_fee=102.75894023118293,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=102.53971546251678,
                 without_fee=102.54051519598579,
                 fee=0.25397154625167895,
@@ -870,7 +870,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test one
     (  ## test two, double the fee
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -890,8 +890,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = p * out = 102.50671833648673
@@ -906,7 +906,7 @@ pt_in_test_cases = [
                 # with_fee = d_y' + fee = 102.50826839753427 + 0.5013436672973456 = 103.00961206483161
                 with_fee=103.00961206483161,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=102.53971546251678,
                 without_fee=102.54051519598579,
                 fee=0.5079430925033579,
@@ -915,7 +915,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test two
     (  ## test three, 10k out
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=10_000, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -935,8 +935,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = p * out = 10250.671833648673
@@ -951,7 +951,7 @@ pt_in_test_cases = [
                 # with_fee = d_y' + fee = 10266.550575620378 + 25.06718336486738 = 10291.617758985245
                 with_fee=10291.617758985245,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=10269.89849637121,
                 without_fee=10278.313158090226,
                 fee=26.989849637120926,
@@ -960,7 +960,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test three
     (  ## test four, 80k out
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=80_000, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -980,8 +980,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 100000**0.9774641559684029528500691670222 + (2*100000 + 100000*1)**0.9774641559684029528500691670222
         #   = 302929.51067963685
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = 1.0250671833648672
                 # without_fee_or_slippage = p * out = 82005.37466918938
@@ -996,7 +996,7 @@ pt_in_test_cases = [
                 # with_fee = d_y' + fee = 83360.61360923108 + 200.53746691893758 = 83561.15107615001
                 with_fee=83561.15107615001,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=83252.75158412871,
                 without_fee=84268.97713182,
                 fee=325.2751584128717,
@@ -1005,7 +1005,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test four
     (  ## test five, change share price
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -1026,8 +1026,8 @@ pt_in_test_cases = [
         #   = 2/1.5*(1.5*100000)**0.9774641559684029528500691670222 + (2*100000 + 2*100000)
         #     **0.9774641559684029528500691670222
         #   = 451988.7122137336
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**tau
                 #   = ((2*100000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
                 #   = 1.0223499142867662
@@ -1043,7 +1043,7 @@ pt_in_test_cases = [
                 # with_fee = d_z' + fee = 204.4734651519102 + 0.44699828573532446 = 204.92046343764554
                 with_fee=204.92046343764554,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=204.52346839323616,
                 without_fee=204.52526228054194,
                 fee=0.45234683932361636,
@@ -1052,7 +1052,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -1073,8 +1073,8 @@ pt_in_test_cases = [
         #   = 2/1.5*(1.5*100000)**0.9774641559684029528500691670222
         #     + (2*1000000 + 2*100000)**0.9774641559684029528500691670222
         #   = 1735927.3223407117
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.0225358440315970471499308329778
                 #   = 1.062390706640675
@@ -1091,7 +1091,7 @@ pt_in_test_cases = [
                 # with_fee = d_z' + fee = 212.48076756019145 + 1.2478141328134997 = 213.72858169300494
                 with_fee=213.72858169300494,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=212.87017681569534,
                 without_fee=212.87157998187467,
                 fee=1.2870176815695311,
@@ -1100,7 +1100,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test six
     (  ## test seven, halve the days remaining
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -1120,8 +1120,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 2/1.5*(1.5*100000)**0.9887320779842015 + (2*1000000 + 2*100000)**0.9887320779842015
         #   = 2041060.1949973335
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu * z))**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.011267922015798524
                 #   = 1.0307233899745727
@@ -1138,7 +1138,7 @@ pt_in_test_cases = [
                 # with_fee = d_z' + fee = 206.1459486191161 + 0.6144677994914531 = 206.76041641860755
                 with_fee=206.76041641860755,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=206.4357825223524,
                 without_fee=206.43613336980343,
                 fee=0.6435782522352407,
@@ -1147,7 +1147,7 @@ pt_in_test_cases = [
         ),
     ),  # end of test seven
     (  ## test eight, halve the APY
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
@@ -1167,8 +1167,8 @@ pt_in_test_cases = [
         # k = c/mu*(mu*z)**(1 - tau) + (2*y + c*z)**(1 - tau)
         #   = 2/1.5*(1.5*100000)**0.9943660389921007 + (2*1000000 + 2*100000)**0.9943660389921007
         #   = 2213245.968723062
-        TestResultCalcInGivenOutSuccessByModel(
-            yieldspace=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            yieldspace=CalcInGivenOutSuccessTestResult(
                 # p = ((2y+cz)/(mu*z))**tau
                 #   = ((2*1000000 + 2*100000)/(1.5*100000))**0.005633961007899263
                 #   = 1.015245482617171
@@ -1184,7 +1184,7 @@ pt_in_test_cases = [
                 # with_fee = d_z' + fee = 203.04972148826346 + 0.30490965234342016 = 203.35463114060687
                 with_fee=203.35463114060687,
             ),
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 without_fee_or_slippage=203.12051511532638,
                 without_fee=203.12067932868376,
                 fee=0.31205151153263944,
@@ -1195,7 +1195,7 @@ pt_in_test_cases = [
 ]
 pt_in_test_cases_hyperdrive_only = [
     (  # test nine, share reserves zero
-        TestCaseCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessTestCase(
             out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=0,  # base reserves (in share terms) base = share * share_price
@@ -1232,8 +1232,8 @@ pt_in_test_cases_hyperdrive_only = [
         #   p = ((2 * y + c * z) / (mu * z)) ** -tau
         #     = ((2 * 999_950 + 1 * 50) / (1 * 50)) ** -0.045071688063194094
         #     = 0.6202658587589548
-        TestResultCalcInGivenOutSuccessByModel(
-            hyperdrive=TestResultCalcInGivenOutSuccess(
+        CalcInGivenOutSuccessByModelTestResult(
+            hyperdrive=CalcInGivenOutSuccessTestResult(
                 # without_fee_or_slippage = p * delta_y * t + delta_y * (1 - t)
                 # without_fee_or_slippage = 0.6202658587589548 * 100 * 0.5 + 100 * 0.5
                 # without_fee_or_slippage = 31.01329293794774 + 50

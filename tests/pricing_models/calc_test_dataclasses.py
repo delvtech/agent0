@@ -8,7 +8,7 @@ from elfpy.types import MarketState, Quantity, StretchedTime
 
 
 @dataclass
-class TestCaseCalcInGivenOutSuccess:
+class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: Quantity
@@ -18,7 +18,7 @@ class TestCaseCalcInGivenOutSuccess:
 
 
 @dataclass
-class TestResultCalcInGivenOutSuccess:
+class CalcInGivenOutSuccessTestResult:
     """Dataclass for calc_in_given_out test results"""
 
     without_fee_or_slippage: float
@@ -28,19 +28,19 @@ class TestResultCalcInGivenOutSuccess:
 
 
 @dataclass
-class TestResultCalcInGivenOutSuccessByModel:
+class CalcInGivenOutSuccessByModelTestResult:
     """Dataclass for calc_in_given_out test results by pricing_model"""
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
-    yieldspace: Optional[TestResultCalcInGivenOutSuccess] = None
-    hyperdrive: Optional[TestResultCalcInGivenOutSuccess] = None
+    yieldspace: Optional[CalcInGivenOutSuccessTestResult] = None
+    hyperdrive: Optional[CalcInGivenOutSuccessTestResult] = None
 
 
 @dataclass
-class TestCaseCalcInGivenOutFailure:
+class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: Quantity
@@ -50,19 +50,19 @@ class TestCaseCalcInGivenOutFailure:
 
 
 @dataclass
-class TestResultCalcInGivenOutFailureByModel:
+class CalcInGivenOutFailureByModelTestResult:
     """Dataclass for calc_in_given_out test cases by pricing_model"""
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
-    yieldspace: TestCaseCalcInGivenOutFailure
-    hyperdrive: TestCaseCalcInGivenOutFailure
+    yieldspace: CalcInGivenOutFailureTestCase
+    hyperdrive: CalcInGivenOutFailureTestCase
 
 
 @dataclass
-class TestCaseCalcOutGivenInSuccess:
+class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
     in_: Quantity
@@ -72,7 +72,7 @@ class TestCaseCalcOutGivenInSuccess:
 
 
 @dataclass
-class TestResultCalcOutGivenInSuccess:
+class CalcOutGivenInSuccessTestResult:
     """Dataclass for calc_out_given_in test results"""
 
     without_fee_or_slippage: float
@@ -82,19 +82,19 @@ class TestResultCalcOutGivenInSuccess:
 
 
 @dataclass
-class TestResultCalcOutGivenInSuccessByModel:
+class CalcOutGivenInSuccessByModelTestResult:
     """Dataclass for calc_out_given_in success test cases by pricing_model"""
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
-    yieldspace: TestResultCalcOutGivenInSuccess
-    hyperdrive: TestResultCalcOutGivenInSuccess
+    yieldspace: CalcOutGivenInSuccessTestResult
+    hyperdrive: CalcOutGivenInSuccessTestResult
 
 
 @dataclass
-class TestCaseCalcOutGivenInFailure:
+class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
     in_: Quantity
@@ -104,12 +104,12 @@ class TestCaseCalcOutGivenInFailure:
 
 
 @dataclass
-class TestCaseCalcOutGivenInFailureByModel:
+class CalcOutGivenInFailureByModelTestCase:
     """Dataclass for calc_out_given_in failure test cases by pricing_model"""
 
     def __getitem__(self, key):
         """Get object attribute referenced by `key`"""
         return getattr(self, key)
 
-    yieldspace: TestCaseCalcOutGivenInFailure
-    hyperdrive: TestCaseCalcOutGivenInFailure
+    yieldspace: CalcOutGivenInFailureTestCase
+    hyperdrive: CalcOutGivenInFailureTestCase
