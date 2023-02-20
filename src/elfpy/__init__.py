@@ -18,13 +18,6 @@ WEI = 1e-18  # smallest denomination of ether
 # small trade is put on.
 MAX_RESERVES_DIFFERENCE = 2e10
 
-# The maximum allowed precision error.
-# This value was selected based on one test not passing without it.
-# apply_delta() below checks if reserves are negative within the threshold,
-# and sets them to 0 if so.
-# TODO: we shouldn't have to adjsut this -- we need to reesolve rounding errors
-PRECISION_THRESHOLD = 0  # 1e-12
-
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
 DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\n%(message)s"

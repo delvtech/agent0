@@ -11,7 +11,6 @@ import json
 import numpy as np
 from numpy.random import Generator
 
-from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
 from elfpy.wallet import Wallet
@@ -274,23 +273,9 @@ class MarketState:
 
         # TODO: issue #146
         # this is an imperfect solution to rounding errors, but it works for now
-        # ideally we'd find a more thorough solution than just catching errors
-        # when they are.
         for key, value in self.__dict__.items():
-            if value >= 0:
-                continue
-            if value < 0 and value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:  # value < -PRECISION_THRESHOLD
-                assert (
-                    value > -PRECISION_THRESHOLD
-                ), f"MarketState values must be >= {-PRECISION_THRESHOLD}. Error on {key} = {value}"
+            if value < 0:
+                assert value > 0, f"MarketState values must be > {0.0}. Error on {key} = {value}"
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
