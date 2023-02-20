@@ -8,6 +8,20 @@ import pandas as pd
 if TYPE_CHECKING:
     from elfpy.simulators import Simulator
 
+# TODO: These will be in a followup PR
+
+# def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+#      return simulator.simulation_state.combined_dataframe
+
+# def add_pnl_to_trades_df()
+#     this can be done across prallel processors
+#     loop through the sim trades
+#     compute pnl
+#     add columns
+
+# def aggregate_agent_and_market_states()
+#     this is the trades df we have now
+
 
 def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
