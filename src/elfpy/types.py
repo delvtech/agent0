@@ -71,6 +71,14 @@ class TokenType(Enum):
     PT = "pt"
 
 
+@dataclass
+class Quantity:
+    r"""An amount with a unit"""
+
+    amount: float
+    unit: TokenType
+
+
 class MarketActionType(Enum):
     r"""
     The descriptor of an action in a market
@@ -88,53 +96,6 @@ class MarketActionType(Enum):
     REMOVE_LIQUIDITY = "remove_liquidity"
 
 
-@dataclass
-class Quantity:
-    r"""An amount with a unit"""
-
-    amount: float
-    unit: TokenType
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class StretchedTime:
-    r"""Stores time in units of days, as well as normalized & stretched variants
-
-    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
-    """
-    days: float
-    time_stretch: float
-    normalizing_constant: float
-
-    @property
-    def stretched_time(self):
-        r"""Returns days / normalizing_constant / time_stretch"""
-        return time_utils.days_to_time_remaining(
-            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
-        )
-
-    @property
-    def normalized_time(self):
-        r"""Format time as normalized days"""
-        return time_utils.norm_days(
-            self.days,
-            self.normalizing_constant,
-        )
-
-    def __str__(self):
-        output_string = (
-            "StretchedTime(\n"
-            f"\t{self.days=},\n"
-            f"\t{self.normalized_time=},\n"
-            f"\t{self.stretched_time=},\n"
-            f"\t{self.time_stretch=},\n"
-            f"\t{self.normalizing_constant=},\n"
-            ")"
-        )
-        return output_string
-
-
 @freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketAction:
@@ -143,7 +104,7 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    trade_amount: float
+    trade_amount: float  # TODO: make this a quantity, not a float
     # min amount to receive for the action
     min_amount_out: float
     # the agent's wallet
@@ -259,7 +220,6 @@ class MarketState:
     init_share_price: float = 1.0
 
     # fee percents
-
     trade_fee_percent: float = 0.0
     redemption_fee_percent: float = 0.0
 
@@ -330,8 +290,8 @@ class MarketState:
 
 @freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class AgentTradeResult:
-    r"""The result to a user of performing a trade"""
+class MarketTradeResult:
+    r"""The result to a market of performing a trade"""
 
     d_base: float
     d_bonds: float
@@ -339,8 +299,8 @@ class AgentTradeResult:
 
 @freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult:
-    r"""The result to a market of performing a trade"""
+class AgentTradeResult:
+    r"""The result to a user of performing a trade"""
 
     d_base: float
     d_bonds: float
@@ -392,6 +352,45 @@ class TradeResult:
             f"\t\t{self.breakdown.without_fee=},\n"
             f"\t\t{self.breakdown.fee=},\n"
             "\t)\n"
+            ")"
+        )
+        return output_string
+
+
+@freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class StretchedTime:
+    r"""Stores time in units of days, as well as normalized & stretched variants
+
+    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
+    """
+    days: float
+    time_stretch: float
+    normalizing_constant: float
+
+    @property
+    def stretched_time(self):
+        r"""Returns days / normalizing_constant / time_stretch"""
+        return time_utils.days_to_time_remaining(
+            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
+        )
+
+    @property
+    def normalized_time(self):
+        r"""Format time as normalized days"""
+        return time_utils.norm_days(
+            self.days,
+            self.normalizing_constant,
+        )
+
+    def __str__(self):
+        output_string = (
+            "StretchedTime(\n"
+            f"\t{self.days=},\n"
+            f"\t{self.normalized_time=},\n"
+            f"\t{self.stretched_time=},\n"
+            f"\t{self.time_stretch=},\n"
+            f"\t{self.normalizing_constant=},\n"
             ")"
         )
         return output_string
