@@ -397,8 +397,7 @@ def plot_and_save_results(name, data, plots=None):
 
     # plot the data
     def print_fig(name_: str, label: str, bbox_inches="tight", pad_inches=0):  # pylint: disable=invalid-name
-        fig.savefig(fname=f"{name_}_{label}.svg", bbox_inches=bbox_inches, pad_inches=pad_inches, dpi=100)
-        shutil.copyfile(f"{name_}_{label}.svg", f"./docs/source/{name_}_{label}.svg")
+        fig.savefig(fname=f"./docs/source/{name_}_{label}.svg", bbox_inches=bbox_inches, pad_inches=pad_inches, dpi=100)
 
     num_charts = len(plots)
     fig, ax = plt.subplots(
@@ -569,8 +568,9 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
 def make_md(markdown, name_):
     """generate markdown from html"""
     nice_name = name_.replace("_", " ").capitalize()
-    markdown = f"{nice_name}\n=================================\n" + markdown
     with open(f"./docs/source/{name_}.rst", mode="w", encoding="utf-8") as file:
+        file.write(nice_name + "\n")
+        file.write("=" * len(nice_name) + "\n")
         # for each line
         for line in markdown.splitlines():
             # if it's a code block
@@ -601,16 +601,16 @@ NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 
 NARRATIVE += "9.65M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year\n"
 NARRATIVE += "9.65M split across all traders evenly\n"
 experiment(EXPERIMENT, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["apr", "pnl_simple"])
-NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg :width: {PLOT_SCALE}\n"
+NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
 NARRATIVE += "uWu what's this? the LPs are making **TOO MUCH MONEY?!@?#!** 😱\n"
 
 EXPERIMENT = "rent_control"
 NARRATIVE += "<hr>let's introduce **rent control** and  see what happens when we set the fees to zero 🤪\n"
 NARRATIVE += "also let's look at the traders in more detail, and break them out between longs and shorts\n"
 experiment(EXPERIMENT, trade_fee_percent=0, redemption_fee_percent=0, plots=["apr", "pnl"])
-NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg :width: {PLOT_SCALE}\n"
-NARRATIVE += f'.. image:: {EXPERIMENT}_trader_pnl.svg :width:"{PLOT_SCALE}\n'
-NARRATIVE += f".. image:: {EXPERIMENT}_lp_pnl.svg :width: {PLOT_SCALE}\n"
+NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
+NARRATIVE += f".. image:: {EXPERIMENT}_trader_pnl.svg\n  :width: {PLOT_SCALE}\n"
+NARRATIVE += f".. image:: {EXPERIMENT}_lp_pnl.svg\n  :width: {PLOT_SCALE}\n"
 
 ## rst img
 # .. image::
