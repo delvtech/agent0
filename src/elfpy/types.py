@@ -431,7 +431,7 @@ class SimulationState:
     current_market_time: list[float] = field(
         default_factory=list, metadata=to_description("float, current market time in years")
     )
-    run_trade_number: list[int] = field(
+    trade_number: list[int] = field(
         default_factory=list, metadata=to_description("integer, trade number in a given simulation")
     )
     market_step_size: list[float] = field(
@@ -490,16 +490,15 @@ class Config:
     )
     target_volume: float = field(default=0.01, metadata=to_description("fraction of pool liquidity"))
     init_vault_age: float = field(default=0, metadata=to_description("fraction of a year since the vault was opened"))
-    base_asset_price: float = field(default=2e3, metadata=to_description("market price"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
     vault_apr: list[float] = field(  # default is overridden in __post_init__
         default_factory=lambda: [-1],
         metadata=to_description("the underlying (variable) vault APR at each time step"),
-    )
+    )  # TODO: Move this out of config, it should be computed in simulator init based on config values
     init_share_price: float = field(  # default is overridden in __post_init__
         default=-1, metadata=to_description("initial market share price for the vault asset")  # type: ignore
-    )
+    )  # TODO: Move this out of config, it should be computed in simulator init based on config values
 
     # AMM
     pricing_model_name: str = field(
@@ -535,7 +534,6 @@ class Config:
         default=True,
         metadata=to_description("Whether or not to use compounding revenue for the underlying yield source"),
     )
-    # init_vault_age: float = field(default=0, metadata=to_description("initial vault age"))
 
     # logging
     log_level: int = field(default=logging.INFO, metadata=to_description("Logging level, as defined by stdlib logging"))

@@ -82,7 +82,7 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
 
 def add_pnl_columns(trades_df: pd.DataFrame) -> None:
     """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
-    num_agents = len([col for col in trades_df if col.startswith("agent") and col.endswith("base")])
+    num_agents = len([col for col in trades_df if str(col).startswith("agent") and str(col).endswith("base")])
     for agent_id in range(num_agents):
         wallet_values_in_base = [
             f"agent_{agent_id}_base",
