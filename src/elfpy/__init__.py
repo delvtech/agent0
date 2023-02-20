@@ -23,7 +23,7 @@ MAX_RESERVES_DIFFERENCE = 2e10
 # apply_delta() below checks if reserves are negative within the threshold,
 # and sets them to 0 if so.
 # TODO: we shouldn't have to adjsut this -- we need to reesolve rounding errors
-PRECISION_THRESHOLD = 1e-8
+PRECISION_THRESHOLD = 1e-12
 
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
