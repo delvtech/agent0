@@ -14,7 +14,7 @@
 
 # + id="efreB4W-4u1q"
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Tuple
 import time
 
 import numpy as np
@@ -28,6 +28,7 @@ from elfpy.types import MarketActionType, MarketAction, Config
 from elfpy.agent import Agent
 from elfpy.markets import Market
 from elfpy.utils import sim_utils
+from elfpy.wallet import Long, Short
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
@@ -127,14 +128,15 @@ def poisson_vault_apr(
 
 
 # +
-def get_biggest_position(position_dict):
+def get_biggest_position(position_dict: Dict[int, Long] | Dict[int, Short]) -> Tuple[Optional[float], Optional[float]]:
     """Return the biggest trade in the position_dict"""
     biggest_position = None
+    biggest_position_mint_time = None
     for mint_time, position in position_dict.items():
-        if biggest_position is None or position.balance > biggest_position["balance"]:
-            biggest_position = position.__dict__
-            biggest_position.update({"mint_time": mint_time})
-    return biggest_position
+        if biggest_position is None or position.balance > biggest_position:
+            biggest_position = position.balance
+            biggest_position_mint_time = mint_time
+    return biggest_position, biggest_position_mint_time
 
     # + [markdown] id="gMKQLsMiLd-_"
     # ### Setup agents
@@ -156,13 +158,14 @@ class RegularGuy(Agent):
         super().__init__(wallet_address, budget)
 
     def action(self, market: Market) -> list[MarketAction]:
-        """Implement a random user strategy
+        """
+        Trade fixed rates targetting fixed rate to equal the vault APR
 
         The agent performs one of four possible trades:
             [OPEN_LONG, OPEN_SHORT, CLOSE_LONG, CLOSE_SHORT]
-            with the condition that close actions can only be performed after open actions
+        If they have an open position, closes it before opening a new one in the opposite direction
 
-        The amount opened and closed is random, within constraints given by agent budget & market reserve levels
+        The amount opened is the maximum allowed, that doesn't move the fixed rate beyod the target (vault APR)
 
         Parameters
         ----------
@@ -189,67 +192,39 @@ class RegularGuy(Agent):
             else:
                 # we want to make rate go UP, so SELL PTs
                 if has_opened_long is True:
-                    available_actions = [MarketActionType.CLOSE_LONG]
+                    available_actions = [MarketActionType.CLOSE_LONG]  # sell to close
                 elif self.trade_short is True:
                     available_actions += [MarketActionType.OPEN_SHORT]  # sell to open
-            if available_actions != []:  # continue only if there are available actions
-                action_type = self.rng.choice(available_actions, size=1)  # choose one random trade type
-                PT_needed = (
-                    abs(
-                        market.pricing_model.calc_bond_reserves(
-                            target_apr=market.market_state.vault_apr,
-                            time_remaining=market.position_duration,
-                            market_state=market.market_state,
-                        )
-                        - market.market_state.bond_reserves
-                    )
-                    / 2
-                )
-                amount_to_trade_base = min(100_000, PT_needed * market.spot_price) if PT_needed > 0 else 0
+            if available_actions:  # continue only if there are available actions
+                action_type = self.rng.choice(np.array(available_actions), size=1)[0]  # choose one random trade type
+                cbr = market.pricing_model.calc_bond_reserves
+                market_pt_needed = cbr(market.market_state.vault_apr, market.position_duration, market.market_state)
+                agent_pt_needed = abs(market_pt_needed - market.market_state.bond_reserves) / 2
+                trade_amount = 0
                 if market.spot_price == 0:
-                    amount_to_trade_pt = np.Inf
-                else:
-                    amount_to_trade_pt = amount_to_trade_base / market.spot_price
+                    trade_amount = np.Inf
+                elif agent_pt_needed > 0:
+                    trade_amount = min(100_000, agent_pt_needed * market.spot_price) / market.spot_price  # in PT
+                mint_time = market.time
                 if action_type == MarketActionType.OPEN_SHORT:
-                    max_short = self.get_max_short(market)
-                    if max_short > WEI:  # if max_short is greater than the minimum eth amount
-                        trade_amount = np.maximum(
-                            WEI, np.minimum(max_short, amount_to_trade_pt)
-                        )  # WEI <= trade_amount <= max_short
-                        action_list = [
-                            self.create_agent_action(
-                                action_type=action_type, trade_amount=trade_amount, mint_time=market.time
-                            ),
-                        ]
+                    trade_amount = np.minimum(self.get_max_short(market), trade_amount)
                 elif action_type == MarketActionType.OPEN_LONG:
-                    max_long = self.get_max_long(market)
-                    if max_long > WEI:  # if max_long is greater than the minimum eth amount
-                        trade_amount = np.maximum(WEI, np.minimum(max_long, amount_to_trade_base))
-                        action_list = [
-                            self.create_agent_action(
-                                action_type=action_type, trade_amount=trade_amount, mint_time=market.time
-                            ),
-                        ]
+                    trade_amount = np.minimum(self.get_max_long(market), trade_amount * market.spot_price)  # base
                 elif action_type == MarketActionType.CLOSE_SHORT:
-                    biggest_short = get_biggest_position(self.wallet.shorts)
-                    trade_amount = np.maximum(WEI, np.minimum(amount_to_trade_pt, biggest_short["balance"]))
-                    action_list = [
-                        self.create_agent_action(
-                            action_type=action_type, trade_amount=trade_amount, mint_time=biggest_short["mint_time"]
-                        ),
-                    ]
+                    biggest_short, mint_time = get_biggest_position(self.wallet.shorts)
+                    trade_amount = np.minimum(trade_amount, np.array(biggest_short))
                 elif action_type == MarketActionType.CLOSE_LONG:
-                    biggest_long = get_biggest_position(self.wallet.longs)
-                    trade_amount = np.maximum(WEI, np.minimum(amount_to_trade_pt, biggest_long["balance"]))
-                    action_list = [
-                        self.create_agent_action(
-                            action_type=action_type, trade_amount=trade_amount, mint_time=biggest_long["mint_time"]
-                        ),
-                    ]
-                if action_list != [] and (market.time * 365) % 36 <= 1:
+                    biggest_long, mint_time = get_biggest_position(self.wallet.longs)
+                    trade_amount = np.minimum(trade_amount, np.array(biggest_long))
+                if trade_amount > WEI:  # if max_long is greater than the minimum eth amount
+                    action_list = [self.create_agent_action(action_type, float(trade_amount), mint_time=mint_time)]
+                if action_list and (market.time * 365) % 36 <= 1:
                     print(
-                        f"t={market.time*365:.0f}: F:{market.apr:.3%}V:{market.market_state.vault_apr:.3%}"
-                        + f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
+                        f"t={market.time*365:.0f}: F:{market.apr:.3%} V:{market.market_state.vault_apr:.3%} "
+                        + f" (Base: {(market.market_state.share_reserves * market.market_state.share_price):.0f} "
+                        + f"PT: {market.market_state.bond_reserves:.0f}) "
+                        + f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}"
+                        # + f"{action_list=}",
                     )
         return action_list
 
@@ -307,11 +282,16 @@ def nice_ticks(axe, config):
     axe.set_xticklabels(xticklabels)
 
 
-def set_labels(axe, title, xlabel, ylabel):
+def set_labels(ax, title=None, xlabel=None, ylabel=None, legend=None):
     """assign labels to axis"""
-    axe.set_title(title)
-    axe.set_xlabel(xlabel)
-    axe.set_ylabel(ylabel)
+    if title is not None:
+        ax.set_title(title)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    if legend is not None:
+        ax.legend(loc="best", labels=legend)
 
 
 def plot_pnl(pnl, axe, label, last_day=None):
@@ -368,12 +348,22 @@ def post_process(simulator):
     trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
     trades_agg = trades_agg.reset_index()
     pnl = get_pnl_excluding_agent_0_with_day(trades)
-    return trades, trades_agg, pnl
+    return dict(trades=trades, trades_agg=trades_agg, pnl=pnl, config=simulator.config)
 
 
-def plot_and_save_results(config, trades, pnl, trades_agg, start_chart_num=1):
-    """plot some charts then save them"""
+def plot_and_save_results(name, data, plots=None):
+    """
+    plot some charts then save them
+    plots: list of strings, each string is a chart to plot, default being all. options are:
+        "reserves", "lp_tokens", "price", "apr", "pnl"
+    """
     # prepare data
+    if plots is None:
+        plots = ["reserves", "lp_tokens", "price", "apr", "pnl"]
+    config = data["config"]
+    trades = data["trades"]
+    trades_agg = data["trades_agg"]
+    pnl = data["pnl"]
     exclude_first_day = True if config.num_trading_days >= 3 else False
     exclude_lat_day = True if config.num_trading_days >= 3 else False
     first_index_that_is_on_second_day = min(trades.index[trades.day > 0])
@@ -384,94 +374,105 @@ def plot_and_save_results(config, trades, pnl, trades_agg, start_chart_num=1):
         start_idx:end_idx,
         [col for col in trades if col.startswith("agent") and col.endswith("pnl") and not col.startswith("agent_0")],
     ]
-    all_traders = trader_pnl.sum(axis=1)
     num_traders = trader_pnl.shape[1] // 2
+    lp_pnl = trades.loc[start_idx:end_idx, ["agent_0_pnl"]]
+    all_traders = trader_pnl.sum(axis=1)
     short_traders = trader_pnl.loc[:, trader_pnl.columns[:num_traders]].sum(axis=1) * 2
     long_traders = trader_pnl.loc[:, trader_pnl.columns[num_traders:]].sum(axis=1) * 2
+    lp_return = (lp_pnl.values[-1] / lp_pnl.values[0] - 1)[0]
+    all_return = all_traders.values[-1] / all_traders.values[0] - 1
+    short_return = short_traders.values[-1] / short_traders.values[0] - 1
+    long_return = long_traders.values[-1] / long_traders.values[0] - 1
     first_index_on_last_day_agg = min(trades_agg.index[trades_agg.day == max(trades_agg.day)])
     end_idx_agg = len(trades_agg) - 2 if exclude_lat_day is True else len(trades_agg) - 1
     trader_data = trades_agg.loc[start_idx:end_idx_agg, "agent_0_pnl_no_mock_mean"]
 
-    def print_fig(chart_num, bbox_inches="tight", pad_inches=0):
-        fig.savefig(fname=f"chart{chart_num:.0f}.svg", bbox_inches=bbox_inches, pad_inches=pad_inches)
+    # plot the data
+    def print_fig(name, bbox_inches="tight", pad_inches=0):  # pylint: disable=invalid-name
+        fig.savefig(fname=f"{name}_summary.svg", bbox_inches=bbox_inches, pad_inches=pad_inches, dpi=100)
 
-    # CHART: 5-plot experiment summary
-    chart_num = start_chart_num
-    fig, axe = plt.subplots(5, 1, sharex=True, gridspec_kw={"wspace": 0.3, "hspace": 0.0}, figsize=(10, 12))
-    # first subplot
-    y_data = trades.loc[start_idx:end_idx, ["share_reserves", "bond_reserves"]]
+    num_charts = len(plots)
+    fig, ax = plt.subplots(
+        num_charts, 1, sharex=True, gridspec_kw={"wspace": 0.3, "hspace": 0.0}, figsize=(10, 2 + 2 * num_charts)
+    )
+    ax = [ax] if num_charts == 1 else ax
     x_data = trades.loc[start_idx:end_idx, ["day"]]
-    axe[0].step(x_data, y_data)
-    axe[0].set_ylabel("# of tokens")
-    axe[0].legend(loc="best", labels=["Share Reserves", "Bond Reserves"])
-    # second subplot
-    y_data = trades.loc[start_idx:end_idx, ["lp_reserves", "agent_0_lp_tokens"]]
-    axe[1].step(x_data, y_data)
-    axe[1].set_ylabel("# of tokens")
-    axe[1].legend(loc="best", labels=["LP Reserves", "Agent 0 LP Tokens"])
-    # third subplot
-    y_data = trades.loc[start_idx:end_idx, ["spot_price"]]
-    axe[2].step(x_data, y_data)
-    axe[2].legend(loc="best", labels=["Spot Price"])
-    # fourth subplot
-    y_data = trades.loc[start_idx:end_idx, ["pool_apr", "vault_apr"]]
-    axe[3].step(x_data, y_data)
-    axe[3].set_yticklabels([f"{(i):.1%}" for i in axe[3].get_yticks()])
-    axe[3].legend(loc="best", labels=["Pool APR", "Vault APR"])
-    # fifth subplot
-    lp_pnl = trades.loc[start_idx:end_idx, ["agent_0_pnl"]]
-    axe[4].step(x_data, lp_pnl)
-    axe[4].step(x_data, all_traders)
-    axe[4].step(x_data, short_traders, c="red")
-    axe[4].step(x_data, long_traders, c="black")
-    axe[4].set_ylabel("PnL in millions")
-    axe[4].legend(loc="best", labels=["LP PnL", "All traders", "Shorts only", "Longs only"])
-    axe[4].set_xlabel("Day")
-    print_fig(chart_num)
+    for idx, plot in enumerate(plots):
+        if plot == "reserves":  # CHART: 5-plot experiment summary
+            y_data = trades.loc[start_idx:end_idx, ["share_reserves", "bond_reserves"]]
+            ax[idx].step(x_data, y_data)
+            ax[idx].set_ylabel("# of tokens")
+            ax[idx].legend(loc="best", labels=["Share Reserves", "Bond Reserves"])
+        elif plot == "lp_tokens":  # CHART: lp tokens for pool and agent_0
+            y_data = trades.loc[start_idx:end_idx, ["lp_reserves", "agent_0_lp_tokens"]]
+            ax[idx].step(x_data, y_data)
+            ax[idx].set_ylabel("# of tokens")
+            ax[idx].legend(loc="best", labels=["LP Reserves", "Agent 0 LP Tokens"])
+        elif plot == "price":  # CHART: spot price
+            y_data = trades.loc[start_idx:end_idx, ["spot_price"]]
+            ax[idx].step(x_data, y_data)
+            ax[idx].legend(loc="best", labels=["Spot Price"])
+        elif plot == "apr":  # CHART: apr
+            y_data = trades.loc[start_idx:end_idx, ["pool_apr", "vault_apr"]]
+            ax[idx].step(x_data, y_data)
+            ax[idx].set_yticklabels([f"{(i):.1%}" for i in ax[idx].get_yticks()])
+            ax[idx].legend(loc="best", labels=["Pool APR", "Vault APR"])
+        elif plot == "pnl":  # CHART: trader PNL
+            ax[idx].step(x_data, lp_pnl)
+            ax[idx].step(x_data, all_traders)
+            ax[idx].step(x_data, short_traders, c="red")
+            ax[idx].step(x_data, long_traders, c="black")
+            legend = [
+                f"LP PnL ({lp_return:.1%})",
+                f"All traders ({all_return:.1%})",
+                f"Shorts only ({short_return:.1%})",
+                f"Longs only ({long_return:.1%})",
+            ]
+            set_labels(ax[idx], xlabel="Day", ylabel="PnL in millions", legend=legend)
+        print_fig(name)
 
-    # CHART: trader PNL
-    chart_num += 1
-    fig, axe = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
-    plot_pnl(pnl=pnl, label="Unrealized Market Value", axe=axe, last_day=first_index_on_last_day_agg)
-    axe.set_title("Trader PNL over time")
-    nice_ticks(axe, config)
-    plt.gca().set_xlabel("Day")
-    print_fig(chart_num)
+    # # CHART: trader PNL
+    # chart_num += 1
+    # fig, ax = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
+    # plot_pnl(pnl=pnl, label="Unrealized Market Value", axe=ax, last_day=first_index_on_last_day_agg)
+    # ax.set_title("Trader PNL over time")
+    # nice_ticks(ax, config)
+    # plt.gca().set_xlabel("Day")
+    # print_fig(chart_num)
 
-    # CHART: LP PNL
-    chart_num += 1
-    fig, axe = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
-    # subplot one
-    axe[0].plot(
-        trades_agg.loc[start_idx:end_idx_agg, "day"],
-        trader_data,
-        label=f"mean = {trades_agg.loc[end_idx_agg,'agent_0_pnl_no_mock_mean']:.3f}",
-    )
-    nice_ticks(axe[0], config)
-    set_labels(axe=axe[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
-    # subplot two
-    axe[1].bar(
-        trades_agg.loc[start_idx:end_idx_agg, "day"],
-        trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_sum"] / 1000,
-        label=f"mean = {trades_agg.loc[start_idx:end_idx_agg,'delta_base_abs_sum'].mean():,.0f}",
-    )
-    axe[1].legend(loc="best")
-    nice_ticks(axe[1], config)
-    set_labels(axe=axe[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
-    # subplot three
-    axe[2].bar(
-        trades_agg.loc[start_idx:end_idx_agg, "day"],
-        trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_count"],
-        label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
-    )
-    axe[2].legend(loc="best")
-    nice_ticks(axe[2], config)
-    set_labels(axe=axe[2], title="# of trades", xlabel="Day", ylabel="# of trades")
-    print_fig(chart_num)
-    return chart_num
+    # # CHART: LP PNL
+    # chart_num += 1
+    # fig, ax = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
+    # # subplot one
+    # ax[0].plot(
+    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
+    #     trader_data,
+    #     label=f"mean = {trades_agg.loc[end_idx_agg,'agent_0_pnl_no_mock_mean']:.3f}",
+    # )
+    # nice_ticks(ax[0], config)
+    # set_labels(axe=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
+    # # subplot two
+    # ax[1].bar(
+    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
+    #     trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_sum"] / 1000,
+    #     label=f"mean = {trades_agg.loc[start_idx:end_idx_agg,'delta_base_abs_sum'].mean():,.0f}",
+    # )
+    # ax[1].legend(loc="best")
+    # nice_ticks(ax[1], config)
+    # set_labels(axe=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
+    # # subplot three
+    # ax[2].bar(
+    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
+    #     trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_count"],
+    #     label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
+    # )
+    # ax[2].legend(loc="best")
+    # nice_ticks(ax[2], config)
+    # set_labels(axe=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
+    # print_fig(chart_num)
 
 
-def experiment(start_chart_num=1, trade_fee_percent=0.1, redemption_fee_percent=0.005, trades_per_period=2) -> int:
+def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trades_per_period=2, plots=None):
     """
     run the defined simulation as an experiment with specified input parameters
     """
@@ -563,21 +564,40 @@ def experiment(start_chart_num=1, trade_fee_percent=0.1, redemption_fee_percent=
     simulator.run_simulation()
     print(f"simulation finished in {time.time()-start_time:0.2f}s")
     start_time = time.time()
-    trades, trades_agg, pnl = post_process(simulator)
+    data = post_process(simulator)
     print(f"post-processing finished in {time.time()-start_time:0.2f}s")
     start_time = time.time()
-    last_chart = plot_and_save_results(
-        config=config, trades=trades, trades_agg=trades_agg, pnl=pnl, start_chart_num=start_chart_num
-    )
+    plot_and_save_results(name_, data=data, plots=plots)
     print(f"plot_and_save_results() ran in {time.time()-start_time:0.2f}s")
-    return last_chart
 
 
 # create narrative
-NARRATIVE = "with 10% trade and 0.05% redemption fees, LPs are <b>TOO DAMN PROFITABLE!!@#</b>"
-last_chart_num = experiment(trade_fee_percent=0.1, redemption_fee_percent=0.005)
-WEBPAGE = NARRATIVE + "<br><br>" + "<br>".join([f'<img src="chart{num}.svg">' for num in range(1, last_chart_num + 2)])
+NAME = "a"
+PLOT_SCALE = "1000"
+
+# LP profit too damn high
+NARRATIVE = "with 10% trade and 0.05% redemption fees, LPs are <b>TOO DAMN PROFITABLE!!@#</b><br>"
+NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 year simulation,<br>"
+NARRATIVE += "5M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year<br>"
+experiment(NAME, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["pnl"])
+NARRATIVE += f'<img src="{NAME}_summary.svg" width="{PLOT_SCALE}"><br>'
+
+NAME = "rent_control"
+NARRATIVE += "let's see what happens when we set the fees to zero 😱<br>"
+experiment(NAME, trade_fee_percent=0, redemption_fee_percent=0, plots=["pnl"])
+NARRATIVE += f'<img src="{NAME}_summary.svg" width="{PLOT_SCALE}"><br>'
 
 # create webpage
-with open("index.html", mode="w", encoding="utf-8") as file:
-    file.write("<html><body><center>" + WEBPAGE)
+HEAD_STR = """
+<head>
+<style>
+body {
+    font-size: 24px;
+    font-family: arial;
+}
+</style>
+</head>
+<body>
+<center>
+"""
+open("index.html", mode="w", encoding="utf-8").write(HEAD_STR + NARRATIVE)

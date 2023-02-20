@@ -75,8 +75,8 @@ class Wallet:
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: Dict[float, Long] = field(default_factory=dict)
-    shorts: Dict[float, Short] = field(default_factory=dict)
+    longs: Dict[int, Long] = field(default_factory=dict)
+    shorts: Dict[int, Short] = field(default_factory=dict)
 
     # TODO: This isn't used for short trades
     fees_paid: float = 0
