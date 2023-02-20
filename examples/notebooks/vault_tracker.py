@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
 
+import shutil
 import numpy as np
 from numpy.random._generator import Generator
 from scipy import special
@@ -107,6 +108,7 @@ def poisson_vault_apr(
     tmax = num_bins
     do_jump = homogeneous_poisson(rng, rate, tmax, bin_size)
     vault_apr = np.array([initial_apr] * num_trading_days)
+    jump_size_ = jump_size
     for day in range(1, num_trading_days):
         if not do_jump[day]:
             continue
@@ -116,12 +118,19 @@ def poisson_vault_apr(
             sign = -1
         elif direction == "random":
             sign = rng.choice([-1, 1], size=1).item()  # flip a fair coin
-        elif direction == "random_weighted":
+        elif direction == "weighted":
             probs = vault_flip_probs(vault_apr[day], lower_bound, upper_bound, num_flip_bins)
             sign = rng.choice([-1, 1], p=probs, size=1).item()  # flip a weighted coin
+        elif direction == "weighted_size":
+            probs = vault_flip_probs(vault_apr[day], lower_bound, upper_bound, num_flip_bins)
+            sign = rng.choice([-1, 1], p=probs, size=1).item()  # flip a weighted coin
+            chosen_prob = probs[max(0, sign)]  # index is 0 if sign is -1, 1 if sign is 1
+            jump_size_ = jump_size * chosen_prob * 2  # scale jump size down by the probability of the chosen direction
         else:
-            raise ValueError(f"Direction must be 'up', 'down', 'weighted_random', or 'random'; not {direction}")
-        step = sign * jump_size
+            raise ValueError(
+                f"Direction must be 'up', 'down', 'random', 'weighted', or 'weighted_size'; not {direction}"
+            )
+        step = sign * jump_size_
         apr = np.minimum(upper_bound, np.maximum(lower_bound, vault_apr[day] + step))
         vault_apr[day:] = apr
     return vault_apr.tolist()
@@ -153,8 +162,7 @@ class RegularGuy(Agent):
         self.trade_short = True  # default to allow easy overriding
         self.trade_chance = trade_chance
         self.rng = rng
-        self.last_think_time = None
-        self.threshold = self.rng.normal(loc=0, scale=0.005)
+        self.threshold = self.rng.normal(loc=0, scale=0.000)  # scale=0.005
         super().__init__(wallet_address, budget)
 
     def action(self, market: Market) -> list[MarketAction]:
@@ -183,7 +191,7 @@ class RegularGuy(Agent):
             available_actions = []
             has_opened_short = bool(any((short.balance > 0 for short in self.wallet.shorts.values())))
             has_opened_long = bool(any((long.balance > 0 for long in self.wallet.longs.values())))
-            if market.apr > market.market_state.vault_apr + self.threshold:
+            if market.apr > market.market_state.vault_apr:  # + self.threshold:
                 # we want to make rate to go DOWN, so BUY PTs
                 if has_opened_short is True:
                     available_actions = [MarketActionType.CLOSE_SHORT]  # buy to close
@@ -218,14 +226,15 @@ class RegularGuy(Agent):
                     trade_amount = np.minimum(trade_amount, np.array(biggest_long))
                 if trade_amount > WEI:  # if max_long is greater than the minimum eth amount
                     action_list = [self.create_agent_action(action_type, float(trade_amount), mint_time=mint_time)]
-                if action_list and (market.time * 365) % 36 <= 1:
+                if action_list and (market.time - (getattr(market, "last_log_time") or -999)) > 35 / 365:
                     print(
                         f"t={market.time*365:.0f}: F:{market.apr:.3%} V:{market.market_state.vault_apr:.3%} "
-                        + f" (Base: {(market.market_state.share_reserves * market.market_state.share_price):.0f} "
+                        + f"(Base: {(market.market_state.share_reserves * market.market_state.share_price):.0f} "
                         + f"PT: {market.market_state.bond_reserves:.0f}) "
                         + f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}"
                         # + f"{action_list=}",
                     )
+                    setattr(market, "last_log_time", market.time)
         return action_list
 
 
@@ -233,9 +242,9 @@ def get_example_agents(
     rng: Generator,
     budget: int,
     new_agents: float,
+    trade_chance: float = 1,
     existing_agents: float = 0,
     direction: Optional[str] = None,
-    trade_chance: float = 1,
 ) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
@@ -388,8 +397,9 @@ def plot_and_save_results(name, data, plots=None):
     trader_data = trades_agg.loc[start_idx:end_idx_agg, "agent_0_pnl_no_mock_mean"]
 
     # plot the data
-    def print_fig(name, bbox_inches="tight", pad_inches=0):  # pylint: disable=invalid-name
-        fig.savefig(fname=f"{name}_summary.svg", bbox_inches=bbox_inches, pad_inches=pad_inches, dpi=100)
+    def print_fig(name_: str, label: str, bbox_inches="tight", pad_inches=0):  # pylint: disable=invalid-name
+        fig.savefig(fname=f"{name_}_{label}.svg", bbox_inches=bbox_inches, pad_inches=pad_inches, dpi=100)
+        shutil.copyfile(f"{name_}_{label}.svg", f"./docs/source/{name_}_{label}.svg")
 
     num_charts = len(plots)
     fig, ax = plt.subplots(
@@ -429,75 +439,73 @@ def plot_and_save_results(name, data, plots=None):
                 f"Longs only ({long_return:.1%})",
             ]
             set_labels(ax[idx], xlabel="Day", ylabel="PnL in millions", legend=legend)
-        print_fig(name)
+        elif plot == "pnl_simple":  # CHART: trader PNL without long and short breakdown
+            ax[idx].step(x_data, lp_pnl)
+            ax[idx].step(x_data, all_traders)
+            legend = [
+                f"LP PnL ({lp_return:.1%})",
+                f"All traders ({all_return:.1%})",
+            ]
+            set_labels(ax[idx], xlabel="Day", ylabel="PnL in millions", legend=legend)
+        print_fig(name_=name, label="summary")
 
-    # # CHART: trader PNL
-    # chart_num += 1
-    # fig, ax = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
-    # plot_pnl(pnl=pnl, label="Unrealized Market Value", axe=ax, last_day=first_index_on_last_day_agg)
-    # ax.set_title("Trader PNL over time")
-    # nice_ticks(ax, config)
-    # plt.gca().set_xlabel("Day")
-    # print_fig(chart_num)
+    # CHART: trader PNL
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
+    plot_pnl(pnl=pnl, label="Unrealized Market Value", axe=ax, last_day=first_index_on_last_day_agg)
+    ax.set_title("Trader PNL over time")
+    nice_ticks(ax, config)
+    plt.gca().set_xlabel("Day")
+    print_fig(name_=name, label="trader_pnl")
 
-    # # CHART: LP PNL
-    # chart_num += 1
-    # fig, ax = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
-    # # subplot one
-    # ax[0].plot(
-    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
-    #     trader_data,
-    #     label=f"mean = {trades_agg.loc[end_idx_agg,'agent_0_pnl_no_mock_mean']:.3f}",
-    # )
-    # nice_ticks(ax[0], config)
-    # set_labels(axe=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
-    # # subplot two
-    # ax[1].bar(
-    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
-    #     trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_sum"] / 1000,
-    #     label=f"mean = {trades_agg.loc[start_idx:end_idx_agg,'delta_base_abs_sum'].mean():,.0f}",
-    # )
-    # ax[1].legend(loc="best")
-    # nice_ticks(ax[1], config)
-    # set_labels(axe=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
-    # # subplot three
-    # ax[2].bar(
-    #     trades_agg.loc[start_idx:end_idx_agg, "day"],
-    #     trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_count"],
-    #     label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
-    # )
-    # ax[2].legend(loc="best")
-    # nice_ticks(ax[2], config)
-    # set_labels(axe=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
-    # print_fig(chart_num)
+    # CHART: LP PNL
+    fig, ax = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
+    # subplot one
+    ax[0].plot(
+        trades_agg.loc[start_idx:end_idx_agg, "day"],
+        trader_data,
+        label=f"mean = {trades_agg.loc[end_idx_agg,'agent_0_pnl_no_mock_mean']:.3f}",
+    )
+    nice_ticks(ax[0], config)
+    set_labels(ax=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
+    # subplot two
+    ax[1].bar(
+        trades_agg.loc[start_idx:end_idx_agg, "day"],
+        trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_sum"] / 1000,
+        label=f"mean = {trades_agg.loc[start_idx:end_idx_agg,'delta_base_abs_sum'].mean():,.0f}",
+    )
+    ax[1].legend(loc="best")
+    nice_ticks(ax[1], config)
+    set_labels(ax=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
+    # subplot three
+    ax[2].bar(
+        trades_agg.loc[start_idx:end_idx_agg, "day"],
+        trades_agg.loc[start_idx:end_idx_agg, "delta_base_abs_count"],
+        label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
+    )
+    ax[2].legend(loc="best")
+    nice_ticks(ax[2], config)
+    set_labels(ax=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
+    print_fig(name_=name, label="lp_pnl")
 
 
 def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trades_per_period=2, plots=None):
     """
     run the defined simulation as an experiment with specified input parameters
     """
+    # override default config, where needed
     start_time = time.time()
     config = Config()
-    # config.init_lp = False
     config.random_seed = 123
-    config.base_asset_price = 1
-
     config.log_filename = "../../.logging/vault_tracker.log"  # Output filename for logging
-
-    config.log_level = (
-        "DEBUG"  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]. ERROR to suppress all logging.
-    )
+    config.log_level = "DEBUG"  # one of ["DEBUG", "INFO", "WARNING"]. ERROR to suppress all logging.
     config.pricing_model_name = "Hyperdrive"  # can be yieldspace or hyperdrive
-
     config.num_trading_days = 365  # Number of simulated trading days, default is 180
     config.num_position_days = config.num_trading_days  # term length
     config.num_blocks_per_day = 1  # 7200 # Blocks in a given day (7200 means ~12 sec per block)
     config.trade_fee_percent = trade_fee_percent  # 0.10 # fee percent collected on trades
     config.redemption_fee_percent = redemption_fee_percent  # 5 bps
 
-    trade_chance = trades_per_period / (
-        config.num_trading_days * config.num_blocks_per_day
-    )  # on a given block, an agent will trade with probability `trade_chance`
+    trade_chance = trades_per_period / (config.num_trading_days * config.num_blocks_per_day)
 
     config.target_pool_apr = 0.05  # 5 # target pool APR of the initial market after the LP
     config.target_liquidity = 5_000_000  # target total liquidity of the initial market, before any trades
@@ -505,9 +513,9 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
     vault_apr_init = 0.05  # Initial vault APR
     vault_apr_jump_size = 0.002  # Scale of the vault APR change (vault_apr (+/-)= jump_size)
     vault_jumps_per_year = 100  # 4 # The average number of jumps per year
-    vault_apr_jump_direction = "random_weighted"  # The direction of a rate change. Can be 'up', 'down', or 'random'.
-    vault_apr_lower_bound = 0.01  # minimum allowable vault apr
-    vault_apr_upper_bound = 0.09  # maximum allowable vault apr
+    vault_apr_jump_direction = "weighted"  # The direction of a rate change. Can be 'up', 'down', or 'random'.
+    vault_apr_lower_bound = 0.04  # minimum allowable vault apr
+    vault_apr_upper_bound = 0.06  # maximum allowable vault apr
 
     # config.vault_apr = DSR_historical(num_dates=config.num_trading_days)
     config.vault_apr = poisson_vault_apr(
@@ -533,22 +541,9 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
     agent_budget = int(9.65 * 1e6 / num_agents)
 
     # add a bunch of regular guys
-    short_agents = get_example_agents(
-        rng=simulator.rng,
-        budget=agent_budget,
-        new_agents=num_agents / 2,
-        existing_agents=1,
-        direction="short",
-        trade_chance=trade_chance,
-    )
-    long_agents = get_example_agents(
-        rng=simulator.rng,
-        budget=agent_budget,
-        new_agents=num_agents / 2,
-        existing_agents=1 + num_agents / 2,
-        direction="long",
-        trade_chance=trade_chance,
-    )
+    agent_data = (simulator.rng, agent_budget, num_agents / 2, trade_chance)
+    short_agents = get_example_agents(*agent_data, direction="short", existing_agents=1)
+    long_agents = get_example_agents(*agent_data, direction="long", existing_agents=1 + num_agents / 2)
     simulator.add_agents(short_agents + long_agents)
     # add a singular regular guy
     # regular_guy = get_example_agents(rng=simulator.rng, budget=9.65*1e6, new_agents=1, existing_agents=1, trade_chance=1)
@@ -561,6 +556,7 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
         if idx in [0, num_agents / 2 - 1]:
             print(f"Agent #{agent.wallet.address} is a long: {agent.trade_short=} {agent.trade_long=}")  # type: ignore
 
+    setattr(simulator.market, "last_log_time", None)
     simulator.run_simulation()
     print(f"simulation finished in {time.time()-start_time:0.2f}s")
     start_time = time.time()
@@ -571,33 +567,54 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
     print(f"plot_and_save_results() ran in {time.time()-start_time:0.2f}s")
 
 
+def make_md(markdown, name_):
+    """generate markdown from html"""
+    nice_name = name_.replace("_", " ").capitalize()
+    markdown = f"{nice_name}\n=================================\n" + markdown
+    with open(f"{name_}.md", mode="w", encoding="utf-8") as f:
+        # for each line
+        for line in markdown.splitlines():
+            # if it's a code block
+            if line.startswith("```") or line.startswith(".."):
+                # add a blank line before and after
+                f.write("\n")
+                f.write(line)
+                f.write("\n")
+            # otherwise
+            else:
+                # write the line as a line-block ( | line)
+                # https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#line-blocks
+                f.write("| " + line + "\n")
+    shutil.copy(f"{name_}.md", f"./docs/source/{name_}.rst")
+    return markdown
+
+
 # create narrative
-NAME = "a"
 PLOT_SCALE = "1000"
 
-# LP profit too damn high
-NARRATIVE = "with 10% trade and 0.05% redemption fees, LPs are <b>TOO DAMN PROFITABLE!!@#</b><br>"
-NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 year simulation,<br>"
-NARRATIVE += "5M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year<br>"
-experiment(NAME, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["pnl"])
-NARRATIVE += f'<img src="{NAME}_summary.svg" width="{PLOT_SCALE}"><br>'
+# get just the name of the file
+name = __file__.rsplit("/", maxsplit=1)[-1]
+# remove .py from end of name
+name = name.rsplit(".", maxsplit=1)[0]
 
-NAME = "rent_control"
-NARRATIVE += "let's see what happens when we set the fees to zero 😱<br>"
-experiment(NAME, trade_fee_percent=0, redemption_fee_percent=0, plots=["pnl"])
-NARRATIVE += f'<img src="{NAME}_summary.svg" width="{PLOT_SCALE}"><br>'
+EXPERIMENT = "starting_scenario"
+NARRATIVE = "let's look at a **starting scenario** with 10% trade and 0.05% redemption fees\n"
+NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 year simulation,\n"
+NARRATIVE += "9.65M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year\n"
+NARRATIVE += "9.65M split across all traders evenly\n"
+experiment(EXPERIMENT, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["apr", "pnl_simple"])
+NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg :width: {PLOT_SCALE}\n"
+NARRATIVE += "uWu what's this? the LPs are making **TOO MUCH MONEY?!@?#!** 😱\n"
 
-# create webpage
-HEAD_STR = """
-<head>
-<style>
-body {
-    font-size: 24px;
-    font-family: arial;
-}
-</style>
-</head>
-<body>
-<center>
-"""
-open("index.html", mode="w", encoding="utf-8").write(HEAD_STR + NARRATIVE)
+EXPERIMENT = "rent_control"
+NARRATIVE += "<hr>let's introduce **rent control** and  see what happens when we set the fees to zero 🤪\n"
+NARRATIVE += "also let's look at the traders in more detail, and break them out between longs and shorts\n"
+experiment(EXPERIMENT, trade_fee_percent=0, redemption_fee_percent=0, plots=["apr", "pnl"])
+NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg :width: {PLOT_SCALE}\n"
+NARRATIVE += f'.. image:: {EXPERIMENT}_trader_pnl.svg :width:"{PLOT_SCALE}\n'
+NARRATIVE += f".. image:: {EXPERIMENT}_lp_pnl.svg :width: {PLOT_SCALE}\n"
+
+## rst img
+# .. image::
+
+make_md(NARRATIVE, name_=name)

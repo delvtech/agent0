@@ -7,6 +7,7 @@ Welcome to elfpy's documentation!
    :caption: Documentation
 
    installation
+   vault_tracker
 
 .. toctree::
    :titlesonly:
