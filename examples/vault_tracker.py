@@ -17,7 +17,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
 
-import shutil
 import numpy as np
 from numpy.random._generator import Generator
 from scipy import special
@@ -571,21 +570,20 @@ def make_md(markdown, name_):
     """generate markdown from html"""
     nice_name = name_.replace("_", " ").capitalize()
     markdown = f"{nice_name}\n=================================\n" + markdown
-    with open(f"{name_}.md", mode="w", encoding="utf-8") as f:
+    with open(f"./docs/source/{name_}.rst", mode="w", encoding="utf-8") as file:
         # for each line
         for line in markdown.splitlines():
             # if it's a code block
             if line.startswith("```") or line.startswith(".."):
                 # add a blank line before and after
-                f.write("\n")
-                f.write(line)
-                f.write("\n")
+                file.write("\n")
+                file.write(line)
+                file.write("\n")
             # otherwise
             else:
                 # write the line as a line-block ( | line)
                 # https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#line-blocks
-                f.write("| " + line + "\n")
-    shutil.copy(f"{name_}.md", f"./docs/source/{name_}.rst")
+                file.write("| " + line + "\n")
     return markdown
 
 
