@@ -13,6 +13,11 @@ from elfpy.types import (
     MarketAction,
     MarketDeltas,
     SimulationState,
+    RunSimVariables,
+    DaySimVariables,
+    BlockSimVariables,
+    TradeSimVariables,
+    NewSimulationState,
 )
 
 if TYPE_CHECKING:
@@ -56,6 +61,8 @@ class Simulator:
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.trade_number = 0
         self.start_time: datetime.datetime | None = None
+        if self.config.do_dataframe_states:
+            self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()
 
     def set_rng(self, rng: Generator) -> None:
@@ -79,6 +86,8 @@ class Simulator:
         state_string : str
             Simulator class member variables (keys & values in self.__dict__) cast to a string, separated by a new line
         """
+        if self.config.do_dataframe_states:
+            return str(self.new_simulation_state)
         strings = []
         for attribute, value in self.__dict__.items():
             if attribute not in ("simulation_state", "rng"):
@@ -198,6 +207,20 @@ class Simulator:
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
             self.update_simulation_state()
+            if self.config.do_dataframe_states:
+                self.new_simulation_state.update(
+                    trade_vars=TradeSimVariables(
+                        self.run_number,
+                        self.day,
+                        self.block_number,
+                        self.trade_number,
+                        self.market.apr,
+                        self.market.spot_price,
+                        market_deltas,
+                        agent_id,
+                        agent_deltas,
+                    )
+                )
             self.trade_number += 1
 
     def run_simulation(self, liquidate_on_end: bool = True) -> None:
@@ -223,6 +246,12 @@ class Simulator:
         """
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
+        if self.config.do_dataframe_states:
+            self.new_simulation_state.update(
+                run_vars=RunSimVariables(
+                    self.run_number, self.config, self.market_step_size, self.market.position_duration, self.start_time
+                )
+            )
         for day in range(0, self.config.num_trading_days):
             self.day = day
             self.market.market_state.vault_apr = self.config.vault_apr[self.day]
@@ -240,12 +269,25 @@ class Simulator:
                     )
                 )
                 self.market.update_market(delta)
+                if self.config.do_dataframe_states:
+                    self.new_simulation_state.update(
+                        day_vars=DaySimVariables(
+                            self.run_number,
+                            self.day,
+                            self.market.market_state.vault_apr,
+                            self.market.market_state.share_price,
+                        )
+                    )
             for daily_block_number in range(self.config.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
                     self.daily_block_number == self.config.num_blocks_per_day - 1
                 )
                 liquidate = last_block_in_sim and liquidate_on_end
+                if self.config.do_dataframe_states:
+                    self.new_simulation_state.update(
+                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.market.time)
+                    )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
