@@ -9,7 +9,11 @@ import numpy as np
 from numpy.random._generator import Generator
 
 import elfpy.utils.time as time_utils
-from elfpy.types import MarketAction, MarketDeltas, SimulationState
+from elfpy.types import (
+    MarketAction,
+    MarketDeltas,
+    SimulationState,
+)
 
 if TYPE_CHECKING:
     from elfpy.agent import Agent
