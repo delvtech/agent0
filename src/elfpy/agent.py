@@ -3,6 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING
 import logging
+from decimal import Decimal
 
 import numpy as np
 
@@ -121,9 +122,11 @@ class Agent:
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
-        return min(
-            self.wallet.base,
-            max_long,
+        return float(
+            min(
+                Decimal(self.wallet.base),
+                Decimal(max_long),
+            )
         )
 
     # TODO: this function should optionally accept a target apr.  the short should not slip the
@@ -143,52 +146,54 @@ class Agent:
             Amount of base that the agent can short in the current market
         """
         # Get the market level max short.
-        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
+        pm_maximums = market.pricing_model.get_max_short(
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
+        max_short_max_loss = Decimal(pm_maximums[0])
+        max_short = Decimal(pm_maximums[1])
         # If the Agent's base balance can cover the max loss of the maximum
         # short, we can simply return the maximum short.
-        if self.wallet.base >= max_short_max_loss:
-            return max_short
+        if Decimal(self.wallet.base) >= max_short_max_loss:
+            return float(max_short)
         last_maybe_max_short = 0
-        bond_percent = 1
+        bond_percent = Decimal(1)
         num_iters = 25
-        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
+        for step_size in [Decimal(1 / (2 ** (x + 1))) for x in range(num_iters)]:
             # Compute the amount of base returned by selling the specified
             # amount of bonds.
             maybe_max_short = max_short * bond_percent
             trade_result = market.pricing_model.calc_out_given_in(
-                in_=Quantity(amount=maybe_max_short, unit=TokenType.PT),
+                in_=Quantity(amount=float(maybe_max_short), unit=TokenType.PT),
                 market_state=market.market_state,
                 time_remaining=market.position_duration,
             )
             # If the max loss is greater than the wallet's base, we need to
             # decrease the bond percentage. Otherwise, we may have found the
             # max short, and we should increase the bond percentage.
-            max_loss = maybe_max_short - trade_result.user_result.d_base
-            if max_loss > self.wallet.base:
+            max_loss = maybe_max_short - Decimal(trade_result.user_result.d_base)
+            if max_loss > Decimal(self.wallet.base):
                 bond_percent -= step_size
             else:
                 last_maybe_max_short = maybe_max_short
                 if bond_percent == 1:
-                    return last_maybe_max_short
+                    return float(last_maybe_max_short)
                 bond_percent += step_size
 
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
-            in_=Quantity(amount=last_maybe_max_short, unit=TokenType.PT),
+            in_=Quantity(amount=float(last_maybe_max_short), unit=TokenType.PT),
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
-        max_loss = last_maybe_max_short - trade_result.user_result.d_base
-        last_step_size = 1 / (2**num_iters + 1)
-        if max_loss > self.wallet.base:
+        max_loss = last_maybe_max_short - Decimal(trade_result.user_result.d_base)
+        last_step_size = Decimal(1 / (2**num_iters + 1))
+        if max_loss > Decimal(self.wallet.base):
             bond_percent -= last_step_size
             last_maybe_max_short = max_short * bond_percent
 
-        return last_maybe_max_short
+        return float(last_maybe_max_short)
 
     def get_trades(self, market: Market) -> list:
         """Helper function for computing a agent trade
