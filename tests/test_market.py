@@ -141,7 +141,7 @@ class BaseMarketTest(unittest.TestCase):
         trade_amount = amount_of_bonds_sold * partial
         mint_time = 0
         if tick_time:
-            simulator.market.tick(simulator.market_step_size())
+            simulator.market.tick(simulator.market_step_size)
         market_deltas, agent_deltas = simulator.market.close_short(
             mint_time=mint_time,
             wallet_address=1,
