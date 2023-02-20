@@ -50,7 +50,7 @@ class Simulator:
         self.daily_block_number = 0
         seconds_in_a_day = 86400
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
-        self.run_trade_number = 0
+        self.trade_number = 0
         self.start_time: datetime.datetime | None = None
         self.simulation_state = SimulationState()
 
@@ -82,6 +82,7 @@ class Simulator:
         state_string = "\n".join(strings)
         return state_string
 
+    @property
     def market_step_size(self) -> float:
         r"""Returns minimum time increment
 
@@ -96,7 +97,7 @@ class Simulator:
     def add_agents(self, agent_list: list[Agent]) -> None:
         r"""Append the agents and simulation_state member variables
 
-        If trades have already happened (as indicated by self.run_trade_number), then empty wallet states are
+        If trades have already happened (as indicated by self.trade_number), then empty wallet states are
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
         a pandas dataframe.
 
@@ -108,7 +109,7 @@ class Simulator:
         for agent in agent_list:
             self.agents.update({agent.wallet.address: agent})
             for key in agent.wallet.get_state_keys():
-                setattr(self.simulation_state, key, [None] * self.run_trade_number)
+                setattr(self.simulation_state, key, [None] * self.trade_number)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
         r"""Get trades from the agent list, execute them, and update states
@@ -193,24 +194,28 @@ class Simulator:
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
             self.update_simulation_state()
-            self.run_trade_number += 1
+            self.trade_number += 1
 
     def run_simulation(self, liquidate_on_end: bool = True) -> None:
         r"""Run the trade simulation and update the output state dictionary
 
-        This is the primary function of the Simulator class.
-        The PricingModel and Market objects will be constructed.
-        A loop will execute a group of trades with random volumes and directions for each day,
-        up to `self.config.num_trading_days` days.
+        This helper function advances time and orchestrates trades.
+        Typically, the simulation executes as follows:
+
+        .. code-block::
+           for day in num_trading_days:
+               # update simulation state day variables
+               for block in num_blocks_per_day:
+                   # update simulation state block variables
+                   for agent in agents:
+                       for trade in agent.trades:
+                           # do_trade
+                           # update simulation state trade variables
 
         Parameters
         ----------
         liquidate_on_end : bool
             if True, liquidate trades when the simulation is complete
-
-        Returns
-        -------
-        There are no returns, but the function does update the simulation_state member variable
         """
         last_block_in_sim = False
         self.start_time = time_utils.current_datetime()
@@ -241,7 +246,7 @@ class Simulator:
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
                 if not last_block_in_sim:
-                    self.market.tick(self.market_step_size())
+                    self.market.tick(self.market_step_size)
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
@@ -272,8 +277,8 @@ class Simulator:
                 time_utils.year_as_datetime(self.start_time, self.market.time)
             )
         self.simulation_state.current_market_time.append(self.market.time)
-        self.simulation_state.run_trade_number.append(self.run_trade_number)
-        self.simulation_state.market_step_size.append(self.market_step_size())
+        self.simulation_state.trade_number.append(self.trade_number)
+        self.simulation_state.market_step_size.append(self.market_step_size)
         self.simulation_state.position_duration.append(self.market.position_duration)
         self.simulation_state.pool_apr.append(self.market.apr)
         self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
