@@ -65,6 +65,7 @@ extensions = [
     "sphinx.ext.autodoc",  # allows rendering of docs automatically from the python code
     "sphinx.ext.autosummary",  # generates documents that contain all the necessary autodoc directives
     "sphinx_autodoc_typehints",  # insert typehints into the final docs
+    "sphinx.ext.autosectionlabel",  # allow reference sections using its title
     "autodocsumm",  # display a list of all class methods in table format
     "autoapi.extension",  # auto generates API reference by recursion
     "sphinx.ext.coverage",  # collect documentation coverage stats
@@ -93,6 +94,7 @@ autoapi_add_toctree_entry = True
 
 autodoc_typehints = "signature"
 autodoc_member_order = "bysource"
+autosectionlabel_prefix_document = True  # Make sure the label target is unique
 autoclass_content = "class"
 
 
