@@ -1,4 +1,3 @@
-"""A set of common types used throughtout the simulation codebase"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
@@ -8,8 +7,11 @@ from dataclasses import dataclass, field, make_dataclass
 =======
 from functools import wraps
 from dataclasses import dataclass, field
+<<<<<<< HEAD
 >>>>>>> 98dc865 (fixes circular imports)
 from enum import Enum
+=======
+>>>>>>> 3966505 (getting started on the rest of the refactor)
 import json
 
 import pandas as pd
@@ -66,120 +68,6 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
         return FrozenClass
 
     return decorator
-
-
-class TokenType(Enum):
-    r"""A type of token"""
-
-    BASE = "base"
-    PT = "pt"
-
-
-@dataclass
-class Quantity:
-    r"""An amount with a unit"""
-
-    amount: float
-    unit: TokenType
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class StretchedTime:
-    r"""Stores time in units of days, as well as normalized & stretched variants
-
-    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
-    """
-    days: float
-    time_stretch: float
-    normalizing_constant: float
-
-    @property
-    def stretched_time(self):
-        r"""Returns days / normalizing_constant / time_stretch"""
-        return time_utils.days_to_time_remaining(
-            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
-        )
-
-    @property
-    def normalized_time(self):
-        r"""Format time as normalized days"""
-        return time_utils.norm_days(
-            self.days,
-            self.normalizing_constant,
-        )
-
-    def __str__(self):
-        output_string = (
-            "StretchedTime(\n"
-            f"\t{self.days=},\n"
-            f"\t{self.normalized_time=},\n"
-            f"\t{self.stretched_time=},\n"
-            f"\t{self.time_stretch=},\n"
-            f"\t{self.normalizing_constant=},\n"
-            ")"
-        )
-        return output_string
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class AgentTradeResult:
-    r"""The result to a user of performing a trade"""
-
-    d_base: float
-    d_bonds: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class TradeBreakdown:
-    r"""A granular breakdown of a trade.
-
-    This includes information relating to fees and slippage.
-    """
-
-    without_fee_or_slippage: float
-    with_fee: float
-    without_fee: float
-    fee: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class TradeResult:
-    r"""The result of performing a trade.
-
-    This includes granular information about the trade details,
-    including the amount of fees collected and the total delta.
-    Additionally, breakdowns for the updates that should be applied
-    to the user and the market are computed.
-    """
-
-    user_result: AgentTradeResult
-    market_result: MarketTradeResult
-    breakdown: TradeBreakdown
-
-    def __str__(self):
-        output_string = (
-            "TradeResult(\n"
-            "\tuser_results(\n"
-            f"\t\t{self.user_result.d_base=},\n"
-            f"\t\t{self.user_result.d_bonds=},\n"
-            "\t),\n"
-            "\tmarket_result(\n"
-            f"\t\t{self.market_result.d_base=},\n"
-            f"\t\t{self.market_result.d_bonds=},\n"
-            "\t),\n"
-            "\tbreakdown(\n"
-            f"\t\t{self.breakdown.without_fee_or_slippage=},\n"
-            f"\t\t{self.breakdown.with_fee=},\n"
-            f"\t\t{self.breakdown.without_fee=},\n"
-            f"\t\t{self.breakdown.fee=},\n"
-            "\t)\n"
-            ")"
-        )
-        return output_string
 
 
 @dataclass

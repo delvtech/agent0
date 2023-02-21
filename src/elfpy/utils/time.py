@@ -6,6 +6,45 @@ import pytz
 import numpy as np
 
 
+@freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class StretchedTime:
+    r"""Stores time in units of days, as well as normalized & stretched variants
+
+    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
+    """
+    days: float
+    time_stretch: float
+    normalizing_constant: float
+
+    @property
+    def stretched_time(self):
+        r"""Returns days / normalizing_constant / time_stretch"""
+        return time_utils.days_to_time_remaining(
+            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
+        )
+
+    @property
+    def normalized_time(self):
+        r"""Format time as normalized days"""
+        return time_utils.norm_days(
+            self.days,
+            self.normalizing_constant,
+        )
+
+    def __str__(self):
+        output_string = (
+            "StretchedTime(\n"
+            f"\t{self.days=},\n"
+            f"\t{self.normalized_time=},\n"
+            f"\t{self.stretched_time=},\n"
+            f"\t{self.time_stretch=},\n"
+            f"\t{self.normalizing_constant=},\n"
+            ")"
+        )
+        return output_string
+
+
 def current_datetime() -> datetime:
     r"""Returns the current time
 

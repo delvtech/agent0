@@ -1,18 +1,29 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import logging
 
 import numpy as np
 
+
 from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.markets.hyperdrive import MarketAction, MarketActionType
-from elfpy.types import Quantity, TokenType
+from elfpy.types import Quantity, TokenType, freezable
 
 if TYPE_CHECKING:
     from typing import Optional, Iterable
     from elfpy.markets.hyperdrive import Market
+
+
+@freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class AgentTradeResult:
+    r"""The result to a user of performing a trade"""
+
+    d_base: float
+    d_bonds: float
 
 
 class Agent:
