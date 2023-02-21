@@ -11,4 +11,4 @@ scipy
 pandas
 tomli
 stochastic
-pyzt
+pytz
