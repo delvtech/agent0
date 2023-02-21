@@ -12,7 +12,7 @@ from stochastic.processes import GeometricBrownianMotion
 import elfpy
 from elfpy.agents.agent import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
-from elfpy.types import Config
+import elfpy.simulators as simulators
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 
@@ -110,7 +110,7 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    config = Config()
+    config = simulators.Config()
     config.num_trading_days = args.num_trading_days
     config.num_blocks_per_day = args.blocks_per_day
     config.pricing_model_name = args.pricing_model

@@ -11,7 +11,6 @@ import pandas as pd
 import numpy as np
 from numpy.random._generator import Generator
 
-# pylint: disable=consider-using-from-import
 import elfpy.utils.time as time_utils
 from elfpy.types import to_description, freezable
 import elfpy.markets.hyperdrive as hyperdrive

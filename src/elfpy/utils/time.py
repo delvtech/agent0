@@ -1,9 +1,9 @@
 """Helper functions for converting time units"""
 
 from datetime import datetime, timedelta
-import pytz
 from dataclasses import dataclass
 
+import pytz
 import numpy as np
 
 from elfpy.types import freezable

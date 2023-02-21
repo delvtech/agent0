@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-# pylint: disable=consider-using-from-import
 from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils

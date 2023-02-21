@@ -4,18 +4,15 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from abc import ABC
 import decimal
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
-# pylint: disable=consider-using-from-import
 from elfpy import (
     MAX_RESERVES_DIFFERENCE,
     WEI,
 )
-import elfpy.types as types
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.simulators.trades as trades
+import elfpy.markets.hyperdrive as hyperdrive
 
 
 # Set the Decimal precision to be higher than the default of 28. This ensures

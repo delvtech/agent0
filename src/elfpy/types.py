@@ -1,3 +1,4 @@
+"""Core types used across the repo"""
 from __future__ import annotations  # types will be strings by default in 3.11
 from functools import wraps
 from typing import Type, Any

@@ -4,13 +4,14 @@ from __future__ import annotations
 import decimal
 import unittest
 import numpy as np
+
+# pylint: disable=consider-using-from-import
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
     CalcInGivenOutSuccessByModelTestResult,
 )
-
 import elfpy.utils.time as time_utils
 import elfpy.simulators.trades as trades
 from elfpy.markets.hyperdrive import MarketState

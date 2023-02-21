@@ -8,7 +8,7 @@ import logging
 import numpy as np
 
 
-from elfpy.agents.wallet import Long, Short, Wallet
+import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators.trades as trades
 from elfpy.types import freezable
@@ -56,7 +56,7 @@ class Agent:
         self.budget: float = budget
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
-        self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
+        self.wallet: wallet.Wallet = wallet.Wallet(address=wallet_address, base=budget)
         name = str(self.__class__)
         if "Policy" in name:  # agent was instantiated from policy folder
             self.name = name.split(".")[-2]
@@ -241,7 +241,7 @@ class Agent:
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: Wallet, market: Market) -> None:
+    def update_wallet(self, wallet_deltas: wallet.Wallet, market: Market) -> None:
         """Update the agent's wallet
 
         Parameters
@@ -283,7 +283,7 @@ class Agent:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[float, wallet.Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
         Parameters
@@ -309,7 +309,7 @@ class Agent:
                 # Remove the empty long from the wallet.
                 del self.wallet.longs[mint_time]
 
-    def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[float, wallet.Short]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
         Parameters

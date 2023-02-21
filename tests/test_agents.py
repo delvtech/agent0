@@ -12,11 +12,11 @@ import utils_for_tests as test_utils  # utilities for testing
 
 from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agents.agent import Agent
-from elfpy.types import Quantity, StretchedTime, TokenType, Config
-from elfpy.markets.hyperdrive import Market, MarketState
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+import elfpy.simulators as simulators
+import elfpy.utils.time as time_utils
+import elfpy.simulators.trades as trades
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.pricing_models as pricing_models
 
 
 class TestErrorPolicy(Agent):
@@ -39,8 +39,8 @@ class TestErrorPolicy(Agent):
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
-    market_state: MarketState
-    time_remaining: StretchedTime
+    market_state: hyperdrive.MarketState
+    time_remaining: time_utils.StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -49,11 +49,11 @@ class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
 
     @staticmethod
-    def setup_market() -> Market:
+    def setup_market() -> hyperdrive.Market:
         """Instantiates a market object for testing purposes"""
         # Give an initial market state
-        pricing_model = HyperdrivePricingModel()
-        market_state = MarketState(
+        pricing_model = pricing_models.HyperdrivePricingModel()
+        market_state = hyperdrive.MarketState(
             share_reserves=1_000_000,
             bond_reserves=1_000_000,
             base_buffer=0,
@@ -63,13 +63,13 @@ class TestAgent(unittest.TestCase):
             trade_fee_percent=0.1,
             redemption_fee_percent=0.1,
         )
-        time_remaining = StretchedTime(
+        time_remaining = time_utils.StretchedTime(
             days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
         )
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         time_remaining.freeze()  # pylint: disable=no-member # type: ignore
-        market = Market(
+        market = hyperdrive.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time_remaining,
@@ -89,7 +89,7 @@ class TestAgent(unittest.TestCase):
         # get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
         # setup a simulation environment
-        simulator = test_utils.setup_simulation_entities(Config(), agent_policies)
+        simulator = test_utils.setup_simulation_entities(simulators.Config(), agent_policies)
         simulator.collect_and_execute_trades()
         for agent in simulator.agents.values():
             wallet_state = agent.wallet.get_state(simulator.market)
@@ -101,11 +101,14 @@ class TestAgent(unittest.TestCase):
         Ensures that get_max_long and get_max_short will not exceed the balance
         of an agent in a variety of market conditions.
         """
-        pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
+        models: list[pricing_models.PricingModel] = [
+            pricing_models.HyperdrivePricingModel(),
+            pricing_models.YieldSpacePricingModel(),
+        ]
 
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -114,12 +117,12 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=100_000,
@@ -128,12 +131,12 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -142,12 +145,12 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=100_000_000,
                     base_buffer=0,
@@ -156,12 +159,12 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=500_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -170,12 +173,12 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -184,12 +187,12 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -198,12 +201,12 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                 ),
-                time_remaining=StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining=time_utils.StretchedTime(
+                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -212,12 +215,12 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=91
+                time_remaining=time_utils.StretchedTime(
+                    days=91, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=91
                 ),
             ),
             TestCaseGetMax(
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -226,14 +229,14 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=91
+                time_remaining=time_utils.StretchedTime(
+                    days=91, time_stretch=models[0].calc_time_stretch(0.25), normalizing_constant=91
                 ),
             ),
         ]
         for test_case in test_cases:
-            for pricing_model in pricing_models:
-                market = Market(
+            for pricing_model in models:
+                market = hyperdrive.Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
                     position_duration=test_case.time_remaining,
@@ -255,7 +258,7 @@ class TestAgent(unittest.TestCase):
                     # Ensure that get_max_short is safe.
                     max_short = agent.get_max_short(market)
                     trade_result = market.pricing_model.calc_out_given_in(
-                        in_=Quantity(amount=max_short, unit=TokenType.PT),
+                        in_=trades.Quantity(amount=max_short, unit=trades.TokenType.PT),
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
                     )

@@ -5,10 +5,8 @@ from decimal import Decimal
 import logging
 from typing import TYPE_CHECKING
 
-# pylint: disable=consider-using-from-import
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
-import elfpy.types as types
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.agents.agent import AgentTradeResult
 

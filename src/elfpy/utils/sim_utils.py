@@ -5,8 +5,7 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-# pylint: disable=consider-using-from-import
-import elfpy.simulators.simulators as simulators
+import elfpy.simulators as simulators
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel

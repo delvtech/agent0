@@ -4,7 +4,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-# pylint: disable=consider-using-from-import
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators.trades as trades
