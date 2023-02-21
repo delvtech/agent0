@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
-from elfpy.agents.agent import AgentTradeResult
+from elfpy.agents import AgentTradeResult
+import elfpy.simulators.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:

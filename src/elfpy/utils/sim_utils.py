@@ -13,7 +13,7 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
-    from elfpy.agents.agent import Agent
+    from elfpy.agents import Agent
 
 
 def get_simulator(
