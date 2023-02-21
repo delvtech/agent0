@@ -16,6 +16,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Tuple
 import time
+import os
 
 import numpy as np
 from numpy.random._generator import Generator
@@ -537,6 +538,8 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
         upper_bound=vault_apr_upper_bound,
     )
 
+    if os.path.exists(config.log_filename):
+        os.remove(config.log_filename)
     output_utils.setup_logging(
         log_filename=config.log_filename,
         log_level=output_utils.text_to_log_level(config.log_level),
