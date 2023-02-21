@@ -429,10 +429,7 @@ def setup_logging(
         log_dir, log_name = os.path.split(log_filename)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        absolute_path = os.path.join(log_dir, log_name)
-        if os.path.exists(absolute_path):
-            os.remove(absolute_path)
-        handler = RotatingFileHandler(absolute_path, mode="w", maxBytes=max_bytes)
+        handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
     logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
