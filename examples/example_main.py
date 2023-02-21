@@ -35,17 +35,17 @@ class CustomShorter(Agent):
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any((short.balance > 0 for short in shorts)))
         can_open_short = self.get_max_short(market) >= self.pt_to_short
-        vault_apr = market.market_state.vault_apr
+        vault_apr = market.market_state.variable_apr
         action_list = []
         if can_open_short:
-            if vault_apr > market.apr:
+            if vault_apr > market.fixed_apr:
                 action_list.append(
                     self.create_agent_action(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.pt_to_short,
                     )
                 )
-            elif vault_apr < market.apr:
+            elif vault_apr < market.fixed_apr:
                 if has_opened_short:
                     action_list.append(
                         self.create_agent_action(
@@ -115,11 +115,11 @@ if __name__ == "__main__":
     config.num_blocks_per_day = args.num_blocks_per_day
     config.pricing_model_name = args.pricing_model
     if args.vault_apr_type == "brownian":
-        config.vault_apr = (
+        config.variable_apr = (
             GeometricBrownianMotion(rng=config.rng).sample(n=config.num_trading_days - 1, initial=0.05)  # type: ignore
         ).tolist()
     elif args.vault_apr_type == "uniform":
-        config.vault_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
+        config.variable_apr = config.rng.uniform(low=0.001, high=0.9, size=config.num_trading_days).tolist()
     else:
         assert False, f"vault_apr_type argument must be 'uniform' or 'brownian', not {args.vault_apr_type}"
     config.log_level = output_utils.text_to_log_level(args.log_level)

@@ -60,7 +60,7 @@ class BaseMarketTest(unittest.TestCase):
         config.redemption_fee_percent = 0.1
         config.target_pool_apr = 0.05
         config.num_trading_days = 9  # minimal simulation steps
-        config.vault_apr = [0.05] * config.num_trading_days
+        config.variable_apr = [0.05] * config.num_trading_days
         config.num_position_days = 365
         config.num_blocks_per_day = 3
         config.shuffle_users = False  # make it deterministic
@@ -408,4 +408,4 @@ class MarketTestsOneFunction(BaseMarketTest):
             )
 
             # TODO have this be exact once we fix issue #146
-            self.assertAlmostEqual(market.apr, target_apr, 12)
+            self.assertAlmostEqual(market.fixed_apr, target_apr, 12)

@@ -139,7 +139,7 @@ def get_market(
             lp_reserves=init_target_liquidity / config.init_share_price,
             init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            vault_apr=config.vault_apr[0],  # yield bearing source apr
+            vault_apr=config.variable_apr[0],  # yield bearing source apr
             trade_fee_percent=config.trade_fee_percent,  # g
             redemption_fee_percent=config.redemption_fee_percent,
         ),

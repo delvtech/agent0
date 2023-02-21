@@ -37,7 +37,7 @@ class SingleTradeTests(unittest.TestCase):
                         config.target_pool_apr = target_pool_apr
                         config.num_trading_days = 3  # sim 3 days to keep it fast for testing
                         config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
-                        config.vault_apr = [0.05] * config.num_trading_days
+                        config.variable_apr = [0.05] * config.num_trading_days
                         config.num_position_days = num_position_days  # how long until token maturity
                         simulator = sim_utils.get_simulator(config)
                         logging.debug(
@@ -73,7 +73,7 @@ class SingleTradeTests(unittest.TestCase):
                                 base_buffer=simulator.market.market_state.base_buffer,
                                 bond_buffer=simulator.market.market_state.bond_buffer,
                                 lp_reserves=simulator.market.market_state.lp_reserves,
-                                vault_apr=simulator.market.market_state.vault_apr,
+                                vault_apr=simulator.market.market_state.variable_apr,
                                 share_price=simulator.market.market_state.share_price,
                                 init_share_price=simulator.market.market_state.init_share_price,
                                 trade_fee_percent=simulator.market.market_state.trade_fee_percent,
@@ -98,20 +98,20 @@ class SingleTradeTests(unittest.TestCase):
                             f"does not equal {total_liquidity_agent=} "
                             f"off by {(np.abs(total_liquidity_direct - total_liquidity_agent))=}."
                         )
-                        assert np.allclose(market_direct.apr, simulator.market.apr, atol=0, rtol=1e-12), (
-                            f"ERROR: {market_direct.apr=}"
-                            f" does not equal {simulator.market.apr=}"
-                            f"off by {(np.abs(market_direct.apr - simulator.market.apr))=}."
+                        assert np.allclose(market_direct.fixed_apr, simulator.market.fixed_apr, atol=0, rtol=1e-12), (
+                            f"ERROR: {market_direct.fixed_apr=}"
+                            f" does not equal {simulator.market.fixed_apr=}"
+                            f"off by {(np.abs(market_direct.fixed_apr - simulator.market.fixed_apr))=}."
                         )
                         assert np.allclose(target_liquidity, total_liquidity_agent, atol=0, rtol=1e-15), (
                             f"ERROR: {target_liquidity=}"
                             f"does not equal {total_liquidity_agent=} "
                             f"off by {(np.abs(target_liquidity - total_liquidity_agent))=}."
                         )
-                        assert np.allclose(target_pool_apr, simulator.market.apr, atol=0, rtol=1e-12), (
+                        assert np.allclose(target_pool_apr, simulator.market.fixed_apr, atol=0, rtol=1e-12), (
                             f"ERROR: {target_pool_apr=}"
-                            f" does not equal {simulator.market.apr=}"
-                            f"off by {(np.abs(target_pool_apr - simulator.market.apr))=}."
+                            f" does not equal {simulator.market.fixed_apr=}"
+                            f"off by {(np.abs(target_pool_apr - simulator.market.fixed_apr))=}."
                         )
         output_utils.close_logging()
 
@@ -138,7 +138,7 @@ class SingleTradeTests(unittest.TestCase):
             config.target_pool_apr = 0.05
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
-            config.vault_apr = [0.05] * config.num_trading_days
+            config.variable_apr = [0.05] * config.num_trading_days
             config.num_position_days = test_case["num_position_days"]
             simulator = sim_utils.get_simulator(config)
             simulator.add_agents(
