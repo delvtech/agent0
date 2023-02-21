@@ -445,6 +445,16 @@ def plot_and_save_results(name, data, plots=None):
                 f"All traders ({all_return:.1%})",
             ]
             set_labels(ax[idx], xlabel="Day", ylabel="PnL in millions", legend=legend)
+        elif plot == "spaghetti":
+            y_data = trades.loc[start_idx:end_idx, ["spot_price"]]
+            ax[idx].step(x_data, y_data)
+            ax[idx].legend(loc="best", labels=["Spot Price"])
+            ax[idx].step(x_data, y_data)
+            for matured_pct in range(0, 101):
+                matured_ratio = matured_pct / 100
+                unmatured_ratio = 1 - matured_ratio
+                effective_price = y_data * unmatured_ratio + 1 * matured_ratio
+                ax[idx].step(x_data, effective_price, c="black", alpha=unmatured_ratio)
         print_fig(name_=name, label="summary")
 
     # CHART: trader PNL
@@ -565,21 +575,24 @@ def experiment(name_, trade_fee_percent=0.1, redemption_fee_percent=0.005, trade
     print(f"plot_and_save_results() ran in {time.time()-start_time:0.2f}s")
 
 
+def make_html(markdown, name_):
+    """generate markdown from html"""
+    with open(f"./docs/source/{name_}.html", mode="w", encoding="utf-8") as file:
+        for line in markdown.splitlines():
+            if line.startswith("```") or line.startswith(".."):
+                file.write("\n" + line + "<br>\n")  # add a blank line before, if it's a code block
+            file.write(line + "<br>\n")
+
+
 def make_md(markdown, name_):
     """generate markdown from html"""
-    nice_name = name_.replace("_", " ").capitalize()
     with open(f"./docs/source/{name_}.rst", mode="w", encoding="utf-8") as file:
+        nice_name = name_.replace("_", " ").capitalize()
         file.write(nice_name + "\n")
         file.write("=" * len(nice_name) + "\n")
-        # for each line
         for line in markdown.splitlines():
-            # if it's a code block
             if line.startswith("```") or line.startswith(".."):
-                # add a blank line before and after
-                file.write("\n")
-                file.write(line)
-                file.write("\n")
-            # otherwise
+                file.write("\n" + line + "\n")  # add a blank line before and after, if it's a code block
             else:
                 # write the line as a line-block ( | line)
                 # https://docutils.sourceforge.io/docs/ref/rst/restructuredtext.html#line-blocks
@@ -595,24 +608,32 @@ name = __file__.rsplit("/", maxsplit=1)[-1]
 # remove .py from end of name
 name = name.rsplit(".", maxsplit=1)[0]
 
-EXPERIMENT = "starting_scenario"
-NARRATIVE = "let's look at a **starting scenario** with 10% trade and 0.05% redemption fees\n"
-NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 year simulation,\n"
-NARRATIVE += "9.65M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year\n"
-NARRATIVE += "9.65M split across all traders evenly\n"
-experiment(EXPERIMENT, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["apr", "pnl_simple"])
-NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
-NARRATIVE += "uWu what's this? the LPs are making **TOO MUCH MONEY?!@?#!** 😱\n"
+# ===:===:===:===: EXPLAIN SOME SHIT :===:===:===:===
+# EXPERIMENT = "starting_scenario"
+# NARRATIVE = "let's look at a **starting scenario** with 10% trade and 0.05% redemption fees\n"
+# NARRATIVE += "other defaults: 100 agents, 50 long, 50 shorts, trading ~2x per 1 year simulation,\n"
+# NARRATIVE += "9.65M initial liquidity, 5% initial APR, 0.2% APR jumps, 100 jumps per year\n"
+# NARRATIVE += "9.65M split across all traders evenly\n"
+# experiment(EXPERIMENT, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["apr", "pnl_simple"])
+# NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
+# NARRATIVE += "uWu what's this? the LPs are making **TOO MUCH MONEY?!@?#!** 😱\n"
 
-EXPERIMENT = "rent_control"
-NARRATIVE += "<hr>let's introduce **rent control** and  see what happens when we set the fees to zero 🤪\n"
-NARRATIVE += "also let's look at the traders in more detail, and break them out between longs and shorts\n"
-experiment(EXPERIMENT, trade_fee_percent=0, redemption_fee_percent=0, plots=["apr", "pnl"])
-NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
-NARRATIVE += f".. image:: {EXPERIMENT}_trader_pnl.svg\n  :width: {PLOT_SCALE}\n"
-NARRATIVE += f".. image:: {EXPERIMENT}_lp_pnl.svg\n  :width: {PLOT_SCALE}\n"
+# EXPERIMENT = "rent_control"
+# NARRATIVE += "<hr>let's introduce **rent control** and  see what happens when we set the fees to zero 🤪\n"
+# NARRATIVE += "also let's look at the traders in more detail, and break them out between longs and shorts\n"
+# experiment(EXPERIMENT, trade_fee_percent=0, redemption_fee_percent=0, plots=["apr", "pnl"])
+# NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n  :width: {PLOT_SCALE}\n"
+# NARRATIVE += f".. image:: {EXPERIMENT}_trader_pnl.svg\n  :width: {PLOT_SCALE}\n"
+# NARRATIVE += f".. image:: {EXPERIMENT}_lp_pnl.svg\n  :width: {PLOT_SCALE}\n"
+
+# ===:===:===:===: SPAGHETTI NOODLE CHART :===:===:===:===
+EXPERIMENT = "spaghetti"
+NARRATIVE = "HAVE SOME SPAGHETTI MOTEHRFUCKERS\n"
+experiment(EXPERIMENT, trade_fee_percent=0.1, redemption_fee_percent=0.005, plots=["spaghetti"])
+NARRATIVE += f".. image:: {EXPERIMENT}_summary.svg\n"
 
 ## rst img
 # .. image::
 
 make_md(NARRATIVE, name_=name)
+make_html(NARRATIVE, name_=name)
