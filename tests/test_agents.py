@@ -10,6 +10,7 @@ import numpy as np
 
 import utils_for_tests as test_utils  # utilities for testing
 
+import elfpy.types as types
 from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
@@ -258,7 +259,7 @@ class TestAgent(unittest.TestCase):
                     # Ensure that get_max_short is safe.
                     max_short = agent.get_max_short(market)
                     trade_result = market.pricing_model.calc_out_given_in(
-                        in_=trades.Quantity(amount=max_short, unit=trades.TokenType.PT),
+                        in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
                     )

@@ -9,6 +9,7 @@ from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.agents.agent import AgentTradeResult
+import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.simulators.trades as trades
@@ -199,7 +200,7 @@ class YieldSpacePricingModel(PricingModel):
 
     def calc_in_given_out(
         self,
-        out: trades.Quantity,
+        out: types.Quantity,
         market_state: MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -301,7 +302,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if out.unit == trades.TokenType.BASE:
+        if out.unit == types.TokenType.BASE:
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
             d_shares = out_amount / share_price
@@ -359,7 +360,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
-        elif out.unit == trades.TokenType.PT:
+        elif out.unit == types.TokenType.PT:
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
@@ -418,7 +419,7 @@ class YieldSpacePricingModel(PricingModel):
         else:
             raise AssertionError(
                 # pylint: disable-next=line-too-long
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {out.unit}!"
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
         return trades.TradeResult(
             user_result=user_result,
@@ -436,7 +437,7 @@ class YieldSpacePricingModel(PricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: trades.Quantity,
+        in_: types.Quantity,
         market_state: MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -537,7 +538,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if in_.unit == trades.TokenType.BASE:
+        if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
@@ -580,7 +581,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
-        elif in_.unit == trades.TokenType.PT:
+        elif in_.unit == types.TokenType.PT:
             d_bonds = in_amount
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
@@ -632,7 +633,7 @@ class YieldSpacePricingModel(PricingModel):
         else:
             raise AssertionError(
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
-                f" to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {in_.unit}!"
+                f" to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
         return trades.TradeResult(
             user_result=user_result,

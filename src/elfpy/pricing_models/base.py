@@ -13,6 +13,7 @@ import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.simulators.trades as trades
 import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.types as types
 
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
@@ -29,7 +30,7 @@ class PricingModel(ABC):
 
     def calc_in_given_out(
         self,
-        out: trades.Quantity,
+        out: types.Quantity,
         market_state: hyperdrive.MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -38,7 +39,7 @@ class PricingModel(ABC):
 
     def calc_out_given_in(
         self,
-        in_: trades.Quantity,
+        in_: types.Quantity,
         market_state: hyperdrive.MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -470,12 +471,12 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be purchased.
         """
         base = self.calc_in_given_out(
-            out=trades.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=trades.TokenType.PT),
+            out=types.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=trades.Quantity(amount=base, unit=trades.TokenType.BASE),
+            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -511,15 +512,15 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be shorted.
         """
         bonds = self.calc_in_given_out(
-            out=trades.Quantity(
+            out=types.Quantity(
                 market_state.share_reserves - market_state.base_buffer / market_state.share_price,
-                unit=trades.TokenType.PT,
+                unit=types.TokenType.PT,
             ),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         base = self.calc_out_given_in(
-            in_=trades.Quantity(amount=bonds, unit=trades.TokenType.PT),
+            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -532,7 +533,7 @@ class PricingModel(ABC):
 
     def check_input_assertions(
         self,
-        quantity: trades.Quantity,
+        quantity: types.Quantity,
         market_state: hyperdrive.MarketState,
         time_remaining: time_utils.StretchedTime,
     ):

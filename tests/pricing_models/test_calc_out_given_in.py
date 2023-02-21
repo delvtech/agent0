@@ -4,6 +4,7 @@ from __future__ import annotations
 import decimal
 import unittest
 import numpy as np
+
 from calc_test_dataclasses import (
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,
@@ -11,6 +12,7 @@ from calc_test_dataclasses import (
     CalcOutGivenInFailureTestCase,
 )
 
+import elfpy.types as types
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
@@ -61,7 +63,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -144,7 +146,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -197,7 +199,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=10_000, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=10_000, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -264,7 +266,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=80_000, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=80_000, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -333,7 +335,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     # Base in of 200 is 100 shares at the current share price.
-                    in_=trades.Quantity(amount=200, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -416,7 +418,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=200, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -499,7 +501,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=200, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -582,7 +584,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targeting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=200, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -695,7 +697,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -780,7 +782,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -833,7 +835,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=10_000, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=10_000, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -902,7 +904,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=80_000, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=80_000, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -971,7 +973,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Non-trivial initial share price and share price.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
@@ -1050,7 +1052,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -1130,7 +1132,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -1215,7 +1217,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targetting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                     market_state=MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
@@ -1358,7 +1360,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # in is in base, out is in bonds
-                trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.BASE)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
                 market_state = MarketState(
                     share_reserves=1,
                     bond_reserves=20_000_000_000,
@@ -1378,7 +1380,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
 
                 # in is in bonds, out is in base
-                trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
                 market_state = MarketState(
                     share_reserves=10_000_000_000,
                     bond_reserves=1,
@@ -1404,7 +1406,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         failure_test_cases = [
             CalcOutGivenInFailureTestCase(
                 # amount negative
-                in_=trades.Quantity(amount=-1, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=-1, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1418,7 +1420,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 # amount 0
-                in_=trades.Quantity(amount=0, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=0, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1431,7 +1433,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     # share reserves negative
                     share_reserves=-1,
@@ -1445,7 +1447,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     # bond reserves negative
@@ -1459,7 +1461,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1473,7 +1475,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1487,7 +1489,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1501,7 +1503,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1515,7 +1517,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1529,7 +1531,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1543,7 +1545,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1558,7 +1560,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 # amount very high, can't make trade
-                in_=trades.Quantity(amount=10_000_000, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=10_000_000, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1571,7 +1573,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=(decimal.InvalidOperation, decimal.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1585,7 +1587,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1599,7 +1601,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1614,7 +1616,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 # amount < 1 wei
-                in_=trades.Quantity(amount=0.5e-18, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=0.5e-18, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -1627,7 +1629,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(
-                in_=trades.Quantity(amount=100, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,

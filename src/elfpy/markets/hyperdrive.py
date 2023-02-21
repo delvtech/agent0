@@ -13,7 +13,6 @@ import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
-import elfpy.simulators.trades as trades
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -442,7 +441,7 @@ class Market:
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
-        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -510,7 +509,7 @@ class Market:
         )
 
         # Perform the trade.
-        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -556,7 +555,7 @@ class Market:
         # issue #146
         if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
-            trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.BASE)
+            trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
             self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -608,7 +607,7 @@ class Market:
         )
 
         # Perform the trade.
-        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -677,8 +676,8 @@ class Market:
             rate = self.apr
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=trades.Quantity(
-                amount=trade_amount, unit=trades.TokenType.PT
+            quantity=types.Quantity(
+                amount=trade_amount, unit=types.TokenType.PT
             ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,
@@ -710,8 +709,8 @@ class Market:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=trades.Quantity(
-                amount=trade_amount, unit=trades.TokenType.PT
+            quantity=types.Quantity(
+                amount=trade_amount, unit=types.TokenType.PT
             ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,

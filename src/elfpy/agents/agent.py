@@ -11,14 +11,14 @@ import numpy as np
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators.trades as trades
-from elfpy.types import freezable
+import elfpy.types as types
 
 if TYPE_CHECKING:
     from typing import Optional, Iterable
     from elfpy.markets.hyperdrive import Market
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentTradeResult:
     r"""The result to a user of performing a trade"""
@@ -176,7 +176,7 @@ class Agent:
             # amount of bonds.
             maybe_max_short = max_short * bond_percent
             trade_result = market.pricing_model.calc_out_given_in(
-                in_=trades.Quantity(amount=maybe_max_short, unit=trades.TokenType.PT),
+                in_=types.Quantity(amount=maybe_max_short, unit=types.TokenType.PT),
                 market_state=market.market_state,
                 time_remaining=market.position_duration,
             )
@@ -195,7 +195,7 @@ class Agent:
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
-            in_=trades.Quantity(amount=last_maybe_max_short, unit=trades.TokenType.PT),
+            in_=types.Quantity(amount=last_maybe_max_short, unit=types.TokenType.PT),
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )

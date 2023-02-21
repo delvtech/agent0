@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import unittest
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
+import elfpy.types as types
 import elfpy.simulators.trades as trades
 import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketDeltas, MarketState
@@ -188,7 +189,7 @@ class TestGetMax(unittest.TestCase):
 
                 # Simulate the trade and ensure the trade was safe.
                 trade_result = pricing_model.calc_out_given_in(
-                    in_=trades.Quantity(amount=max_long, unit=trades.TokenType.BASE),
+                    in_=types.Quantity(amount=max_long, unit=types.TokenType.BASE),
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
@@ -207,7 +208,7 @@ class TestGetMax(unittest.TestCase):
 
                 # Simulate the trade.
                 trade_result = pricing_model.calc_out_given_in(
-                    in_=trades.Quantity(amount=max_short, unit=trades.TokenType.PT),
+                    in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )

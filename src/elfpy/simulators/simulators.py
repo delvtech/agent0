@@ -480,7 +480,7 @@ class Simulator:
                 agent_ids = list(self.agents)[::-1]
         # Collect trades from all of the agents.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
-        # Execute the trades.
+        # Execute the trades
         self.execute_trades(trades)
 
     def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, MarketAction]]:

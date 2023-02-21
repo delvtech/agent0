@@ -1,29 +1,13 @@
-"""Trading types & functions"""
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 
-from elfpy.types import freezable
+import elfpy.types as types
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive
 
 
-class TokenType(Enum):
-    r"""A type of token"""
-
-    BASE = "base"
-    PT = "pt"
-
-
-@dataclass
-class Quantity:
-    r"""An amount with a unit"""
-
-    amount: float
-    unit: TokenType
-
-
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class TradeBreakdown:
     r"""A granular breakdown of a trade.
@@ -37,7 +21,7 @@ class TradeBreakdown:
     fee: float
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class TradeResult:
     r"""The result of performing a trade.

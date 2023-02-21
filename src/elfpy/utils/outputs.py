@@ -48,7 +48,7 @@ def plot_market_lp_reserves(
     first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
     end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="lp_reserves", ax=axes[0])
-    axis.get_legend().remove()
+    axis.get_legend().remove()  # type: ignore
     axis.set_title("Market liquidity provider reserves")
     axis.set_ylabel("LP reserves")
     axis.set_xlabel("Day")
@@ -78,7 +78,7 @@ def plot_market_spot_price(
     first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
     end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="spot_price", ax=axes[0])
-    axis.get_legend().remove()
+    axis.get_legend().remove()  # type: ignore
     axis.set_title("Market spot price")
     axis.set_ylabel("Spot price of principle tokens")
     axis.set_xlabel("Day")
@@ -101,7 +101,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
     -------
     Figure
     """
-    num_agents = len([col for col in state_df if col.startswith("agent") and col.endswith("pnl")])
+    num_agents = len([col for col in state_df if str(col).startswith("agent") and str(col).endswith("pnl")])
     agent_start_idx = 1 if exclude_first_agent else 0
     first_trade_that_is_on_second_day = min(state_df.index[state_df.day == min(state_df.day) + 1])
     day_start_idx = first_trade_that_is_on_second_day if exclude_first_day is True else 0
@@ -164,7 +164,7 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclud
     first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
     end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
     axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="pool_apr_percent", ax=axes[0])
-    axis.get_legend().remove()
+    axis.get_legend().remove()  # type: ignore
     axis.set_title("Market pool APR")
     axis.set_ylabel("APR (%)")
     axis.set_xlabel("Day")
@@ -193,7 +193,7 @@ def plot_pool_volume(
     start_idx = 1 if exclude_first_trade else 0
     end_idx = -1 if exclude_last_trade is True else None
     axis = trades_agg.iloc[start_idx:end_idx].plot(x="day", y="delta_base_abs_sum", ax=axes[0], kind="bar")
-    axis.get_legend().remove()
+    axis.get_legend().remove()  # type: ignore
     axis.set_title("Market Volume")
     axis.set_ylabel("Base")
     axis.set_xlabel("Day")
@@ -225,7 +225,7 @@ def plot_longs_and_shorts(
     start_idx = 1 if exclude_first_trade else 0
     addresses = []
     for column in state_df.columns:
-        splits = column.split("_")
+        splits = str(column).split("_")
         if splits[0] == "agent":
             addresses.append(int(splits[1]))
     agents = set(addresses)
@@ -248,7 +248,7 @@ def plot_longs_and_shorts(
         axis.set_xticklabels([str(x + 1) for x in trade_labels])
         axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
-    fig.set_size_inches([2 * fig_size[0], fig_size[1]])
+    fig.set_size_inches([2 * fig_size[0], fig_size[1]])  # type: ignore
     _ = fig.suptitle("Longs and shorts per agent", y=0.90)
     return fig
 
@@ -278,7 +278,7 @@ def plot_wallet_reserves(
     start_idx = 1 if exclude_first_trade else 0
     addresses = []
     for column in state_df.columns:
-        splits = column.split("_")
+        splits = str(column).split("_")
         if splits[0] == "agent":
             addresses.append(int(splits[1]))
     agents = set(addresses)
@@ -301,7 +301,7 @@ def plot_wallet_reserves(
         axis.set_xticklabels([str(x + 1) for x in trade_labels][start_idx:])
         axis.set_box_aspect(1)
     fig_size = fig.get_size_inches()  # [width (or cols), height (or rows)]
-    fig.set_size_inches([2 * fig_size[0], fig_size[1]])
+    fig.set_size_inches([2 * fig_size[0], fig_size[1]])  # type: ignore
     _ = fig.suptitle("Agent wallet reserves", y=0.90)
     return fig
 

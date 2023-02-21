@@ -9,6 +9,7 @@ import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators.trades as trades
 import elfpy.utils.time as time_utils
 from elfpy.agents.agent import AgentTradeResult
+import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import MarketState
@@ -31,7 +32,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
     def calc_in_given_out(
         self,
-        out: trades.Quantity,
+        out: types.Quantity,
         market_state: MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -127,20 +128,20 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
-        if out.unit == trades.TokenType.BASE:
+        if out.unit == types.TokenType.BASE:
             market_state.share_reserves -= float(d_shares)
             market_state.bond_reserves += float(d_bonds)
-        elif out.unit == trades.TokenType.PT:
+        elif out.unit == types.TokenType.PT:
             market_state.share_reserves += float(d_shares)
             market_state.bond_reserves -= float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
-                f"Expected out.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {out.unit}!"
+                f"Expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=trades.Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
+            out=types.Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
             market_state=market_state,
             time_remaining=time_utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -155,7 +156,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         flat_with_fee = flat_without_fee + redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
-        if out.unit == trades.TokenType.BASE:
+        if out.unit == types.TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-flat_with_fee + Decimal(curve.user_result.d_bonds)),
@@ -164,7 +165,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_base=-out.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
-        elif out.unit == trades.TokenType.PT:
+        elif out.unit == types.TokenType.PT:
             user_result = AgentTradeResult(
                 d_base=float(-flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
@@ -175,7 +176,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
             )
         else:
             raise AssertionError(
-                f"ERROR: Expected out.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {out.unit}!"
+                f"ERROR: Expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
 
         return trades.TradeResult(
@@ -194,7 +195,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: trades.Quantity,
+        in_: types.Quantity,
         market_state: MarketState,
         time_remaining: time_utils.StretchedTime,
     ) -> trades.TradeResult:
@@ -278,21 +279,21 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
-        if in_.unit == trades.TokenType.BASE:
+        if in_.unit == types.TokenType.BASE:
             market_state.share_reserves += float(d_shares)
             market_state.bond_reserves -= float(d_bonds)
-        elif in_.unit == trades.TokenType.PT:
+        elif in_.unit == types.TokenType.PT:
             market_state.share_reserves -= float(d_shares)
             market_state.bond_reserves += float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
-                f"Expected in_.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {in_.unit}!"
+                f"Expected in_.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=trades.Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
+            in_=types.Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
             market_state=market_state,
             time_remaining=time_utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -307,7 +308,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         flat_with_fee = flat_without_fee - redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
-        if in_.unit == trades.TokenType.BASE:
+        if in_.unit == types.TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(flat_with_fee + Decimal(curve.user_result.d_bonds)),
@@ -316,7 +317,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_base=in_.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
-        elif in_.unit == trades.TokenType.PT:
+        elif in_.unit == types.TokenType.PT:
             user_result = AgentTradeResult(
                 d_base=float(flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
@@ -328,7 +329,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
-                f"Expected in_.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {in_.unit}!"
+                f"Expected in_.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
 
         return trades.TradeResult(

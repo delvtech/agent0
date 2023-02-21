@@ -6,10 +6,10 @@ from dataclasses import dataclass
 import pytz
 import numpy as np
 
-from elfpy.types import freezable
+import elfpy.types as types
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class StretchedTime:
     r"""Stores time in units of days, as well as normalized & stretched variants
