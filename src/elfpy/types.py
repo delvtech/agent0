@@ -4,10 +4,11 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from functools import wraps
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, make_dataclass
 from enum import Enum
 import json
 
+import pandas as pd
 import numpy as np
 from numpy.random import Generator
 
@@ -484,6 +485,9 @@ class Config:
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
 
+    # Temporary
+    do_dataframe_states: bool = False
+
     # Market
     target_liquidity: float = field(
         default=1e6, metadata=to_description("total size of the market pool (bonds + shares)")
@@ -588,3 +592,140 @@ class Config:
                 + f"{self.num_trading_days},"
                 + f" not {len(self.vault_apr)}"
             )
+
+
+@dataclass
+class RunSimVariables:
+    """Simulation state variables that change by run"""
+
+    run_number: int = field(metadata=to_description("incremented each time run_simulation is called"))
+    config: Config = field(metadata=to_description("the simulation config"))
+    market_step_size: float = field(metadata=to_description("minimum time discretization for market time step"))
+    position_duration: StretchedTime = field(
+        metadata=to_description("time lapse between token mint and expiry as a yearfrac")
+    )
+    simulation_start_time: datetime = field(metadata=to_description("start datetime for a given simulation"))
+
+
+@dataclass
+class DaySimVariables:
+    """Simulation state variables that change by day"""
+
+    run_number: int = field(metadata=to_description("incremented each time run_simulation is called"))
+    day: int = field(metadata=to_description("day index in a given simulation"))
+    vault_apr: float = field(metadata=to_description("vault apr on a given day"))
+    share_price: float = field(metadata=to_description("share price for the underlying vault"))
+
+
+@dataclass
+class BlockSimVariables:
+    """Simulation state variables that change by block"""
+
+    run_number: int = field(metadata=to_description("incremented each time run_simulation is called"))
+    day: int = field(metadata=to_description("day index in a given simulation"))
+    block_number: int = field(metadata=to_description("integer, block index in a given simulation"))
+    market_time: float = field(metadata=to_description("float, current market time in years"))
+
+
+@dataclass
+class TradeSimVariables:
+    """Simulation state variables that change by trade"""
+
+    # pylint: disable=too-many-instance-attributes
+
+    run_number: int = field(metadata=to_description("incremented each time run_simulation is called"))
+    day: int = field(metadata=to_description("day index in a given simulation"))
+    block_number: int = field(metadata=to_description("integer, block index in a given simulation"))
+    trade_number: int = field(metadata=to_description("trade number in a given simulation"))
+    pool_apr: float = field(metadata=to_description("apr of the AMM pool"))
+    spot_price: float = field(metadata=to_description("price of shares"))
+    market_deltas: MarketDeltas = field(metadata=to_description("deltas used to update the market state"))
+    agent_address: int = field(metadata=to_description("address of the agent that is executing the trade"))
+    agent_deltas: Wallet = field(metadata=to_description("deltas used to update the market state"))
+
+
+def simulation_state_aggreagator(constructor):
+    """Returns a dataclass that aggregates simulation state attributes"""
+    # Wrap the type from the constructor in a list, but keep the name
+    attribs = [
+        (key, "list[" + val + "]", field(default_factory=list)) for key, val in constructor.__annotations__.items()
+    ]
+    # Make a new dataclass that has helper functions for appending to the list
+    def update(obj, dictionary):
+        for key, value in dictionary.items():
+            obj.update_item(key, value)
+
+    # The lambda is used because of the self variable -- TODO: can possibly remove?
+    # pylint: disable=unnecessary-lambda
+    aggregator = make_dataclass(
+        constructor.__name__ + "Aggregator",
+        attribs,
+        namespace={
+            "update_item": lambda self, key, value: getattr(self, key).append(value),
+            "update": lambda self, dict_like: update(self, dict_like),
+        },
+    )()
+    return aggregator
+
+
+@dataclass
+class NewSimulationState:
+    r"""Simulator state that stores Market, Agent, and Config attributes
+    The SimulationState has the following external attributes:
+        run_updates: pd.DataFrame composed of RunSimVariables
+        day_updates: pd.DataFrame composed of DaySimVariables
+        block_updates: pd.DataFrame composed of BlockSimVariables
+        trade_updates: pd.DataFrame composed of TradeSimVariables
+    """
+
+    def __post_init__(self) -> None:
+        r"""Construct empty dataclasses with appropriate attributes for each state variable type"""
+        self._run_updates = simulation_state_aggreagator(RunSimVariables)
+        self._day_updates = simulation_state_aggreagator(DaySimVariables)
+        self._block_updates = simulation_state_aggreagator(BlockSimVariables)
+        self._trade_updates = simulation_state_aggreagator(TradeSimVariables)
+
+    def update(
+        self,
+        run_vars: Optional[RunSimVariables] = None,
+        day_vars: Optional[DaySimVariables] = None,
+        block_vars: Optional[BlockSimVariables] = None,
+        trade_vars: Optional[TradeSimVariables] = None,
+    ) -> None:
+        r"""Add a row to the state dataframes that contains the latest variables"""
+        if run_vars is not None:
+            self._run_updates.update(run_vars.__dict__)
+        if day_vars is not None:
+            self._day_updates.update(day_vars.__dict__)
+        if block_vars is not None:
+            self._block_updates.update(block_vars.__dict__)
+        if trade_vars is not None:
+            self._trade_updates.update(trade_vars.__dict__)
+
+    @property
+    def run_updates(self) -> pd.DataFrame:
+        r"""Converts internal list of state values into a dataframe"""
+        return pd.DataFrame.from_dict(self._run_updates.__dict__)
+
+    @property
+    def day_updates(self) -> pd.DataFrame:
+        r"""Converts internal list of state values into a dataframe"""
+        return pd.DataFrame.from_dict(self._day_updates.__dict__)
+
+    @property
+    def block_updates(self) -> pd.DataFrame:
+        r"""Converts internal list of state values into a dataframe"""
+        return pd.DataFrame.from_dict(self._block_updates.__dict__)
+
+    @property
+    def trade_updates(self) -> pd.DataFrame:
+        r"""Converts internal list of state values into a dataframe"""
+        return pd.DataFrame.from_dict(self._trade_updates.__dict__)
+
+    @property
+    def combined_dataframe(self) -> pd.DataFrame:
+        r"""Returns a single dataframe that combines the run, day, block, and trade variables
+        The merged dataframe has the same number of rows as self.trade_updates,
+        with entries in the smaller dataframes duplicated accordingly
+        """
+        return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
