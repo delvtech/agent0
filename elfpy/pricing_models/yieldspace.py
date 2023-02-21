@@ -52,7 +52,9 @@ class YieldSpacePricingModel(PricingModel):
         if market_state.share_reserves > 0:  # normal case where we have some share reserves
             # TODO: We need to update these LP calculations to address the LP
             #       exploit scenario.
-            lp_out = (d_shares * market_state.lp_reserves) / (market_state.share_reserves - market_state.base_buffer)
+            lp_out = (d_shares * market_state.lp_total_supply) / (
+                market_state.share_reserves - market_state.base_buffer
+            )
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
@@ -66,11 +68,11 @@ class YieldSpacePricingModel(PricingModel):
                 "inputs: d_base=%g, share_reserves=%d, "
                 "bond_reserves=%d, base_buffer=%g, "
                 "init_share_price=%g, share_price=%g, "
-                "lp_reserves=%g, rate=%g, "
+                "lp_total_supply=%g, rate=%g, "
                 "time_remaining=%g, stretched_time_remaining=%g"
                 "\nd_shares=%g (d_base / share_price = %g / %g)"
                 "\nlp_out=%g\n"
-                "(d_share_reserves * lp_reserves / (share_reserves - base_buffer / share_price) = "
+                "(d_share_reserves * lp_total_supply / (share_reserves - base_buffer / share_price) = "
                 "%g * %g / (%g - %g / %g))"
                 "\nd_bonds=%g\n"
                 "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** "
@@ -84,7 +86,7 @@ class YieldSpacePricingModel(PricingModel):
             market_state.base_buffer,
             market_state.init_share_price,
             market_state.share_price,
-            market_state.lp_reserves,
+            market_state.lp_total_supply,
             rate,
             time_remaining.normalized_time,
             time_remaining.stretched_time,
@@ -93,7 +95,7 @@ class YieldSpacePricingModel(PricingModel):
             market_state.share_price,
             lp_out,
             d_shares,
-            market_state.lp_reserves,
+            market_state.lp_total_supply,
             market_state.share_reserves,
             market_state.base_buffer,
             market_state.share_price,
@@ -123,7 +125,7 @@ class YieldSpacePricingModel(PricingModel):
             y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
         """
         d_shares = d_base / market_state.share_price
-        lp_in = (d_shares * market_state.lp_reserves) / (
+        lp_in = (d_shares * market_state.lp_total_supply) / (
             market_state.share_reserves - market_state.base_buffer / market_state.share_price
         )
         # TODO: Move this calculation to a helper function.
@@ -149,7 +151,7 @@ class YieldSpacePricingModel(PricingModel):
             market_state.share_price
             * (market_state.share_reserves - market_state.base_buffer)
             * lp_in
-            / market_state.lp_reserves
+            / market_state.lp_total_supply
         )
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
@@ -178,7 +180,7 @@ class YieldSpacePricingModel(PricingModel):
             market_state.base_buffer,
             market_state.init_share_price,
             market_state.share_price,
-            market_state.lp_reserves,
+            market_state.lp_total_supply,
             rate,
             time_remaining.normalized_time,
             time_remaining.stretched_time,
