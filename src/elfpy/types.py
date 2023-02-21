@@ -104,7 +104,7 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    trade_amount: float  # TODO: make this a quantity, not a float
+    trade_amount: float  # FIXME: make this a quantity, not a float
     # min amount to receive for the action
     min_amount_out: float
     # the agent's wallet
@@ -114,7 +114,7 @@ class MarketAction:
 
     def __str__(self):
         r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address}"
+        output_string = f"MARKET ACTION:\nagent #{self.wallet.address}"
         for key, value in self.__dict__.items():
             if key == "action_type":
                 output_string += f" execute {value}()"
@@ -130,13 +130,11 @@ class MarketAction:
 class MarketDeltas:
     r"""Specifies changes to values in the market"""
 
-    # .. todo::  Create our own dataclass decorator that is always mutable and includes dict set/get syntax
-    # pylint: disable=duplicate-code
     # pylint: disable=too-many-instance-attributes
 
-    # .. todo::  Use better naming for these values:
+    # FIXME:  Use better naming for these values:
     #     - "d_base_asset" => "d_share_reserves"
-    # .. todo::  Is there some reason this is base instead of shares?
+    # Is there some reason this is base instead of shares?
     #     - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
     d_token_asset: float = 0
@@ -186,6 +184,7 @@ class MarketState:
         Bond amount set aside to account for open shorts
     lp_reserves: float
         Amount of lp tokens
+    FIXME: Do these todos
     vault_apr: float
         .. todo: fill this in
     share_price: float
