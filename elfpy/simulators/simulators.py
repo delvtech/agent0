@@ -1,401 +1,25 @@
-"""A set of common types used throughtout the simulation codebase"""
+"""Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from typing import TYPE_CHECKING, Optional
+from datetime import datetime
 import logging
-from functools import wraps
-from typing import TYPE_CHECKING
-from dataclasses import dataclass, field, make_dataclass
-from enum import Enum
 import json
+from dataclasses import dataclass, field, make_dataclass
 
 import pandas as pd
 import numpy as np
-from numpy.random import Generator
+from numpy.random._generator import Generator
 
-from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.time as time_utils
-from elfpy.utils.outputs import CustomEncoder
-from elfpy.wallet import Wallet
+from elfpy.types import to_description, freezable
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.utils.outputs as output_utils
+import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
-    from datetime import datetime
-    from typing import Type, Any, Optional
-
-
-def to_description(description: str) -> dict[str, str]:
-    r"""A dataclass helper that constructs metadata containing a description."""
-    return {"description": description}
-
-
-def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
-    r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
-
-    def decorator(cls: Type) -> Type:
-        @wraps(wrapped=cls, updated=())
-        class FrozenClass(cls):
-            """Subclass cls to enable freezing of attributes
-
-            .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
-            """
-
-            def __init__(self, *args, frozen=frozen, no_new_attribs=no_new_attribs, **kwargs) -> None:
-                super().__init__(*args, **kwargs)
-                super().__setattr__("frozen", frozen)
-                super().__setattr__("no_new_attribs", no_new_attribs)
-
-            def __setattr__(self, attrib: str, value: Any) -> None:
-                if hasattr(self, attrib) and hasattr(self, "frozen") and getattr(self, "frozen"):
-                    raise AttributeError(f"{self.__class__.__name__} is frozen, cannot change attribute '{attrib}'.")
-                if not hasattr(self, attrib) and hasattr(self, "no_new_attribs") and getattr(self, "no_new_attribs"):
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no_new_attribs set, cannot add attribute '{attrib}'."
-                    )
-                super().__setattr__(attrib, value)
-
-            def freeze(self) -> None:
-                """disallows changing existing members"""
-                super().__setattr__("frozen", True)
-
-            def disable_new_attribs(self) -> None:
-                """disallows adding new members"""
-                super().__setattr__("no_new_attribs", True)
-
-        return FrozenClass
-
-    return decorator
-
-
-class TokenType(Enum):
-    r"""A type of token"""
-
-    BASE = "base"
-    PT = "pt"
-
-
-class MarketActionType(Enum):
-    r"""
-    The descriptor of an action in a market
-
-    .. todo:: Add INITIALIZE_MARKET = "initialize_market"
-    """
-
-    OPEN_LONG = "open_long"
-    OPEN_SHORT = "open_short"
-
-    CLOSE_LONG = "close_long"
-    CLOSE_SHORT = "close_short"
-
-    ADD_LIQUIDITY = "add_liquidity"
-    REMOVE_LIQUIDITY = "remove_liquidity"
-
-
-@dataclass
-class Quantity:
-    r"""An amount with a unit"""
-
-    amount: float
-    unit: TokenType
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class StretchedTime:
-    r"""Stores time in units of days, as well as normalized & stretched variants
-
-    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
-    """
-    days: float
-    time_stretch: float
-    normalizing_constant: float
-
-    @property
-    def stretched_time(self):
-        r"""Returns days / normalizing_constant / time_stretch"""
-        return time_utils.days_to_time_remaining(
-            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
-        )
-
-    @property
-    def normalized_time(self):
-        r"""Format time as normalized days"""
-        return time_utils.norm_days(
-            self.days,
-            self.normalizing_constant,
-        )
-
-    def __str__(self):
-        output_string = (
-            "StretchedTime(\n"
-            f"\t{self.days=},\n"
-            f"\t{self.normalized_time=},\n"
-            f"\t{self.stretched_time=},\n"
-            f"\t{self.time_stretch=},\n"
-            f"\t{self.normalizing_constant=},\n"
-            ")"
-        )
-        return output_string
-
-
-@freezable(frozen=False, no_new_attribs=True)
-@dataclass
-class MarketAction:
-    r"""Market action specification"""
-
-    # these two variables are required to be set by the strategy
-    action_type: MarketActionType
-    # amount to supply for the action
-    trade_amount: float
-    # min amount to receive for the action
-    min_amount_out: float
-    # the agent's wallet
-    wallet: Wallet
-    # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: Optional[float] = None
-
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address}"
-        for key, value in self.__dict__.items():
-            if key == "action_type":
-                output_string += f" execute {value}()"
-            elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {value}"
-            elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {value}"
-        return output_string
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketDeltas:
-    r"""Specifies changes to values in the market"""
-
-    # .. todo::  Create our own dataclass decorator that is always mutable and includes dict set/get syntax
-    # pylint: disable=duplicate-code
-    # pylint: disable=too-many-instance-attributes
-
-    # .. todo::  Use better naming for these values:
-    #     - "d_base_asset" => "d_share_reserves"
-    # .. todo::  Is there some reason this is base instead of shares?
-    #     - "d_token_asset" => "d_bond_reserves"
-    d_base_asset: float = 0
-    d_token_asset: float = 0
-    d_base_buffer: float = 0
-    d_bond_buffer: float = 0
-    d_lp_reserves: float = 0
-    d_share_price: float = 0
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-    def __str__(self):
-        output_string = (
-            "MarketDeltas(\n"
-            f"\t{self.d_base_asset=},\n"
-            f"\t{self.d_token_asset=},\n"
-            f"\t{self.d_base_buffer=},\n"
-            f"\t{self.d_bond_buffer=},\n"
-            f"\t{self.d_lp_reserves=},\n"
-            f"\t{self.d_share_price=},\n"
-            ")"
-        )
-        return output_string
-
-
-@freezable(frozen=False, no_new_attribs=False)
-@dataclass
-class MarketState:
-    r"""The state of an AMM
-
-    Implements a class for all that that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
-    likely be accessible through the AMM as well.
-
-    Attributes
-    ----------
-    share_reserves: float
-        Quantity of shares stored in the market
-    bond_reserves: float
-        Quantity of bonds stored in the market
-    base_buffer: float
-        Base amount set aside to account for open longs
-    bond_buffer: float
-        Bond amount set aside to account for open shorts
-    lp_reserves: float
-        Amount of lp tokens
-    vault_apr: float
-        .. todo: fill this in
-    share_price: float
-        .. todo: fill this in
-    init_share_price: float
-        .. todo: fill this in
-    trade_fee_percent : float
-        The percentage of the difference between the amount paid without
-        slippage and the amount received that will be added to the input
-        as a fee.
-    redemption_fee_percent : float
-        A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    """
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-    # trading reserves
-    share_reserves: float = 0.0
-    bond_reserves: float = 0.0
-
-    # trading buffers
-    base_buffer: float = 0.0
-    bond_buffer: float = 0.0
-
-    # lp reserves
-    lp_reserves: float = 0.0
-
-    # share price
-    vault_apr: float = 0.0
-    share_price: float = 1.0
-    init_share_price: float = 1.0
-
-    # fee percents
-
-    trade_fee_percent: float = 0.0
-    redemption_fee_percent: float = 0.0
-
-    def apply_delta(self, delta: MarketDeltas) -> None:
-        r"""Applies a delta to the market state."""
-        self.share_reserves += delta.d_base_asset / self.share_price
-        self.bond_reserves += delta.d_token_asset
-        self.base_buffer += delta.d_base_buffer
-        self.bond_buffer += delta.d_bond_buffer
-        self.lp_reserves += delta.d_lp_reserves
-        self.share_price += delta.d_share_price
-
-        # TODO: issue #146
-        # this is an imperfect solution to rounding errors, but it works for now
-        # ideally we'd find a more thorough solution than just catching errors
-        # when they are.
-        for key, value in self.__dict__.items():
-            if 0 > value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
-
-    def copy(self) -> MarketState:
-        """Returns a new copy of self"""
-        return MarketState(
-            share_reserves=self.share_reserves,
-            bond_reserves=self.bond_reserves,
-            base_buffer=self.bond_buffer,
-            lp_reserves=self.lp_reserves,
-            vault_apr=self.vault_apr,
-            share_price=self.share_price,
-            init_share_price=self.init_share_price,
-            trade_fee_percent=self.trade_fee_percent,
-            redemption_fee_percent=self.redemption_fee_percent,
-        )
-
-    def __str__(self):
-        output_string = (
-            "MarketState(\n"
-            "\ttrading_reserves(\n"
-            f"\t\t{self.share_reserves=},\n"
-            f"\t\t{self.bond_reserves=},\n"
-            "\t),\n"
-            "\ttrading_buffers(\n"
-            f"\t\t{self.base_buffer=},\n"
-            f"\t\t{self.bond_buffer=},\n"
-            "\t),\n"
-            "\tlp_reserves(\n"
-            f"\t\t{self.lp_reserves=},\n"
-            "\t),\n"
-            "\tunderlying_vault((\n"
-            f"\t\t{self.vault_apr=},\n"
-            f"\t\t{self.share_price=},\n"
-            f"\t\t{self.init_share_price=},\n"
-            "\t)\n"
-            ")"
-        )
-        return output_string
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class AgentTradeResult:
-    r"""The result to a user of performing a trade"""
-
-    d_base: float
-    d_bonds: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketTradeResult:
-    r"""The result to a market of performing a trade"""
-
-    d_base: float
-    d_bonds: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class TradeBreakdown:
-    r"""A granular breakdown of a trade.
-
-    This includes information relating to fees and slippage.
-    """
-
-    without_fee_or_slippage: float
-    with_fee: float
-    without_fee: float
-    fee: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class TradeResult:
-    r"""The result of performing a trade.
-
-    This includes granular information about the trade details,
-    including the amount of fees collected and the total delta.
-    Additionally, breakdowns for the updates that should be applied
-    to the user and the market are computed.
-    """
-
-    user_result: AgentTradeResult
-    market_result: MarketTradeResult
-    breakdown: TradeBreakdown
-
-    def __str__(self):
-        output_string = (
-            "TradeResult(\n"
-            "\tuser_results(\n"
-            f"\t\t{self.user_result.d_base=},\n"
-            f"\t\t{self.user_result.d_bonds=},\n"
-            "\t),\n"
-            "\tmarket_result(\n"
-            f"\t\t{self.market_result.d_base=},\n"
-            f"\t\t{self.market_result.d_bonds=},\n"
-            "\t),\n"
-            "\tbreakdown(\n"
-            f"\t\t{self.breakdown.without_fee_or_slippage=},\n"
-            f"\t\t{self.breakdown.with_fee=},\n"
-            f"\t\t{self.breakdown.without_fee=},\n"
-            f"\t\t{self.breakdown.fee=},\n"
-            "\t)\n"
-            ")"
-        )
-        return output_string
+    from elfpy.agents import Agent
+    from elfpy.markets.hyperdrive import Market, MarketAction, MarketDeltas
 
 
 @dataclass
@@ -438,7 +62,7 @@ class SimulationState:
     market_step_size: list[float] = field(
         default_factory=list, metadata=to_description("minimum time discretization for market time step")
     )
-    position_duration: list[StretchedTime] = field(
+    position_duration: list[time_utils.StretchedTime] = field(
         default_factory=list, metadata=to_description("time lapse between token mint and expiry as a yearfrac")
     )
     current_vault_apr: list[float] = field(default_factory=list, metadata=to_description("vault apr on a given day"))
@@ -576,7 +200,7 @@ class Config:
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
+        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
         return config_string
 
     def check_vault_apr(self) -> None:
@@ -601,7 +225,7 @@ class RunSimVariables:
     run_number: int = field(metadata=to_description("incremented each time run_simulation is called"))
     config: Config = field(metadata=to_description("the simulation config"))
     market_step_size: float = field(metadata=to_description("minimum time discretization for market time step"))
-    position_duration: StretchedTime = field(
+    position_duration: time_utils.StretchedTime = field(
         metadata=to_description("time lapse between token mint and expiry as a yearfrac")
     )
     simulation_start_time: datetime = field(metadata=to_description("start datetime for a given simulation"))
@@ -641,7 +265,7 @@ class TradeSimVariables:
     spot_price: float = field(metadata=to_description("price of shares"))
     market_deltas: MarketDeltas = field(metadata=to_description("deltas used to update the market state"))
     agent_address: int = field(metadata=to_description("address of the agent that is executing the trade"))
-    agent_deltas: Wallet = field(metadata=to_description("deltas used to update the market state"))
+    agent_deltas: wallet.Wallet = field(metadata=to_description("deltas used to update the market state"))
 
 
 def simulation_state_aggreagator(constructor):
@@ -729,3 +353,317 @@ class NewSimulationState:
         with entries in the smaller dataframes duplicated accordingly
         """
         return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
+
+
+class Simulator:
+    r"""Stores environment variables & market simulation outputs for AMM experimentation
+
+    Member variables include input settings, random variable ranges, and simulation outputs.
+    To be used in conjunction with the Market and PricingModel classes
+    """
+
+    # TODO: set up member (dataclass?) object that owns attributes instead of so many individual instance attributes
+    # pylint: disable=too-many-instance-attributes
+
+    def __init__(
+        self,
+        config: Config,
+        market: Market,
+    ):
+        # User specified variables
+        self.config = config
+        logging.info("%s", self.config)
+        self.market = market
+        self.set_rng(config.rng)
+        self.config.check_vault_apr()
+        # NOTE: lint error false positives: This message may report object members that are created dynamically,
+        # but exist at the time they are accessed.
+        self.config.freeze()  # type: ignore
+        self.agents: dict[int, Agent] = {}
+
+        # Simulation variables
+        self.run_number = 0
+        self.day = 0
+        self.block_number = 0
+        self.daily_block_number = 0
+        seconds_in_a_day = 86400
+        self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
+        self.trade_number = 0
+        self.start_time: datetime | None = None
+        if self.config.do_dataframe_states:
+            self.new_simulation_state = NewSimulationState()
+        self.simulation_state = SimulationState()
+
+    def set_rng(self, rng: Generator) -> None:
+        r"""Assign the internal random number generator to a new instantiation
+        This function is useful for forcing identical trade volume and directions across simulation runs
+
+        Parameters
+        ----------
+        rng : Generator
+            Random number generator, constructed using np.random.default_rng(seed)
+        """
+        if not isinstance(rng, Generator):
+            raise TypeError(f"rng type must be a random number generator, not {type(rng)}.")
+        self.rng = rng
+
+    def get_simulation_state_string(self) -> str:
+        r"""Returns a formatted string containing all of the Simulation class member variables
+
+        Returns
+        -------
+        state_string : str
+            Simulator class member variables (keys & values in self.__dict__) cast to a string, separated by a new line
+        """
+        if self.config.do_dataframe_states:
+            return str(self.new_simulation_state)
+        strings = []
+        for attribute, value in self.__dict__.items():
+            if attribute not in ("simulation_state", "rng"):
+                strings.append(f"{attribute} = {value}")
+        state_string = "\n".join(strings)
+        return state_string
+
+    @property
+    def market_step_size(self) -> float:
+        r"""Returns minimum time increment
+
+        Returns
+        -------
+        float
+            time between blocks, which is computed as 1 / blocks_per_year
+        """
+        blocks_per_year = 365 * self.config.num_blocks_per_day
+        return 1 / blocks_per_year
+
+    def add_agents(self, agent_list: list[Agent]) -> None:
+        r"""Append the agents and simulation_state member variables
+
+        If trades have already happened (as indicated by self.trade_number), then empty wallet states are
+        prepended to the simulation_state for each new agent so that the state can still easily be converted into
+        a pandas dataframe.
+
+        Parameters
+        ----------
+        agent_list : list[Agent]
+            A list of instantiated Agent objects
+        """
+        for agent in agent_list:
+            self.agents.update({agent.wallet.address: agent})
+            for key in agent.wallet.get_state_keys():
+                setattr(self.simulation_state, key, [None] * self.trade_number)
+
+    def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
+        r"""Get trades from the agent list, execute them, and update states
+
+        Parameters
+        ----------
+        last_block_in_sim : bool
+            If True, indicates if the current set of trades are occuring on the final block in the simulation
+        """
+        if self.config.shuffle_users:
+            if last_block_in_sim:
+                agent_ids: list[int] = self.rng.permutation(  # shuffle wallets except init_lp
+                    [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
+                ).tolist()
+                if self.config.init_lp:
+                    agent_ids.append(0)  # add init_lp so that they're always last
+            else:
+                agent_ids = self.rng.permutation(
+                    list(self.agents)
+                ).tolist()  # random permutation of keys (agent wallet addresses)
+        else:  # we are in a deterministic mode
+            if not last_block_in_sim:
+                agent_ids = list(self.agents)  # execute in increasing order
+            else:  # last block in sim
+                # close their trades in reverse order to allow withdrawing of LP tokens
+                agent_ids = list(self.agents)[::-1]
+        # Collect trades from all of the agents.
+        trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
+        # Execute the trades
+        self.execute_trades(trades)
+
+    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, MarketAction]]:
+        r"""Collect trades from a set of provided agent IDs.
+
+        Parameters
+        ----------
+        agent_ids: list[int]
+            A list of agent IDs. These IDs must correspond to agents that are
+            registered in the simulator.
+
+        liquidate: bool
+            If true, have agents collect their liquidation trades. Otherwise, agents collect their normal trades.
+
+
+        Returns
+        -------
+        list[tuple[int, MarketAction]]
+            A list of trades associated with specific agents.
+        """
+        agents_and_trades = []
+        for agent_id in agent_ids:
+            agent = self.agents[agent_id]
+            if liquidate:
+                logging.debug("Collecting liquiditation trades for market closure")
+                trades = agent.get_liquidation_trades(self.market)
+            else:
+                trades = agent.get_trades(self.market)
+            for trade in trades:
+                agents_and_trades.append((agent_id, trade))
+        return agents_and_trades
+
+    def execute_trades(self, agent_trades: list[tuple[int, MarketAction]]) -> None:
+        r"""Execute a list of trades associated with agents in the simulator.
+
+        Parameters
+        ----------
+        trades : list[tuple[int, list[MarketAction]]]
+            A list of agent trades. These will be executed in order.
+        """
+        for trade in agent_trades:
+            agent_id, agent_deltas, market_deltas = self.market.trade_and_update(trade)
+            self.market.update_market(market_deltas)
+            agent = self.agents[agent_id]
+            logging.debug(
+                "agent #%g wallet deltas:\n%s",
+                agent.wallet.address,
+                agent_deltas,
+            )
+            agent.update_wallet(agent_deltas, self.market)
+            # TODO: Get simulator, market, pricing model, agent state strings and log
+            agent.log_status_report()
+            # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
+            # issue #215
+            self.update_simulation_state()
+            if self.config.do_dataframe_states:
+                self.new_simulation_state.update(
+                    trade_vars=TradeSimVariables(
+                        self.run_number,
+                        self.day,
+                        self.block_number,
+                        self.trade_number,
+                        self.market.apr,
+                        self.market.spot_price,
+                        market_deltas,
+                        agent_id,
+                        agent_deltas,
+                    )
+                )
+            self.trade_number += 1
+
+    def run_simulation(self, liquidate_on_end: bool = True) -> None:
+        r"""Run the trade simulation and update the output state dictionary
+
+        This helper function advances time and orchestrates trades.
+        Typically, the simulation executes as follows:
+
+        .. code-block::
+           for day in num_trading_days:
+               # update simulation state day variables
+               for block in num_blocks_per_day:
+                   # update simulation state block variables
+                   for agent in agents:
+                       for trade in agent.trades:
+                           # do_trade
+                           # update simulation state trade variables
+
+        Parameters
+        ----------
+        liquidate_on_end : bool
+            if True, liquidate trades when the simulation is complete
+        """
+        last_block_in_sim = False
+        self.start_time = time_utils.current_datetime()
+        if self.config.do_dataframe_states:
+            self.new_simulation_state.update(
+                run_vars=RunSimVariables(
+                    self.run_number, self.config, self.market_step_size, self.market.position_duration, self.start_time
+                )
+            )
+        for day in range(0, self.config.num_trading_days):
+            self.day = day
+            self.market.market_state.vault_apr = self.config.vault_apr[self.day]
+            # Vault return can vary per day, which sets the current price per share
+            if self.day > 0:  # Update only after first day (first day set to init_share_price)
+                if self.config.compound_vault_apr:  # Apply return to latest price (full compounding)
+                    price_multiplier = self.market.market_state.share_price
+                else:  # Apply return to starting price (no compounding)
+                    price_multiplier = self.market.market_state.init_share_price
+                delta = hyperdrive.MarketDeltas(
+                    d_share_price=(
+                        self.market.market_state.vault_apr  # current day's apy
+                        / 365  # convert annual yield to daily
+                        * price_multiplier
+                    )
+                )
+                self.market.update_market(delta)
+                if self.config.do_dataframe_states:
+                    self.new_simulation_state.update(
+                        day_vars=DaySimVariables(
+                            self.run_number,
+                            self.day,
+                            self.market.market_state.vault_apr,
+                            self.market.market_state.share_price,
+                        )
+                    )
+            for daily_block_number in range(self.config.num_blocks_per_day):
+                self.daily_block_number = daily_block_number
+                last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
+                    self.daily_block_number == self.config.num_blocks_per_day - 1
+                )
+                liquidate = last_block_in_sim and liquidate_on_end
+                if self.config.do_dataframe_states:
+                    self.new_simulation_state.update(
+                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.market.time)
+                    )
+                self.collect_and_execute_trades(liquidate)
+                logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
+                self.market.log_market_step_string()
+                if not last_block_in_sim:
+                    self.market.tick(self.market_step_size)
+                    self.block_number += 1
+        # simulation has ended
+        for agent in self.agents.values():
+            agent.log_final_report(self.market)
+
+    def update_simulation_state(self) -> None:
+        r"""Increment the list for each key in the simulation_state output variable
+
+        .. todo:: This gets duplicated in notebooks when we make the pandas dataframe.
+            Instead, the simulation_state should be a dataframe.
+            issue #215
+        """
+        # pylint: disable=too-many-statements
+        self.simulation_state.model_name.append(self.market.pricing_model.model_name())
+        self.simulation_state.run_number.append(self.run_number)
+        self.simulation_state.simulation_start_time.append(self.start_time)
+        self.simulation_state.day.append(self.day)
+        self.simulation_state.block_number.append(self.block_number)
+        self.simulation_state.daily_block_number.append(self.daily_block_number)
+        if self.start_time is None:
+            self.simulation_state.block_timestamp.append(None)
+            self.simulation_state.current_market_datetime.append(None)
+        else:
+            self.simulation_state.block_timestamp.append(
+                time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+            )
+            self.simulation_state.current_market_datetime.append(
+                time_utils.year_as_datetime(self.start_time, self.market.time)
+            )
+        self.simulation_state.current_market_time.append(self.market.time)
+        self.simulation_state.trade_number.append(self.trade_number)
+        self.simulation_state.market_step_size.append(self.market_step_size)
+        self.simulation_state.position_duration.append(self.market.position_duration)
+        self.simulation_state.pool_apr.append(self.market.apr)
+        self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
+        self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
+        self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
+        for agent in self.agents.values():
+            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.market))
+        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
+        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
+        if self.market.market_state.share_reserves > 0:  # there is money in the market
+            self.simulation_state.spot_price.append(self.market.spot_price)
+        else:
+            self.simulation_state.spot_price.append(np.nan)

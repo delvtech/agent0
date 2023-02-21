@@ -7,7 +7,7 @@ import logging
 import numpy as np
 
 import utils_for_tests as test_utils  # utilities for testing
-from elfpy.types import Config
+import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 
@@ -21,12 +21,11 @@ class BaseParameterTest(unittest.TestCase):
     ):
         """Assigns member variables that are useful for many tests"""
         output_utils.setup_logging(log_filename=".logging/test_parameters.log", log_level=logging.DEBUG)
-        config = Config()
+        config = simulators.Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.num_position_days = 90
         simulator = test_utils.setup_simulation_entities(config, agent_policies)
-        simulator.run_simulation()
         output_utils.close_logging(delete_logs=delete_logs)
         return simulator
 

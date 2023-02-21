@@ -11,3 +11,4 @@ stochastic>=0.6.0
 pylint>=2.15.10
 pyright>=1.1.288
 black>=22.8.0
+pytz~=2022.7

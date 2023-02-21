@@ -1,4 +1,4 @@
-"""Testing for functions in src/elfpy/utils/post_processing.py"""
+"""Testing for functions in elfpy/utils/post_processing.py"""
 
 import unittest
 import pandas as pd

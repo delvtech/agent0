@@ -6,7 +6,9 @@ from typing import Type, Optional
 
 from pytest import skip
 
-from elfpy.types import MarketState, Quantity, StretchedTime
+import elfpy.types as types
+import elfpy.utils.time as time_utils
+from elfpy.markets.hyperdrive import MarketState
 
 skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)
 
@@ -15,7 +17,7 @@ skip(msg="These are dataclasses used for tests, not tests themselves", allow_mod
 class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: Quantity
+    out: types.Quantity
     market_state: MarketState
     days_remaining: float
     time_stretch_apy: float
@@ -47,9 +49,9 @@ class CalcInGivenOutSuccessByModelTestResult:
 class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: Quantity
+    out: types.Quantity
     market_state: MarketState
-    time_remaining: StretchedTime
+    time_remaining: time_utils.StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
 
@@ -69,7 +71,7 @@ class CalcInGivenOutFailureByModelTestResult:
 class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
-    in_: Quantity
+    in_: types.Quantity
     market_state: MarketState
     days_remaining: float
     time_stretch_apy: float
@@ -101,9 +103,9 @@ class CalcOutGivenInSuccessByModelTestResult:
 class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
-    in_: Quantity
+    in_: types.Quantity
     market_state: MarketState
-    time_remaining: StretchedTime
+    time_remaining: time_utils.StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
 

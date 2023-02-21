@@ -1,11 +1,11 @@
-"""Testing for price utilities found in src/elfpy/utils/price.py"""
+"""Testing for price utilities found in elfpy/utils/price.py"""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 import numpy as np
 
-from elfpy.types import StretchedTime
-from elfpy.utils import price as price_utils
+import elfpy.utils.time as time_utils
+import elfpy.utils.price as price_utils
 
 
 class BasePriceTest(unittest.TestCase):
@@ -20,7 +20,7 @@ class BasePriceTest(unittest.TestCase):
             # test 1: 0.95 price; 6mo remaining;
             {
                 "price": 0.95,
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -32,7 +32,7 @@ class BasePriceTest(unittest.TestCase):
             # test 2: 0.99 price; 6mo remaining;
             {
                 "price": 0.99,
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -44,7 +44,7 @@ class BasePriceTest(unittest.TestCase):
             # test 3: 1.00 price; 6mo remaining;
             {
                 "price": 1.00,  # 0% APR
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -56,7 +56,7 @@ class BasePriceTest(unittest.TestCase):
             # test 4: 0.95 price; 3mo remaining;
             {
                 "price": 0.95,
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -68,7 +68,7 @@ class BasePriceTest(unittest.TestCase):
             # test 5: 0.95 price; 12mo remaining;
             {
                 "price": 0.95,
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=365,  # 12 months = 1 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -80,7 +80,7 @@ class BasePriceTest(unittest.TestCase):
             # test 6: 0.10 price; 3mo remaining;
             {
                 "price": 0.10,  # 0% APR
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -94,7 +94,7 @@ class BasePriceTest(unittest.TestCase):
             #   the function asserts that price > 0, so this case should raise an AssertionError
             {
                 "price": -0.50,  # 0% APR
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -110,7 +110,7 @@ class BasePriceTest(unittest.TestCase):
             #   should raise an AssertionError
             {
                 "price": 0.95,  # 0% APR
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=-91.25,  # -3 months = -0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -125,7 +125,7 @@ class BasePriceTest(unittest.TestCase):
             #   the AMM math shouldn't let price be greater than 1
             {
                 "price": 1.50,  # 0% APR
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -160,7 +160,7 @@ class BasePriceTest(unittest.TestCase):
             # test 1: 10% apr; 6mo remaining;
             {
                 "apr": 0.10,  # 10% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -172,7 +172,7 @@ class BasePriceTest(unittest.TestCase):
             # test 2: 2% apr; 6mo remaining;
             {
                 "apr": 0.02,  # 2% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -184,7 +184,7 @@ class BasePriceTest(unittest.TestCase):
             # test 3: 0% apr; 6mo remaining;
             {
                 "apr": 0,  # 0% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=182.5,  # 6 months = 0.5 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -196,7 +196,7 @@ class BasePriceTest(unittest.TestCase):
             # test 4: 21% apr; 3mo remaining;
             {
                 "apr": 0.21,  # 21% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -208,7 +208,7 @@ class BasePriceTest(unittest.TestCase):
             # test 5: 5% apr; 12mo remaining;
             {
                 "apr": 0.05,  # 5% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=365,  # 12 months = 1 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -220,7 +220,7 @@ class BasePriceTest(unittest.TestCase):
             # test 6: 3600% apr; 3mo remaining;
             {
                 "apr": 36,  # 3600% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -232,7 +232,7 @@ class BasePriceTest(unittest.TestCase):
             # test 7: 0% apr; 3mo remaining;
             {
                 "apr": 0,  # 0% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=91.25,  # 3 months = 0.25 years
                     time_stretch=1,
                     normalizing_constant=365,
@@ -244,7 +244,7 @@ class BasePriceTest(unittest.TestCase):
             # test 8: 5% apr; no time remaining;
             {
                 "apr": 5,  # 500% apr
-                "time_remaining": StretchedTime(
+                "time_remaining": time_utils.StretchedTime(
                     days=0,
                     time_stretch=1,
                     normalizing_constant=365,

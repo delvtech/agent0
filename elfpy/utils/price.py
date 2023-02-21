@@ -1,11 +1,11 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from elfpy.types import StretchedTime
 import elfpy.utils.time as time_utils
 
+
 ### Spot Price and APR ###
-def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
+def calc_apr_from_spot_price(price: float, time_remaining: time_utils.StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
@@ -33,7 +33,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
     return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
-def calc_spot_price_from_apr(apr: float, time_remaining: StretchedTime):
+def calc_spot_price_from_apr(apr: float, time_remaining: time_utils.StretchedTime):
     r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
 
     Parameters

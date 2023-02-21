@@ -5,9 +5,8 @@ subclasses of BasicPolicy will implement trade actions
 """
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from elfpy.markets import Market
-from elfpy.agent import Agent
-from elfpy.types import MarketAction
+from elfpy.markets.hyperdrive import Market, MarketAction
+from elfpy.agents import Agent
 
 
 class NoAction(Agent):

@@ -10,9 +10,9 @@ from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
-from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.types import MarketActionType, Config
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive import Market, MarketActionType
+import elfpy.simulators as simulators
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 
@@ -97,7 +97,7 @@ def get_argparser() -> argparse.ArgumentParser:
         "--pricing_model", help="Pricing model to be used in the simulation", default="Hyperdrive", type=str
     )
     parser.add_argument("--num_trading_days", help="Number of simulated trading days", default=5, type=int)
-    parser.add_argument("--blocks_per_day", help="Number of simulated trading blocks per day", default=5, type=int)
+    parser.add_argument("--num_blocks_per_day", help="Number of simulated trading blocks per day", default=5, type=int)
     parser.add_argument(
         "--vault_apr_type",
         help="Distribution type for the vault apr; must be 'uniform' or 'brownian'.",
@@ -110,9 +110,9 @@ def get_argparser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     args = get_argparser().parse_args()
-    config = Config()
+    config = simulators.Config()
     config.num_trading_days = args.num_trading_days
-    config.num_blocks_per_day = args.blocks_per_day
+    config.num_blocks_per_day = args.num_blocks_per_day
     config.pricing_model_name = args.pricing_model
     if args.vault_apr_type == "brownian":
         config.vault_apr = (

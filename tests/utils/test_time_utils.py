@@ -1,4 +1,4 @@
-"""Testing for time utilities found in src/elfpy/utils/time.py"""
+"""Testing for time utilities found in elfpy/utils/time.py"""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import datetime
