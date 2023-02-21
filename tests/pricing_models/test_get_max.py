@@ -232,13 +232,13 @@ class TestGetMax(unittest.TestCase):
         if is_long:
             delta = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
+                d_bond_asset=trade_result.market_result.d_bonds,
                 d_base_buffer=trade_result.breakdown.with_fee,
             )
         else:
             delta = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
+                d_bond_asset=trade_result.market_result.d_bonds,
                 d_bond_buffer=-trade_result.user_result.d_bonds,
             )
         market_state.apply_delta(delta=delta)

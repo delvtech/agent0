@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import numpy as np
@@ -189,7 +189,7 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    trade_amount: float  # FIXME: should this be a Quantity, not a float? Make sure, then delete fixme
+    trade_amount: float  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # min amount to receive for the action
     min_amount_out: float
     # the agent's wallet
