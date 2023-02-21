@@ -8,8 +8,8 @@ import numpy as np
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 from elfpy.utils import sim_utils
-from elfpy.types import MarketState, Config
-from elfpy.markets import Market
+from elfpy.types import Config
+from elfpy.markets.hyperdrive import Market, MarketState
 
 # because we're testing lots of stuff here!
 # pylint: disable=too-many-arguments

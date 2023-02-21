@@ -4,20 +4,23 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from abc import ABC
 import decimal
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
+# pylint: disable=consider-using-from-import
 from elfpy import (
     MAX_RESERVES_DIFFERENCE,
     WEI,
 )
-from elfpy.types import (
-    Quantity,
-    MarketState,
-    StretchedTime,
-    TokenType,
-    TradeResult,
-)
+import elfpy.types as types
+from elfpy.markets.hyperdrive import MarketState
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
+
+if TYPE_CHECKING:
+    from elfpy.types import (
+        StretchedTime,
+        TradeResult,
+    )
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
@@ -33,7 +36,7 @@ class PricingModel(ABC):
 
     def calc_in_given_out(
         self,
-        out: Quantity,
+        out: types.Quantity,
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> TradeResult:
@@ -42,7 +45,7 @@ class PricingModel(ABC):
 
     def calc_out_given_in(
         self,
-        in_: Quantity,
+        in_: types.Quantity,
         market_state: MarketState,
         time_remaining: StretchedTime,
     ) -> TradeResult:
@@ -472,12 +475,12 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be purchased.
         """
         base = self.calc_in_given_out(
-            out=Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=TokenType.PT),
+            out=types.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=Quantity(amount=base, unit=TokenType.BASE),
+            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -513,14 +516,15 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be shorted.
         """
         bonds = self.calc_in_given_out(
-            out=Quantity(
-                market_state.share_reserves - market_state.base_buffer / market_state.share_price, unit=TokenType.PT
+            out=types.Quantity(
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price,
+                unit=types.TokenType.PT,
             ),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         base = self.calc_out_given_in(
-            in_=Quantity(amount=bonds, unit=TokenType.PT),
+            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -533,7 +537,7 @@ class PricingModel(ABC):
 
     def check_input_assertions(
         self,
-        quantity: Quantity,
+        quantity: types.Quantity,
         market_state: MarketState,
         time_remaining: StretchedTime,
     ):

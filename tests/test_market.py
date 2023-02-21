@@ -7,9 +7,9 @@ import logging
 from typing import Any
 
 import utils_for_tests as test_utils  # utilities for testing
-from elfpy.wallet import Wallet, Long, Short
-from elfpy.types import MarketDeltas, StretchedTime, MarketState, Config
-from elfpy.markets import Market
+from elfpy.agents.wallet import Wallet, Long, Short
+from elfpy.types import StretchedTime, Config
+from elfpy.markets.hyperdrive import Market, MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 

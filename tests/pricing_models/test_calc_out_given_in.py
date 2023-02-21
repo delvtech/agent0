@@ -14,7 +14,8 @@ from calc_test_dataclasses import (
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType
+from elfpy.types import Quantity, StretchedTime, TokenType
+from elfpy.markets.hyperdrive import MarketState
 
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines

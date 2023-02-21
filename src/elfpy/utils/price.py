@@ -1,8 +1,12 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from elfpy.types import StretchedTime
+from typing import TYPE_CHECKING
+
 import elfpy.utils.time as time_utils
+
+if TYPE_CHECKING:
+    from elfpy.types import StretchedTime
 
 ### Spot Price and APR ###
 def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):

@@ -6,7 +6,8 @@ from dataclasses import dataclass
 import unittest
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
-from elfpy.types import MarketDeltas, MarketState, Quantity, StretchedTime, TokenType, TradeResult
+from elfpy.types import Quantity, StretchedTime, TokenType, TradeResult
+from elfpy.markets.hyperdrive import MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 

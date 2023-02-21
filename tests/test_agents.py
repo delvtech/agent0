@@ -10,10 +10,10 @@ import numpy as np
 
 import utils_for_tests as test_utils  # utilities for testing
 
-from elfpy import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
-from elfpy.agent import Agent
-from elfpy.types import MarketState, Quantity, StretchedTime, TokenType, Config
-from elfpy.markets import Market
+from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
+from elfpy.agents.agent import Agent
+from elfpy.types import Quantity, StretchedTime, TokenType, Config
+from elfpy.markets.hyperdrive import Market, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel

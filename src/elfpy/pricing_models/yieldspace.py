@@ -3,19 +3,17 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
 import logging
+from typing import TYPE_CHECKING
 
+# pylint: disable=consider-using-from-import
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
-from elfpy.types import (
-    MarketTradeResult,
-    Quantity,
-    MarketState,
-    StretchedTime,
-    TokenType,
-    TradeBreakdown,
-    TradeResult,
-    AgentTradeResult,
-)
+import elfpy.types as types
+import elfpy.markets.hyperdrive as hyperdrive
+
+if TYPE_CHECKING:
+    from elfpy.types import Quantity, StretchedTime
+    from elfpy.markets.hyperdrive import MarketState
 
 
 class YieldSpacePricingModel(PricingModel):
@@ -205,7 +203,7 @@ class YieldSpacePricingModel(PricingModel):
         out: Quantity,
         market_state: MarketState,
         time_remaining: StretchedTime,
-    ) -> TradeResult:
+    ) -> types.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -304,7 +302,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if out.unit == TokenType.BASE:
+        if out.unit == types.TokenType.BASE:
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
             d_shares = out_amount / share_price
@@ -354,15 +352,15 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = types.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = MarketTradeResult(
+            market_result = hyperdrive.MarketTradeResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
-        elif out.unit == TokenType.PT:
+        elif out.unit == types.TokenType.PT:
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
@@ -410,23 +408,23 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = types.AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = MarketTradeResult(
+            market_result = hyperdrive.MarketTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
         else:
             raise AssertionError(
                 # pylint: disable-next=line-too-long
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {TokenType.BASE} or {TokenType.PT}, not {out.unit}!"
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
-        return TradeResult(
+        return types.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=TradeBreakdown(
+            breakdown=types.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
@@ -442,7 +440,7 @@ class YieldSpacePricingModel(PricingModel):
         in_: Quantity,
         market_state: MarketState,
         time_remaining: StretchedTime,
-    ) -> TradeResult:
+    ) -> types.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -540,7 +538,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if in_.unit == TokenType.BASE:
+        if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
@@ -575,15 +573,15 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = types.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = MarketTradeResult(
+            market_result = hyperdrive.MarketTradeResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
-        elif in_.unit == TokenType.PT:
+        elif in_.unit == types.TokenType.PT:
             d_bonds = in_amount
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
@@ -624,23 +622,23 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = types.AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = MarketTradeResult(
+            market_result = hyperdrive.MarketTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
         else:
             raise AssertionError(
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
-                f" to be {TokenType.BASE} or {TokenType.PT}, not {in_.unit}!"
+                f" to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
-        return TradeResult(
+        return types.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=TradeBreakdown(
+            breakdown=types.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),

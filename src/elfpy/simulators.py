@@ -8,7 +8,9 @@ import logging
 import numpy as np
 from numpy.random._generator import Generator
 
+# pylint: disable=consider-using-from-import
 import elfpy.utils.time as time_utils
+<<<<<<< HEAD
 from elfpy.types import (
     MarketAction,
     MarketDeltas,
@@ -19,10 +21,14 @@ from elfpy.types import (
     TradeSimVariables,
     NewSimulationState,
 )
+=======
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.types as types
+>>>>>>> 98dc865 (fixes circular imports)
 
 if TYPE_CHECKING:
-    from elfpy.agent import Agent
-    from elfpy.markets import Market
+    from elfpy.agents.agent import Agent
+    from elfpy.markets.hyperdrive import Market, MarketAction
     from elfpy.types import Config
 
 
@@ -61,9 +67,13 @@ class Simulator:
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.trade_number = 0
         self.start_time: datetime.datetime | None = None
+<<<<<<< HEAD
         if self.config.do_dataframe_states:
             self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()
+=======
+        self.simulation_state = types.SimulationState()
+>>>>>>> 98dc865 (fixes circular imports)
 
     def set_rng(self, rng: Generator) -> None:
         r"""Assign the internal random number generator to a new instantiation
@@ -261,7 +271,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = MarketDeltas(
+                delta = hyperdrive.MarketDeltas(
                     d_share_price=(
                         self.market.market_state.vault_apr  # current day's apy
                         / 365  # convert annual yield to daily

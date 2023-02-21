@@ -2,9 +2,13 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from functools import wraps
 from typing import TYPE_CHECKING
+<<<<<<< HEAD
 from dataclasses import dataclass, field, make_dataclass
+=======
+from functools import wraps
+from dataclasses import dataclass, field
+>>>>>>> 98dc865 (fixes circular imports)
 from enum import Enum
 import json
 
@@ -12,12 +16,11 @@ import pandas as pd
 import numpy as np
 from numpy.random import Generator
 
-from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.time as time_utils
-from elfpy.utils.outputs import CustomEncoder
-from elfpy.markets.hyperdrive import MarketTradeResult
+import elfpy.utils.outputs as output_utils
 
 if TYPE_CHECKING:
+    from elfpy.markets.hyperdrive import MarketTradeResult
     from datetime import datetime
     from typing import Type, Any, Optional
 
@@ -357,7 +360,7 @@ class Config:
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=CustomEncoder)
+        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
         return config_string
 
     def check_vault_apr(self) -> None:

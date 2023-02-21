@@ -5,7 +5,8 @@ import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.price as price_utils
-from elfpy.types import MarketState, StretchedTime
+from elfpy.types import StretchedTime
+from elfpy.markets.hyperdrive import MarketState
 
 
 # pylint: disable=duplicate-code

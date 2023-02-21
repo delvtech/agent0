@@ -8,10 +8,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
+# pylint: disable=consider-using-from-import
+from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
-from elfpy.types import freezable, Quantity, StretchedTime, TokenType
-from elfpy.agents.wallet import Long, Short, Wallet
+import elfpy.agents.wallet as wallet
+import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -34,7 +36,7 @@ class MarketActionType(Enum):
     REMOVE_LIQUIDITY = "remove_liquidity"
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltas:
     r"""Specifies changes to values in the market"""
@@ -74,7 +76,7 @@ class MarketDeltas:
         return output_string
 
 
-@freezable(frozen=True, no_new_attribs=True)
+@types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketTradeResult:
     r"""The result to a market of performing a trade"""
@@ -83,7 +85,7 @@ class MarketTradeResult:
     d_bonds: float
 
 
-@freezable(frozen=False, no_new_attribs=False)
+@types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
 class MarketState:
     r"""The state of an AMM
@@ -154,8 +156,18 @@ class MarketState:
         # TODO: issue #146
         # this is an imperfect solution to rounding errors, but it works for now
         for key, value in self.__dict__.items():
-            if value < 0:
-                assert value > 0, f"MarketState values must be > {0.0}. Error on {key} = {value}"
+            if 0 > value > -PRECISION_THRESHOLD:
+                logging.debug(
+                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                    key,
+                    value,
+                    PRECISION_THRESHOLD,
+                )
+                setattr(self, key, 0)
+            else:
+                assert (
+                    value > -PRECISION_THRESHOLD
+                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -195,7 +207,7 @@ class MarketState:
         return output_string
 
 
-@freezable(frozen=False, no_new_attribs=True)
+@types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class MarketAction:
     r"""Market action specification"""
@@ -207,7 +219,7 @@ class MarketAction:
     # min amount to receive for the action
     min_amount_out: float
     # the agent's wallet
-    wallet: Wallet
+    wallet: wallet.Wallet
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
 
@@ -236,7 +248,7 @@ class Market:
         self,
         pricing_model: PricingModel,
         market_state: MarketState,
-        position_duration: StretchedTime,
+        position_duration: types.StretchedTime,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
@@ -245,7 +257,7 @@ class Market:
         assert (
             position_duration.days == position_duration.normalizing_constant
         ), "position_duration argument term length (days) should normalize to 1"
-        self.position_duration = StretchedTime(
+        self.position_duration = types.StretchedTime(
             position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
         )
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -276,7 +288,7 @@ class Market:
             if agent_action.mint_time is None:
                 raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
 
-    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
+    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -417,7 +429,7 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         shorts need their margin account to cover the worst case scenario (p=1)
         margin comes from 2 sources:
@@ -430,7 +442,7 @@ class Market:
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
-        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -450,10 +462,10 @@ class Market:
         )
         # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
         max_loss = trade_amount - trade_result.user_result.d_base
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=-max_loss,
-            shorts={self.time: Short(balance=trade_amount, open_share_price=self.market_state.share_price)},
+            shorts={self.time: wallet.Short(balance=trade_amount, open_share_price=self.market_state.share_price)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -464,7 +476,7 @@ class Market:
         open_share_price: float,
         trade_amount: float,
         mint_time: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
         the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
@@ -491,14 +503,14 @@ class Market:
         years_remaining = time_utils.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = StretchedTime(
+        time_remaining = types.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
 
         # Perform the trade.
-        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -516,12 +528,12 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-trade_amount,
         )
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=(self.market_state.share_price / open_share_price) * trade_amount
             + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
             shorts={
-                mint_time: Short(
+                mint_time: wallet.Short(
                     balance=-trade_amount,
                     open_share_price=0,
                 )
@@ -534,7 +546,7 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,  # in base
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -544,7 +556,7 @@ class Market:
         # issue #146
         if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
-            trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
+            trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
             self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -562,15 +574,15 @@ class Market:
                 d_token_asset=trade_result.market_result.d_bonds,
                 d_base_buffer=trade_result.user_result.d_bonds,
             )
-            agent_deltas = Wallet(
+            agent_deltas = wallet.Wallet(
                 address=wallet_address,
                 base=trade_result.user_result.d_base,
-                longs={self.time: Long(trade_result.user_result.d_bonds)},
+                longs={self.time: wallet.Long(trade_result.user_result.d_bonds)},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = Wallet(address=wallet_address, base=0)
+            agent_deltas = wallet.Wallet(address=wallet_address, base=0)
         return market_deltas, agent_deltas
 
     def close_long(
@@ -578,7 +590,7 @@ class Market:
         wallet_address: int,
         trade_amount: float,  # in bonds
         mint_time: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -589,14 +601,14 @@ class Market:
         years_remaining = time_utils.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = StretchedTime(
+        time_remaining = types.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
 
         # Perform the trade.
-        trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -614,10 +626,10 @@ class Market:
             d_token_asset=trade_result.market_result.d_bonds,
             d_base_buffer=-trade_amount,
         )
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=trade_result.user_result.d_base,
-            longs={mint_time: Long(trade_result.user_result.d_bonds)},
+            longs={mint_time: wallet.Long(trade_result.user_result.d_bonds)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -627,7 +639,7 @@ class Market:
         wallet_address: int,
         contribution: float,
         target_apr: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Allows an LP to initialize the market"""
         share_reserves = contribution / self.market_state.share_price
         bond_reserves = self.pricing_model.calc_bond_reserves(
@@ -643,7 +655,7 @@ class Market:
             d_base_asset=contribution,
             d_token_asset=bond_reserves,
         )
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=-contribution,
             lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
@@ -654,7 +666,7 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
         if (
@@ -665,7 +677,9 @@ class Market:
             rate = self.apr
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=Quantity(amount=trade_amount, unit=TokenType.PT),  # temporary Quantity object just for this check
+            quantity=types.Quantity(
+                amount=trade_amount, unit=types.TokenType.PT
+            ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
@@ -681,7 +695,7 @@ class Market:
             d_token_asset=d_token_reserves,
             d_lp_reserves=lp_out,
         )
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=-d_base_reserves,
             lp_tokens=lp_out,
@@ -692,11 +706,13 @@ class Market:
         self,
         wallet_address: int,
         trade_amount: float,
-    ) -> tuple[MarketDeltas, Wallet]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=Quantity(amount=trade_amount, unit=TokenType.PT),  # temporary Quantity object just for this check
+            quantity=types.Quantity(
+                amount=trade_amount, unit=types.TokenType.PT
+            ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
@@ -712,7 +728,7 @@ class Market:
             d_token_asset=-d_token_reserves,
             d_lp_reserves=-lp_in,
         )
-        agent_deltas = Wallet(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             base=d_base_reserves,
             lp_tokens=-lp_in,

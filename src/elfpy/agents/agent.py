@@ -45,7 +45,11 @@ class Agent:
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
         self.wallet: Wallet = Wallet(address=wallet_address, base=budget)
-        self.name = str(self).split(" ", maxsplit=1)[0][len("<elfpy.policies.") : -len(".Policy")]
+        name = str(self.__class__)
+        if "Policy" in name:  # agent was instantiated from policy folder
+            self.name = name.split(".")[-2]
+        else:  # agent was built in the namespace (e.g. a jupyter notebook)
+            self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
     def create_agent_action(
         self,

@@ -5,18 +5,16 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
+# pylint: disable=consider-using-from-import
 from elfpy.simulators import Simulator
-from elfpy.types import (
-    MarketState,
-    StretchedTime,
-)
-from elfpy.markets import Market
+import elfpy.types as types
+import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
-    from elfpy.agent import Agent
+    from elfpy.agents.agent import Agent
     from elfpy.types import Config
 
 
@@ -57,7 +55,7 @@ def get_simulator(
 
 
 def get_init_lp_agent(
-    market: Market,
+    market: hyperdrive.Market,
     target_liquidity: float,
 ) -> Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -87,7 +85,7 @@ def get_market(
     pricing_model: PricingModel,
     config: Config,
     init_target_liquidity: float = 1.0,
-) -> Market:
+) -> hyperdrive.Market:
     r"""Setup market
 
     Parameters
@@ -117,7 +115,7 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
     """
-    position_duration = StretchedTime(
+    position_duration = types.StretchedTime(
         days=config.num_position_days,
         time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
         normalizing_constant=config.num_position_days,
@@ -126,14 +124,16 @@ def get_market(
     # then we need to rescale the target apr passed to calc_liquidity
     adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
-        market_state=MarketState(share_price=config.init_share_price, init_share_price=config.init_share_price),
+        market_state=hyperdrive.MarketState(
+            share_price=config.init_share_price, init_share_price=config.init_share_price
+        ),
         target_liquidity=init_target_liquidity,
         target_apr=adjusted_target_apr,
         position_duration=position_duration,
     )
-    market = Market(
+    market = hyperdrive.Market(
         pricing_model=pricing_model,
-        market_state=MarketState(
+        market_state=hyperdrive.MarketState(
             share_reserves=share_reserves_direct,
             bond_reserves=bond_reserves_direct,
             base_buffer=0,
@@ -186,4 +186,4 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
     Uninstantiated agent policy
 
     """
-    return import_module(f"elfpy.policies.{agent_type}").Policy
+    return import_module(f"elfpy.agents.policies.{agent_type}").Policy

@@ -3,7 +3,8 @@ import unittest
 import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
-from elfpy.types import MarketState, StretchedTime
+from elfpy.types import StretchedTime
+from elfpy.markets.hyperdrive import MarketState
 from elfpy.utils import sim_utils
 from elfpy.utils.time import time_to_days_remaining
 
