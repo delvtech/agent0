@@ -15,7 +15,7 @@ from numpy.random import Generator
 from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.time as time_utils
 from elfpy.utils.outputs import CustomEncoder
-from elfpy.wallet import Wallet
+from elfpy.markets.hyperdrive import MarketTradeResult
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -72,23 +72,6 @@ class TokenType(Enum):
     PT = "pt"
 
 
-class MarketActionType(Enum):
-    r"""
-    The descriptor of an action in a market
-
-    .. todo:: Add INITIALIZE_MARKET = "initialize_market"
-    """
-
-    OPEN_LONG = "open_long"
-    OPEN_SHORT = "open_short"
-
-    CLOSE_LONG = "close_long"
-    CLOSE_SHORT = "close_short"
-
-    ADD_LIQUIDITY = "add_liquidity"
-    REMOVE_LIQUIDITY = "remove_liquidity"
-
-
 @dataclass
 class Quantity:
     r"""An amount with a unit"""
@@ -136,212 +119,10 @@ class StretchedTime:
         return output_string
 
 
-@freezable(frozen=False, no_new_attribs=True)
-@dataclass
-class MarketAction:
-    r"""Market action specification"""
-
-    # these two variables are required to be set by the strategy
-    action_type: MarketActionType
-    # amount to supply for the action
-    trade_amount: float
-    # min amount to receive for the action
-    min_amount_out: float
-    # the agent's wallet
-    wallet: Wallet
-    # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: Optional[float] = None
-
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address}"
-        for key, value in self.__dict__.items():
-            if key == "action_type":
-                output_string += f" execute {value}()"
-            elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {value}"
-            elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {value}"
-        return output_string
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketDeltas:
-    r"""Specifies changes to values in the market"""
-
-    # .. todo::  Create our own dataclass decorator that is always mutable and includes dict set/get syntax
-    # pylint: disable=duplicate-code
-    # pylint: disable=too-many-instance-attributes
-
-    # .. todo::  Use better naming for these values:
-    #     - "d_base_asset" => "d_share_reserves"
-    # .. todo::  Is there some reason this is base instead of shares?
-    #     - "d_token_asset" => "d_bond_reserves"
-    d_base_asset: float = 0
-    d_token_asset: float = 0
-    d_base_buffer: float = 0
-    d_bond_buffer: float = 0
-    d_lp_reserves: float = 0
-    d_share_price: float = 0
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
-
-    def __str__(self):
-        output_string = (
-            "MarketDeltas(\n"
-            f"\t{self.d_base_asset=},\n"
-            f"\t{self.d_token_asset=},\n"
-            f"\t{self.d_base_buffer=},\n"
-            f"\t{self.d_bond_buffer=},\n"
-            f"\t{self.d_lp_reserves=},\n"
-            f"\t{self.d_share_price=},\n"
-            ")"
-        )
-        return output_string
-
-
-@freezable(frozen=False, no_new_attribs=False)
-@dataclass
-class MarketState:
-    r"""The state of an AMM
-
-    Implements a class for all that that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
-    likely be accessible through the AMM as well.
-
-    Attributes
-    ----------
-    share_reserves: float
-        Quantity of shares stored in the market
-    bond_reserves: float
-        Quantity of bonds stored in the market
-    base_buffer: float
-        Base amount set aside to account for open longs
-    bond_buffer: float
-        Bond amount set aside to account for open shorts
-    lp_reserves: float
-        Amount of lp tokens
-    vault_apr: float
-        .. todo: fill this in
-    share_price: float
-        .. todo: fill this in
-    init_share_price: float
-        .. todo: fill this in
-    trade_fee_percent : float
-        The percentage of the difference between the amount paid without
-        slippage and the amount received that will be added to the input
-        as a fee.
-    redemption_fee_percent : float
-        A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    """
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
-
-    # trading reserves
-    share_reserves: float = 0.0
-    bond_reserves: float = 0.0
-
-    # trading buffers
-    base_buffer: float = 0.0
-    bond_buffer: float = 0.0
-
-    # lp reserves
-    lp_reserves: float = 0.0
-
-    # share price
-    vault_apr: float = 0.0
-    share_price: float = 1.0
-    init_share_price: float = 1.0
-
-    # fee percents
-
-    trade_fee_percent: float = 0.0
-    redemption_fee_percent: float = 0.0
-
-    def apply_delta(self, delta: MarketDeltas) -> None:
-        r"""Applies a delta to the market state."""
-        self.share_reserves += delta.d_base_asset / self.share_price
-        self.bond_reserves += delta.d_token_asset
-        self.base_buffer += delta.d_base_buffer
-        self.bond_buffer += delta.d_bond_buffer
-        self.lp_reserves += delta.d_lp_reserves
-        self.share_price += delta.d_share_price
-
-        # TODO: issue #146
-        # this is an imperfect solution to rounding errors, but it works for now
-        # ideally we'd find a more thorough solution than just catching errors
-        # when they are.
-        for key, value in self.__dict__.items():
-            if 0 > value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
-
-    def copy(self) -> MarketState:
-        """Returns a new copy of self"""
-        return MarketState(
-            share_reserves=self.share_reserves,
-            bond_reserves=self.bond_reserves,
-            base_buffer=self.bond_buffer,
-            lp_reserves=self.lp_reserves,
-            vault_apr=self.vault_apr,
-            share_price=self.share_price,
-            init_share_price=self.init_share_price,
-            trade_fee_percent=self.trade_fee_percent,
-            redemption_fee_percent=self.redemption_fee_percent,
-        )
-
-    def __str__(self):
-        output_string = (
-            "MarketState(\n"
-            "\ttrading_reserves(\n"
-            f"\t\t{self.share_reserves=},\n"
-            f"\t\t{self.bond_reserves=},\n"
-            "\t),\n"
-            "\ttrading_buffers(\n"
-            f"\t\t{self.base_buffer=},\n"
-            f"\t\t{self.bond_buffer=},\n"
-            "\t),\n"
-            "\tlp_reserves(\n"
-            f"\t\t{self.lp_reserves=},\n"
-            "\t),\n"
-            "\tunderlying_vault((\n"
-            f"\t\t{self.vault_apr=},\n"
-            f"\t\t{self.share_price=},\n"
-            f"\t\t{self.init_share_price=},\n"
-            "\t)\n"
-            ")"
-        )
-        return output_string
-
-
 @freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentTradeResult:
     r"""The result to a user of performing a trade"""
-
-    d_base: float
-    d_bonds: float
-
-
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketTradeResult:
-    r"""The result to a market of performing a trade"""
 
     d_base: float
     d_bonds: float

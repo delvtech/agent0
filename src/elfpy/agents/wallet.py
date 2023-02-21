@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from elfpy.markets import Market
+    from elfpy.markets.hyperdrive import Market
     from typing import Any
 
 

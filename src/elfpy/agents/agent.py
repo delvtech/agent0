@@ -6,12 +6,13 @@ import logging
 
 import numpy as np
 
-from elfpy.wallet import Long, Short, Wallet
-from elfpy.types import MarketAction, MarketActionType, Quantity, TokenType
+from elfpy.agents.wallet import Long, Short, Wallet
+from elfpy.markets.hyperdrive import MarketAction, MarketActionType
+from elfpy.types import Quantity, TokenType
 
 if TYPE_CHECKING:
     from typing import Optional, Iterable
-    from elfpy.markets import Market
+    from elfpy.markets.hyperdrive import Market
 
 
 class Agent:

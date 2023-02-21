@@ -10,9 +10,9 @@ from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
 import elfpy
-from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.types import MarketActionType, Config
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive import Market, MarketActionType
+from elfpy.types import Config
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 

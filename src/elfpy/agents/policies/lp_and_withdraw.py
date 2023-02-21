@@ -1,7 +1,6 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
-from elfpy.agent import Agent
-from elfpy.markets import Market
-from elfpy.types import MarketActionType
+from elfpy.agents.agent import Agent
+from elfpy.markets.hyperdrive import Market, MarketActionType
 
 # pylint: disable=duplicate-code
 
