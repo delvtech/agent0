@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 
 from elfpy.types import freezable
+from elfpy.agents.agent import AgentTradeResult
+from elfpy.markets.hyperdrive import MarketTradeResult
 
 
 class TokenType(Enum):

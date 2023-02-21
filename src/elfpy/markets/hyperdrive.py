@@ -14,6 +14,7 @@ import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
+import elfpy.simulators.trades as trades
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -248,7 +249,7 @@ class Market:
         self,
         pricing_model: PricingModel,
         market_state: MarketState,
-        position_duration: types.StretchedTime,
+        position_duration: time_utils.StretchedTime,
     ):
         # market state variables
         self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
@@ -257,7 +258,7 @@ class Market:
         assert (
             position_duration.days == position_duration.normalizing_constant
         ), "position_duration argument term length (days) should normalize to 1"
-        self.position_duration = types.StretchedTime(
+        self.position_duration = time_utils.StretchedTime(
             position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
         )
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -442,7 +443,7 @@ class Market:
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -503,14 +504,14 @@ class Market:
         years_remaining = time_utils.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = types.StretchedTime(
+        time_remaining = time_utils.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
 
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -556,7 +557,7 @@ class Market:
         # issue #146
         if trade_amount <= self.market_state.bond_reserves:
             # Perform the trade.
-            trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
+            trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.BASE)
             self.pricing_model.check_input_assertions(
                 quantity=trade_quantity,
                 market_state=self.market_state,
@@ -601,14 +602,14 @@ class Market:
         years_remaining = time_utils.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = types.StretchedTime(
+        time_remaining = time_utils.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
 
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -677,8 +678,8 @@ class Market:
             rate = self.apr
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=types.Quantity(
-                amount=trade_amount, unit=types.TokenType.PT
+            quantity=trades.Quantity(
+                amount=trade_amount, unit=trades.TokenType.PT
             ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,
@@ -710,8 +711,8 @@ class Market:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         # sanity check inputs
         self.pricing_model.check_input_assertions(
-            quantity=types.Quantity(
-                amount=trade_amount, unit=types.TokenType.PT
+            quantity=trades.Quantity(
+                amount=trade_amount, unit=trades.TokenType.PT
             ),  # temporary Quantity object just for this check
             market_state=self.market_state,
             time_remaining=self.position_duration,

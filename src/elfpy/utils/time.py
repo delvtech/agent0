@@ -2,8 +2,11 @@
 
 from datetime import datetime, timedelta
 import pytz
+from dataclasses import dataclass
 
 import numpy as np
+
+from elfpy.types import freezable
 
 
 @freezable(frozen=True, no_new_attribs=True)
@@ -20,14 +23,12 @@ class StretchedTime:
     @property
     def stretched_time(self):
         r"""Returns days / normalizing_constant / time_stretch"""
-        return time_utils.days_to_time_remaining(
-            self.days, self.time_stretch, normalizing_constant=self.normalizing_constant
-        )
+        return days_to_time_remaining(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
 
     @property
     def normalized_time(self):
         r"""Format time as normalized days"""
-        return time_utils.norm_days(
+        return norm_days(
             self.days,
             self.normalizing_constant,
         )

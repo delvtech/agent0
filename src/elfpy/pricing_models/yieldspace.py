@@ -10,9 +10,10 @@ from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
 import elfpy.types as types
 import elfpy.markets.hyperdrive as hyperdrive
+from elfpy.agents.agent import AgentTradeResult
 
 if TYPE_CHECKING:
-    from elfpy.types import Quantity, StretchedTime
+    import elfpy.simulators.trades as trades
     from elfpy.markets.hyperdrive import MarketState
 
 
@@ -41,7 +42,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -115,7 +116,7 @@ class YieldSpacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -139,7 +140,7 @@ class YieldSpacePricingModel(PricingModel):
         lp_in: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: StretchedTime,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
 
@@ -200,10 +201,10 @@ class YieldSpacePricingModel(PricingModel):
 
     def calc_in_given_out(
         self,
-        out: Quantity,
+        out: trades.Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> types.TradeResult:
+        time_remaining: time_utils.StretchedTime,
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -302,7 +303,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if out.unit == types.TokenType.BASE:
+        if out.unit == trades.TokenType.BASE:
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
             d_shares = out_amount / share_price
@@ -352,7 +353,7 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = types.AgentTradeResult(
+            user_result = AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
@@ -360,7 +361,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
-        elif out.unit == types.TokenType.PT:
+        elif out.unit == trades.TokenType.PT:
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
@@ -408,7 +409,7 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = types.AgentTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
@@ -419,12 +420,12 @@ class YieldSpacePricingModel(PricingModel):
         else:
             raise AssertionError(
                 # pylint: disable-next=line-too-long
-                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
+                f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {out.unit}!"
             )
-        return types.TradeResult(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=types.TradeBreakdown(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
@@ -437,10 +438,10 @@ class YieldSpacePricingModel(PricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: Quantity,
+        in_: trades.Quantity,
         market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> types.TradeResult:
+        time_remaining: time_utils.StretchedTime,
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -538,7 +539,7 @@ class YieldSpacePricingModel(PricingModel):
         #
         # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
         k = self._calc_k_const(market_state, time_remaining)
-        if in_.unit == types.TokenType.BASE:
+        if in_.unit == trades.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             in_reserves = share_reserves
             out_reserves = bond_reserves + total_reserves
@@ -573,7 +574,7 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = types.AgentTradeResult(
+            user_result = AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
@@ -581,7 +582,7 @@ class YieldSpacePricingModel(PricingModel):
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
-        elif in_.unit == types.TokenType.PT:
+        elif in_.unit == trades.TokenType.PT:
             d_bonds = in_amount
             in_reserves = bond_reserves + total_reserves
             out_reserves = share_reserves
@@ -622,7 +623,7 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = types.AgentTradeResult(
+            user_result = AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
@@ -633,12 +634,12 @@ class YieldSpacePricingModel(PricingModel):
         else:
             raise AssertionError(
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
-                f" to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
+                f" to be {trades.TokenType.BASE} or {trades.TokenType.PT}, not {in_.unit}!"
             )
-        return types.TradeResult(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=types.TradeBreakdown(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
@@ -646,7 +647,7 @@ class YieldSpacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: MarketState, time_remaining: time_utils.StretchedTime) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 
