@@ -16,7 +16,6 @@ import elfpy.types as types
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-import elfpy.simulators.trades as trades
 import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketState
 

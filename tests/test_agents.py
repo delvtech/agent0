@@ -15,7 +15,6 @@ from elfpy.agents import policies  # type: ignore # TODO: Investigate why this r
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
 import elfpy.utils.time as time_utils
-import elfpy.simulators.trades as trades
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models as pricing_models
 

@@ -10,7 +10,6 @@ import numpy as np
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.simulators.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:

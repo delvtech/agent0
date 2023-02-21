@@ -5,13 +5,14 @@ import decimal
 import unittest
 import numpy as np
 
-import elfpy.types as types
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
     CalcInGivenOutSuccessByModelTestResult,
 )
+
+import elfpy.types as types
 import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
@@ -374,7 +375,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         ]
         failure_test_cases_yieldpsace_only = [
             CalcInGivenOutFailureTestCase(
-                out=type.Quantity(amount=100, unit=types.TokenType.PT),
+                out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     # share reserves zero
                     share_reserves=0,

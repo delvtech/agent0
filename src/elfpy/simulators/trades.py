@@ -1,5 +1,5 @@
+"""Trade related classes and functions"""
 from dataclasses import dataclass
-from enum import Enum
 
 
 import elfpy.types as types
