@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 from dataclasses import dataclass
 
 import numpy as np
@@ -13,17 +13,14 @@ import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
+import elfpy.markets.base as base_market
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
 
 class MarketActionType(Enum):
-    r"""
-    The descriptor of an action in a market
-
-    .. todo:: Add INITIALIZE_MARKET = "initialize_market"
-    """
+    r"""The descriptor of an action in a market"""
 
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
@@ -37,38 +34,23 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltas:
+class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
-
-    # .. todo::  Create our own dataclass decorator that is always mutable and includes dict set/get syntax
-    # pylint: disable=duplicate-code
-    # pylint: disable=too-many-instance-attributes
-
-    # .. todo::  Use better naming for these values:
-    #     - "d_base_asset" => "d_share_reserves"
-    # .. todo::  Is there some reason this is base instead of shares?
-    #     - "d_token_asset" => "d_bond_reserves"
     d_base_asset: float = 0
-    d_token_asset: float = 0
+    d_bond_asset: float = 0
     d_base_buffer: float = 0
     d_bond_buffer: float = 0
-    d_lp_reserves: float = 0
+    d_lp_total_supply: float = 0
     d_share_price: float = 0
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
 
     def __str__(self):
         output_string = (
             "MarketDeltas(\n"
             f"\t{self.d_base_asset=},\n"
-            f"\t{self.d_token_asset=},\n"
+            f"\t{self.d_bond_asset=},\n"
             f"\t{self.d_base_buffer=},\n"
             f"\t{self.d_bond_buffer=},\n"
-            f"\t{self.d_lp_reserves=},\n"
+            f"\t{self.d_lp_total_supply=},\n"
             f"\t{self.d_share_price=},\n"
             ")"
         )
@@ -77,7 +59,7 @@ class MarketDeltas:
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult:
+class MarketTradeResult(base_market.MarketTradeResult):
     r"""The result to a market of performing a trade"""
 
     d_base: float
@@ -86,15 +68,13 @@ class MarketTradeResult:
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class MarketState:
+class MarketState(base_market.BaseMarketState):
     r"""The state of an AMM
-
-    Implements a class for all that that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
-    likely be accessible through the AMM as well.
 
     Attributes
     ----------
+    lp_total_supply: float
+        Amount of lp tokens
     share_reserves: float
         Quantity of shares stored in the market
     bond_reserves: float
@@ -103,14 +83,13 @@ class MarketState:
         Base amount set aside to account for open longs
     bond_buffer: float
         Bond amount set aside to account for open shorts
-    lp_reserves: float
-        Amount of lp tokens
-    vault_apr: float
-        .. todo: fill this in
+    variable_apr: float
+        apr of underlying yield-bearing source
     share_price: float
-        .. todo: fill this in
+        ratio of value of base & shares that are stored in the underlying vault,
+        i.e. share_price = base_value / share_value
     init_share_price: float
-        .. todo: fill this in
+        share price at pool initialization
     trade_fee_percent : float
         The percentage of the difference between the amount paid without
         slippage and the amount received that will be added to the input
@@ -130,26 +109,22 @@ class MarketState:
     base_buffer: float = 0.0
     bond_buffer: float = 0.0
 
-    # lp reserves
-    lp_reserves: float = 0.0
-
     # share price
-    vault_apr: float = 0.0
+    variable_apr: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
 
     # fee percents
-
     trade_fee_percent: float = 0.0
     redemption_fee_percent: float = 0.0
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
-        self.bond_reserves += delta.d_token_asset
+        self.bond_reserves += delta.d_bond_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
-        self.lp_reserves += delta.d_lp_reserves
+        self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
 
         # TODO: issue #146
@@ -174,8 +149,8 @@ class MarketState:
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             base_buffer=self.bond_buffer,
-            lp_reserves=self.lp_reserves,
-            vault_apr=self.vault_apr,
+            lp_total_supply=self.lp_total_supply,
+            variable_apr=self.variable_apr,
             share_price=self.share_price,
             init_share_price=self.init_share_price,
             trade_fee_percent=self.trade_fee_percent,
@@ -194,10 +169,10 @@ class MarketState:
             f"\t\t{self.bond_buffer=},\n"
             "\t),\n"
             "\tlp_reserves(\n"
-            f"\t\t{self.lp_reserves=},\n"
+            f"\t\t{self.lp_total_supply=},\n"
             "\t),\n"
             "\tunderlying_vault((\n"
-            f"\t\t{self.vault_apr=},\n"
+            f"\t\t{self.variable_apr=},\n"
             f"\t\t{self.share_price=},\n"
             f"\t\t{self.init_share_price=},\n"
             "\t)\n"
@@ -214,7 +189,7 @@ class MarketAction:
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    trade_amount: float
+    trade_amount: float  # FIXME: should this be a Quantity, not a float? Make sure, then delete fixme
     # min amount to receive for the action
     min_amount_out: float
     # the agent's wallet
@@ -224,18 +199,20 @@ class MarketAction:
 
     def __str__(self):
         r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address}"
-        for key, value in self.__dict__.items():
-            if key == "action_type":
-                output_string += f" execute {value}()"
-            elif key in ["trade_amount", "mint_time"]:
-                output_string += f" {key}: {value}"
-            elif key not in ["wallet_address", "agent"]:
-                output_string += f" {key}: {value}"
+        output_string = (
+            "MarketAction(\n"
+            f"\tagent={self.wallet.address},\n"
+            f"\t{self.action_type=},\n"
+            f"\t{self.trade_amount=},\n"
+            f"\t{self.min_amount_out=},\n"
+            f"\t{self.mint_time=},\n"
+            f"\t{self.wallet=},\n"
+            ")"
+        )
         return output_string
 
 
-class Market:
+class Market(base_market.Market[MarketState, MarketDeltas]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -250,9 +227,6 @@ class Market:
         position_duration: time_utils.StretchedTime,
     ):
         # market state variables
-        self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
-        self.pricing_model = pricing_model
-        self.market_state: MarketState = market_state
         assert (
             position_duration.days == position_duration.normalizing_constant
         ), "position_duration argument term length (days) should normalize to 1"
@@ -262,6 +236,7 @@ class Market:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
+        super().__init__(pricing_model=pricing_model, market_state=market_state)
 
     @property
     def annualized_position_duration(self) -> float:
@@ -280,12 +255,15 @@ class Market:
         -------
         None
         """
-        if agent_action.action_type in [
-            MarketActionType.CLOSE_LONG,
-            MarketActionType.CLOSE_SHORT,
-        ]:  # sell to close long
-            if agent_action.mint_time is None:
-                raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
+        if (
+            agent_action.action_type
+            in [
+                MarketActionType.CLOSE_LONG,
+                MarketActionType.CLOSE_SHORT,
+            ]
+            and agent_action.mint_time is None
+        ):
+            raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
 
     def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
@@ -385,34 +363,27 @@ class Market:
                 assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
 
     @property
-    def apr(self) -> float:
-        """Returns the current market apr
-
-        .. todo: rename to fixed_apr, rename vault_apr to variable_apr, & add market.variable_apr property
-        """
+    def fixed_apr(self) -> float:
+        """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
         #       Write checks to remedy this in the market.
         # issue #146
 
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
-            rate = np.nan
-        else:
-            rate = price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
-        return rate
+            return np.nan
+        return price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
 
     @property
     def spot_price(self) -> float:
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
-            spot_price = np.nan
-        else:
-            spot_price = self.pricing_model.calc_spot_price_from_reserves(
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
-            )
-        return spot_price
+            return np.nan
+        return self.pricing_model.calc_spot_price_from_reserves(
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
 
     def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
@@ -456,7 +427,7 @@ class Market:
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_bond_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=trade_amount,
         )
         # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
@@ -524,7 +495,7 @@ class Market:
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_bond_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-trade_amount,
         )
         agent_deltas = wallet.Wallet(
@@ -570,7 +541,7 @@ class Market:
             # Get the market and wallet deltas to return.
             market_deltas = MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
-                d_token_asset=trade_result.market_result.d_bonds,
+                d_bond_asset=trade_result.market_result.d_bonds,
                 d_base_buffer=trade_result.user_result.d_bonds,
             )
             agent_deltas = wallet.Wallet(
@@ -622,7 +593,7 @@ class Market:
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
+            d_bond_asset=trade_result.market_result.d_bonds,
             d_base_buffer=-trade_amount,
         )
         agent_deltas = wallet.Wallet(
@@ -652,7 +623,7 @@ class Market:
         )
         market_deltas = MarketDeltas(
             d_base_asset=contribution,
-            d_token_asset=bond_reserves,
+            d_bond_asset=bond_reserves,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
@@ -673,7 +644,7 @@ class Market:
         ):  # pool has not been initialized
             rate = 0
         else:
-            rate = self.apr
+            rate = self.fixed_apr
         # sanity check inputs
         self.pricing_model.check_input_assertions(
             quantity=types.Quantity(
@@ -683,7 +654,7 @@ class Market:
             time_remaining=self.position_duration,
         )
         # perform the trade
-        lp_out, d_base_reserves, d_token_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
+        lp_out, d_base_reserves, d_bond_reserves = self.pricing_model.calc_lp_out_given_tokens_in(
             d_base=trade_amount,
             rate=rate,
             market_state=self.market_state,
@@ -691,8 +662,8 @@ class Market:
         )
         market_deltas = MarketDeltas(
             d_base_asset=d_base_reserves,
-            d_token_asset=d_token_reserves,
-            d_lp_reserves=lp_out,
+            d_bond_asset=d_bond_reserves,
+            d_lp_total_supply=lp_out,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
@@ -716,16 +687,16 @@ class Market:
             time_remaining=self.position_duration,
         )
         # perform the trade
-        lp_in, d_base_reserves, d_token_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
+        lp_in, d_base_reserves, d_bond_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
-            rate=self.apr,
+            rate=self.fixed_apr,
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
         market_deltas = MarketDeltas(
             d_base_asset=-d_base_reserves,
-            d_token_asset=-d_token_reserves,
-            d_lp_reserves=-lp_in,
+            d_bond_asset=-d_bond_reserves,
+            d_lp_total_supply=-lp_in,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
@@ -743,7 +714,7 @@ class Market:
             rate = str(np.nan)
         else:
             spot_price = self.spot_price
-            rate = self.apr
+            rate = self.fixed_apr
         logging.debug(
             (
                 "t = %g"
@@ -759,7 +730,7 @@ class Market:
             self.time,
             self.market_state.share_reserves * self.market_state.share_price,
             self.market_state.bond_reserves,
-            self.market_state.lp_reserves,
+            self.market_state.lp_total_supply,
             self.market_state.share_reserves,
             self.market_state.base_buffer,
             self.market_state.bond_buffer,
