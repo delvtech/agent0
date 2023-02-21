@@ -66,7 +66,7 @@ class SimulationState:
         default_factory=list, metadata=to_description("time lapse between token mint and expiry as a yearfrac")
     )
     current_vault_apr: list[float] = field(default_factory=list, metadata=to_description("vault apr on a given day"))
-    pool_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
+    fixed_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
     spot_price: list[float] = field(default_factory=list, metadata=to_description("price of shares"))
 
     def add_dict_entries(self, dictionary: dict) -> None:
@@ -138,7 +138,7 @@ class Config:
     redemption_fee_percent: float = field(
         default=0.05, metadata=to_description("LP fee factor (decimal) to charge for redemption")
     )
-    target_pool_apr: float = field(default=0.1, metadata=to_description("desired fixed apr for as a decimal"))
+    target_fixed_apr: float = field(default=0.1, metadata=to_description("desired fixed apr for as a decimal"))
     floor_fee: float = field(default=0, metadata=to_description("minimum fee percentage (bps)"))
 
     # Simulation
@@ -261,7 +261,7 @@ class TradeSimVariables:
     day: int = field(metadata=to_description("day index in a given simulation"))
     block_number: int = field(metadata=to_description("integer, block index in a given simulation"))
     trade_number: int = field(metadata=to_description("trade number in a given simulation"))
-    pool_apr: float = field(metadata=to_description("apr of the AMM pool"))
+    fixed_apr: float = field(metadata=to_description("apr of the AMM pool"))
     spot_price: float = field(metadata=to_description("price of shares"))
     market_deltas: MarketDeltas = field(metadata=to_description("deltas used to update the market state"))
     agent_address: int = field(metadata=to_description("address of the agent that is executing the trade"))
@@ -655,7 +655,7 @@ class Simulator:
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size)
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.pool_apr.append(self.market.fixed_apr)
+        self.simulation_state.fixed_apr.append(self.market.fixed_apr)
         self.simulation_state.current_vault_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)

@@ -34,7 +34,7 @@ class SingleTradeTests(unittest.TestCase):
                         config.target_liquidity = target_liquidity
                         config.trade_fee_percent = 0.1
                         config.redemption_fee_percent = 0.0
-                        config.target_pool_apr = target_pool_apr
+                        config.target_fixed_apr = target_pool_apr
                         config.num_trading_days = 3  # sim 3 days to keep it fast for testing
                         config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
                         config.variable_apr = [0.05] * config.num_trading_days
@@ -135,7 +135,7 @@ class SingleTradeTests(unittest.TestCase):
             config.target_liquidity = 10e6
             config.trade_fee_percent = 0.1
             config.redemption_fee_percent = 0.0
-            config.target_pool_apr = 0.05
+            config.target_fixed_apr = 0.05
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
             config.variable_apr = [0.05] * config.num_trading_days

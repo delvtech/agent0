@@ -63,8 +63,8 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     trades_df["delta_base_abs"] = trades_df.delta_base.abs()
     trades_df["delta_bonds_abs"] = trades_df.delta_bonds.abs()
     # calculate derived variables across runs
-    trades_df["pool_apr_percent"] = trades_df.pool_apr * 100
-    trades_df["vault_apr_percent"] = trades_df.vault_apr * 100
+    trades_df["fixed_apr_percent"] = trades_df.fixed_apr * 100
+    trades_df["variable_apr_percent"] = trades_df.variable_apr * 100
     share_liquidity_usd = trades_df.share_reserves * trades_df.share_price
     bond_liquidity_usd = trades_df.bond_reserves * trades_df.share_price * trades_df.spot_price
     trades_df["total_liquidity_usd"] = share_liquidity_usd + bond_liquidity_usd

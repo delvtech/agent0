@@ -58,7 +58,7 @@ class BaseMarketTest(unittest.TestCase):
         config.trade_fee_percent = 0.1
         # our model currently has no redemption fee for yieldspace, if added these tests will break
         config.redemption_fee_percent = 0.1
-        config.target_pool_apr = 0.05
+        config.target_fixed_apr = 0.05
         config.num_trading_days = 9  # minimal simulation steps
         config.variable_apr = [0.05] * config.num_trading_days
         config.num_position_days = 365
