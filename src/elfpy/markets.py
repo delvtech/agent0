@@ -92,6 +92,8 @@ class Market:
             pricing model computes new market deltas
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
+
+        .. todo: change agent deltas from Wallet type to its own type
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
@@ -165,11 +167,15 @@ class Market:
 
     @property
     def apr(self) -> float:
-        """Returns the current market apr"""
+        """Returns the current market apr
+
+        .. todo: rename to fixed_apr, rename vault_apr to variable_apr, & add market.variable_apr property
+        """
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
         #       Write checks to remedy this in the market.
         # issue #146
+
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
             rate = np.nan
         else:
