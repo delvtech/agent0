@@ -13,7 +13,6 @@ import elfpy.simulators.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    import elfpy.simulators.trades as trades
     from elfpy.markets.hyperdrive import MarketState
 
 

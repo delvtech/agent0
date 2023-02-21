@@ -97,7 +97,7 @@ def get_argparser() -> argparse.ArgumentParser:
         "--pricing_model", help="Pricing model to be used in the simulation", default="Hyperdrive", type=str
     )
     parser.add_argument("--num_trading_days", help="Number of simulated trading days", default=5, type=int)
-    parser.add_argument("--blocks_per_day", help="Number of simulated trading blocks per day", default=5, type=int)
+    parser.add_argument("--num_blocks_per_day", help="Number of simulated trading blocks per day", default=5, type=int)
     parser.add_argument(
         "--vault_apr_type",
         help="Distribution type for the vault apr; must be 'uniform' or 'brownian'.",
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     args = get_argparser().parse_args()
     config = simulators.Config()
     config.num_trading_days = args.num_trading_days
-    config.num_blocks_per_day = args.blocks_per_day
+    config.num_blocks_per_day = args.num_blocks_per_day
     config.pricing_model_name = args.pricing_model
     if args.vault_apr_type == "brownian":
         config.vault_apr = (
