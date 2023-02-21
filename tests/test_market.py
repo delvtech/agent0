@@ -8,7 +8,8 @@ from typing import Any
 
 import utils_for_tests as test_utils  # utilities for testing
 from elfpy.agents.wallet import Wallet, Long, Short
-from elfpy.types import StretchedTime, Config
+import elfpy.simulators.simulators as simulators
+import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import Market, MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -31,12 +32,12 @@ class BaseMarketTest(unittest.TestCase):
 
     def test_position_duration(self):
         """Test to make sure market init fails when normalizing_constant != days"""
-        pd_good = StretchedTime(
+        pd_good = time_utils.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=365,
         )
-        pd_nonorm = StretchedTime(
+        pd_nonorm = time_utils.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=36,
@@ -51,7 +52,7 @@ class BaseMarketTest(unittest.TestCase):
     ):
         """Create base structure for future tests"""
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
-        config = Config()
+        config = simulators.Config()
         config.pricing_model_name = "Yieldspace"
         config.target_liquidity = 10e6
         config.trade_fee_percent = 0.1
@@ -388,7 +389,7 @@ class MarketTestsOneFunction(BaseMarketTest):
     def test_apr(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
         pricing_model = HyperdrivePricingModel()
-        position_duration = StretchedTime(
+        position_duration = time_utils.StretchedTime(
             days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
         )
         share_reserves = 1_000

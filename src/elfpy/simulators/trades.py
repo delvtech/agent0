@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 
 from elfpy.types import freezable
-from elfpy.agents.agent import AgentTradeResult
-from elfpy.markets.hyperdrive import MarketTradeResult
+import elfpy.agents.agent as agent
+import elfpy.markets.hyperdrive as hyperdrive
 
 
 class TokenType(Enum):
@@ -47,8 +47,8 @@ class TradeResult:
     to the user and the market are computed.
     """
 
-    user_result: AgentTradeResult
-    market_result: MarketTradeResult
+    user_result: agent.AgentTradeResult
+    market_result: hyperdrive.MarketTradeResult
     breakdown: TradeBreakdown
 
     def __str__(self):

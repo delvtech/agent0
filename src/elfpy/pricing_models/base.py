@@ -12,15 +12,11 @@ from elfpy import (
     WEI,
 )
 import elfpy.types as types
-from elfpy.markets.hyperdrive import MarketState
+import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
+import elfpy.simulators.trades as trades
 
-if TYPE_CHECKING:
-    from elfpy.types import (
-        StretchedTime,
-        TradeResult,
-    )
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
@@ -36,19 +32,19 @@ class PricingModel(ABC):
 
     def calc_in_given_out(
         self,
-        out: types.Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        out: trades.Quantity,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
+    ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
     def calc_out_given_in(
         self,
-        in_: types.Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
-    ) -> TradeResult:
+        in_: trades.Quantity,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
+    ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
@@ -56,8 +52,8 @@ class PricingModel(ABC):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -66,8 +62,8 @@ class PricingModel(ABC):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -76,8 +72,8 @@ class PricingModel(ABC):
         self,
         lp_in: float,
         rate: float,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -90,15 +86,15 @@ class PricingModel(ABC):
         """Unique identifier given to the model, should be lower snake_cased name"""
         raise NotImplementedError
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: hyperdrive.MarketState, time_remaining: time_utils.StretchedTime) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError
 
     def calc_bond_reserves(
         self,
         target_apr: float,
-        time_remaining: StretchedTime,
-        market_state: MarketState,
+        time_remaining: time_utils.StretchedTime,
+        market_state: hyperdrive.MarketState,
     ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -138,7 +134,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond_reserves: float,
-        time_remaining: StretchedTime,
+        time_remaining: time_utils.StretchedTime,
         init_share_price: float = 1,
     ):
         """Returns the assumed share (i.e. base asset) reserve amounts given
@@ -187,7 +183,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond: float,
-        position_duration: StretchedTime,
+        position_duration: time_utils.StretchedTime,
         share_price: float = 1.0,
     ) -> float:
         """Returns the base required to buy the given bonds at the target APR
@@ -227,7 +223,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         base: float,
-        position_duration: StretchedTime,
+        position_duration: time_utils.StretchedTime,
         share_price: float = 1.0,
     ) -> float:
         """Returns the bonds for a given base at the target APR.
@@ -265,13 +261,13 @@ class PricingModel(ABC):
 
     def calc_liquidity(
         self,
-        market_state: MarketState,
+        market_state: hyperdrive.MarketState,
         target_liquidity: float,
         target_apr: float,
         # TODO: Fields like position_duration and fee_percent could arguably be
         # wrapped up into a "MarketContext" value that includes the state as
         # one of its fields.
-        position_duration: StretchedTime,
+        position_duration: time_utils.StretchedTime,
     ) -> tuple[float, float]:
         """Returns the reserve volumes and total supply
 
@@ -303,14 +299,14 @@ class PricingModel(ABC):
         bond_reserves = self.calc_bond_reserves(
             target_apr=target_apr,
             time_remaining=position_duration,
-            market_state=MarketState(
+            market_state=hyperdrive.MarketState(
                 share_reserves=share_reserves,
                 init_share_price=market_state.init_share_price,
                 share_price=market_state.share_price,
             ),
         )
         total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
-            MarketState(
+            hyperdrive.MarketState(
                 share_reserves=share_reserves,
                 bond_reserves=bond_reserves,
                 base_buffer=market_state.base_buffer,
@@ -328,7 +324,9 @@ class PricingModel(ABC):
         share_reserves = share_reserves * scaling_factor
         return share_reserves, bond_reserves
 
-    def calc_total_liquidity_from_reserves_and_price(self, market_state: MarketState, share_price: float) -> float:
+    def calc_total_liquidity_from_reserves_and_price(
+        self, market_state: hyperdrive.MarketState, share_price: float
+    ) -> float:
         """Returns the total liquidity in the pool in terms of base
 
         Parameters
@@ -353,8 +351,8 @@ class PricingModel(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -384,8 +382,8 @@ class PricingModel(ABC):
 
     def _calc_spot_price_from_reserves_high_precision(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> Decimal:
         r"""
         Calculates the current market spot price of base in terms of bonds.
@@ -425,8 +423,8 @@ class PricingModel(ABC):
 
     def calc_apr_from_reserves(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> float:
         r"""Returns the apr given reserve amounts
 
@@ -446,8 +444,8 @@ class PricingModel(ABC):
 
     def get_max_long(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum long the market can support
@@ -475,12 +473,12 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be purchased.
         """
         base = self.calc_in_given_out(
-            out=types.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=types.TokenType.PT),
+            out=trades.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=trades.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
+            in_=trades.Quantity(amount=base, unit=trades.TokenType.BASE),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -488,8 +486,8 @@ class PricingModel(ABC):
 
     def get_max_short(
         self,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum short the market can support using the bisection
@@ -516,15 +514,15 @@ class PricingModel(ABC):
             The maximum amount of bonds that can be shorted.
         """
         bonds = self.calc_in_given_out(
-            out=types.Quantity(
+            out=trades.Quantity(
                 market_state.share_reserves - market_state.base_buffer / market_state.share_price,
-                unit=types.TokenType.PT,
+                unit=trades.TokenType.PT,
             ),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         base = self.calc_out_given_in(
-            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
+            in_=trades.Quantity(amount=bonds, unit=trades.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -537,9 +535,9 @@ class PricingModel(ABC):
 
     def check_input_assertions(
         self,
-        quantity: types.Quantity,
-        market_state: MarketState,
-        time_remaining: StretchedTime,
+        quantity: trades.Quantity,
+        market_state: hyperdrive.MarketState,
+        time_remaining: time_utils.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
 
@@ -589,7 +587,7 @@ class PricingModel(ABC):
     # issue #57
     def check_output_assertions(
         self,
-        trade_result: TradeResult,
+        trade_result: trades.TradeResult,
     ):
         """Applies a set of assertions to a trade result."""
 

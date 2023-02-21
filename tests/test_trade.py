@@ -7,8 +7,8 @@ import logging
 import numpy as np
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
-from elfpy.utils import sim_utils
-from elfpy.types import Config
+import elfpy.utils.sim_utils as sim_utils
+import elfpy.simulators.simulators as simulators
 from elfpy.markets.hyperdrive import Market, MarketState
 
 # because we're testing lots of stuff here!
@@ -29,7 +29,7 @@ class SingleTradeTests(unittest.TestCase):
             for target_pool_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 1.1):
                 for num_position_days in [90, 365]:
                     for pricing_model_name in ["Yieldspace", "Hyperdrive"]:
-                        config = Config()
+                        config = simulators.Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
                         config.trade_fee_percent = 0.1
@@ -130,7 +130,7 @@ class SingleTradeTests(unittest.TestCase):
 
         output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
         for test_number, test_case in enumerate(test_cases):
-            config = Config()
+            config = simulators.Config()
             config.pricing_model_name = test_case["pricing_model_name"]
             config.target_liquidity = 10e6
             config.trade_fee_percent = 0.1

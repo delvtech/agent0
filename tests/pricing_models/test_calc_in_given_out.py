@@ -11,7 +11,8 @@ from calc_test_dataclasses import (
     CalcInGivenOutSuccessByModelTestResult,
 )
 
-from elfpy.types import Quantity, StretchedTime, TokenType
+import elfpy.utils.time as time_utils
+import elfpy.simulators.trades as trades
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -39,7 +40,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-                time_remaining = StretchedTime(
+                time_remaining = time_utils.StretchedTime(
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                 )
                 expected_result = results_by_model[model_type]
@@ -85,7 +86,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # out is in base, in is in bonds
-                trade_quantity = Quantity(amount=trade_amount, unit=TokenType.BASE)
+                trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.BASE)
                 market_state = MarketState(
                     share_reserves=10_000_000_000,
                     bond_reserves=1,
@@ -95,7 +96,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # TODO: test with redemption fees
                     redemption_fee_percent=0.0,
                 )
-                time_remaining = StretchedTime(
+                time_remaining = time_utils.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
                 )
                 trade_result = pricing_model.calc_in_given_out(
@@ -105,7 +106,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
                 # out is in bonds, in is in base
-                trade_quantity = Quantity(amount=trade_amount, unit=TokenType.PT)
+                trade_quantity = trades.Quantity(amount=trade_amount, unit=trades.TokenType.PT)
                 market_state = MarketState(
                     share_reserves=1,
                     bond_reserves=10_000_000_000,
@@ -115,7 +116,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # TODO: test with redemption fees
                     redemption_fee_percent=0.0,
                 )
-                time_remaining = StretchedTime(
+                time_remaining = time_utils.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
                 )
                 trade_result = pricing_model.calc_in_given_out(
@@ -134,7 +135,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         failure_test_cases = [
             CalcInGivenOutFailureTestCase(
                 # amount negative
-                out=Quantity(amount=-1, unit=TokenType.PT),
+                out=trades.Quantity(amount=-1, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -143,12 +144,12 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
                 # amount 0
-                out=Quantity(amount=0, unit=TokenType.PT),
+                out=trades.Quantity(amount=0, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -157,11 +158,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     # share reserves negative
                     share_reserves=-1,
@@ -171,11 +172,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     # bond reserves negative
@@ -185,11 +186,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -199,11 +200,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=-1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -213,11 +214,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # redemption fee negative
                     redemption_fee_percent=-1,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -227,11 +228,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=1.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -241,11 +242,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # redemption fee above 1
                     redemption_fee_percent=1.1,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -255,11 +256,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining negative
-                time_remaining=StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -269,11 +270,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining == 365, will get divide by zero error
-                time_remaining=StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -283,12 +284,12 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining > 365
-                time_remaining=StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
                 # amount very high, can't make trade
-                out=Quantity(amount=10_000_000, unit=TokenType.BASE),
+                out=trades.Quantity(amount=10_000_000, unit=trades.TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -297,11 +298,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.InvalidOperation),
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.BASE),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -311,11 +312,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.BASE),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -325,11 +326,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.BASE),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -339,12 +340,12 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
                 # amount < 1 wei
-                out=Quantity(amount=0.5e-18, unit=TokenType.PT),
+                out=trades.Quantity(amount=0.5e-18, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
@@ -353,11 +354,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,
@@ -367,13 +368,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
         ]
         failure_test_cases_yieldpsace_only = [
             CalcInGivenOutFailureTestCase(
-                out=Quantity(amount=100, unit=TokenType.PT),
+                out=trades.Quantity(amount=100, unit=trades.TokenType.PT),
                 market_state=MarketState(
                     # share reserves zero
                     share_reserves=0,
@@ -383,7 +384,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             )
         ]
@@ -428,7 +429,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     )
 
 
-# Test cases where token_in = TokenType.BASE indicating that bonds are being
+# Test cases where token_in = trades.TokenType.BASE indicating that bonds are being
 # purchased for base.
 #
 # 1. in_ = 100; 10% fee; 100k share reserves; 100k bond reserves;
@@ -458,7 +459,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 base_in_test_cases = [
     (  ## test one, basic starting point
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=100, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -503,7 +504,7 @@ base_in_test_cases = [
     ),  # end of test one
     (  ## test two, double the fee
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=100, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -548,7 +549,7 @@ base_in_test_cases = [
     ),  # end of test two
     (  ## test three, 10k out
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=10_000, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=10_000, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -593,7 +594,7 @@ base_in_test_cases = [
     ),  # end of test three
     (  ## test four, 80k out
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=80_000, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=80_000, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -639,7 +640,7 @@ base_in_test_cases = [
     ),  # end of test four
     (  ## test five, change share price
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -686,7 +687,7 @@ base_in_test_cases = [
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -733,7 +734,7 @@ base_in_test_cases = [
     ),  # end of test six
     (  ## test seven, halve the days remaining
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -779,7 +780,7 @@ base_in_test_cases = [
     ),  # end of test seven
     (  ## test eight, halve the APY
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -827,7 +828,7 @@ base_in_test_cases = [
 pt_in_test_cases = [
     (  ## test one, basic starting point
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=100, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -872,7 +873,7 @@ pt_in_test_cases = [
     ),  # end of test one
     (  ## test two, double the fee
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=100, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=100, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -917,7 +918,7 @@ pt_in_test_cases = [
     ),  # end of test two
     (  ## test three, 10k out
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=10_000, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=10_000, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -962,7 +963,7 @@ pt_in_test_cases = [
     ),  # end of test three
     (  ## test four, 80k out
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=80_000, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=80_000, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -1007,7 +1008,7 @@ pt_in_test_cases = [
     ),  # end of test four
     (  ## test five, change share price
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=100_000,  # PT reserves
@@ -1054,7 +1055,7 @@ pt_in_test_cases = [
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -1102,7 +1103,7 @@ pt_in_test_cases = [
     ),  # end of test six
     (  ## test seven, halve the days remaining
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -1149,7 +1150,7 @@ pt_in_test_cases = [
     ),  # end of test seven
     (  ## test eight, halve the APY
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=200, unit=TokenType.BASE),  # how many tokens you expect to get
+            out=trades.Quantity(amount=200, unit=trades.TokenType.BASE),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=100_000,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves
@@ -1197,7 +1198,7 @@ pt_in_test_cases = [
 pt_in_test_cases_hyperdrive_only = [
     (  # test nine, share reserves zero
         CalcInGivenOutSuccessTestCase(
-            out=Quantity(amount=100, unit=TokenType.PT),  # how many tokens you expect to get
+            out=trades.Quantity(amount=100, unit=trades.TokenType.PT),  # how many tokens you expect to get
             market_state=MarketState(
                 share_reserves=0,  # base reserves (in share terms) base = share * share_price
                 bond_reserves=1_000_000,  # PT reserves

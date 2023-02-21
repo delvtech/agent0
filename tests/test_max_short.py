@@ -8,7 +8,7 @@ import logging
 
 import utils_for_tests as test_utils  # utilities for testing
 
-from elfpy.types import Config
+import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 
@@ -23,7 +23,7 @@ class BaseParameterTest(unittest.TestCase):
     ):
         """Assigns member variables that are useful for many tests"""
         output_utils.setup_logging(log_filename=".logging/test_max_short.log", log_level=logging.DEBUG)
-        config = Config()
+        config = simulators.Config()
         config.num_trading_days = 3  # sim 3 days to keep it fast for testing
         config.num_blocks_per_day = 3  # 3 block a day, keep it fast for testing
         config.num_position_days = 90

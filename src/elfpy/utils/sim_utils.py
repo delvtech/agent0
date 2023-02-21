@@ -6,8 +6,8 @@ from typing import Any, TYPE_CHECKING, Optional
 import logging
 
 # pylint: disable=consider-using-from-import
-from elfpy.simulators import Simulator
-import elfpy.types as types
+import elfpy.simulators.simulators as simulators
+import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
@@ -15,13 +15,12 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
     from elfpy.agents.agent import Agent
-    from elfpy.types import Config
 
 
 def get_simulator(
-    config: Config,
+    config: simulators.Config,
     agents: Optional[list[Agent]] = None,
-) -> Simulator:
+) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -42,7 +41,7 @@ def get_simulator(
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     market = get_market(pricing_model, config)
-    simulator = Simulator(config=config, market=market)
+    simulator = simulators.Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp is True:
         simulator.add_agents([get_init_lp_agent(market, config.target_liquidity)])
@@ -83,7 +82,7 @@ def get_init_lp_agent(
 
 def get_market(
     pricing_model: PricingModel,
-    config: Config,
+    config: simulators.Config,
     init_target_liquidity: float = 1.0,
 ) -> hyperdrive.Market:
     r"""Setup market
@@ -115,7 +114,7 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
     """
-    position_duration = types.StretchedTime(
+    position_duration = time_utils.StretchedTime(
         days=config.num_position_days,
         time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
         normalizing_constant=config.num_position_days,
