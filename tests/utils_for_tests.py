@@ -7,7 +7,7 @@ import elfpy.simulators as simulators
 import elfpy.utils.sim_utils as sim_utils
 
 
-# TODO: review these helper functions for inclusion into the package under src/elfpy/utils
+# TODO: review these helper functions for inclusion into the package under elfpy/utils
 # left to be reviewed when we add new examples that will live inside the package
 # if those examples use these functions, then we should move them into the package
 

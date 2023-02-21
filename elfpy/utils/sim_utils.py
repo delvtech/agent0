@@ -177,7 +177,7 @@ def get_policy(agent_type: str) -> Any:  # TODO: Figure out a better type for ou
     Parameters
     ----------
     agent_type : str
-        The agent type must correspond to one of the files in src/elfpy/policies
+        The agent type must correspond to one of the files in elfpy.policies
 
     Returns
     -------

@@ -1,4 +1,4 @@
-"""Testing for price utilities found in src/elfpy/utils/price.py"""
+"""Testing for price utilities found in elfpy/utils/price.py"""
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
