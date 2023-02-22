@@ -283,6 +283,7 @@ def simulation_state_aggreagator(constructor):
     attribs = [
         (key, "list[" + val + "]", field(default_factory=list)) for key, val in constructor.__annotations__.items()
     ]
+
     # Make a new dataclass that has helper functions for appending to the list
     def update(obj, dictionary):
         for key, value in dictionary.items():
