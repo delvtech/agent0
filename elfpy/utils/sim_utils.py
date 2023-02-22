@@ -120,13 +120,12 @@ def get_market(
     )
     # apr is "annual", so if position durations is not 365
     # then we need to rescale the target apr passed to calc_liquidity
-    adjusted_target_apr = config.target_fixed_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
         market_state=hyperdrive.MarketState(
             share_price=config.init_share_price, init_share_price=config.init_share_price
         ),
         target_liquidity=init_target_liquidity,
-        target_apr=adjusted_target_apr,
+        target_apr=config.target_fixed_apr,
         position_duration=position_duration,
     )
     market = hyperdrive.Market(
