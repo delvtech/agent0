@@ -9,9 +9,12 @@ import numpy as np
 from numpy.random import RandomState
 
 import elfpy.simulators.simulators as simulators
+import elfpy.agents.wallet as wallet
+import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.time as time_utils
+import elfpy.utils.post_processing as post_processing
 
 
 class TestSimulator(unittest.TestCase):
@@ -30,6 +33,7 @@ class TestSimulator(unittest.TestCase):
         config.pricing_model_name = "Hyperdrive"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
+        config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         output_utils.close_logging()
@@ -41,6 +45,7 @@ class TestSimulator(unittest.TestCase):
         config.pricing_model_name = "Yieldspace"
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
+        config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         output_utils.close_logging()
@@ -51,6 +56,7 @@ class TestSimulator(unittest.TestCase):
         config = simulators.Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
+        config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         new_rng = np.random.default_rng(1234)
         simulator.set_rng(new_rng)
@@ -70,6 +76,7 @@ class TestSimulator(unittest.TestCase):
         config = simulators.Config()
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
+        config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         simulation_state_num_writes = np.array([len(value) for value in simulator.simulation_state.__dict__.values()])
@@ -105,6 +112,8 @@ class TestSimulator(unittest.TestCase):
             {
                 "run_number": [0] * num_runs,
                 "config": [simulators.Config()],
+                "agent_init": [[wallet.Wallet(address) for address in range(2)]],
+                "market_init": [hyperdrive.MarketState()],
                 "market_step_size": [0.001],
                 "position_duration": [90],
                 "simulation_start_time": [time_utils.current_datetime()],
@@ -114,7 +123,7 @@ class TestSimulator(unittest.TestCase):
             {
                 "run_number": [0] * total_num_days,
                 "day": [0, 1, 2],
-                "vault_apr": [0, 5, 9],
+                "variable_apr": [0, 5, 9],
                 "share_price": [1, 2, 3],
             }
         )
@@ -152,8 +161,31 @@ class TestSimulator(unittest.TestCase):
                     sim_state.update(trade_vars=simulators.TradeSimVariables(**trades.iloc[trade_number].to_dict()))
                     trade_number += 1
                 block_number += 1
-        assert np.all(sim_state.run_updates == runs)
-        assert np.all(sim_state.day_updates == days)
-        assert np.all(sim_state.block_updates == blocks)
-        assert np.all(sim_state.trade_updates == trades)
-        assert np.all(sim_state.combined_dataframe == all_trades)
+        assert np.all(sim_state.run_updates == runs), f"{sim_state.run_updates=}\n{runs}"
+        assert np.all(sim_state.day_updates == days), f"{sim_state.day_updates=}\n{days}"
+        assert np.all(sim_state.block_updates == blocks), f"{sim_state.block_updates=}\n{blocks}"
+        assert np.all(sim_state.trade_updates == trades), f"{sim_state.trade_updates=}\n{trades}"
+        assert np.all(sim_state.combined_dataframe == all_trades), f"{sim_state.combined_dataframe}\n{all_trades}"
+
+    def test_aggregate_agent_and_market_states(self):
+        """Tests tweet aggregation with new dataframe in a simulation"""
+        self.setup_logging()
+        config = simulators.Config()
+        config.num_trading_days = 4
+        config.num_blocks_per_day = 4
+        config.variable_apr = [0.01] * config.num_trading_days
+        config.do_dataframe_states = True
+        simulator = sim_utils.get_simulator(
+            config=config,
+            agents=[
+                sim_utils.get_policy("single_long")(wallet_address=address, budget=1_000) for address in range(1, 3)
+            ],
+        )
+        simulator.run_simulation()
+        post_processing.aggregate_agent_and_market_states(simulator.new_simulation_state.combined_dataframe)
+
+
+if __name__ == "__main__":
+    test = TestSimulator()
+    test.test_new_simulation_state()
+    test.test_aggregate_agent_and_market_states()

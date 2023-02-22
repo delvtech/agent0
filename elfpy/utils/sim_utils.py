@@ -44,6 +44,31 @@ def get_simulator(
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp is True:
         simulator.add_agents([get_init_lp_agent(market, config.target_liquidity)])
+    if config.do_dataframe_states:
+        # update state with day & block = 0 for the initialization trades
+        simulator.new_simulation_state.update(
+            run_vars=simulators.RunSimVariables(
+                run_number=simulator.run_number,
+                config=config,
+                agent_init=[agent.wallet for agent in simulator.agents.values()],
+                market_init=simulator.market.market_state,
+                market_step_size=simulator.market_step_size,
+                position_duration=simulator.market.position_duration,
+                simulation_start_time=time_utils.current_datetime(),
+            ),
+            day_vars=simulators.DaySimVariables(
+                run_number=simulator.run_number,
+                day=simulator.day,
+                variable_apr=simulator.market.market_state.variable_apr,
+                share_price=simulator.market.market_state.share_price,
+            ),
+            block_vars=simulators.BlockSimVariables(
+                run_number=simulator.run_number,
+                day=simulator.day,
+                block_number=simulator.block_number,
+                market_time=market.time,
+            ),
+        )
     # Initialize the simulator using only the initial LP.
     simulator.collect_and_execute_trades()
     # Add the remaining agents.

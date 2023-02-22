@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.wallet as wallet
+
 if TYPE_CHECKING:
     from elfpy.simulators import Simulator
 
@@ -19,8 +22,25 @@ if TYPE_CHECKING:
 #     compute pnl
 #     add columns
 
-# def aggregate_agent_and_market_states()
-#     this is the trades df we have now
+
+def aggregate_agent_and_market_states(combined_trades_df):
+    print(combined_trades_df)
+    market_state = hyperdrive.MarketState(
+        lp_total_supply=combined_trades_df.market_init.iloc[0].lp_total_supply,
+        share_reserves=combined_trades_df.market_init.iloc[0].share_reserves,
+        bond_reserves=combined_trades_df.market_init.iloc[0].bond_reserves,
+        variable_apr=combined_trades_df.market_init.iloc[0].variable_apr,
+        share_price=combined_trades_df.market_init.iloc[0].share_price,
+        init_share_price=combined_trades_df.market_init.iloc[0].init_share_price,
+        trade_fee_percent=combined_trades_df.market_init.iloc[0].trade_fee_percent,
+        redemption_fee_percent=combined_trades_df.market_init.iloc[0].redemption_fee_percent,
+    )
+    agent_wallets = [agent_init_wallet for agent_init_wallet in combined_trades_df.iloc[0, :].agent_init]
+    # print(combined_trades_df.iloc[0, :])
+    # print(combined_trades_df.iloc[1, :])
+    # print(combined_trades_df.iloc[0, :] == combined_trades_df[1, :])
+    for trade_number in range(combined_trades_df.trade_number.max()):
+        trades = combined_trades_df.loc[combined_trades_df.trade_number == trade_number]
 
 
 def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
