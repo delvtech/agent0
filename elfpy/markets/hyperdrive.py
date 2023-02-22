@@ -265,7 +265,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         ):
             raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
 
-    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
+    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:

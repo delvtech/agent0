@@ -417,10 +417,11 @@ class Simulator:
         """
         if self.config.do_dataframe_states:
             return str(self.new_simulation_state)
-        strings = []
-        for attribute, value in self.__dict__.items():
-            if attribute not in ("simulation_state", "rng"):
-                strings.append(f"{attribute} = {value}")
+        strings = [
+            f"{attribute} = {value}"
+            for attribute, value in self.__dict__.items()
+            if attribute not in ("simulation_state", "rng")
+        ]
         state_string = "\n".join(strings)
         return state_string
 
@@ -473,11 +474,7 @@ class Simulator:
                     list(self.agents)
                 ).tolist()  # random permutation of keys (agent wallet addresses)
         else:  # we are in a deterministic mode
-            if not last_block_in_sim:
-                agent_ids = list(self.agents)  # execute in increasing order
-            else:  # last block in sim
-                # close their trades in reverse order to allow withdrawing of LP tokens
-                agent_ids = list(self.agents)[::-1]
+            agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
         # Collect trades from all of the agents.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
@@ -509,11 +506,10 @@ class Simulator:
                 trades = agent.get_liquidation_trades(self.market)
             else:
                 trades = agent.get_trades(self.market)
-            for trade in trades:
-                agents_and_trades.append((agent_id, trade))
+            agents_and_trades.extend((agent_id, trade) for trade in trades)
         return agents_and_trades
 
-    def execute_trades(self, agent_trades: list[tuple[int, MarketAction]]) -> None:
+    def execute_trades(self, agent_actions: list[tuple[int, MarketAction]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
         Parameters
@@ -521,8 +517,8 @@ class Simulator:
         trades : list[tuple[int, list[MarketAction]]]
             A list of agent trades. These will be executed in order.
         """
-        for trade in agent_trades:
-            agent_id, agent_deltas, market_deltas = self.market.trade_and_update(trade)
+        for trade in agent_actions:
+            agent_id, agent_deltas, market_deltas = self.market.perform_action(trade)
             self.market.update_market(market_deltas)
             agent = self.agents[agent_id]
             logging.debug(
@@ -581,7 +577,7 @@ class Simulator:
                     self.run_number, self.config, self.market_step_size, self.market.position_duration, self.start_time
                 )
             )
-        for day in range(0, self.config.num_trading_days):
+        for day in range(self.config.num_trading_days):
             self.day = day
             self.market.market_state.variable_apr = self.config.variable_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
