@@ -36,7 +36,7 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
-    config.check_vault_apr()  # quick check to make sure the vault apr is correctly set
+    config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     market = get_market(pricing_model, config)
@@ -102,8 +102,8 @@ def get_market(
                 target apr, used for calculating the time stretch
             trade_fee_percent : float
                 portion of trades to be collected as fees for LPers, expressed as a decimal
-            vault_apr : list
-                valut apr per day for the duration of the simulation
+            variable_apr : list
+                variable (often a valut) apr per day for the duration of the simulation
     init_target_liquidity : float = 1.0
         initial liquidity for setting up the market
         should be a tiny amount for setting up apr
@@ -128,7 +128,7 @@ def get_market(
         target_apr=config.target_fixed_apr,
         position_duration=position_duration,
     )
-    market = hyperdrive.Market(
+    return hyperdrive.Market(
         pricing_model=pricing_model,
         market_state=hyperdrive.MarketState(
             share_reserves=share_reserves_direct,
@@ -144,7 +144,6 @@ def get_market(
         ),
         position_duration=position_duration,
     )
-    return market
 
 
 def get_pricing_model(model_name: str) -> PricingModel:

@@ -163,7 +163,7 @@ class Config:
     init_lp: bool = field(default=True, metadata=types.to_description("If True, use an initial LP agent to seed pool"))
 
     # vault
-    compound_vault_apr: bool = field(
+    compound_variable_apr: bool = field(
         default=True,
         metadata=types.to_description("Whether or not to use compounding revenue for the underlying yield source"),
     )
@@ -196,30 +196,29 @@ class Config:
         return getattr(self, key)
 
     def __setattr__(self, attrib, value) -> None:
-        if attrib == "vault_apr":
-            if hasattr(self, "vault_apr"):
-                self.check_vault_apr()
-            super().__setattr__("vault_apr", value)
-        elif attrib == "init_share_price":
-            super().__setattr__("init_share_price", value)
-        else:
+        #  variable_apr gets set to [-1] on init, then an appropriate value
+        #  on post_init. So we need to check after it has been set, and only if
+        #  it is not the first time being set.
+        if not hasattr(self, attrib) or attrib != "variable_apr":
             super().__setattr__(attrib, value)
+        else:  # only check variable apr if it is being reassigned
+            super().__setattr__(attrib, value)
+            self.check_variable_apr()  # check it after it has been assigned
 
     def __str__(self) -> str:
         # cls arg tells json how to handle numpy objects and nested dataclasses
-        config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
-        return config_string
+        return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
-    def check_vault_apr(self) -> None:
-        r"""Verify that the vault_apr is the right length"""
+    def check_variable_apr(self) -> None:
+        r"""Verify that the variable_apr is the right length"""
         if not isinstance(self.variable_apr, list):
             raise TypeError(
-                f"ERROR: vault_apr must be of type list, not {type(self.variable_apr)}."
+                f"ERROR: variable_apr must be of type list, not {type(self.variable_apr)}."
                 f"\nhint: it must be set after Config is initialized."
             )
-        if not hasattr(self, "num_trading_days") and len(self.variable_apr) != self.num_trading_days:
+        if len(self.variable_apr) != self.num_trading_days:
             raise ValueError(
-                "ERROR: vault_apr must have len equal to num_trading_days = "
+                "ERROR: variable_apr must have len equal to num_trading_days = "
                 + f"{self.num_trading_days},"
                 + f" not {len(self.variable_apr)}"
             )
@@ -383,7 +382,7 @@ class Simulator:
         logging.info("%s", self.config)
         self.market = market
         self.set_rng(config.rng)
-        self.config.check_vault_apr()
+        self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
@@ -430,8 +429,7 @@ class Simulator:
             for attribute, value in self.__dict__.items()
             if attribute not in ("simulation_state", "rng")
         ]
-        state_string = "\n".join(strings)
-        return state_string
+        return "\n".join(strings)
 
     @property
     def market_step_size(self) -> float:
@@ -588,7 +586,13 @@ class Simulator:
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
                 run_vars=RunSimVariables(
-                    self.run_number, self.config, self.market_step_size, self.market.position_duration, self.start_time
+                    run_number=self.run_number,
+                    config=self.config,
+                    agent_init=[agent.wallet for agent in self.agents.values()],
+                    market_init=self.market.market_state,
+                    market_step_size=self.market_step_size,
+                    position_duration=self.market.position_duration,
+                    simulation_start_time=self.start_time,
                 )
             )
         for day in range(self.config.num_trading_days):
@@ -596,7 +600,7 @@ class Simulator:
             self.market.market_state.variable_apr = self.config.variable_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                if self.config.compound_vault_apr:  # Apply return to latest price (full compounding)
+                if self.config.compound_variable_apr:  # Apply return to latest price (full compounding)
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
@@ -666,7 +670,7 @@ class Simulator:
         self.simulation_state.market_step_size.append(self.market_step_size)
         self.simulation_state.position_duration.append(self.market.position_duration)
         self.simulation_state.fixed_apr.append(self.market.fixed_apr)
-        self.simulation_state.current_vault_apr.append(self.config.variable_apr[self.day])
+        self.simulation_state.current_variable_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
