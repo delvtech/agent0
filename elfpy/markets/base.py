@@ -123,7 +123,7 @@ class Market(Generic[State, Deltas]):
         self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
 
     def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
-        """Performs a trade in the simulated market without updating the market."""
+        """Performs an action in the market without updating it."""
         raise NotImplementedError
 
     def update_market(self, market_deltas: Deltas) -> None:
