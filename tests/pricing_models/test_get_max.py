@@ -7,7 +7,7 @@ import unittest
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 
 import elfpy.types as types
-import elfpy.simulators.trades as trades
+import elfpy.pricing_models.trades as trades
 import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
