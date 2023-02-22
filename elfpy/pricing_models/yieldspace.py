@@ -58,9 +58,9 @@ class YieldSpacePricingModel(PricingModel):
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
-            market_state.init_share_price
-            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
         logging.debug(
@@ -129,9 +129,9 @@ class YieldSpacePricingModel(PricingModel):
             market_state.share_reserves - market_state.base_buffer / market_state.share_price
         )
         # TODO: Move this calculation to a helper function.
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
-            market_state.init_share_price
-            * (1 + rate * time_remaining.normalized_time) ** (1 / time_remaining.stretched_time)
+            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
         return lp_in, d_base, d_bonds
