@@ -142,18 +142,16 @@ class TestSimulator(unittest.TestCase):
         all_trades = trades.merge(blocks.merge(days.merge(runs)))
         sim_state = simulators.NewSimulationState()
         sim_state.update(run_vars=simulators.RunSimVariables(**runs.iloc[0].to_dict()))
-        day_num = 0
-        block_num = 0
-        trade_num = 0
-        for _ in range(num_days_per_run):
-            sim_state.update(day_vars=simulators.DaySimVariables(**days.iloc[day_num].to_dict()))
-            day_num += 1
+        block_number = 0  # this is a cumulative tracker across days
+        trade_number = 0  # this is a cumulative tracker across blocks and days
+        for day in range(num_days_per_run):
+            sim_state.update(day_vars=simulators.DaySimVariables(**days.iloc[day].to_dict()))
             for _ in range(num_blocks_per_day):
-                sim_state.update(block_vars=simulators.BlockSimVariables(**blocks.iloc[block_num].to_dict()))
-                block_num += 1
+                sim_state.update(block_vars=simulators.BlockSimVariables(**blocks.iloc[block_number].to_dict()))
                 for _ in range(num_trades_per_block):
-                    sim_state.update(trade_vars=simulators.TradeSimVariables(**trades.iloc[trade_num].to_dict()))
-                    trade_num += 1
+                    sim_state.update(trade_vars=simulators.TradeSimVariables(**trades.iloc[trade_number].to_dict()))
+                    trade_number += 1
+                block_number += 1
         assert np.all(sim_state.run_updates == runs)
         assert np.all(sim_state.day_updates == days)
         assert np.all(sim_state.block_updates == blocks)
