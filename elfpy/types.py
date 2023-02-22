@@ -62,3 +62,6 @@ class Quantity:
 
     amount: float
     unit: TokenType
+
+    def __neg__(self):
+        return Quantity(amount=-self.amount, unit=self.unit)

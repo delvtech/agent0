@@ -309,7 +309,7 @@ class PricingModel(ABC):
                 bond_reserves=bond_reserves,
                 base_buffer=market_state.base_buffer,
                 bond_buffer=market_state.bond_buffer,
-                lp_reserves=market_state.lp_reserves,
+                lp_total_supply=market_state.lp_total_supply,
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             ),
@@ -406,7 +406,7 @@ class PricingModel(ABC):
         Decimal
             The spot price of principal tokens.
         """
-        # TODO: in general s != y + c*z, we'll want to update this to have s = lp_reserves
+        # TODO: in general s != y + c*z, we'll want to update this to have s = lp_total_supply
         # issue #94
         # s = y + c*z
         total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(

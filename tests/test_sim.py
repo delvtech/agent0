@@ -132,7 +132,7 @@ class TestSimulator(unittest.TestCase):
                 "day": [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2],
                 "block_number": [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5],
                 "trade_number": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                "pool_apr": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
+                "fixed_apr": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
                 "spot_price": [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1],
                 "market_deltas": [[idx, 8] for idx in range(total_num_trades)],
                 "agent_address": [0] * total_num_trades,

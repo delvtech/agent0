@@ -58,9 +58,9 @@ class BaseMarketTest(unittest.TestCase):
         config.trade_fee_percent = 0.1
         # our model currently has no redemption fee for yieldspace, if added these tests will break
         config.redemption_fee_percent = 0.1
-        config.target_pool_apr = 0.05
+        config.target_fixed_apr = 0.05
         config.num_trading_days = 9  # minimal simulation steps
-        config.vault_apr = [0.05] * config.num_trading_days
+        config.variable_apr = [0.05] * config.num_trading_days
         config.num_position_days = 365
         config.num_blocks_per_day = 3
         config.shuffle_users = False  # make it deterministic
@@ -185,10 +185,10 @@ class MarketTestsOneFunction(BaseMarketTest):
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base,  # base asset increases because agent is selling base into market to buy bonds
-            d_token_asset=-d_bonds,  # token asset increases because agent is buying bonds from market to sell base
+            d_bond_asset=-d_bonds,  # token asset increases because agent is buying bonds from market to sell base
             d_base_buffer=d_bonds,  # base buffer increases, identifying agent deposits, set aside from LPs
             d_bond_buffer=0,  # bond buffer doesn't change because agent did not deposit bonds
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -214,10 +214,10 @@ class MarketTestsOneFunction(BaseMarketTest):
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base into market to sell bonds
-            d_token_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=-d_bonds,  # base buffer decreases, identifying agent withdrawals, no longer set aside
             d_bond_buffer=0,  # bond buffer doesn't change because agent did not withdraw bonds
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -243,10 +243,10 @@ class MarketTestsOneFunction(BaseMarketTest):
 
         expected_market_deltas = MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
-            d_token_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # bond buffer doesn't change because agent did not deposit base
             d_bond_buffer=d_bonds,  # bond buffer increases, identifying agent deposits, set aside from LPs
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -274,10 +274,10 @@ class MarketTestsOneFunction(BaseMarketTest):
         fees_paid = 0.47619047619047666  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
-            d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
             d_bond_buffer=-d_bonds,  # bond buffer decreases, identifying agent withdrawals, no longer set aside
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -303,10 +303,10 @@ class MarketTestsOneFunction(BaseMarketTest):
         fees_paid = 0.47576611218819087  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
-            d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
             d_bond_buffer=-d_bonds,  # bond buffer decreases, identifying agent withdrawals, no longer set aside
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -335,10 +335,10 @@ class MarketTestsOneFunction(BaseMarketTest):
         fees_paid = 0.23809523809523833  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
-            d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
             d_bond_buffer=-d_bonds,  # bond buffer decreases, identifying agent withdrawals, no longer set aside
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -367,10 +367,10 @@ class MarketTestsOneFunction(BaseMarketTest):
         fees_paid = 0.23788305609409544  # taken from pricing model output, not tested here
         expected_market_deltas = MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
-            d_token_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
+            d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
             d_bond_buffer=-d_bonds,  # bond buffer decreases, identifying agent withdrawals, no longer set aside
-            d_lp_reserves=0,
+            d_lp_total_supply=0,
             d_share_price=0,
         )
         expected_agent_deltas = Wallet(
@@ -408,4 +408,4 @@ class MarketTestsOneFunction(BaseMarketTest):
             )
 
             # TODO have this be exact once we fix issue #146
-            self.assertAlmostEqual(market.apr, target_apr, 12)
+            self.assertAlmostEqual(market.fixed_apr, target_apr, 12)

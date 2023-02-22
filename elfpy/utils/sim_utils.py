@@ -98,7 +98,7 @@ def get_market(
                 how much time between token minting and expiry, in days
             redemption_fee_percent : float
                 portion of redemptions to be collected as fees for LPers, expressed as a decimal
-            target_pool_apr : float
+            target_fixed_apr : float
                 target apr, used for calculating the time stretch
             trade_fee_percent : float
                 portion of trades to be collected as fees for LPers, expressed as a decimal
@@ -115,12 +115,12 @@ def get_market(
     """
     position_duration = time_utils.StretchedTime(
         days=config.num_position_days,
-        time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
+        time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
         normalizing_constant=config.num_position_days,
     )
     # apr is "annual", so if position durations is not 365
     # then we need to rescale the target apr passed to calc_liquidity
-    adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
+    adjusted_target_apr = config.target_fixed_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
         market_state=hyperdrive.MarketState(
             share_price=config.init_share_price, init_share_price=config.init_share_price
@@ -136,10 +136,10 @@ def get_market(
             bond_reserves=bond_reserves_direct,
             base_buffer=0,
             bond_buffer=0,
-            lp_reserves=init_target_liquidity / config.init_share_price,
+            lp_total_supply=init_target_liquidity / config.init_share_price,
             init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
             share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            vault_apr=config.vault_apr[0],  # yield bearing source apr
+            variable_apr=config.variable_apr[0],  # yield bearing source apr
             trade_fee_percent=config.trade_fee_percent,  # g
             redemption_fee_percent=config.redemption_fee_percent,
         ),

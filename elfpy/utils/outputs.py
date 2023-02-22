@@ -143,7 +143,7 @@ def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
     return fig
 
 
-def plot_pool_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
+def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
     Parameters
@@ -163,15 +163,15 @@ def plot_pool_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclud
     start_idx = 1 if exclude_first_day else 0
     first_trade_that_is_on_last_day = min(state_df.index[state_df.day == max(state_df.day)])
     end_idx = first_trade_that_is_on_last_day - 1 if exclude_last_day is True else len(state_df)
-    axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="pool_apr_percent", ax=axes[0])
+    axis = state_df.iloc[start_idx:end_idx].plot(x="day", y="fixed_apr_percent", ax=axes[0])
     axis.get_legend().remove()  # type: ignore
-    axis.set_title("Market pool APR")
+    axis.set_title("Market fixed APR")
     axis.set_ylabel("APR (%)")
     axis.set_xlabel("Day")
     return fig
 
 
-def plot_pool_volume(
+def plot_fixed_volume(
     trades_agg: pd.DataFrame, exclude_first_trade: bool = True, exclude_last_trade: bool = True
 ) -> Figure:
     r"""Plot the simulator market APR per day

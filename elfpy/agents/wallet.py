@@ -115,8 +115,8 @@ class Wallet:
         """
         lp_token_value = 0
         if self.lp_tokens > 0:  # proceed further only if the agent has LP tokens
-            if market.market_state.lp_reserves > 0:  # avoid divide by zero
-                share_of_pool = self.lp_tokens / market.market_state.lp_reserves
+            if market.market_state.lp_total_supply > 0:  # avoid divide by zero
+                share_of_pool = self.lp_tokens / market.market_state.lp_total_supply
                 pool_value = (
                     market.market_state.bond_reserves * market.spot_price  # in base
                     + market.market_state.share_reserves * market.market_state.share_price  # in base

@@ -66,7 +66,7 @@ class SimulationState:
         default_factory=list, metadata=to_description("time lapse between token mint and expiry as a yearfrac")
     )
     current_vault_apr: list[float] = field(default_factory=list, metadata=to_description("vault apr on a given day"))
-    pool_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
+    fixed_apr: list[float] = field(default_factory=list, metadata=to_description("apr of the AMM pool"))
     spot_price: list[float] = field(default_factory=list, metadata=to_description("price of shares"))
 
     def add_dict_entries(self, dictionary: dict) -> None:
@@ -120,7 +120,7 @@ class Config:
     init_vault_age: float = field(default=0, metadata=to_description("fraction of a year since the vault was opened"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
-    vault_apr: list[float] = field(  # default is overridden in __post_init__
+    variable_apr: list[float] = field(  # default is overridden in __post_init__
         default_factory=lambda: [-1],
         metadata=to_description("the underlying (variable) vault APR at each time step"),
     )  # TODO: Move this out of config, it should be computed in simulator init based on config values
@@ -138,7 +138,7 @@ class Config:
     redemption_fee_percent: float = field(
         default=0.05, metadata=to_description("LP fee factor (decimal) to charge for redemption")
     )
-    target_pool_apr: float = field(default=0.1, metadata=to_description("desired fixed apr for as a decimal"))
+    target_fixed_apr: float = field(default=0.1, metadata=to_description("desired fixed apr for as a decimal"))
     floor_fee: float = field(default=0, metadata=to_description("minimum fee percentage (bps)"))
 
     # Simulation
@@ -179,10 +179,10 @@ class Config:
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
-        if self.vault_apr == [-1]:  # defaults to [-1] so this should happen right after init
-            self.vault_apr = [0.05] * self.num_trading_days
+        if self.variable_apr == [-1]:  # defaults to [-1] so this should happen right after init
+            self.variable_apr = [0.05] * self.num_trading_days
         if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
-            self.init_share_price = (1 + self.vault_apr[0]) ** self.init_vault_age
+            self.init_share_price = (1 + self.variable_apr[0]) ** self.init_vault_age
         self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
     def __getitem__(self, key) -> None:
@@ -205,16 +205,16 @@ class Config:
 
     def check_vault_apr(self) -> None:
         r"""Verify that the vault_apr is the right length"""
-        if not isinstance(self.vault_apr, list):
+        if not isinstance(self.variable_apr, list):
             raise TypeError(
-                f"ERROR: vault_apr must be of type list, not {type(self.vault_apr)}."
+                f"ERROR: vault_apr must be of type list, not {type(self.variable_apr)}."
                 f"\nhint: it must be set after Config is initialized."
             )
-        if not hasattr(self, "num_trading_days") and len(self.vault_apr) != self.num_trading_days:
+        if not hasattr(self, "num_trading_days") and len(self.variable_apr) != self.num_trading_days:
             raise ValueError(
                 "ERROR: vault_apr must have len equal to num_trading_days = "
                 + f"{self.num_trading_days},"
-                + f" not {len(self.vault_apr)}"
+                + f" not {len(self.variable_apr)}"
             )
 
 
@@ -261,7 +261,7 @@ class TradeSimVariables:
     day: int = field(metadata=to_description("day index in a given simulation"))
     block_number: int = field(metadata=to_description("integer, block index in a given simulation"))
     trade_number: int = field(metadata=to_description("trade number in a given simulation"))
-    pool_apr: float = field(metadata=to_description("apr of the AMM pool"))
+    fixed_apr: float = field(metadata=to_description("apr of the AMM pool"))
     spot_price: float = field(metadata=to_description("price of shares"))
     market_deltas: MarketDeltas = field(metadata=to_description("deltas used to update the market state"))
     agent_address: int = field(metadata=to_description("address of the agent that is executing the trade"))
@@ -543,7 +543,7 @@ class Simulator:
                         self.day,
                         self.block_number,
                         self.trade_number,
-                        self.market.apr,
+                        self.market.fixed_apr,
                         self.market.spot_price,
                         market_deltas,
                         agent_id,
@@ -583,7 +583,7 @@ class Simulator:
             )
         for day in range(0, self.config.num_trading_days):
             self.day = day
-            self.market.market_state.vault_apr = self.config.vault_apr[self.day]
+            self.market.market_state.variable_apr = self.config.variable_apr[self.day]
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 if self.config.compound_vault_apr:  # Apply return to latest price (full compounding)
@@ -592,7 +592,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.init_share_price
                 delta = hyperdrive.MarketDeltas(
                     d_share_price=(
-                        self.market.market_state.vault_apr  # current day's apy
+                        self.market.market_state.variable_apr  # current day's apy
                         / 365  # convert annual yield to daily
                         * price_multiplier
                     )
@@ -603,7 +603,7 @@ class Simulator:
                         day_vars=DaySimVariables(
                             self.run_number,
                             self.day,
-                            self.market.market_state.vault_apr,
+                            self.market.market_state.variable_apr,
                             self.market.market_state.share_price,
                         )
                     )
@@ -655,8 +655,8 @@ class Simulator:
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size)
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.pool_apr.append(self.market.apr)
-        self.simulation_state.current_vault_apr.append(self.config.vault_apr[self.day])
+        self.simulation_state.fixed_apr.append(self.market.fixed_apr)
+        self.simulation_state.current_vault_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():

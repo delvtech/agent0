@@ -48,7 +48,7 @@ class TestLogging(unittest.TestCase):
             config.pricing_model_name = "Yieldspace"
             config.num_trading_days = 10
             config.num_blocks_per_day = 3  # keep it fast for testing
-            config.vault_apr = [0.05] * config.num_trading_days
+            config.variable_apr = [0.05] * config.num_trading_days
             simulator = sim_utils.get_simulator(config)  # initialize
             simulator.run_simulation()  # run
             self.assertLogs(level=level)
