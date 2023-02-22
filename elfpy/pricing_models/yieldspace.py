@@ -9,7 +9,7 @@ from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.agents import AgentTradeResult
-import elfpy.simulators.trades as trades
+import elfpy.pricing_models.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:
@@ -251,13 +251,13 @@ class YieldSpacePricingModel(PricingModel):
 
         .. note::
            The pool total supply is a function of the base and bond reserves, and is modified in
-           :func:`calc_lp_in_given_tokens_out 
+           :func:`calc_lp_in_given_tokens_out
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_in_given_tokens_out>`,
-           :func:`calc_tokens_out_given_lp_in 
+           :func:`calc_tokens_out_given_lp_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_tokens_out_given_lp_in>`,
-           and :func:`calc_lp_out_given_tokens_in 
+           and :func:`calc_lp_out_given_tokens_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_out_given_tokens_in>`.
-           
+
            It can be approximated as :math:`s \approx y + cz`.
 
         Parameters
@@ -487,13 +487,13 @@ class YieldSpacePricingModel(PricingModel):
 
         .. note::
            The pool total supply is a function of the base and bond reserves, and is modified in
-           :func:`calc_lp_in_given_tokens_out 
+           :func:`calc_lp_in_given_tokens_out
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_in_given_tokens_out>`,
-           :func:`calc_tokens_out_given_lp_in 
+           :func:`calc_tokens_out_given_lp_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_tokens_out_given_lp_in>`,
-           and :func:`calc_lp_out_given_tokens_in 
+           and :func:`calc_lp_out_given_tokens_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_out_given_tokens_in>`.
-           
+
            It can be approximated as :math:`s \approx y + cz`.
 
         Parameters

@@ -11,8 +11,6 @@ import elfpy.types as types
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
-Actions = TypeVar("Actions", Enum, Enum)
-
 
 class MarketActionType(Enum):
     r"""
@@ -122,15 +120,15 @@ class Market(Generic[State, Deltas]):
         # market state variables
         self.pricing_model = pricing_model
         self.market_state = market_state
-        self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
 
-    def trade_and_update(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
-        """Execute a trade in the simulated market."""
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
+        """Performs an action in the market without updating it."""
         raise NotImplementedError
 
     def update_market(self, market_deltas: Deltas) -> None:
         """
-        Increments member variables to reflect current market conditions
+        Updates the market with market deltas.
         """
         raise NotImplementedError
 

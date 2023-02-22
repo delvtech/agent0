@@ -11,7 +11,7 @@ from elfpy import (
 )
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
-import elfpy.simulators.trades as trades
+import elfpy.pricing_models.trades as trades
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
 
