@@ -40,7 +40,7 @@ class CustomShorter(Agent):
         if can_open_short:
             if vault_apr > market.fixed_apr:
                 action_list.append(
-                    self.create_agent_action(
+                    self.create_hyperdrive_action(
                         action_type=MarketActionType.OPEN_SHORT,
                         trade_amount=self.pt_to_short,
                     )
@@ -48,7 +48,7 @@ class CustomShorter(Agent):
             elif vault_apr < market.fixed_apr:
                 if has_opened_short:
                     action_list.append(
-                        self.create_agent_action(
+                        self.create_hyperdrive_action(
                             action_type=MarketActionType.CLOSE_SHORT,
                             trade_amount=self.pt_to_short,
                             mint_time=list(self.wallet.shorts.keys())[0],

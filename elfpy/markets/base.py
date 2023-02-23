@@ -11,6 +11,12 @@ import elfpy.types as types
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
+# TODO: see if we can't restrict these types to MarketState and MarketDeltas such that all
+# subclasses of Market need to pass subclasses of MarketState and MarketDeltas
+Action = TypeVar("Action")
+State = TypeVar("State")
+Deltas = TypeVar("Deltas")
+
 
 class MarketActionType(Enum):
     r"""
@@ -21,7 +27,7 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction:
+class MarketAction(Generic[Action]):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
@@ -54,10 +60,6 @@ class MarketDeltas:
 
     def __setitem__(self, key, value):
         setattr(self, key, value)
-
-    def __str__(self):
-        output_string = f"BaseMarketDeltas(\n\t{self.d_lp_total_supply=})"
-        return output_string
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -93,16 +95,6 @@ class BaseMarketState:
         """Returns a new copy of self"""
         return BaseMarketState(lp_total_supply=self.lp_total_supply)
 
-    def __str__(self):
-        output_string = "MarketState(\n" "\tlp_total_supply(\n" f"\t\t{self.lp_total_supply=},\n" "\t),\n" ")"
-        return output_string
-
-
-# TODO: see if we can't restrict these types to MarketState and MarketDeltas such that all
-# subclasses of Market need to pass subclasses of MarketState and MarketDeltas
-State = TypeVar("State")
-Deltas = TypeVar("Deltas")
-
 
 class Market(Generic[State, Deltas]):
     r"""Market state simulator
@@ -117,7 +109,6 @@ class Market(Generic[State, Deltas]):
         pricing_model: PricingModel,
         market_state: State,
     ):
-        # market state variables
         self.pricing_model = pricing_model
         self.market_state = market_state
         self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
@@ -135,8 +126,7 @@ class Market(Generic[State, Deltas]):
     def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        state_string = "\n".join(strings)
-        return state_string
+        return "\n".join(strings)
 
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""

@@ -1,7 +1,10 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 
+from typing import List
+
 from elfpy.agents import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
+import elfpy.types as types
 
 # pylint: disable=too-many-arguments
 
@@ -12,7 +15,7 @@ class Policy(Agent):
     only has one long open at a time
     """
 
-    def action(self, market: Market):
+    def action(self, market: Market) -> List[types.Trade]:
         """Specify action"""
         longs = list(self.wallet.longs.values())
         has_opened_long = bool(any((long.balance > 0 for long in longs)))
@@ -22,7 +25,7 @@ class Policy(Agent):
             enough_time_has_passed = market.time - mint_time > 0.01
             if enough_time_has_passed:
                 action_list.append(
-                    self.create_agent_action(
+                    self.create_hyperdrive_action(
                         action_type=MarketActionType.CLOSE_LONG,
                         trade_amount=longs[-1].balance,
                         mint_time=mint_time,
@@ -31,6 +34,7 @@ class Policy(Agent):
         else:
             trade_amount = self.get_max_long(market) / 2
             action_list.append(
-                self.create_agent_action(action_type=MarketActionType.OPEN_LONG, trade_amount=trade_amount)
+                self.create_hyperdrive_action(action_type=MarketActionType.OPEN_LONG, trade_amount=trade_amount)
             )
+        action_list = [types.Trade(market=types.MarketType.HYPERDRIVE, trade=trade) for trade in action_list]
         return action_list
