@@ -78,15 +78,15 @@ def block_number_to_datetime(start_time: datetime, block_number: float, time_bet
     return start_time + delta_time
 
 
-def year_as_datetime(start_time: datetime, year: float) -> datetime:
+def year_as_datetime(start_time: datetime, years: float) -> datetime:
     r"""Returns a year (e.g. the current market time) in datetime format
 
     Parameters
     ----------
     start_time : datetime
         Timestamp at which the simulation started
-    year : float
-        Fraction of a year since start_time to convert into datetime
+    years : float
+        years since start_time to convert into datetime
 
     Returns
     -------
@@ -94,33 +94,31 @@ def year_as_datetime(start_time: datetime, year: float) -> datetime:
         Timestamp for the provided start_time plus the provided year
     """
 
-    dayfrac = year * 365
-    delta_time = timedelta(days=dayfrac)
+    days = years * 365
+    delta_time = timedelta(days=days)
     return start_time + delta_time
 
 
 def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
-    r"""Get the year fraction remaining on a token
+    r"""Get the time remaining in years on a token
 
     Parameters
     ----------
     market_time : float
-        Time that has elapsed in the given market, in fractions of a year
+        Time that has elapsed in the given market, in years
     mint_time : float
         Time at which the token in question was minted, relative to market_time,
-        in fractions of a year. Should be less than market_time.
+        in yearss. Should be less than market_time.
     position_duration_years: float
-        Total duration of the token's term, in fractions of a year
+        Total duration of the token's term, in years
 
     Returns
     -------
     float
-        Time left until token maturity, in fractions of a year
+        Time left until token maturity, in years
     """
     if mint_time > market_time:
-        raise ValueError(
-            f"elfpy.utils.time.get_yearfrac_remaining: ERROR: {mint_time=} must be less than {market_time=}."
-        )
+        raise ValueError(f"elfpy.utils.time.get_years_remaining: ERROR: {mint_time=} must be less than {market_time=}.")
     years_elapsed = market_time - mint_time
     # if we are closing after the position duration has completed, then just set time_remaining to zero
     time_remaining = np.maximum(position_duration_years - years_elapsed, 0)

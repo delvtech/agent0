@@ -176,7 +176,7 @@ class Market:
         market_state: MarketState,
     ):
         # market state variables
-        self.time: float = 0  # t: timefrac unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.time: float = 0  # t: time unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.market_state: MarketState = market_state
 
     def check_action(self, agent_action: MarketAction) -> None:
