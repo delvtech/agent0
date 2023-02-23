@@ -47,7 +47,7 @@ class MarketDeltas(base_market.MarketDeltas):
     d_share_price: float = 0
 
     def __str__(self):
-        output_string = (
+        return (
             "MarketDeltas(\n"
             f"\t{self.d_base_asset=},\n"
             f"\t{self.d_bond_asset=},\n"
@@ -57,7 +57,6 @@ class MarketDeltas(base_market.MarketDeltas):
             f"\t{self.d_share_price=},\n"
             ")"
         )
-        return output_string
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -100,6 +99,9 @@ class MarketState(base_market.BaseMarketState):
     redemption_fee_percent : float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
     """
+
+    # lp reserves
+    lp_total_supply: float = 0.0
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
@@ -171,7 +173,7 @@ class MarketState(base_market.BaseMarketState):
             f"\t\t{self.base_buffer=},\n"
             f"\t\t{self.bond_buffer=},\n"
             "\t),\n"
-            "\tlp_reserves(\n"
+            "\tlp_total_supply(\n"
             f"\t\t{self.lp_total_supply=},\n"
             "\t),\n"
             "\tunderlying_vault((\n"
