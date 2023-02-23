@@ -75,15 +75,7 @@ class BaseMarketState:
 
     Implements a class for all that that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.
-
-    Attributes
-    ----------
-    lp_total_supply: float
-        Amount of lp tokens
     """
-
-    # lp reserves
-    lp_total_supply: float = 0.0
 
     # TODO: have this be generic enough that any subclass can apply deltas?
     def apply_delta(self, delta: MarketDeltas) -> None:
@@ -93,7 +85,7 @@ class BaseMarketState:
     # TODO: have this be generic enough that any subclass can copy?
     def copy(self) -> BaseMarketState:
         """Returns a new copy of self"""
-        return BaseMarketState(lp_total_supply=self.lp_total_supply)
+        raise NotImplementedError
 
 
 class Market(Generic[State, Deltas]):
