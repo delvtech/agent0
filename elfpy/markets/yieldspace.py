@@ -112,33 +112,15 @@ class MarketState(base_market.BaseMarketState):
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
-        self.lp_total_supply += delta.d_lp_total_supply
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_bond_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.share_price += delta.d_share_price
 
-        # TODO: issue #146
-        # this is an imperfect solution to rounding errors, but it works for now
-        for key, value in self.__dict__.items():
-            if 0 > value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
-
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
         return MarketState(
-            lp_total_supply=self.lp_total_supply,
             share_reserves=self.share_reserves,
             bond_reserves=self.bond_reserves,
             base_buffer=self.bond_buffer,
@@ -247,12 +229,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         check which of 6 action types are being executed, and handles each case:
 
         open_long
+        ..todo add description
 
         close_long
+        ..todo add description
 
         open_short
+        ..todo add description
 
         close_short
+        ..todo add description
 
         add_liquidity
             pricing model computes new market deltas
@@ -340,22 +326,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 )
             )
             self.update_market(delta)
-
-    def update_market(self, market_deltas: MarketDeltas) -> None:
-        """
-        Increments member variables to reflect current market conditions
-
-        .. todo:: This order is weird. We should move everything in apply_update to update_market,
-            and then make a new function called check_update that runs these checks
-        """
-        self.check_market_updates(market_deltas)
-        self.market_state.apply_delta(market_deltas)
-
-    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
-        """Check market update values to make sure they are valid"""
-        for key, value in market_deltas.__dict__.items():
-            if value:  # check that it's instantiated and non-empty
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
 
     @property
     def fixed_apr(self) -> float:
