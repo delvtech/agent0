@@ -54,7 +54,7 @@ class Wallet:
     ----------
     address : int
         The trader's address.
-    base : Quantity
+    balance : Quantity
         The base assets that held by the trader.
     lp_tokens : float
         The LP tokens held by the trader.
