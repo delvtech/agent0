@@ -143,3 +143,6 @@ dmypy.json
 
 # python virutalenv
 elf-env
+
+# pycharm
+.idea

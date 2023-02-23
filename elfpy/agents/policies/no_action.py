@@ -6,7 +6,7 @@ subclasses of BasicPolicy will implement trade actions
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.markets.hyperdrive import Market
-from elfpy.agents import Agent
+from elfpy.agents.agent import Agent
 import elfpy.types as types
 
 

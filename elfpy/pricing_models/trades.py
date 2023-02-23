@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 import elfpy.types as types
-import elfpy.agents as agent
+import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive
 
 

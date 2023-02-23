@@ -1,6 +1,6 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 
-from elfpy.agents import Agent
+from elfpy.agents.agent import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
 import elfpy.types as types
 

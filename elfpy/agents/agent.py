@@ -265,7 +265,7 @@ class Agent:
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
-            if key in ["fees_paid", "address"]:
+            if key in ["fees_paid", "address", "borrows"]:
                 continue
             # handle updating a value
             if key in ["lp_tokens", "fees_paid"]:

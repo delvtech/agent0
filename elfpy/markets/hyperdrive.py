@@ -18,6 +18,9 @@ import elfpy.markets.base as base_market
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
+# TODO: for now...
+# pylint: disable=duplicate-code
+
 
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""

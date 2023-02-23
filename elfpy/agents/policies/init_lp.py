@@ -2,7 +2,7 @@
 
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
-from elfpy.agents import Agent
+from elfpy.agents.agent import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
 
 import elfpy.types as types

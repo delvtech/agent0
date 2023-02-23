@@ -8,7 +8,7 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models.trades as trades
 import elfpy.utils.time as time_utils
-from elfpy.agents import AgentTradeResult
+from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
 
 if TYPE_CHECKING:

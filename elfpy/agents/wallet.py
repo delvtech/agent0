@@ -23,9 +23,6 @@ class Long:
 
     balance: float
 
-    def __str__(self):
-        return f"Long(balance: {self.balance})"
-
 
 @dataclass
 class Short:
@@ -42,8 +39,24 @@ class Short:
     balance: float
     open_share_price: float
 
-    def __str__(self):
-        return f"Short(balance: {self.balance}, open_share_price: {self.open_share_price})"
+
+@dataclass
+class Borrow:
+    r"""An open borrow position
+
+    Parameters
+    ----------
+    borrow_token : TokenType
+    borrow_amount : float
+    start_time : float
+    loan_token : TokenType
+    loan_amount: int
+    """
+    borrow_token: types.TokenType
+    borrow_amount: float
+    start_time: float
+    loan_token: types.TokenType
+    loan_amount: int
 
 
 @dataclass(frozen=False)
@@ -79,6 +92,7 @@ class Wallet:
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Long] = field(default_factory=dict)
     shorts: Dict[float, Short] = field(default_factory=dict)
+    borrows: Dict[float, Borrow] = field(default_factory=dict)
 
     # TODO: This isn't used for short trades
     fees_paid: float = 0
@@ -89,41 +103,20 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def __str__(self) -> str:
-        long_string = "\tlongs={\n"
-        for key, value in self.longs.items():
-            long_string += f"\t\t{key}: {value}\n"
-        long_string += "\t}"
-        short_string = "\tshorts={\n"
-        for key, value in self.shorts.items():
-            short_string += f"\t\t{key}: {value}\n"
-        short_string += "\t}"
-        output_string = (
-            "Wallet(\n"
-            f"\t{self.address=},\n"
-            f"\t{self.balance=},\n"
-            f"\t{self.lp_tokens=},\n"
-            f"\t{self.lp_tokens=},\n"
-            f"{long_string},\n"
-            f"{short_string},\n"
-            ")"
-        )
-        return output_string
-
     def get_state(self, market: Market) -> dict:
         r"""The wallet's current state of public variables
 
-        .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
+        .. todo:: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
         """
         lp_token_value = 0
-        if self.lp_tokens > 0:  # proceed further only if the agent has LP tokens
-            if market.market_state.lp_total_supply > 0:  # avoid divide by zero
-                share_of_pool = self.lp_tokens / market.market_state.lp_total_supply
-                pool_value = (
-                    market.market_state.bond_reserves * market.spot_price  # in base
-                    + market.market_state.share_reserves * market.market_state.share_price  # in base
-                )
-                lp_token_value = pool_value * share_of_pool  # in base
+        # proceed further only if the agent has LP tokens and avoid divide by zero
+        if self.lp_tokens > 0 and market.market_state.lp_total_supply > 0:
+            share_of_pool = self.lp_tokens / market.market_state.lp_total_supply
+            pool_value = (
+                market.market_state.bond_reserves * market.spot_price  # in base
+                + market.market_state.share_reserves * market.market_state.share_price  # in base
+            )
+            lp_token_value = pool_value * share_of_pool  # in base
         share_reserves = market.market_state.share_reserves
         # compute long values in units of base
         longs_value = 0
