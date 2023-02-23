@@ -162,7 +162,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def __init__(
         self,
         pricing_model: PricingModel,
-        market_state: State,
+        market_state: MarketState,
         position_duration: time_utils.StretchedTime,
     ):
         # market state variables
