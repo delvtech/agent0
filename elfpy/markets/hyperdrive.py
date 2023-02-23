@@ -46,18 +46,6 @@ class MarketDeltas(base_market.MarketDeltas):
     d_lp_total_supply: float = 0
     d_share_price: float = 0
 
-    def __str__(self):
-        return (
-            "MarketDeltas(\n"
-            f"\t{self.d_base_asset=},\n"
-            f"\t{self.d_bond_asset=},\n"
-            f"\t{self.d_base_buffer=},\n"
-            f"\t{self.d_bond_buffer=},\n"
-            f"\t{self.d_lp_total_supply=},\n"
-            f"\t{self.d_share_price=},\n"
-            ")"
-        )
-
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
@@ -162,28 +150,6 @@ class MarketState(base_market.BaseMarketState):
             redemption_fee_percent=self.redemption_fee_percent,
         )
 
-    def __str__(self):
-        return (
-            "MarketState(\n"
-            "\ttrading_reserves(\n"
-            f"\t\t{self.share_reserves=},\n"
-            f"\t\t{self.bond_reserves=},\n"
-            "\t),\n"
-            "\ttrading_buffers(\n"
-            f"\t\t{self.base_buffer=},\n"
-            f"\t\t{self.bond_buffer=},\n"
-            "\t),\n"
-            "\tlp_total_supply(\n"
-            f"\t\t{self.lp_total_supply=},\n"
-            "\t),\n"
-            "\tunderlying_vault((\n"
-            f"\t\t{self.variable_apr=},\n"
-            f"\t\t{self.share_price=},\n"
-            f"\t\t{self.init_share_price=},\n"
-            "\t)\n"
-            ")"
-        )
-
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
@@ -200,20 +166,6 @@ class MarketAction(Generic[base_market.Action]):
     min_amount_out: float = 0
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
-
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = (
-            "MarketAction(\n"
-            f"\tagent={self.wallet.address},\n"
-            f"\t{self.action_type=},\n"
-            f"\t{self.trade_amount=},\n"
-            f"\t{self.min_amount_out=},\n"
-            f"\t{self.mint_time=},\n"
-            f"\t{self.wallet=},\n"
-            ")"
-        )
-        return output_string
 
 
 class Market(base_market.Market[MarketState, MarketDeltas]):
