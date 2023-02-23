@@ -266,27 +266,27 @@ class Agent:
             if key in ["fees_paid", "address"]:
                 continue
             # handle updating a value
-            if key in ["balance", "lp_tokens", "fees_paid"]:
-                if key == "balance":
-                    logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.wallet.address,
-                        key,
-                        self.wallet[key].amount,
-                        self.wallet[key].amount + value_or_dict.amount,
-                        value_or_dict,
-                    )
-                    self.wallet[key].amount += value_or_dict.amount
-                else:
-                    logging.debug(
-                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                        self.wallet.address,
-                        key,
-                        self.wallet[key],
-                        self.wallet[key] + value_or_dict,
-                        value_or_dict,
-                    )
-                    self.wallet[key] += value_or_dict
+            if key in ["lp_tokens", "fees_paid"]:
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.wallet.address,
+                    key,
+                    self.wallet[key],
+                    self.wallet[key] + value_or_dict,
+                    value_or_dict,
+                )
+                self.wallet[key] += value_or_dict
+            # handle updating a Quantity
+            elif key == "balance":
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.wallet.address,
+                    key,
+                    self.wallet[key].amount,
+                    self.wallet[key].amount + value_or_dict.amount,
+                    value_or_dict,
+                )
+                self.wallet[key].amount += value_or_dict.amount
             # handle updating a dict, which have mint_time attached
             elif key == "longs":
                 self._update_longs(value_or_dict.items())
