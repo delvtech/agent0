@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Optional, Dict, Any
 
 import numpy as np
 
