@@ -451,7 +451,7 @@ class Simulator:
         blocks_per_year = 365 * self.config.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def add_agents(self, agent_list: list[agent.Agent]) -> None:
+    def add_agents(self, agent_list: "list[agent.Agent]") -> None:
         r"""Append the agents and simulation_state member variables
 
         If trades have already happened (as indicated by self.trade_number), then empty wallet states are
@@ -463,9 +463,9 @@ class Simulator:
         agent_list : list[Agent]
             A list of instantiated Agent objects
         """
-        for agent in agent_list:
-            self.agents.update({agent.wallet.address: agent})
-            for key in agent.wallet.get_state_keys():
+        for my_agent in agent_list:
+            self.agents.update({my_agent.wallet.address: my_agent})
+            for key in my_agent.wallet.get_state_keys():
                 setattr(self.simulation_state, key, [None] * self.trade_number)
 
     def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
@@ -507,11 +507,6 @@ class Simulator:
         -------
         list[tuple[int, Trade]]
             A list of trades associated with specific agents.
-        all_agent_trades = [{agent_addres, trade}]
-        for agent in agents:
-           for trade in agent_trades:
-              all_agent_trades.append({agent, trade})
-
         """
         trades: "list[types.Trade]" = []
         for agent_id in agent_ids:
@@ -529,15 +524,15 @@ class Simulator:
         for trade in agent_actions:
             agent_id, agent_deltas, market_deltas = self.markets[trade.market].perform_action(trade)
             self.markets[trade.market].update_market(market_deltas)
-            agent = self.agents[trade.agent]
+            my_agent = self.agents[trade.agent]
             logging.debug(
                 "agent #%g wallet deltas:\n%s",
-                agent.wallet.address,
+                my_agent.wallet.address,
                 agent_deltas,
             )
-            agent.update_wallet(agent_deltas, self.global_time)
+            my_agent.update_wallet(agent_deltas, self.global_time)
             # TODO: Get simulator, market, pricing model, agent state strings and log
-            agent.log_status_report()
+            my_agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
             self.update_simulation_state()
@@ -624,9 +619,9 @@ class Simulator:
                     self.block_number += 1
 
         # simulation has ended
-        for agent in self.agents.values():
+        for my_agent in self.agents.values():
             for market in self.markets.values():
-                agent.log_final_report(market)
+                my_agent.log_final_report(market)
 
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable
@@ -659,10 +654,10 @@ class Simulator:
         self.simulation_state.fixed_apr.append(self.markets[types.MarketType.HYPERDRIVE].fixed_apr)
         self.simulation_state.current_vault_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
-        # FIXME: loop through markets & pass each state
-        self.simulation_state.add_dict_entries(self.markets[types.MarketType.HYPERDRIVE].market_state.__dict__)
-        for agent in self.agents.values():
-            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.markets[types.MarketType.HYPERDRIVE]))
+        for market in self.markets.values():
+            self.simulation_state.add_dict_entries(market.market_state.__dict__)
+        for my_agent in self.agents.values():
+            self.simulation_state.add_dict_entries(my_agent.wallet.get_state(self.markets[types.MarketType.HYPERDRIVE]))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.markets[types.MarketType.HYPERDRIVE].market_state.share_reserves > 0:  # there is money in the market

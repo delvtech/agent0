@@ -8,11 +8,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+import elfpy.markets.base as base_market
+import elfpy.agents.wallet as wallet
 import elfpy.utils.price as price_utils
 import elfpy.time as time
-import elfpy.agents.wallet as wallet
 import elfpy.types as types
-import elfpy.markets.base as base_market
 
 if TYPE_CHECKING:
     import elfpy.pricing_models.base as base

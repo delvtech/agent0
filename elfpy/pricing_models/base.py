@@ -212,21 +212,21 @@ class PricingModel(ABC):
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
         annualized_time = time.utils.norm_days(position_duration.days, 365)
-        base = share_price * bond * (1 - target_apr * annualized_time)
+        base_amount = share_price * bond * (1 - target_apr * annualized_time)
 
-        assert base >= 0, "base value negative"
-        return base
+        assert base_amount >= 0, "base_amount value negative"
+        return base_amount
 
     def calc_bond_for_target_apr(
         self,
         target_apr: float,
-        base: float,
+        base_amount: float,
         position_duration: time.utils.StretchedTime,
         share_price: float = 1.0,
     ) -> float:
-        """Returns the bonds for a given base at the target APR.
-        For a long this is the minimum amount of bonds out for a given base in.
-        For a short this is the maximum amount of base in for a given base out.
+        """Returns the bonds for a given base_amount at the target APR.
+        For a long this is the minimum amount of bonds out for a given base_amount in.
+        For a short this is the maximum amount of base_amount in for a given base_amount out.
 
         Parameters
         ----------
@@ -242,7 +242,7 @@ class PricingModel(ABC):
         Returns
         -------
         float
-            The bond amount for a given base in at the target APR
+            The bond amount for a given base_amount in at the target APR
         """
 
         # delta_z / delta_y = p = 1 - r
@@ -252,7 +252,7 @@ class PricingModel(ABC):
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
         annualized_time = time.utils.norm_days(position_duration.days, 365)
-        bond = (base / share_price) / (1 - target_apr * annualized_time)
+        bond = (base_amount / share_price) / (1 - target_apr * annualized_time)
 
         assert bond >= 0, "bond value negative"
         return bond
@@ -403,17 +403,17 @@ class PricingModel(ABC):
         float
             The maximum amount of bonds that can be purchased.
         """
-        base = self.calc_in_given_out(
+        base_amount = self.calc_in_given_out(
             out=types.Quantity(market_state.bond_reserves - market_state.bond_buffer, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
+            in_=types.Quantity(amount=base_amount, unit=types.TokenType.BASE),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return (base_amount, bonds)
 
     def get_max_short(
         self,
@@ -452,12 +452,12 @@ class PricingModel(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        base = self.calc_out_given_in(
+        base_amount = self.calc_out_given_in(
             in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return (base_amount, bonds)
 
     def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
