@@ -118,9 +118,7 @@ def get_years_remaining(market_time: float, mint_time: float, position_duration_
         Time left until token maturity, in years
     """
     if mint_time > market_time:
-        raise ValueError(
-            f"elfpy.utils.time.get_years_remaining: ERROR: {mint_time=} must be less than {market_time=}."
-        )
+        raise ValueError(f"elfpy.utils.time.get_years_remaining: ERROR: {mint_time=} must be less than {market_time=}.")
     years_elapsed = market_time - mint_time
     # if we are closing after the position duration has completed, then just set time_remaining to zero
     time_remaining = np.maximum(position_duration_years - years_elapsed, 0)
