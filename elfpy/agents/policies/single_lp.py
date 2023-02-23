@@ -1,6 +1,4 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
-from typing import List
-
 from elfpy.agents import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
 import elfpy.types as types
@@ -19,7 +17,7 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: Market) -> List[types.Trade]:
+    def action(self, _market: Market) -> "list[types.Trade]":
         """
         implement user strategy
         LP if you can, but only do it once

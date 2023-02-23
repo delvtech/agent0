@@ -1,6 +1,4 @@
 """User strategy that opens a single short and doesn't close until liquidation"""
-from typing import List
-
 from elfpy.agents import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
 import elfpy.types as types
@@ -16,7 +14,7 @@ class Policy(Agent):
         self.amount_to_trade = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market) -> List[types.Trade]:
+    def action(self, market: Market) -> "list[types.Trade]":
         """
         implement user strategy
         short if you can, only once
