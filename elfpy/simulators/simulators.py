@@ -64,7 +64,7 @@ class SimulationState:
         default_factory=list, metadata=types.to_description("minimum time discretization for market time step")
     )
     position_duration: list[time_utils.StretchedTime] = field(
-        default_factory=list, metadata=types.to_description("time lapse between token mint and expiry as a yearfrac")
+        default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     current_vault_apr: list[float] = field(
         default_factory=list, metadata=types.to_description("vault apr on a given day")
@@ -121,7 +121,7 @@ class Config:
     )
     target_volume: float = field(default=0.01, metadata=types.to_description("fraction of pool liquidity"))
     init_vault_age: float = field(
-        default=0, metadata=types.to_description("fraction of a year since the vault was opened")
+        default=0, metadata=types.to_description("years since the vault was opened")
     )
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
@@ -235,7 +235,7 @@ class RunSimVariables:
     config: Config = field(metadata=types.to_description("the simulation config"))
     market_step_size: float = field(metadata=types.to_description("minimum time discretization for market time step"))
     position_duration: time_utils.StretchedTime = field(
-        metadata=types.to_description("time lapse between token mint and expiry as a yearfrac")
+        metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     simulation_start_time: datetime = field(metadata=types.to_description("start datetime for a given simulation"))
 
