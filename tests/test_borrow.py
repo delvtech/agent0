@@ -25,8 +25,12 @@ class TestBorrow(unittest.TestCase):
                     collateral_amount = 10**collateral_exponent
                     collateral = types.Quantity(unit=collateral_token, amount=collateral_amount)
 
+                    loan_to_value_ratios = {
+                        types.TokenType.BASE: loan_to_value / 100,
+                        types.TokenType.PT: loan_to_value / 100,
+                    }
                     borrow_market = BorrowMarket(
-                        market_state=BorrowMarketState(loan_to_value_ratio={types.TokenType.BASE: loan_to_value / 100})
+                        market_state=BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios)
                     )
 
                     market_deltas, agent_deltas = borrow_market.open_borrow(
@@ -42,7 +46,8 @@ class TestBorrow(unittest.TestCase):
 
                     print(
                         f"LTV={loan_to_value}, collateral={collateral_amount} -> "
-                        f"expect={expected_borrow_amount} actual=(mkt={borrowed_amount_into_market} 🤖{borrowed_amount_into_agent})"
+                        f"expect={expected_borrow_amount} actual=(mkt={borrowed_amount_into_market}"
+                        f" 🤖{borrowed_amount_into_agent})"
                     )
 
                     np.testing.assert_almost_equal(borrowed_amount_into_market, expected_borrow_amount)

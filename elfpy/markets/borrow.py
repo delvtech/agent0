@@ -298,7 +298,6 @@ class Market:
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
             collateral_value_in_base = collateral.amount * (spot_price or 1)
-        print(f"returning {collateral.unit=} from {collateral=}")
         borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio[collateral.unit]
         return collateral_value_in_base, borrow_amount_in_base
 
