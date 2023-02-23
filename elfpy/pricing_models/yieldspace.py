@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 import logging
 
-import elfpy.markets.yieldspace as yieldspace
+import elfpy.markets.yieldspace as yieldspace_market
 import elfpy.agents.agent as agent
 import elfpy.pricing_models.base as base
 import elfpy.pricing_models.trades as trades
@@ -26,9 +26,11 @@ class YieldSpacePricingModel(base.PricingModel):
     # pylint: disable=too-many-locals
     # pylint: disable=duplicate-code
 
+    @property
     def model_name(self) -> str:
         return "YieldSpace"
 
+    @property
     def model_type(self) -> str:
         return "yieldspace"
 
@@ -36,7 +38,7 @@ class YieldSpacePricingModel(base.PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: yieldspace.MarketState,
+        market_state: yieldspace_market.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -112,7 +114,7 @@ class YieldSpacePricingModel(base.PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: yieldspace.MarketState,
+        market_state: yieldspace_market.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -136,7 +138,7 @@ class YieldSpacePricingModel(base.PricingModel):
         self,
         lp_in: float,
         rate: float,
-        market_state: yieldspace.MarketState,
+        market_state: yieldspace_market.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
@@ -199,7 +201,7 @@ class YieldSpacePricingModel(base.PricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: yieldspace.MarketState,
+        market_state: yieldspace_market.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -354,7 +356,7 @@ class YieldSpacePricingModel(base.PricingModel):
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = yieldspace.MarketTradeResult(
+            market_result = yieldspace_market.MarketTradeResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
@@ -410,7 +412,7 @@ class YieldSpacePricingModel(base.PricingModel):
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = yieldspace.MarketTradeResult(
+            market_result = yieldspace_market.MarketTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
@@ -436,7 +438,7 @@ class YieldSpacePricingModel(base.PricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: yieldspace.MarketState,
+        market_state: yieldspace_market.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -575,7 +577,7 @@ class YieldSpacePricingModel(base.PricingModel):
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = yieldspace.MarketTradeResult(
+            market_result = yieldspace_market.MarketTradeResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
@@ -624,7 +626,7 @@ class YieldSpacePricingModel(base.PricingModel):
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = yieldspace.MarketTradeResult(
+            market_result = yieldspace_market.MarketTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
@@ -644,7 +646,9 @@ class YieldSpacePricingModel(base.PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: yieldspace.MarketState, time_remaining: time.utils.StretchedTime) -> Decimal:
+    def _calc_k_const(
+        self, market_state: yieldspace_market.MarketState, time_remaining: time.utils.StretchedTime
+    ) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 

@@ -202,3 +202,8 @@ class SingleTradeTests(unittest.TestCase):
             else:
                 assert False, "Agent policy test only enabled for single_long and single_short"
         output_utils.close_logging()
+
+
+if __name__ == "__main__":
+    my_test = SingleTradeTests()
+    my_test.test_market_init_apr_and_liquidity()

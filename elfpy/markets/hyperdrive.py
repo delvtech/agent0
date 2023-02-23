@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from enum import Enum
-from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 import elfpy.types as types
