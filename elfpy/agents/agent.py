@@ -66,42 +66,6 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def create_hyperdrive_action(
-        self,
-        action_type: hyperdrive.MarketActionType,
-        trade_amount: float,
-        min_amount_out: float = 0,
-        mint_time: Optional[float] = None,
-    ) -> hyperdrive.MarketAction:
-        r"""Creates and returns a MarketAction object which represents a trade that this agent can make
-
-        Parameters
-        ----------
-        action_type : MarketActionType
-            Type of action this function will execute. Must be one of the supported MarketActionTypes
-        trade_amount : float
-            Amount of assets that the agent will trade
-        mint_time : float
-            Time relative to the market at which the tokens relevant to this trade were minted, in years
-        min_amount_out: float
-            The minimum amount out from a trade for the trade to be successful
-
-        Returns
-        -------
-        MarketAction
-            The MarketAction object that contains the details about the action to execute in the market
-        """
-        agent_action = hyperdrive.MarketAction(
-            # these two variables are required to be set by the strategy
-            action_type=action_type,
-            trade_amount=trade_amount,
-            min_amount_out=min_amount_out,
-            # next two variables are set automatically by the basic agent class
-            wallet=self.wallet,
-            mint_time=mint_time,
-        )
-        return agent_action
-
     def action(self, market: Market) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
@@ -380,9 +344,10 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=self.create_hyperdrive_action(
+                        trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
+                            wallet=self.wallet,
                             mint_time=mint_time,
                         ),
                     )
@@ -393,9 +358,10 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=self.create_hyperdrive_action(
+                        trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
+                            wallet=self.wallet,
                             mint_time=mint_time,
                         ),
                     )
@@ -405,9 +371,10 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=self.create_hyperdrive_action(
+                    trade=hyperdrive.MarketAction(
                         action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
+                        wallet=self.wallet,
                         mint_time=market.time,
                     ),
                 )

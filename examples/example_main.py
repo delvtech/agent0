@@ -9,12 +9,13 @@ from typing import Any
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-import elfpy
 from elfpy.agents.agent import Agent
-from elfpy.markets.hyperdrive import Market, MarketActionType
+import elfpy
 import elfpy.simulators as simulators
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.types as types
+import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.outputs as output_utils
+import elfpy.utils.sim_utils as sim_utils
 
 
 # pylint: disable=duplicate-code
@@ -30,7 +31,7 @@ class CustomShorter(Agent):
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market: Market) -> list[Any]:
+    def action(self, market: hyperdrive.Market) -> "list[Any]":
         """Implement a custom user strategy"""
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any((short.balance > 0 for short in shorts)))
@@ -40,18 +41,26 @@ class CustomShorter(Agent):
         if can_open_short:
             if vault_apr > market.fixed_apr:
                 action_list.append(
-                    self.create_hyperdrive_action(
-                        action_type=MarketActionType.OPEN_SHORT,
-                        trade_amount=self.pt_to_short,
+                    types.Trade(
+                        market=types.MarketType.HYPERDRIVE,
+                        trade=hyperdrive.MarketAction(
+                            action_type=hyperdrive.MarketActionType.OPEN_SHORT,
+                            trade_amount=self.pt_to_short,
+                            wallet=self.wallet,
+                        ),
                     )
                 )
             elif vault_apr < market.fixed_apr:
                 if has_opened_short:
                     action_list.append(
-                        self.create_hyperdrive_action(
-                            action_type=MarketActionType.CLOSE_SHORT,
-                            trade_amount=self.pt_to_short,
-                            mint_time=list(self.wallet.shorts.keys())[0],
+                        types.Trade(
+                            market=types.MarketType.HYPERDRIVE,
+                            trade=hyperdrive.MarketAction(
+                                action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                                trade_amount=self.pt_to_short,
+                                wallet=self.wallet,
+                                mint_time=list(self.wallet.shorts.keys())[0],
+                            ),
                         )
                     )
         return action_list
