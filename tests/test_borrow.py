@@ -81,18 +81,14 @@ class TestBorrow(unittest.TestCase):
         # borrowed_amount_into_market = market_deltas.d_borrow_shares
         # borrowed_amount_into_agent = agent_deltas.borrow
 
-        expected_d_borrow_shares: float = 100  # borrow is always in DAI
-        expected_d_collateral = types.Quantity(amount=100, unit=types.TokenType.BASE)
+        expected_d_borrow_shares: float = -100  # borrow is always in DAI
+        expected_d_collateral = types.Quantity(amount=-100, unit=types.TokenType.BASE)
         # expected_d_borrow_outstanding: float = 100  # changes based on borrow_shares * borrow_share_price
         expected_d_borrow_closed_interest: float = 0  # realized interest from closed borrows
 
-        print(f"{expected_d_borrow_shares=} {market_deltas.d_borrow_shares=}")
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
-        print(f"{expected_d_collateral=} {market_deltas.d_collateral=}")
         self.assertEqual(expected_d_collateral, market_deltas.d_collateral)
-        print(f"{expected_d_borrow_shares=} {market_deltas.d_borrow_shares=}")
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
-        print(f"{expected_d_borrow_closed_interest=} {market_deltas.d_borrow_closed_interest=}")
         self.assertEqual(expected_d_borrow_closed_interest, market_deltas.d_borrow_closed_interest)
 
 
