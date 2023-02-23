@@ -4,9 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict, Any
-
-import numpy as np
+from typing import Optional, Dict, Any, Union
 
 import elfpy.markets.base as base_market
 from elfpy.pricing_models.base import PricingModel
@@ -33,6 +31,7 @@ class MarketDeltas(base_market.MarketDeltas):
     d_collateral: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.PT))
     d_borrow_outstanding: float = 0.0  # changes based on borrow_shares * borrow_share_price
     d_borrow_closed_interest: float = 0.0  # realized interest from closed borrows
+    d_borrow_share_price: float = 0.0  # used only when time ticks and interest accrues
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -89,9 +88,9 @@ class MarketState(base_market.BaseMarketState):
     # pylint: disable=too-many-instance-attributes
 
     # borrow ratios
-    loan_to_value_ratio: Dict[types.TokenType, float] = field(
-        default_factory=dict
-    )  # 99% loan to value ratio corresponds to 1% haircut
+    loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
+        default_factory=lambda: {token_type: 0.97 for token_type in types.TokenType}
+    )
 
     # trading reserves
     borrow_shares: float = field(default=0.0)  # allows tracking the increasing value of loans over time
@@ -102,6 +101,7 @@ class MarketState(base_market.BaseMarketState):
 
     # share prices used to track amounts owed
     borrow_share_price: float = field(default=1.0)
+    init_borrow_share_price: float = field(default=borrow_share_price)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
     collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
 
@@ -109,6 +109,12 @@ class MarketState(base_market.BaseMarketState):
     lending_rate: float = field(default=0.01)  # 1% per year
     # borrow rate is lending_rate * spread_ratio
     spread_ratio: float = field(default=1.25)
+
+    def __post_init__(self) -> None:
+        r"""Initialize the market state"""
+        # initialize loan to value ratios if a float is passed
+        if isinstance(self.loan_to_value_ratio, float):
+            self.loan_to_value_ratio = {token_type: self.loan_to_value_ratio for token_type in types.TokenType}
 
     @property
     def borrow_amount(self) -> float:
@@ -120,30 +126,16 @@ class MarketState(base_market.BaseMarketState):
         """The amount of deposited asset in the market"""
         return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
-    @property
-    def total_market_profit(self) -> float:
-        """
-        From the market's perspective, the profit is the difference between the borrowed and deposited assets
-        This is composed of two parts:
-            uncollected profit = borrow_shares * share_price - borrow_outstanding
-            collected profit = borrow_closed_interest
-        """
-        return self.borrow_shares * self.borrow_share_price - self.borrow_outstanding + self.borrow_closed_interest
-
-    @property
-    def borrow_rate(self) -> float:
-        """The borrow rate is the lending rate multiplied by the spread ratio"""
-        return self.lending_rate * self.spread_ratio
-
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.borrow_shares += delta.d_borrow_shares
-        deposit_unit = delta.d_collateral.unit
-        self.collateral[deposit_unit] += delta.d_collateral.amount
-        assert self.borrow_shares > 0, f"BorrowMarket:MarketState borrow shares must be > 0, not {self.borrow_shares=}."
-        assert (
-            self.collateral[deposit_unit] > 0
-        ), f"BorrowMarket:MarketState deposit shares must be > 0, not {self.collateral[deposit_unit]=}."
+        collateral_unit = delta.d_collateral.unit
+        if collateral_unit not in self.collateral:  # key doesn't exist
+            self.collateral[collateral_unit] = delta.d_collateral.amount
+        else:  # key exists
+            self.collateral[collateral_unit] += delta.d_collateral.amount
+
+        self.check_market_non_zero()
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -180,7 +172,9 @@ class BorrowPricingModel(PricingModel):
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
             collateral_value_in_base = collateral.amount * (spot_price or 1)
-        borrow_amount_in_base = collateral_value_in_base * market_state.loan_to_value_ratio[collateral.unit]
+        borrow_amount_in_base = (
+            collateral_value_in_base * market_state.loan_to_value_ratio[collateral.unit]  # type: ignore
+        )
         return collateral_value_in_base, borrow_amount_in_base
 
 
@@ -278,7 +272,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # market reserves are stored in shares, so we need to convert the amount to shares
-        # borrow asset increases because it's being lent out
+        # borrow shares increase because they're being lent out
         # collateral increases because it's being deposited
         market_deltas = MarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
@@ -307,35 +301,47 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # market reserves are stored in shares, so we need to convert the amount to shares
-        # borrow asset increases because it's being lent out
-        # deposit asset increases because it's being deposited
+        # borrow shares increases because it's being repaid
+        # collateral decreases because it's being sent back to the agent
         market_deltas = MarketDeltas(
-            d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
-            d_collateral=types.Quantity(
-                unit=collateral.unit,
-                amount=collateral.amount,
-            ),
+            d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrow=borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrow=-borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
 
-    def update_market(self, market_deltas: MarketDeltas) -> None:
-        """
-        Increments member variables to reflect current market conditions
+    def update_share_prices(self, compound_vault_apr=True) -> None:
+        """Increment share price to account for accrued interest based on the current borrow rate"""
+        if compound_vault_apr:  # Apply return to latest price (full compounding)
+            price_multiplier = self.market_state.borrow_share_price
+        else:  # Apply return to starting price (no compounding)
+            price_multiplier = self.market_state.init_borrow_share_price
+        delta = MarketDeltas(
+            d_borrow_share_price=(
+                self.borrow_rate / 365 * price_multiplier  # current day's apy  # convert annual yield to daily
+            )
+        )
+        self.update_market(delta)  # save the delta of borrow share price into the market
 
-        .. todo:: This order is weird. We should move everything in apply_update to update_market,
-            and then make a new function called check_update that runs these checks
+    @property
+    def total_profit(self) -> float:
         """
-        self.check_market_updates(market_deltas)
-        self.market_state.apply_delta(market_deltas)
+        From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        This is composed of two parts:
+            uncollected profit = borrow_shares * share_price - borrow_outstanding
+            collected profit = borrow_closed_interest
+        """
+        return (
+            self.market_state.borrow_shares * self.market_state.borrow_share_price
+            - self.market_state.borrow_outstanding
+            + self.market_state.borrow_closed_interest
+        )
 
-    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
-        """Check market update values to make sure they are valid"""
-        for key, value in market_deltas.__dict__.items():
-            if value:  # check that it's instantiated and non-empty
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
+    @property
+    def borrow_rate(self) -> float:
+        """The borrow rate is the lending rate multiplied by the spread ratio"""
+        return self.market_state.lending_rate * self.market_state.spread_ratio
 
     def log_market_step_string(self) -> None:
         """Logs the current market step"""
@@ -344,5 +350,5 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             self.time,
             self.market_state.borrow_amount,
             self.market_state.deposit_amount,
-            self.market_state.borrow_rate,
+            self.borrow_rate,
         )
