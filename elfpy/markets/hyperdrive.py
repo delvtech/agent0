@@ -163,7 +163,7 @@ class MarketState(base_market.BaseMarketState):
         )
 
     def __str__(self):
-        output_string = (
+        return (
             "MarketState(\n"
             "\ttrading_reserves(\n"
             f"\t\t{self.share_reserves=},\n"
@@ -183,7 +183,6 @@ class MarketState(base_market.BaseMarketState):
             "\t)\n"
             ")"
         )
-        return output_string
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

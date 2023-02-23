@@ -145,6 +145,20 @@ class MarketState(base_market.BaseMarketState):
             self.collateral[deposit_unit] > 0
         ), f"BorrowMarket:MarketState deposit shares must be > 0, not {self.collateral[deposit_unit]=}."
 
+    def copy(self) -> MarketState:
+        """Returns a new copy of self"""
+        return MarketState(
+            loan_to_value_ratio=self.loan_to_value_ratio,
+            borrow_shares=self.borrow_shares,
+            collateral=self.collateral,
+            borrow_outstanding=self.borrow_outstanding,
+            borrow_closed_interest=self.borrow_closed_interest,
+            borrow_share_price=self.borrow_share_price,
+            collateral_spot_price=self.collateral_spot_price,
+            lending_rate=self.lending_rate,
+            spread_ratio=self.spread_ratio,
+        )
+
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
