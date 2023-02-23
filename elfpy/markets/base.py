@@ -11,8 +11,8 @@ import elfpy.types as types
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
-# TODO: see if we can't restrict these types to MarketState and MarketDeltas such that all
-# subclasses of Market need to pass subclasses of MarketState and MarketDeltas
+# TODO: see if we can't restrict these types to MarketAction, MarketState and MarketDeltas such that all
+# subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action")
 State = TypeVar("State")
 Deltas = TypeVar("Deltas")
