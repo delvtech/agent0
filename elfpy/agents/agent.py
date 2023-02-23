@@ -7,17 +7,15 @@ import logging
 
 import numpy as np
 
-
 import elfpy.agents.wallet as wallet
-from elfpy.markets.base import Market
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.base as base
 import elfpy.types as types
 
 if TYPE_CHECKING:
     from typing import Iterable
 
 
-MarketsByName = Dict[types.MarketType, Market]
+MarketsByName = Dict[types.MarketType, base.Market]
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -69,7 +67,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, markets: MarketsByName) -> "list[types.Trade]":
+    def action(self, markets: "dict[types.MarketType, base.Market]") -> "list[types.Trade]":
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -89,7 +87,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: Market) -> float:
+    def get_max_long(self, market: base.Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -116,7 +114,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: Market) -> float:
+    def get_max_short(self, market: base.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -178,7 +176,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, markets: dict[str, Market]) -> "list[types.Trade]":
+    def get_trades(self, markets: dict[str, base.Market]) -> "list[types.Trade]":
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -315,7 +313,6 @@ class Agent:
                 if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
                     self.wallet.shorts[mint_time].balance += short.balance
                     old_balance = self.wallet.shorts[mint_time].balance
-
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
                     # opened for the same account in the same block.  if the balance is negative, we
@@ -331,65 +328,6 @@ class Agent:
                 # Remove the empty short from the wallet.
                 del self.wallet.shorts[mint_time]
 
-    def get_hyperdrive_liquidation_trades(self) -> list[types.Trade]:
-        """Get final trades for liquidating positions
-
-        Parameters
-        ----------
-        market : dict[str, Market]
-            The market on which this agent will be executing trades or liquidations (MarketActions)
-
-        Returns
-        -------
-        list[Trade]
-            List of trades to execute in order to liquidate positions where applicable
-        """
-        action_list = []
-        for mint_time, long in self.wallet.longs.items():
-            logging.debug("evaluating closing long: mint_time=%g, position=%s", mint_time, long)
-            if long.balance > 0:
-                action_list.append(
-                    types.Trade(
-                        agent=self.wallet.address,
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_LONG,
-                            trade_amount=long.balance,
-                            wallet=self.wallet,
-                            mint_time=mint_time,
-                        ),
-                    )
-                )
-        for mint_time, short in self.wallet.shorts.items():
-            logging.debug("evaluating closing short: mint_time=%g, position=%s", mint_time, short)
-            if short.balance > 0:
-                action_list.append(
-                    types.Trade(
-                        agent=self.wallet.address,
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
-                            trade_amount=short.balance,
-                            wallet=self.wallet,
-                            mint_time=mint_time,
-                        ),
-                    )
-                )
-        if self.wallet.lp_tokens > 0:
-            logging.debug("evaluating closing lp: mint_time=%g, position=%s", mint_time, self.wallet.lp_tokens)
-            action_list.append(
-                types.Trade(
-                    agent=self.wallet.address,
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive.MarketAction(
-                        action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
-                        trade_amount=self.wallet.lp_tokens,
-                        wallet=self.wallet,
-                    ),
-                )
-            )
-        return action_list
-
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
@@ -399,7 +337,7 @@ class Agent:
             self.wallet.fees_paid or 0,
         )
 
-    def log_final_report(self, market: Market) -> None:
+    def log_final_report(self, market: base.Market) -> None:
         """Logs a report of the agent's state
 
         Parameters

@@ -5,7 +5,7 @@ subclasses of BasicPolicy will implement trade actions
 """
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from elfpy.markets.hyperdrive import Market
+import elfpy.markets.base as base
 from elfpy.agents.agent import Agent
 import elfpy.types as types
 
@@ -15,7 +15,7 @@ class NoAction(Agent):
     Most basic policy setup, which implements a noop agent that performs no action
     """
 
-    def action(self, market: Market) -> "list[types.Trade]":
+    def action(self, markets: "dict[types.MarketType, base.Market]") -> "list[types.Trade]":
         """Returns an empty list, indicating now action"""
         # pylint disable=unused-argument
         return []

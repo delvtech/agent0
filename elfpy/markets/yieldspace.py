@@ -8,8 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from elfpy import PRECISION_THRESHOLD
-from elfpy.pricing_models import yieldspace
+import elfpy.pricing_models.yieldspace as yieldspace
 import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.agents.wallet as wallet

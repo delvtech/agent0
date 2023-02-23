@@ -8,8 +8,8 @@ from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
-from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
+import elfpy.agents.agent as agent
 
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import MarketState
@@ -157,7 +157,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if out.unit == types.TokenType.BASE:
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
@@ -166,7 +166,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif out.unit == types.TokenType.PT:
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=float(-flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
             )
@@ -309,7 +309,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if in_.unit == types.TokenType.BASE:
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
@@ -318,7 +318,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif in_.unit == types.TokenType.PT:
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=float(flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
             )

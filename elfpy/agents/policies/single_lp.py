@@ -1,7 +1,8 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
 from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
+import elfpy.markets.base as base
+import elfpy.markets.hyperdrive as hyperdrive
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance
@@ -17,25 +18,27 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: hyperdrive.Market) -> "list[types.Trade]":
+    def action(self, markets: "dict[types.MarketType, base.Market]") -> "list[types.Trade]":
         """
         implement user strategy
         LP if you can, but only do it once
         """
         action_list = []
-        has_lp = self.wallet.lp_tokens > 0
-        can_lp = self.wallet.balance.amount >= self.amount_to_lp
-        if can_lp and not has_lp:
-            action_list.append(
-                types.Trade(
-                    agent=self.wallet.address,
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive.MarketAction(
-                        # these two variables are required to be set by the strategy
-                        action_type=hyperdrive.MarketActionType.ADD_LIQUIDITY,
-                        trade_amount=self.amount_to_lp,
-                        wallet=self.wallet,
-                    ),
-                )
-            )
+        for market_type in markets:
+            if market_type == types.MarketType.HYPERDRIVE:
+                has_lp = self.wallet.lp_tokens > 0
+                can_lp = self.wallet.balance.amount >= self.amount_to_lp
+                if can_lp and not has_lp:
+                    action_list.append(
+                        types.Trade(
+                            agent=self.wallet.address,
+                            market=types.MarketType.HYPERDRIVE,
+                            trade=hyperdrive.MarketAction(
+                                # these two variables are required to be set by the strategy
+                                action_type=hyperdrive.MarketActionType.ADD_LIQUIDITY,
+                                trade_amount=self.amount_to_lp,
+                                wallet=self.wallet,
+                            ),
+                        )
+                    )
         return action_list
