@@ -131,6 +131,11 @@ class Market(ABC, Generic[State, Deltas]):
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
+    @property
+    def time(self) -> float:
+        """Returns the global time"""
+        return self._time.time
+
     def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
@@ -160,15 +165,3 @@ class Market(ABC, Generic[State, Deltas]):
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
-
-    @abstractmethod
-    def update_market(self, market_deltas: Deltas) -> None:
-        """
-        Updates the market with market deltas.
-        """
-        raise NotImplementedError
-
-    @property
-    def time(self) -> float:
-        """Returns the global time"""
-        return self._time.time

@@ -17,7 +17,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
-    from elfpy.markets.base import Market, MarketDeltas
+    import elfpy.markets.base as base
     from elfpy.agents.agent import Agent
 
 
@@ -270,7 +270,7 @@ class TradeSimVariables:
     trade_number: int = field(metadata=types.to_description("trade number in a given simulation"))
     fixed_apr: float = field(metadata=types.to_description("apr of the AMM pool"))
     spot_price: float = field(metadata=types.to_description("price of shares"))
-    market_deltas: MarketDeltas = field(metadata=types.to_description("deltas used to update the market state"))
+    market_deltas: base.MarketDeltas = field(metadata=types.to_description("deltas used to update the market state"))
     agent_address: int = field(metadata=types.to_description("address of the agent that is executing the trade"))
     agent_deltas: wallet.Wallet = field(metadata=types.to_description("deltas used to update the market state"))
 
@@ -377,7 +377,7 @@ class Simulator:
         self,
         config: Config,
         global_time: time.Time,
-        markets: list[Market],
+        markets: list[base.Market],
     ):
         # User specified variables
         self.config = config
@@ -535,7 +535,7 @@ class Simulator:
                 agent.wallet.address,
                 agent_deltas,
             )
-            agent.update_wallet(agent_deltas, self.time)
+            agent.update_wallet(agent_deltas, self.global_time)
             # TODO: Get simulator, market, pricing model, agent state strings and log
             agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
@@ -620,7 +620,7 @@ class Simulator:
                 for market in self.markets.values():
                     market.log_market_step_string()
                 if not last_block_in_sim:
-                    self.time.tick(self.delta_time)
+                    self.global_time.tick(self.delta_time)
                     self.block_number += 1
 
         # simulation has ended
@@ -650,9 +650,9 @@ class Simulator:
                 time.utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
             )
             self.simulation_state.current_market_datetime.append(
-                time.utils.year_as_datetime(self.start_time, self.time)
+                time.utils.year_as_datetime(self.start_time, self.global_time)
             )
-        self.simulation_state.current_market_time.append(self.time)
+        self.simulation_state.current_market_time.append(self.global_time)
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.market_step_size.append(self.delta_time)
         self.simulation_state.position_duration.append(self.markets[types.MarketType.HYPERDRIVE].position_duration)
