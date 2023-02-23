@@ -17,9 +17,7 @@ import elfpy.types as types
 
 
 class MarketActionType(Enum):
-    r"""
-    Enumerate actions available in this market
-    """
+    r"""Enumerate actions available in this market"""
 
     OPEN_BORROW = "open_borrow"
     CLOSE_BORROW = "close_borrow"
@@ -61,7 +59,7 @@ class MarketState(base_market.BaseMarketState):
     r"""The state of an AMM
 
     Implements a class for all that that an AMM smart contract would hold or would have access to
-    For example, reserve numbers are local state variables of the AMM.  The vault_apr will most
+    For example, reserve numbers are local state variables of the AMM.  The borrow_rate will most
     likely be accessible through the AMM as well.
 
     Attributes
@@ -69,13 +67,17 @@ class MarketState(base_market.BaseMarketState):
     loan_to_value_ratio: float
         The maximum loan to value ratio a collateral can have before liquidations occur.
     borrow_shares: float
-        Quantity of borrow asset that has been lent out by the market
-    deposit_shares: float
-        Quantity of deposit asset that has been deposited into the market
+        Accounting units for borrow assets that has been lent out by the market, allows tracking of interest
+    collateral: float
+        Amount of collateral that has been deposited into the market
+    borrow_outstanding: float
+        The amount of borrowed asset that has been lent out by the market, without accounting for interest
     borrow_share_price: float
         The "share price" of the borrowed asset tracks the cumulative amount owed over time, indexed to 1 at the start
-    deposit_share_price: float
-        The "share price" of the deposited asset tracks the cumulative amount owed over time, indexed to 1 at the start
+    borrow_closed_interest: float
+        The interest that has been collected from closed borrows, to capture realized profit
+    collateral_spot_price: float
+        The spot price of the collateral asset, to allow updating valuation across time
     lending_rate: float
         The rate a user receives when lending out assets
     spread_ratio: float
@@ -99,12 +101,8 @@ class MarketState(base_market.BaseMarketState):
 
     # share prices used to track amounts owed
     borrow_share_price: float = field(default=1.0)
-    # number of TokenA between t=0 and t=1
-    deposit_share_price: Dict[types.TokenType, float] = field(
-        default_factory=lambda: {types.TokenType.BASE: 1.0, types.TokenType.PT: 1.0}
-    )
     # number of TokenA you get for TokenB
-    deposit_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
 
     # borrow and lending rates
     lending_rate: float = field(default=0.01)  # 1% per year
@@ -119,22 +117,16 @@ class MarketState(base_market.BaseMarketState):
     @property
     def deposit_amount(self) -> dict[types.TokenType, float]:
         """The amount of deposited asset in the market"""
-        return {key: value * self.deposit_spot_price[key] for key, value in self.collateral.items()}
+        return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
     @property
     def total_market_profit(self) -> float:
         """
         From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        This is composed of two parts:
+            uncollected profit = borrow_shares * share_price - borrow_outstanding
+            collected profit = borrow_closed_interest
         """
-        # how do we calcualte this?
-        # return self.borrow_asset - self.deposit_asset
-        # the profit is the borrow_shares * borrow_share_price - borrow_outstanding
-        # TEST: when borrow goes down, what happens? => correctly captured by borrow_closed_interest
-        # TEST: do we pay out interest on collateral?
-
-        # uncollected profit = borrow_shares * share_price - borrow_outstanding
-        # collected profit = borrow_closed_interest
-
         return self.borrow_shares * self.borrow_share_price - self.borrow_outstanding + self.borrow_closed_interest
 
     @property
@@ -261,7 +253,7 @@ class Market:
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             d_collateral=types.Quantity(
                 unit=collateral.unit,
-                amount=collateral.amount / self.market_state.deposit_share_price[collateral.unit],
+                amount=collateral.amount,
             ),
         )
 
@@ -288,7 +280,7 @@ class Market:
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             d_collateral=types.Quantity(
                 unit=collateral.unit,
-                amount=collateral.amount / self.market_state.deposit_share_price[collateral.unit],
+                amount=collateral.amount,
             ),
         )
 
@@ -322,8 +314,6 @@ class Market:
 
     def log_market_step_string(self) -> None:
         """Logs the current market step"""
-        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
-        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         logging.debug(
             ("t = %g\nborrow_asset = %g\ndeposit_assets = %g\nborrow_rate = %g"),
             self.time,
