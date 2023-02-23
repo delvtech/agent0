@@ -46,8 +46,9 @@ class TestBorrow(unittest.TestCase):
 
                     print(
                         f"LTV={loan_to_value}, collateral={collateral_amount} -> "
-                        f"expect={expected_borrow_amount} actual=(mkt={borrowed_amount_into_market}"
-                        f" 🤖{borrowed_amount_into_agent})"
+                        f"expect={expected_borrow_amount} "
+                        f"actual=(mkt={borrowed_amount_into_market} "
+                        f"🤖{borrowed_amount_into_agent})"
                     )
 
                     np.testing.assert_almost_equal(borrowed_amount_into_market, expected_borrow_amount)
@@ -61,28 +62,29 @@ class TestBorrow(unittest.TestCase):
         collateral = types.Quantity(unit=types.TokenType.BASE, amount=collateral_amount)
         loan_to_value = 1
 
+        # borrow is always in DAI, this allows tracking the increasing value of loans over time
         borrow_market = BorrowMarket(
             market_state=BorrowMarketState(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
-                borrow_shares=100,  # borrow is always in DAI, this allows tracking the increasing value of loans over time
+                borrow_shares=100,
                 collateral={},
                 borrow_outstanding=100,  # sum of Dai that went out the door
                 borrow_closed_interest=0.0,  # interested collected from closed borrows
             )
         )
 
-        market_deltas, agent_deltas = borrow_market.close_borrow(
+        market_deltas = borrow_market.close_borrow(
             wallet_address=1,
             collateral=collateral,
             spot_price=0.9,
-        )
+        )[0]
 
-        borrowed_amount_into_market = market_deltas.d_borrow_shares
-        borrowed_amount_into_agent = agent_deltas.borrow
+        # borrowed_amount_into_market = market_deltas.d_borrow_shares
+        # borrowed_amount_into_agent = agent_deltas.borrow
 
         expected_d_borrow_shares: float = 100  # borrow is always in DAI
         expected_d_collateral = types.Quantity(amount=100, unit=types.TokenType.BASE)
-        expected_d_borrow_outstanding: float = 100  # changes based on borrow_shares * borrow_share_price
+        # expected_d_borrow_outstanding: float = 100  # changes based on borrow_shares * borrow_share_price
         expected_d_borrow_closed_interest: float = 0  # realized interest from closed borrows
 
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)

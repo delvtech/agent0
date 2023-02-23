@@ -1,5 +1,5 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
-from elfpy.agents import Agent
+from elfpy.agents.agent import Agent
 from elfpy.markets.hyperdrive import Market, MarketActionType
 import elfpy.types as types
 

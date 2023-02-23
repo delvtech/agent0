@@ -12,6 +12,9 @@ import elfpy.markets.base as base_market
 
 import elfpy.types as types
 
+# TODO: for now...
+# pylint: disable=duplicate-code
+
 
 class MarketActionType(Enum):
     r"""

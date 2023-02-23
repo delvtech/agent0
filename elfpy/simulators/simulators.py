@@ -19,7 +19,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
-    from elfpy.agents import Agent
+    from elfpy.agents.agent import Agent
     from elfpy.markets.hyperdrive import Market, MarketAction, MarketDeltas
 
 
