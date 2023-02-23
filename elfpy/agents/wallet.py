@@ -4,6 +4,8 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass, field
 
+import elfpy.types as types
+
 if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import Market
     from typing import Any
@@ -52,7 +54,7 @@ class Wallet:
     ----------
     address : int
         The trader's address.
-    base : float
+    base : Quantity
         The base assets that held by the trader.
     lp_tokens : float
         The LP tokens held by the trader.
@@ -71,7 +73,7 @@ class Wallet:
     address: int
 
     # fungible
-    base: float = 0
+    balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
@@ -99,7 +101,7 @@ class Wallet:
         output_string = (
             "Wallet(\n"
             f"\t{self.address=},\n"
-            f"\t{self.base=},\n"
+            f"\t{self.balance=},\n"
             f"\t{self.lp_tokens=},\n"
             f"\t{self.lp_tokens=},\n"
             f"{long_string},\n"
@@ -127,20 +129,19 @@ class Wallet:
         longs_value = 0
         longs_value_no_mock = 0
         for mint_time, long in self.longs.items():
-            base = (
-                market.close_long(self.address, long.balance, mint_time)[1].base
-                if long.balance > 0 and share_reserves
-                else 0.0
-            )
+            if long.balance > 0 and share_reserves:
+                base = market.close_long(self.address, long.balance, mint_time)[1].balance.amount
+                # base = agent_deltas.base.amount
+            else:
+                base = 0.0
             longs_value += base
-            base_no_mock = long.balance * market.spot_price
-            longs_value_no_mock += base_no_mock
+            longs_value_no_mock += long.balance * market.spot_price
         # compute short values in units of base
         shorts_value = 0
         shorts_value_no_mock = 0
         for mint_time, short in self.shorts.items():
             base = (
-                market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].base
+                market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].balance.amount
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
@@ -148,7 +149,7 @@ class Wallet:
             base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock
         return {
-            f"agent_{self.address}_base": self.base,
+            f"agent_{self.address}_base": self.balance.amount,
             f"agent_{self.address}_lp_tokens": lp_token_value,
             f"agent_{self.address}_num_longs": len(self.longs),
             f"agent_{self.address}_num_shorts": len(self.shorts),

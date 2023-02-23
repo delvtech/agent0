@@ -55,7 +55,9 @@ class Agent:
         self.budget: float = budget
         self.last_update_spend: float = 0  # timestamp
         self.product_of_time_and_base: float = 0
-        self.wallet: wallet.Wallet = wallet.Wallet(address=wallet_address, base=budget)
+        self.wallet: wallet.Wallet = wallet.Wallet(
+            address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
+        )
         name = str(self.__class__)
         if "Policy" in name:  # agent was instantiated from policy folder
             self.name = name.split(".")[-2]
@@ -138,7 +140,7 @@ class Agent:
             time_remaining=market.position_duration,
         )
         return min(
-            self.wallet.base,
+            self.wallet.balance.amount,
             max_long,
         )
 
@@ -165,7 +167,7 @@ class Agent:
         )
         # If the Agent's base balance can cover the max loss of the maximum
         # short, we can simply return the maximum short.
-        if self.wallet.base >= max_short_max_loss:
+        if self.wallet.balance.amount >= max_short_max_loss:
             return max_short
         last_maybe_max_short = 0
         bond_percent = 1
@@ -183,7 +185,7 @@ class Agent:
             # decrease the bond percentage. Otherwise, we may have found the
             # max short, and we should increase the bond percentage.
             max_loss = maybe_max_short - trade_result.user_result.d_base
-            if max_loss > self.wallet.base:
+            if max_loss > self.wallet.balance.amount:
                 bond_percent -= step_size
             else:
                 last_maybe_max_short = maybe_max_short
@@ -200,7 +202,7 @@ class Agent:
         )
         max_loss = last_maybe_max_short - trade_result.user_result.d_base
         last_step_size = 1 / (2**num_iters + 1)
-        if max_loss > self.wallet.base:
+        if max_loss > self.wallet.balance.amount:
             bond_percent -= last_step_size
             last_maybe_max_short = max_short * bond_percent
 
@@ -255,7 +257,7 @@ class Agent:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet["base"])
+        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
         self.product_of_time_and_base += new_spend
         self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
@@ -264,16 +266,27 @@ class Agent:
             if key in ["fees_paid", "address"]:
                 continue
             # handle updating a value
-            if key in ["base", "lp_tokens", "fees_paid"]:
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.wallet.address,
-                    key,
-                    self.wallet[key],
-                    self.wallet[key] + value_or_dict,
-                    value_or_dict,
-                )
-                self.wallet[key] += value_or_dict
+            if key in ["balance", "lp_tokens", "fees_paid"]:
+                if key == "balance":
+                    logging.debug(
+                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        self.wallet.address,
+                        key,
+                        self.wallet[key].amount,
+                        self.wallet[key].amount + value_or_dict.amount,
+                        value_or_dict,
+                    )
+                    self.wallet[key].amount += value_or_dict.amount
+                else:
+                    logging.debug(
+                        "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                        self.wallet.address,
+                        key,
+                        self.wallet[key],
+                        self.wallet[key] + value_or_dict,
+                        value_or_dict,
+                    )
+                    self.wallet[key] += value_or_dict
             # handle updating a dict, which have mint_time attached
             elif key == "longs":
                 self._update_longs(value_or_dict.items())
@@ -394,9 +407,9 @@ class Agent:
     def log_status_report(self) -> None:
         """Logs the current user state"""
         logging.debug(
-            "agent #%g base = %1g and fees_paid = %1g",
+            "agent #%g balance = %1g and fees_paid = %1g",
             self.wallet.address,
-            self.wallet.base,
+            self.wallet.balance.amount,
             self.wallet.fees_paid if self.wallet.fees_paid else 0,
         )
 
@@ -414,7 +427,7 @@ class Agent:
             price = market.spot_price
         else:
             price = 0
-        base = self.wallet.base
+        balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
 
@@ -429,7 +442,7 @@ class Agent:
             if len(shorts) > 0
             else 0
         )
-        total_value = base + longs_value + shorts_value
+        total_value = balance + longs_value + shorts_value
         profit_and_loss = total_value - self.budget
 
         # Calculated spending statistics.
@@ -447,7 +460,7 @@ class Agent:
             (
                 "agent #%g %s %s on $%s spent, APR = %g"
                 " (%.2g in %s years), net worth = $%s"
-                " from %s base, %s longs, and %s shorts at p = %g\n"
+                " from %s balance, %s longs, and %s shorts at p = %g\n"
             ),
             self.wallet.address,
             lost_or_made,
@@ -457,7 +470,7 @@ class Agent:
             holding_period_rate,
             market.time,
             total_value,
-            base,
+            balance,
             sum(long.balance for long in longs),
             sum(short.balance for short in shorts),
             price,
