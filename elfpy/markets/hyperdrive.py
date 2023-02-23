@@ -4,11 +4,10 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Optional, Generic
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
-from elfpy import PRECISION_THRESHOLD
 import elfpy.utils.price as price_utils
 import elfpy.utils.time as time_utils
 import elfpy.agents.wallet as wallet
@@ -92,24 +91,24 @@ class MarketState(base_market.BaseMarketState):
     # pylint: disable=too-many-instance-attributes
 
     # lp reserves
-    lp_total_supply: float = 0.0
+    lp_total_supply: float = field(default=0.0)
 
     # trading reserves
-    share_reserves: float = 0.0
-    bond_reserves: float = 0.0
+    share_reserves: float = field(default=0.0)
+    bond_reserves: float = field(default=0.0)
 
     # trading buffers
-    base_buffer: float = 0.0
-    bond_buffer: float = 0.0
+    base_buffer: float = field(default=0.0)
+    bond_buffer: float = field(default=0.0)
 
     # share price
-    variable_apr: float = 0.0
-    share_price: float = 1.0
-    init_share_price: float = 1.0
+    variable_apr: float = field(default=0.0)
+    share_price: float = field(default=1.0)
+    init_share_price: float = field(default=1.0)
 
     # fee percents
-    trade_fee_percent: float = 0.0
-    redemption_fee_percent: float = 0.0
+    trade_fee_percent: float = field(default=0.0)
+    redemption_fee_percent: float = field(default=0.0)
 
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
@@ -119,22 +118,6 @@ class MarketState(base_market.BaseMarketState):
         self.bond_buffer += delta.d_bond_buffer
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
-
-        # TODO: issue #146
-        # this is an imperfect solution to rounding errors, but it works for now
-        for key, value in self.__dict__.items():
-            if 0 > value > -PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -179,7 +162,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def __init__(
         self,
         pricing_model: PricingModel,
-        market_state: MarketState,
+        market_state: State,
         position_duration: time_utils.StretchedTime,
     ):
         # market state variables
@@ -227,12 +210,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         check which of 6 action types are being executed, and handles each case:
 
         open_long
+        .. todo: add description
 
         close_long
+        .. todo: add description
 
         open_short
+        .. todo: add description
 
         close_short
+        .. todo: add description
 
         add_liquidity
             pricing model computes new market deltas
@@ -301,22 +288,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             self.market_state,
         )
         return (agent_id, agent_deltas, market_deltas)
-
-    def update_market(self, market_deltas: MarketDeltas) -> None:
-        """
-        Increments member variables to reflect current market conditions
-
-        .. todo:: This order is weird. We should move everything in apply_update to update_market,
-            and then make a new function called check_update that runs these checks
-        """
-        self.check_market_updates(market_deltas)
-        self.market_state.apply_delta(market_deltas)
-
-    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
-        """Check market update values to make sure they are valid"""
-        for key, value in market_deltas.__dict__.items():
-            if value:  # check that it's instantiated and non-empty
-                assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
 
     @property
     def fixed_apr(self) -> float:

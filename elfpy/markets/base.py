@@ -1,21 +1,24 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
+import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 from dataclasses import dataclass
 
+import numpy as np
+
+import elfpy
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
 
-# TODO: see if we can't restrict these types to MarketAction, MarketState and MarketDeltas such that all
-# subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
-Action = TypeVar("Action")
-State = TypeVar("State")
-Deltas = TypeVar("Deltas")
+# all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
+Action = TypeVar("Action", bound="MarketAction")
+State = TypeVar("State", bound="BaseMarketState")
+Deltas = TypeVar("Deltas", bound="MarketDeltas")
 
 
 class MarketActionType(Enum):
@@ -53,13 +56,6 @@ class MarketAction(Generic[Action]):
 @dataclass
 class MarketDeltas:
     r"""Specifies changes to values in the market"""
-    d_lp_total_supply: float = 0.0
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def __setitem__(self, key, value):
-        setattr(self, key, value)
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -70,7 +66,7 @@ class MarketTradeResult:
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class BaseMarketState:
+class BaseMarketState(Generic[State]):
     r"""The state of an AMM
 
     Implements a class for all that that an AMM smart contract would hold or would have access to
@@ -86,6 +82,24 @@ class BaseMarketState:
     def copy(self) -> BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
+
+    def check_market_non_zero(self):
+        r"""Checks that all market variables are non-zero within a precision threshold"""
+        # TODO: issue #146
+        # this is an imperfect solution to rounding errors, but it works for now
+        for key, value in self.__dict__.items():
+            if 0 > value > -elfpy.PRECISION_THRESHOLD:
+                logging.debug(
+                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                    key,
+                    value,
+                    elfpy.PRECISION_THRESHOLD,
+                )
+                setattr(self, key, 0)
+            else:
+                assert (
+                    value > -elfpy.PRECISION_THRESHOLD
+                ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
 
 
 class Market(Generic[State, Deltas]):
@@ -109,16 +123,31 @@ class Market(Generic[State, Deltas]):
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
-    def update_market(self, market_deltas: Deltas) -> None:
-        """
-        Updates the market with market deltas.
-        """
-        raise NotImplementedError
-
     def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
         return "\n".join(strings)
+
+    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
+        """Check market update values to make sure they are valid"""
+        for key, value in market_deltas.__dict__.items():
+            if value:  # check that it's instantiated and non-empty
+                print(f"check_market_updateS(): key = {key}, value = {value}")
+                value_to_check = value
+                if isinstance(value, types.Quantity):
+                    value_to_check = value.amount
+                else:
+                    assert np.isfinite(
+                        value_to_check
+                    ), f"markets.update_market: ERROR: market delta key {key} is not finite."
+
+    def update_market(self, market_deltas: MarketDeltas) -> None:
+        """
+        Increments member variables to reflect current market conditions
+        """
+        self.check_market_updates(market_deltas)  # check that market deltas are valid
+        self.market_state.apply_delta(market_deltas)
+        self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold
 
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
