@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 import numpy as np
 
 import elfpy.markets.base as base_market
+from elfpy.pricing_models.base import PricingModel
 
 import elfpy.types as types
 
@@ -157,7 +158,19 @@ class MarketAction(base_market.MarketAction):
     spot_price: Optional[float] = None
 
 
-class Market:
+class BorrowPricingModel(PricingModel):
+    """stores calculation functions use for the borrow market"""
+
+    def value_collateral(self, market_state: MarketState, collateral: types.Quantity, spot_price: Optional[float]):
+        """Values collateral and returns how much the agent can borrow against it"""
+        collateral_value_in_base = collateral.amount  # if collateral is BASE
+        if collateral.unit == types.TokenType.PT:
+            collateral_value_in_base = collateral.amount * (spot_price or 1)
+        borrow_amount_in_base = collateral_value_in_base * market_state.loan_to_value_ratio[collateral.unit]
+        return collateral_value_in_base, borrow_amount_in_base
+
+
+class Market(base_market.Market[MarketState, MarketDeltas]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -170,6 +183,7 @@ class Market:
     """
 
     available_actions = [MarketActionType.OPEN_BORROW, MarketActionType.CLOSE_BORROW]
+    pricing_model = BorrowPricingModel()
 
     def __init__(
         self,
@@ -178,6 +192,7 @@ class Market:
         # market state variables
         self.time: float = 0  # t: time unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.market_state: MarketState = market_state
+        super().__init__(pricing_model=self.pricing_model, market_state=market_state)
 
     def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -244,7 +259,9 @@ class Market:
         execute a borrow as requested by the agent, return the market and agent deltas
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
         """
-        _, borrow_amount_in_base = self.value_collateral(collateral, spot_price)
+        _, borrow_amount_in_base = self.pricing_model.value_collateral(
+            market_state=self.market_state, collateral=collateral, spot_price=spot_price
+        )
 
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow asset increases because it's being lent out
@@ -271,7 +288,9 @@ class Market:
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
         """
-        _, borrow_amount_in_base = self.value_collateral(collateral, spot_price)
+        _, borrow_amount_in_base = self.pricing_model.value_collateral(
+            market_state=self.market_state, collateral=collateral, spot_price=spot_price
+        )
 
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow asset increases because it's being lent out
@@ -287,14 +306,6 @@ class Market:
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
         agent_deltas = AgentDeltas(address=wallet_address, borrow=borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
-
-    def value_collateral(self, collateral: types.Quantity, spot_price: Optional[float]):
-        """Values collateral and returns how much the agent can borrow against it"""
-        collateral_value_in_base = collateral.amount  # if collateral is BASE
-        if collateral.unit == types.TokenType.PT:
-            collateral_value_in_base = collateral.amount * (spot_price or 1)
-        borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio[collateral.unit]
-        return collateral_value_in_base, borrow_amount_in_base
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """
