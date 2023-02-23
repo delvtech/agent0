@@ -434,7 +434,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         max_loss = trade_amount - trade_result.user_result.d_base
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=-max_loss,
+            balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
             shorts={self.time: wallet.Short(balance=trade_amount, open_share_price=self.market_state.share_price)},
             fees_paid=trade_result.breakdown.fee,
         )
@@ -500,8 +500,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=(self.market_state.share_price / open_share_price) * trade_amount
-            + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
+            balance=types.Quantity(
+                amount=(self.market_state.share_price / open_share_price) * trade_amount
+                + trade_result.user_result.d_base,
+                unit=types.TokenType.BASE,
+            ),  # see CLOSING SHORT LOGIC above
             shorts={
                 mint_time: wallet.Short(
                     balance=-trade_amount,
@@ -546,13 +549,15 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             )
             agent_deltas = wallet.Wallet(
                 address=wallet_address,
-                base=trade_result.user_result.d_base,
+                balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
                 longs={self.time: wallet.Long(trade_result.user_result.d_bonds)},
                 fees_paid=trade_result.breakdown.fee,
             )
         else:
             market_deltas = MarketDeltas()
-            agent_deltas = wallet.Wallet(address=wallet_address, base=0)
+            agent_deltas = wallet.Wallet(
+                address=wallet_address, balance=types.Quantity(amount=0, unit=types.TokenType.BASE)
+            )
         return market_deltas, agent_deltas
 
     def close_long(
@@ -598,7 +603,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=trade_result.user_result.d_base,
+            balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
             longs={mint_time: wallet.Long(trade_result.user_result.d_bonds)},
             fees_paid=trade_result.breakdown.fee,
         )
@@ -627,7 +632,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=-contribution,
+            balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
             lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
         )
         return (market_deltas, agent_deltas)
@@ -667,7 +672,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=-d_base_reserves,
+            balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
             lp_tokens=lp_out,
         )
         return market_deltas, agent_deltas
@@ -700,7 +705,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            base=d_base_reserves,
+            balance=types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
             lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas

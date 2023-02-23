@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 import utils_for_tests as test_utils  # utilities for testing
+import elfpy.types as types
 from elfpy.agents.wallet import Wallet, Long, Short
 import elfpy.simulators.simulators as simulators
 import elfpy.utils.time as time_utils
@@ -193,7 +194,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=-d_base,  # base asset decreases because agent is spending base to buy bonds
+            balance=-types.Quantity(
+                amount=d_base, unit=types.TokenType.BASE
+            ),  # base asset decreases because agent is spending base to buy bonds
             longs={0: Long(d_bonds)},  # longs increase by the amount of bonds bought
             fees_paid=fees_paid,
         )
@@ -222,7 +225,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=d_base,  # base asset increases because agent is getting base back to close his bond position
+            balance=types.Quantity(
+                amount=d_base, unit=types.TokenType.BASE
+            ),  # base asset increases because agent is getting base back to close his bond position
             longs={0: Long(-d_bonds)},  # longs decrease by the amount of bonds sold to close the position
             fees_paid=trade_fees_paid + redemption_fees_paid,
         )
@@ -251,7 +256,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=-max_loss,  # base asset decreases because agent is spending base to buy bonds
+            balance=-types.Quantity(
+                amount=max_loss, unit=types.TokenType.BASE
+            ),  # base asset decreases because agent is spending base to buy bonds
             # shorts increase by the amount of bonds sold
             # margin is the amount of base asset that is in the agent's margin account
             # it is composed of two parts: proceeds from sale of bonds (d_base)
@@ -282,7 +289,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
+            balance=types.Quantity(
+                amount=d_base_agent, unit=types.TokenType.BASE
+            ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
                 0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
@@ -311,7 +320,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
+            balance=types.Quantity(
+                amount=d_base_agent, unit=types.TokenType.BASE
+            ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
                 0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
@@ -343,7 +354,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
+            balance=types.Quantity(
+                amount=d_base_agent, unit=types.TokenType.BASE
+            ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
                 0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
@@ -375,7 +388,9 @@ class MarketTestsOneFunction(BaseMarketTest):
         )
         expected_agent_deltas = Wallet(
             address=1,
-            base=d_base_agent,  # base asset increases because agent is getting base back to close his bond position
+            balance=types.Quantity(
+                amount=d_base_agent, unit=types.TokenType.BASE
+            ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
                 0: Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position

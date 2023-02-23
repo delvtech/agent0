@@ -242,11 +242,11 @@ class TestAgent(unittest.TestCase):
                     position_duration=test_case.time_remaining,
                 )
                 # Ensure safety for Agents with different budgets.
-                for budget in (1e-3 * 10 ** (3 * x) for x in range(0, 5)):
+                for budget in (1e-3 * 10 ** (3 * x) for x in range(5)):
                     agent = Agent(wallet_address=0, budget=budget)
                     # Ensure that get_max_long is safe.
                     max_long = agent.get_max_long(market)
-                    self.assertGreaterEqual(agent.wallet.base, max_long)
+                    self.assertGreaterEqual(agent.wallet.balance.amount, max_long)
                     (market_max_long, _) = market.pricing_model.get_max_long(
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
@@ -263,7 +263,7 @@ class TestAgent(unittest.TestCase):
                         time_remaining=market.position_duration,
                     )
                     max_loss = max_short - trade_result.user_result.d_base
-                    self.assertGreaterEqual(agent.wallet.base, max_loss)
+                    self.assertGreaterEqual(agent.wallet.balance.amount, max_loss)
                     (_, market_max_short) = market.pricing_model.get_max_short(
                         market_state=market.market_state,
                         time_remaining=market.position_duration,

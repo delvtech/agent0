@@ -23,7 +23,7 @@ class Policy(Agent):
         """
         action_list = []
         has_lp = self.wallet.lp_tokens > 0
-        can_lp = self.wallet.base >= self.amount_to_lp
+        can_lp = self.wallet.balance.amount >= self.amount_to_lp
         if can_lp and not has_lp:
             action_list.append(
                 self.create_agent_action(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp)

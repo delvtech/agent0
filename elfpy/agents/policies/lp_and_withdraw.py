@@ -25,7 +25,8 @@ class Policy(Agent):
         # pylint disable=unused-argument
         action_list = []
         has_lp = self.wallet.lp_tokens > 0
-        can_lp = self.wallet.base >= self.amount_to_lp
+        amount_in_base = self.wallet.balance.amount
+        can_lp = amount_in_base >= self.amount_to_lp
         if not has_lp and can_lp:
             action_list.append(
                 self.create_agent_action(action_type=MarketActionType.ADD_LIQUIDITY, trade_amount=self.amount_to_lp)
