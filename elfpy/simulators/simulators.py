@@ -120,9 +120,7 @@ class Config:
         default=1e6, metadata=types.to_description("total size of the market pool (bonds + shares)")
     )
     target_volume: float = field(default=0.01, metadata=types.to_description("fraction of pool liquidity"))
-    init_vault_age: float = field(
-        default=0, metadata=types.to_description("years since the vault was opened")
-    )
+    init_vault_age: float = field(default=0, metadata=types.to_description("years since the vault was opened"))
     # NOTE: We ignore the type error since the value will never be None after
     # initialization, and we don't want the value to be set to None downstream.
     variable_apr: list[float] = field(  # default is overridden in __post_init__
