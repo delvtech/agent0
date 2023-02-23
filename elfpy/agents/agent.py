@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 import logging
 
 import numpy as np
@@ -210,7 +210,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: Market) -> list[types.Trade]:
+    def get_trades(self, market: Market) -> List[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -360,7 +360,7 @@ class Agent:
                 # Remove the empty short from the wallet.
                 del self.wallet.shorts[mint_time]
 
-    def get_liquidation_trades(self, market: Market) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: Market) -> List[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -370,7 +370,7 @@ class Agent:
 
         Returns
         -------
-        list[MarketAction]
+        list[Trade]
             List of trades to execute in order to liquidate positions where applicable
         """
         action_list = []

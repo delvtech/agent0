@@ -522,7 +522,7 @@ class Simulator:
 
         Parameters
         ----------
-        trades : list[tuple[int, list[MarketAction]]]
+        trades : list[tuple[int, list[Trade]]]
             A list of agent trades. These will be executed in order.
         """
         for trade in agent_actions:
