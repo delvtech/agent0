@@ -86,9 +86,13 @@ class TestBorrow(unittest.TestCase):
         # expected_d_borrow_outstanding: float = 100  # changes based on borrow_shares * borrow_share_price
         expected_d_borrow_closed_interest: float = 0  # realized interest from closed borrows
 
+        print(f"{expected_d_borrow_shares=} {market_deltas.d_borrow_shares=}")
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
+        print(f"{expected_d_collateral=} {market_deltas.d_collateral=}")
         self.assertEqual(expected_d_collateral, market_deltas.d_collateral)
+        print(f"{expected_d_borrow_shares=} {market_deltas.d_borrow_shares=}")
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
+        print(f"{expected_d_borrow_closed_interest=} {market_deltas.d_borrow_closed_interest=}")
         self.assertEqual(expected_d_borrow_closed_interest, market_deltas.d_borrow_closed_interest)
 
 
