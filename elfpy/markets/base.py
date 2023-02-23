@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -87,19 +87,35 @@ class BaseMarketState:
         r"""Checks that all market variables are non-zero within a precision threshold"""
         # TODO: issue #146
         # this is an imperfect solution to rounding errors, but it works for now
+        types_to_skip = [str, Enum, bool, field]
         for key, value in self.__dict__.items():
-            if 0 > value > -elfpy.PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    elfpy.PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -elfpy.PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
+            if type(value) in types_to_skip:
+                continue
+            values_to_check = [value]
+            if not isinstance(value, float):
+                if isinstance(value, types.Quantity):
+                    values_to_check = [value.amount]
+                elif isinstance(value, dict):
+                    values_to_check = list(value.values())
+            try:
+                for value in values_to_check:
+                    if 0 > value > -elfpy.PRECISION_THRESHOLD:
+                        logging.debug(
+                            ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                            key,
+                            value,
+                            elfpy.PRECISION_THRESHOLD,
+                        )
+                        setattr(self, key, 0)
+                    else:
+                        assert (
+                            value > -elfpy.PRECISION_THRESHOLD
+                        ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
+            except Exception as exception_error:
+                raise AssertionError(
+                    f"BaseMarket::check_market_non_zero() trying to check reserves are non-zero on"
+                    f" key={key} or type={type(key)}. ERROR: {exception_error}"
+                ) from exception_error
 
 
 class Market(Generic[State, Deltas]):
@@ -132,7 +148,6 @@ class Market(Generic[State, Deltas]):
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
-                print(f"check_market_updateS(): key = {key}, value = {value}")
                 value_to_check = value
                 if isinstance(value, types.Quantity):
                     value_to_check = value.amount

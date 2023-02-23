@@ -64,7 +64,7 @@ class TestBorrow(unittest.TestCase):
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
         borrow_market = BorrowMarket(
             market_state=BorrowMarketState(
-                loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
+                loan_to_value_ratio={types.TokenType.BASE: loan_to_value},  # type: ignore
                 borrow_shares=100,
                 collateral={},
                 borrow_outstanding=100,  # sum of Dai that went out the door
@@ -79,7 +79,7 @@ class TestBorrow(unittest.TestCase):
         )[0]
 
         # borrowed_amount_into_market = market_deltas.d_borrow_shares
-        # borrowed_amount_into_agent = agent_deltas.borrow
+        # borrowed_amount_into_agent = agent_deltas.borgsrow
 
         expected_d_borrow_shares: float = -100  # borrow is always in DAI
         expected_d_collateral = types.Quantity(amount=-100, unit=types.TokenType.BASE)

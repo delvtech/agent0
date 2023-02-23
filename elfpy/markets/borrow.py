@@ -64,7 +64,7 @@ class MarketState(base_market.BaseMarketState):
 
     Attributes
     ----------
-    loan_to_value_ratio: float
+    loan_to_value_ratio: dict[types.TokenType, float]
         The maximum loan to value ratio a collateral can have before liquidations occur.
     borrow_shares: float
         Accounting units for borrow assets that has been lent out by the market, allows tracking of interest
@@ -101,7 +101,7 @@ class MarketState(base_market.BaseMarketState):
 
     # share prices used to track amounts owed
     borrow_share_price: float = field(default=1.0)
-    init_borrow_share_price: float = field(default=borrow_share_price)  # allow not setting init_share_price
+    init_borrow_share_price: float = field(default=0)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
     collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
 
@@ -115,6 +115,8 @@ class MarketState(base_market.BaseMarketState):
         # initialize loan to value ratios if a float is passed
         if isinstance(self.loan_to_value_ratio, float):
             self.loan_to_value_ratio = {token_type: self.loan_to_value_ratio for token_type in types.TokenType}
+        if self.init_borrow_share_price == 0:
+            self.init_borrow_share_price = self.borrow_share_price
 
     @property
     def borrow_amount(self) -> float:
