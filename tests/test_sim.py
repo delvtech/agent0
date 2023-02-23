@@ -11,7 +11,7 @@ from numpy.random import RandomState
 import elfpy.simulators.simulators as simulators
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 
 
 class TestSimulator(unittest.TestCase):
@@ -107,7 +107,7 @@ class TestSimulator(unittest.TestCase):
                 "config": [simulators.Config()],
                 "market_step_size": [0.001],
                 "position_duration": [90],
-                "simulation_start_time": [time_utils.current_datetime()],
+                "simulation_start_time": [time.utils.current_datetime()],
             }
         )
         days = pd.DataFrame(

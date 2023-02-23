@@ -31,6 +31,7 @@ class Policy(Agent):
         if not has_lp and can_lp:
             action_list.append(
                 types.Trade(
+                    agent=self.wallet.address,
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive.MarketAction(
                         action_type=hyperdrive.MarketActionType.ADD_LIQUIDITY,
@@ -44,6 +45,7 @@ class Policy(Agent):
             if enough_time_has_passed:
                 action_list.append(
                     types.Trade(
+                        agent=self,
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,

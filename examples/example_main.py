@@ -34,14 +34,15 @@ class CustomShorter(Agent):
     def action(self, market: hyperdrive.Market) -> "list[Any]":
         """Implement a custom user strategy"""
         shorts = list(self.wallet.shorts.values())
-        has_opened_short = bool(any((short.balance > 0 for short in shorts)))
+        has_opened_short = any((short.balance > 0 for short in shorts))
         can_open_short = self.get_max_short(market) >= self.pt_to_short
-        vault_apr = market.market_state.variable_apr
         action_list = []
         if can_open_short:
+            vault_apr = market.market_state.variable_apr
             if vault_apr > market.fixed_apr:
                 action_list.append(
                     types.Trade(
+                        agent=self.wallet.address,
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.OPEN_SHORT,
@@ -54,6 +55,7 @@ class CustomShorter(Agent):
                 if has_opened_short:
                     action_list.append(
                         types.Trade(
+                            agent=self,
                             market=types.MarketType.HYPERDRIVE,
                             trade=hyperdrive.MarketAction(
                                 action_type=hyperdrive.MarketActionType.CLOSE_SHORT,

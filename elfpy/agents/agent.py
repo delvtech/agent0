@@ -2,19 +2,22 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 import logging
 
 import numpy as np
 
 
 import elfpy.agents.wallet as wallet
+from elfpy.markets.base import Market
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from typing import Optional, Iterable
-    from elfpy.markets.hyperdrive import Market
+    from typing import Iterable
+
+
+MarketsByName = Dict[types.MarketType, Market]
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -66,7 +69,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: Market) -> list[types.Trade]:
+    def action(self, markets: MarketsByName) -> "list[types.Trade]":
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -131,6 +134,7 @@ class Agent:
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
+
         # If the Agent's base balance can cover the max loss of the maximum
         # short, we can simply return the maximum short.
         if self.wallet.balance.amount >= max_short_max_loss:
@@ -174,7 +178,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: Market) -> list[types.Trade]:
+    def get_trades(self, markets: dict[str, Market]) -> "list[types.Trade]":
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -188,8 +192,8 @@ class Agent:
 
         Parameters
         ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
+        market : dict[str, Market]
+            The market on which this agent will be executing trades {MarktType: MarketActions}
         pricing_model : PricingModel
             The pricing model in use for this simulated market
 
@@ -198,17 +202,20 @@ class Agent:
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        actions = self.action(market)  # get the action list from the policy
-        for action in actions:  # edit each action in place
-            if action.trade.mint_time is None:
-                action.trade.mint_time = market.time
+        actions = []
+        for market in markets.values():
+            market_actions = self.action(market)  # get the action list from the policy
+            for action in market_actions:  # edit each action in place
+                if action.trade.mint_time is None:
+                    action.trade.mint_time = market.time
+            actions.extend(market_actions)
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: wallet.Wallet, market: Market) -> None:
+    def update_wallet(self, wallet_deltas: wallet.Wallet, time: float) -> None:
         """Update the agent's wallet
 
         Parameters
@@ -223,9 +230,9 @@ class Agent:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
+        new_spend = (time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
         self.product_of_time_and_base += new_spend
-        self.last_update_spend = market.time
+        self.last_update_spend = time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
@@ -324,12 +331,12 @@ class Agent:
                 # Remove the empty short from the wallet.
                 del self.wallet.shorts[mint_time]
 
-    def get_liquidation_trades(self, market: Market) -> list[types.Trade]:
+    def get_hyperdrive_liquidation_trades(self) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
         ----------
-        market : Market
+        market : dict[str, Market]
             The market on which this agent will be executing trades or liquidations (MarketActions)
 
         Returns
@@ -343,6 +350,7 @@ class Agent:
             if long.balance > 0:
                 action_list.append(
                     types.Trade(
+                        agent=self.wallet.address,
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.CLOSE_LONG,
@@ -357,6 +365,7 @@ class Agent:
             if short.balance > 0:
                 action_list.append(
                     types.Trade(
+                        agent=self.wallet.address,
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
@@ -367,15 +376,15 @@ class Agent:
                     )
                 )
         if self.wallet.lp_tokens > 0:
-            logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp_tokens)
+            logging.debug("evaluating closing lp: mint_time=%g, position=%s", mint_time, self.wallet.lp_tokens)
             action_list.append(
                 types.Trade(
+                    agent=self.wallet.address,
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive.MarketAction(
                         action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
-                        mint_time=market.time,
                     ),
                 )
             )
@@ -400,23 +409,20 @@ class Agent:
         """
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if market.market_state.share_reserves > 0:
-            price = market.spot_price
-        else:
-            price = 0
+        price = market.spot_price if market.market_state.share_reserves > 0 else 0
         balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
 
         # Calculate the total pnl of the trader.
-        longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
+        longs_value = (sum(long.balance for long in longs) if longs else 0) * price
         shorts_value = (
             sum(
                 # take the interest from the margin and subtract the bonds shorted at the current price
                 (market.market_state.share_price / short.open_share_price) * short.balance - price * short.balance
                 for short in shorts
             )
-            if len(shorts) > 0
+            if shorts
             else 0
         )
         total_value = balance + longs_value + shorts_value

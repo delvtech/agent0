@@ -5,11 +5,16 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-import elfpy.simulators as simulators
-import elfpy.utils.time as time_utils
-import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+
+import elfpy.time as time
+import elfpy.types as types
+import elfpy.simulators as simulators
+import elfpy.markets.base as base
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.yieldspace as yieldspace
+import elfpy.markets.borrow as borrow
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -36,14 +41,15 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
-    config.check_vault_apr()  # quick check to make sure the vault apr is correctly set
+    # TODO: variable_apr is getting moved into the market itself
+    config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
-    pricing_model = get_pricing_model(config.pricing_model_name)
-    market = get_market(pricing_model, config)
-    simulator = simulators.Simulator(config=config, market=market)
+    global_time = time.Time()
+    markets = get_markets(global_time, config)
+    simulator = simulators.Simulator(config=config, global_time=global_time, markets=markets)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp is True:
-        simulator.add_agents([get_init_lp_agent(market, config.target_liquidity)])
+        simulator.add_agents([get_init_lp_agent(markets, config.target_liquidity)])
     # Initialize the simulator using only the initial LP.
     simulator.collect_and_execute_trades()
     # Add the remaining agents.
@@ -53,7 +59,7 @@ def get_simulator(
 
 
 def get_init_lp_agent(
-    market: hyperdrive.Market,
+    market: list[base.Market],
     target_liquidity: float,
 ) -> Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -79,19 +85,19 @@ def get_init_lp_agent(
     return init_lp_agent
 
 
-def get_market(
-    pricing_model: PricingModel,
+def get_markets(
+    global_time: time.Time,
     config: simulators.Config,
     init_target_liquidity: float = 1.0,
-) -> hyperdrive.Market:
+) -> "list[base.Market]":
     r"""Setup market
 
     Parameters
     ----------
-    pricing_model : PricingModel
-        instantiated pricing model
     config: Config
         instantiated config object. The following attributes are used:
+            market_types : list[MarketType]
+                list of markets to be used in the simulation
             init_share_price : float
                 the initial price of the yield bearing vault shares
             num_position_days : int
@@ -110,41 +116,64 @@ def get_market(
 
     Returns
     -------
-    Market
-        instantiated market without any liquidity (i.e. no shares or bonds)
+    Markets : list[Market]
+        instantiated markets without any liquidity (i.e. no shares or bonds)
     """
-    position_duration = time_utils.StretchedTime(
-        days=config.num_position_days,
-        time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
-        normalizing_constant=config.num_position_days,
-    )
-    # apr is "annual", so if position durations is not 365
-    # then we need to rescale the target apr passed to calc_liquidity
-    share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
-        market_state=hyperdrive.MarketState(
-            share_price=config.init_share_price, init_share_price=config.init_share_price
-        ),
-        target_liquidity=init_target_liquidity,
-        target_apr=config.target_fixed_apr,
-        position_duration=position_duration,
-    )
-    market = hyperdrive.Market(
-        pricing_model=pricing_model,
-        market_state=hyperdrive.MarketState(
-            share_reserves=share_reserves_direct,
-            bond_reserves=bond_reserves_direct,
-            base_buffer=0,
-            bond_buffer=0,
-            lp_total_supply=init_target_liquidity / config.init_share_price,
-            init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            variable_apr=config.variable_apr[0],  # yield bearing source apr
-            trade_fee_percent=config.trade_fee_percent,  # g
-            redemption_fee_percent=config.redemption_fee_percent,
-        ),
-        position_duration=position_duration,
-    )
-    return market
+    markets = []
+    for market_type in config.market_types:
+        pricing_model = get_pricing_model(str(market_type))
+        if market_type in [types.MarketType.HYPERDRIVE, types.MarketType.YIELDSPACE]:
+            market_module = yieldspace if market_type == types.MarketType.YIELDSPACE else hyperdrive
+            position_duration = time.utils.StretchedTime(
+                days=config.num_position_days,
+                time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
+                normalizing_constant=config.num_position_days,
+            )
+            share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
+                market_state=market_module.MarketState(
+                    share_price=config.init_share_price, init_share_price=config.init_share_price
+                ),
+                target_liquidity=init_target_liquidity,
+                target_apr=config.target_fixed_apr,
+                position_duration=position_duration,
+            )
+            markets.append(
+                market_module.Market(
+                    market_state=market_module.MarketState(
+                        share_reserves=share_reserves_direct,
+                        bond_reserves=bond_reserves_direct,
+                        base_buffer=0,
+                        bond_buffer=0,
+                        lp_total_supply=init_target_liquidity / config.init_share_price,
+                        init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
+                        share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
+                        variable_apr=config.variable_apr[0],  # yield bearing source apr
+                        trade_fee_percent=config.trade_fee_percent,  # g
+                        redemption_fee_percent=config.redemption_fee_percent,
+                    ),
+                    time=global_time,
+                    position_duration=position_duration,
+                )
+            )
+        elif market_type == types.MarketType.BORROW:
+            markets.append(
+                borrow.Market(
+                    market_state=borrow.MarketState(
+                        lp_total_supply=0,
+                        loan_to_value_ratio={},
+                        borrow_shares=0,
+                        collateral={},
+                        borrow_outstanding=0,
+                        borrow_closed_interest=0,
+                        borrow_share_price=1,
+                        collateral_spot_price={},
+                        lending_rate=0.01,
+                        spread_ratio=1.25,
+                    ),
+                    global_time=global_time,
+                )
+            )
+    return markets
 
 
 def get_pricing_model(model_name: str) -> PricingModel:

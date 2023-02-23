@@ -190,17 +190,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         List of actions available in this market (used by simulator to determine which actions to offer to the agent)
     """
 
+    name = "borrow"
     available_actions = [MarketActionType.OPEN_BORROW, MarketActionType.CLOSE_BORROW]
     pricing_model = BorrowPricingModel()
-
-    def __init__(
-        self,
-        market_state: MarketState,
-    ):
-        # market state variables
-        self.time: float = 0  # t: time unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
-        self.market_state: MarketState = market_state
-        super().__init__(pricing_model=self.pricing_model, market_state=market_state)
 
     def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -217,7 +209,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, AgentDeltas, MarketDeltas]:
+    def perform_action(self, action_details: types.Trade) -> tuple[int, AgentDeltas, MarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -229,7 +221,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         .. todo: change agent deltas from Wallet type to its own type
         """
-        agent_id, agent_action = action_details
+        agent_id = action_details.agent
+        agent_action = action_details.trade
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
         self.check_action(agent_action)

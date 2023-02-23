@@ -6,7 +6,7 @@ import unittest
 import pytz
 import numpy as np
 
-from elfpy.utils import time as time_utils
+import elfpy.time as time
 
 
 class TestTimeUtils(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestTimeUtils(unittest.TestCase):
         """Test the current_datetime function"""
 
         now = datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
-        test_time = time_utils.current_datetime()
+        test_time = time.utils.current_datetime()
 
         assert (
             now < test_time < (now + datetime.timedelta(milliseconds=100))
@@ -52,7 +52,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            block_time = time_utils.block_number_to_datetime(
+            block_time = time.utils.block_number_to_datetime(
                 test_case["start_time"], test_case["block_number"], test_case["time_between_blocks"]
             )
             assert block_time == test_case["expected_result"], f"unexpected time value {block_time}"
@@ -73,7 +73,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            year_time = time_utils.year_as_datetime(test_case["start_time"], test_case["year"])
+            year_time = time.utils.year_as_datetime(test_case["start_time"], test_case["year"])
 
             assert (
                 datetime.datetime.strftime(year_time, "%d/%m/%Y %H:%M:%S") == test_case["expected_result"]
@@ -120,11 +120,11 @@ class TestTimeUtils(unittest.TestCase):
         for test_case in test_cases:
             if test_case["is_error_case"]:
                 with self.assertRaises(test_case["expected_result"]):
-                    time_remaining = time_utils.get_years_remaining(
+                    time_remaining = time.utils.get_years_remaining(
                         test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                     )
             else:
-                time_remaining = time_utils.get_years_remaining(
+                time_remaining = time.utils.get_years_remaining(
                     test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                 )
                 np.testing.assert_almost_equal(
@@ -144,7 +144,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            norm_days = time_utils.norm_days(test_case["days"], test_case["normalizing_constant"])
+            norm_days = time.utils.norm_days(test_case["days"], test_case["normalizing_constant"])
 
             np.testing.assert_almost_equal(
                 norm_days, test_case["expected_result"], err_msg=f"unexpected normalized days {norm_days}"
@@ -163,7 +163,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            stretched_time = time_utils.stretch_time(test_case["time"], test_case["time_stretch"])
+            stretched_time = time.utils.stretch_time(test_case["time"], test_case["time_stretch"])
 
             np.testing.assert_almost_equal(
                 stretched_time, test_case["expected_result"], err_msg=f"unexpected stretched time {stretched_time}"
@@ -190,7 +190,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            unnormed_days = time_utils.unnorm_days(test_case["normed_days"], test_case["normalizing_constant"])
+            unnormed_days = time.utils.unnorm_days(test_case["normed_days"], test_case["normalizing_constant"])
 
             np.testing.assert_almost_equal(
                 unnormed_days, test_case["expected_result"], err_msg=f"unexpected amount of days {unnormed_days}"
@@ -209,7 +209,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            unstretched_time = time_utils.unstretch_time(test_case["stretched_time"], test_case["time_stretch"])
+            unstretched_time = time.utils.unstretch_time(test_case["stretched_time"], test_case["time_stretch"])
 
             np.testing.assert_almost_equal(
                 unstretched_time,
@@ -245,7 +245,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            time_remaining = time_utils.days_to_time_remaining(
+            time_remaining = time.utils.days_to_time_remaining(
                 test_case["days_remaining"], test_case["time_stretch"], test_case["normalizing_constant"]
             )
 
@@ -281,7 +281,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            days_remaining = time_utils.time_to_days_remaining(
+            days_remaining = time.utils.time_to_days_remaining(
                 test_case["time_remaining"], test_case["time_stretch"], test_case["normalizing_constant"]
             )
 

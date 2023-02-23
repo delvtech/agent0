@@ -28,6 +28,7 @@ class Policy(Agent):
         if can_lp and not has_lp:
             action_list.append(
                 types.Trade(
+                    agent=self.wallet.address,
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive.MarketAction(
                         # these two variables are required to be set by the strategy

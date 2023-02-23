@@ -26,6 +26,7 @@ class Policy(Agent):
         if can_open_short and not has_opened_short:
             action_list.append(
                 types.Trade(
+                    agent=self.address.wallet,
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive.MarketAction(
                         action_type=hyperdrive.MarketActionType.OPEN_SHORT,

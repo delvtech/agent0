@@ -5,7 +5,7 @@ import numpy as np
 import elfpy.pricing_models.base as base_pm
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.utils import sim_utils
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):
@@ -40,7 +40,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50,
                     time_stretch=22.186877016851916,
                     normalizing_constant=365,
@@ -56,7 +56,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.02,  # fixed rate APR you'd get from purchasing bonds; r = 0.02
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50
                     time_stretch=55.467192542129794,
                     normalizing_constant=365,
@@ -72,7 +72,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.08,  # fixed rate APR you'd get from purchasing bonds; r = 0.08
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=182.5,  # 6 months remaining; t = 0.50
                     time_stretch=13.866798135532449,
                     normalizing_constant=365,
@@ -88,7 +88,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=91.25,  # 3 months remaining; t = 0.25
                     time_stretch=36.97812836141987,
                     normalizing_constant=365,
@@ -104,7 +104,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=273.75,  # 9 months remaining; t = 0.75
                     time_stretch=36.97812836141987,
                     normalizing_constant=365,
@@ -121,7 +121,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             {
                 "target_liquidity": 0,  # ERROR CASE; Targeting 0 liquidity
                 "target_apr": 0.06,  # fixed rate APR you'd get from purchasing bonds; r = 0.06
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=91.25,  # 3 months remaining; t = 0.25
                     time_stretch=36.97812836141986,
                     normalizing_constant=365,
@@ -281,8 +281,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     k = float(
                         pricing_model._calc_k_const(  # pylint: disable=protected-access
                             market_state=test_case["market_state"],
-                            time_remaining=time_utils.StretchedTime(
-                                days=time_utils.time_to_days_remaining(1 - test_case["time_elapsed"]),
+                            time_remaining=time.utils.StretchedTime(
+                                days=time.utils.time_to_days_remaining(1 - test_case["time_elapsed"]),
                                 time_stretch=1,
                                 normalizing_constant=365,
                             ),
@@ -294,8 +294,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 k = float(
                     pricing_model._calc_k_const(  # pylint: disable=protected-access
                         market_state=test_case["market_state"],
-                        time_remaining=time_utils.StretchedTime(
-                            days=time_utils.time_to_days_remaining(1 - test_case["time_elapsed"]),
+                        time_remaining=time.utils.StretchedTime(
+                            days=time.utils.time_to_days_remaining(1 - test_case["time_elapsed"]),
                             time_stretch=1,
                             normalizing_constant=365,
                         ),
@@ -389,7 +389,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         pricing_model.calc_bond_for_target_apr(
                             target_apr=test_case["target_apr"],
                             base=test_case["base"],
-                            position_duration=time_utils.StretchedTime(
+                            position_duration=time.utils.StretchedTime(
                                 days=test_case["position_duration"],
                                 time_stretch=1,
                                 normalizing_constant=test_case["position_duration"],
@@ -404,7 +404,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     pricing_model.calc_bond_for_target_apr(
                         target_apr=test_case["target_apr"],
                         base=test_case["base"],
-                        position_duration=time_utils.StretchedTime(
+                        position_duration=time.utils.StretchedTime(
                             days=test_case["position_duration"],
                             time_stretch=1,
                             normalizing_constant=test_case["position_duration"],
@@ -500,7 +500,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         pricing_model.calc_base_for_target_apr(
                             target_apr=test_case["target_apr"],
                             bond=test_case["bond"],
-                            position_duration=time_utils.StretchedTime(
+                            position_duration=time.utils.StretchedTime(
                                 days=test_case["position_duration"],
                                 time_stretch=1,
                                 normalizing_constant=test_case["position_duration"],
@@ -515,7 +515,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     pricing_model.calc_base_for_target_apr(
                         target_apr=test_case["target_apr"],
                         bond=test_case["bond"],
-                        position_duration=time_utils.StretchedTime(
+                        position_duration=time.utils.StretchedTime(
                             days=test_case["position_duration"],
                             time_stretch=1,
                             normalizing_constant=test_case["position_duration"],

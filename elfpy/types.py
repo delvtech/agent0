@@ -52,6 +52,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
 class MarketType(Enum):
     r"""A type of market"""
 
+    YIELDSPACE = "yieldspace"
     HYPERDRIVE = "hyperdrive"
     BORROW = "borrow"
 
@@ -76,7 +77,9 @@ class Quantity:
 
 @dataclass
 class Trade:
-    r"""A trade for a market"""
+    r"""A trade for a in the simulation"""
 
+    # TODO: change this import to Agent after we move this dataclass to simulators/
+    agent: Any
     market: MarketType
     trade: Any  # TODO: How to specify the type as a generic market action?

@@ -13,7 +13,7 @@ from calc_test_dataclasses import (
 )
 
 import elfpy.types as types
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -41,7 +41,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-                time_remaining = time_utils.StretchedTime(
+                time_remaining = time.utils.StretchedTime(
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                 )
                 expected_result = results_by_model[model_type]
@@ -97,7 +97,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # TODO: test with redemption fees
                     redemption_fee_percent=0.0,
                 )
-                time_remaining = time_utils.StretchedTime(
+                time_remaining = time.utils.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
                 )
                 trade_result = pricing_model.calc_in_given_out(
@@ -117,7 +117,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # TODO: test with redemption fees
                     redemption_fee_percent=0.0,
                 )
-                time_remaining = time_utils.StretchedTime(
+                time_remaining = time.utils.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
                 )
                 trade_result = pricing_model.calc_in_given_out(
@@ -145,7 +145,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -159,7 +159,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -173,7 +173,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -187,7 +187,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -201,7 +201,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=-1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -215,7 +215,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # redemption fee negative
                     redemption_fee_percent=-1,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -229,7 +229,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=1.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -243,7 +243,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # redemption fee above 1
                     redemption_fee_percent=1.1,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -257,7 +257,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining negative
-                time_remaining=time_utils.StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -271,7 +271,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining == 365, will get divide by zero error
-                time_remaining=time_utils.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(
@@ -285,7 +285,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 # days remaining > 365
-                time_remaining=time_utils.StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -299,7 +299,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.InvalidOperation),
             ),
             CalcInGivenOutFailureTestCase(
@@ -313,7 +313,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -327,7 +327,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -341,7 +341,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -355,7 +355,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(
@@ -369,7 +369,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
         ]
@@ -385,7 +385,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.01,
                     redemption_fee_percent=0.01,
                 ),
-                time_remaining=time_utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
+                time_remaining=time.utils.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             )
         ]

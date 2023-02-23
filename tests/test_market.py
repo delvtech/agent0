@@ -6,16 +6,16 @@ import unittest
 import logging
 from typing import Any
 
-import utils_for_tests as test_utils  # utilities for testing
-import elfpy.types as types
 from elfpy.agents.wallet import Wallet, Long, Short
-import elfpy.simulators.simulators as simulators
-import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import Market, MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
+import utils_for_tests as test_utils  # utilities for testing
+import elfpy.types as types
+import elfpy.simulators.simulators as simulators
+import elfpy.time as time
 
 
 @dataclass
@@ -33,12 +33,12 @@ class BaseMarketTest(unittest.TestCase):
 
     def test_position_duration(self):
         """Test to make sure market init fails when normalizing_constant != days"""
-        pd_good = time_utils.StretchedTime(
+        pd_good = time.utils.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=365,
         )
-        pd_nonorm = time_utils.StretchedTime(
+        pd_nonorm = time.utils.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=36,
@@ -143,7 +143,7 @@ class BaseMarketTest(unittest.TestCase):
         trade_amount = amount_of_bonds_sold * partial
         mint_time = 0
         if tick_time:
-            simulator.market.tick(simulator.market_step_size)
+            simulator.market.tick(simulator.delta_time)
         market_deltas, agent_deltas = simulator.market.close_short(
             mint_time=mint_time,
             wallet_address=1,
@@ -404,7 +404,7 @@ class MarketTestsOneFunction(BaseMarketTest):
     def test_apr(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
         pricing_model = HyperdrivePricingModel()
-        position_duration = time_utils.StretchedTime(
+        position_duration = time.utils.StretchedTime(
             days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
         )
         share_reserves = 1_000

@@ -17,7 +17,7 @@ class Policy(Agent):
     def action(self, market: hyperdrive.Market) -> "list[types.Trade]":
         """Specify action"""
         longs = list(self.wallet.longs.values())
-        has_opened_long = bool(any((long.balance > 0 for long in longs)))
+        has_opened_long = any((long.balance > 0 for long in longs))
         action_list = []
         if has_opened_long:
             mint_time = list(self.wallet.longs)[-1]
@@ -25,6 +25,7 @@ class Policy(Agent):
             if enough_time_has_passed:
                 action_list.append(
                     types.Trade(
+                        agent=self.wallet.address,
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive.MarketAction(
                             action_type=hyperdrive.MarketActionType.CLOSE_LONG,
@@ -38,6 +39,7 @@ class Policy(Agent):
             trade_amount = self.get_max_long(market) / 2
             action_list.append(
                 types.Trade(
+                    agent=self,
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive.MarketAction(
                         action_type=hyperdrive.MarketActionType.OPEN_LONG,

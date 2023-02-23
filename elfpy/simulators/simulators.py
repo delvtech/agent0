@@ -11,16 +11,14 @@ import pandas as pd
 import numpy as np
 from numpy.random._generator import Generator
 
-
 import elfpy.types as types
-import elfpy.utils.time as time_utils
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
+    from elfpy.markets.base import Market, MarketDeltas
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive import Market, MarketAction, MarketDeltas
 
 
 @dataclass
@@ -63,7 +61,7 @@ class SimulationState:
     market_step_size: list[float] = field(
         default_factory=list, metadata=types.to_description("minimum time discretization for market time step")
     )
-    position_duration: list[time_utils.StretchedTime] = field(
+    position_duration: list[time.utils.StretchedTime] = field(
         default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     current_vault_apr: list[float] = field(
@@ -132,9 +130,6 @@ class Config:
     )  # TODO: Move this out of config, it should be computed in simulator init based on config values
 
     # AMM
-    pricing_model_name: str = field(
-        default="Hyperdrive", metadata=types.to_description('Must be "Hyperdrive", or "YieldSpace"')
-    )
     trade_fee_percent: float = field(
         default=0.05, metadata=types.to_description("LP fee factor (decimal) to charge for trades")
     )
@@ -143,6 +138,10 @@ class Config:
     )
     target_fixed_apr: float = field(default=0.1, metadata=types.to_description("desired fixed apr for as a decimal"))
     floor_fee: float = field(default=0, metadata=types.to_description("minimum fee percentage (bps)"))
+    market_types: list[types.MarketType] = field(
+        default_factory=lambda: [types.MarketType.HYPERDRIVE],
+        metadata=types.to_description("Market types to be used in the simulation"),
+    )
 
     # Simulation
     # durations
@@ -186,6 +185,7 @@ class Config:
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
+        # TODO: Add borrow lending rate & borrow rate
         if self.variable_apr == [-1]:  # defaults to [-1] so this should happen right after init
             self.variable_apr = [0.05] * self.num_trading_days
         if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
@@ -198,7 +198,7 @@ class Config:
     def __setattr__(self, attrib, value) -> None:
         if attrib == "vault_apr":
             if hasattr(self, "vault_apr"):
-                self.check_vault_apr()
+                self.check_variable_apr()
             super().__setattr__("vault_apr", value)
         elif attrib == "init_share_price":
             super().__setattr__("init_share_price", value)
@@ -210,7 +210,7 @@ class Config:
         config_string = json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
         return config_string
 
-    def check_vault_apr(self) -> None:
+    def check_variable_apr(self) -> None:
         r"""Verify that the vault_apr is the right length"""
         if not isinstance(self.variable_apr, list):
             raise TypeError(
@@ -232,7 +232,7 @@ class RunSimVariables:
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     config: Config = field(metadata=types.to_description("the simulation config"))
     market_step_size: float = field(metadata=types.to_description("minimum time discretization for market time step"))
-    position_duration: time_utils.StretchedTime = field(
+    position_duration: time.utils.StretchedTime = field(
         metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     simulation_start_time: datetime = field(metadata=types.to_description("start datetime for a given simulation"))
@@ -376,14 +376,16 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        market: Market,
+        global_time: time.Time,
+        markets: list[Market],
     ):
         # User specified variables
         self.config = config
         logging.info("%s", self.config)
-        self.market = market
+        self.global_time = global_time
+        self.markets = {market.name: market for market in markets}
         self.set_rng(config.rng)
-        self.config.check_vault_apr()
+        self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
@@ -401,6 +403,10 @@ class Simulator:
         if self.config.do_dataframe_states:
             self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()
+
+    def get_time(self):
+        r"""Time utils"""
+        return self.global_time
 
     def set_rng(self, rng: Generator) -> None:
         r"""Assign the internal random number generator to a new instantiation
@@ -434,7 +440,7 @@ class Simulator:
         return state_string
 
     @property
-    def market_step_size(self) -> float:
+    def delta_time(self) -> float:
         r"""Returns minimum time increment
 
         Returns
@@ -484,11 +490,11 @@ class Simulator:
         else:  # we are in a deterministic mode
             agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
         # Collect trades from all of the agents.
-        trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
+        trades = self.collect_trades(agent_ids)
         # Execute the trades
         self.execute_trades(trades)
 
-    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> "list[tuple[int, types.Trade]]":
+    def collect_trades(self, agent_ids: list[int]) -> "list[types.Trade]":
         r"""Collect trades from a set of provided agent IDs.
 
         Parameters
@@ -497,26 +503,22 @@ class Simulator:
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
 
-        liquidate: bool
-            If true, have agents collect their liquidation trades. Otherwise, agents collect their normal trades.
-
         Returns
         -------
         list[tuple[int, Trade]]
             A list of trades associated with specific agents.
-        """
-        agents_and_trades: "list[tuple[int, types.Trade]]" = []
-        for agent_id in agent_ids:
-            agent = self.agents[agent_id]
-            if liquidate:
-                logging.debug("Collecting liquiditation trades for market closure")
-                trades = agent.get_liquidation_trades(self.market)
-            else:
-                trades = agent.get_trades(self.market)
-            agents_and_trades.extend((agent_id, trade) for trade in trades)
-        return agents_and_trades
+        all_agent_trades = [{agent_addres, trade}]
+        for agent in agents:
+           for trade in agent_trades:
+              all_agent_trades.append({agent, trade})
 
-    def execute_trades(self, agent_actions: "list[tuple[int, types.Trade]]") -> None:
+        """
+        trades: "list[types.Trade]" = []
+        for agent_id in agent_ids:
+            trades.extend(self.agents[agent_id].get_trades(self.markets))
+        return trades
+
+    def execute_trades(self, agent_actions: "list[types.Trade]") -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
         Parameters
@@ -525,18 +527,15 @@ class Simulator:
             A list of agent trades. These will be executed in order.
         """
         for trade in agent_actions:
-            # TODO: In a follow-up PR we will decompose the trade into the
-            # agent ID, market, and market action before sending the info off to the correct market
-            action_details = (trade[0], trade[1].trade)
-            agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
-            self.market.update_market(market_deltas)
-            agent = self.agents[agent_id]
+            agent_id, agent_deltas, market_deltas = self.markets[trade.market].perform_action(trade)
+            self.markets[trade.market].update_market(market_deltas)
+            agent = self.agents[trade.agent]
             logging.debug(
                 "agent #%g wallet deltas:\n%s",
                 agent.wallet.address,
                 agent_deltas,
             )
-            agent.update_wallet(agent_deltas, self.market)
+            agent.update_wallet(agent_deltas, self.time)
             # TODO: Get simulator, market, pricing model, agent state strings and log
             agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
@@ -549,8 +548,8 @@ class Simulator:
                         self.day,
                         self.block_number,
                         self.trade_number,
-                        self.market.fixed_apr,
-                        self.market.spot_price,
+                        self.markets[trade.market].fixed_apr,
+                        self.markets[trade.market].spot_price,
                         market_deltas,
                         agent_id,
                         agent_deltas,
@@ -580,39 +579,30 @@ class Simulator:
             if True, liquidate trades when the simulation is complete
         """
         last_block_in_sim = False
-        self.start_time = time_utils.current_datetime()
+        self.start_time = time.utils.current_datetime()
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
                 run_vars=RunSimVariables(
-                    self.run_number, self.config, self.market_step_size, self.market.position_duration, self.start_time
+                    self.run_number, self.config, self.delta_time, self.markets.position_duration, self.start_time
                 )
             )
         for day in range(self.config.num_trading_days):
             self.day = day
-            self.market.market_state.variable_apr = self.config.variable_apr[self.day]
-            # Vault return can vary per day, which sets the current price per share
-            if self.day > 0:  # Update only after first day (first day set to init_share_price)
-                if self.config.compound_vault_apr:  # Apply return to latest price (full compounding)
-                    price_multiplier = self.market.market_state.share_price
-                else:  # Apply return to starting price (no compounding)
-                    price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive.MarketDeltas(
-                    d_share_price=(
-                        self.market.market_state.variable_apr  # current day's apy
-                        / 365  # convert annual yield to daily
-                        * price_multiplier
+            for market_type, market in self.markets.items():
+                # TODO: redo this with callbacks, which specify market updates & are defined
+                #     in the user notebook. We could also make generic template callbacks that show some example
+                #     update scenarios
+                if market_type == types.MarketType.HYPERDRIVE:
+                    market.update_state_vars(self.day, self.config)
+            if self.config.do_dataframe_states:
+                self.new_simulation_state.update(
+                    day_vars=DaySimVariables(
+                        self.run_number,
+                        self.day,
+                        self.markets[types.MarketType.HYPERDRIVE].market_state.variable_apr,
+                        self.markets[types.MarketType.HYPERDRIVE].market_state.share_price,
                     )
                 )
-                self.market.update_market(delta)
-                if self.config.do_dataframe_states:
-                    self.new_simulation_state.update(
-                        day_vars=DaySimVariables(
-                            self.run_number,
-                            self.day,
-                            self.market.market_state.variable_apr,
-                            self.market.market_state.share_price,
-                        )
-                    )
             for daily_block_number in range(self.config.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
@@ -621,17 +611,22 @@ class Simulator:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.market.time)
+                        block_vars=BlockSimVariables(
+                            self.run_number, self.day, self.block_number, self.markets[types.MarketType.HYPERDRIVE].time
+                        )
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
-                self.market.log_market_step_string()
+                for market in self.markets.values():
+                    market.log_market_step_string()
                 if not last_block_in_sim:
-                    self.market.tick(self.market_step_size)
+                    self.time.tick(self.delta_time)
                     self.block_number += 1
+
         # simulation has ended
         for agent in self.agents.values():
-            agent.log_final_report(self.market)
+            for market in self.markets.values():
+                agent.log_final_report(market)
 
     def update_simulation_state(self) -> None:
         r"""Increment the list for each key in the simulation_state output variable
@@ -641,7 +636,7 @@ class Simulator:
             issue #215
         """
         # pylint: disable=too-many-statements
-        self.simulation_state.model_name.append(self.market.pricing_model.model_name())
+        self.simulation_state.model_name.append(self.markets[types.MarketType.HYPERDRIVE].pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
         self.simulation_state.simulation_start_time.append(self.start_time)
         self.simulation_state.day.append(self.day)
@@ -652,24 +647,25 @@ class Simulator:
             self.simulation_state.current_market_datetime.append(None)
         else:
             self.simulation_state.block_timestamp.append(
-                time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+                time.utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
             )
             self.simulation_state.current_market_datetime.append(
-                time_utils.year_as_datetime(self.start_time, self.market.time)
+                time.utils.year_as_datetime(self.start_time, self.time)
             )
-        self.simulation_state.current_market_time.append(self.market.time)
+        self.simulation_state.current_market_time.append(self.time)
         self.simulation_state.trade_number.append(self.trade_number)
-        self.simulation_state.market_step_size.append(self.market_step_size)
-        self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.fixed_apr.append(self.market.fixed_apr)
+        self.simulation_state.market_step_size.append(self.delta_time)
+        self.simulation_state.position_duration.append(self.markets[types.MarketType.HYPERDRIVE].position_duration)
+        self.simulation_state.fixed_apr.append(self.markets[types.MarketType.HYPERDRIVE].fixed_apr)
         self.simulation_state.current_vault_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
-        self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
+        # FIXME: loop through markets & pass each state
+        self.simulation_state.add_dict_entries(self.markets[types.MarketType.HYPERDRIVE].market_state.__dict__)
         for agent in self.agents.values():
-            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.market))
+            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.markets[types.MarketType.HYPERDRIVE]))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if self.market.market_state.share_reserves > 0:  # there is money in the market
-            self.simulation_state.spot_price.append(self.market.spot_price)
+        if self.markets[types.MarketType.HYPERDRIVE].market_state.share_reserves > 0:  # there is money in the market
+            self.simulation_state.spot_price.append(self.markets[types.MarketType.HYPERDRIVE].spot_price)
         else:
             self.simulation_state.spot_price.append(np.nan)

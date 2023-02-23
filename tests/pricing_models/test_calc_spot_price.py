@@ -5,7 +5,7 @@ import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 from elfpy.markets.hyperdrive import MarketState
 
 
@@ -31,7 +31,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=1,  # c
                     init_share_price=1,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90,
                     time_stretch=1,
                     normalizing_constant=365,
@@ -52,7 +52,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=2,  # c
                     init_share_price=1.5,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90,
                     time_stretch=1,
                     normalizing_constant=365,
@@ -73,7 +73,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=2,  # c
                     init_share_price=1.5,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=180,
                     time_stretch=0.7,
                     normalizing_constant=365,
@@ -103,7 +103,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 1: r = 0.05; d=90
             {
                 "apr": 0.05,
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90, time_stretch=1, normalizing_constant=365  # not used  # not used
                 ),
                 # t = time_remaining / 365
@@ -114,7 +114,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 2: r = 0.025; d=90
             {
                 "apr": 0.025,
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90,
                     time_stretch=1,  # not used
                     normalizing_constant=90,  # not used
@@ -127,7 +127,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 3: r = 0.025; d=180
             {
                 "apr": 0.025,
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=180,
                     time_stretch=0.5,  # not used
                     normalizing_constant=270,  # not used
@@ -140,7 +140,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 3: r = 0.1; d=365
             {
                 "apr": 0.1,
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=365,
                     time_stretch=1.0,  # not used
                     normalizing_constant=365,  # not used
@@ -181,7 +181,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=1,  # c
                     init_share_price=1,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90,
                     time_stretch=1,
                     normalizing_constant=365,
@@ -197,7 +197,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=2,  # c
                     init_share_price=1.5,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=90,
                     time_stretch=1,
                     normalizing_constant=365,
@@ -213,7 +213,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=2,  # c
                     init_share_price=1.5,  # u
                 ),
-                "time_remaining": time_utils.StretchedTime(
+                "time_remaining": time.utils.StretchedTime(
                     days=180,
                     time_stretch=0.7,
                     normalizing_constant=365,

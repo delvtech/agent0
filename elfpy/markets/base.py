@@ -1,5 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import logging
 from enum import Enum
@@ -14,11 +15,14 @@ import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
+    import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
-Action = TypeVar("Action", bound="MarketAction")
-State = TypeVar("State", bound="BaseMarketState")
-Deltas = TypeVar("Deltas", bound="MarketDeltas")
+class MarketTypes(Enum):
+    """The types of markets that exist"""
+
+    HYPERDRIVE = "hyperdrive"
+    BORROW = "borrow"
 
 
 class MarketActionType(Enum):
@@ -30,26 +34,13 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(Generic[Action]):
+class MarketAction:
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
     action_type: Enum
     # the agent's wallet
     wallet: wallet.Wallet
-
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address:03.0f}"
-        for key, value in self.__dict__.items():
-            if key == "action_type":
-                output_string += f" execute {value}()"
-            elif key in ["trade_amount", "mint_time"] or key not in [
-                "wallet_address",
-                "agent",
-            ]:
-                output_string += f" {key}: {value}"
-        return output_string
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -102,7 +93,14 @@ class BaseMarketState:
                 ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
 
 
-class Market(Generic[State, Deltas]):
+# TODO: see if we can't restrict these types to MarketAction, MarketState and MarketDeltas such that all
+# subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
+Action = TypeVar("Action", bound="MarketAction")
+State = TypeVar("State", bound="BaseMarketState")
+Deltas = TypeVar("Deltas", bound="MarketDeltas")
+
+
+class Market(ABC, Generic[State, Deltas]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -110,16 +108,26 @@ class Market(Generic[State, Deltas]):
     It also has some helper variables for assessing pricing model values given market conditions.
     """
 
+    @property
+    @abstractmethod
+    def name(self) -> types.MarketType:
+        """Returns the name of the Market"""
+
+    @property
+    @abstractmethod
+    def pricing_model(self) -> PricingModel:
+        """Returns the PricingModel of the Market"""
+
     def __init__(
         self,
-        pricing_model: PricingModel,
         market_state: State,
+        global_time: time.Time,
     ):
-        self.pricing_model = pricing_model
         self.market_state = market_state
-        self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self._time = global_time
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
+    @abstractmethod
+    def perform_action(self, action_details: types.Trade) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
@@ -152,3 +160,15 @@ class Market(Generic[State, Deltas]):
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
+
+    @abstractmethod
+    def update_market(self, market_deltas: Deltas) -> None:
+        """
+        Updates the market with market deltas.
+        """
+        raise NotImplementedError
+
+    @property
+    def time(self) -> float:
+        """Returns the global time"""
+        return self._time.time
