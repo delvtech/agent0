@@ -100,11 +100,11 @@ class MarketState(base_market.BaseMarketState):
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
     """
 
-    # lp reserves
-    lp_total_supply: float = 0.0
-
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
+
+    # lp reserves
+    lp_total_supply: float = 0.0
 
     # trading reserves
     share_reserves: float = 0.0
