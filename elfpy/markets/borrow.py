@@ -39,7 +39,7 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class BorrowDeltas:
+class AgentDeltas:
     r"""Specifies changes to values in the agent's wallet"""
 
     # agent identifier
@@ -204,7 +204,7 @@ class Market:
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, BorrowDeltas, MarketDeltas]:
+    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, AgentDeltas, MarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -225,12 +225,12 @@ class Market:
         # current assumption is that the user will borrow the maximum LTV against the collateral they are offering
         if agent_action.action_type == MarketActionType.OPEN_BORROW:  # open a borrow position
             market_deltas, agent_deltas = self.open_borrow(
-                wallet_address=agent_action.wallet.address,
+                wallet_address=agent_action.wallet_address,
                 collateral=agent_action.collateral,  # in BASE or PT, the collateral being offered
             )
         elif agent_action.action_type == MarketActionType.CLOSE_BORROW:  # close a borrow position
             market_deltas, agent_deltas = self.close_borrow(
-                wallet_address=agent_action.wallet.address,
+                wallet_address=agent_action.wallet_address,
                 collateral=agent_action.collateral,  # in BASE or PT, the collateral being asked for
             )
         else:
@@ -246,10 +246,10 @@ class Market:
 
     def open_borrow(
         self,
-        wallet_address: int,
+        walle_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: Optional[float] = None,
-    ) -> tuple[MarketDeltas, BorrowDeltas]:
+    ) -> tuple[MarketDeltas, AgentDeltas]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
@@ -268,7 +268,7 @@ class Market:
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = BorrowDeltas(address=wallet_address, base=borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, base=borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
 
     def close_borrow(
@@ -276,7 +276,7 @@ class Market:
         wallet_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: Optional[float] = None,
-    ) -> tuple[MarketDeltas, BorrowDeltas]:
+    ) -> tuple[MarketDeltas, AgentDeltas]:
         """
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
@@ -295,16 +295,15 @@ class Market:
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = BorrowDeltas(address=wallet_address, base=borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, base=borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
 
     def value_collateral(self, collateral: types.Quantity, spot_price: Optional[float]):
         """Values collateral and returns how much the agent can borrow against it"""
-        collateral_unit = collateral.unit
         collateral_value_in_base = collateral.amount  # if collateral is BASE
-        if collateral_unit == TokenType.PT:
-            collateral_value_in_base = collateral.amount * (spot_price or 0)
-        borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio[collateral_unit]
+        if collateral.unit == TokenType.PT:
+            collateral_value_in_base = collateral.amount * (spot_price or 1)
+        borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio[collateral.unit]
         return collateral_value_in_base, borrow_amount_in_base
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
