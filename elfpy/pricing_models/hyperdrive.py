@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models.trades as trades
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
 
@@ -34,7 +34,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         out: types.Quantity,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -143,7 +143,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_in_given_out(
             out=types.Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
             market_state=market_state,
-            time_remaining=time_utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+            time_remaining=time.utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
@@ -197,7 +197,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         self,
         in_: types.Quantity,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a specified amount of the
@@ -295,7 +295,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
         curve = super().calc_out_given_in(
             in_=types.Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
             market_state=market_state,
-            time_remaining=time_utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
+            time_remaining=time.utils.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
