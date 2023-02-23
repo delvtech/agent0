@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-import elfpy.pricing_models.yieldspace as yieldspace
 import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.agents.wallet as wallet
@@ -16,7 +15,7 @@ import elfpy.types as types
 import elfpy.markets.base as base_market
 
 if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
+    import elfpy.pricing_models.base as base
     import elfpy.simulators as simulators
 
 # TODO: for now...
@@ -174,13 +173,10 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def name(self) -> types.MarketType:
         return types.MarketType.YIELDSPACE
 
-    @property
-    def pricing_model(self) -> PricingModel:
-        return yieldspace.PricingModel()
-
     def __init__(
         self,
         market_state: MarketState,
+        pricing_model: base.PricingModel,
         global_time: time.Time,
         position_duration: time.utils.StretchedTime,
     ):
@@ -194,7 +190,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
-        super().__init__(market_state=market_state, global_time=global_time)
+        super().__init__(market_state=market_state, pricing_model=pricing_model, global_time=global_time)
 
     def annualized_position_duration(self) -> float:
         r"""Returns the position duration in years"""

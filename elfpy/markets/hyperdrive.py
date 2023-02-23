@@ -7,10 +7,7 @@ from dataclasses import dataclass
 
 import elfpy.types as types
 import elfpy.markets.yieldspace as yieldspace_market
-import elfpy.pricing_models.hyperdrive as hyperdrive
 
-if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
 
 # TODO: for now...
 # pylint: disable=duplicate-code
@@ -91,7 +88,3 @@ class Market(yieldspace_market.Market[MarketState, MarketDeltas]):
     @property
     def name(self) -> types.MarketType:
         return types.MarketType.HYPERDRIVE
-
-    @property
-    def pricing_model(self) -> PricingModel:
-        return hyperdrive.HyperdrivePricingModel()

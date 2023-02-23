@@ -14,11 +14,11 @@ from numpy.random._generator import Generator
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
-import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
     import elfpy.markets.base as base
-    from elfpy.agents.agent import Agent
+    import elfpy.agents.agent as agent
+    import elfpy.agents.wallet as wallet
 
 
 @dataclass
@@ -389,7 +389,7 @@ class Simulator:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
-        self.agents: dict[int, Agent] = {}
+        self.agents: dict[int, agent.Agent] = {}
 
         # Simulation variables
         self.run_number = 0
@@ -451,7 +451,7 @@ class Simulator:
         blocks_per_year = 365 * self.config.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def add_agents(self, agent_list: list[Agent]) -> None:
+    def add_agents(self, agent_list: list[agent.Agent]) -> None:
         r"""Append the agents and simulation_state member variables
 
         If trades have already happened (as indicated by self.trade_number), then empty wallet states are

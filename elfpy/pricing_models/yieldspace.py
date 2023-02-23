@@ -3,20 +3,16 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING
 
-from elfpy.pricing_models.base import PricingModel
-import elfpy.time as time
-import elfpy.markets.hyperdrive as hyperdrive
-from elfpy.agents.agent import AgentTradeResult
+import elfpy.markets.yieldspace as yieldspace
+import elfpy.agents.agent as agent
+import elfpy.pricing_models.base as base
 import elfpy.pricing_models.trades as trades
+import elfpy.time as time
 import elfpy.types as types
 
-if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import MarketState
 
-
-class YieldSpacePricingModel(PricingModel):
+class YieldSpacePricingModel(base.PricingModel):
     """
     YieldSpace Pricing Model
 
@@ -40,7 +36,7 @@ class YieldSpacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
+        market_state: yieldspace.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -116,7 +112,7 @@ class YieldSpacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
+        market_state: yieldspace.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -140,7 +136,7 @@ class YieldSpacePricingModel(PricingModel):
         self,
         lp_in: float,
         rate: float,
-        market_state: MarketState,
+        market_state: yieldspace.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
@@ -203,7 +199,7 @@ class YieldSpacePricingModel(PricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: MarketState,
+        market_state: yieldspace.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -354,11 +350,11 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = yieldspace.MarketTradeResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
@@ -410,11 +406,11 @@ class YieldSpacePricingModel(PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = yieldspace.MarketTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
@@ -440,7 +436,7 @@ class YieldSpacePricingModel(PricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: MarketState,
+        market_state: yieldspace.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -575,11 +571,11 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = yieldspace.MarketTradeResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
@@ -624,11 +620,11 @@ class YieldSpacePricingModel(PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
             # Create the user and market trade results.
-            user_result = AgentTradeResult(
+            user_result = agent.AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = yieldspace.MarketTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
@@ -648,7 +644,7 @@ class YieldSpacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: time.utils.StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: yieldspace.MarketState, time_remaining: time.utils.StretchedTime) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 

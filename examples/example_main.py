@@ -13,9 +13,10 @@ from elfpy.agents.agent import Agent
 import elfpy
 import elfpy.simulators as simulators
 import elfpy.types as types
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
+import elfpy.markets.hyperdrive as base
+import elfpy.markets.hyperdrive as hyperdrive
 
 
 # pylint: disable=duplicate-code
@@ -31,40 +32,42 @@ class CustomShorter(Agent):
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive.Market) -> "list[Any]":
+    def action(self, markets: "dict[types.MarketType, base.Market]") -> "list[types.Trade]":
         """Implement a custom user strategy"""
-        shorts = list(self.wallet.shorts.values())
-        has_opened_short = any((short.balance > 0 for short in shorts))
-        can_open_short = self.get_max_short(market) >= self.pt_to_short
         action_list = []
-        if can_open_short:
-            vault_apr = market.market_state.variable_apr
-            if vault_apr > market.fixed_apr:
-                action_list.append(
-                    types.Trade(
-                        agent=self.wallet.address,
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.OPEN_SHORT,
-                            trade_amount=self.pt_to_short,
-                            wallet=self.wallet,
-                        ),
-                    )
-                )
-            elif vault_apr < market.fixed_apr:
-                if has_opened_short:
-                    action_list.append(
-                        types.Trade(
-                            agent=self,
-                            market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive.MarketAction(
-                                action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
-                                trade_amount=self.pt_to_short,
-                                wallet=self.wallet,
-                                mint_time=list(self.wallet.shorts.keys())[0],
-                            ),
+        for market_type, market in markets.items():
+            if market_type == types.MarketType.HYPERDRIVE:
+                shorts = list(self.wallet.shorts.values())
+                has_opened_short = any((short.balance > 0 for short in shorts))
+                can_open_short = self.get_max_short(market) >= self.pt_to_short
+                if can_open_short:
+                    vault_apr = market.market_state.variable_apr
+                    if vault_apr > market.fixed_apr:
+                        action_list.append(
+                            types.Trade(
+                                agent=self.wallet.address,
+                                market=types.MarketType.HYPERDRIVE,
+                                trade=hyperdrive.MarketAction(
+                                    action_type=hyperdrive.MarketActionType.OPEN_SHORT,
+                                    trade_amount=self.pt_to_short,
+                                    wallet=self.wallet,
+                                ),
+                            )
                         )
-                    )
+                    elif vault_apr < market.fixed_apr:
+                        if has_opened_short:
+                            action_list.append(
+                                types.Trade(
+                                    agent=self,
+                                    market=types.MarketType.HYPERDRIVE,
+                                    trade=hyperdrive.MarketAction(
+                                        action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                                        trade_amount=self.pt_to_short,
+                                        wallet=self.wallet,
+                                        mint_time=list(self.wallet.shorts.keys())[0],
+                                    ),
+                                )
+                            )
         return action_list
 
 

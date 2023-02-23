@@ -2,20 +2,16 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
-from typing import TYPE_CHECKING
 
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.pricing_models.yieldspace as yieldspace
 import elfpy.pricing_models.trades as trades
+import elfpy.agents.agent as agent
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.agents.agent as agent
-
-if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import MarketState
 
 
-class HyperdrivePricingModel(YieldSpacePricingModel):
+class HyperdrivePricingModel(yieldspace.YieldSpacePricingModel):
     """
     Hyperdrive Pricing Model
 
@@ -33,7 +29,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: MarketState,
+        market_state: hyperdrive.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -196,7 +192,7 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: MarketState,
+        market_state: hyperdrive.MarketState,
         time_remaining: time.utils.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -342,3 +338,67 @@ class HyperdrivePricingModel(YieldSpacePricingModel):
                 with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
             ),
         )
+
+    def calc_liquidity(
+        self,
+        market_state: hyperdrive.MarketState,
+        target_liquidity: float,
+        target_apr: float,
+        # TODO: Fields like position_duration and fee_percent could arguably be
+        # wrapped up into a "MarketContext" value that includes the state as
+        # one of its fields.
+        position_duration: time.utils.StretchedTime,
+    ) -> tuple[float, float]:
+        """Returns the reserve volumes and total supply
+
+        The scaling factor ensures bond_reserves and share_reserves add
+        up to target_liquidity, while keeping their ratio constant (preserves apr).
+
+        total_liquidity = in base terms, used to target liquidity as passed in
+        total_reserves  = in arbitrary units (AU), used for yieldspace math
+
+        Parameters
+        ----------
+        market_state : MarketState
+            The state of the market
+        target_liquidity_usd : float
+            Amount of liquidity that the simulation is trying to achieve in a given market
+        target_apr : float
+            Desired APR for the seeded market
+        position_duration : StretchedTime
+            The duration of bond positions in this market
+
+        Returns
+        -------
+        (float, float)
+            Tuple that contains (share_reserves, bond_reserves)
+            calculated from the provided parameters
+        """
+        share_reserves = target_liquidity / market_state.share_price
+        # guarantees only that it hits target_apr
+        bond_reserves = self.calc_bond_reserves(
+            target_apr=target_apr,
+            time_remaining=position_duration,
+            market_state=hyperdrive.MarketState(
+                share_reserves=share_reserves,
+                init_share_price=market_state.init_share_price,
+                share_price=market_state.share_price,
+            ),
+        )
+        total_liquidity = self.calc_total_liquidity_from_reserves_and_price(
+            hyperdrive.MarketState(
+                share_reserves=share_reserves,
+                bond_reserves=bond_reserves,
+                base_buffer=market_state.base_buffer,
+                bond_buffer=market_state.bond_buffer,
+                share_price=market_state.share_price,
+                init_share_price=market_state.init_share_price,
+            ),
+            market_state.share_price,
+        )
+        # compute scaling factor to adjust reserves so that they match the target liquidity
+        scaling_factor = target_liquidity / total_liquidity  # both in token units
+        # update variables by rescaling the original estimates
+        bond_reserves = bond_reserves * scaling_factor
+        share_reserves = share_reserves * scaling_factor
+        return share_reserves, bond_reserves

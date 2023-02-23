@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import Market
+    import elfpy.markets.hyperdrive as hyperdrive
     from typing import Any
 
 
@@ -103,7 +103,7 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def get_state(self, market: Market) -> dict:
+    def get_state(self, market: hyperdrive.Market) -> dict:
         r"""The wallet's current state of public variables
 
         .. todo:: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func

@@ -5,25 +5,24 @@ from importlib import import_module
 from typing import Any, TYPE_CHECKING, Optional
 import logging
 
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
-
-import elfpy.time as time
-import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.markets.base as base
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.yieldspace as yieldspace
 import elfpy.markets.borrow as borrow
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.time as time
+import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.agents.agent import Agent
-    from elfpy.pricing_models.base import PricingModel
+    import elfpy.agents.agent as agent
+    import elfpy.pricing_models.base as base
 
 
 def get_simulator(
     config: simulators.Config,
-    agents: Optional[list[Agent]] = None,
+    agents: Optional[list[agent.Agent]] = None,
 ) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
@@ -61,7 +60,7 @@ def get_simulator(
 def get_init_lp_agent(
     market: list[base.Market],
     target_liquidity: float,
-) -> Agent:
+) -> agent.Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
 
     Parameters
@@ -144,13 +143,13 @@ def get_markets(
                         bond_reserves=bond_reserves_direct,
                         base_buffer=0,
                         bond_buffer=0,
-                        lp_total_supply=init_target_liquidity / config.init_share_price,
                         init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
                         share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
                         variable_apr=config.variable_apr[0],  # yield bearing source apr
                         trade_fee_percent=config.trade_fee_percent,  # g
                         redemption_fee_percent=config.redemption_fee_percent,
                     ),
+                    pricing_model=get_pricing_model(str(market_type)),
                     time=global_time,
                     position_duration=position_duration,
                 )
@@ -159,7 +158,6 @@ def get_markets(
             markets.append(
                 borrow.Market(
                     market_state=borrow.MarketState(
-                        lp_total_supply=0,
                         loan_to_value_ratio={},
                         borrow_shares=0,
                         collateral={},
@@ -176,7 +174,7 @@ def get_markets(
     return markets
 
 
-def get_pricing_model(model_name: str) -> PricingModel:
+def get_pricing_model(model_name: str) -> base.PricingModel:
     r"""Get a PricingModel object from the config passed in
 
     Parameters
@@ -191,9 +189,9 @@ def get_pricing_model(model_name: str) -> PricingModel:
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
     if model_name.lower() == "hyperdrive":
-        pricing_model = HyperdrivePricingModel()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     elif model_name.lower() == "yieldspace":
-        pricing_model = YieldSpacePricingModel()
+        pricing_model = yieldspace_pm.YieldSpacePricingModel()
     else:
         raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model

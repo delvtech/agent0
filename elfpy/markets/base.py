@@ -14,7 +14,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
+    import elfpy.pricing_models.base as base
     import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
@@ -113,17 +113,14 @@ class Market(ABC, Generic[State, Deltas]):
     def name(self) -> types.MarketType:
         """Returns the name of the Market"""
 
-    @property
-    @abstractmethod
-    def pricing_model(self) -> PricingModel:
-        """Returns the PricingModel of the Market"""
-
     def __init__(
         self,
         market_state: State,
+        pricing_model: base.PricingModel,
         global_time: time.Time,
     ):
         self.market_state = market_state
+        self.pricing_model = pricing_model
         self._time = global_time
 
     @abstractmethod
