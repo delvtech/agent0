@@ -115,7 +115,6 @@ class MarketState(base_market.BaseMarketState):
         # initialize loan to value ratios if a float is passed
         if isinstance(self.loan_to_value_ratio, float):
             self.loan_to_value_ratio = {token_type: self.loan_to_value_ratio for token_type in types.TokenType}
-            print(f"LTVs initialized to {self.loan_to_value_ratio=}")
 
     @property
     def borrow_amount(self) -> float:
