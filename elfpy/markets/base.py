@@ -66,7 +66,7 @@ class MarketTradeResult:
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class BaseMarketState(Generic[State]):
+class BaseMarketState:
     r"""The state of an AMM
 
     Implements a class for all that that an AMM smart contract would hold or would have access to
