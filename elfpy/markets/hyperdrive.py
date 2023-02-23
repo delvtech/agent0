@@ -193,10 +193,10 @@ class MarketAction(Generic[base_market.Action]):
     action_type: MarketActionType
     # amount to supply for the action
     trade_amount: float  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
-    # min amount to receive for the action
-    min_amount_out: float
     # the agent's wallet
     wallet: wallet.Wallet
+    # min amount to receive for the action
+    min_amount_out: float = 0
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
 
