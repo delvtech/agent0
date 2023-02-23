@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Generic
 from dataclasses import dataclass
 
 import numpy as np
@@ -183,7 +183,7 @@ class MarketState(base_market.BaseMarketState):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction:
+class MarketAction(Generic[base_market.Action]):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy

@@ -58,13 +58,15 @@ class Agent:
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
+        # TODO: We need to fix this up -- probably just have the user specify a name on init
+        # (i.e. attribute without default)
         name = str(self.__class__)
         if "Policy" in name:  # agent was instantiated from policy folder
             self.name = name.split(".")[-2]
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def create_agent_action(
+    def create_hyperdrive_action(
         self,
         action_type: hyperdrive.MarketActionType,
         trade_amount: float,
@@ -100,7 +102,7 @@ class Agent:
         )
         return agent_action
 
-    def action(self, market: Market) -> list[hyperdrive.MarketAction]:
+    def action(self, market: Market) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -112,7 +114,7 @@ class Agent:
 
         Returns
         -------
-        list[MarketAction]
+        list[Trade]
             List of actions to execute in the market
         """
         raise NotImplementedError
@@ -208,7 +210,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: Market) -> list:
+    def get_trades(self, market: Market) -> list[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -229,13 +231,13 @@ class Agent:
 
         Returns
         -------
-        list
-            List of MarketAction objects that represent the trades to be made by this agent
+        list[Trade]
+            List of Trade type objects that represent the trades to be made by this agent
         """
         actions = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
-            if action.mint_time is None:
-                action.mint_time = market.time
+            if action.trade.mint_time is None:
+                action.trade.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
@@ -341,15 +343,14 @@ class Agent:
                 )
                 if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
                     self.wallet.shorts[mint_time].balance += short.balance
-
                     old_balance = self.wallet.shorts[mint_time].balance
-                    old_share_price = self.wallet.shorts[mint_time].open_share_price
 
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
                     # opened for the same account in the same block.  if the balance is negative, we
                     # don't want to update the open_short_price
                     if short.balance > 0:
+                        old_share_price = self.wallet.shorts[mint_time].open_share_price
                         self.wallet.shorts[mint_time].open_share_price = (
                             short.open_share_price * short.balance + old_share_price * old_balance
                         ) / (short.balance + old_balance)
@@ -359,7 +360,7 @@ class Agent:
                 # Remove the empty short from the wallet.
                 del self.wallet.shorts[mint_time]
 
-    def get_liquidation_trades(self, market: Market) -> list[hyperdrive.MarketAction]:
+    def get_liquidation_trades(self, market: Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -369,37 +370,46 @@ class Agent:
 
         Returns
         -------
-        list[MarketAction]
+        list[Trade]
             List of trades to execute in order to liquidate positions where applicable
         """
-        action_list: list[hyperdrive.MarketAction] = []
+        action_list = []
         for mint_time, long in self.wallet.longs.items():
             logging.debug("evaluating closing long: mint_time=%g, position=%s", mint_time, long)
             if long.balance > 0:
                 action_list.append(
-                    self.create_agent_action(
-                        action_type=hyperdrive.MarketActionType.CLOSE_LONG,
-                        trade_amount=long.balance,
-                        mint_time=mint_time,
+                    types.Trade(
+                        market=types.MarketType.HYPERDRIVE,
+                        trade=self.create_hyperdrive_action(
+                            action_type=hyperdrive.MarketActionType.CLOSE_LONG,
+                            trade_amount=long.balance,
+                            mint_time=mint_time,
+                        ),
                     )
                 )
         for mint_time, short in self.wallet.shorts.items():
             logging.debug("evaluating closing short: mint_time=%g, position=%s", mint_time, short)
             if short.balance > 0:
                 action_list.append(
-                    self.create_agent_action(
-                        action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
-                        trade_amount=short.balance,
-                        mint_time=mint_time,
+                    types.Trade(
+                        market=types.MarketType.HYPERDRIVE,
+                        trade=self.create_hyperdrive_action(
+                            action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                            trade_amount=short.balance,
+                            mint_time=mint_time,
+                        ),
                     )
                 )
         if self.wallet.lp_tokens > 0:
             logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp_tokens)
             action_list.append(
-                self.create_agent_action(
-                    action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=self.wallet.lp_tokens,
-                    mint_time=market.time,
+                types.Trade(
+                    market=types.MarketType.HYPERDRIVE,
+                    trade=self.create_hyperdrive_action(
+                        action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
+                        trade_amount=self.wallet.lp_tokens,
+                        mint_time=market.time,
+                    ),
                 )
             )
         return action_list
@@ -410,7 +420,7 @@ class Agent:
             "agent #%g balance = %1g and fees_paid = %1g",
             self.wallet.address,
             self.wallet.balance.amount,
-            self.wallet.fees_paid if self.wallet.fees_paid else 0,
+            self.wallet.fees_paid or 0,
         )
 
     def log_final_report(self, market: Market) -> None:

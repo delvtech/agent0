@@ -49,6 +49,13 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     return decorator
 
 
+class MarketType(Enum):
+    r"""A type of market"""
+
+    HYPERDRIVE = "hyperdrive"
+    BORROW = "borrow"
+
+
 class TokenType(Enum):
     r"""A type of token"""
 
@@ -65,3 +72,11 @@ class Quantity:
 
     def __neg__(self):
         return Quantity(amount=-self.amount, unit=self.unit)
+
+
+@dataclass
+class Trade:
+    r"""A trade for a market"""
+
+    market: MarketType
+    trade: Any  # TODO: How to specify the type as a generic market action?
