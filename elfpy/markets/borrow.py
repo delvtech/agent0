@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict, Any
 
-import elfpy.markets.base as base_market
 import numpy as np
-from elfpy.wallet import Wallet
+
+import elfpy.markets.base as base_market
 
 import elfpy.types as types
 from elfpy.types import freezable, TokenType
@@ -28,11 +28,13 @@ class MarketActionType(Enum):
 class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
 
-    d_borrow_shares: float = 0.0
-    d_deposit_shares: types.Quantity = field(default_factory=lambda: types.Quantity(unit=TokenType.PT, amount=0))
+    d_borrow_shares: float = 0.0  # borrow is always in DAI
+    d_collateral: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=TokenType.PT))
+    d_borrow_outstanding: float = 0.0  # changes based on borrow_shares * borrow_share_price
+    d_borrow_closed_interest: float = 0.0  # realized interest from closed borrows
 
     def __str__(self):
-        return f"MarketDeltas(\n\t{self.d_borrow_asset=},\n\t{self.d_deposit_shares=},\n)"
+        return f"MarketDeltas(\n\t{self.d_borrow_shares=},\n\t{self.d_collateral=},\n)"
 
 
 @freezable(frozen=True, no_new_attribs=True)
@@ -68,6 +70,8 @@ class MarketState(base_market.BaseMarketState):
 
     Attributes
     ----------
+    loan_to_value_ratio: float
+        The maximum loan to value ratio a collateral can have before liquidations occur.
     borrow_shares: float
         Quantity of borrow asset that has been lent out by the market
     deposit_shares: float
@@ -80,27 +84,34 @@ class MarketState(base_market.BaseMarketState):
         The rate a user receives when lending out assets
     spread_ratio: float
         The ratio of the borrow rate to the lending rate
-    haircut: float
-        Amount of the deposited asset that is not available for borrowing
     """
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
+    # borrow ratios
+    loan_to_value_ratio: Dict[TokenType, float] = field(
+        default_factory=dict
+    )  # 99% loan to value ratio corresponds to 1% haircut
+
     # trading reserves
-    borrow_shares: float = 0.0
-    deposit_shares: Dict[TokenType, float] = field(default_factory=dict)
+    borrow_shares = 0.0  # borrow is always in DAI, this allows tracking the increasing value of loans over time
+    collateral: Dict[TokenType, float] = field(default_factory=dict)
+
+    borrow_outstanding = 0.0  # sum of Dai that went out the door
+    borrow_closed_interest = 0.0  # interested collected from closed borrows
 
     # share prices used to track amounts owed
     borrow_share_price: float = 1.0
+    # number of TokenA between t=0 and t=1
     deposit_share_price: Dict[TokenType, float] = field(default_factory=dict)
+    # number of TokenA you get for TokenB
+    deposit_spot_price: Dict[TokenType, float] = field(default_factory=dict)
 
     # borrow and lending rates
     lending_rate: float = 0.01  # 1% per year
+    # borrow rate is lending_rate * spread_ratio
     spread_ratio = 1.25
-
-    # borrow ratios
-    haircut: float = 0.03  # 3% haircut equates to 97% loan to value ratio
 
     @property
     def borrow_amount(self) -> float:
@@ -110,19 +121,23 @@ class MarketState(base_market.BaseMarketState):
     @property
     def deposit_amount(self) -> dict[TokenType, float]:
         """The amount of deposited asset in the market"""
-        return {k: v * self.deposit_share_price[k] for k, v in self.deposit_shares.items()}
+        return {key: value * self.deposit_spot_price[key] for key, value in self.collateral.items()}
 
     @property
-    def profit(self) -> float:
-        """The profit is the difference between the borrowed and deposited assets"""
+    def total_market_profit(self) -> float:
+        """
+        From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        """
         # how do we calcualte this?
         # return self.borrow_asset - self.deposit_asset
-        return 0
+        # the profit is the borrow_shares * borrow_share_price - borrow_outstanding
+        # TEST: when borrow goes down, what happens? => correctly captured by borrow_closed_interest
+        # TEST: do we pay out interest on collateral?
 
-    @property
-    def loan_to_value_ratio(self) -> float:
-        """The loan to value ratio defines how much someone can borrow as a ratio of their deposited asset"""
-        return 1 - self.haircut
+        # uncollected profit = borrow_shares * share_price - borrow_outstanding
+        # collected profit = borrow_closed_interest
+
+        return self.borrow_shares * self.borrow_share_price - self.borrow_outstanding + self.borrow_closed_interest
 
     @property
     def borrow_rate(self) -> float:
@@ -132,29 +147,12 @@ class MarketState(base_market.BaseMarketState):
     def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.borrow_shares += delta.d_borrow_shares
-        deposit_unit = delta.unit
-        self.deposit_shares[deposit_unit] += delta.d_deposit_shares
+        deposit_unit = delta.d_collateral.unit
+        self.collateral[deposit_unit] += delta.d_collateral.amount
+        assert self.borrow_shares > 0, f"BorrowMarket:MarketState borrow shares must be > 0, not {self.borrow_shares=}."
         assert (
-            self.borrow_shares > 0
-        ), f"BorrowMarket:MarketState borrow shares must be > 0. Error on {self.borrow_shares=}"
-        assert (
-            self.deposit_shares[deposit_unit] > 0
-        ), f"BorrowMarket:MarketState deposit shares must be > 0. Error on {self.deposit_shares[deposit_unit]=}"
-
-    def __str__(self):
-        return (
-            "BorrowMarket:MarketState(\n"
-            "\treserves(\n"
-            f"\t\t{self.borrow_amount=},\n"
-            f"\t\t{self.deposit_amount=},\n"
-            "\t),\n"
-            "\tvariables(\n"
-            f"\t\t{self.lending_rate=},\n"
-            f"\t\t{self.spread_ratio=},\n"
-            f"\t\t{self.haircut=},\n"
-            "\t)\n"
-            ")"
-        )
+            self.collateral[deposit_unit] > 0
+        ), f"BorrowMarket:MarketState deposit shares must be > 0, not {self.collateral[deposit_unit]=}."
 
 
 @freezable(frozen=False, no_new_attribs=True)
@@ -206,15 +204,7 @@ class Market:
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def value_collateral(self, collateral: types.Quantity, spot_price: Optional[float]):
-        """Values collateral and returns how much the agent can borrow against it"""
-        collateral_value_in_base = collateral.amount  # if collateral is BASE
-        if collateral.unit == TokenType.PT:
-            collateral_value_in_base = collateral.amount * (spot_price or 0)
-        borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio
-        return collateral_value_in_base, borrow_amount_in_base
-
-    def trade_and_update(self, action_details: tuple[int, MarketAction]) -> tuple[int, Wallet, MarketDeltas]:
+    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, BorrowDeltas, MarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -231,8 +221,8 @@ class Market:
         # issue 216
         self.check_action(agent_action)
         market_deltas = MarketDeltas()
-        agent_deltas = Wallet()
         # for each position, specify how to formulate trade and then execute
+        # current assumption is that the user will borrow the maximum LTV against the collateral they are offering
         if agent_action.action_type == MarketActionType.OPEN_BORROW:  # open a borrow position
             market_deltas, agent_deltas = self.open_borrow(
                 wallet_address=agent_action.wallet.address,
@@ -270,10 +260,10 @@ class Market:
         # borrow asset increases because it's being lent out
         # deposit asset increases because it's being deposited
         market_deltas = MarketDeltas(
-            d_borrow_shares=borrow_amount_in_base / self.borrow_share_price,
-            d_deposit_shares=types.Quantity(
+            d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
+            d_collateral=types.Quantity(
                 unit=collateral.unit,
-                amount=collateral.amount / self.deposit_share_price[collateral.unit],
+                amount=collateral.amount / self.market_state.deposit_share_price[collateral.unit],
             ),
         )
 
@@ -291,22 +281,31 @@ class Market:
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
         """
-        collateral_value_in_base, borrow_amount_in_base = self.value_collateral(collateral, spot_price)
+        _, borrow_amount_in_base = self.value_collateral(collateral, spot_price)
 
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow asset increases because it's being lent out
         # deposit asset increases because it's being deposited
         market_deltas = MarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
-            d_deposit_shares=types.Quantity(
+            d_collateral=types.Quantity(
                 unit=collateral.unit,
-                amount=collateral.amount / self.deposit_share_price[collateral.unit],
+                amount=collateral.amount / self.market_state.deposit_share_price[collateral.unit],
             ),
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
         agent_deltas = BorrowDeltas(address=wallet_address, base=borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
+
+    def value_collateral(self, collateral: types.Quantity, spot_price: Optional[float]):
+        """Values collateral and returns how much the agent can borrow against it"""
+        collateral_unit = collateral.unit
+        collateral_value_in_base = collateral.amount  # if collateral is BASE
+        if collateral_unit == TokenType.PT:
+            collateral_value_in_base = collateral.amount * (spot_price or 0)
+        borrow_amount_in_base = collateral_value_in_base * self.market_state.loan_to_value_ratio[collateral_unit]
+        return collateral_value_in_base, borrow_amount_in_base
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """
@@ -329,17 +328,7 @@ class Market:
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         logging.debug(
-            (
-                "t = %g"
-                "\nborrow_asset = %g"
-                "\ndeposit_assets = %g"
-                "\nborrow_rate = %g"
-                "\nz = %g"
-                "\nx_b = %g"
-                "\ny_b = %g"
-                "\np = %s"
-                "\npool apr = %s"
-            ),
+            ("t = %g\nborrow_asset = %g\ndeposit_assets = %g\nborrow_rate = %g"),
             self.time,
             self.market_state.borrow_amount,
             self.market_state.deposit_amount,
