@@ -130,22 +130,21 @@ class Wallet:
         longs_value_no_mock = 0
         for mint_time, long in self.longs.items():
             if long.balance > 0 and share_reserves:
-                base = market.close_long(self.address, long.balance, mint_time)[1].balance.amount
-                # base = agent_deltas.base.amount
+                balance = market.close_long(self.address, long.balance, mint_time)[1].balance.amount
             else:
-                base = 0.0
-            longs_value += base
+                balance = 0.0
+            longs_value += balance
             longs_value_no_mock += long.balance * market.spot_price
         # compute short values in units of base
         shorts_value = 0
         shorts_value_no_mock = 0
         for mint_time, short in self.shorts.items():
-            base = (
+            balance = (
                 market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].balance.amount
                 if short.balance > 0 and share_reserves
                 else 0.0
             )
-            shorts_value += base
+            shorts_value += balance
             base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock
         return {
