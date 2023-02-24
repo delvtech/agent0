@@ -16,7 +16,9 @@ import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.markets.pricing_models as pricing_models
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.pricing_models.yieldspace_pm as yieldspace_pm
+import elfpy.markets.pricing_models.hyperdrive_pm as hyperdrive_pm
 
 
 class TestErrorPolicy(agent.Agent):
@@ -52,7 +54,7 @@ class TestAgent(unittest.TestCase):
     def setup_market() -> hyperdrive.HyperdriveMarket:
         """Instantiates a market object for testing purposes"""
         # Give an initial market state
-        pricing_model = pricing_models.HyperdrivePricingModel()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive.MarketState(
             share_reserves=1_000_000,
             bond_reserves=1_000_000,
@@ -101,9 +103,9 @@ class TestAgent(unittest.TestCase):
         Ensures that get_max_long and get_max_short will not exceed the balance
         of an agent in a variety of market conditions.
         """
-        models: list[pricing_models.PricingModel] = [
-            pricing_models.HyperdrivePricingModel(),
-            pricing_models.YieldSpacePricingModel(),
+        models: list[base_pm.PricingModel] = [
+            hyperdrive_pm.HyperdrivePricingModel(),
+            yieldspace_pm.YieldSpacePricingModel(),
         ]
 
         test_cases: list[TestCaseGetMax] = [

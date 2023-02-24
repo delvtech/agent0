@@ -9,7 +9,8 @@ from typing import Any
 import utils_for_tests as test_utils  # utilities for testing
 
 import elfpy.markets.hyperdrive as hyperdrive_market
-import elfpy.markets.pricing_models as pricing_models
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.pricing_models.hyperdrive_pm as hyperdrive_pm
 import elfpy.agents.wallet as wallet
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 import elfpy.types as types
@@ -43,13 +44,13 @@ class BaseMarketTest(unittest.TestCase):
             normalizing_constant=36,
         )
         _ = hyperdrive_market.HyperdriveMarket(
-            pricing_model=pricing_models.PricingModel(),
+            pricing_model=base_pm.PricingModel(),
             market_state=hyperdrive_market.MarketState(),
             position_duration=pd_good,
         )
         with self.assertRaises(AssertionError):
             _ = hyperdrive_market.HyperdriveMarket(
-                pricing_model=pricing_models.PricingModel(),
+                pricing_model=base_pm.PricingModel(),
                 market_state=hyperdrive_market.MarketState(),
                 position_duration=pd_nonorm,
             )
@@ -410,7 +411,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_apr(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
-        pricing_model = pricing_models.HyperdrivePricingModel()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         position_duration = time.utils.StretchedTime(
             days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
         )

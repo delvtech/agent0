@@ -74,9 +74,9 @@ def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
-        agent = CustomShorter(address)
-        agent.log_status_report()
-        agents += [agent]
+        my_agent = CustomShorter(address)
+        my_agent.log_status_report()
+        agents += [my_agent]
     return agents
 
 
