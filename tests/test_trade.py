@@ -7,11 +7,11 @@ import logging
 
 import numpy as np
 
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.simulators.simulators as simulators
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.simulators.simulators as simulators
-import elfpy.markets.hyperdrive as hyperdrive
 
 # because we're testing lots of stuff here!
 # pylint: disable=too-many-arguments

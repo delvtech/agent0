@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 if TYPE_CHECKING:
-    from elfpy.simulators import Simulator
+    import elfpy.simulators.simulators as simulators
 
 # TODO: These will be in a followup PR
 
-# def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+# def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
 #      return simulator.simulation_state.combined_dataframe
 
 # def add_pnl_to_trades_df()
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 #     this is the trades df we have now
 
 
-def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Parameters
@@ -40,7 +40,7 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
     return pd.DataFrame.from_dict(simulator.simulation_state.__dict__)
 
 
-def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
+def compute_derived_variables(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Parameters

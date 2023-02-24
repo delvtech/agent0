@@ -2,9 +2,9 @@
 from dataclasses import dataclass
 
 
-import elfpy.types as types
-import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.agent as agent
+import elfpy.types as types
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

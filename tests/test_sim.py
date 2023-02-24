@@ -9,8 +9,8 @@ import numpy as np
 from numpy.random import RandomState
 
 import elfpy.simulators.simulators as simulators
-import elfpy.utils.outputs as output_utils
 import elfpy.time as time
+import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 
 

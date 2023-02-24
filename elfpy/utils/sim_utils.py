@@ -6,7 +6,7 @@ from typing import Any, TYPE_CHECKING, Optional
 import logging
 
 import elfpy.simulators as simulators
-import elfpy.markets.base as base_pm
+import elfpy.markets.base as base
 import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.markets.yieldspace as yieldspace_market
 import elfpy.markets.borrow as borrow
@@ -58,7 +58,7 @@ def get_simulator(
 
 
 def get_init_lp_agent(
-    market: list[base_pm.Market],
+    market: list[base.Market],
     target_liquidity: float,
 ) -> agent.Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -88,7 +88,7 @@ def get_markets(
     global_time: time.Time,
     config: simulators.Config,
     init_target_liquidity: float = 1.0,
-) -> "list[base_pm.Market]":
+) -> "list[base.Market]":
     r"""Setup market
 
     Parameters

@@ -12,12 +12,12 @@ from calc_test_dataclasses import (
     CalcOutGivenInFailureTestCase,
 )
 
-import elfpy.types as types
-from elfpy.markets.pricing_models.base_pm import PricingModel
-from elfpy.markets.pricing_models.hyperdrive_pm import HyperdrivePricingModel
-from elfpy.markets.pricing_models.yieldspace_pm import YieldSpacePricingModel
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.pricing_models.hyperdrive_pm as hyperdrive_pm
+import elfpy.markets.pricing_models.yieldspace_pm as yieldspace_pm
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketState
+import elfpy.types as types
 
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines
@@ -29,7 +29,10 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldSpacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
+        ]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
         # purchased for base.
@@ -63,7 +66,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -146,7 +149,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -199,7 +202,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=10_000, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -266,7 +269,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=80_000, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -335,7 +338,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 CalcOutGivenInSuccessTestCase(
                     # Base in of 200 is 100 shares at the current share price.
                     in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=2,
@@ -418,7 +421,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -501,7 +504,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -584,7 +587,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -697,7 +700,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -782,7 +785,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -835,7 +838,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=10_000, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -904,7 +907,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=80_000, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=1,
@@ -973,7 +976,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=100_000,
                         share_price=2,
@@ -1052,7 +1055,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -1132,7 +1135,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -1217,7 +1220,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         share_reserves=100_000,
                         bond_reserves=1_000_000,
                         share_price=2,
@@ -1354,13 +1357,16 @@ class TestCalcOutGivenIn(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldSpacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
+        ]
 
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # in is in base, out is in bonds
                 trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
-                market_state = MarketState(
+                market_state = hyperdrive.MarketState(
                     share_reserves=1,
                     bond_reserves=20_000_000_000,
                     share_price=1,
@@ -1380,7 +1386,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
 
                 # in is in bonds, out is in base
                 trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
-                market_state = MarketState(
+                market_state = hyperdrive.MarketState(
                     share_reserves=10_000_000_000,
                     bond_reserves=1,
                     share_price=2,
@@ -1399,14 +1405,17 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldSpacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
+        ]
 
         # Failure test cases.
         failure_test_cases = [
             CalcOutGivenInFailureTestCase(
                 # amount negative
                 in_=types.Quantity(amount=-1, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1420,7 +1429,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             CalcOutGivenInFailureTestCase(
                 # amount 0
                 in_=types.Quantity(amount=0, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1433,7 +1442,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     # share reserves negative
                     share_reserves=-1,
                     bond_reserves=1_000_000,
@@ -1447,7 +1456,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     # bond reserves negative
                     bond_reserves=-1,
@@ -1461,7 +1470,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1475,7 +1484,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1489,7 +1498,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1503,7 +1512,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1517,7 +1526,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1531,7 +1540,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1545,7 +1554,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1560,7 +1569,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             CalcOutGivenInFailureTestCase(
                 # amount very high, can't make trade
                 in_=types.Quantity(amount=10_000_000, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1573,7 +1582,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=2,
@@ -1587,7 +1596,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     # share_price < init_share_price
@@ -1601,7 +1610,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     # share_price 0
@@ -1616,7 +1625,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             CalcOutGivenInFailureTestCase(
                 # amount < 1 wei
                 in_=types.Quantity(amount=0.5e-18, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     share_reserves=100_000,
                     bond_reserves=1_000_000,
                     share_price=1,
@@ -1629,7 +1638,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(
                 in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                market_state=hyperdrive.MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=30_000_000_000,
                     bond_reserves=1,

@@ -9,11 +9,11 @@ from elfpy import (
     MAX_RESERVES_DIFFERENCE,
     WEI,
 )
-import elfpy.utils.price as price_utils
 import elfpy.markets.base as base_market
 import elfpy.markets.pricing_models.trades as trades
 import elfpy.types as types
 import elfpy.time as time
+import elfpy.utils.price as price_utils
 
 
 # Set the Decimal precision to be higher than the default of 28. This ensures

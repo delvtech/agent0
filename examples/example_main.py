@@ -12,10 +12,10 @@ import elfpy
 import elfpy.simulators as simulators
 import elfpy.markets.base as base
 import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.agent as agent
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.agents.agent as agent
 
 
 # pylint: disable=duplicate-code
