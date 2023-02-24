@@ -20,9 +20,11 @@ class HyperdrivePricingModel(yieldspace.YieldSpacePricingModel):
     base reserves to be deposited into yield bearing vaults
     """
 
+    @property
     def model_name(self) -> str:
         return "Hyperdrive"
 
+    @property
     def model_type(self) -> str:
         return "hyperdrive"
 

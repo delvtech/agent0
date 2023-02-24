@@ -3,7 +3,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
 import argparse
-from typing import Any
 
 # external
 from stochastic.processes import GeometricBrownianMotion
@@ -15,7 +14,7 @@ import elfpy.simulators as simulators
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.markets.hyperdrive as base
+import elfpy.markets.base as base
 import elfpy.markets.hyperdrive as hyperdrive
 
 
@@ -39,7 +38,7 @@ class CustomShorter(Agent):
             if market_type == types.MarketType.HYPERDRIVE:
                 shorts = list(self.wallet.shorts.values())
                 has_opened_short = any((short.balance > 0 for short in shorts))
-                can_open_short = self.get_max_short(market) >= self.pt_to_short
+                can_open_short = market.get_max_short(self.wallet) >= self.pt_to_short
                 if can_open_short:
                     vault_apr = market.market_state.variable_apr
                     if vault_apr > market.fixed_apr:

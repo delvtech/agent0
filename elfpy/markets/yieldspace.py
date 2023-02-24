@@ -15,7 +15,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.base as base
+    import elfpy.pricing_models.base as base_pm
     import elfpy.simulators as simulators
 
 # TODO: for now...
@@ -51,7 +51,6 @@ class MarketDeltas(base_market.MarketDeltas):
 @dataclass
 class MarketTradeResult(base_market.MarketTradeResult):
     r"""The result to a market of performing a trade"""
-
     d_base: float
     d_bonds: float
 
@@ -146,22 +145,8 @@ class MarketAction(base_market.MarketAction):
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
 
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = (
-            "MarketAction(\n"
-            f"\tagent={self.wallet.address},\n"
-            f"\t{self.action_type=},\n"
-            f"\t{self.trade_amount=},\n"
-            f"\t{self.min_amount_out=},\n"
-            f"\t{self.mint_time=},\n"
-            f"\t{self.wallet=},\n"
-            ")"
-        )
-        return output_string
 
-
-class Market(base_market.Market[MarketState, MarketDeltas]):
+class YieldspaceMarket(base_market.Market[MarketState, MarketDeltas]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -176,7 +161,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def __init__(
         self,
         market_state: MarketState,
-        pricing_model: base.PricingModel,
+        pricing_model: base_pm.PricingModel,
         global_time: time.Time,
         position_duration: time.utils.StretchedTime,
     ):
@@ -663,6 +648,98 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate below the APR when opening the long
+    # issue #213
+    def get_max_long(self, agent_wallet: wallet.Wallet) -> float:
+        """Gets an approximation of the maximum amount of base the agent can use
+
+        Typically would be called to determine how much to enter into a long position.
+
+        Parameters
+        ----------
+        wallet : Wallet
+            The agent wallet
+
+        Returns
+        -------
+        float
+            Maximum amount the agent can use to open a long
+        """
+        (max_long, _) = self.pricing_model.get_max_long(
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        return min(
+            agent_wallet.balance.amount,
+            max_long,
+        )
+
+    # TODO: this function should optionally accept a target apr.  the short should not slip the
+    # market fixed rate above the APR when opening the short
+    # issue #213
+    def get_max_short(self, agent_wallet: wallet.Wallet) -> float:
+        """Gets an approximation of the maximum amount of bonds the agent can short.
+
+        Parameters
+        ----------
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        float
+            Amount of base that the agent can short in the current market
+        """
+        # Get the market level max short.
+        (max_short_max_loss, max_short) = self.pricing_model.get_max_short(
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+
+        # If the Agent's base balance can cover the max loss of the maximum
+        # short, we can simply return the maximum short.
+        if agent_wallet.balance.amount >= max_short_max_loss:
+            return max_short
+        last_maybe_max_short = 0
+        bond_percent = 1
+        num_iters = 25
+        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
+            # Compute the amount of base returned by selling the specified
+            # amount of bonds.
+            maybe_max_short = max_short * bond_percent
+            trade_result = self.pricing_model.calc_out_given_in(
+                in_=types.Quantity(amount=maybe_max_short, unit=types.TokenType.PT),
+                market_state=self.market_state,
+                time_remaining=self.position_duration,
+            )
+            # If the max loss is greater than the wallet's base, we need to
+            # decrease the bond percentage. Otherwise, we may have found the
+            # max short, and we should increase the bond percentage.
+            max_loss = maybe_max_short - trade_result.user_result.d_base
+            if max_loss > agent_wallet.balance.amount:
+                bond_percent -= step_size
+            else:
+                last_maybe_max_short = maybe_max_short
+                if bond_percent == 1:
+                    return last_maybe_max_short
+                bond_percent += step_size
+
+        # do one more iteration at the last step size in case the bisection method was stuck
+        # approaching a max_short value with slightly more base than an agent has.
+        trade_result = self.pricing_model.calc_out_given_in(
+            in_=types.Quantity(amount=last_maybe_max_short, unit=types.TokenType.PT),
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        max_loss = last_maybe_max_short - trade_result.user_result.d_base
+        last_step_size = 1 / (2**num_iters + 1)
+        if max_loss > agent_wallet.balance.amount:
+            bond_percent -= last_step_size
+            last_maybe_max_short = max_short * bond_percent
+
+        return last_maybe_max_short
 
     def log_market_step_string(self) -> None:
         """Logs the current market step"""

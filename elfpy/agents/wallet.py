@@ -103,7 +103,7 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def get_state(self, market: hyperdrive.Market) -> dict:
+    def get_state(self, market: hyperdrive.HyperdriveMarket) -> dict:
         r"""The wallet's current state of public variables
 
         .. todo:: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func

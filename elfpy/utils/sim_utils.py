@@ -137,7 +137,7 @@ def get_markets(
                 position_duration=position_duration,
             )
             markets.append(
-                market_module.Market(
+                market_module.YieldspaceMarket(
                     market_state=market_module.MarketState(
                         share_reserves=share_reserves_direct,
                         bond_reserves=bond_reserves_direct,

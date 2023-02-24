@@ -84,99 +84,7 @@ class Agent:
         """
         raise NotImplementedError
 
-    # TODO: this function should optionally accept a target apr.  the short should not slip the
-    # market fixed rate below the APR when opening the long
-    # issue #213
-    def get_max_long(self, market: base.Market) -> float:
-        """Gets an approximation of the maximum amount of base the agent can use
-
-        Typically would be called to determine how much to enter into a long position.
-
-        Parameters
-        ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
-
-        Returns
-        -------
-        float
-            Maximum amount the agent can use to open a long
-        """
-        (max_long, _) = market.pricing_model.get_max_long(
-            market_state=market.market_state,
-            time_remaining=market.position_duration,
-        )
-        return min(
-            self.wallet.balance.amount,
-            max_long,
-        )
-
-    # TODO: this function should optionally accept a target apr.  the short should not slip the
-    # market fixed rate above the APR when opening the short
-    # issue #213
-    def get_max_short(self, market: base.Market) -> float:
-        """Gets an approximation of the maximum amount of bonds the agent can short.
-
-        Parameters
-        ----------
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
-
-        Returns
-        -------
-        float
-            Amount of base that the agent can short in the current market
-        """
-        # Get the market level max short.
-        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
-            market_state=market.market_state,
-            time_remaining=market.position_duration,
-        )
-
-        # If the Agent's base balance can cover the max loss of the maximum
-        # short, we can simply return the maximum short.
-        if self.wallet.balance.amount >= max_short_max_loss:
-            return max_short
-        last_maybe_max_short = 0
-        bond_percent = 1
-        num_iters = 25
-        for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
-            # Compute the amount of base returned by selling the specified
-            # amount of bonds.
-            maybe_max_short = max_short * bond_percent
-            trade_result = market.pricing_model.calc_out_given_in(
-                in_=types.Quantity(amount=maybe_max_short, unit=types.TokenType.PT),
-                market_state=market.market_state,
-                time_remaining=market.position_duration,
-            )
-            # If the max loss is greater than the wallet's base, we need to
-            # decrease the bond percentage. Otherwise, we may have found the
-            # max short, and we should increase the bond percentage.
-            max_loss = maybe_max_short - trade_result.user_result.d_base
-            if max_loss > self.wallet.balance.amount:
-                bond_percent -= step_size
-            else:
-                last_maybe_max_short = maybe_max_short
-                if bond_percent == 1:
-                    return last_maybe_max_short
-                bond_percent += step_size
-
-        # do one more iteration at the last step size in case the bisection method was stuck
-        # approaching a max_short value with slightly more base than an agent has.
-        trade_result = market.pricing_model.calc_out_given_in(
-            in_=types.Quantity(amount=last_maybe_max_short, unit=types.TokenType.PT),
-            market_state=market.market_state,
-            time_remaining=market.position_duration,
-        )
-        max_loss = last_maybe_max_short - trade_result.user_result.d_base
-        last_step_size = 1 / (2**num_iters + 1)
-        if max_loss > self.wallet.balance.amount:
-            bond_percent -= last_step_size
-            last_maybe_max_short = max_short * bond_percent
-
-        return last_maybe_max_short
-
-    def get_trades(self, markets: dict[str, base.Market]) -> "list[types.Trade]":
+    def get_trades(self, markets: dict[types.MarketType, base.Market]) -> "list[types.Trade]":
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -200,18 +108,15 @@ class Agent:
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        actions = []
-        for market in markets.values():
-            market_actions = self.action(market)  # get the action list from the policy
-            for action in market_actions:  # edit each action in place
-                if action.trade.mint_time is None:
-                    action.trade.mint_time = market.time
-            actions.extend(market_actions)
+        market_actions = self.action(markets)  # get the action list from the policy
+        for action in market_actions:  # edit each action in place
+            if action.trade.mint_time is None:
+                action.trade.mint_time = markets[0].time  # should be global
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
         # issue #57
-        return actions
+        return market_actions
 
     def update_wallet(self, wallet_deltas: wallet.Wallet, time: float) -> None:
         """Update the agent's wallet

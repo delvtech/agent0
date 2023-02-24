@@ -32,10 +32,7 @@ class SingleTradeTests(unittest.TestCase):
                 for num_position_days in [90, 365]:
                     for market_type in [types.MarketType.YIELDSPACE, types.MarketType.HYPERDRIVE]:
                         config = simulators.Config()
-                        config.market_types = [
-                            market_type
-                        ]  # FIXME: Add this to config & adjust wherever config is used
-                        # config.pricing_model_name = pricing_model_name # FIXME: Remove this from config
+                        config.market_types = [market_type]
                         config.target_liquidity = target_liquidity
                         config.trade_fee_percent = 0.1
                         config.redemption_fee_percent = 0.0
@@ -72,7 +69,7 @@ class SingleTradeTests(unittest.TestCase):
                             target_apr=target_pool_apr,
                             position_duration=simulator.markets[market_type].position_duration,
                         )
-                        market_direct = hyperdrive.Market(
+                        market_direct = hyperdrive.HyperdriveMarket(
                             pricing_model=simulator.markets[market_type].pricing_model,
                             market_state=hyperdrive.MarketState(
                                 share_reserves=share_reserves_direct,

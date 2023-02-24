@@ -6,13 +6,13 @@ import logging
 
 import elfpy.markets.yieldspace as yieldspace_market
 import elfpy.agents.agent as agent
-import elfpy.pricing_models.base as base
 import elfpy.pricing_models.trades as trades
+import elfpy.pricing_models.base as base_pm
 import elfpy.time as time
 import elfpy.types as types
 
 
-class YieldSpacePricingModel(base.PricingModel):
+class YieldSpacePricingModel(base_pm.PricingModel):
     """
     YieldSpace Pricing Model
 

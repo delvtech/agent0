@@ -436,8 +436,7 @@ class Simulator:
             for attribute, value in self.__dict__.items()
             if attribute not in ("simulation_state", "rng")
         ]
-        state_string = "\n".join(strings)
-        return state_string
+        return "\n".join(strings)
 
     @property
     def delta_time(self) -> float:
@@ -530,7 +529,7 @@ class Simulator:
                 my_agent.wallet.address,
                 agent_deltas,
             )
-            my_agent.update_wallet(agent_deltas, self.global_time)
+            my_agent.update_wallet(agent_deltas, self.global_time.time)
             # TODO: Get simulator, market, pricing model, agent state strings and log
             my_agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
@@ -578,7 +577,11 @@ class Simulator:
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
                 run_vars=RunSimVariables(
-                    self.run_number, self.config, self.delta_time, self.markets.position_duration, self.start_time
+                    self.run_number,
+                    self.config,
+                    self.delta_time,
+                    self.markets[types.MarketType.HYPERDRIVE].position_duration,
+                    self.start_time,
                 )
             )
         for day in range(self.config.num_trading_days):

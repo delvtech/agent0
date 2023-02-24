@@ -4,11 +4,10 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Any, Union
 
+import elfpy.pricing_models.base as base_pm
 import elfpy.markets.base as base_market
-from elfpy.pricing_models.base import PricingModel
-
 import elfpy.types as types
 
 # TODO: for now...
@@ -88,13 +87,13 @@ class MarketState(base_market.BaseMarketState):
     # pylint: disable=too-many-instance-attributes
 
     # borrow ratios
-    loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
+    loan_to_value_ratio: "Union[dict[types.TokenType, float], float]" = field(
         default_factory=lambda: {token_type: 0.97 for token_type in types.TokenType}
     )
 
     # trading reserves
     borrow_shares: float = field(default=0.0)  # allows tracking the increasing value of loans over time
-    collateral: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral: "dict[types.TokenType, float]" = field(default_factory=dict)
 
     borrow_outstanding: float = field(default=0.0)  # sum of Dai that went out the door
     borrow_closed_interest: float = field(default=0.0)  # interested collected from closed borrows
@@ -103,7 +102,7 @@ class MarketState(base_market.BaseMarketState):
     borrow_share_price: float = field(default=1.0)
     init_borrow_share_price: float = field(default=borrow_share_price)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
-    collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral_spot_price: "dict[types.TokenType, float]" = field(default_factory=dict)
 
     # borrow and lending rates
     lending_rate: float = field(default=0.01)  # 1% per year
@@ -122,7 +121,7 @@ class MarketState(base_market.BaseMarketState):
         return self.borrow_shares * self.borrow_share_price
 
     @property
-    def deposit_amount(self) -> dict[types.TokenType, float]:
+    def deposit_amount(self) -> "dict[types.TokenType, float]":
         """The amount of deposited asset in the market"""
         return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
@@ -164,7 +163,7 @@ class MarketAction(base_market.MarketAction):
     spot_price: Optional[float] = None
 
 
-class BorrowPricingModel(PricingModel):
+class BorrowPricingModel(base_pm.PricingModel):
     """stores calculation functions use for the borrow market"""
 
     def value_collateral(self, market_state: MarketState, collateral: types.Quantity, spot_price: Optional[float]):

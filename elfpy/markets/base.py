@@ -133,6 +133,10 @@ class Market(ABC, Generic[State, Deltas]):
         """Returns the global time"""
         return self._time.time
 
+    def tick(self, delta_time: float) -> None:
+        """Increments the time member variable"""
+        self._time.time += delta_time
+
     def get_market_state_string(self) -> str:
         """Returns a formatted string containing all of the Market class member variables"""
         strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
@@ -158,7 +162,3 @@ class Market(ABC, Generic[State, Deltas]):
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
         self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold
-
-    def tick(self, delta_time: float) -> None:
-        """Increments the time member variable"""
-        self.time += delta_time

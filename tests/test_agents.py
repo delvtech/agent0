@@ -14,7 +14,7 @@ import elfpy.types as types
 from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
-import elfpy.utils.time as time
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models as pricing_models
 
@@ -49,7 +49,7 @@ class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
 
     @staticmethod
-    def setup_market() -> hyperdrive.Market:
+    def setup_market() -> hyperdrive.HyperdriveMarket:
         """Instantiates a market object for testing purposes"""
         # Give an initial market state
         pricing_model = pricing_models.HyperdrivePricingModel()
@@ -69,7 +69,7 @@ class TestAgent(unittest.TestCase):
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         time_remaining.freeze()  # pylint: disable=no-member # type: ignore
-        market = hyperdrive.Market(
+        market = hyperdrive.HyperdriveMarket(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time_remaining,
@@ -236,7 +236,7 @@ class TestAgent(unittest.TestCase):
         ]
         for test_case in test_cases:
             for pricing_model in models:
-                market = hyperdrive.Market(
+                market = hyperdrive.HyperdriveMarket(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
                     position_duration=test_case.time_remaining,
@@ -245,7 +245,7 @@ class TestAgent(unittest.TestCase):
                 for budget in (1e-3 * 10 ** (3 * x) for x in range(5)):
                     agent = Agent(wallet_address=0, budget=budget)
                     # Ensure that get_max_long is safe.
-                    max_long = agent.get_max_long(market)
+                    max_long = market.get_max_long(agent.wallet)
                     self.assertGreaterEqual(agent.wallet.balance.amount, max_long)
                     (market_max_long, _) = market.pricing_model.get_max_long(
                         market_state=market.market_state,
@@ -256,7 +256,7 @@ class TestAgent(unittest.TestCase):
                         market_max_long,
                     )
                     # Ensure that get_max_short is safe.
-                    max_short = agent.get_max_short(market)
+                    max_short = market.get_max_short(agent.wallet)
                     trade_result = market.pricing_model.calc_out_given_in(
                         in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
                         market_state=market.market_state,

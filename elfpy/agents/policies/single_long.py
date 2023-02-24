@@ -39,7 +39,7 @@ class Policy(Agent):
                             )
                         )
                 else:
-                    trade_amount = self.get_max_long(market) / 2
+                    trade_amount = market.get_max_long(self.wallet) / 2
                     action_list.append(
                         types.Trade(
                             agent=self,

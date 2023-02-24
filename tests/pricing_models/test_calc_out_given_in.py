@@ -1312,8 +1312,8 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
         ) in enumerate(test_cases):
             for pricing_model in pricing_models:
-                model_name = pricing_model.model_name()
-                model_type = pricing_model.model_type()
+                model_name = pricing_model.model_name
+                model_type = pricing_model.model_type
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
                 expected_result = results_by_model[model_type]
                 # Ensure we get the expected results from the pricing model.
@@ -1334,7 +1334,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     expected_result.without_fee,
                     err_msg=f"{model_type} test {test_number + 1} unexpected without_fee",
                 )
-                model_name = pricing_model.model_name()
+                model_name = pricing_model.model_name
                 if model_type in {"yieldspace", "hyperdrive"}:
                     np.testing.assert_almost_equal(
                         trade_result.breakdown.fee,
@@ -1648,7 +1648,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         for test_number, test_case in enumerate(failure_test_cases):
             print(f"{test_number=}")
             for pricing_model in pricing_models:
-                print(f"{pricing_model.model_name()=}")
+                print(f"{pricing_model.model_name=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.in_,

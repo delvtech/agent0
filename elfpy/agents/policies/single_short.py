@@ -25,7 +25,7 @@ class Policy(Agent):
             if market_type == types.MarketType.HYPERDRIVE:
                 shorts = list(self.wallet.shorts.values())
                 has_opened_short = bool(any(short.balance > 0 for short in shorts))
-                can_open_short = self.get_max_short(market) >= self.amount_to_trade
+                can_open_short = market.get_max_short(self.wallet) >= self.amount_to_trade
                 if can_open_short and not has_opened_short:
                     action_list.append(
                         types.Trade(

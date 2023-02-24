@@ -38,8 +38,8 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
-                model_name = pricing_model.model_name()
-                model_type = pricing_model.model_type()
+                model_name = pricing_model.model_name
+                model_type = pricing_model.model_type
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
                 time_remaining = time.utils.StretchedTime(
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
@@ -394,7 +394,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         for test_number, test_case in enumerate(failure_test_cases):
             print(f"{test_number=}")
             for pricing_model in pricing_models:
-                print(f"{pricing_model.model_name()=}")
+                print(f"{pricing_model.model_name=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.out,
@@ -413,7 +413,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         for test_number, test_case in enumerate(failure_test_cases_yieldpsace_only):
             print(f"{test_number=}")
             for pricing_model in [YieldSpacePricingModel()]:
-                print(f"{pricing_model.model_name()=}")
+                print(f"{pricing_model.model_name=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.out,

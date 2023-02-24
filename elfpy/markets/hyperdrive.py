@@ -76,7 +76,7 @@ class MarketAction(yieldspace_market.MarketAction):
     r"""Market action specification"""
 
 
-class Market(yieldspace_market.Market[MarketState, MarketDeltas]):
+class HyperdriveMarket(yieldspace_market.YieldspaceMarket):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

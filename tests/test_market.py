@@ -6,13 +6,14 @@ import unittest
 import logging
 from typing import Any
 
+import utils_for_tests as test_utils  # utilities for testing
+
 from elfpy.agents.wallet import Wallet, Long, Short
-from elfpy.markets.hyperdrive import Market, MarketDeltas, MarketState
+from elfpy.markets.hyperdrive import HyperdriveMarket, MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
-import utils_for_tests as test_utils  # utilities for testing
 import elfpy.types as types
 import elfpy.simulators.simulators as simulators
 import elfpy.time as time
@@ -43,9 +44,9 @@ class BaseMarketTest(unittest.TestCase):
             time_stretch=1,
             normalizing_constant=36,
         )
-        _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
+        _ = HyperdriveMarket(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
         with self.assertRaises(AssertionError):
-            _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_nonorm)
+            _ = HyperdriveMarket(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_nonorm)
 
     def set_up_test(
         self,
@@ -411,7 +412,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         target_aprs = [0.001, 0.01, 0.2, 0.123456789, 1]
 
         for target_apr in target_aprs:
-            market = Market(
+            market = HyperdriveMarket(
                 pricing_model,
                 MarketState(
                     share_reserves=share_reserves,
