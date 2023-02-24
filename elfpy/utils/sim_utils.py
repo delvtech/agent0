@@ -149,8 +149,8 @@ def get_markets(
                         trade_fee_percent=config.trade_fee_percent,  # g
                         redemption_fee_percent=config.redemption_fee_percent,
                     ),
-                    pricing_model=get_pricing_model(str(market_type)),
-                    time=global_time,
+                    pricing_model=get_pricing_model(market_type.name),
+                    global_time=global_time,
                     position_duration=position_duration,
                 )
             )
@@ -168,6 +168,7 @@ def get_markets(
                         lending_rate=0.01,
                         spread_ratio=1.25,
                     ),
+                    pricing_model=get_pricing_model(market_type.name),
                     global_time=global_time,
                 )
             )
