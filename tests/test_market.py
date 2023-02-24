@@ -8,11 +8,9 @@ from typing import Any
 
 import utils_for_tests as test_utils  # utilities for testing
 
-from elfpy.agents.wallet import Wallet, Long, Short
-from elfpy.markets.hyperdrive import HyperdriveMarket, MarketDeltas, MarketState
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-
+import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.pricing_models as pricing_models
+import elfpy.agents.wallet as wallet
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 import elfpy.types as types
 import elfpy.simulators.simulators as simulators
@@ -23,8 +21,8 @@ import elfpy.time as time
 class Deltas:
     """Expected deltas for a trade"""
 
-    market_deltas: MarketDeltas
-    agent_deltas: Wallet
+    market_deltas: hyperdrive_market.MarketDeltas
+    agent_deltas: wallet.Wallet
 
     __test__ = False  # pytest: don't test this class
 
@@ -44,9 +42,17 @@ class BaseMarketTest(unittest.TestCase):
             time_stretch=1,
             normalizing_constant=36,
         )
-        _ = HyperdriveMarket(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
+        _ = hyperdrive_market.HyperdriveMarket(
+            pricing_model=pricing_models.PricingModel(),
+            market_state=hyperdrive_market.MarketState(),
+            position_duration=pd_good,
+        )
         with self.assertRaises(AssertionError):
-            _ = HyperdriveMarket(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_nonorm)
+            _ = hyperdrive_market.HyperdriveMarket(
+                pricing_model=pricing_models.PricingModel(),
+                market_state=hyperdrive_market.MarketState(),
+                position_duration=pd_nonorm,
+            )
 
     def set_up_test(
         self,
@@ -185,7 +191,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = trade_result
         fees_paid = 0.5000000000000006  # taken from pricing model output, not tested here
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=d_base,  # base asset increases because agent is selling base into market to buy bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is buying bonds from market to sell base
             d_base_buffer=d_bonds,  # base buffer increases, identifying agent deposits, set aside from LPs
@@ -193,12 +199,12 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=-types.Quantity(
                 amount=d_base, unit=types.TokenType.BASE
             ),  # base asset decreases because agent is spending base to buy bonds
-            longs={0: Long(d_bonds)},  # longs increase by the amount of bonds bought
+            longs={0: wallet.Long(d_bonds)},  # longs increase by the amount of bonds bought
             fees_paid=fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
@@ -216,7 +222,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         trade_fees_paid = 0.4976188948619445  # taken from pricing model output, not tested here
         redemption_fees_paid = 0  # taken from pricing model output, not tested here
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base into market to sell bonds
             d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=-d_bonds,  # base buffer decreases, identifying agent withdrawals, no longer set aside
@@ -224,12 +230,12 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=types.Quantity(
                 amount=d_base, unit=types.TokenType.BASE
             ),  # base asset increases because agent is getting base back to close his bond position
-            longs={0: Long(-d_bonds)},  # longs decrease by the amount of bonds sold to close the position
+            longs={0: wallet.Long(-d_bonds)},  # longs decrease by the amount of bonds sold to close the position
             fees_paid=trade_fees_paid + redemption_fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
@@ -247,7 +253,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         open_share_price = 1.0
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # bond buffer doesn't change because agent did not deposit base
@@ -255,7 +261,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=-types.Quantity(
                 amount=max_loss, unit=types.TokenType.BASE
@@ -264,7 +270,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             # margin is the amount of base asset that is in the agent's margin account
             # it is composed of two parts: proceeds from sale of bonds (d_base)
             # and the additional base deposited by the agent to cover the worst case scenario (max_loss)
-            shorts={0: Short(balance=d_bonds, open_share_price=open_share_price)},
+            shorts={0: wallet.Short(balance=d_bonds, open_share_price=open_share_price)},
             fees_paid=fees_paid,
         )
         expected_deltas = Deltas(market_deltas=expected_market_deltas, agent_deltas=expected_agent_deltas)
@@ -280,7 +286,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.47619047619047666  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -288,13 +294,13 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=types.Quantity(
                 amount=d_base_agent, unit=types.TokenType.BASE
             ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, open_share_price=0)
+                0: wallet.Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -311,7 +317,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.47576611218819087  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -319,13 +325,13 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=types.Quantity(
                 amount=d_base_agent, unit=types.TokenType.BASE
             ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, open_share_price=0)
+                0: wallet.Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -345,7 +351,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
         fees_paid = 0.23809523809523833  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -353,13 +359,13 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=types.Quantity(
                 amount=d_base_agent, unit=types.TokenType.BASE
             ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, open_share_price=0)
+                0: wallet.Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -379,7 +385,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
         fees_paid = 0.23788305609409544  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -387,13 +393,13 @@ class MarketTestsOneFunction(BaseMarketTest):
             d_lp_total_supply=0,
             d_share_price=0,
         )
-        expected_agent_deltas = Wallet(
+        expected_agent_deltas = wallet.Wallet(
             address=1,
             balance=types.Quantity(
                 amount=d_base_agent, unit=types.TokenType.BASE
             ),  # base asset increases because agent is getting base back to close his bond position
             shorts={
-                0: Short(balance=-d_bonds, open_share_price=0)
+                0: wallet.Short(balance=-d_bonds, open_share_price=0)
             },  # shorts decrease by the amount of bonds sold to close the position
             fees_paid=fees_paid,
         )
@@ -404,7 +410,7 @@ class MarketTestsOneFunction(BaseMarketTest):
 
     def test_apr(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
-        pricing_model = HyperdrivePricingModel()
+        pricing_model = pricing_models.HyperdrivePricingModel()
         position_duration = time.utils.StretchedTime(
             days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
         )
@@ -412,12 +418,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         target_aprs = [0.001, 0.01, 0.2, 0.123456789, 1]
 
         for target_apr in target_aprs:
-            market = HyperdriveMarket(
+            market = hyperdrive_market.HyperdriveMarket(
                 pricing_model,
-                MarketState(
+                hyperdrive_market.MarketState(
                     share_reserves=share_reserves,
                     bond_reserves=pricing_model.calc_bond_reserves(
-                        target_apr, position_duration, MarketState(share_reserves=share_reserves)
+                        target_apr, position_duration, hyperdrive_market.MarketState(share_reserves=share_reserves)
                     ),
                 ),
                 position_duration,

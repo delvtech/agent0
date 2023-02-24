@@ -9,9 +9,9 @@ import numpy as np
 from numpy.random import RandomState
 
 import elfpy.simulators.simulators as simulators
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 import elfpy.time as time
+import elfpy.utils.sim_utils as sim_utils
 
 
 class TestSimulator(unittest.TestCase):

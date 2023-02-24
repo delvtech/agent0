@@ -2,16 +2,16 @@
 
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
-from elfpy.agents.agent import Agent
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.base as base
+import elfpy.agents.agent as agent
 
 import elfpy.types as types
 
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """Adds a large LP"""
 
     def action(self, markets: "dict[types.MarketType, base.Market]") -> "list[types.Trade]":

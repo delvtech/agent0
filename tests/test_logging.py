@@ -7,9 +7,9 @@ import itertools
 import os
 import sys
 
-from elfpy.simulators import simulators
-from elfpy.utils import sim_utils
 import elfpy.utils.outputs as output_utils  # utilities for setting up a simulation
+import elfpy.utils.sim_utils as sim_utils
+import elfpy.simulators.simulators as simulators
 
 
 class TestLogging(unittest.TestCase):

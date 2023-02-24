@@ -1,15 +1,15 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 
-from elfpy.agents.agent import Agent
 import elfpy.types as types
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.base as base
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.agent as agent
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """
     simple long
     only has one long open at a time

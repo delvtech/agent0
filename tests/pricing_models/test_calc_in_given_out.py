@@ -15,9 +15,9 @@ from calc_test_dataclasses import (
 import elfpy.types as types
 import elfpy.time as time
 from elfpy.markets.hyperdrive import MarketState
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.markets.pricing_models.base_pm import PricingModel
+from elfpy.markets.pricing_models.hyperdrive_pm import HyperdrivePricingModel
+from elfpy.markets.pricing_models.yieldspace_pm import YieldSpacePricingModel
 
 # pylint: disable=too-many-lines
 

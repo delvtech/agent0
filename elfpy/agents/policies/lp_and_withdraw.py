@@ -1,13 +1,13 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
-from elfpy.agents.agent import Agent
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.base as base
 import elfpy.types as types
+import elfpy.agents.agent as agent
 
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """
     simple LP
     only has one LP open at a time

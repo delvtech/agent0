@@ -16,7 +16,7 @@ from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
 import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.pricing_models as pricing_models
+import elfpy.markets.pricing_models as pricing_models
 
 
 class TestErrorPolicy(Agent):

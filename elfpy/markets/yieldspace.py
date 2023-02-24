@@ -15,7 +15,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.base as base_pm
+    import elfpy.markets.pricing_models.base_pm as base_pm
     import elfpy.simulators as simulators
 
 # TODO: for now...

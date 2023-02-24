@@ -6,18 +6,18 @@ from typing import Any, TYPE_CHECKING, Optional
 import logging
 
 import elfpy.simulators as simulators
-import elfpy.markets.base as base
-import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.markets.yieldspace as yieldspace
+import elfpy.markets.base as base_pm
+import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.yieldspace as yieldspace_market
 import elfpy.markets.borrow as borrow
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.markets.pricing_models.hyperdrive_pm as hyperdrive_pm
+import elfpy.markets.pricing_models.yieldspace_pm as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.agents.agent as agent
-    import elfpy.pricing_models.base as base
+    import elfpy.markets.pricing_models.base_pm as base_pm
 
 
 def get_simulator(
@@ -58,7 +58,7 @@ def get_simulator(
 
 
 def get_init_lp_agent(
-    market: list[base.Market],
+    market: list[base_pm.Market],
     target_liquidity: float,
 ) -> agent.Agent:
     r"""Calculate the required deposit amounts and instantiate the LP agent
@@ -88,7 +88,7 @@ def get_markets(
     global_time: time.Time,
     config: simulators.Config,
     init_target_liquidity: float = 1.0,
-) -> "list[base.Market]":
+) -> "list[base_pm.Market]":
     r"""Setup market
 
     Parameters
@@ -120,9 +120,9 @@ def get_markets(
     """
     markets = []
     for market_type in config.market_types:
-        pricing_model = get_pricing_model(str(market_type))
+        pricing_model = get_pricing_model(market_type.name)
         if market_type in [types.MarketType.HYPERDRIVE, types.MarketType.YIELDSPACE]:
-            market_module = yieldspace if market_type == types.MarketType.YIELDSPACE else hyperdrive
+            market_module = yieldspace_market if market_type == types.MarketType.YIELDSPACE else hyperdrive_market
             position_duration = time.utils.StretchedTime(
                 days=config.num_position_days,
                 time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
@@ -174,7 +174,7 @@ def get_markets(
     return markets
 
 
-def get_pricing_model(model_name: str) -> base.PricingModel:
+def get_pricing_model(model_name: str) -> base_pm.PricingModel:
     r"""Get a PricingModel object from the config passed in
 
     Parameters

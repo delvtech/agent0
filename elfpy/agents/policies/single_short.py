@@ -1,13 +1,13 @@
 """User strategy that opens a single short and doesn't close until liquidation"""
-from elfpy.agents.agent import Agent
 import elfpy.types as types
 import elfpy.markets.base as base
 import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.agent as agent
 
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """simple short thatonly has one long open at a time"""
 
     def __init__(self, wallet_address, budget=100):

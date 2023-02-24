@@ -6,8 +6,7 @@ import unittest
 import numpy as np
 
 import elfpy.types as types
-from elfpy.markets.borrow import Market as BorrowMarket
-from elfpy.markets.borrow import MarketState as BorrowMarketState
+import elfpy.markets.borrow as borrow
 
 
 class TestBorrow(unittest.TestCase):
@@ -30,7 +29,9 @@ class TestBorrow(unittest.TestCase):
                     types.TokenType.BASE: loan_to_value / 100,
                     types.TokenType.PT: loan_to_value / 100,
                 }
-                borrow_market = BorrowMarket(market_state=BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios))
+                borrow_market = borrow.BorrowMarket(
+                    market_state=borrow.BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios)
+                )
 
                 market_deltas, agent_deltas = borrow_market.open_borrow(
                     wallet_address=1,
@@ -62,8 +63,8 @@ class TestBorrow(unittest.TestCase):
         loan_to_value = 1
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
-        borrow_market = BorrowMarket(
-            market_state=BorrowMarketState(
+        borrow_market = borrow.BorrowMarket(
+            market_state=borrow.BorrowMarketState(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
                 borrow_shares=100,
                 collateral={},

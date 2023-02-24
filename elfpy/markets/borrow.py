@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Any, Union
 
-import elfpy.pricing_models.base as base_pm
+import elfpy.markets.pricing_models.base_pm as base_pm
 import elfpy.markets.base as base_market
 import elfpy.types as types
 

@@ -3,10 +3,10 @@ import unittest
 
 import numpy as np
 
-from elfpy.pricing_models.base import PricingModel
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.price as price_utils
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketState
 
 
 # pylint: disable=duplicate-code
@@ -25,7 +25,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=500000,  # z
                     bond_reserves=500000,  # y
                     share_price=1,  # c
@@ -46,7 +46,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=250000,  # z
                     bond_reserves=500000,  # y
                     share_price=2,  # c
@@ -67,7 +67,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=250000,  # z
                     bond_reserves=300000,  # y
                     share_price=2,  # c
@@ -85,7 +85,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 "expected_result": 0.4685364947185249,
             },
         ]
-        pricing_model = PricingModel()
+        pricing_model = base_pm.PricingModel()
         for test_number, test_case in enumerate(test_cases):
             spot_price = pricing_model.calc_spot_price_from_reserves(
                 market_state=test_case["market_state"],
@@ -175,7 +175,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=500000,  # z
                     bond_reserves=500000,  # y
                     share_price=1,  # c
@@ -191,7 +191,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=250000,  # z
                     bond_reserves=500000,  # y
                     share_price=2,  # c
@@ -207,7 +207,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive.MarketState(
                     share_reserves=250000,  # z
                     bond_reserves=300000,  # y
                     share_price=2,  # c
@@ -220,7 +220,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 ),
             },
         ]
-        pricing_model = PricingModel()
+        pricing_model = base_pm.PricingModel()
         for test_number, test_case in enumerate(test_cases):
             pm_spot_price = pricing_model.calc_spot_price_from_reserves(
                 market_state=test_case["market_state"],

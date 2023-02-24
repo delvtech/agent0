@@ -10,8 +10,8 @@ from elfpy import (
     WEI,
 )
 import elfpy.utils.price as price_utils
-import elfpy.pricing_models.trades as trades
 import elfpy.markets.base as base_market
+import elfpy.markets.pricing_models.trades as trades
 import elfpy.types as types
 import elfpy.time as time
 

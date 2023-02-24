@@ -6,9 +6,9 @@ from typing import Type, Optional
 
 from pytest import skip
 
+import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.types as types
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketState
 
 skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)
 
@@ -18,7 +18,7 @@ class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     days_remaining: float
     time_stretch_apy: float
 
@@ -50,7 +50,7 @@ class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.utils.StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 
@@ -72,7 +72,7 @@ class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
     in_: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     days_remaining: float
     time_stretch_apy: float
 
@@ -104,7 +104,7 @@ class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
     in_: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.utils.StretchedTime
     exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
 

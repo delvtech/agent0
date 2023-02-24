@@ -8,20 +8,20 @@ import argparse
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-from elfpy.agents.agent import Agent
 import elfpy
 import elfpy.simulators as simulators
+import elfpy.markets.base as base
+import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.markets.base as base
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.agents.agent as agent
 
 
 # pylint: disable=duplicate-code
 
 
-class CustomShorter(Agent):
+class CustomShorter(agent.Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts
     """
@@ -70,7 +70,7 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     config = simulators.Config()
     config.num_trading_days = args.num_trading_days
     config.num_blocks_per_day = args.num_blocks_per_day
-    config.pricing_model_name = args.pricing_model
+    config.market_types = [types.MarketType.HYPERDRIVE]
     if args.vault_apr_type == "brownian":
         config.variable_apr = (
             GeometricBrownianMotion(rng=config.rng).sample(n=config.num_trading_days - 1, initial=0.05)  # type: ignore

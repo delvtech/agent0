@@ -2,9 +2,9 @@
 import unittest
 import numpy as np
 
-import elfpy.pricing_models.base as base_pm
-from elfpy.markets.hyperdrive import MarketState
-from elfpy.utils import sim_utils
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.utils.sim_utils as sim_utils
 import elfpy.time as time
 
 
@@ -142,7 +142,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 with self.assertRaises(test_case["expected_result"]):
                     # share, bond
                     share_reserves, bond_reserves = pricing_model.calc_liquidity(
-                        market_state=MarketState(
+                        market_state=hyperdrive_market.MarketState(
                             init_share_price=test_case["init_share_price"],
                             share_price=test_case["share_price"],
                         ),
@@ -153,7 +153,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # If test was not supposed to fail, continue normal execution
             else:
                 share_reserves, bond_reserves = pricing_model.calc_liquidity(
-                    market_state=MarketState(
+                    market_state=hyperdrive_market.MarketState(
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
@@ -182,7 +182,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 1: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 3mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=500000,  # z = 500000
                     bond_reserves=500000,  # y = 500000
                     share_price=1,  # c = 1
@@ -197,7 +197,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 2: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 12mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=500000,  # x = 500000
                     bond_reserves=500000,  # y = 500000
                     share_price=1,  # c = 1
@@ -212,7 +212,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 3: 5M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=5000000,  # x = 5000000
                     bond_reserves=5000000,  # y = 5000000
                     share_price=2,  # c = 2
@@ -227,7 +227,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 4: 0M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=0,  # x = 0
                     bond_reserves=5000000,  # y = 5000000
                     share_price=2,  # c = 2
@@ -242,7 +242,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             # test 5: 0 share_reserves; 0 bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=0,  # x = 0
                     bond_reserves=0,  # y = 0
                     share_price=2,  # c = 2
@@ -258,7 +258,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   5M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
-                "market_state": MarketState(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=5000000,  # x = 5000000
                     bond_reserves=5000000,  # y = 5000000
                     share_price=2,  # c = 2

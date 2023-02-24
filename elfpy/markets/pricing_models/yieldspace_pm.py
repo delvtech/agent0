@@ -5,9 +5,9 @@ from decimal import Decimal
 import logging
 
 import elfpy.markets.yieldspace as yieldspace_market
+import elfpy.markets.pricing_models.base_pm as base_pm
+import elfpy.markets.pricing_models.trades as trades
 import elfpy.agents.agent as agent
-import elfpy.pricing_models.trades as trades
-import elfpy.pricing_models.base as base_pm
 import elfpy.time as time
 import elfpy.types as types
 

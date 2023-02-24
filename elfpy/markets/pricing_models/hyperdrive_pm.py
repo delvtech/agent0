@@ -4,14 +4,14 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 
 import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.pricing_models.yieldspace as yieldspace
-import elfpy.pricing_models.trades as trades
+import elfpy.markets.pricing_models.yieldspace_pm as yieldspace_pm
+import elfpy.markets.pricing_models.trades as trades
 import elfpy.agents.agent as agent
 import elfpy.time as time
 import elfpy.types as types
 
 
-class HyperdrivePricingModel(yieldspace.YieldSpacePricingModel):
+class HyperdrivePricingModel(yieldspace_pm.YieldSpacePricingModel):
     """
     Hyperdrive Pricing Model
 
