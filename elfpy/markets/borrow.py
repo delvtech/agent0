@@ -37,7 +37,17 @@ class MarketDeltas(base_market.MarketDeltas):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentDeltas:
-    r"""Specifies changes to values in the agent's wallet"""
+    r"""Specifies changes to values in the agent's wallet
+
+    Attributes
+    ----------
+    address: int
+        agent address
+    borrow: float
+        how much base asset has been borrowed
+    collateral: Quantity
+        how much has been offerd as collateral
+    """
 
     # agent identifier
     address: int
@@ -68,7 +78,7 @@ class MarketState(base_market.BaseMarketState):
         The maximum loan to value ratio a collateral can have before liquidations occur.
     borrow_shares: float
         Accounting units for borrow assets that has been lent out by the market, allows tracking of interest
-    collateral: float
+    collateral: dict[TokenType, float]
         Amount of collateral that has been deposited into the market
     borrow_outstanding: float
         The amount of borrowed asset that has been lent out by the market, without accounting for interest
