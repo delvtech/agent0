@@ -604,15 +604,15 @@ class Simulator:
                     )
                 )
                 self.market.update_market(delta)
-                if self.config.do_dataframe_states:
-                    self.new_simulation_state.update(
-                        day_vars=DaySimVariables(
-                            self.run_number,
-                            self.day,
-                            self.market.market_state.variable_apr,
-                            self.market.market_state.share_price,
-                        )
+            if self.config.do_dataframe_states:
+                self.new_simulation_state.update(
+                    day_vars=DaySimVariables(
+                        self.run_number,
+                        self.day,
+                        self.market.market_state.variable_apr,
+                        self.market.market_state.share_price,
                     )
+                )
             for daily_block_number in range(self.config.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (
