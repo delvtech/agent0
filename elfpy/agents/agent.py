@@ -199,9 +199,8 @@ class Agent:
             List of Trade type objects that represent the trades to be made by this agent
         """
         actions = self.action(market)  # get the action list from the policy
-        # TODO: This check should only be applied for certain market actions
         for action in actions:  # edit each action in place
-            if action.trade.mint_time is None:
+            if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
                 action.trade.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
