@@ -258,7 +258,8 @@ class Agent:
         else:
             self.wallet.borrows.update({borrow_summary.start_time: borrow_summary})
         if self.wallet.borrows[borrow_summary.start_time].borrow_amount == 0:
-            # Remove the empty borrow entry from the wallet.
+            # Removing the empty borrows allows us to check existance
+            # of open borrows using `if self.wallet.borrows`
             del self.wallet.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[float, wallet.Long]]) -> None:
@@ -284,7 +285,8 @@ class Agent:
                 else:
                     self.wallet.longs.update({mint_time: long})
             if self.wallet.longs[mint_time].balance == 0:
-                # Remove the empty long from the wallet.
+                # Removing the empty borrows allows us to check existance
+                # of open longs using `if self.wallet.longs`
                 del self.wallet.longs[mint_time]
 
     def _update_shorts(self, shorts: Iterable[tuple[float, wallet.Short]]) -> None:
@@ -321,7 +323,8 @@ class Agent:
                 else:
                     self.wallet.shorts.update({mint_time: short})
             if self.wallet.shorts[mint_time].balance == 0:
-                # Remove the empty short from the wallet.
+                # Removing the empty borrows allows us to check existance
+                # of open shorts using `if self.wallet.shorts`
                 del self.wallet.shorts[mint_time]
 
     def get_liquidation_trades(self, market: hyperdrive.Market) -> list[types.Trade]:
