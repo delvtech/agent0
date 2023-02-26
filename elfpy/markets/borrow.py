@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, Union
 
 import elfpy.markets.base as base_market
 from elfpy.pricing_models.base import PricingModel
+import elfpy.agents.wallet as wallet
 
 import elfpy.types as types
 
@@ -53,7 +54,7 @@ class AgentDeltas:
     address: int
 
     # fungible assets, but collateral can be two TokenTypes
-    borrow: float = 0
+    borrows: wallet.Borrow
     collateral: types.Quantity = field(default_factory=lambda: types.Quantity(unit=types.TokenType.PT, amount=0))
 
     def __getitem__(self, key: str) -> Any:
@@ -292,8 +293,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             ),
         )
 
+        borrow_summary = wallet.Borrow(
+            borrow_token=types.TokenType.BASE,
+            borrow_amount=borrow_amount_in_base,
+            start_time=self.time,
+            loan_token=collateral.unit,
+            loan_amount=0,  # FIXME: What is this?
+        )
+
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrow=borrow_amount_in_base, collateral=collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary, collateral=collateral)
         return market_deltas, agent_deltas
 
     def close_borrow(
@@ -318,7 +327,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrow=-borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=-borrow_amount_in_base, collateral=-collateral)
         return market_deltas, agent_deltas
 
     def update_share_prices(self, compound_vault_apr=True) -> None:

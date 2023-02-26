@@ -44,7 +44,7 @@ class Short:
 class Borrow:
     r"""An open borrow position
 
-    Parameters
+    Parameters # FIXME: add explanations
     ----------
     borrow_token : TokenType
     borrow_amount : float
@@ -56,10 +56,10 @@ class Borrow:
     borrow_amount: float
     start_time: float
     loan_token: types.TokenType
-    loan_amount: int
+    loan_amount: int  # FIXME: what is this?
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Wallet:
     r"""Stores what is in the agent's wallet
 
@@ -92,7 +92,7 @@ class Wallet:
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Long] = field(default_factory=dict)
     shorts: Dict[float, Short] = field(default_factory=dict)
-    borrows: Dict[float, Borrow] = field(default_factory=dict)
+    borrows: list[Borrow] = field(default_factory=list)
 
     # TODO: This isn't used for short trades
     fees_paid: float = 0

@@ -53,8 +53,9 @@ class Agent:
     def __init__(self, wallet_address: int, budget: float):
         """Set up initial conditions"""
         self.budget: float = budget
-        self.last_update_spend: float = 0  # timestamp
-        self.product_of_time_and_base: float = 0
+        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
+        # self.last_update_spend: float = 0  # timestamp
+        # self.product_of_time_and_base: float = 0
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
@@ -208,7 +209,7 @@ class Agent:
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: wallet.Wallet, market: base_market.Market) -> None:
+    def update_wallet(self, wallet_deltas: wallet.Wallet) -> None:
         """Update the agent's wallet
 
         Parameters
@@ -223,16 +224,18 @@ class Agent:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
-        self.product_of_time_and_base += new_spend
-        self.last_update_spend = market.time
+        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
+        # new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
+        # self.product_of_time_and_base += new_spend
+        # self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
-            if key in ["fees_paid", "address", "borrows"]:
+            elif key in ["fees_paid", "address", "frozen", "no_new_attribs", "collateral"]:
                 continue
-            # handle updating a value
-            if key in ["lp_tokens", "fees_paid"]:
+            elif key == "borrows":
+                self.wallet[key].append(value_or_dict)
+            elif key in ["lp_tokens", "fees_paid"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                     self.wallet.address,
@@ -423,28 +426,32 @@ class Agent:
         profit_and_loss = total_value - self.budget
 
         # Calculated spending statistics.
-        weighted_average_spend = self.product_of_time_and_base / market.time if market.time > 0 else 0
-        spend = weighted_average_spend
-        holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-        if market.time > 0:
-            annual_percentage_rate = holding_period_rate / market.time
-        else:
-            annual_percentage_rate = np.nan
+        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
+        # weighted_average_spend = self.product_of_time_and_base / market.time if market.time > 0 else 0
+        # spend = weighted_average_spend
+        # holding_period_rate = profit_and_loss / spend if spend != 0 else 0
+        # if market.time > 0:
+        #    annual_percentage_rate = holding_period_rate / market.time
+        # else:
+        #    annual_percentage_rate = np.nan
 
         # Log the trading report.
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
             (
-                "agent #%g %s %s on $%s spent, APR = %g"
-                " (%.2g in %s years), net worth = $%s"
+                "agent #%g %s %s"
+                " (%s years), net worth = $%s"
                 " from %s balance, %s longs, and %s shorts at p = %g\n"
+                # "agent #%g %s %s on $%s spent, APR = %g"
+                # " (%.2g in %s years), net worth = $%s"
+                # " from %s balance, %s longs, and %s shorts at p = %g\n"
             ),
             self.wallet.address,
             lost_or_made,
             profit_and_loss,
-            spend,
-            annual_percentage_rate,
-            holding_period_rate,
+            # spend,
+            # annual_percentage_rate,
+            # holding_period_rate,
             market.time,
             total_value,
             balance,

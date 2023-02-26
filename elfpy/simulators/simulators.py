@@ -484,6 +484,9 @@ class Simulator:
         else:  # we are in a deterministic mode
             agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
         # Collect trades from all of the agents.
+        # TODO: This API causes a unnecessary double loop; first over agents and second over trades
+        #       in the future we want this to be able to put trades into the mempool
+        #       it would be better if we could get all of the block's trades without a for loop
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
         self.execute_trades(trades)
@@ -536,7 +539,7 @@ class Simulator:
                 agent.wallet.address,
                 agent_deltas,
             )
-            agent.update_wallet(agent_deltas, self.market)
+            agent.update_wallet(agent_deltas)
             # TODO: Get simulator, market, pricing model, agent state strings and log
             agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
