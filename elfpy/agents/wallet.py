@@ -44,19 +44,25 @@ class Short:
 class Borrow:
     r"""An open borrow position
 
-    Parameters # FIXME: add explanations
+    Parameters
     ----------
     borrow_token : TokenType
+    .. todo: add explanation
     borrow_amount : float
+    .. todo: add explanation
+    collateral_token : TokenType
+    .. todo: add explanation
+    collateral_amount: float
+    .. todo: add explanation
     start_time : float
-    loan_token : TokenType
-    loan_amount: int
+    .. todo: add explanation
     """
     borrow_token: types.TokenType
     borrow_amount: float
+    borrow_shares: float
+    collateral_token: types.TokenType
+    collateral_amount: float
     start_time: float
-    loan_token: types.TokenType
-    loan_amount: int  # FIXME: what is this?
 
 
 @dataclass()
