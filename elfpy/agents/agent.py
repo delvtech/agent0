@@ -426,7 +426,7 @@ class Agent:
         # Log the trading report.
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
-            ("agent #%g %s %s" " (%s years), net worth = $%s" " from %s balance, %s longs, and %s shorts at p = %g\n"),
+            ("agent #%g %s %s (%s years), net worth = $%s from %s balance, %s longs, and %s shorts at p = %g\n"),
             self.wallet.address,
             lost_or_made,
             profit_and_loss,
