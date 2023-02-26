@@ -321,9 +321,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
 
-        # FIXME: why don't we decrease collateral amount?
-        # FIXME: Should the borrow_share_price actually use the spot_price?
-        # FIXME: why don't we store the mint time (when borrow was opened) in the market deltas?
+        # TODO:
+        #     why don't we decrease collateral amount?
+        #     why don't we store the mint time (when borrow was opened) in the market deltas?
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )

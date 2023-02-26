@@ -1,11 +1,13 @@
 """Testing the Borrow Market"""
 
+import logging
 import itertools
 import unittest
 
 import numpy as np
 
 import elfpy.types as types
+import elfpy.utils.outputs as output_utils
 from elfpy.markets.borrow import Market as BorrowMarket
 from elfpy.markets.borrow import MarketState as BorrowMarketState
 
@@ -13,8 +15,9 @@ from elfpy.markets.borrow import MarketState as BorrowMarketState
 class TestBorrow(unittest.TestCase):
     """Testing the Borrow Market"""
 
-    def test_open_borrow(self):
+    def test_open_borrow(self, delete_logs=False):
         """Borrow 100 BASE"""
+        output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
 
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), types.TokenType
@@ -39,20 +42,24 @@ class TestBorrow(unittest.TestCase):
                 )
 
                 borrowed_amount_into_market = market_deltas.d_borrow_shares
-                borrowed_amount_into_agent = agent_deltas.borrows
+                borrowed_amount_into_agent = agent_deltas.borrows.borrow_amount
 
                 expected_borrow_amount = collateral_amount * loan_to_value / 100 * spot_price
 
-                # FIXME: log this
-                print(
-                    f"LTV={loan_to_value}, collateral={collateral_amount} -> "
-                    f"expect={expected_borrow_amount} "
-                    f"actual=(mkt={borrowed_amount_into_market} "
-                    f"{borrowed_amount_into_agent=})"
+                logging.debug(
+                    "LTV=%g, collateral=%g -> expect=%g\n\tactual = (mkt=%g, borrowed_amount_into_agent=%g)",
+                    loan_to_value,
+                    collateral_amount,
+                    expected_borrow_amount,
+                    borrowed_amount_into_market,
+                    borrowed_amount_into_agent,
                 )
 
                 np.testing.assert_almost_equal(borrowed_amount_into_market, expected_borrow_amount)
                 np.testing.assert_almost_equal(borrowed_amount_into_agent, expected_borrow_amount)
+
+                if delete_logs:
+                    output_utils.close_logging()
 
     def test_close_borrow(self):
         """Borrow 100 BASE"""
@@ -79,12 +86,8 @@ class TestBorrow(unittest.TestCase):
             spot_price=0.9,
         )[0]
 
-        # borrowed_amount_into_market = market_deltas.d_borrow_shares
-        # borrowed_amount_into_agent = agent_deltas.borrow
-
         expected_d_borrow_shares: float = -100  # borrow is always in DAI
         expected_d_collateral = types.Quantity(amount=-100, unit=types.TokenType.BASE)
-        # expected_d_borrow_outstanding: float = 100  # changes based on borrow_shares * borrow_share_price
         expected_d_borrow_closed_interest: float = 0  # realized interest from closed borrows
 
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
