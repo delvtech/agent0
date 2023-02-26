@@ -3,6 +3,7 @@ contracts_folder: notebook/contracts
 plugins:
   - name: solidity
   - name: foundry
+  - name: notebook
 
 dependencies:
   - name: OpenZeppelin
