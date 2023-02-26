@@ -67,7 +67,7 @@ class SimulationState:
         default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     current_variable_apr: list[float] = field(
-        default_factory=list, metadata=types.to_description("vault apr on a given day")
+        default_factory=list, metadata=types.to_description("variable apr on a given day")
     )
     fixed_apr: list[float] = field(default_factory=list, metadata=types.to_description("apr of the AMM pool"))
     spot_price: list[float] = field(default_factory=list, metadata=types.to_description("price of shares"))
@@ -125,7 +125,7 @@ class Config:
     # initialization, and we don't want the value to be set to None downstream.
     variable_apr: list[float] = field(  # default is overridden in __post_init__
         default_factory=lambda: [-1],
-        metadata=types.to_description("the underlying (variable) vault APR at each time step"),
+        metadata=types.to_description("the underlying variable (e.g. from a vault) APR at each time step"),
     )  # TODO: Move this out of config, it should be computed in simulator init based on config values
     init_share_price: float = field(  # default is overridden in __post_init__
         default=-1, metadata=types.to_description("initial market share price for the vault asset")  # type: ignore
@@ -230,6 +230,10 @@ class RunSimVariables:
 
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     config: Config = field(metadata=types.to_description("the simulation config"))
+    agent_init: list[wallet.Wallet] = field(metadata=types.to_description("initial wallets for the agents"))
+    market_init: hyperdrive.MarketState = field(
+        metadata=types.to_description("initial market state for this simulation run")
+    )
     market_step_size: float = field(metadata=types.to_description("minimum time discretization for market time step"))
     position_duration: time_utils.StretchedTime = field(
         metadata=types.to_description("time lapse between token mint and expiry in years")
@@ -243,7 +247,7 @@ class DaySimVariables:
 
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     day: int = field(metadata=types.to_description("day index in a given simulation"))
-    vault_apr: float = field(metadata=types.to_description("vault apr on a given day"))
+    variable_apr: float = field(metadata=types.to_description("variable apr on a given day"))
     share_price: float = field(metadata=types.to_description("share price for the underlying vault"))
 
 
@@ -588,8 +592,8 @@ class Simulator:
                 run_vars=RunSimVariables(
                     run_number=self.run_number,
                     config=self.config,
-                    # agent_init=[agent.wallet for agent in self.agents.values()],
-                    # market_init=self.market.market_state,
+                    agent_init=[agent.wallet for agent in self.agents.values()],
+                    market_init=self.market.market_state,
                     market_step_size=self.market_step_size,
                     position_duration=self.market.position_duration,
                     simulation_start_time=self.start_time,
