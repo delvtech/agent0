@@ -114,7 +114,7 @@ class Wallet:
     def get_state(self, market: Market) -> dict:
         r"""The wallet's current state of public variables
 
-        .. todo:: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
+        .. todo:: This will go away once we finish refactoring the state
         """
         lp_token_value = 0
         # proceed further only if the agent has LP tokens and avoid divide by zero
