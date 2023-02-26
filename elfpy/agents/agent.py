@@ -261,32 +261,6 @@ class Agent:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
     def _update_borrows(self, borrow_summary: wallet.Borrow) -> None:
-        #### MARKET DELTA APPLICATION
-        # self.borrow_shares += delta.d_borrow_shares
-        # collateral_unit = delta.d_collateral.unit
-        # if collateral_unit not in self.collateral:  # key doesn't exist
-        #    self.collateral[collateral_unit] = delta.d_collateral.amount
-        # else:  # key exists
-        #    self.collateral[collateral_unit] += delta.d_collateral.amount
-        #### INPUT TO USER WALLET UPDATE FOR OPEN
-        # borrow_summary = wallet.Borrow(
-        #     borrow_token=types.TokenType.BASE,
-        #     borrow_amount=borrow_amount_in_base,
-        #     borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
-        #     collateral_token=collateral.unit,
-        #     collateral_amount=collateral.amount,
-        #     start_time=self.time,
-        # )
-        #### INPUT TO USER WALLET UPDATE FOR CLOSE
-        # borrow_summary = wallet.Borrow(
-        #     borrow_token=types.TokenType.BASE,
-        #     borrow_amount=-borrow_amount_in_base,
-        #     borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
-        #     collateral_token=collateral.unit,
-        #     collateral_amount=-collateral.amount,
-        #     start_time=self.time,
-        # )
-        ####
         if borrow_summary.start_time in self.wallet.borrows:  #  entry already exists for this mint_time, so add to it
             self.wallet.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
         else:
