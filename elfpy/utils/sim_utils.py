@@ -36,7 +36,7 @@ def get_simulator(
     simulator : Simulator
         instantiated simulator class
     """
-    config.check_vault_apr()  # quick check to make sure the vault apr is correctly set
+    config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     market = get_market(pricing_model, config)
@@ -44,6 +44,31 @@ def get_simulator(
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp is True:
         simulator.add_agents([get_init_lp_agent(market, config.target_liquidity)])
+    if config.do_dataframe_states:
+        # update state with day & block = 0 for the initialization trades
+        simulator.new_simulation_state.update(
+            run_vars=simulators.RunSimVariables(
+                run_number=simulator.run_number,
+                config=config,
+                agent_init=[agent.wallet for agent in simulator.agents.values()],
+                market_init=simulator.market.market_state,
+                market_step_size=simulator.market_step_size,
+                position_duration=simulator.market.position_duration,
+                simulation_start_time=time_utils.current_datetime(),
+            ),
+            day_vars=simulators.DaySimVariables(
+                run_number=simulator.run_number,
+                day=simulator.day,
+                variable_apr=simulator.market.market_state.variable_apr,
+                share_price=simulator.market.market_state.share_price,
+            ),
+            block_vars=simulators.BlockSimVariables(
+                run_number=simulator.run_number,
+                day=simulator.day,
+                block_number=simulator.block_number,
+                market_time=market.time,
+            ),
+        )
     # Initialize the simulator using only the initial LP.
     simulator.collect_and_execute_trades()
     # Add the remaining agents.
@@ -102,8 +127,8 @@ def get_market(
                 target apr, used for calculating the time stretch
             trade_fee_percent : float
                 portion of trades to be collected as fees for LPers, expressed as a decimal
-            vault_apr : list
-                valut apr per day for the duration of the simulation
+            variable_apr : list
+                variable (often a valut) apr per day for the duration of the simulation
     init_target_liquidity : float = 1.0
         initial liquidity for setting up the market
         should be a tiny amount for setting up apr
@@ -128,7 +153,7 @@ def get_market(
         target_apr=config.target_fixed_apr,
         position_duration=position_duration,
     )
-    market = hyperdrive.Market(
+    return hyperdrive.Market(
         pricing_model=pricing_model,
         market_state=hyperdrive.MarketState(
             share_reserves=share_reserves_direct,
@@ -144,7 +169,6 @@ def get_market(
         ),
         position_duration=position_duration,
     )
-    return market
 
 
 def get_pricing_model(model_name: str) -> PricingModel:
