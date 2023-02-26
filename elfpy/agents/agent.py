@@ -64,7 +64,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: "base_market.Market") -> "list[types.Trade]":
+    def action(self, market: base_market.Market) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -84,7 +84,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: "hyperdrive.Market") -> "float":
+    def get_max_long(self, market: hyperdrive.Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -111,7 +111,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: "hyperdrive.Market") -> "float":
+    def get_max_short(self, market: hyperdrive.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -172,7 +172,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: "base_market.Market") -> "list[types.Trade]":
+    def get_trades(self, market: base_market.Market) -> list[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -206,7 +206,7 @@ class Agent:
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: "wallet.Wallet") -> "None":
+    def update_wallet(self, wallet_deltas: wallet.Wallet) -> None:
         """Update the agent's wallet
 
         Parameters
@@ -332,7 +332,7 @@ class Agent:
                 # Remove the empty short from the wallet.
                 del self.wallet.shorts[mint_time]
 
-    def get_liquidation_trades(self, market: "hyperdrive.Market") -> "list[types.Trade]":
+    def get_liquidation_trades(self, market: hyperdrive.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -398,7 +398,7 @@ class Agent:
             self.wallet.fees_paid or 0,
         )
 
-    def log_final_report(self, market: "hyperdrive.Market") -> "None":
+    def log_final_report(self, market: hyperdrive.Market) -> None:
         """Logs a report of the agent's state
 
         Parameters

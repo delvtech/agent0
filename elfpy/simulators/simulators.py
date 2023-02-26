@@ -492,7 +492,7 @@ class Simulator:
         # Execute the trades
         self.execute_trades(trades)
 
-    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> "list[tuple[int, types.Trade]]":
+    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, types.Trade]]:
         r"""Collect trades from a set of provided agent IDs.
 
         Parameters
@@ -509,7 +509,7 @@ class Simulator:
         list[tuple[int, Trade]]
             A list of trades associated with specific agents.
         """
-        agents_and_trades: "list[tuple[int, types.Trade]]" = []
+        agents_and_trades: list[tuple[int, types.Trade]] = []
         for agent_id in agent_ids:
             agent = self.agents[agent_id]
             if liquidate:
@@ -520,7 +520,7 @@ class Simulator:
             agents_and_trades.extend((agent_id, trade) for trade in trades)
         return agents_and_trades
 
-    def execute_trades(self, agent_actions: "list[tuple[int, types.Trade]]") -> None:
+    def execute_trades(self, agent_actions: list[tuple[int, types.Trade]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
         Parameters

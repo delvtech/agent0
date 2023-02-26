@@ -1,7 +1,7 @@
 """Implements abstract classes that control user behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 import elfpy.types as types
@@ -98,11 +98,11 @@ class Wallet:
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: Dict[float, Long] = field(default_factory=dict)
-    shorts: Dict[float, Short] = field(default_factory=dict)
+    longs: dict[float, Long] = field(default_factory=dict)
+    shorts: dict[float, Short] = field(default_factory=dict)
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
-    borrows: Dict[float, Borrow] = field(default_factory=dict)
+    borrows: dict[float, Borrow] = field(default_factory=dict)
     fees_paid: float = 0
 
     def __getitem__(self, key: str) -> Any:
@@ -111,7 +111,7 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def get_state(self, market: Market) -> dict:
+    def get_state(self, market: Market) -> dict[str, float]:
         r"""The wallet's current state of public variables
 
         .. todo:: This will go away once we finish refactoring the state
