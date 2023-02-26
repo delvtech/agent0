@@ -93,7 +93,8 @@ class Wallet:
 
     # fungible
     balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
-    # TODO: Support multiple typed balances: balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
+    # TODO: Support multiple typed balances:
+    #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
