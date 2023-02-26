@@ -484,11 +484,15 @@ class Simulator:
         else:  # we are in a deterministic mode
             agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
         # Collect trades from all of the agents.
+        # TODO: This API causes a unnecessary double loop; first over agents, then trades,
+        #       then we loop again over all trades. In the future we want to simulate something like
+        #       the mempool, which has all agent trades. But it would be better if we could get all
+        #       of the block's trades without an extra loop.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
         self.execute_trades(trades)
 
-    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> "list[tuple[int, types.Trade]]":
+    def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, types.Trade]]:
         r"""Collect trades from a set of provided agent IDs.
 
         Parameters
@@ -505,7 +509,7 @@ class Simulator:
         list[tuple[int, Trade]]
             A list of trades associated with specific agents.
         """
-        agents_and_trades: "list[tuple[int, types.Trade]]" = []
+        agents_and_trades: list[tuple[int, types.Trade]] = []
         for agent_id in agent_ids:
             agent = self.agents[agent_id]
             if liquidate:
@@ -516,7 +520,7 @@ class Simulator:
             agents_and_trades.extend((agent_id, trade) for trade in trades)
         return agents_and_trades
 
-    def execute_trades(self, agent_actions: "list[tuple[int, types.Trade]]") -> None:
+    def execute_trades(self, agent_actions: list[tuple[int, types.Trade]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
         Parameters
@@ -536,7 +540,7 @@ class Simulator:
                 agent.wallet.address,
                 agent_deltas,
             )
-            agent.update_wallet(agent_deltas, self.market)
+            agent.update_wallet(agent_deltas)
             # TODO: Get simulator, market, pricing model, agent state strings and log
             agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
@@ -604,15 +608,15 @@ class Simulator:
                     )
                 )
                 self.market.update_market(delta)
-                if self.config.do_dataframe_states:
-                    self.new_simulation_state.update(
-                        day_vars=DaySimVariables(
-                            self.run_number,
-                            self.day,
-                            self.market.market_state.variable_apr,
-                            self.market.market_state.share_price,
-                        )
+            if self.config.do_dataframe_states:
+                self.new_simulation_state.update(
+                    day_vars=DaySimVariables(
+                        self.run_number,
+                        self.day,
+                        self.market.market_state.variable_apr,
+                        self.market.market_state.share_price,
                     )
+                )
             for daily_block_number in range(self.config.num_blocks_per_day):
                 self.daily_block_number = daily_block_number
                 last_block_in_sim = (self.day == self.config.num_trading_days - 1) and (

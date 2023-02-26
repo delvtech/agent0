@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, Union
 
 import elfpy.markets.base as base_market
 from elfpy.pricing_models.base import PricingModel
+import elfpy.agents.wallet as wallet
 
 import elfpy.types as types
 
@@ -37,14 +38,23 @@ class MarketDeltas(base_market.MarketDeltas):
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class AgentDeltas:
-    r"""Specifies changes to values in the agent's wallet"""
+    r"""Specifies changes to values in the agent's wallet
+
+    Attributes
+    ----------
+    address: int
+        agent address
+    borrow: float
+        how much base asset has been borrowed
+    collateral: Quantity
+        how much has been offerd as collateral
+    """
 
     # agent identifier
     address: int
 
     # fungible assets, but collateral can be two TokenTypes
-    borrow: float = 0
-    collateral: types.Quantity = field(default_factory=lambda: types.Quantity(unit=types.TokenType.PT, amount=0))
+    borrows: wallet.Borrow
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -68,7 +78,7 @@ class MarketState(base_market.BaseMarketState):
         The maximum loan to value ratio a collateral can have before liquidations occur.
     borrow_shares: float
         Accounting units for borrow assets that has been lent out by the market, allows tracking of interest
-    collateral: float
+    collateral: dict[TokenType, float]
         Amount of collateral that has been deposited into the market
     borrow_outstanding: float
         The amount of borrowed asset that has been lent out by the market, without accounting for interest
@@ -86,6 +96,8 @@ class MarketState(base_market.BaseMarketState):
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
+
+    # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
 
     # borrow ratios
     loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
@@ -134,8 +146,6 @@ class MarketState(base_market.BaseMarketState):
             self.collateral[collateral_unit] = delta.d_collateral.amount
         else:  # key exists
             self.collateral[collateral_unit] += delta.d_collateral.amount
-
-        self.check_market_non_zero()
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -281,9 +291,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 amount=collateral.amount,
             ),
         )
-
+        borrow_summary = wallet.Borrow(
+            borrow_token=types.TokenType.BASE,
+            borrow_amount=borrow_amount_in_base,
+            borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
+            collateral_token=collateral.unit,
+            collateral_amount=collateral.amount,
+            start_time=self.time,
+        )
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrow=borrow_amount_in_base, collateral=collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary)
         return market_deltas, agent_deltas
 
     def close_borrow(
@@ -303,12 +320,22 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
+
+        # TODO: why don't we decrease collateral amount?
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
 
+        borrow_summary = wallet.Borrow(
+            borrow_token=types.TokenType.BASE,
+            borrow_amount=-borrow_amount_in_base,
+            borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
+            collateral_token=collateral.unit,
+            collateral_amount=-collateral.amount,
+            start_time=self.time,
+        )
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrow=-borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary)
         return market_deltas, agent_deltas
 
     def update_share_prices(self, compound_vault_apr=True) -> None:

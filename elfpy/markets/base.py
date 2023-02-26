@@ -88,18 +88,19 @@ class BaseMarketState:
         # TODO: issue #146
         # this is an imperfect solution to rounding errors, but it works for now
         for key, value in self.__dict__.items():
-            if 0 > value > -elfpy.PRECISION_THRESHOLD:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    value,
-                    elfpy.PRECISION_THRESHOLD,
-                )
-                setattr(self, key, 0)
-            else:
-                assert (
-                    value > -elfpy.PRECISION_THRESHOLD
-                ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
+            if isinstance(value, (int, float)):
+                if 0 > value > -elfpy.PRECISION_THRESHOLD:
+                    logging.debug(
+                        ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                        key,
+                        value,
+                        elfpy.PRECISION_THRESHOLD,
+                    )
+                    setattr(self, key, 0)
+                else:
+                    assert (
+                        value > -elfpy.PRECISION_THRESHOLD
+                    ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
 
 
 class Market(Generic[State, Deltas]):
@@ -132,14 +133,8 @@ class Market(Generic[State, Deltas]):
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
-                print(f"check_market_updateS(): key = {key}, value = {value}")
-                value_to_check = value
-                if isinstance(value, types.Quantity):
-                    value_to_check = value.amount
-                else:
-                    assert np.isfinite(
-                        value_to_check
-                    ), f"markets.update_market: ERROR: market delta key {key} is not finite."
+                value_to_check = value.amount if isinstance(value, types.Quantity) else value
+                assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
     def update_market(self, market_deltas: MarketDeltas) -> None:
         """

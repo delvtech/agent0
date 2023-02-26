@@ -5,16 +5,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import logging
 
-import numpy as np
-
-
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from typing import Optional, Iterable
-    from elfpy.markets.hyperdrive import Market
+    from typing import Iterable
+    import elfpy.markets.base as base_market
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -53,8 +50,6 @@ class Agent:
     def __init__(self, wallet_address: int, budget: float):
         """Set up initial conditions"""
         self.budget: float = budget
-        self.last_update_spend: float = 0  # timestamp
-        self.product_of_time_and_base: float = 0
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
@@ -66,7 +61,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: Market) -> list[types.Trade]:
+    def action(self, market: base_market.Market) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -86,7 +81,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: Market) -> float:
+    def get_max_long(self, market: hyperdrive.Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -113,7 +108,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: Market) -> float:
+    def get_max_short(self, market: hyperdrive.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -158,7 +153,6 @@ class Agent:
                 if bond_percent == 1:
                     return last_maybe_max_short
                 bond_percent += step_size
-
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
@@ -174,7 +168,7 @@ class Agent:
 
         return last_maybe_max_short
 
-    def get_trades(self, market: Market) -> list[types.Trade]:
+    def get_trades(self, market: base_market.Market) -> list[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -200,7 +194,7 @@ class Agent:
         """
         actions = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
-            if action.trade.mint_time is None:
+            if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
                 action.trade.mint_time = market.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
@@ -208,7 +202,7 @@ class Agent:
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: wallet.Wallet, market: Market) -> None:
+    def update_wallet(self, wallet_deltas: wallet.Wallet) -> None:
         """Update the agent's wallet
 
         Parameters
@@ -223,15 +217,9 @@ class Agent:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
-        self.product_of_time_and_base += new_spend
-        self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
-            if value_or_dict is None:
+            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
                 continue
-            if key in ["fees_paid", "address", "borrows"]:
-                continue
-            # handle updating a value
             if key in ["lp_tokens", "fees_paid"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
@@ -254,12 +242,25 @@ class Agent:
                 )
                 self.wallet[key].amount += value_or_dict.amount
             # handle updating a dict, which have mint_time attached
+            elif key == "borrows":
+                if value_or_dict:  # could be empty
+                    self._update_borrows(value_or_dict)
             elif key == "longs":
                 self._update_longs(value_or_dict.items())
             elif key == "shorts":
                 self._update_shorts(value_or_dict.items())
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
+
+    def _update_borrows(self, borrow_summary: wallet.Borrow) -> None:
+        if borrow_summary.start_time in self.wallet.borrows:  #  entry already exists for this mint_time, so add to it
+            self.wallet.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
+        else:
+            self.wallet.borrows.update({borrow_summary.start_time: borrow_summary})
+        if self.wallet.borrows[borrow_summary.start_time].borrow_amount == 0:
+            # Removing the empty borrows allows us to check existance
+            # of open borrows using `if self.wallet.borrows`
+            del self.wallet.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[float, wallet.Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
@@ -284,7 +285,8 @@ class Agent:
                 else:
                     self.wallet.longs.update({mint_time: long})
             if self.wallet.longs[mint_time].balance == 0:
-                # Remove the empty long from the wallet.
+                # Removing the empty borrows allows us to check existance
+                # of open longs using `if self.wallet.longs`
                 del self.wallet.longs[mint_time]
 
     def _update_shorts(self, shorts: Iterable[tuple[float, wallet.Short]]) -> None:
@@ -321,10 +323,11 @@ class Agent:
                 else:
                     self.wallet.shorts.update({mint_time: short})
             if self.wallet.shorts[mint_time].balance == 0:
-                # Remove the empty short from the wallet.
+                # Removing the empty borrows allows us to check existance
+                # of open shorts using `if self.wallet.shorts`
                 del self.wallet.shorts[mint_time]
 
-    def get_liquidation_trades(self, market: Market) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: hyperdrive.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -390,7 +393,7 @@ class Agent:
             self.wallet.fees_paid or 0,
         )
 
-    def log_final_report(self, market: Market) -> None:
+    def log_final_report(self, market: hyperdrive.Market) -> None:
         """Logs a report of the agent's state
 
         Parameters
@@ -407,7 +410,6 @@ class Agent:
         balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
-
         # Calculate the total pnl of the trader.
         longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
         shorts_value = (
@@ -421,30 +423,13 @@ class Agent:
         )
         total_value = balance + longs_value + shorts_value
         profit_and_loss = total_value - self.budget
-
-        # Calculated spending statistics.
-        weighted_average_spend = self.product_of_time_and_base / market.time if market.time > 0 else 0
-        spend = weighted_average_spend
-        holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-        if market.time > 0:
-            annual_percentage_rate = holding_period_rate / market.time
-        else:
-            annual_percentage_rate = np.nan
-
         # Log the trading report.
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
-            (
-                "agent #%g %s %s on $%s spent, APR = %g"
-                " (%.2g in %s years), net worth = $%s"
-                " from %s balance, %s longs, and %s shorts at p = %g\n"
-            ),
+            ("agent #%g %s %s (%s years), net worth = $%s from %s balance, %s longs, and %s shorts at p = %g\n"),
             self.wallet.address,
             lost_or_made,
             profit_and_loss,
-            spend,
-            annual_percentage_rate,
-            holding_period_rate,
             market.time,
             total_value,
             balance,

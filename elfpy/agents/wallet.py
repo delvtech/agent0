@@ -1,7 +1,7 @@
 """Implements abstract classes that control user behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 import elfpy.types as types
@@ -47,19 +47,25 @@ class Borrow:
     Parameters
     ----------
     borrow_token : TokenType
+    .. todo: add explanation
     borrow_amount : float
+    .. todo: add explanation
+    collateral_token : TokenType
+    .. todo: add explanation
+    collateral_amount: float
+    .. todo: add explanation
     start_time : float
-    loan_token : TokenType
-    loan_amount: int
+    .. todo: add explanation
     """
     borrow_token: types.TokenType
     borrow_amount: float
+    borrow_shares: float
+    collateral_token: types.TokenType
+    collateral_amount: float
     start_time: float
-    loan_token: types.TokenType
-    loan_amount: int
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Wallet:
     r"""Stores what is in the agent's wallet
 
@@ -87,14 +93,16 @@ class Wallet:
 
     # fungible
     balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
+    # TODO: Support multiple typed balances:
+    #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: Dict[float, Long] = field(default_factory=dict)
-    shorts: Dict[float, Short] = field(default_factory=dict)
-    borrows: Dict[float, Borrow] = field(default_factory=dict)
-
-    # TODO: This isn't used for short trades
+    longs: dict[float, Long] = field(default_factory=dict)
+    shorts: dict[float, Short] = field(default_factory=dict)
+    # borrow and  collateral have token type, which is not represented here
+    # this therefore assumes that only one token type can be used at any given mint time
+    borrows: dict[float, Borrow] = field(default_factory=dict)
     fees_paid: float = 0
 
     def __getitem__(self, key: str) -> Any:
@@ -103,10 +111,10 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def get_state(self, market: Market) -> dict:
+    def get_state(self, market: Market) -> dict[str, float]:
         r"""The wallet's current state of public variables
 
-        .. todo:: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
+        .. todo:: This will go away once we finish refactoring the state
         """
         lp_token_value = 0
         # proceed further only if the agent has LP tokens and avoid divide by zero
