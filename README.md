@@ -4,7 +4,9 @@
 
 # [Element Finance](https://element.fi) market simulation and analysis
 
-This project is a work-in-progress. All code is provided as is and without guarantee. Documentation can be found [here](elfpy.element.fi).
+This project is a work-in-progress. All code is provided as is and without guarantee.
+
+Documentation can be found [here](https://elfpy.element.fi).
 
 ## Install
 
@@ -13,8 +15,8 @@ Set up your favorite python virutal environment with python == 3.8 (we recommend
 ```bash
 pyenv install 3.8.16
 pyenv local 3.8.16
-python -m venv elf-env
-source elf-env/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 ```
 
 Once this is done, check that your version is correct when you run `python --version`. Within the virtualenv, upgrade pip with `python -m pip install --upgrade pip` and then install the required packages.
