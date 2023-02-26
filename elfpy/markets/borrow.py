@@ -97,7 +97,7 @@ class MarketState(base_market.BaseMarketState):
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
-    # TODO: Are we tracking the last time the dsr changed?
+    # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
 
     # borrow ratios
     loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
@@ -321,9 +321,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
 
-        # TODO:
-        #     why don't we decrease collateral amount?
-        #     why don't we store the mint time (when borrow was opened) in the market deltas?
+        # TODO: why don't we decrease collateral amount?
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )

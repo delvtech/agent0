@@ -484,9 +484,10 @@ class Simulator:
         else:  # we are in a deterministic mode
             agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
         # Collect trades from all of the agents.
-        # TODO: This API causes a unnecessary double loop; first over agents and second over trades
-        #       in the future we want this to be able to put trades into the mempool
-        #       it would be better if we could get all of the block's trades without a for loop
+        # TODO: This API causes a unnecessary double loop; first over agents, then trades,
+        #       then we loop again over all trades. In the future we want to simulate something like
+        #       the mempool, which has all agent trades. But it would be better if we could get all
+        #       of the block's trades without an extra loop.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
         self.execute_trades(trades)
