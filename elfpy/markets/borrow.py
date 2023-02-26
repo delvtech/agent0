@@ -98,6 +98,8 @@ class MarketState(base_market.BaseMarketState):
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
+    # TODO: Are we tracking the last time the dsr changed?
+
     # borrow ratios
     loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
         default_factory=lambda: {token_type: 0.97 for token_type in types.TokenType}
@@ -297,8 +299,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             borrow_token=types.TokenType.BASE,
             borrow_amount=borrow_amount_in_base,
             start_time=self.time,
-            loan_token=collateral.unit,
-            loan_amount=0,  # FIXME: What is this?
+            collateral_token=collateral.unit,
+            collateral_amount=0,
         )
 
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
