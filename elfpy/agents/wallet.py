@@ -60,6 +60,7 @@ class Borrow:
     borrow_token: types.TokenType
     borrow_amount: float
     borrow_shares: float
+    # borrow: Dict[types.TokenType, tuple[float, float]]
     collateral_token: types.TokenType
     collateral_amount: float
     start_time: float
@@ -93,12 +94,27 @@ class Wallet:
 
     # fungible
     balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
+    # balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
     lp_tokens: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Long] = field(default_factory=dict)
     shorts: Dict[float, Short] = field(default_factory=dict)
-    borrows: list[Borrow] = field(default_factory=list)
+    # borrow and  collateral have token type, which is not represented here
+    # this therefore assumes that only one token type can be used at any given mint time
+    borrows: Dict[float, Borrow] = field(default_factory=dict)
+    # borrows: Dict[float, list[Borrow]] = field(default_factory=dict)
+    # borrows: Dict[float, Dict[types.TokenType, Borrow]] = field(default_factory=dict)
+    # collateral: Dict[float, Dict[types.TokenType, Collateral]] = field(default_factory=dict)
+    # borrows: list[Borrow] = field(default_factory=list)
+    # borrows: Borrow = Borrow(
+    #    borrow_token=types.TokenType.BASE,
+    #    borrow_amount=0,
+    #    borrow_shares=0,
+    #    collateral_token=types.TokenType.BASE,
+    #    collateral_amount=0,
+    #    start_time=0,
+    # )
 
     # TODO: This isn't used for short trades
     fees_paid: float = 0

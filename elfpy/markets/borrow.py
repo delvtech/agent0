@@ -55,7 +55,6 @@ class AgentDeltas:
 
     # fungible assets, but collateral can be two TokenTypes
     borrows: wallet.Borrow
-    collateral: types.Quantity = field(default_factory=lambda: types.Quantity(unit=types.TokenType.PT, amount=0))
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -147,8 +146,6 @@ class MarketState(base_market.BaseMarketState):
             self.collateral[collateral_unit] = delta.d_collateral.amount
         else:  # key exists
             self.collateral[collateral_unit] += delta.d_collateral.amount
-
-        self.check_market_non_zero()
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -294,17 +291,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 amount=collateral.amount,
             ),
         )
-
         borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=borrow_amount_in_base,
-            start_time=self.time,
+            borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             collateral_token=collateral.unit,
-            collateral_amount=0,
+            collateral_amount=collateral.amount,
+            start_time=self.time,
         )
-
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary, collateral=collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary)
         return market_deltas, agent_deltas
 
     def close_borrow(
@@ -324,12 +320,24 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
+
+        # FIXME: why don't we decrease collateral amount?
+        # FIXME: Should the borrow_share_price actually use the spot_price?
+        # FIXME: why don't we store the mint time (when borrow was opened) in the market deltas?
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
 
+        borrow_summary = wallet.Borrow(
+            borrow_token=types.TokenType.BASE,
+            borrow_amount=-borrow_amount_in_base,
+            borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
+            collateral_token=collateral.unit,
+            collateral_amount=-collateral.amount,
+            start_time=self.time,
+        )
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = AgentDeltas(address=wallet_address, borrows=-borrow_amount_in_base, collateral=-collateral)
+        agent_deltas = AgentDeltas(address=wallet_address, borrows=borrow_summary)
         return market_deltas, agent_deltas
 
     def update_share_prices(self, compound_vault_apr=True) -> None:

@@ -231,10 +231,10 @@ class Agent:
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None:
                 continue
-            elif key in ["fees_paid", "address", "frozen", "no_new_attribs", "collateral"]:
+            elif key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
                 continue
             elif key == "borrows":
-                self.wallet[key].append(value_or_dict)
+                self._update_borrows(value_or_dict)
             elif key in ["lp_tokens", "fees_paid"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
@@ -263,6 +263,41 @@ class Agent:
                 self._update_shorts(value_or_dict.items())
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
+
+    def _update_borrows(self, borrow_summary: wallet.Borrow) -> None:
+        #### MARKET DELTA APPLICATION
+        # self.borrow_shares += delta.d_borrow_shares
+        # collateral_unit = delta.d_collateral.unit
+        # if collateral_unit not in self.collateral:  # key doesn't exist
+        #    self.collateral[collateral_unit] = delta.d_collateral.amount
+        # else:  # key exists
+        #    self.collateral[collateral_unit] += delta.d_collateral.amount
+        #### INPUT TO USER WALLET UPDATE FOR OPEN
+        # borrow_summary = wallet.Borrow(
+        #     borrow_token=types.TokenType.BASE,
+        #     borrow_amount=borrow_amount_in_base,
+        #     borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
+        #     collateral_token=collateral.unit,
+        #     collateral_amount=collateral.amount,
+        #     start_time=self.time,
+        # )
+        #### INPUT TO USER WALLET UPDATE FOR CLOSE
+        # borrow_summary = wallet.Borrow(
+        #     borrow_token=types.TokenType.BASE,
+        #     borrow_amount=-borrow_amount_in_base,
+        #     borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
+        #     collateral_token=collateral.unit,
+        #     collateral_amount=-collateral.amount,
+        #     start_time=self.time,
+        # )
+        ####
+        if borrow_summary.start_time in self.wallet.borrows:  #  entry already exists for this mint_time, so add to it
+            self.wallet.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
+        else:
+            self.wallet.borrows.update({borrow_summary.start_time: borrow_summary})
+        if self.wallet.borrows[borrow_summary.start_time].borrow_amount == 0:
+            # Remove the empty borrow entry from the wallet.
+            del self.wallet.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[float, wallet.Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object

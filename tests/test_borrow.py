@@ -39,15 +39,16 @@ class TestBorrow(unittest.TestCase):
                 )
 
                 borrowed_amount_into_market = market_deltas.d_borrow_shares
-                borrowed_amount_into_agent = agent_deltas.borrow
+                borrowed_amount_into_agent = agent_deltas.borrows
 
                 expected_borrow_amount = collateral_amount * loan_to_value / 100 * spot_price
 
+                # FIXME: log this
                 print(
                     f"LTV={loan_to_value}, collateral={collateral_amount} -> "
                     f"expect={expected_borrow_amount} "
                     f"actual=(mkt={borrowed_amount_into_market} "
-                    f"🤖{borrowed_amount_into_agent})"
+                    f"{borrowed_amount_into_agent=})"
                 )
 
                 np.testing.assert_almost_equal(borrowed_amount_into_market, expected_borrow_amount)
