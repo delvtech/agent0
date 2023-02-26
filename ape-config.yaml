@@ -1,9 +1,10 @@
 contracts_folder: notebook/contracts
 
 plugins:
-  - name: solidity
-  - name: foundry
-  - name: notebook
+  - name: solidity==0.5.4
+  - name: foundry==0.5.2
+  - name: notebook==0.5.0a2
+  - name: etherscan==0.5.5
 
 dependencies:
   - name: OpenZeppelin

@@ -1,3 +1,4 @@
+black==22.10.0
 numpy==1.21.6
 pytest==3.6.4
 scipy==1.7.3
@@ -12,8 +13,3 @@ pylint>=2.15.10
 pyright>=1.1.288
 black>=22.8.0
 pytz~=2022.7
-ape-etherscan==0.6.0
-ape-foundry==0.6.1
-ape-notebook==0.5.0a2
-ape-solidity==0.6.0
-eth-ape==0.6.3
