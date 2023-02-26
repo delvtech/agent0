@@ -12,8 +12,3 @@ pandas
 tomli
 stochastic
 pytz
-ape-etherscan
-ape-foundry
-ape-notebook
-ape-solidity
-eth-ape
