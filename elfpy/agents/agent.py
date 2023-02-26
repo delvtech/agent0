@@ -50,9 +50,6 @@ class Agent:
     def __init__(self, wallet_address: int, budget: float):
         """Set up initial conditions"""
         self.budget: float = budget
-        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
-        # self.last_update_spend: float = 0  # timestamp
-        # self.product_of_time_and_base: float = 0
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
@@ -156,7 +153,6 @@ class Agent:
                 if bond_percent == 1:
                     return last_maybe_max_short
                 bond_percent += step_size
-
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
@@ -221,10 +217,6 @@ class Agent:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
-        # new_spend = (market.time - self.last_update_spend) * (self.budget - self.wallet.balance.amount)
-        # self.product_of_time_and_base += new_spend
-        # self.last_update_spend = market.time
         for key, value_or_dict in wallet_deltas.__dict__.items():
             if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
                 continue
@@ -415,7 +407,6 @@ class Agent:
         balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
-
         # Calculate the total pnl of the trader.
         longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
         shorts_value = (
@@ -429,34 +420,13 @@ class Agent:
         )
         total_value = balance + longs_value + shorts_value
         profit_and_loss = total_value - self.budget
-
-        # Calculated spending statistics.
-        # TODO: These create an unnecessary dependency on the market in wallet; move them to post-processing
-        # weighted_average_spend = self.product_of_time_and_base / market.time if market.time > 0 else 0
-        # spend = weighted_average_spend
-        # holding_period_rate = profit_and_loss / spend if spend != 0 else 0
-        # if market.time > 0:
-        #    annual_percentage_rate = holding_period_rate / market.time
-        # else:
-        #    annual_percentage_rate = np.nan
-
         # Log the trading report.
         lost_or_made = "lost" if profit_and_loss < 0 else "made"
         logging.info(
-            (
-                "agent #%g %s %s"
-                " (%s years), net worth = $%s"
-                " from %s balance, %s longs, and %s shorts at p = %g\n"
-                # "agent #%g %s %s on $%s spent, APR = %g"
-                # " (%.2g in %s years), net worth = $%s"
-                # " from %s balance, %s longs, and %s shorts at p = %g\n"
-            ),
+            ("agent #%g %s %s" " (%s years), net worth = $%s" " from %s balance, %s longs, and %s shorts at p = %g\n"),
             self.wallet.address,
             lost_or_made,
             profit_and_loss,
-            # spend,
-            # annual_percentage_rate,
-            # holding_period_rate,
             market.time,
             total_value,
             balance,
