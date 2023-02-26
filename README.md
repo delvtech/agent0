@@ -57,7 +57,7 @@ Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.ht
 
 ## Examples
 
-Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent. We do not recommend using Google Colab because the install process requires upgrading the Colab Python version to 3.10 and pip installing elfpy from the git URI.
+Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
 
 ## Contributor git workflow:
 
