@@ -14,7 +14,6 @@ import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.time as time_utils
-import elfpy.utils.post_processing as post_processing
 
 
 class TestSimulator(unittest.TestCase):
@@ -182,7 +181,11 @@ class TestSimulator(unittest.TestCase):
             ],
         )
         simulator.run_simulation()
-        post_processing.aggregate_agent_and_market_states(simulator.new_simulation_state.combined_dataframe)
+        # aggregated_states = post_processing.aggregate_agent_and_market_states(
+        #     simulator.new_simulation_state.combined_dataframe
+        # )
+        # TODO: Check aggregated_states against simulator.simulation_state to make
+        #       sure agent & market states are equal after each block
 
 
 if __name__ == "__main__":

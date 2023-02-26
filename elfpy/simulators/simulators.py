@@ -85,6 +85,8 @@ class SimulationState:
             items to be added
         """
         for key, val in dictionary.items():
+            if key in ["frozen", "no_new_attribs"]:
+                continue
             if hasattr(self, key):
                 attribute_state = getattr(self, key)
                 attribute_state.append(val)
