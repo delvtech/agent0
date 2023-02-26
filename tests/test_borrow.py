@@ -15,10 +15,9 @@ from elfpy.markets.borrow import MarketState as BorrowMarketState
 class TestBorrow(unittest.TestCase):
     """Testing the Borrow Market"""
 
-    def test_open_borrow(self, delete_logs=False):
+    def test_open_borrow(self, delete_logs=True):
         """Borrow 100 BASE"""
         output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
-
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), types.TokenType
         ):
@@ -28,36 +27,27 @@ class TestBorrow(unittest.TestCase):
             for spot_price in spot_price_range:
                 collateral_amount = 10**collateral_exponent
                 collateral = types.Quantity(unit=collateral_token, amount=collateral_amount)
-
                 loan_to_value_ratios = {
                     types.TokenType.BASE: loan_to_value / 100,
                     types.TokenType.PT: loan_to_value / 100,
                 }
                 borrow_market = BorrowMarket(market_state=BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios))
-
                 market_deltas, agent_deltas = borrow_market.open_borrow(
                     wallet_address=1,
                     collateral=collateral,
                     spot_price=spot_price,
                 )
-
-                borrowed_amount_into_market = market_deltas.d_borrow_shares
-                borrowed_amount_into_agent = agent_deltas.borrows.borrow_amount
-
                 expected_borrow_amount = collateral_amount * loan_to_value / 100 * spot_price
-
                 logging.debug(
                     "LTV=%g, collateral=%g -> expect=%g\n\tactual = (mkt=%g, borrowed_amount_into_agent=%g)",
                     loan_to_value,
                     collateral_amount,
                     expected_borrow_amount,
-                    borrowed_amount_into_market,
-                    borrowed_amount_into_agent,
+                    market_deltas.d_borrow_shares,
+                    agent_deltas.borrows.borrow_amount,
                 )
-
-                np.testing.assert_almost_equal(borrowed_amount_into_market, expected_borrow_amount)
-                np.testing.assert_almost_equal(borrowed_amount_into_agent, expected_borrow_amount)
-
+                np.testing.assert_almost_equal(market_deltas.d_borrow_shares, expected_borrow_amount)
+                np.testing.assert_almost_equal(agent_deltas.borrows.borrow_amount, expected_borrow_amount)
                 if delete_logs:
                     output_utils.close_logging()
 
