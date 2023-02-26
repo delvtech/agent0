@@ -55,6 +55,18 @@ docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host 
 
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
 
+## Apeworks and Contract Integration
+First, open the hyperdrive contracts repo and after installing forge run anvil.
+Next, deploy on cashd-testnet branch by running `yarn testnet`
+
+Then in the sim repo run:
+
+```bash
+ape plugins install .
+ape compile
+ape notebook
+```
+
 ## Examples
 
 Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
