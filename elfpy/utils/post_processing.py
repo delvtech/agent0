@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate the trade details from the simulation state into a representation of market & wallet states per trade
     TODO:
-    The new combined_trades_df sores the deltas (literally market_delta and agent_delta).
+    The new combined_trades_df stores the deltas (literally market_delta and agent_delta).
     We want this function to loop over every trade and construct the market state by applying each delta.
     We can also compute the PNL values in the loop. This should be able to take advantage of multi-threading,
     since the delta values are fixed & we don't have to worry about trades changing what they would be.

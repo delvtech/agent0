@@ -181,11 +181,11 @@ class TestSimulator(unittest.TestCase):
             ],
         )
         simulator.run_simulation()
+        # TODO: Check aggregated_states against simulator.simulation_state to make
+        #       sure agent & market states are equal after each block
         # aggregated_states = post_processing.aggregate_agent_and_market_states(
         #     simulator.new_simulation_state.combined_dataframe
         # )
-        # TODO: Check aggregated_states against simulator.simulation_state to make
-        #       sure agent & market states are equal after each block
 
 
 if __name__ == "__main__":
