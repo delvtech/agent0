@@ -318,12 +318,14 @@ class Wallet:
     # dataclasses can have many attributes
 
     # agent identifier
-    address: int
+    address: Optional[int] = field(default=None)
 
-    # fungible
+    # reserves
     base: float = 0
     bonds: float = 0
-    lp_tokens: float = 0
+    base_buffer: float = 0
+    bond_buffer: float = 0
+    lp: float = 0
 
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: Dict[float, Position] = field(default_factory=Dict)
@@ -337,66 +339,68 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def get_state(self, market_state_: MarketState) -> dict:
-        r"""The wallet's current state of public variables
-        .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
-        """
-        lp_token_value = 0
-        if self.lp_tokens > 0 and market_state_.lp_reserves > 0:  # check if LP, and avoid divide by zero
-            share_of_pool = self.lp_tokens / market_state_.lp_reserves
-            pool_value = (
-                market_state_.bond_reserves * market.spot_price  # in base
-                + market_state_.share_reserves * market_state_.share_price  # in base
-            )
-            lp_token_value = pool_value * share_of_pool  # in base
-        share_reserves = market_state_.share_reserves
-        # compute long values in units of base
-        longs_value = 0
-        longs_value_no_mock = 0
-        for mint_time, long in self.longs.items():
-            base = (
-                market.close_long(self.address, long.balance, mint_time)[1].base
-                if long.balance > 0 and share_reserves
-                else 0.0
-            )
-            longs_value += base
-            base_no_mock = long.balance * market.spot_price
-            longs_value_no_mock += base_no_mock
-        # compute short values in units of base
-        shorts_value = 0
-        shorts_value_no_mock = 0
-        for mint_time, short in self.shorts.items():
-            base = (
-                market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].base
-                if short.balance > 0 and share_reserves
-                else 0.0
-            )
-            shorts_value += base
-            base_no_mock = short.balance * (1 - market.spot_price)
-            shorts_value_no_mock += base_no_mock
-        return {
-            f"agent_{self.address}_base": self.base,
-            f"agent_{self.address}_lp_tokens": lp_token_value,
-            f"agent_{self.address}_num_longs": len(self.longs),
-            f"agent_{self.address}_num_shorts": len(self.shorts),
-            f"agent_{self.address}_total_longs": longs_value,
-            f"agent_{self.address}_total_shorts": shorts_value,
-            f"agent_{self.address}_total_longs_no_mock": longs_value_no_mock,
-            f"agent_{self.address}_total_shorts_no_mock": shorts_value_no_mock,
-        }
 
-    def get_state_keys(self) -> list:
-        """Get state keys for a wallet."""
-        return [
-            f"agent_{self.address}_base",
-            f"agent_{self.address}_lp_tokens",
-            f"agent_{self.address}_num_longs",
-            f"agent_{self.address}_num_shorts",
-            f"agent_{self.address}_total_longs",
-            f"agent_{self.address}_total_shorts",
-            f"agent_{self.address}_total_longs_no_mock",
-            f"agent_{self.address}_total_shorts_no_mock",
-        ]
+def get_state(wallet_, market_state_: MarketState) -> dict:
+    r"""The wallet's current state of public variables
+    .. todo:: TODO: return a dataclass instead of dict to avoid having to check keys & the get_state_keys func
+    """
+    lp_token_value = 0
+    if wallet_.lp_tokens > 0 and market_state_.lp > 0:  # check if LP, and avoid divide by zero
+        share_of_pool = wallet_.lp_tokens / market_state_.lp
+        pool_value = (
+            market_state_.bond_reserves * market_state_.spot_price  # in base
+            + market_state_.share_reserves * market_state_.share_price  # in base
+        )
+        lp_token_value = pool_value * share_of_pool  # in base
+    share_reserves = market_state_.share_reserves
+    # compute long values in units of base
+    longs_value = 0
+    longs_value_no_mock = 0
+    for mint_time, long in wallet_.longs.items():
+        base = (
+            market.close_long(wallet_.address, long.balance, mint_time)[1].base
+            if long.balance > 0 and share_reserves
+            else 0.0
+        )
+        longs_value += base
+        base_no_mock = long.balance * market.spot_price
+        longs_value_no_mock += base_no_mock
+    # compute short values in units of base
+    shorts_value = 0
+    shorts_value_no_mock = 0
+    for mint_time, short in wallet_.shorts.items():
+        base = (
+            market.close_short(wallet_.address, short.open_share_price, short.balance, mint_time)[1].base
+            if short.balance > 0 and share_reserves
+            else 0.0
+        )
+        shorts_value += base
+        base_no_mock = short.balance * (1 - market.spot_price)
+        shorts_value_no_mock += base_no_mock
+    return {
+        f"agent_{wallet_.address}_base": wallet_.base,
+        f"agent_{wallet_.address}_lp_tokens": lp_token_value,
+        f"agent_{wallet_.address}_num_longs": len(wallet_.longs),
+        f"agent_{wallet_.address}_num_shorts": len(wallet_.shorts),
+        f"agent_{wallet_.address}_total_longs": longs_value,
+        f"agent_{wallet_.address}_total_shorts": shorts_value,
+        f"agent_{wallet_.address}_total_longs_no_mock": longs_value_no_mock,
+        f"agent_{wallet_.address}_total_shorts_no_mock": shorts_value_no_mock,
+    }
+
+
+def get_state_keys(self) -> list:
+    """Get state keys for a wallet."""
+    return [
+        f"agent_{self.address}_base",
+        f"agent_{self.address}_lp_tokens",
+        f"agent_{self.address}_num_longs",
+        f"agent_{self.address}_num_shorts",
+        f"agent_{self.address}_total_longs",
+        f"agent_{self.address}_total_shorts",
+        f"agent_{self.address}_total_longs_no_mock",
+        f"agent_{self.address}_total_shorts_no_mock",
+    ]
 
 
 @freezable(frozen=False, no_new_attribs=True)
@@ -429,7 +433,7 @@ class MarketState:
         Base amount set aside to account for open longs
     bond_buffer: float
         Bond amount set aside to account for open shorts
-    lp_reserves: float
+    lp: float
         Amount of lp tokens
     variable_rate: float
         .. todo: fill this in
@@ -457,21 +461,41 @@ class MarketState:
     bond_reserves: float = 0.0
     base_buffer: float = 0.0
     bond_buffer: float = 0.0
-    lp_reserves: float = 0.0
+    lp: float = 0.0
     variable_rate: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
     trade_fee_percent: float = 0.0
     redemption_fee_percent: float = 0.0
 
+    @property
+    def apr(self) -> float:
+        """Returns the current market apr (returns nan if shares are zero)"""
+        return (
+            np.nan
+            if self.share_reserves <= 0
+            else calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
+        )
+
+    @property
+    def spot_price(self) -> float:
+        """Returns the current market price of the share reserves (returns nan if shares are zero)"""
+        return (
+            np.nan
+            if self.share_reserves == 0
+            else self.pricing_model.calc_spot_price_from_reserves(
+                market_state=self, time_remaining=self.position_duration
+            )
+        )
+
 
 def apply_delta(simulation_state_, delta: Wallet) -> None:
     r"""Applies a delta to the market state."""
     simulation_state_.share_reserves += delta.base / simulation_state_.share_price
-    simulation_state_.bond_reserves += delta
+    simulation_state_.bond_reserves += delta.bonds
     simulation_state_.base_buffer += delta.base_buffer
     simulation_state_.bond_buffer += delta.bond_buffer
-    simulation_state_.lp_reserves += delta.lp_reserves
+    simulation_state_.lp += delta.lp
     simulation_state_.share_price += delta.share_price
 
     # TODO: issue #146
@@ -576,52 +600,52 @@ def trade_and_update(simulation_state_, action_details: tuple[int, MarketAction]
     return (agent_id, agent_deltas, market_deltas)
 
 
-def update_market(simulation_state_, market_deltas: Wallet) -> None:
+### Spot Price and APR ###
+def calc_apr_from_spot_price(price: float, time_remaining: StretchedTime):
+    r"""
+    Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
+
+    Parameters
+    ----------
+    price : float
+        Spot price of bonds in terms of base
+    time_remaining : StretchedTime
+        Time remaining until bond maturity, in yearfracs
+
+    Returns
+    -------
+    float
+        APR (decimal) calculated from the provided parameters
     """
-    Increments member variables to reflect current market conditions
+    assert price > 0, (
+        "utils.price.calc_apr_from_spot_price: ERROR: "
+        f"Price argument should be greater or equal to zero, not {price}"
+    )
+    assert time_remaining.normalized_time > 0, (
+        "utils.price.calc_apr_from_spot_price: ERROR: "
+        f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
+    )
+    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
-    .. todo:: This order is weird. We should move everything in apply_update to update_market,
-        and then make a new function called check_update that runs these checks
+
+def calc_spot_price_from_apr(apr_: float, time_remaining: StretchedTime):
+    r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
+
+    Parameters
+    ----------
+    apr : float
+        Current fixed APR in decimal units (for example, 5% APR would be 0.05)
+    time_remaining : StretchedTime
+        Time remaining until bond maturity
+
+    Returns
+    -------
+    float
+        Spot price of bonds in terms of base, calculated from the provided parameters
     """
-    simulation_state_.check_market_updates(market_deltas)
-    simulation_state_.market_state.apply_delta(market_deltas)
-
-
-def check_market_updates(simulation_state_, market_deltas: Wallet) -> None:
-    """Check market update values to make sure they are valid"""
-    for key, value in market_deltas.__dict__.items():
-        if value:  # check that it's instantiated and non-empty
-            assert np.isfinite(value), f"markets.update_market: ERROR: market delta key {key} is not finite."
-
-
-@property
-def apr(simulation_state_) -> float:
-    """Returns the current market apr (returns nan if shares are zero)"""
-    return (
-        np.nan
-        if simulation_state_.market_state.share_reserves <= 0
-        else price_utils.calc_apr_from_spot_price(
-            price=simulation_state_.spot_price, time_remaining=simulation_state_.position_duration
-        )
-    )
-
-
-@property
-def spot_price(simulation_state_) -> float:
-    """Returns the current market price of the share reserves (returns nan if shares are zero)"""
-    return (
-        np.nan
-        if simulation_state_.market_state.share_reserves == 0
-        else simulation_state_.pricing_model.calc_spot_price_from_reserves(
-            market_state=simulation_state_.market_state, time_remaining=simulation_state_.position_duration
-        )
-    )
-
-
-def get_market_state_string(simulation_state_) -> str:
-    """Returns a formatted string containing all of the Market class member variables"""
-    strings = [f"{attribute} = {value}" for attribute, value in simulation_state_.__dict__.items()]
-    return "\n".join(strings)
+    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    return 1 / (1 + apr_ * annualized_time)  # price = 1 / (1 + r * t)
 
 
 def open_short(
@@ -655,9 +679,9 @@ def open_short(
     simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
     # Return the market and wallet deltas.
     market_deltas = Wallet(
-        d_base_asset=trade_result.market_result.d_base,
-        d_token_asset=trade_result.market_result.d_bonds,
-        d_bond_buffer=trade_amount,
+        base=trade_result.market_result.d_base,
+        bonds=trade_result.market_result.d_bonds,
+        bond_buffer=trade_amount,
     )
     # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
     max_loss = trade_amount - trade_result.user_result.d_base
@@ -665,11 +689,10 @@ def open_short(
         address=wallet_address,
         base=-max_loss,
         shorts={
-            simulation_state_.time: Short(
+            simulation_state_.time: Position(
                 balance=trade_amount, open_share_price=simulation_state_.market_state.share_price
             )
         },
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -730,21 +753,20 @@ def close_short(
     simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
     # Return the market and wallet deltas.
     market_deltas = Wallet(
-        d_base_asset=trade_result.market_result.d_base,
-        d_token_asset=trade_result.market_result.d_bonds,
-        d_bond_buffer=-trade_amount,
+        base=trade_result.market_result.d_base,
+        bonds=trade_result.market_result.d_bonds,
+        bond_buffer=-trade_amount,
     )
     agent_deltas = Wallet(
         address=wallet_address,
         base=(simulation_state_.market_state.share_price / open_share_price) * trade_amount
         + trade_result.user_result.d_base,  # see CLOSING SHORT LOGIC above
         shorts={
-            mint_time: Short(
+            mint_time: Position(
                 balance=-trade_amount,
                 open_share_price=0,
             )
         },
-        fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
 
@@ -777,15 +799,14 @@ def open_long(
         simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
         # Get the market and wallet deltas to return.
         market_deltas = Wallet(
-            d_base_asset=trade_result.market_result.d_base,
-            d_token_asset=trade_result.market_result.d_bonds,
-            d_base_buffer=trade_result.user_result.d_bonds,
+            base=trade_result.market_result.d_base,
+            bonds=trade_result.market_result.d_bonds,
+            base_buffer=trade_result.user_result.d_bonds,
         )
         agent_deltas = Wallet(
             address=wallet_address,
             base=trade_result.user_result.d_base,
-            longs={simulation_state_.time: Long(trade_result.user_result.d_bonds)},
-            fees_paid=trade_result.breakdown.fee,
+            longs={simulation_state_.time: Position(trade_result.user_result.d_bonds)},
         )
     else:
         market_deltas = Wallet()
@@ -832,15 +853,14 @@ def close_long(
     simulation_state_.pricing_model.check_output_assertions(trade_result=trade_result)
     # Return the market and wallet deltas.
     market_deltas = Wallet(
-        d_base_asset=trade_result.market_result.d_base,
-        d_token_asset=trade_result.market_result.d_bonds,
-        d_base_buffer=-trade_amount,
+        base=trade_result.market_result.d_base,
+        bonds=trade_result.market_result.d_bonds,
+        base_buffer=-trade_amount,
     )
     agent_deltas = Wallet(
         address=wallet_address,
         base=trade_result.user_result.d_base,
-        longs={mint_time: Long(trade_result.user_result.d_bonds)},
-        fees_paid=trade_result.breakdown.fee,
+        longs={mint_time: Position(trade_result.user_result.d_bonds)},
     )
     return market_deltas, agent_deltas
 
@@ -863,13 +883,13 @@ def initialize_market(
         ),
     )
     market_deltas = Wallet(
-        d_base_asset=contribution,
-        d_token_asset=bond_reserves,
+        base=contribution,
+        bonds=bond_reserves,
     )
     agent_deltas = Wallet(
         address=wallet_address,
         base=-contribution,
-        lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
+        lp=2 * bond_reserves + contribution,  # 2y + cz
     )
     return (market_deltas, agent_deltas)
 
@@ -901,14 +921,14 @@ def add_liquidity(
         time_remaining=simulation_state_.position_duration,
     )
     market_deltas = Wallet(
-        d_base_asset=d_base_reserves,
-        d_token_asset=d_token_reserves,
-        d_lp_reserves=lp_out,
+        base=d_base_reserves,
+        bonds=d_token_reserves,
+        lp=lp_out,
     )
     agent_deltas = Wallet(
         address=wallet_address,
         base=-d_base_reserves,
-        lp_tokens=lp_out,
+        lp=lp_out,
     )
     return market_deltas, agent_deltas
 
@@ -933,14 +953,14 @@ def remove_liquidity(
         time_remaining=simulation_state_.position_duration,
     )
     market_deltas = Wallet(
-        d_base_asset=-d_base_reserves,
-        d_token_asset=-d_token_reserves,
-        d_lp_reserves=-lp_in,
+        base=-d_base_reserves,
+        bonds=-d_token_reserves,
+        lp=-lp_in,
     )
     agent_deltas = Wallet(
         address=wallet_address,
         base=d_base_reserves,
-        lp_tokens=-lp_in,
+        lp=-lp_in,
     )
     return market_deltas, agent_deltas
 
@@ -960,7 +980,7 @@ def log_market_step_string(simulation_state_) -> None:
         simulation_state_.time,
         simulation_state_.market_state.share_reserves * simulation_state_.market_state.share_price,
         simulation_state_.market_state.bond_reserves,
-        simulation_state_.market_state.lp_reserves,
+        simulation_state_.market_state.lp,
         simulation_state_.market_state.share_reserves,
         simulation_state_.market_state.base_buffer,
         simulation_state_.market_state.bond_buffer,
@@ -969,70 +989,22 @@ def log_market_step_string(simulation_state_) -> None:
     )
 
 
-def get_market(
-    pricing_model: PricingModel,
-    config: Config,
-    init_target_liquidity: float = 1.0,
-) -> Market:
-    r"""Setup market
-
-    Parameters
-    ----------
-    pricing_model : PricingModel
-        instantiated pricing model
-    config: Config
-        instantiated config object. The following attributes are used:
-            init_share_price : float
-                the initial price of the yield bearing vault shares
-            num_position_days : int
-                how much time between token minting and expiry, in days
-            redemption_fee_percent : float
-                portion of redemptions to be collected as fees for LPers, expressed as a decimal
-            target_pool_apr : float
-                target apr, used for calculating the time stretch
-            trade_fee_percent : float
-                portion of trades to be collected as fees for LPers, expressed as a decimal
-            vault_apr : list
-                valut apr per day for the duration of the simulation
-    init_target_liquidity : float = 1.0
-        initial liquidity for setting up the market
-        should be a tiny amount for setting up apr
-
-    Returns
-    -------
-    Market
-        instantiated market without any liquidity (i.e. no shares or bonds)
-    """
+def init_market_state(market_state_, config, pricing_model, init_target_liquidity: float = 1):
+    """Calculate reserves required to hit init targets and assign them to market_state"""
     position_duration = StretchedTime(
         days=config.num_position_days,
         time_stretch=pricing_model.calc_time_stretch(config.target_pool_apr),
         normalizing_constant=config.num_position_days,
     )
-    # apr is "annual", so if position durations is not 365
-    # then we need to rescale the target apr passed to calc_liquidity
     adjusted_target_apr = config.target_pool_apr * config.num_position_days / 365
     share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
-        market_state=MarketState(share_price=config.init_share_price, init_share_price=config.init_share_price),
+        market_state=market_state_,
         target_liquidity=init_target_liquidity,
         target_apr=adjusted_target_apr,
         position_duration=position_duration,
     )
-    return Market(
-        pricing_model=pricing_model,
-        market_state=MarketState(
-            share_reserves=share_reserves_direct,
-            bond_reserves=bond_reserves_direct,
-            base_buffer=0,
-            bond_buffer=0,
-            lp_reserves=init_target_liquidity / config.init_share_price,
-            init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            variable_rate=config.variable_rate[0],  # yield bearing source apr
-            trade_fee_percent=config.trade_fee_percent,  # g
-            redemption_fee_percent=config.redemption_fee_percent,
-        ),
-        position_duration=position_duration,
-    )
+    market_state_.share_reserves = share_reserves_direct
+    market_state_.bond_reserves = bond_reserves_direct
 
 
 @dataclass
@@ -1057,19 +1029,17 @@ class SimulationState:
         self.rng = self.config.rng
         logging.info("%s %s %s", "#" * 20, self.config.pricing_model_name, "#" * 20)
         if self.config.pricing_model_name.lower() == "hyperdrive":
-            pricing_model = HyperdrivePricingModel()
+            self.market_state.pricing_model = HyperdrivePricingModel()
         elif self.config.pricing_model_name.lower() == "yieldspace":
-            pricing_model = YieldSpacePricingModel()
+            self.market_state.pricing_model = YieldSpacePricingModel()
         else:
             raise ValueError(
                 f'pricing_config.pricing_model_name must be "Hyperdrive", or "YieldSpace", not {self.config.pricing_model_name}'
             )
-        self.market = get_market(pricing_model=pricing_model, config=self.config)
-        # Instantiate the market.
-        market = get_market(pricing_model, self.config)
+        init_market_state(self.market_state, config=self.config, pricing_model=self.market_state.pricing_model)
         if self.config.init_lp is True:  # Instantiate and add the initial LP agent, if desired
-            current_market_liquidity = market.pricing_model.calc_total_liquidity_from_reserves_and_price(
-                market_state=self.market_state, share_price=market.market_state.share_price
+            current_market_liquidity = self.market_state.pricing_model.calc_total_liquidity_from_reserves_and_price(
+                market_state=self.market_state, share_price=self.market_state.share_price
             )
             lp_amount = self.config.target_liquidity - current_market_liquidity
             init_lp_agent = import_module("elfpy.policies.init_lp").Policy(wallet_address=0, budget=lp_amount)
@@ -1182,15 +1152,10 @@ def collect_and_execute_trades(simulation_state_, last_block_in_sim: bool = Fals
     agent_trades = collect_trades(simulation_state_, agent_ids, liquidate=last_block_in_sim)
     for trade in agent_trades:
         agent_id, agent_deltas, market_deltas = simulation_state_.market.trade_and_update(trade)
-        simulation_state_.market.update_market(market_deltas)
+        simulation_state_.market_state.apply_delta(market_deltas)
         agent = simulation_state_.agents[agent_id]
-        logging.debug(
-            "agent #%g wallet deltas:\n%s",
-            agent.wallet.address,
-            agent_deltas,
-        )
+        logging.debug("agent #%g wallet deltas:\n%s", agent.wallet.address, agent_deltas)
         agent.update_wallet(agent_deltas, simulation_state_.market)
-        # TODO: Get simulator, market, pricing model, agent state strings and log
         agent.log_status_report()
         # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
         # issue #215
@@ -1227,7 +1192,7 @@ def run_simulation(simulation_state_, liquidate_on_end: bool = True) -> None:
             else:  # Apply return to starting price (no compounding)
                 price_multiplier = simulation_state_.market.market_state.init_share_price
             delta = Wallet(
-                d_share_price=(
+                share_price=(
                     simulation_state_.market.market_state.vault_apr  # current day's apy
                     / 365  # convert annual yield to daily
                     * price_multiplier
