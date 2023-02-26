@@ -20,7 +20,7 @@ import elfpy.agents.wallet as wallet
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive import Market, MarketAction, MarketDeltas
+    from elfpy.markets.hyperdrive import Market, MarketDeltas
 
 
 @dataclass
@@ -66,7 +66,7 @@ class SimulationState:
     position_duration: list[time_utils.StretchedTime] = field(
         default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
     )
-    current_vault_apr: list[float] = field(
+    current_variable_apr: list[float] = field(
         default_factory=list, metadata=types.to_description("vault apr on a given day")
     )
     fixed_apr: list[float] = field(default_factory=list, metadata=types.to_description("apr of the AMM pool"))
@@ -588,8 +588,8 @@ class Simulator:
                 run_vars=RunSimVariables(
                     run_number=self.run_number,
                     config=self.config,
-                    agent_init=[agent.wallet for agent in self.agents.values()],
-                    market_init=self.market.market_state,
+                    # agent_init=[agent.wallet for agent in self.agents.values()],
+                    # market_init=self.market.market_state,
                     market_step_size=self.market_step_size,
                     position_duration=self.market.position_duration,
                     simulation_start_time=self.start_time,
