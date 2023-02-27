@@ -35,10 +35,11 @@ venv.bak/
 elf-env
 
 # documentation
-/docs/source/_autosummary
-/docs/source/generated
-/docs/source/autoapi
-/docs/build
+docs/source/_autosummary
+docs/source/generated
+docs/source/autoapi
+docs/build
+docs/make_outputs.log
 
 # mypy
 .mypy_cache/

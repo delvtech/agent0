@@ -1,0 +1,24 @@
+contracts_folder: notebook/contracts
+
+plugins:
+  - name: solidity==0.5.4
+  - name: foundry==0.5.2
+  - name: notebook==0.5.0a2
+  - name: etherscan==0.5.5
+
+dependencies:
+  - name: OpenZeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 4.8.1
+
+solidity:
+  import_remapping:
+    - "@openzeppelin/contracts=OpenZeppelin/4.8.1"
+
+ethereum:
+  default_network: local
+  local:
+    default_provider: foundry
+
+foundry:
+  port: 8555
