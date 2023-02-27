@@ -150,25 +150,6 @@ class TestTimeUtils(unittest.TestCase):
                 norm_days, test_case["expected_result"], err_msg=f"unexpected normalized days {norm_days}"
             )
 
-    def test_stretch_time(self):
-        """Unit tests for the stretch_time function"""
-
-        test_cases = [
-            # test 1
-            {"time": 0, "time_stretch": 20, "expected_result": 0},  # no time  # 20 years stretch
-            # test 2
-            {"time": 0.5, "time_stretch": 20, "expected_result": 0.025},  # 6 months  # 20 years stretch
-            # test 3
-            {"time": 1, "time_stretch": 2, "expected_result": 0.5},  # one year  # 2 years stretch
-        ]
-
-        for test_case in test_cases:
-            stretched_time = time_utils.stretch_time(test_case["time"], test_case["time_stretch"])
-
-            np.testing.assert_almost_equal(
-                stretched_time, test_case["expected_result"], err_msg=f"unexpected stretched time {stretched_time}"
-            )
-
     def test_unnorm_days(self):
         """Unit tests for the unnorm_days function"""
 
@@ -194,27 +175,6 @@ class TestTimeUtils(unittest.TestCase):
 
             np.testing.assert_almost_equal(
                 unnormed_days, test_case["expected_result"], err_msg=f"unexpected amount of days {unnormed_days}"
-            )
-
-    def unstretch_time(self):
-        """Unit tests for the unstretch_time function"""
-
-        test_cases = [
-            # test 1
-            {"stretched_time": 0, "time_stretch": 20, "expected_result": 0},  # no time  # 20 years stretch
-            # test 2
-            {"stretched_time": 0.05, "time_stretch": 20, "expected_result": 1},  # 20 years stretch  # 1 year
-            # test 3
-            {"stretched_time": 0.10, "time_stretch": 5, "expected_result": 0.50},  # 3 years stretch  # 6 months
-        ]
-
-        for test_case in test_cases:
-            unstretched_time = time_utils.unstretch_time(test_case["stretched_time"], test_case["time_stretch"])
-
-            np.testing.assert_almost_equal(
-                unstretched_time,
-                test_case["expected_result"],
-                err_msg=f"unexpected unstretched time {unstretched_time}",
             )
 
     def test_days_to_time_remaining(self):

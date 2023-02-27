@@ -143,25 +143,6 @@ def norm_days(days: float, normalizing_constant: float = 365) -> float:
     return days / normalizing_constant
 
 
-def stretch_time(time: float, time_stretch: float = 1.0) -> float:
-    r"""Returns stretched time values
-
-    Parameters
-    ----------
-    time : float
-        Time that needs to be stretched for calculations, in terms of the normalizing constant
-    time_stretch : float
-        Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-        Defaults to 1
-
-    Returns
-    -------
-    float
-        Stretched time, using the provided parameters
-    """
-    return time / time_stretch
-
-
 def unnorm_days(normed_days: float, normalizing_constant: float = 365) -> float:
     r"""Returns days from a value between 0 and 1
 
@@ -178,25 +159,6 @@ def unnorm_days(normed_days: float, normalizing_constant: float = 365) -> float:
         Amount of days, calculated from the provided parameters
     """
     return normed_days * normalizing_constant
-
-
-def unstretch_time(stretched_time: float, time_stretch: float = 1) -> float:
-    r"""Returns unstretched time value, which should be between 0 and 1
-
-    Parameters
-    ----------
-    stretched_time : float
-        Time that has been stretched using the time_stretch factor
-    time_stretch : float
-        Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-        Defaults to 1
-
-    Returns
-    -------
-    float
-        Time that was provided, unstretched but still based on the normalization factor
-    """
-    return stretched_time * time_stretch
 
 
 def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
@@ -219,7 +181,7 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    time_remaining = stretch_time(normed_days_remaining, time_stretch)
+    time_remaining = normed_days_remaining / time_stretch
     return time_remaining
 
 
@@ -241,6 +203,6 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     float
         Time remaining until term maturity, in days
     """
-    normed_days_remaining = unstretch_time(time_remaining, time_stretch)
+    normed_days_remaining = time_remaining * time_stretch
     days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
     return days_remaining
