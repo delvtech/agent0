@@ -9,7 +9,7 @@ import elfpy.simulators as simulators
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -179,7 +179,7 @@ def get_pricing_model(model_name: str) -> PricingModel:
     if model_name.lower() == "hyperdrive":
         pricing_model = HyperdrivePricingModel()
     elif model_name.lower() == "yieldspace":
-        pricing_model = YieldSpacePricingModel()
+        pricing_model = YieldspacePricingModel()
     else:
         raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model

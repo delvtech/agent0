@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models.trades as trades
 import elfpy.utils.time as time_utils
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import MarketState
 
 
-class HyperdrivePricingModel(YieldSpacePricingModel):
+class HyperdrivePricingModel(YieldspacePricingModel):
     """
     Hyperdrive Pricing Model
 

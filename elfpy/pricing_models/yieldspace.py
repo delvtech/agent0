@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from elfpy.markets.hyperdrive import MarketState
 
 
-class YieldSpacePricingModel(PricingModel):
+class YieldspacePricingModel(PricingModel):
     """
     YieldSpace Pricing Model
 

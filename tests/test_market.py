@@ -13,9 +13,11 @@ import elfpy.types as types
 from elfpy.agents.wallet import Wallet, Long, Short
 import elfpy.simulators.simulators as simulators
 import elfpy.utils.time as time_utils
-from elfpy.markets.hyperdrive import Market, MarketDeltas, MarketState
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.borrow as borrow
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
@@ -24,7 +26,7 @@ import elfpy.utils.outputs as output_utils  # utilities for file outputs
 class Deltas:
     """Expected deltas for a trade"""
 
-    market_deltas: MarketDeltas
+    market_deltas: hyperdrive.MarketDeltas
     agent_deltas: Wallet
 
     __test__ = False  # pytest: don't test this class
@@ -45,9 +47,13 @@ class BaseMarketTest(unittest.TestCase):
             time_stretch=1,
             normalizing_constant=36,
         )
-        _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_good)
+        _ = hyperdrive.Market(
+            pricing_model=PricingModel(), market_state=hyperdrive.MarketState(), position_duration=pd_good
+        )
         with self.assertRaises(AssertionError):
-            _ = Market(pricing_model=PricingModel(), market_state=MarketState(), position_duration=pd_nonorm)
+            _ = hyperdrive.Market(
+                pricing_model=PricingModel(), market_state=hyperdrive.MarketState(), position_duration=pd_nonorm
+            )
 
     def set_up_test(
         self,
@@ -186,7 +192,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = trade_result
         fees_paid = 0.5000000000000006  # taken from pricing model output, not tested here
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=d_base,  # base asset increases because agent is selling base into market to buy bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is buying bonds from market to sell base
             d_base_buffer=d_bonds,  # base buffer increases, identifying agent deposits, set aside from LPs
@@ -217,7 +223,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         trade_fees_paid = 0.4976188948619445  # taken from pricing model output, not tested here
         redemption_fees_paid = 0  # taken from pricing model output, not tested here
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base into market to sell bonds
             d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=-d_bonds,  # base buffer decreases, identifying agent withdrawals, no longer set aside
@@ -248,7 +254,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         open_share_price = 1.0
 
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=-d_base,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # bond buffer doesn't change because agent did not deposit base
@@ -281,7 +287,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.47619047619047666  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -312,7 +318,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_bonds = 100
         d_base_agent = 100 - trade_result_close_short_in_base  # remaining margin after closing the position
         fees_paid = 0.47576611218819087  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -346,7 +352,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
         fees_paid = 0.23809523809523833  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -380,7 +386,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         d_max_loss = d_worst_case_scenario - trade_result_close_short_in_base
         d_base_agent = d_max_loss  # get back the improvement in your max loss
         fees_paid = 0.23788305609409544  # taken from pricing model output, not tested here
-        expected_market_deltas = MarketDeltas(
+        expected_market_deltas = hyperdrive.MarketDeltas(
             d_base_asset=d_base_market,  # base asset decreases because agent is buying base from market to sell bonds
             d_bond_asset=-d_bonds,  # token asset increases because agent is selling bonds into market to buy base
             d_base_buffer=0,  # base buffer doesn't change because agent did not withdraw base
@@ -413,12 +419,12 @@ class MarketTestsOneFunction(BaseMarketTest):
         target_aprs = [0.001, 0.01, 0.2, 0.123456789, 1]
 
         for target_apr in target_aprs:
-            market = Market(
+            market = hyperdrive.Market(
                 pricing_model,
-                MarketState(
+                hyperdrive.MarketState(
                     share_reserves=share_reserves,
                     bond_reserves=pricing_model.calc_bond_reserves(
-                        target_apr, position_duration, MarketState(share_reserves=share_reserves)
+                        target_apr, position_duration, hyperdrive.MarketState(share_reserves=share_reserves)
                     ),
                 ),
                 position_duration,
@@ -457,7 +463,7 @@ class MarketTestsOneFunction(BaseMarketTest):
         test_cases = [
             # test 1: 5M target_liquidity; 5% APR;
             #   6mo duration; 22.186877016851916 time_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
+            #   1 init share price; 1 share price; Hyperdrive
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
@@ -468,12 +474,13 @@ class MarketTestsOneFunction(BaseMarketTest):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": 5_000_000,  # target_liquidity / share_price
                 "expected_bond_reserves": 1_823_834.7868545868,
             },
             # test 2: 5M target_liquidity; 2% APR;
             #   6mo duration; 22.186877016851916 time_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
+            #   1 init share price; 1 share price; Yieldspace
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.02,  # fixed rate APR you'd get from purchasing bonds; r = 0.02
@@ -484,12 +491,13 @@ class MarketTestsOneFunction(BaseMarketTest):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
+                "pricing_model": YieldspacePricingModel(),
                 "expected_share_reserves": 5_000_000.0,  # target_liquidity / share_price
                 "expected_bond_reserves": 1_841_446.767658661,
             },
             # test 3: 5M target_liquidity; 8% APR;
             #   6mo duration; 22.186877016851916 time_stretch (targets 5% APR);
-            #   1 init share price; 1 share price
+            #   1 init share price; 1 share price; Hyperdrive
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.08,  # fixed rate APR you'd get from purchasing bonds; r = 0.08
@@ -500,12 +508,13 @@ class MarketTestsOneFunction(BaseMarketTest):
                 ),
                 "init_share_price": 1,  # original share price pool started; u = 1
                 "share_price": 1,  # share price of the LP in the yield source; c = 1
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": 5_000_000.0,
                 "expected_bond_reserves": 1_806_633.2221533637,
             },
             # test 4:  10M target_liquidity; 3% APR
             #   3mo duration; 36.97812836141986 time_stretch (targets 3% APR);
-            #   1.5 init share price; 2 share price
+            #   2 init share price; 2 share price; Hyperdrive
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
@@ -516,12 +525,13 @@ class MarketTestsOneFunction(BaseMarketTest):
                 ),
                 "init_share_price": 2,  # original share price when pool started
                 "share_price": 2,  # share price of the LP in the yield source
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": 5_000_000.0,
                 "expected_bond_reserves": 1_591_223.795848793,
             },
             # test 5:  10M target_liquidity; 5% APR
             #   9mo duration; 36.97812836141986 time_stretch (targets 3% APR);
-            #   1.5 init share price; 2 share price
+            #   1.3 init share price; 1.3 share price; Hyperdrive
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.001,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
@@ -532,39 +542,67 @@ class MarketTestsOneFunction(BaseMarketTest):
                 ),
                 "init_share_price": 1.3,  # original share price when pool started
                 "share_price": 1.3,  # share price of the LP in the yield source
+                "pricing_model": HyperdrivePricingModel(),
                 "expected_share_reserves": 7_692_307.692307692,
                 "expected_bond_reserves": 6_486_058.016848019,
+            },
+            # test 6:  10M target_liquidity; 3% APR
+            #   3mo duration; 36.97812836141986 time_stretch (targets 3% APR);
+            #   2 init share price; 2 share price; Yieldspace
+            {
+                "target_liquidity": 10_000_000,  # Targeting 10M liquidity
+                "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
+                "position_duration": time_utils.StretchedTime(
+                    days=91.25,
+                    time_stretch=36.97812836141987,
+                    normalizing_constant=91.25,
+                ),
+                "init_share_price": 2,  # original share price when pool started
+                "share_price": 2,  # share price of the LP in the yield source
+                "pricing_model": YieldspacePricingModel(),
+                "expected_share_reserves": 5_000_000.0,
+                "expected_bond_reserves": 1_591_223.795848793,
+            },
+            # test 7:  Borrow market is initialized empty
+            {
+                "pricing_model": borrow.BorrowPricingModel(),
+                "borrow_shares": 0.0,
+                "collateral": {types.TokenType.BASE, 0.0},
+                "borrow_amount": 0.0,
+                "borrow_shares": 0.0,
+                "borrow_outstanding": 0.0,
             },
         ]
         # Loop through the test cases & pricing model
         for test_index, test_case in enumerate(test_cases):
-            # Check if this test case is supposed to fail
-            if "is_error_case" in test_case and test_case["is_error_case"]:
-                # Check that test case throws the expected error
-                with self.assertRaises(test_case["expected_result"]):
-                    market = Market(
-                        position_duration=test_case["position_duration"],
-                        market_state=MarketState(
-                            init_share_price=test_case["init_share_price"],
-                            share_price=test_case["share_price"],
-                        ),
-                        pricing_model=HyperdrivePricingModel(),
-                    )
-                    market_deltas, _ = market.initialize_market(
-                        wallet_address=0,
-                        contribution=test_case["target_liquidity"],
-                        target_apr=test_case["target_apr"],
-                    )
-                    market.market_state.apply_delta(market_deltas)
-            # If test was not supposed to fail, continue normal execution
+            test_number = test_index + 1
+            if isinstance(test_case["pricing_model"], borrow.BorrowPricingModel):
+                market = borrow.Market(market_state=borrow.MarketState())
+                market_deltas, _ = market.initialize_market(wallet_address=0)
+                market.market_state.apply_delta(market_deltas)
+                np.testing.assert_equal(
+                    actual=market.market_state.borrow_amount,
+                    desired=test_case["borrow_amount"],
+                    err_msg=f"{test_number=}\nunexpected borrow_amount",
+                )
+                np.testing.assert_almost_equal(
+                    actual=market.market_state.borrow_shares,
+                    desired=test_case["borrow_shares"],
+                    err_msg=f"{test_number=}\nunexpected borrow_shares",
+                )
+                np.testing.assert_almost_equal(
+                    actual=market.market_state.borrow_outstanding,
+                    desired=test_case["borrow_outstanding"],
+                    err_msg=f"{test_number=}\nunexpected collateral_amount",
+                )
             else:
-                market = Market(
+                market = hyperdrive.Market(
                     position_duration=test_case["position_duration"],
-                    market_state=MarketState(
+                    market_state=hyperdrive.MarketState(
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
-                    pricing_model=HyperdrivePricingModel(),
+                    pricing_model=test_case["pricing_model"],
                 )
                 market_deltas, _ = market.initialize_market(
                     wallet_address=0,
@@ -572,7 +610,6 @@ class MarketTestsOneFunction(BaseMarketTest):
                     target_apr=test_case["target_apr"],
                 )
                 market.market_state.apply_delta(market_deltas)
-                test_number = test_index + 1
                 np.testing.assert_almost_equal(
                     actual=market.market_state.share_reserves,
                     desired=test_case["expected_share_reserves"],
