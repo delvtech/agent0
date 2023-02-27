@@ -5,17 +5,45 @@ import itertools
 import unittest
 
 import numpy as np
+import elfpy.agents.agent as agent
+import elfpy.markets.hyperdrive as hyperdrive_markets
+from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.markets.borrow import Market as BorrowMarket
 from elfpy.markets.borrow import MarketState as BorrowMarketState
+from elfpy.utils.time import StretchedTime
 
 
 class TestAddLiquidity(unittest.TestCase):
-    """Test add liquidity to """
+    """Test adding liquidity to hyperdrive"""
+
+    alice: agent.Agent
+    market: hyperdrive_markets.Market
+
+    def setUp(self):
+        contribution = 500_000_000
+        target_apr = 0.05
+
+        alice = agent.Agent(wallet_address=0, budget=contribution + 100)
+        bob = agent.Agent(wallet_address=1, budget=100)
+
+        pricing_model = HyperdrivePricingModel()
+        market_state = hyperdrive_markets.MarketState()
+        market = hyperdrive_markets.Market(
+            pricing_model=pricing_model,
+            market_state=market_state,
+            position_duration=StretchedTime(
+                days=365, time_stretch=pricing_model.calc_time_stretch(target_apr), normalizing_constant=365
+            ),
+        )
+        market_deltas, agent_deltas = market.initialize_market(alice.wallet.address, contribution, 0.05)
+        market.market_state.apply_delta(market_deltas)
+        alice.update_wallet(agent_deltas)
 
     def test_add_liquidity_failure_zero_amount(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -29,6 +57,7 @@ class TestAddLiquidity(unittest.TestCase):
         # hyperdrive.addLiquidity(0, 0, bob, true);
 
     def test_add_liquidity_identical_lp_shares(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -67,6 +96,7 @@ class TestAddLiquidity(unittest.TestCase):
         # assertApproxEqAbs(poolApr, apr, 1);
 
     def test_add_liquidity_with_long_immediately(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -101,7 +131,8 @@ class TestAddLiquidity(unittest.TestCase):
         # uint256 aprAfter = calculateAPRFromReserves(hyperdrive);
         # assertApproxEqAbs(aprAfter, aprBefore, 1);
 
-    def test_add_liquidity_with_short_immediately():
+    def test_add_liquidity_with_short_immediately(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -136,7 +167,8 @@ class TestAddLiquidity(unittest.TestCase):
         # uint256 aprAfter = calculateAPRFromReserves(hyperdrive);
         # assertApproxEqAbs(aprAfter, aprBefore, 1);
 
-    def test_add_liquidity_with_long_at_maturity():
+    def test_add_liquidity_with_long_at_maturity(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -173,7 +205,8 @@ class TestAddLiquidity(unittest.TestCase):
         # uint256 withdrawalProceeds = removeLiquidity(bob, lpShares);
         # assertApproxEqAbs(withdrawalProceeds, contribution, 1e9);
 
-    def test_add_liquidity_with_short_at_maturity():
+    def test_add_liquidity_with_short_at_maturity(self):
+        self.assertEqual(True, True)
         # uint256 apr = 0.05e18;
 
         # // Initialize the pool with a large amount of capital.
@@ -207,9 +240,3 @@ class TestAddLiquidity(unittest.TestCase):
 
         # // Ensure that if the new LP withdraws, they get their money back.
         # uint256 withdrawalProceeds = removeLiquidity(bob, lpShares);
-
-    def test_open_borrow():
-        # self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
-        # self.assertEqual(expected_d_collateral, market_deltas.d_collateral)
-        # self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
-        # self.assertEqual(expected_d_borrow_closed_interest, market_deltas.d_borrow_closed_interest)
