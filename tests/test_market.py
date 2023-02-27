@@ -434,24 +434,24 @@ class MarketTestsOneFunction(BaseMarketTest):
             test 1: 5M target_liquidity; 5% APR;
             6mo remaining; 22.186877016851916 time_stretch (targets 5% APR);
             1 init share price; 1 share price
-                l = target_liquidity = 5_000_000
-                r = target_apr = 0.05
-                days = 182.5
-                normalizing_constant = 182.5  # normalizing_constant = days on market init
-                init_share_price = 1
-                share_price = 1
+            l = target_liquidity = 5_000_000
+            r = target_apr = 0.05
+            days = 182.5
+            normalizing_constant = 182.5  # normalizing_constant = days on market init
+            init_share_price = 1
+            share_price = 1
 
-                time_stretch = 3.09396 / (0.02789 * r * 100)
-                t = days / 365
-                T = days / normalizing_constant / time_stretch
-                u = init_share_price
-                c = share_price  # share price of the LP in the yield source
-                z = share_reserves = l / c
-                y = bond_reserves = (z / 2) * (u * (1 + r * t) ** (1 / T) - c)
-                total_liquidity = c * z
+            time_stretch = 3.09396 / (0.02789 * r * 100)
+            t = days / 365
+            T = days / normalizing_constant / time_stretch
+            u = init_share_price
+            c = share_price  # share price of the LP in the yield source
+            z = share_reserves = l / c
+            y = bond_reserves = (z / 2) * (u * (1 + r * t) ** (1 / T) - c)
+            total_liquidity = c * z
 
-                p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
-                final_apr = (1 - p) / (p * t)
+            p = ((2 * y + c * z) / (u * z)) ** (-T)  # spot price from reserves
+            final_apr = (1 - p) / (p * t)
         """
 
         test_cases = [
