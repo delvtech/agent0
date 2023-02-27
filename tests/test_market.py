@@ -566,8 +566,6 @@ class MarketTestsOneFunction(BaseMarketTest):
             # test 7:  Borrow market is initialized empty
             {
                 "pricing_model": borrow.BorrowPricingModel(),
-                "borrow_shares": 0.0,
-                "collateral": {types.TokenType.BASE, 0.0},
                 "borrow_amount": 0.0,
                 "borrow_shares": 0.0,
                 "borrow_outstanding": 0.0,

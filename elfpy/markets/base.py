@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar, Any
+from typing import TYPE_CHECKING, Generic, TypeVar
 from dataclasses import dataclass
 
 import numpy as np
@@ -122,15 +122,6 @@ class Market(Generic[State, Deltas]):
 
     def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
-        raise NotImplementedError
-
-    def initialize_market(
-        self,
-        wallet_address: int,
-        contribution: float,
-        target_apr: float,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """Market Deltas so that an LP can initialize the market"""
         raise NotImplementedError
 
     def get_market_state_string(self) -> str:
