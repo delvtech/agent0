@@ -238,7 +238,7 @@ class Agent:
                     key,
                     self.wallet[key].amount,
                     self.wallet[key].amount + value_or_dict.amount,
-                    value_or_dict,
+                    value_or_dict.amount,
                 )
                 self.wallet[key].amount += value_or_dict.amount
             # handle updating a dict, which have mint_time attached
