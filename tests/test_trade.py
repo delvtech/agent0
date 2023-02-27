@@ -62,8 +62,6 @@ class SingleTradeTests(unittest.TestCase):
                         market_direct = Market(
                             pricing_model=simulator.market.pricing_model,
                             market_state=MarketState(
-                                share_reserves=0,  # set later
-                                bond_reserves=0,  # set later
                                 base_buffer=simulator.market.market_state.base_buffer,
                                 bond_buffer=simulator.market.market_state.bond_buffer,
                                 lp_total_supply=simulator.market.market_state.lp_total_supply,
