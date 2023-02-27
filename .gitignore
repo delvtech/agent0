@@ -8,6 +8,9 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
+# pytest
+.pytest_cache
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
