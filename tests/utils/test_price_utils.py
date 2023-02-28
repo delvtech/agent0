@@ -4,7 +4,7 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 import numpy as np
 
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 import elfpy.utils.price as price_utils
 
 

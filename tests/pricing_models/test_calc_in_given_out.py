@@ -13,7 +13,7 @@ from calc_test_dataclasses import (
 )
 
 import elfpy.types as types
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel

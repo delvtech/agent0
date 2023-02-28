@@ -9,6 +9,17 @@ import numpy as np
 import elfpy.types as types
 
 
+@dataclass
+class GlobalTime:
+    r"""Global time."""
+
+    time: float = 0
+
+    def tick(self, delta_time: float) -> None:
+        """ticks the time by delta_time amount"""
+        self.time += delta_time
+
+
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class StretchedTime:
@@ -32,18 +43,6 @@ class StretchedTime:
             self.days,
             self.normalizing_constant,
         )
-
-    def __str__(self):
-        output_string = (
-            "StretchedTime(\n"
-            f"\t{self.days=},\n"
-            f"\t{self.normalized_time=},\n"
-            f"\t{self.stretched_time=},\n"
-            f"\t{self.time_stretch=},\n"
-            f"\t{self.normalizing_constant=},\n"
-            ")"
-        )
-        return output_string
 
 
 def current_datetime() -> datetime:
@@ -181,8 +180,7 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    time_remaining = normed_days_remaining / time_stretch
-    return time_remaining
+    return normed_days_remaining / time_stretch
 
 
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
@@ -204,5 +202,4 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in days
     """
     normed_days_remaining = time_remaining * time_stretch
-    days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
-    return days_remaining
+    return unnorm_days(normed_days_remaining, normalizing_constant)

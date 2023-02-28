@@ -6,7 +6,7 @@ import unittest
 import pytz
 import numpy as np
 
-from elfpy.utils import time as time_utils
+import time_utils as time_utils
 
 
 class TestTimeUtils(unittest.TestCase):

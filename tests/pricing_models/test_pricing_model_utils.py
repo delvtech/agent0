@@ -5,7 +5,7 @@ import numpy as np
 import elfpy.pricing_models.base as base_pm
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.utils import sim_utils
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):

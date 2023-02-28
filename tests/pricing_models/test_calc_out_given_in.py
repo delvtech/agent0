@@ -16,7 +16,7 @@ import elfpy.types as types
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 from elfpy.markets.hyperdrive import MarketState
 
 # pylint: disable=duplicate-code

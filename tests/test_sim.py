@@ -13,7 +13,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 
 
 class TestSimulator(unittest.TestCase):

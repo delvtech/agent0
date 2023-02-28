@@ -5,7 +5,7 @@ import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 from elfpy.markets.hyperdrive import MarketState
 
 

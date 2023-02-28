@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 import elfpy.types as types
 from elfpy.agents.wallet import Wallet, Long, Short
 import elfpy.simulators.simulators as simulators
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.borrow as borrow
 from elfpy.pricing_models.base import PricingModel

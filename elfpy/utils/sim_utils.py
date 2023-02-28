@@ -6,7 +6,7 @@ from typing import Any, TYPE_CHECKING, Optional
 import logging
 
 import elfpy.simulators as simulators
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel

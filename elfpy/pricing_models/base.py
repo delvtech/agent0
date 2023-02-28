@@ -10,7 +10,7 @@ from elfpy import (
     WEI,
 )
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
+import time_utils as time_utils
 import elfpy.pricing_models.trades as trades
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
