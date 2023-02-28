@@ -15,8 +15,10 @@ from elfpy.agents import policies  # type: ignore # TODO: Investigate why this r
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
 import elfpy.time as time
-import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.pricing_models as pricing_models
+import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.pricing_models.base as base_pm
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
 
 
 class TestErrorPolicy(Agent):
@@ -39,7 +41,7 @@ class TestErrorPolicy(Agent):
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
-    market_state: hyperdrive.MarketState
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
@@ -49,11 +51,11 @@ class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
 
     @staticmethod
-    def setup_market() -> hyperdrive.Market:
+    def setup_market() -> hyperdrive_market.Market:
         """Instantiates a market object for testing purposes"""
         # Give an initial market state
-        pricing_model = pricing_models.HyperdrivePricingModel()
-        market_state = hyperdrive.MarketState(
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+        market_state = hyperdrive_market.MarketState(
             share_reserves=1_000_000,
             bond_reserves=1_000_000,
             base_buffer=0,
@@ -69,7 +71,7 @@ class TestAgent(unittest.TestCase):
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         time_remaining.freeze()  # pylint: disable=no-member # type: ignore
-        market = hyperdrive.Market(
+        market = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time_remaining,
@@ -101,14 +103,14 @@ class TestAgent(unittest.TestCase):
         Ensures that get_max_long and get_max_short will not exceed the balance
         of an agent in a variety of market conditions.
         """
-        models: list[pricing_models.PricingModel] = [
-            pricing_models.HyperdrivePricingModel(),
-            pricing_models.YieldspacePricingModel(),
+        models: list[base_pm.PricingModel] = [
+            hyperdrive_pm.HyperdrivePricingModel(),
+            yieldspace_pm.YieldspacePricingModel(),
         ]
 
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -122,7 +124,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=100_000,
@@ -136,7 +138,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=100_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -150,7 +152,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=100_000_000,
                     base_buffer=0,
@@ -164,7 +166,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=500_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -178,7 +180,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -192,7 +194,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -206,7 +208,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -220,7 +222,7 @@ class TestAgent(unittest.TestCase):
                 ),
             ),
             TestCaseGetMax(
-                market_state=hyperdrive.MarketState(
+                market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
                     base_buffer=0,
@@ -236,7 +238,7 @@ class TestAgent(unittest.TestCase):
         ]
         for test_case in test_cases:
             for pricing_model in models:
-                market = hyperdrive.Market(
+                market = hyperdrive_market.Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
                     position_duration=test_case.time_remaining,

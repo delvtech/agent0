@@ -154,10 +154,11 @@ def get_market(
         position_duration=position_duration,
     )
     # Not using an agent to initialize the market so we ignore the agent address
-    market_deltas, _ = market.initialize_market(
-        wallet_address=0, contribution=init_target_liquidity, target_apr=config.target_fixed_apr
+    _ = market.initialize_market(
+        wallet_address=0,
+        contribution=init_target_liquidity,
+        target_apr=config.target_fixed_apr,
     )
-    market.update_market(market_deltas)
     return market
 
 
