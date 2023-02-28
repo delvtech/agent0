@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 import elfpy.utils.price as price_utils
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
 import elfpy.markets.base as base_market

@@ -1,7 +1,7 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 
 
 ### Spot Price and APR ###

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models.trades as trades
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
 

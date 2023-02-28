@@ -13,7 +13,7 @@ from numpy.random._generator import Generator
 
 
 import elfpy.types as types
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet

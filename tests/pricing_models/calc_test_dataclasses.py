@@ -7,7 +7,7 @@ from typing import Type, Optional
 from pytest import skip
 
 import elfpy.types as types
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 from elfpy.markets.hyperdrive import MarketState
 
 skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)

@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.base import PricingModel
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.pricing_models.trades as trades

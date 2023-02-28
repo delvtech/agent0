@@ -14,7 +14,7 @@ import elfpy.types as types
 from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
-import time_utils as time_utils
+import elfpy.time_utils as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models as pricing_models
 
