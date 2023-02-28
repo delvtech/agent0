@@ -10,14 +10,20 @@ import elfpy.types as types
 
 
 @dataclass
-class GlobalTime:
+class BlockTime:
     r"""Global time."""
 
-    time: float = 0
+    time_in_years: float = 0
+    block_number: float = 0
 
-    def tick(self, delta_time: float) -> None:
+    @property
+    def time_in_seconds(self) -> float:
+        """1 year = 31,556,952 seconds"""
+        return self.time_in_years * 31_556_952
+
+    def tick(self, delta_years: float) -> None:
         """ticks the time by delta_time amount"""
-        self.time += delta_time
+        self.time_in_years += delta_years
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
