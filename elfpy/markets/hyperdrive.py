@@ -650,6 +650,81 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
+    def calc_lp_out_given_tokens_in(
+        self,
+        d_base: float,
+        rate: float,
+        market_state: MarketState,
+        time_remaining: time_utils.StretchedTime,
+    ) -> tuple[float, float, float]:
+        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
+
+        .. math::
+            y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+        """
+        d_shares = d_base / market_state.share_price
+        if market_state.share_reserves > 0:  # normal case where we have some share reserves
+            # TODO: We need to update these LP calculations to address the LP
+            #       exploit scenario.
+            lp_out = (d_shares * market_state.lp_total_supply) / (
+                market_state.share_reserves - market_state.base_buffer
+            )
+        else:  # initial case where we have 0 share reserves or final case where it has been removed
+            lp_out = d_shares
+        # TODO: Move this calculation to a helper function.
+        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        d_bonds = (market_state.share_reserves + d_shares) / 2 * (
+            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
+        ) - market_state.bond_reserves
+        logging.debug(
+            (
+                "inputs: d_base=%g, share_reserves=%d, "
+                "bond_reserves=%d, base_buffer=%g, "
+                "init_share_price=%g, share_price=%g, "
+                "lp_total_supply=%g, rate=%g, "
+                "time_remaining=%g, stretched_time_remaining=%g"
+                "\nd_shares=%g (d_base / share_price = %g / %g)"
+                "\nlp_out=%g\n"
+                "(d_share_reserves * lp_total_supply / (share_reserves - base_buffer / share_price) = "
+                "%g * %g / (%g - %g / %g))"
+                "\nd_bonds=%g\n"
+                "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** "
+                "(1 / stretched_time_remaining) - share_price) - bond_reserves = "
+                "(%g + %g) / 2 * (%g * (1 + %g * %g) ** "
+                "(1 / %g) - %g) - %g)"
+            ),
+            d_base,
+            market_state.share_reserves,
+            market_state.bond_reserves,
+            market_state.base_buffer,
+            market_state.init_share_price,
+            market_state.share_price,
+            market_state.lp_total_supply,
+            rate,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
+            d_shares,
+            d_base,
+            market_state.share_price,
+            lp_out,
+            d_shares,
+            market_state.lp_total_supply,
+            market_state.share_reserves,
+            market_state.base_buffer,
+            market_state.share_price,
+            d_bonds,
+            market_state.share_reserves,
+            d_shares,
+            market_state.init_share_price,
+            rate,
+            time_remaining.normalized_time,
+            time_remaining.stretched_time,
+            market_state.share_price,
+            market_state.bond_reserves,
+        )
+        return lp_out, d_base, d_bonds
+
     def log_market_step_string(self) -> None:
         """Logs the current market step"""
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
