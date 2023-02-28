@@ -6,7 +6,7 @@ from typing import Any, TYPE_CHECKING, Optional
 import logging
 
 import elfpy.simulators as simulators
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
@@ -54,7 +54,6 @@ def get_simulator(
                 market_init=simulator.market.market_state,
                 market_step_size=simulator.market_step_size,
                 position_duration=simulator.market.position_duration,
-                simulation_start_time=time_utils.current_datetime(),
             ),
             day_vars=simulators.DaySimVariables(
                 run_number=simulator.run_number,
@@ -138,7 +137,7 @@ def get_market(
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
     """
-    position_duration = time_utils.StretchedTime(
+    position_duration = time.StretchedTime(
         days=config.num_position_days,
         time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
         normalizing_constant=config.num_position_days,

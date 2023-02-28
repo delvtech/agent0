@@ -1,12 +1,27 @@
 """Helper functions for converting time units"""
 
-from datetime import datetime, timedelta
 from dataclasses import dataclass
 
-import pytz
 import numpy as np
 
 import elfpy.types as types
+
+
+@dataclass
+class BlockTime:
+    r"""Global time."""
+
+    time_in_years: float = 0
+    block_number: float = 0
+
+    @property
+    def time_in_seconds(self) -> float:
+        """1 year = 31,556,952 seconds"""
+        return self.time_in_years * 31_556_952
+
+    def tick(self, delta_years: float) -> None:
+        """ticks the time by delta_time amount"""
+        self.time_in_years += delta_years
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -32,71 +47,6 @@ class StretchedTime:
             self.days,
             self.normalizing_constant,
         )
-
-    def __str__(self):
-        output_string = (
-            "StretchedTime(\n"
-            f"\t{self.days=},\n"
-            f"\t{self.normalized_time=},\n"
-            f"\t{self.stretched_time=},\n"
-            f"\t{self.time_stretch=},\n"
-            f"\t{self.normalizing_constant=},\n"
-            ")"
-        )
-        return output_string
-
-
-def current_datetime() -> datetime:
-    r"""Returns the current time
-
-    Returns
-    -------
-    datetime
-        Current UTC time
-    """
-    return datetime.now(pytz.timezone("Etc/GMT-0"))
-
-
-def block_number_to_datetime(start_time: datetime, block_number: float, time_between_blocks: float) -> datetime:
-    r"""Converts the current block number to a datetime based on the start datetime of the simulation
-
-    Parameters
-    ----------
-    start_time : datetime
-        Timestamp at which the simulation started
-    block_number : int
-        Number of blocks since the simulation started
-    time_between_blocks : float
-        Number of seconds between blocks
-
-    Returns
-    -------
-    datetime
-        Timestamp at which the provided block number was (or will be) validated
-    """
-    delta_time = timedelta(seconds=block_number * time_between_blocks)
-    return start_time + delta_time
-
-
-def year_as_datetime(start_time: datetime, years: float) -> datetime:
-    r"""Returns a year (e.g. the current market time) in datetime format
-
-    Parameters
-    ----------
-    start_time : datetime
-        Timestamp at which the simulation started
-    years : float
-        years since start_time to convert into datetime
-
-    Returns
-    -------
-    datetime
-        Timestamp for the provided start_time plus the provided year
-    """
-
-    days = years * 365
-    delta_time = timedelta(days=days)
-    return start_time + delta_time
 
 
 def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
@@ -181,8 +131,7 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    time_remaining = normed_days_remaining / time_stretch
-    return time_remaining
+    return normed_days_remaining / time_stretch
 
 
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
@@ -204,5 +153,4 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in days
     """
     normed_days_remaining = time_remaining * time_stretch
-    days_remaining = unnorm_days(normed_days_remaining, normalizing_constant)
-    return days_remaining
+    return unnorm_days(normed_days_remaining, normalizing_constant)

@@ -13,7 +13,6 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.time as time_utils
 
 
 class TestSimulator(unittest.TestCase):
@@ -115,7 +114,6 @@ class TestSimulator(unittest.TestCase):
                 "market_init": [hyperdrive.MarketState()],
                 "market_step_size": [0.001],
                 "position_duration": [90],
-                "simulation_start_time": [time_utils.current_datetime()],
             }
         )
         days = pd.DataFrame(

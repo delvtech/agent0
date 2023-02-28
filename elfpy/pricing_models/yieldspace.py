@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.base import PricingModel
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.pricing_models.trades as trades
@@ -41,7 +41,7 @@ class YieldspacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -58,7 +58,7 @@ class YieldspacePricingModel(PricingModel):
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -117,7 +117,7 @@ class YieldspacePricingModel(PricingModel):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -129,7 +129,7 @@ class YieldspacePricingModel(PricingModel):
             market_state.share_reserves - market_state.base_buffer / market_state.share_price
         )
         # TODO: Move this calculation to a helper function.
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -141,7 +141,7 @@ class YieldspacePricingModel(PricingModel):
         lp_in: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
 
@@ -156,7 +156,7 @@ class YieldspacePricingModel(PricingModel):
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
         # rate is an APR, which is annual, so we normalize time by 365 to correct for units
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -204,7 +204,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         out: types.Quantity,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -441,7 +441,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         in_: types.Quantity,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -648,7 +648,7 @@ class YieldspacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: time_utils.StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: MarketState, time_remaining: time.StretchedTime) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 

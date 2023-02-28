@@ -1,11 +1,11 @@
 """Utilities for price calculations"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 
 
 ### Spot Price and APR ###
-def calc_apr_from_spot_price(price: float, time_remaining: time_utils.StretchedTime):
+def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
@@ -29,11 +29,11 @@ def calc_apr_from_spot_price(price: float, time_remaining: time_utils.StretchedT
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    annualized_time = time.norm_days(time_remaining.days, 365)
     return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
-def calc_spot_price_from_apr(apr: float, time_remaining: time_utils.StretchedTime):
+def calc_spot_price_from_apr(apr: float, time_remaining: time.StretchedTime):
     r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
 
     Parameters
@@ -48,5 +48,5 @@ def calc_spot_price_from_apr(apr: float, time_remaining: time_utils.StretchedTim
     float
         Spot price of bonds in terms of base, calculated from the provided parameters
     """
-    annualized_time = time_utils.norm_days(time_remaining.days, 365)
+    annualized_time = time.norm_days(time_remaining.days, 365)
     return 1 / (1 + apr * annualized_time)  # price = 1 / (1 + r * t)

@@ -10,7 +10,7 @@ from elfpy import (
     WEI,
 )
 import elfpy.utils.price as price_utils
-import elfpy.utils.time as time_utils
+import elfpy.time as time
 import elfpy.pricing_models.trades as trades
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
@@ -32,7 +32,7 @@ class PricingModel(ABC):
         self,
         out: types.Quantity,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -41,7 +41,7 @@ class PricingModel(ABC):
         self,
         in_: types.Quantity,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -51,7 +51,7 @@ class PricingModel(ABC):
         d_base: float,
         rate: float,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -61,7 +61,7 @@ class PricingModel(ABC):
         d_base: float,
         rate: float,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -71,7 +71,7 @@ class PricingModel(ABC):
         lp_in: float,
         rate: float,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -84,14 +84,14 @@ class PricingModel(ABC):
         """Unique identifier given to the model, should be lower snake_cased name"""
         raise NotImplementedError
 
-    def _calc_k_const(self, market_state: hyperdrive.MarketState, time_remaining: time_utils.StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: hyperdrive.MarketState, time_remaining: time.StretchedTime) -> Decimal:
         """Returns the 'k' constant variable for trade mathematics"""
         raise NotImplementedError
 
     def calc_bond_reserves(
         self,
         target_apr: float,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
         market_state: hyperdrive.MarketState,
     ) -> float:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
@@ -121,7 +121,7 @@ class PricingModel(ABC):
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         bond_reserves = (market_state.share_reserves / 2) * (
             market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -132,7 +132,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond_reserves: float,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
         init_share_price: float = 1,
     ):
         """Returns the assumed share (i.e. base asset) reserve amounts given
@@ -165,7 +165,7 @@ class PricingModel(ABC):
         # z = (2 * y) / (mu * (1 + rt)**(1/tau) - c)
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         share_reserves = (
             2
             * bond_reserves
@@ -181,7 +181,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         bond: float,
-        position_duration: time_utils.StretchedTime,
+        position_duration: time.StretchedTime,
         share_price: float = 1.0,
     ) -> float:
         """Returns the base required to buy the given bonds at the target APR
@@ -211,7 +211,7 @@ class PricingModel(ABC):
 
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(position_duration.days, 365)
+        annualized_time = time.norm_days(position_duration.days, 365)
         base = share_price * bond * (1 - target_apr * annualized_time)
 
         assert base >= 0, "base value negative"
@@ -221,7 +221,7 @@ class PricingModel(ABC):
         self,
         target_apr: float,
         base: float,
-        position_duration: time_utils.StretchedTime,
+        position_duration: time.StretchedTime,
         share_price: float = 1.0,
     ) -> float:
         """Returns the bonds for a given base at the target APR.
@@ -251,7 +251,7 @@ class PricingModel(ABC):
 
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time_utils.norm_days(position_duration.days, 365)
+        annualized_time = time.norm_days(position_duration.days, 365)
         bond = (base / share_price) / (1 - target_apr * annualized_time)
 
         assert bond >= 0, "bond value negative"
@@ -285,7 +285,7 @@ class PricingModel(ABC):
     def calc_spot_price_from_reserves(
         self,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> float:
         r"""
         Calculates the spot price of base in terms of bonds.
@@ -316,7 +316,7 @@ class PricingModel(ABC):
     def _calc_spot_price_from_reserves_high_precision(
         self,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> Decimal:
         r"""
         Calculates the current market spot price of base in terms of bonds.
@@ -357,7 +357,7 @@ class PricingModel(ABC):
     def calc_apr_from_reserves(
         self,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> float:
         r"""Returns the apr given reserve amounts
 
@@ -378,7 +378,7 @@ class PricingModel(ABC):
     def get_max_long(
         self,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum long the market can support
@@ -420,7 +420,7 @@ class PricingModel(ABC):
     def get_max_short(
         self,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float]:
         r"""
         Calculates the maximum short the market can support using the bisection
@@ -470,7 +470,7 @@ class PricingModel(ABC):
         self,
         quantity: types.Quantity,
         market_state: hyperdrive.MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
 
