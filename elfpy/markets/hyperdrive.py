@@ -564,7 +564,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
-            lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
+            lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,  # 2y + cz
         )
         self.update_market(market_deltas)
         return agent_deltas
