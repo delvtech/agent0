@@ -556,6 +556,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         market_deltas = MarketDeltas(
             d_base_asset=contribution,
             d_bond_asset=bond_reserves,
+            d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
