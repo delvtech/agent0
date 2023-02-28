@@ -54,7 +54,6 @@ def get_simulator(
                 market_init=simulator.market.market_state,
                 market_step_size=simulator.market_step_size,
                 position_duration=simulator.market.position_duration,
-                simulation_start_time=time.current_datetime(),
             ),
             day_vars=simulators.DaySimVariables(
                 run_number=simulator.run_number,

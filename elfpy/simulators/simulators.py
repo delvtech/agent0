@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING, Optional
-from datetime import datetime
 import logging
 import json
 from dataclasses import dataclass, field, make_dataclass
@@ -44,15 +43,6 @@ class SimulationState:
     )
     daily_block_number: list[int] = field(
         default_factory=list, metadata=types.to_description("integer, block index in a given day")
-    )
-    simulation_start_time: list[Optional[datetime]] = field(
-        default_factory=list, metadata=types.to_description("start datetime for a given simulation")
-    )
-    block_timestamp: list[Optional[datetime]] = field(
-        default_factory=list, metadata=types.to_description("datetime of a given block's creation")
-    )
-    current_market_datetime: list[Optional[datetime]] = field(
-        default_factory=list, metadata=types.to_description("float, current market time as a datetime")
     )
     current_market_time: list[float] = field(
         default_factory=list, metadata=types.to_description("float, current market time in years")
@@ -240,7 +230,6 @@ class RunSimVariables:
     position_duration: time.StretchedTime = field(
         metadata=types.to_description("time lapse between token mint and expiry in years")
     )
-    simulation_start_time: datetime = field(metadata=types.to_description("start datetime for a given simulation"))
 
 
 @dataclass
@@ -402,7 +391,6 @@ class Simulator:
         seconds_in_a_day = 86400
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.trade_number = 0
-        self.start_time: datetime | None = None
         if self.config.do_dataframe_states:
             self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()
@@ -588,7 +576,6 @@ class Simulator:
             if True, liquidate trades when the simulation is complete
         """
         last_block_in_sim = False
-        self.start_time = time.current_datetime()
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
                 run_vars=RunSimVariables(
@@ -598,7 +585,6 @@ class Simulator:
                     market_init=self.market.market_state,
                     market_step_size=self.market_step_size,
                     position_duration=self.market.position_duration,
-                    simulation_start_time=self.start_time,
                 )
             )
         for day in range(self.config.num_trading_days):
@@ -657,20 +643,9 @@ class Simulator:
         # pylint: disable=too-many-statements
         self.simulation_state.model_name.append(self.market.pricing_model.model_name())
         self.simulation_state.run_number.append(self.run_number)
-        self.simulation_state.simulation_start_time.append(self.start_time)
         self.simulation_state.day.append(self.day)
         self.simulation_state.block_number.append(self.block_number)
         self.simulation_state.daily_block_number.append(self.daily_block_number)
-        if self.start_time is None:
-            self.simulation_state.block_timestamp.append(None)
-            self.simulation_state.current_market_datetime.append(None)
-        else:
-            self.simulation_state.block_timestamp.append(
-                time.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
-            )
-            self.simulation_state.current_market_datetime.append(
-                time.year_as_datetime(self.start_time, self.market.time)
-            )
         self.simulation_state.current_market_time.append(self.market.time)
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.market_step_size.append(self.market_step_size)

@@ -1,9 +1,7 @@
 """Testing for time utilities found in elfpy/utils/time.py"""
 from __future__ import annotations  # types are strings by default in 3.11
 
-import datetime
 import unittest
-import pytz
 import numpy as np
 
 import elfpy.time as time
@@ -11,73 +9,6 @@ import elfpy.time as time
 
 class TestTimeUtils(unittest.TestCase):
     """Unit tests for the parse_simulation_config function"""
-
-    def test_current_datetime(self):
-        """Test the current_datetime function"""
-
-        now = datetime.datetime.now(pytz.timezone("Etc/GMT-0"))
-        test_time = time.current_datetime()
-
-        assert (
-            now < test_time < (now + datetime.timedelta(milliseconds=100))
-        ), f"Unexpected time value {test_time} should be close to {now}"
-
-    def test_block_number_to_datetime(self):
-        """Test the block_number_to_datetime function"""
-
-        start_time = datetime.datetime.strptime("28/03/1990 05:30:42", "%d/%m/%Y %H:%M:%S")
-
-        test_cases = [
-            # test 1: block number 0 (at start time)
-            {
-                "start_time": start_time,  # arbitrarily chosen date
-                "block_number": 0,  # first block, should be at start_time
-                "time_between_blocks": 12,  # time in seconds
-                "expected_result": start_time,
-            },
-            # test 2: block number 2628000 (1 year after start)
-            {
-                "start_time": start_time,  # arbitrarily chosen date
-                "block_number": 365 * 24 * 60 * 60 / 12,  # block after 1 year
-                "time_between_blocks": 12,  # time in seconds
-                "expected_result": start_time + datetime.timedelta(days=365),
-            },
-            # test 3: block number 69420
-            {
-                "start_time": start_time,  # arbitrarily chosen date
-                "block_number": 69420,
-                "time_between_blocks": 12,  # time in seconds
-                "expected_result": start_time + datetime.timedelta(seconds=69420 * 12),
-            },
-        ]
-
-        for test_case in test_cases:
-            block_time = time.block_number_to_datetime(
-                test_case["start_time"], test_case["block_number"], test_case["time_between_blocks"]
-            )
-            assert block_time == test_case["expected_result"], f"unexpected time value {block_time}"
-
-    def test_year_as_datetime(self):
-        """Unit tests for the year_as_datetime function"""
-
-        # Choose an arbitrary date as start_time
-        start_time = datetime.datetime.strptime("28/03/1990 05:30:42", "%d/%m/%Y %H:%M:%S")
-
-        test_cases = [
-            # test 1: year = 6 months
-            {
-                "start_time": start_time,  # arbitrarily chosen date
-                "year": 0.50,  # 6 months
-                "expected_result": "26/09/1990 17:30:42",
-            }
-        ]
-
-        for test_case in test_cases:
-            year_time = time.year_as_datetime(test_case["start_time"], test_case["year"])
-
-            assert (
-                datetime.datetime.strftime(year_time, "%d/%m/%Y %H:%M:%S") == test_case["expected_result"]
-            ), f"unexpected time value {year_time}"
 
     def test_get_year_remaining(self):
         """Unit tests for the get_year_remaining function"""
