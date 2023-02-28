@@ -125,23 +125,31 @@ class MarketState(base_market.BaseMarketState):
 
     # The amount of longs that are still open.
     longs_outstanding: float = field(default=0.0)
+
     # the amount of shorts that are still open.
     shorts_outstanding: float = field(default=0.0)
+
     # the average maturity time of long positions.
     long_average_maturity_time: float = field(default=0.0)
+
     # the average maturity time of short positions.
     short_average_maturity_time: float = field(default=0.0)
+
     # the amount of base paid by outstanding longs.
     long_base_volume: float = field(default=0.0)
+
     # the amount of base paid to outstanding shorts.
     short_base_volume: float = field(default=0.0)
 
     # the amount of long withdrawal shares that haven't been paid out.
     long_withdrawal_shares_outstanding: float = field(default=0.0)
+
     # the amount of short withdrawal shares that haven't been paid out.
     short_withdrawal_shares_outstanding: float = field(default=0.0)
+
     # the proceeds that have accrued to the long withdrawal shares.
     long_withdrawal_share_proceeds: float = field(default=0.0)
+
     # the proceeds that have accrued to the short withdrawal shares.
     short_withdrawal_share_proceeds: float = field(default=0.0)
 
@@ -782,6 +790,83 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
+    def calculate_short_adjustment(self) -> float:
+        """Calculates an adjustment amount for lp shares"""
+        # (year_end - year_start) / (normalizing_constant / 365)
+        normalized_time_remaining = (self.market_state.short_average_maturity_time - self.time) / (
+            self.position_duration.normalizing_constant / 365
+        )
+
+        return self.calculate_lp_allocation_adjustment(
+            self.market_state.shorts_outstanding,
+            self.market_state.short_base_volume,
+            normalized_time_remaining,
+            self.market_state.share_price,
+        )
+
+    def calculate_long_adjustment(self) -> float:
+        """Calculates an adjustment amount for lp shares"""
+        # (year_end - year_start) / (normalizing_constant / 365)
+        normalized_time_remaining = (self.market_state.long_average_maturity_time - self.time) / (
+            self.position_duration.normalizing_constant / 365
+        )
+
+        return self.calculate_lp_allocation_adjustment(
+            self.market_state.longs_outstanding,
+            self.market_state.long_base_volume,
+            normalized_time_remaining,
+            self.market_state.share_price,
+        )
+
+    def calculate_base_volume(self, base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
+        """Calculates the base volume of an open trade given the base amount,
+        the bond amount, and the time remaining. Since the base amount takes into account
+        backdating, we can't use this as our base volume. Since we linearly interpolate between the
+        base volume and the bond amount as the time remaining goes from 1 to 0, the base volume is
+        can be determined as follows:
+
+            base_amount = t * base_volume + (1 - t) * bond_amount
+                                =>
+            base_volume = (base_amount - (1 - t) * bond_amount) / t
+        """
+        # If the time remaining is 0, the position has already matured and doesn't have an impact on
+        # LP's ability to withdraw. This is a pathological case that should never arise.
+        if normalized_time_remaining == 0:
+            return 0
+
+        return (base_amount - (1 - normalized_time_remaining) * bond_amount) / normalized_time_remaining
+
+    def update_weighted_average(
+        self,
+        average: float,
+        total_weight: float,
+        delta: float,
+        delta_weight: float,
+        is_adding: float,
+    ) -> float:
+        """Updates a weighted average by adding or removing a weighted delta."""
+        if is_adding:
+            return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
+
+        if total_weight == delta_weight:
+            return 0
+
+        return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
+
+    def calculate_lp_allocation_adjustment(
+        self,
+        positions_outstanding: float,
+        base_volume: float,
+        average_time_remaining: float,
+        share_price: float,
+    ) -> float:
+        """Calculates an adjustment amount for lp shares"""
+        # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
+        base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
+
+        # adjustment = base_adjustment / c
+        return base_adjustment / share_price
+
     def calc_lp_out_given_tokens_in(
         self,
         d_base: float,
@@ -792,69 +877,28 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
-            y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
+            \Delta l = \frac{(l \cdot \Delta z)(z + a_s - a_l)}
+
+        where a_s and a_l are the short and long adjustments. In order to calculate these we need to
+        keep track of the long and short base volumes, amounts outstanding and average maturity
+        times.
         """
         d_shares = d_base / market_state.share_price
-        if market_state.share_reserves > 0:  # normal case where we have some share reserves
-            # TODO: We need to update these LP calculations to address the LP
-            #       exploit scenario.
-            lp_out = (d_shares * market_state.lp_total_supply) / (
-                market_state.share_reserves - market_state.base_buffer
-            )
-        else:  # initial case where we have 0 share reserves or final case where it has been removed
-            lp_out = d_shares
-        # TODO: Move this calculation to a helper function.
         annualized_time = time_utils.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
-        logging.debug(
-            (
-                "inputs: d_base=%g, share_reserves=%d, "
-                "bond_reserves=%d, base_buffer=%g, "
-                "init_share_price=%g, share_price=%g, "
-                "lp_total_supply=%g, rate=%g, "
-                "time_remaining=%g, stretched_time_remaining=%g"
-                "\nd_shares=%g (d_base / share_price = %g / %g)"
-                "\nlp_out=%g\n"
-                "(d_share_reserves * lp_total_supply / (share_reserves - base_buffer / share_price) = "
-                "%g * %g / (%g - %g / %g))"
-                "\nd_bonds=%g\n"
-                "((share_reserves + d_share_reserves) / 2 * (init_share_price * (1 + rate * time_remaining) ** "
-                "(1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                "(%g + %g) / 2 * (%g * (1 + %g * %g) ** "
-                "(1 / %g) - %g) - %g)"
-            ),
-            d_base,
-            market_state.share_reserves,
-            market_state.bond_reserves,
-            market_state.base_buffer,
-            market_state.init_share_price,
-            market_state.share_price,
-            market_state.lp_total_supply,
-            rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
-            d_shares,
-            d_base,
-            market_state.share_price,
-            lp_out,
-            d_shares,
-            market_state.lp_total_supply,
-            market_state.share_reserves,
-            market_state.base_buffer,
-            market_state.share_price,
-            d_bonds,
-            market_state.share_reserves,
-            d_shares,
-            market_state.init_share_price,
-            rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
-            market_state.share_price,
-            market_state.bond_reserves,
-        )
+
+        if market_state.share_reserves > 0:  # normal case where we have some share reserves
+            short_adjustment = self.calculate_short_adjustment()
+            long_adjustment = self.calculate_long_adjustment()
+            lp_out = (d_shares * market_state.lp_total_supply) / (
+                market_state.share_reserves + short_adjustment - long_adjustment
+            )
+        else:  # initial case where we have 0 share reserves or final case where it has been removed
+            lp_out = d_shares
+
         return lp_out, d_base, d_bonds
 
     def log_market_step_string(self) -> None:
