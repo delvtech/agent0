@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any
 
 import elfpy.markets.base as base_market
 from elfpy.pricing_models.base import PricingModel
@@ -100,7 +100,7 @@ class MarketState(base_market.BaseMarketState):
     # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
 
     # borrow ratios
-    loan_to_value_ratio: Union[Dict[types.TokenType, float], float] = field(
+    loan_to_value_ratio: Dict[types.TokenType, float] = field(
         default_factory=lambda: {token_type: 0.97 for token_type in types.TokenType}
     )
 
@@ -121,12 +121,6 @@ class MarketState(base_market.BaseMarketState):
     lending_rate: float = field(default=0.01)  # 1% per year
     # borrow rate is lending_rate * spread_ratio
     spread_ratio: float = field(default=1.25)
-
-    def __post_init__(self) -> None:
-        r"""Initialize the market state"""
-        # initialize loan to value ratios if a float is passed
-        if isinstance(self.loan_to_value_ratio, float):
-            self.loan_to_value_ratio = {token_type: self.loan_to_value_ratio for token_type in types.TokenType}
 
     @property
     def borrow_amount(self) -> float:
@@ -177,14 +171,17 @@ class MarketAction(base_market.MarketAction):
 class BorrowPricingModel(PricingModel):
     """stores calculation functions use for the borrow market"""
 
-    def value_collateral(self, market_state: MarketState, collateral: types.Quantity, spot_price: Optional[float]):
+    def value_collateral(
+        self,
+        loan_to_value_ratio: Dict[types.TokenType, float],
+        collateral: types.Quantity,
+        spot_price: Optional[float] = None,
+    ):
         """Values collateral and returns how much the agent can borrow against it"""
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
             collateral_value_in_base = collateral.amount * (spot_price or 1)
-        borrow_amount_in_base = (
-            collateral_value_in_base * market_state.loan_to_value_ratio[collateral.unit]  # type: ignore
-        )
+        borrow_amount_in_base = collateral_value_in_base * loan_to_value_ratio[collateral.unit]  # type: ignore
         return collateral_value_in_base, borrow_amount_in_base
 
 
@@ -211,6 +208,23 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         self.time: float = 0  # t: time unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.market_state: MarketState = market_state
         super().__init__(pricing_model=self.pricing_model, market_state=market_state)
+
+    def initialize_market(
+        self,
+        wallet_address: int,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Market Deltas so that an LP can initialize the market"""
+        market_deltas = MarketDeltas()
+        borrow_summary = wallet.Borrow(
+            borrow_token=types.TokenType.BASE,
+            borrow_amount=0,
+            borrow_shares=0,
+            collateral_token=types.TokenType.BASE,
+            collateral_amount=0,
+            start_time=0,
+        )
+        agent_deltas = wallet.Wallet(address=wallet_address, borrows={0: borrow_summary})
+        return (market_deltas, agent_deltas)
 
     def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -278,9 +292,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
-            market_state=self.market_state, collateral=collateral, spot_price=spot_price
+            loan_to_value_ratio=self.market_state.loan_to_value_ratio, collateral=collateral, spot_price=spot_price
         )
-
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increase because they're being lent out
         # collateral increases because it's being deposited
@@ -314,18 +327,15 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
-            market_state=self.market_state, collateral=collateral, spot_price=spot_price
+            loan_to_value_ratio=self.market_state.loan_to_value_ratio, collateral=collateral, spot_price=spot_price
         )
-
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
-
         # TODO: why don't we decrease collateral amount?
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
-
         borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=-borrow_amount_in_base,

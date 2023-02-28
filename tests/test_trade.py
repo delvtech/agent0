@@ -57,19 +57,11 @@ class SingleTradeTests(unittest.TestCase):
                         )
                         # assign the results of the init_lp agent to explicit variables
                         # market_state is used only for share_price and init_share_price
-                        # TODO: Redo this to compute the direct reserves exactly instead of calling calc_liquidity
-                        #       this ensures that the underlying function is changed and messed up at some point
-                        share_reserves_direct, bond_reserves_direct = simulator.market.pricing_model.calc_liquidity(
-                            market_state=simulator.market.market_state,
-                            target_liquidity=target_liquidity,
-                            target_apr=target_pool_apr,
-                            position_duration=simulator.market.position_duration,
-                        )
+                        # TODO: Redo this to compute the direct reserves exactly instead of calling initialize_market
+                        #       this ensures that the underlying function is not changed
                         market_direct = Market(
                             pricing_model=simulator.market.pricing_model,
                             market_state=MarketState(
-                                share_reserves=share_reserves_direct,
-                                bond_reserves=bond_reserves_direct,
                                 base_buffer=simulator.market.market_state.base_buffer,
                                 bond_buffer=simulator.market.market_state.bond_buffer,
                                 lp_total_supply=simulator.market.market_state.lp_total_supply,
@@ -81,6 +73,10 @@ class SingleTradeTests(unittest.TestCase):
                             ),
                             position_duration=simulator.market.position_duration,
                         )
+                        market_deltas, _ = market_direct.initialize_market(
+                            wallet_address=0, contribution=target_liquidity, target_apr=target_pool_apr
+                        )
+                        market_direct.update_market(market_deltas)
                         total_liquidity_direct = (
                             market_direct.pricing_model.calc_total_liquidity_from_reserves_and_price(
                                 market_state=market_direct.market_state,

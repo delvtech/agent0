@@ -4,7 +4,7 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 import unittest
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 import elfpy.types as types
 import elfpy.pricing_models.trades as trades
@@ -36,7 +36,7 @@ class TestGetMax(unittest.TestCase):
             share_price * market_state.share_reserves >= base_buffer
             bond_reserves >= bond_buffer
         """
-        pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldSpacePricingModel()]
+        pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldspacePricingModel()]
 
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(

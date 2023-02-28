@@ -103,7 +103,7 @@ class TestAgent(unittest.TestCase):
         """
         models: list[pricing_models.PricingModel] = [
             pricing_models.HyperdrivePricingModel(),
-            pricing_models.YieldSpacePricingModel(),
+            pricing_models.YieldspacePricingModel(),
         ]
 
         test_cases: list[TestCaseGetMax] = [

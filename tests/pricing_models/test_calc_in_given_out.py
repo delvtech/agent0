@@ -17,7 +17,7 @@ import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 # pylint: disable=too-many-lines
 
@@ -28,7 +28,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
             test_number,
@@ -83,7 +83,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # out is in base, in is in bonds
@@ -131,7 +131,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # issue #57
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
         failure_test_cases = [
             CalcInGivenOutFailureTestCase(
@@ -412,7 +412,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         # yieldspace only failures
         for test_number, test_case in enumerate(failure_test_cases_yieldpsace_only):
             print(f"{test_number=}")
-            for pricing_model in [YieldSpacePricingModel()]:
+            for pricing_model in [YieldspacePricingModel()]:
                 print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(

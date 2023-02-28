@@ -15,7 +15,7 @@ from calc_test_dataclasses import (
 import elfpy.types as types
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.utils.time as time_utils
 from elfpy.markets.hyperdrive import MarketState
 
@@ -29,7 +29,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
         # purchased for base.
@@ -1354,7 +1354,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
 
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
@@ -1399,7 +1399,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldSpacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
 
         # Failure test cases.
         failure_test_cases = [

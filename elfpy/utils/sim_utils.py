@@ -9,7 +9,7 @@ import elfpy.simulators as simulators
 import elfpy.utils.time as time_utils
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldSpacePricingModel
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -143,32 +143,23 @@ def get_market(
         time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
         normalizing_constant=config.num_position_days,
     )
-    # apr is "annual", so if position durations is not 365
-    # then we need to rescale the target apr passed to calc_liquidity
-    share_reserves_direct, bond_reserves_direct = pricing_model.calc_liquidity(
-        market_state=hyperdrive.MarketState(
-            share_price=config.init_share_price, init_share_price=config.init_share_price
-        ),
-        target_liquidity=init_target_liquidity,
-        target_apr=config.target_fixed_apr,
-        position_duration=position_duration,
-    )
-    return hyperdrive.Market(
+    market = hyperdrive.Market(
         pricing_model=pricing_model,
         market_state=hyperdrive.MarketState(
-            share_reserves=share_reserves_direct,
-            bond_reserves=bond_reserves_direct,
-            base_buffer=0,
-            bond_buffer=0,
-            lp_total_supply=init_target_liquidity / config.init_share_price,
-            init_share_price=config.init_share_price,  # u from YieldSpace w/ Yield Baring Vaults
-            share_price=config.init_share_price,  # c from YieldSpace w/ Yield Baring Vaults
-            variable_apr=config.variable_apr[0],  # yield bearing source apr
-            trade_fee_percent=config.trade_fee_percent,  # g
+            init_share_price=config.init_share_price,
+            share_price=config.init_share_price,
+            variable_apr=config.variable_apr[0],
+            trade_fee_percent=config.trade_fee_percent,
             redemption_fee_percent=config.redemption_fee_percent,
         ),
         position_duration=position_duration,
     )
+    # Not using an agent to initialize the market so we ignore the agent address
+    market_deltas, _ = market.initialize_market(
+        wallet_address=0, contribution=init_target_liquidity, target_apr=config.target_fixed_apr
+    )
+    market.update_market(market_deltas)
+    return market
 
 
 def get_pricing_model(model_name: str) -> PricingModel:
@@ -188,7 +179,7 @@ def get_pricing_model(model_name: str) -> PricingModel:
     if model_name.lower() == "hyperdrive":
         pricing_model = HyperdrivePricingModel()
     elif model_name.lower() == "yieldspace":
-        pricing_model = YieldSpacePricingModel()
+        pricing_model = YieldspacePricingModel()
     else:
         raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model

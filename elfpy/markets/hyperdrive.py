@@ -542,7 +542,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         contribution: float,
         target_apr: float,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """Allows an LP to initialize the market"""
+        """Market Deltas so that an LP can initialize the market"""
         share_reserves = contribution / self.market_state.share_price
         bond_reserves = self.pricing_model.calc_bond_reserves(
             target_apr=target_apr,
