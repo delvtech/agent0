@@ -403,22 +403,18 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.position_duration.days / 365
-        short_average_maturity_time = self.update_weighted_average(
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
             maturity_time,
-            bond_amount,
+            trade_amount,
             True,
         )
-        d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
-        d_short_average_maturity_time = (
-            self.market_state.short_average_maturity_time
-            if self.market_state.short_average_maturity_time + d_short_average_maturity_time < 0
-            else d_short_average_maturity_time
-        )
-        # calculate_base_volume needs a positive base, so we use the value from user_result
-        base_volume = self.calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.short_base_volume += base_volume
+        self.market_state.shorts_outstanding += trade_amount
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -485,15 +481,18 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.position_duration.days / 365
-        short_average_maturity_time = self.update_weighted_average(
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
             maturity_time,
-            bond_amount,
+            trade_amount,
             False,
         )
-        d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.short_base_volume -= base_volume
+        self.market_state.shorts_outstanding -= trade_amount
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -553,12 +552,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         tuple[MarketDeltas, wallet.Wallet]
             The deltas that should be applied to the market and agent
         """
-        if base_amount > self.market_state.bond_reserves:
-            raise AssertionError(
-                "ERROR: cannot open a long with more than the available bond resereves, "
-                f"but {base_amount=} > {self.market_state.bond_reserves=}."
-            )
-
         # Perform the trade.
         trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         self.pricing_model.check_input_assertions(
@@ -647,23 +640,22 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.position_duration.days / 365
-        long_average_maturity_time = self.update_weighted_average(
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
             maturity_time,
-            bond_amount,
+            trade_amount,
             False,
         )
-        d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        # TODO: update base volume logic here when we have checkpointing
+        self.market_state.long_base_volume -= base_volume
+        self.market_state.longs_outstanding -= trade_amount
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-        # TODO: update base volume logic here when we have checkpointing
-        base_volume = self.calculate_base_volume(
-            trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
-        )
 
         # TODO: add accounting for withdrawal shares
 
