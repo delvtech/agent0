@@ -12,7 +12,7 @@ import utils_for_tests as test_utils  # utilities for testing
 import elfpy.types as types
 from elfpy.agents.wallet import Wallet, Long, Short
 import elfpy.simulators.simulators as simulators
-import elfpy.time_utils as time_utils
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.markets.borrow as borrow
 from elfpy.pricing_models.base import PricingModel
@@ -37,12 +37,12 @@ class BaseMarketTest(unittest.TestCase):
 
     def test_position_duration(self):
         """Test to make sure market init fails when normalizing_constant != days"""
-        pd_good = time_utils.StretchedTime(
+        pd_good = time.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=365,
         )
-        pd_nonorm = time_utils.StretchedTime(
+        pd_nonorm = time.StretchedTime(
             days=365,
             time_stretch=1,
             normalizing_constant=36,
@@ -412,7 +412,7 @@ class MarketTestsOneFunction(BaseMarketTest):
     def test_apr(self):
         """open short of 100 bonds, close short of 50 bonds, one tick later"""
         pricing_model = HyperdrivePricingModel()
-        position_duration = time_utils.StretchedTime(
+        position_duration = time.StretchedTime(
             days=91.25, time_stretch=pricing_model.calc_time_stretch(0.2), normalizing_constant=91.25
         )
         share_reserves = 1_000
@@ -467,7 +467,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.05,  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=182.5,
                     time_stretch=22.186877016851916,
                     normalizing_constant=182.5,
@@ -484,7 +484,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.02,  # fixed rate APR you'd get from purchasing bonds; r = 0.02
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=182.5,
                     time_stretch=55.467192542129794,
                     normalizing_constant=182.5,
@@ -501,7 +501,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 5_000_000,  # Targeting 5M liquidity
                 "target_apr": 0.08,  # fixed rate APR you'd get from purchasing bonds; r = 0.08
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=182.5,
                     time_stretch=13.866798135532449,
                     normalizing_constant=182.5,
@@ -518,7 +518,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=91.25,
                     time_stretch=36.97812836141987,
                     normalizing_constant=91.25,
@@ -535,7 +535,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.001,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=273.75,
                     time_stretch=1109.3438508425959,
                     normalizing_constant=273.75,
@@ -552,7 +552,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             {
                 "target_liquidity": 10_000_000,  # Targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time_utils.StretchedTime(
+                "position_duration": time.StretchedTime(
                     days=91.25,
                     time_stretch=36.97812836141987,
                     normalizing_constant=91.25,

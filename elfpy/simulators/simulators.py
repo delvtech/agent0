@@ -13,7 +13,7 @@ from numpy.random._generator import Generator
 
 
 import elfpy.types as types
-import elfpy.time_utils as time_utils
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
@@ -63,7 +63,7 @@ class SimulationState:
     market_step_size: list[float] = field(
         default_factory=list, metadata=types.to_description("minimum time discretization for market time step")
     )
-    position_duration: list[time_utils.StretchedTime] = field(
+    position_duration: list[time.StretchedTime] = field(
         default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     current_variable_apr: list[float] = field(
@@ -237,7 +237,7 @@ class RunSimVariables:
         metadata=types.to_description("initial market state for this simulation run")
     )
     market_step_size: float = field(metadata=types.to_description("minimum time discretization for market time step"))
-    position_duration: time_utils.StretchedTime = field(
+    position_duration: time.StretchedTime = field(
         metadata=types.to_description("time lapse between token mint and expiry in years")
     )
     simulation_start_time: datetime = field(metadata=types.to_description("start datetime for a given simulation"))
@@ -588,7 +588,7 @@ class Simulator:
             if True, liquidate trades when the simulation is complete
         """
         last_block_in_sim = False
-        self.start_time = time_utils.current_datetime()
+        self.start_time = time.current_datetime()
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
                 run_vars=RunSimVariables(
@@ -666,10 +666,10 @@ class Simulator:
             self.simulation_state.current_market_datetime.append(None)
         else:
             self.simulation_state.block_timestamp.append(
-                time_utils.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
+                time.block_number_to_datetime(self.start_time, self.block_number, self.time_between_blocks)
             )
             self.simulation_state.current_market_datetime.append(
-                time_utils.year_as_datetime(self.start_time, self.market.time)
+                time.year_as_datetime(self.start_time, self.market.time)
             )
         self.simulation_state.current_market_time.append(self.market.time)
         self.simulation_state.trade_number.append(self.trade_number)

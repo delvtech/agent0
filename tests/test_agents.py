@@ -14,7 +14,7 @@ import elfpy.types as types
 from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
 from elfpy.agents.agent import Agent
 import elfpy.simulators as simulators
-import elfpy.time_utils as time_utils
+import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.pricing_models as pricing_models
 
@@ -40,7 +40,7 @@ class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
     market_state: hyperdrive.MarketState
-    time_remaining: time_utils.StretchedTime
+    time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -63,7 +63,7 @@ class TestAgent(unittest.TestCase):
             trade_fee_percent=0.1,
             redemption_fee_percent=0.1,
         )
-        time_remaining = time_utils.StretchedTime(
+        time_remaining = time.StretchedTime(
             days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
         )
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -117,7 +117,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -131,7 +131,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -145,7 +145,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -159,7 +159,7 @@ class TestAgent(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -173,7 +173,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -187,7 +187,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -201,7 +201,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
@@ -215,7 +215,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=91, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=91
                 ),
             ),
@@ -229,7 +229,7 @@ class TestAgent(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                 ),
-                time_remaining=time_utils.StretchedTime(
+                time_remaining=time.StretchedTime(
                     days=91, time_stretch=models[0].calc_time_stretch(0.25), normalizing_constant=91
                 ),
             ),

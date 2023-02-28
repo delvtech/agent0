@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 import elfpy.utils.price as price_utils
-import elfpy.time_utils as time_utils
+import elfpy.time as time
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
 import elfpy.markets.base as base_market
@@ -163,13 +163,13 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         self,
         pricing_model: PricingModel,
         market_state: MarketState,
-        position_duration: time_utils.StretchedTime,
+        position_duration: time.StretchedTime,
     ):
         # market state variables
         assert (
             position_duration.days == position_duration.normalizing_constant
         ), "position_duration argument term length (days) should normalize to 1"
-        self.position_duration = time_utils.StretchedTime(
+        self.position_duration = time.StretchedTime(
             position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
         )
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -397,10 +397,10 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             trade_amount = self.market_state.bond_reserves
 
         # Compute the time remaining given the mint time.
-        years_remaining = time_utils.get_years_remaining(
+        years_remaining = time.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = time_utils.StretchedTime(
+        time_remaining = time.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
@@ -500,10 +500,10 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         """
 
         # Compute the time remaining given the mint time.
-        years_remaining = time_utils.get_years_remaining(
+        years_remaining = time.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
         )  # all args in units of years
-        time_remaining = time_utils.StretchedTime(
+        time_remaining = time.StretchedTime(
             days=years_remaining * 365,  # converting years to days
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
