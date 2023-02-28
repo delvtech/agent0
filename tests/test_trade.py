@@ -73,10 +73,9 @@ class SingleTradeTests(unittest.TestCase):
                             ),
                             position_duration=simulator.market.position_duration,
                         )
-                        market_deltas, _ = market_direct.initialize_market(
+                        _ = market_direct.initialize_market(
                             wallet_address=0, contribution=target_liquidity, target_apr=target_pool_apr
                         )
-                        market_direct.update_market(market_deltas)
                         total_liquidity_direct = (
                             market_direct.pricing_model.calc_total_liquidity_from_reserves_and_price(
                                 market_state=market_direct.market_state,

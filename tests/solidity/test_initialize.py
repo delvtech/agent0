@@ -1,6 +1,6 @@
+"""Market initialization tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -43,15 +43,25 @@ class TestInitialize(unittest.TestCase):
                 normalizing_constant=self.position_duration,
             ),
         )
-        market_deltas, wallet_deltas = self.hyperdrive.initialize_market(
+        wallet_deltas = self.hyperdrive.initialize_market(
             wallet_address=self.alice.wallet.address,
             contribution=self.contribution,
             target_apr=self.target_apr,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas)
         self.alice.update_wallet(wallet_deltas)
 
+    def test_initialize_failure(self):
+        """Markets should not be able to be initialized twice.
+        Since setUp initializes it, we can check the assert by trying again here."""
+        with self.assertRaises(AssertionError):
+            _ = self.hyperdrive.initialize_market(
+                wallet_address=self.bob.wallet.address,
+                contribution=self.contribution,
+                target_apr=self.target_apr,
+            )
+
     def test_initialize_success(self):
+        """Verify that the initialized market has the correct APR & reserve levels"""
         init_apr = self.pricing_model.calc_apr_from_reserves(
             market_state=self.hyperdrive.market_state,
             time_remaining=self.hyperdrive.position_duration,

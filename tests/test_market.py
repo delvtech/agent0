@@ -602,12 +602,11 @@ class MarketTestsOneFunction(BaseMarketTest):
                     ),
                     pricing_model=test_case["pricing_model"],
                 )
-                market_deltas, _ = market.initialize_market(
+                _ = market.initialize_market(
                     wallet_address=0,
                     contribution=test_case["target_liquidity"],
                     target_apr=test_case["target_apr"],
                 )
-                market.market_state.apply_delta(market_deltas)
                 np.testing.assert_almost_equal(
                     actual=market.market_state.share_reserves,
                     desired=test_case["expected_share_reserves"],

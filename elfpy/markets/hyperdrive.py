@@ -541,8 +541,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         wallet_address: int,
         contribution: float,
         target_apr: float,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
+    ) -> wallet.Wallet:
         """Market Deltas so that an LP can initialize the market"""
+        if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
+            raise AssertionError("The market appears to already be initialized.")
+
         share_reserves = contribution / self.market_state.share_price
         bond_reserves = self.pricing_model.calc_bond_reserves(
             target_apr=target_apr,
@@ -563,7 +566,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
             lp_tokens=2 * bond_reserves + contribution,  # 2y + cz
         )
-        return (market_deltas, agent_deltas)
+        self.update_market(market_deltas)
+        return agent_deltas
 
     def add_liquidity(
         self,
