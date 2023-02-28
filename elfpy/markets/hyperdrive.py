@@ -376,7 +376,24 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
+
+        # Update accouting for average maturity time, base volume and longs outstanding
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.short_average_maturity_time = self.update_weighted_average(
+            self.market_state.short_average_maturity_time,
+            self.market_state.shorts_outstanding,
+            maturity_time,
+            trade_amount,
+            True,
+        )
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.short_base_volume += base_volume
+        self.market_state.shorts_outstanding += trade_amount
+
+        # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -444,7 +461,26 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
+
+        # Update accouting for average maturity time, base volume and longs outstanding
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.short_average_maturity_time = self.update_weighted_average(
+            self.market_state.short_average_maturity_time,
+            self.market_state.shorts_outstanding,
+            maturity_time,
+            trade_amount,
+            False,
+        )
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.short_base_volume -= base_volume
+        self.market_state.shorts_outstanding -= trade_amount
+
+        # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+
+        # TODO: add accounting for withdrawal shares
+
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -493,11 +529,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         tuple[MarketDeltas, wallet.Wallet]
             The deltas that should be applied to the market and agent
         """
-        if trade_amount > self.market_state.bond_reserves:
-            raise AssertionError(
-                "ERROR: cannot open a long with more than the available bond resereves, "
-                f"but {trade_amount=} > {self.market_state.bond_reserves=}."
-            )
         # Perform the trade.
         trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         self.pricing_model.check_input_assertions(
@@ -559,7 +590,27 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
+
+        # Update accouting for average maturity time, base volume and longs outstanding
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.long_average_maturity_time = self.update_weighted_average(
+            self.market_state.long_average_maturity_time,
+            self.market_state.longs_outstanding,
+            maturity_time,
+            trade_amount,
+            False,
+        )
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        # TODO: update base volume logic here when we have checkpointing
+        self.market_state.long_base_volume -= base_volume
+        self.market_state.longs_outstanding -= trade_amount
+
+        # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+
+        # TODO: add accounting for withdrawal shares
+
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
