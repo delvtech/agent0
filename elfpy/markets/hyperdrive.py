@@ -566,22 +566,21 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.position_duration.days / 365
-        long_average_maturity_time = self.update_weighted_average(
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
             maturity_time,
-            base_amount,
+            trade_amount,
             True,
         )
-        d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
         # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
-        longs_outstanding = trade_result.user_result.d_bonds
-
-        # TODO: add accounting for withdrawal shares
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.long_base_volume += base_volume
+        self.market_state.longs_outstanding += trade_amount
 
         # Make sure the trade is valid
+        #
         # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
         # this should be in hyperdrive.check_output_assertions which then calls
         # super().check_output_assertions
