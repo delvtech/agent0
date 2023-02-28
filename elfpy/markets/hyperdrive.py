@@ -541,7 +541,28 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
+
+        # Update accouting for average maturity time, base volume and longs outstanding
+        maturity_time = self.time + self.position_duration.days / 365
+        self.market_state.long_average_maturity_time = self.update_weighted_average(
+            self.market_state.long_average_maturity_time,
+            self.market_state.longs_outstanding,
+            maturity_time,
+            trade_amount,
+            True,
+        )
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        self.market_state.long_base_volume += base_volume
+        self.market_state.longs_outstanding += trade_amount
+
+        # Make sure the trade is valid
+        #
+        # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
+        # this should be in hyperdrive.check_output_assertions which then calls
+        # super().check_output_assertions
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+
         # Get the market and wallet deltas to return.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
