@@ -329,9 +329,9 @@ class YieldspacePricingModel(PricingModel):
             # d_y' = (k - (c / mu) * (mu * (z - d_z))**(1 - tau))**(1 / (1 - tau)) - (2y + cz)
             #
             # without_fee = d_y'
-            without_fee = (k - scale * (init_share_price * (out_reserves - d_shares)) ** time_elapsed) ** (
-                1 / time_elapsed
-            ) - in_reserves
+            base_of_exponent = k - scale * (init_share_price * (out_reserves - d_shares)) ** time_elapsed
+            assert base_of_exponent >= 0, "base_of_exponent must be non-negative"
+            without_fee = base_of_exponent ** (1 / time_elapsed) - in_reserves
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
@@ -388,10 +388,9 @@ class YieldspacePricingModel(PricingModel):
             # user pays. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
-            without_fee = (
-                (1 / init_share_price) * ((k - (out_reserves - d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
-                - in_reserves
-            ) * share_price
+            base_of_exponent = (k - (out_reserves - d_bonds) ** time_elapsed) / scale
+            assert base_of_exponent >= 0, "base_of_exponent must be non-negative"
+            without_fee = ((1 / init_share_price) * base_of_exponent ** (1 / time_elapsed) - in_reserves) * share_price
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
@@ -561,9 +560,9 @@ class YieldspacePricingModel(PricingModel):
             # without including fees:
             #
             # d_y' = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
-            without_fee = out_reserves - (
-                k - scale * (init_share_price * (in_reserves + d_shares)) ** time_elapsed
-            ) ** (1 / time_elapsed)
+            base_of_exponent = k - scale * (init_share_price * (in_reserves + d_shares)) ** time_elapsed
+            assert base_of_exponent >= 0, "base of exponent must be non-negative"
+            without_fee = out_reserves - base_of_exponent ** (1 / time_elapsed)
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
@@ -609,10 +608,9 @@ class YieldspacePricingModel(PricingModel):
             # user receives without fees. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
-            without_fee = (
-                share_reserves
-                - (1 / init_share_price) * ((k - (in_reserves + d_bonds) ** time_elapsed) / scale) ** (1 / time_elapsed)
-            ) * share_price
+            base_of_exponent = (k - (in_reserves + d_bonds) ** time_elapsed) / scale
+            assert base_of_exponent >= 0, "base of exponent must be non-negative"
+            without_fee = share_reserves - (1 / init_share_price) * base_of_exponent ** (1 / time_elapsed) * share_price
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
