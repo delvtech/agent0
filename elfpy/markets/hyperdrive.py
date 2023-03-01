@@ -46,6 +46,16 @@ class MarketDeltas(base_market.MarketDeltas):
     d_bond_buffer: float = 0
     d_lp_total_supply: float = 0
     d_share_price: float = 0
+    longs_outstanding: float = 0
+    shorts_outstanding: float = 0
+    long_average_maturity_time: float = 0
+    short_average_maturity_time: float = 0
+    long_base_volume: float = 0
+    short_base_volume: float = 0
+    long_withdrawal_shares_outstanding: float = 0
+    short_withdrawal_shares_outstanding: float = 0
+    long_withdrawal_share_proceeds: float = 0
+    short_withdrawal_share_proceeds: float = 0
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -114,31 +124,23 @@ class MarketState(base_market.BaseMarketState):
 
     # The amount of longs that are still open.
     longs_outstanding: float = field(default=0.0)
-
     # the amount of shorts that are still open.
     shorts_outstanding: float = field(default=0.0)
-
     # the average maturity time of long positions.
     long_average_maturity_time: float = field(default=0.0)
-
     # the average maturity time of short positions.
     short_average_maturity_time: float = field(default=0.0)
-
     # the amount of base paid by outstanding longs.
     long_base_volume: float = field(default=0.0)
-
     # the amount of base paid to outstanding shorts.
     short_base_volume: float = field(default=0.0)
 
     # the amount of long withdrawal shares that haven't been paid out.
     long_withdrawal_shares_outstanding: float = field(default=0.0)
-
     # the amount of short withdrawal shares that haven't been paid out.
     short_withdrawal_shares_outstanding: float = field(default=0.0)
-
     # the proceeds that have accrued to the long withdrawal shares.
     long_withdrawal_share_proceeds: float = field(default=0.0)
-
     # the proceeds that have accrued to the short withdrawal shares.
     short_withdrawal_share_proceeds: float = field(default=0.0)
 
@@ -151,19 +153,21 @@ class MarketState(base_market.BaseMarketState):
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
 
+        self.longs_outstanding += delta.longs_outstanding
+        self.shorts_outstanding += delta.shorts_outstanding
+        self.long_average_maturity_time += delta.long_average_maturity_time
+        self.short_average_maturity_time += delta.short_average_maturity_time
+        self.long_base_volume += delta.long_base_volume
+        self.short_base_volume += delta.short_base_volume
+
+        self.long_withdrawal_shares_outstanding += delta.long_withdrawal_shares_outstanding
+        self.short_withdrawal_shares_outstanding += delta.short_withdrawal_shares_outstanding
+        self.long_withdrawal_share_proceeds += delta.long_withdrawal_share_proceeds
+        self.short_withdrawal_share_proceeds += delta.short_withdrawal_share_proceeds
+
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
-        return MarketState(
-            share_reserves=self.share_reserves,
-            bond_reserves=self.bond_reserves,
-            base_buffer=self.bond_buffer,
-            lp_total_supply=self.lp_total_supply,
-            variable_apr=self.variable_apr,
-            share_price=self.share_price,
-            init_share_price=self.init_share_price,
-            trade_fee_percent=self.trade_fee_percent,
-            redemption_fee_percent=self.redemption_fee_percent,
-        )
+        return MarketState(**self.__dict__)
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -275,20 +279,20 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+                base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
             )
         elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = float(agent_action.mint_time or 0)
             market_deltas, agent_deltas = self.close_long(
                 wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                 mint_time=mint_time,
             )
         elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
             market_deltas, agent_deltas = self.open_short(
                 wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
             )
         elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
@@ -296,7 +300,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
             market_deltas, agent_deltas = self.close_short(
                 wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                 mint_time=mint_time,
                 open_share_price=open_share_price,
             )
@@ -351,7 +355,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def open_short(
         self,
         wallet_address: int,
-        trade_amount: float,
+        bond_amount: float,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         shorts need their margin account to cover the worst case scenario (p=1)
@@ -365,7 +369,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -379,17 +383,15 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.time + self.position_duration.days / 365
-        self.market_state.short_average_maturity_time = self.update_weighted_average(
+        short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
             maturity_time,
-            trade_amount,
+            bond_amount,
             True,
         )
-        # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
-        self.market_state.short_base_volume += base_volume
-        self.market_state.shorts_outstanding += trade_amount
+        # calculate_base_volume needs a positive base, so we use the value from user_result
+        base_volume = self.calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -398,14 +400,17 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=trade_amount,
+            d_bond_buffer=bond_amount,
+            short_base_volume=base_volume,
+            shorts_outstanding=bond_amount,
+            short_average_maturity_time=short_average_maturity_time,
         )
         # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
-        max_loss = trade_amount - trade_result.user_result.d_base
+        max_loss = bond_amount - trade_result.user_result.d_base
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
-            shorts={self.time: wallet.Short(balance=trade_amount, open_share_price=self.market_state.share_price)},
+            shorts={self.time: wallet.Short(balance=bond_amount, open_share_price=self.market_state.share_price)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -414,7 +419,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         self,
         wallet_address: int,
         open_share_price: float,
-        trade_amount: float,
+        bond_amount: float,
         mint_time: float,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
@@ -427,17 +432,17 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         """
 
         # Clamp the trade amount to the bond reserves.
-        if trade_amount > self.market_state.bond_reserves:
+        if bond_amount > self.market_state.bond_reserves:
             logging.warning(
                 (
                     "markets._close_short: WARNING: trade amount = %g"
                     "is greater than bond reserves = %g. "
                     "Adjusting to allowable amount."
                 ),
-                trade_amount,
+                bond_amount,
                 self.market_state.bond_reserves,
             )
-            trade_amount = self.market_state.bond_reserves
+            bond_amount = self.market_state.bond_reserves
 
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
@@ -450,7 +455,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -464,17 +469,14 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.time + self.position_duration.days / 365
-        self.market_state.short_average_maturity_time = self.update_weighted_average(
+        short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
             maturity_time,
-            trade_amount,
+            bond_amount,
             False,
         )
-        # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
-        self.market_state.short_base_volume -= base_volume
-        self.market_state.shorts_outstanding -= trade_amount
+        d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -482,21 +484,26 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # TODO: add accounting for withdrawal shares
 
         # Return the market and wallet deltas.
+        # TODO: don't use 1 for time_remaining once we have checkpointing
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, bond_amount, 1)
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=-trade_amount,
+            d_bond_buffer=-bond_amount,
+            short_base_volume=-base_volume,
+            shorts_outstanding=-bond_amount,
+            short_average_maturity_time=d_short_average_maturity_time,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=types.Quantity(
-                amount=(self.market_state.share_price / open_share_price) * trade_amount
+                amount=(self.market_state.share_price / open_share_price) * bond_amount
                 + trade_result.user_result.d_base,
                 unit=types.TokenType.BASE,
             ),  # see CLOSING SHORT LOGIC above
             shorts={
                 mint_time: wallet.Short(
-                    balance=-trade_amount,
+                    balance=-bond_amount,
                     open_share_price=0,
                 )
             },
@@ -507,10 +514,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def open_long(
         self,
         wallet_address: int,
-        trade_amount: float,  # in base
+        base_amount: float,  # in base
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """Open a long position by purchasing bonds with base
-
+        """
         When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
         proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
         The remaining amount of longs are sold on the internal AMM. The trader doesn’t receive any variable interest
@@ -530,7 +536,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             The deltas that should be applied to the market and agent
         """
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
+        trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -544,20 +550,21 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.time + self.position_duration.days / 365
-        self.market_state.long_average_maturity_time = self.update_weighted_average(
+        long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
             maturity_time,
-            trade_amount,
+            base_amount,
             True,
         )
+        d_long_average_maturity_time = self.market_state.long_average_maturity_time - long_average_maturity_time
         # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
-        self.market_state.long_base_volume += base_volume
-        self.market_state.longs_outstanding += trade_amount
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
+        longs_outstanding = trade_result.user_result.d_bonds
+
+        # TODO: add accounting for withdrawal shares
 
         # Make sure the trade is valid
-        #
         # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
         # this should be in hyperdrive.check_output_assertions which then calls
         # super().check_output_assertions
@@ -568,6 +575,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
             d_base_buffer=trade_result.user_result.d_bonds,
+            long_base_volume=base_volume,
+            longs_outstanding=longs_outstanding,
+            long_average_maturity_time=d_long_average_maturity_time,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
@@ -580,7 +590,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     def close_long(
         self,
         wallet_address: int,
-        trade_amount: float,  # in bonds
+        bond_amount: float,  # in bonds
         mint_time: float,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
@@ -600,7 +610,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Perform the trade.
-        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
+        trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
             quantity=trade_quantity,
             market_state=self.market_state,
@@ -614,18 +624,18 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.time + self.position_duration.days / 365
-        self.market_state.long_average_maturity_time = self.update_weighted_average(
+        long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
             maturity_time,
-            trade_amount,
+            bond_amount,
             False,
         )
+        d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
+
         # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, trade_amount, 1)
+        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, bond_amount, 1)
         # TODO: update base volume logic here when we have checkpointing
-        self.market_state.long_base_volume -= base_volume
-        self.market_state.longs_outstanding -= trade_amount
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -636,7 +646,10 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
-            d_base_buffer=-trade_amount,
+            d_base_buffer=-bond_amount,
+            long_base_volume=-base_volume,
+            longs_outstanding=-bond_amount,
+            long_average_maturity_time=d_long_average_maturity_time,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
@@ -834,7 +847,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         d_base: float,
         rate: float,
         market_state: MarketState,
-        time_remaining: time_utils.StretchedTime,
+        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -846,7 +859,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         times.
         """
         d_shares = d_base / market_state.share_price
-        annualized_time = time_utils.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
