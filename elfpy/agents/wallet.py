@@ -140,11 +140,15 @@ class Wallet:
         shorts_value = 0
         shorts_value_no_mock = 0
         for mint_time, short in self.shorts.items():
-            balance = (
-                market.close_short(self.address, short.open_share_price, short.balance, mint_time)[1].balance.amount
-                if short.balance > 0 and share_reserves
-                else 0.0
-            )
+            balance = 0.0
+            if (
+                short.balance > 0
+                and share_reserves > 0
+                and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
+            ):
+                balance = market.close_short(self.address, short.open_share_price, short.balance, mint_time)[
+                    1
+                ].balance.amount
             shorts_value += balance
             base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock

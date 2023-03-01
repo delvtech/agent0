@@ -1,18 +1,11 @@
 """Testing the Borrow Market"""
 
-import logging
-import itertools
 import unittest
 
-import numpy as np
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive_markets
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
-import elfpy.types as types
-import elfpy.utils.outputs as output_utils
-from elfpy.markets.borrow import Market as BorrowMarket
-from elfpy.markets.borrow import MarketState as BorrowMarketState
 from elfpy.time import StretchedTime
 
 
@@ -79,7 +72,6 @@ class TestAddLiquidity(unittest.TestCase):
 
         # Celine opens a long.
         market_deltas, wallet_deltas = self.hyperdrive.open_long(self.celine.wallet.address, 50_000_000)
-        print(f"{market_deltas=}")
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.update_wallet(wallet_deltas)
 
@@ -92,9 +84,8 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
 
         # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        # TODO: fix this test
-        self.assertEqual(market_deltas.d_lp_total_supply, lp_supply_before)
-        # self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
+        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, 6)
+        self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
@@ -122,9 +113,8 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
 
         # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        # TODO: fix this test
-        # self.assertEqual(market_deltas.d_lp_total_supply, lp_supply_before)
-        # self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
+        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, 6)
+        self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
@@ -134,8 +124,6 @@ class TestAddLiquidity(unittest.TestCase):
 
     def test_add_liquidity_with_long_at_maturity(self):
         """Test adding liquidity with a long at maturity."""
-        lp_supply_before = self.hyperdrive.market_state.lp_total_supply
-
         # Celine opens a long.
         market_deltas, wallet_deltas = self.hyperdrive.open_long(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
@@ -143,26 +131,17 @@ class TestAddLiquidity(unittest.TestCase):
 
         self.hyperdrive.tick(1)
 
-        # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        print(f"{wallet_deltas=}")
-        print(f"{market_deltas=}")
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(wallet_deltas)
-        print(f"{self.hyperdrive.market_state=}")
-
         # Mock having Celine's long auto closed from checkpointing.
         market_deltas_close_long, _ = self.hyperdrive.close_long(self.celine.wallet.address, 50_000_000, 0)
-        print(f"{market_deltas_close_long=}")
-        # self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
+        self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
+
+        # Add liquidity with the same amount as the original contribution.
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
+        self.hyperdrive.market_state.apply_delta(market_deltas)
+        self.bob.update_wallet(wallet_deltas)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
-
-        # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        # TODO: fix this test
-        # self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, 6)
-        # self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
@@ -176,8 +155,6 @@ class TestAddLiquidity(unittest.TestCase):
 
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
-        lp_supply_before = self.hyperdrive.market_state.lp_total_supply
-
         # Celine opens a short.
         market_deltas, wallet_deltas = self.hyperdrive.open_short(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
@@ -185,26 +162,17 @@ class TestAddLiquidity(unittest.TestCase):
 
         self.hyperdrive.tick(1)
 
+        # Mock having Celine's long auto closed from checkpointing.
+        market_deltas_close_short, _ = self.hyperdrive.close_short(self.celine.wallet.address, 1, 50_000_000, 0)
+        self.hyperdrive.market_state.apply_delta(market_deltas_close_short)
+
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        print(f"{wallet_deltas=}")
-        print(f"{market_deltas=}")
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.bob.update_wallet(wallet_deltas)
-        print(f"{self.hyperdrive.market_state=}")
-
-        # Mock having Celine's long auto closed from checkpointing.
-        market_deltas_close_long, _ = self.hyperdrive.close_short(self.celine.wallet.address, 1, 50_000_000, 0)
-        print(f"{market_deltas_close_long=}")
-        # self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
-
-        # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        # TODO: fix this test
-        # self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, 6)
-        # self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * 2)
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
