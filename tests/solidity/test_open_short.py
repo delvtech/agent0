@@ -37,8 +37,8 @@ class TestOpenLong(unittest.TestCase):
                 days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
             ),
         )
-        wallet_deltas = self.hyperdrive.initialize_market(self.alice.wallet.address, self.contribution, 0.05)
-        self.alice.update_wallet(wallet_deltas)
+        market_deltas, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
+        self.alice.update_wallet(agent_deltas)
 
     def verify_open_short(
         self,
