@@ -602,7 +602,7 @@ class MarketTestsOneFunction(BaseMarketTest):
                     ),
                     pricing_model=test_case["pricing_model"],
                 )
-                _ = market.initialize_market(
+                _ = market.initialize(
                     wallet_address=0,
                     contribution=test_case["target_liquidity"],
                     target_apr=test_case["target_apr"],

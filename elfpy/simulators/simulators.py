@@ -533,7 +533,6 @@ class Simulator:
                 agent_deltas,
             )
             agent.update_wallet(agent_deltas)
-            # TODO: Get simulator, market, pricing model, agent state strings and log
             agent.log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215

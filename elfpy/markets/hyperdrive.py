@@ -24,14 +24,16 @@ if TYPE_CHECKING:
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""
 
+    INITIALIZE_MARKET = "initialize_market"
+
+    ADD_LIQUIDITY = "add_liquidity"
+    REMOVE_LIQUIDITY = "remove_liquidity"
+
     OPEN_LONG = "open_long"
     OPEN_SHORT = "open_short"
 
     CLOSE_LONG = "close_long"
     CLOSE_SHORT = "close_short"
-
-    ADD_LIQUIDITY = "add_liquidity"
-    REMOVE_LIQUIDITY = "remove_liquidity"
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -312,12 +314,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_remaining=self.position_duration,
         )
 
-    def get_market_state_string(self) -> str:
-        """Returns a formatted string containing all of the Market class member variables"""
-        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        state_string = "\n".join(strings)
-        return state_string
-
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
@@ -447,44 +443,56 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         wallet_address: int,
         trade_amount: float,  # in base
     ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Open a long position by purchasing bonds with base
+
+        When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
+        proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
+        The remaining amount of longs are sold on the internal AMM. The trader doesn’t receive any variable interest
+        from their long positions, so the only money they make on closing is from the long maturing and the fixed
+        rate changing.
+
+        Arguments
+        ----------
+        wallet_address: int
+            integer address for the agent's wallet
+        trade_amount: float
+            amount in base that the agent wishes to trade
+
+        Returns
+        -------
+        tuple[MarketDeltas, wallet.Wallet]
+            The deltas that should be applied to the market and agent
         """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-        will be conditional on the pricing model
-        """
-        # TODO: Why are we clamping elsewhere but we don't apply the trade at all here?
-        # issue #146
-        if trade_amount <= self.market_state.bond_reserves:
-            # Perform the trade.
-            trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
-            self.pricing_model.check_input_assertions(
-                quantity=trade_quantity,
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
+        if trade_amount > self.market_state.bond_reserves:
+            raise AssertionError(
+                "ERROR: cannot open a long with more than the available bond resereves, "
+                f"but {trade_amount=} > {self.market_state.bond_reserves=}."
             )
-            trade_result = self.pricing_model.calc_out_given_in(
-                in_=trade_quantity,
-                market_state=self.market_state,
-                time_remaining=self.position_duration,
-            )
-            self.pricing_model.check_output_assertions(trade_result=trade_result)
-            # Get the market and wallet deltas to return.
-            market_deltas = MarketDeltas(
-                d_base_asset=trade_result.market_result.d_base,
-                d_bond_asset=trade_result.market_result.d_bonds,
-                d_base_buffer=trade_result.user_result.d_bonds,
-            )
-            agent_deltas = wallet.Wallet(
-                address=wallet_address,
-                balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-                longs={self.time: wallet.Long(trade_result.user_result.d_bonds)},
-                fees_paid=trade_result.breakdown.fee,
-            )
-        else:
-            market_deltas = MarketDeltas()
-            agent_deltas = wallet.Wallet(
-                address=wallet_address, balance=types.Quantity(amount=0, unit=types.TokenType.BASE)
-            )
+        # Perform the trade.
+        trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
+        self.pricing_model.check_input_assertions(
+            quantity=trade_quantity,
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        trade_result = self.pricing_model.calc_out_given_in(
+            in_=trade_quantity,
+            market_state=self.market_state,
+            time_remaining=self.position_duration,
+        )
+        self.pricing_model.check_output_assertions(trade_result=trade_result)
+        # Get the market and wallet deltas to return.
+        market_deltas = MarketDeltas(
+            d_base_asset=trade_result.market_result.d_base,
+            d_bond_asset=trade_result.market_result.d_bonds,
+            d_base_buffer=trade_result.user_result.d_bonds,
+        )
+        agent_deltas = wallet.Wallet(
+            address=wallet_address,
+            balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
+            longs={self.time: wallet.Long(trade_result.user_result.d_bonds)},
+            fees_paid=trade_result.breakdown.fee,
+        )
         return market_deltas, agent_deltas
 
     def close_long(
@@ -536,12 +544,12 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def initialize_market(
+    def initialize(
         self,
         wallet_address: int,
         contribution: float,
         target_apr: float,
-    ) -> wallet.Wallet:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Market Deltas so that an LP can initialize the market"""
         if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
             raise AssertionError("The market appears to already be initialized.")
@@ -567,7 +575,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,
         )
         self.update_market(market_deltas)
-        return agent_deltas
+        return market_deltas, agent_deltas
 
     def add_liquidity(
         self,

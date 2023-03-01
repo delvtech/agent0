@@ -103,18 +103,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
 
         Returns
         -------
-        float
-            The amount the user pays without fees or slippage. The units
-            are always in terms of bonds or base.
-        float
-            The amount the user pays with fees and slippage. The units are
-            always in terms of bonds or base.
-        float
-            The amount the user pays with slippage and no fees. The units are
-            always in terms of bonds or base.
-        float
-            The fee the user pays. The units are always in terms of bonds or
-            base.
+        TradeResult
+            The result of performing the trade
         """
 
         # Calculate some common values up front

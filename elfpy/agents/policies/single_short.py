@@ -21,7 +21,7 @@ class Policy(Agent):
         """
         action_list = []
         shorts = list(self.wallet.shorts.values())
-        has_opened_short = bool(any(short.balance > 0 for short in shorts))
+        has_opened_short = len(shorts) > 0
         can_open_short = self.get_max_short(market) >= self.amount_to_trade
         if can_open_short and not has_opened_short:
             action_list.append(

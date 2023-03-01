@@ -13,6 +13,21 @@ class TradeBreakdown:
     r"""A granular breakdown of a trade.
 
     This includes information relating to fees and slippage.
+
+    Attributes
+    ----------
+    without_fee_or_slippage: float
+        The amount the user pays without fees or slippage. The units
+        are always in terms of bonds or base, depending on input.
+    with_fee: float
+        The fee the user pays. The units are always in terms of bonds or
+        base.
+    without_fee: float
+        The amount the user pays with fees and slippage. The units are
+        always in terms of bonds or base.
+    fee: float
+        The amount the user pays with slippage and no fees. The units are
+        always in terms of bonds or base.
     """
 
     without_fee_or_slippage: float
@@ -35,24 +50,3 @@ class TradeResult:
     user_result: agent.AgentTradeResult
     market_result: hyperdrive.MarketTradeResult
     breakdown: TradeBreakdown
-
-    def __str__(self):
-        output_string = (
-            "TradeResult(\n"
-            "\tuser_results(\n"
-            f"\t\t{self.user_result.d_base=},\n"
-            f"\t\t{self.user_result.d_bonds=},\n"
-            "\t),\n"
-            "\tmarket_result(\n"
-            f"\t\t{self.market_result.d_base=},\n"
-            f"\t\t{self.market_result.d_bonds=},\n"
-            "\t),\n"
-            "\tbreakdown(\n"
-            f"\t\t{self.breakdown.without_fee_or_slippage=},\n"
-            f"\t\t{self.breakdown.with_fee=},\n"
-            f"\t\t{self.breakdown.without_fee=},\n"
-            f"\t\t{self.breakdown.fee=},\n"
-            "\t)\n"
-            ")"
-        )
-        return output_string
