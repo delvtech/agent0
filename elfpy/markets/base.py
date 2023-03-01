@@ -38,19 +38,6 @@ class MarketAction(Generic[Action]):
     # the agent's wallet
     wallet: wallet.Wallet
 
-    def __str__(self):
-        r"""Return a description of the Action"""
-        output_string = f"AGENT ACTION:\nagent #{self.wallet.address:03.0f}"
-        for key, value in self.__dict__.items():
-            if key == "action_type":
-                output_string += f" execute {value}()"
-            elif key in ["trade_amount", "mint_time"] or key not in [
-                "wallet_address",
-                "agent",
-            ]:
-                output_string += f" {key}: {value}"
-        return output_string
-
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
@@ -124,22 +111,17 @@ class Market(Generic[State, Deltas]):
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
-    def get_market_state_string(self) -> str:
-        """Returns a formatted string containing all of the Market class member variables"""
-        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        return "\n".join(strings)
-
-    def check_market_updates(self, market_deltas: MarketDeltas) -> None:
+    def check_market_updates(self, market_deltas: Deltas) -> None:
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
+            if key == "action_type":
+                continue
             if value:  # check that it's instantiated and non-empty
                 value_to_check = value.amount if isinstance(value, types.Quantity) else value
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
-    def update_market(self, market_deltas: MarketDeltas) -> None:
-        """
-        Increments member variables to reflect current market conditions
-        """
+    def update_market(self, market_deltas: Deltas) -> None:
+        """Increments member variables to reflect current market conditions"""
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
         self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold

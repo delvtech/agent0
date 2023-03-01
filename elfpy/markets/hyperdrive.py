@@ -312,12 +312,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_remaining=self.position_duration,
         )
 
-    def get_market_state_string(self) -> str:
-        """Returns a formatted string containing all of the Market class member variables"""
-        strings = [f"{attribute} = {value}" for attribute, value in self.__dict__.items()]
-        state_string = "\n".join(strings)
-        return state_string
-
     def tick(self, delta_time: float) -> None:
         """Increments the time member variable"""
         self.time += delta_time
