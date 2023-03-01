@@ -287,46 +287,56 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # issue 216
         self.check_action(agent_action)
         # for each position, specify how to forumulate trade and then execute
-        if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
-            market_deltas, agent_deltas = self.open_long(
-                wallet_address=agent_action.wallet.address,
-                base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+        market_deltas = MarketDeltas()
+        agent_deltas = wallet.Wallet(address=0)
+        try:
+            if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
+                market_deltas, agent_deltas = self.open_long(
+                    wallet_address=agent_action.wallet.address,
+                    base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+                )
+            elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
+                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+                mint_time = float(agent_action.mint_time or 0)
+                market_deltas, agent_deltas = self.close_long(
+                    wallet_address=agent_action.wallet.address,
+                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
+                    mint_time=mint_time,
+                )
+            elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
+                market_deltas, agent_deltas = self.open_short(
+                    wallet_address=agent_action.wallet.address,
+                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
+                )
+            elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
+                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+                mint_time = float(agent_action.mint_time or 0)
+                open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
+                market_deltas, agent_deltas = self.close_short(
+                    wallet_address=agent_action.wallet.address,
+                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
+                    mint_time=mint_time,
+                    open_share_price=open_share_price,
+                )
+            elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
+                market_deltas, agent_deltas = self.add_liquidity(
+                    wallet_address=agent_action.wallet.address,
+                    trade_amount=agent_action.trade_amount,
+                )
+            elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
+                market_deltas, agent_deltas = self.remove_liquidity(
+                    wallet_address=agent_action.wallet.address,
+                    trade_amount=agent_action.trade_amount,
+                )
+            else:
+                raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
+        except Exception:
+            logging.debug(
+                "TRADE FAILED %s\npre_trade_market = %s",
+                agent_action,
+                self.market_state,
             )
-        elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
-            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-            mint_time = float(agent_action.mint_time or 0)
-            market_deltas, agent_deltas = self.close_long(
-                wallet_address=agent_action.wallet.address,
-                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
-                mint_time=mint_time,
-            )
-        elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
-            market_deltas, agent_deltas = self.open_short(
-                wallet_address=agent_action.wallet.address,
-                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
-            )
-        elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
-            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-            mint_time = float(agent_action.mint_time or 0)
-            open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
-            market_deltas, agent_deltas = self.close_short(
-                wallet_address=agent_action.wallet.address,
-                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
-                mint_time=mint_time,
-                open_share_price=open_share_price,
-            )
-        elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
-            market_deltas, agent_deltas = self.add_liquidity(
-                wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,
-            )
-        elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
-            market_deltas, agent_deltas = self.remove_liquidity(
-                wallet_address=agent_action.wallet.address,
-                trade_amount=agent_action.trade_amount,
-            )
-        else:
-            raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
+
         logging.debug(
             "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
@@ -401,6 +411,12 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             bond_amount,
             True,
         )
+        d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
+        d_short_average_maturity_time = (
+            self.market_state.short_average_maturity_time
+            if self.market_state.short_average_maturity_time + d_short_average_maturity_time < 0
+            else d_short_average_maturity_time
+        )
         # calculate_base_volume needs a positive base, so we use the value from user_result
         base_volume = self.calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
 
@@ -414,7 +430,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             d_bond_buffer=bond_amount,
             short_base_volume=base_volume,
             shorts_outstanding=bond_amount,
-            short_average_maturity_time=short_average_maturity_time,
+            short_average_maturity_time=d_short_average_maturity_time,
         )
         # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
         max_loss = bond_amount - trade_result.user_result.d_base
@@ -442,18 +458,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         for more on short accounting, see the open short method
         """
 
-        # Clamp the trade amount to the bond reserves.
-        if bond_amount > self.market_state.bond_reserves:
-            logging.warning(
-                (
-                    "markets._close_short: WARNING: trade amount = %g"
-                    "is greater than bond reserves = %g. "
-                    "Adjusting to allowable amount."
-                ),
-                bond_amount,
-                self.market_state.bond_reserves,
-            )
-            bond_amount = self.market_state.bond_reserves
+        if bond_amount > self.market_state.bond_reserves - self.market_state.bond_buffer:
+            raise AssertionError("not enough reserves to close short")
 
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
@@ -488,6 +494,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
+        d_short_average_maturity_time = (
+            self.market_state.short_average_maturity_time
+            if self.market_state.short_average_maturity_time + d_short_average_maturity_time < 0
+            else d_short_average_maturity_time
+        )
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -495,8 +506,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # TODO: add accounting for withdrawal shares
 
         # Return the market and wallet deltas.
-        # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, bond_amount, 1)
+        base_volume = self.calculate_base_volume(
+            trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
+        )
+        print("\nclose_short")
+        print(f"{base_volume=}\n")
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
@@ -568,7 +582,12 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             base_amount,
             True,
         )
-        d_long_average_maturity_time = self.market_state.long_average_maturity_time - long_average_maturity_time
+        d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
+        d_long_average_maturity_time = (
+            self.market_state.long_average_maturity_time
+            if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
+            else d_long_average_maturity_time
+        )
         # TODO: don't use 1 for time_remaining once we have checkpointing
         base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
         longs_outstanding = trade_result.user_result.d_bonds
@@ -643,13 +662,19 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
-
-        # TODO: don't use 1 for time_remaining once we have checkpointing
-        base_volume = self.calculate_base_volume(trade_result.market_result.d_base, bond_amount, 1)
-        # TODO: update base volume logic here when we have checkpointing
+        d_long_average_maturity_time = (
+            self.market_state.long_average_maturity_time
+            if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
+            else d_long_average_maturity_time
+        )
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+
+        # TODO: update base volume logic here when we have checkpointing
+        base_volume = self.calculate_base_volume(
+            trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
+        )
 
         # TODO: add accounting for withdrawal shares
 
@@ -778,6 +803,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
     def calculate_short_adjustment(self) -> float:
         """Calculates an adjustment amount for lp shares"""
+        if self.time > self.market_state.short_average_maturity_time:
+            return 0
+
         # (year_end - year_start) / (normalizing_constant / 365)
         normalized_time_remaining = (self.market_state.short_average_maturity_time - self.time) / (
             self.position_duration.normalizing_constant / 365
@@ -792,6 +820,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
     def calculate_long_adjustment(self) -> float:
         """Calculates an adjustment amount for lp shares"""
+        if self.time > self.market_state.long_average_maturity_time:
+            return 0
+
         # (year_end - year_start) / (normalizing_constant / 365)
         normalized_time_remaining = (self.market_state.long_average_maturity_time - self.time) / (
             self.position_duration.normalizing_constant / 365
@@ -803,6 +834,20 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             normalized_time_remaining,
             self.market_state.share_price,
         )
+
+    def calculate_lp_allocation_adjustment(
+        self,
+        positions_outstanding: float,
+        base_volume: float,
+        average_time_remaining: float,
+        share_price: float,
+    ) -> float:
+        """Calculates an adjustment amount for lp shares"""
+        # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
+        base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
+
+        # adjustment = base_adjustment / c
+        return base_adjustment / share_price
 
     def calculate_base_volume(self, base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
         """Calculates the base volume of an open trade given the base amount,
@@ -838,20 +883,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             return 0
 
         return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
-
-    def calculate_lp_allocation_adjustment(
-        self,
-        positions_outstanding: float,
-        base_volume: float,
-        average_time_remaining: float,
-        share_price: float,
-    ) -> float:
-        """Calculates an adjustment amount for lp shares"""
-        # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
-        base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
-
-        # adjustment = base_adjustment / c
-        return base_adjustment / share_price
 
     def calc_lp_out_given_tokens_in(
         self,
