@@ -582,7 +582,7 @@ class MarketTestsOneFunction(BaseMarketTest):
             test_number = test_index + 1
             if isinstance(test_case["pricing_model"], borrow.BorrowPricingModel):
                 market = borrow.Market(market_state=borrow.MarketState())
-                market_deltas, _ = market.initialize_market(wallet_address=0)
+                market_deltas, _ = market.initialize(wallet_address=0)
                 market.market_state.apply_delta(market_deltas)
                 np.testing.assert_equal(
                     actual=market.market_state.borrow_amount,

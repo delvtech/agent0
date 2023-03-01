@@ -34,7 +34,7 @@ class TestAddLiquidity(unittest.TestCase):
                 days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
             ),
         )
-        wallet_deltas = self.hyperdrive.initialize_market(self.alice.wallet.address, self.contribution, 0.05)
+        market_deltas, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
         self.alice.update_wallet(wallet_deltas)
 
     def test_add_liquidity_failure_zero_amount(self):

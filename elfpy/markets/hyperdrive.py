@@ -40,6 +40,7 @@ class MarketActionType(Enum):
 @dataclass
 class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
+    # pylint: disable=too-many-instance-attributes
     d_base_asset: float = 0
     d_bond_asset: float = 0
     d_base_buffer: float = 0
@@ -319,7 +320,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 )
             else:
                 raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
-        except Exception:
+        except AssertionError:
             logging.debug(
                 "TRADE FAILED %s\npre_trade_market = %s",
                 agent_action,
@@ -856,7 +857,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         return (base_amount - (1 - normalized_time_remaining) * bond_amount) / normalized_time_remaining
 
-    def update_weighted_average(
+    def update_weighted_average(  # pylint: disable=too-many-arguments
         self,
         average: float,
         total_weight: float,
