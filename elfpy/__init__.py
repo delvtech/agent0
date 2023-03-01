@@ -1,6 +1,5 @@
 """Elfpy package"""
 
-import os
 import shutil
 import logging
 
@@ -8,9 +7,6 @@ import matplotlib as mpl
 
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
-
-# save current working folder
-CWD = os.getcwd()
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.

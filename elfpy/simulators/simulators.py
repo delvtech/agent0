@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from typing import TYPE_CHECKING, Optional
-import os
 import logging
 import json
 from dataclasses import dataclass, field, make_dataclass
@@ -11,7 +10,6 @@ import pandas as pd
 import numpy as np
 from numpy.random._generator import Generator
 
-import elfpy
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
@@ -165,7 +163,7 @@ class Config:
     log_level: int = field(
         default=logging.INFO, metadata=types.to_description("Logging level, as defined by stdlib logging")
     )
-    log_filename: str = field(default="simulation.log", metadata=types.to_description("filename for output logs"))
+    log_filename: str = field(default="simulation", metadata=types.to_description("filename for output logs"))
 
     # numerical
     precision: int = field(default=64, metadata=types.to_description("precision of calculations; max is 64"))
@@ -183,10 +181,6 @@ class Config:
             self.variable_apr = [0.05] * self.num_trading_days
         if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
             self.init_share_price = (1 + self.variable_apr[0]) ** self.init_vault_age
-
-        # put the filename in the .logging folder
-        self.log_filename = os.path.join(elfpy.CWD, self.log_filename)
-
         self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
     def __getitem__(self, key) -> None:
