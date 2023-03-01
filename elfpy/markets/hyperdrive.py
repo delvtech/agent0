@@ -463,9 +463,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         tuple[MarketDeltas, wallet.Wallet]
             The deltas that should be applied to the market and agent
         """
-        # TODO: This should reject by raising a (custom) RevertError,
-        # which can be checked in a try/catch when the agent tries to open the trade
-        # issue #146
         if trade_amount > self.market_state.bond_reserves:
             raise AssertionError(
                 "ERROR: cannot open a long with more than the available bond resereves, "

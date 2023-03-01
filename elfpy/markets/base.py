@@ -114,8 +114,6 @@ class Market(Generic[State, Deltas]):
     def check_market_updates(self, market_deltas: Deltas) -> None:
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
-            if key == "action_type":
-                continue
             if value:  # check that it's instantiated and non-empty
                 value_to_check = value.amount if isinstance(value, types.Quantity) else value
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
