@@ -390,7 +390,7 @@ class Simulator:
         self.daily_block_number = 0
         seconds_in_a_day = 86400
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
-        self.trade_number = 0
+        self.trade_number = 1 if self.config.init_lp else 0
         if self.config.do_dataframe_states:
             self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()

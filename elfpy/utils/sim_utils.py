@@ -14,6 +14,7 @@ from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
     from elfpy.pricing_models.base import PricingModel
+    import elfpy.agents.wallet as wallet
 
 
 def get_simulator(
@@ -39,11 +40,13 @@ def get_simulator(
     config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
-    market = get_market(pricing_model, config)
+    market, init_agent_deltas, market_deltas = get_market(pricing_model, config)
     simulator = simulators.Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired
-    if config.init_lp is True:
-        simulator.add_agents([get_init_lp_agent(market, config.target_liquidity)])
+    if config.init_lp:
+        init_agent = get_policy("init_lp")(wallet_address=0, budget=0)
+        init_agent.update_wallet(init_agent_deltas)
+        simulator.add_agents([init_agent])
     if config.do_dataframe_states:
         # update state with day & block = 0 for the initialization trades
         simulator.new_simulation_state.update(
@@ -68,46 +71,33 @@ def get_simulator(
                 market_time=market.time,
             ),
         )
-    # Initialize the simulator using only the initial LP.
-    simulator.collect_and_execute_trades()
+        # TODO: init_lp_agent should execute a trade that calls initialize market
+        # issue # 268
+        if config.init_lp:
+            simulator.new_simulation_state.update(
+                trade_vars=simulators.TradeSimVariables(
+                    run_number=simulator.run_number,
+                    day=simulator.day,
+                    block_number=simulator.block_number,
+                    trade_number=0,
+                    fixed_apr=simulator.market.fixed_apr,
+                    spot_price=simulator.market.spot_price,
+                    market_deltas=market_deltas,
+                    agent_address=0,
+                    agent_deltas=init_agent_deltas,
+                )
+            )
     # Add the remaining agents.
     if agents is not None:
         simulator.add_agents(agents)
     return simulator
 
 
-def get_init_lp_agent(
-    market: hyperdrive.Market,
-    target_liquidity: float,
-) -> Agent:
-    r"""Calculate the required deposit amounts and instantiate the LP agent
-
-    Parameters
-    ----------
-    market : Market
-        empty market object
-    target_liquidity : float
-        target total liquidity for LPer to provide (bonds+shares)
-        the result will be within 1e-15% of the target
-
-    Returns
-    -------
-    init_lp_agent : Agent
-        Agent class that will perform the lp initialization action
-    """
-    current_market_liquidity = market.pricing_model.calc_total_liquidity_from_reserves_and_price(
-        market_state=market.market_state, share_price=market.market_state.share_price
-    )
-    lp_amount = target_liquidity - current_market_liquidity
-    init_lp_agent = get_policy("init_lp")(wallet_address=0, budget=lp_amount)
-    return init_lp_agent
-
-
 def get_market(
     pricing_model: PricingModel,
     config: simulators.Config,
     init_target_liquidity: float = 1.0,
-) -> hyperdrive.Market:
+) -> tuple[hyperdrive.Market, wallet.Wallet, hyperdrive.MarketDeltas]:
     r"""Setup market
 
     Parameters
@@ -154,12 +144,12 @@ def get_market(
         position_duration=position_duration,
     )
     # Not using an agent to initialize the market so we ignore the agent address
-    _ = market.initialize_market(
+    agent_deltas, market_deltas = market.initialize_market(
         wallet_address=0,
         contribution=init_target_liquidity,
         target_apr=config.target_fixed_apr,
     )
-    return market
+    return market, agent_deltas, market_deltas
 
 
 def get_pricing_model(model_name: str) -> PricingModel:
