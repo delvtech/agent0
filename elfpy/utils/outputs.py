@@ -434,9 +434,7 @@ def setup_logging(
             log_dir = os.path.join(base_folder, ".logging")
         if not os.path.exists(log_dir):  # create log_dir if necessary
             os.makedirs(log_dir)
-        final_log_filename = os.path.join(log_dir, log_name)
-        print(f"{final_log_filename=}")
-        handler = RotatingFileHandler(final_log_filename, mode="w", maxBytes=max_bytes)
+        handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
 
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
