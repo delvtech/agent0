@@ -73,7 +73,7 @@ class SingleTradeTests(unittest.TestCase):
                             ),
                             position_duration=simulator.market.position_duration,
                         )
-                        _ = market_direct.initialize_market(
+                        _ = market_direct.initialize(
                             wallet_address=0, contribution=target_liquidity, target_apr=target_pool_apr
                         )
                         total_liquidity_direct = (

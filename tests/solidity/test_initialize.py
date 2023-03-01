@@ -43,7 +43,7 @@ class TestInitialize(unittest.TestCase):
                 normalizing_constant=self.position_duration,
             ),
         )
-        wallet_deltas, _ = self.hyperdrive.initialize_market(
+        _, wallet_deltas = self.hyperdrive.initialize(
             wallet_address=self.alice.wallet.address,
             contribution=self.contribution,
             target_apr=self.target_apr,
@@ -54,7 +54,7 @@ class TestInitialize(unittest.TestCase):
         """Markets should not be able to be initialized twice.
         Since setUp initializes it, we can check the assert by trying again here."""
         with self.assertRaises(AssertionError):
-            _ = self.hyperdrive.initialize_market(
+            _ = self.hyperdrive.initialize(
                 wallet_address=self.bob.wallet.address,
                 contribution=self.contribution,
                 target_apr=self.target_apr,

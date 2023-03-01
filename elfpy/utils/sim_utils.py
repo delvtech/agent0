@@ -40,7 +40,7 @@ def get_simulator(
     config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
-    market, init_agent_deltas, market_deltas = get_market(pricing_model, config)
+    market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, config)
     simulator = simulators.Simulator(config=config, market=market)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
@@ -74,29 +74,31 @@ def get_simulator(
         # TODO: init_lp_agent should execute a trade that calls initialize market
         # issue # 268
         if config.init_lp:
-            simulator.new_simulation_state.update(
-                trade_vars=simulators.TradeSimVariables(
-                    run_number=simulator.run_number,
-                    day=simulator.day,
-                    block_number=simulator.block_number,
-                    trade_number=0,
-                    fixed_apr=simulator.market.fixed_apr,
-                    spot_price=simulator.market.spot_price,
-                    market_deltas=market_deltas,
-                    agent_address=0,
-                    agent_deltas=init_agent_deltas,
+            if config.do_dataframe_states:
+                simulator.new_simulation_state.update(
+                    trade_vars=simulators.TradeSimVariables(
+                        run_number=simulator.run_number,
+                        day=simulator.day,
+                        block_number=simulator.block_number,
+                        trade_number=0,
+                        fixed_apr=simulator.market.fixed_apr,
+                        spot_price=simulator.market.spot_price,
+                        market_deltas=market_deltas,
+                        agent_address=0,
+                        agent_deltas=init_agent_deltas,
+                    )
                 )
-            )
+            simulator.update_simulation_state()
+            simulator.trade_number += 1
     # Add the remaining agents.
     if agents is not None:
         simulator.add_agents(agents)
     return simulator
 
 
-def get_market(
+def get_initialized_market(
     pricing_model: PricingModel,
     config: simulators.Config,
-    init_target_liquidity: float = 1.0,
 ) -> tuple[hyperdrive.Market, wallet.Wallet, hyperdrive.MarketDeltas]:
     r"""Setup market
 
@@ -118,9 +120,6 @@ def get_market(
                 portion of trades to be collected as fees for LPers, expressed as a decimal
             variable_apr : list
                 variable (often a valut) apr per day for the duration of the simulation
-    init_target_liquidity : float = 1.0
-        initial liquidity for setting up the market
-        should be a tiny amount for setting up apr
 
     Returns
     -------
@@ -144,9 +143,9 @@ def get_market(
         position_duration=position_duration,
     )
     # Not using an agent to initialize the market so we ignore the agent address
-    agent_deltas, market_deltas = market.initialize_market(
+    market_deltas, agent_deltas = market.initialize(
         wallet_address=0,
-        contribution=init_target_liquidity,
+        contribution=config.target_liquidity,
         target_apr=config.target_fixed_apr,
     )
     return market, agent_deltas, market_deltas
