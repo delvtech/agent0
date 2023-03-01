@@ -43,7 +43,7 @@ class TestInitialize(unittest.TestCase):
                 normalizing_constant=self.position_duration,
             ),
         )
-        wallet_deltas = self.hyperdrive.initialize_market(
+        wallet_deltas, _ = self.hyperdrive.initialize_market(
             wallet_address=self.alice.wallet.address,
             contribution=self.contribution,
             target_apr=self.target_apr,
