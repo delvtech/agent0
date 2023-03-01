@@ -34,6 +34,13 @@ class TestNotebook(unittest.TestCase):
                 continue
             # Read the notebook cell by cell, grab the code & add it to a string
             notebook = nbformat.read(os.path.join(notebook_location, file), as_version=4)
+            first_code_cell = next(
+                (cell for cell in notebook["cells"] if cell["cell_type"] == "code"),
+                None,  # No code cells
+            )
+            if first_code_cell is None or "# test: skip-notebook" in first_code_cell["source"]:
+                continue  # skip the whole file
+            # Then start over checking it more carefully
             file_source = ""
             for cell in notebook["cells"]:
                 if cell["cell_type"] != "code":  # only parse code blocks
