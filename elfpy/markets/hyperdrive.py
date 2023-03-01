@@ -422,6 +422,10 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
+        assert trade_result.breakdown.with_fee <= self.market_state.bond_reserves, (
+            f"ERROR: open_short() output({trade_result.breakdown.with_fee}) >"
+            f" bond_reserves({self.market_state.bond_reserves})"
+        )
 
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
