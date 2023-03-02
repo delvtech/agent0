@@ -1,21 +1,21 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from importlib import import_module
-from typing import Any, TYPE_CHECKING, Optional
 import logging
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, Optional
 
+import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators as simulators
 import elfpy.time as time
-import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
+    import elfpy.agents.wallet as wallet
     from elfpy.agents.agent import Agent
     from elfpy.pricing_models.base import PricingModel
-    import elfpy.agents.wallet as wallet
 
 
 def get_simulator(
@@ -43,7 +43,7 @@ def get_simulator(
     pricing_model = get_pricing_model(config.pricing_model_name)
     block_time = BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, block_time, config)
-    simulator = simulators.Simulator(config=config, market=market, time=block_time)
+    simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
         init_agent = get_policy("init_lp")(wallet_address=0, budget=0)
@@ -70,7 +70,7 @@ def get_simulator(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 block_number=simulator.block_number,
-                time=simulator.time.time,
+                time=simulator.block_time.time,
             ),
         )
         # TODO: init_lp_agent should execute a trade that calls initialize market

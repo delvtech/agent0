@@ -4,22 +4,21 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 from importlib import import_module
-from os import walk, path
+from os import path, walk
 
 import numpy as np
-from elfpy.time.time import BlockTime
-
 import utils_for_tests as test_utils  # utilities for testing
 
-import elfpy.types as types
-from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
-from elfpy.agents.agent import Agent
-import elfpy.simulators as simulators
-import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.base as base_pm
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.simulators as simulators
+import elfpy.time as time
+import elfpy.types as types
+from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
+from elfpy.agents.agent import Agent
+from elfpy.time.time import BlockTime
 
 
 class TestErrorPolicy(Agent):

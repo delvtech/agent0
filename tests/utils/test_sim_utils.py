@@ -1,18 +1,20 @@
 """Testing for the ElfPy package modules"""
 from __future__ import annotations  # types are strings by default in 3.11
 
-import unittest
 import logging
+import unittest
 
 import numpy as np
 
+import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-import elfpy.markets.hyperdrive as hyperdrive_market
-from elfpy.time.time import BlockTime
+import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.simulators.simulators as simulators
+from elfpy.time.time import BlockTime
+
+# pylint: disable=too-many-locals
 
 
 class SimUtilsTest(unittest.TestCase):

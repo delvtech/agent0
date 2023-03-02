@@ -1,21 +1,21 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING, Optional
-import logging
 import json
+import logging
 from dataclasses import dataclass, field, make_dataclass
+from typing import TYPE_CHECKING, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from numpy.random._generator import Generator
-from elfpy.time.time import BlockTime
 
-import elfpy.types as types
-import elfpy.time as time
-import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
+import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.time as time
+import elfpy.types as types
+import elfpy.utils.outputs as output_utils
+from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -380,13 +380,13 @@ class Simulator:
         self,
         config: Config,
         market: Market,
-        time: BlockTime,
+        block_time: BlockTime,
     ):
         # User specified variables
         self.config = config.copy()
         logging.info("%s", self.config)
         self.market = market
-        self.time = time
+        self.block_time = block_time
         self.set_rng(config.rng)
         self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -631,13 +631,13 @@ class Simulator:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.time.time)
+                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.block_time.time)
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
                 if not last_block_in_sim:
-                    self.time.tick(self.time_step)
+                    self.block_time.tick(self.time_step)
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
@@ -656,7 +656,7 @@ class Simulator:
         self.simulation_state.day.append(self.day)
         self.simulation_state.block_number.append(self.block_number)
         self.simulation_state.daily_block_number.append(self.daily_block_number)
-        self.simulation_state.current_time.append(self.time.time)
+        self.simulation_state.current_time.append(self.block_time.time)
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.time_step_size.append(self.time_step)
         self.simulation_state.position_duration.append(self.market.position_duration)

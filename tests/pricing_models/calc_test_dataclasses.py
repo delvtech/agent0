@@ -1,16 +1,13 @@
 """Useful dataclasses for testing a pricing model's calc_in_given_out method"""
 from __future__ import annotations
 
+import builtins
 from dataclasses import dataclass
-from typing import Type, Optional
+from typing import Optional, Type
 
-from pytest import skip
-
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 from elfpy.markets.hyperdrive import MarketState
-
-skip(msg="These are dataclasses used for tests, not tests themselves", allow_module_level=True)
 
 
 @dataclass
@@ -52,7 +49,7 @@ class CalcInGivenOutFailureTestCase:
     out: types.Quantity
     market_state: MarketState
     time_remaining: time.StretchedTime
-    exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
+    exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
 
 @dataclass
@@ -106,7 +103,7 @@ class CalcOutGivenInFailureTestCase:
     in_: types.Quantity
     market_state: MarketState
     time_remaining: time.StretchedTime
-    exception_type: Type[Exception] | tuple[Type[Exception], Type[Exception]]
+    exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
 
 @dataclass
