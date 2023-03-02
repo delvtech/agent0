@@ -1,28 +1,17 @@
-<div style="display: flex;">
-  <div style="flex: 1; padding-top: 50px;">
-    <p>
-      <a hre="https://github.com/psf/black">
-        <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
-      </a>
-    </p>
-    <p>
-      <a hre="https://docs.pytest.org/en/latest/contents.html">
-        <img src="https://img.shields.io/badge/testing-pytest-blue.svg"/>
-      </a>
-    </p>
-    </p>
-      <a hre="https://codecov.io/gh/element-fi/elf-simulations">
-        <img src="https://codecov.io/gh/element-fi/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP"/>
-      </a>
-    </p>
-    <p>
-    </p>
+<div>
+  <div>
+    <a hre="https://codecov.io/gh/element-fi/elf-simulations">
+      <img src="https://codecov.io/gh/element-fi/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP"/>
+    </a>
+    <a hre="https://github.com/psf/black">
+      <img src="https://img.shields.io/badge/code%20style-black-000000.svg"/>
+    </a>
+    <a hre="https://docs.pytest.org/en/latest/contents.html">
+      <img src="https://img.shields.io/badge/testing-pytest-blue.svg"/>
+    </a>
   </div>
-  <div style="flex: 1;">
-    <img src="https://codecov.io/gh/element-fi/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP">
-  </div>
+  <img height="50px" src="https://codecov.io/gh/element-fi/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP">
 </div>
-<div k>
 
 # [Element Finance](https://element.fi) market simulation and analysis
 
