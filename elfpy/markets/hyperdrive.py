@@ -247,16 +247,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         check which of 6 action types are being executed, and handles each case:
 
         open_long
-        .. todo: add description
+        .. todo:: link to description in the open long func
 
         close_long
-        .. todo: add description
+        .. todo:: link to description in the close long func
 
         open_short
-        .. todo: add description
+        .. todo:: link to description in the open short func
 
         close_short
-        .. todo: add description
+        .. todo:: link to description in the close short func
 
         add_liquidity
             pricing model computes new market deltas
@@ -270,7 +270,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
 
-        .. todo: change agent deltas from Wallet type to its own type
+        .. todo:: We should update the market inside here, like we do for init
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
@@ -550,7 +550,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 "ERROR: cannot open a long with more than the available bond resereves, "
                 f"but {base_amount=} > {self.market_state.bond_reserves=}."
             )
-
         # Perform the trade.
         trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         self.pricing_model.check_input_assertions(
@@ -563,7 +562,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
-
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.position_duration.days / 365
         long_average_maturity_time = self.update_weighted_average(
@@ -577,15 +575,12 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # TODO: don't use 1 for time_remaining once we have checkpointing
         base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
         longs_outstanding = trade_result.user_result.d_bonds
-
         # TODO: add accounting for withdrawal shares
-
         # Make sure the trade is valid
         # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
         # this should be in hyperdrive.check_output_assertions which then calls
         # super().check_output_assertions
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
         # Get the market and wallet deltas to return.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
@@ -614,7 +609,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         compute wallet update spec with specific details
         will be conditional on the pricing model
         """
-
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
             market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
@@ -624,7 +618,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
-
         # Perform the trade.
         trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
@@ -637,7 +630,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
-
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.position_duration.days / 365
         long_average_maturity_time = self.update_weighted_average(
@@ -648,17 +640,13 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
-
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
         # TODO: update base volume logic here when we have checkpointing
         base_volume = self.calculate_base_volume(
             trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
         )
-
         # TODO: add accounting for withdrawal shares
-
         # Return the market and wallet deltas.
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
