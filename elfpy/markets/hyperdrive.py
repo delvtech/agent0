@@ -247,16 +247,16 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         check which of 6 action types are being executed, and handles each case:
 
         open_long
-        .. todo: add description
+        .. todo:: link to description in the open long func
 
         close_long
-        .. todo: add description
+        .. todo:: link to description in the close long func
 
         open_short
-        .. todo: add description
+        .. todo:: link to description in the open short func
 
         close_short
-        .. todo: add description
+        .. todo:: link to description in the close short func
 
         add_liquidity
             pricing model computes new market deltas
@@ -270,7 +270,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
             LP tokens are also stored in user wallet as fungible amounts, for ease of use
 
-        .. todo: change agent deltas from Wallet type to its own type
+        .. todo:: We should update the market inside here, like we do for init
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
