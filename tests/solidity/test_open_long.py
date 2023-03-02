@@ -78,15 +78,9 @@ class TestOpenLong(unittest.TestCase):
             market_state_before.share_reserves + share_amount,
             msg=f"{self.hyperdrive.market_state.share_price=} is not correct",
         )
-        # TODO: why is this approx?
-        # if we have a rounding error then we should be handling it internally
-        # so the final outputs are exactly as expected
-        # issue #112
-        # issue #57
-        self.assertAlmostEqual(
+        self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves - unsigned_bond_amount,
-            delta=10 * elfpy.WEI,
             msg=f"{self.hyperdrive.market_state.bond_reserves=} is not correct",
         )
         self.assertEqual(
