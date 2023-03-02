@@ -106,22 +106,24 @@ class TestOpenLong(unittest.TestCase):
             delta=10 * elfpy.WEI,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
-        # self.assertAlmostEqual(
-        #    self.hyperdrive.market_state.long_average_maturity_time,
-        #    maturity_time,
-        #    delta=100 * elfpy.WEI,
-        #    msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
-        # )
+        self.assertAlmostEqual(
+            self.hyperdrive.market_state.long_average_maturity_time,
+            maturity_time,
+            delta=100 * elfpy.WEI,
+            msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
+        )
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
             base_amount,
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
         )
+        # TODO: once we add checkpointing we will need to switch to this
+        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
-        # self.assertEqual(
-        #    self.hyperdrive.long_base_volume_checkpoints(checkpoint_time),
-        #    base_amount,
-        # )
+        self.assertEqual(
+            self.hyperdrive.market_state.long_base_volume,
+            base_amount,
+        )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
@@ -137,10 +139,12 @@ class TestOpenLong(unittest.TestCase):
             0,
             msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
         )
-        # self.assertEqual(
-        #    self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        #    0,
-        # )
+        # TODO: once we add checkpointing we will need to switch to this
+        # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
+        self.assertEqual(
+            self.hyperdrive.market_state.short_base_volume,
+            0,
+        )
 
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
@@ -163,55 +167,37 @@ class TestOpenLong(unittest.TestCase):
         market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.bob.update_wallet(agent_deltas)
-        # TODO: maturity time in solidity is be latest_checkpoint() + position_duration,
-        # where latest_checkpoint:
-        #    block.timestamp - (block.timestamp % CHECKPOINT_DURATION);
-        # That being said, in this case I think that all comes out to position_duration,
-        # so the value for long_average_maturity_time is still incorrect
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
             contribution=self.contribution,
             base_amount=base_amount,
             unsigned_bond_amount=abs(market_deltas.d_bond_asset),
-            maturity_time=self.position_duration,
+            maturity_time=self.hyperdrive.position_duration.days / 365,
+            apr_before=apr_before,
+        )
+
+    def test_open_long_with_small_amount(self):
+        """Open a tiny long & check that accounting is done correctly"""
+        base_amount = 0.01
+        self.bob.budget = base_amount
+        self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
+        market_state_before = self.hyperdrive.market_state.copy()
+        apr_before = self.hyperdrive.fixed_apr
+        market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
+        self.hyperdrive.market_state.apply_delta(market_deltas)
+        self.bob.update_wallet(agent_deltas)
+        self.verify_open_long(
+            user=self.bob,
+            market_state_before=market_state_before,
+            contribution=self.contribution,
+            base_amount=base_amount,
+            unsigned_bond_amount=abs(market_deltas.d_bond_asset),
+            maturity_time=self.hyperdrive.position_duration.days / 365,
             apr_before=apr_before,
         )
 
 
-#
-#    function test_open_long() external {
-#        uint256 apr = 0.05e18;
-#
-#        // Initialize the pools with a large amount of capital.
-#        uint256 contribution = 500_000_000e18;
-#        initialize(alice, apr, contribution);
-#
-#        // Get the reserves before opening the long.
-#        PoolInfo memory poolInfoBefore = getPoolInfo();
-#
-#        // Open a long.
-#        uint256 baseAmount = 10e18;
-#        (uint256 maturityTime, uint256 bondAmount) = openLong(bob, baseAmount);
-#
-#        // Verify that the open long updated the state correctly.
-#        verifyOpenLong(
-#            poolInfoBefore,
-#            contribution,
-#            baseAmount,
-#            bondAmount,
-#            maturityTime,
-#            apr
-#        );
-#    }
-#
-#    function test_open_long_with_small_amount() external {
-#        uint256 apr = 0.05e18;
-#
-#        // Initialize the pool with a large amount of capital.
-#        uint256 contribution = 500_000_000e18;
-#        initialize(alice, apr, contribution);
-#
 #        // Get the reserves before opening the long.
 #        PoolInfo memory poolInfoBefore = getPoolInfo();
 #
