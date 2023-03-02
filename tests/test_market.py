@@ -11,6 +11,7 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.markets.borrow as borrow
 import elfpy.time as time
+from elfpy.time.time import BlockTime
 
 
 class BaseMarketTest(unittest.TestCase):
@@ -35,12 +36,14 @@ class BaseMarketTest(unittest.TestCase):
         _ = hyperdrive_market.Market(
             pricing_model=base_pm.PricingModel(),
             market_state=hyperdrive_market.MarketState(),
+            block_time=BlockTime(),
             position_duration=pd_good,
         )
         with self.assertRaises(AssertionError):
             _ = hyperdrive_market.Market(
                 pricing_model=base_pm.PricingModel(),
                 market_state=hyperdrive_market.MarketState(),
+                block_time=BlockTime(),
                 position_duration=pd_nonorm,
             )
 
@@ -195,7 +198,7 @@ class BaseMarketTest(unittest.TestCase):
         for test_index, test_case in enumerate(test_cases):
             test_number = test_index + 1
             if isinstance(test_case["pricing_model"], borrow.BorrowPricingModel):
-                market = borrow.Market(market_state=borrow.MarketState())
+                market = borrow.Market(block_time=BlockTime(), market_state=borrow.MarketState())
                 market_deltas, _ = market.initialize(wallet_address=0)
                 market.market_state.apply_delta(market_deltas)
                 np.testing.assert_equal(
@@ -220,6 +223,7 @@ class BaseMarketTest(unittest.TestCase):
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
+                    block_time=BlockTime(),
                     pricing_model=test_case["pricing_model"],
                 )
                 _ = market.initialize(

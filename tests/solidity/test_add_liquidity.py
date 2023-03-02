@@ -7,6 +7,7 @@ import elfpy.markets.hyperdrive as hyperdrive_markets
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 from elfpy.time import StretchedTime
+from elfpy.time.time import BlockTime
 
 
 class TestAddLiquidity(unittest.TestCase):
@@ -18,18 +19,22 @@ class TestAddLiquidity(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_markets.Market
+    block_time: BlockTime
 
     def setUp(self):
 
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=1, budget=self.contribution)
+        self.block_time = BlockTime()
 
         pricing_model = HyperdrivePricingModel()
         market_state = hyperdrive_markets.MarketState()
+
         self.hyperdrive = hyperdrive_markets.Market(
             pricing_model=pricing_model,
             market_state=market_state,
+            block_time=self.block_time,
             position_duration=StretchedTime(
                 days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
             ),
@@ -129,7 +134,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.update_wallet(wallet_deltas)
 
-        self.hyperdrive.tick(1)
+        self.block_time.tick(1)
 
         # Mock having Celine's long auto closed from checkpointing.
         market_deltas_close_long, _ = self.hyperdrive.close_long(self.celine.wallet.address, 50_000_000, 0)
@@ -162,7 +167,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.update_wallet(wallet_deltas)
 
-        self.hyperdrive.tick(1)
+        self.block_time.tick(1)
 
         # Mock having Celine's long auto closed from checkpointing.
         market_deltas_close_short, _ = self.hyperdrive.close_short(self.celine.wallet.address, 1, 50_000_000, 0)

@@ -9,6 +9,7 @@ import numpy as np
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.markets.hyperdrive as hyperdrive_market
+from elfpy.time.time import BlockTime
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.simulators.simulators as simulators
@@ -35,11 +36,12 @@ class SimUtilsTest(unittest.TestCase):
                         config.variable_apr = [0.05] * config.num_trading_days
                         config.num_position_days = num_position_days
                         # construct the market via sim utils
+                        block_time = BlockTime()
                         if pricing_model_name.lower() == "hyperdrive":
                             pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         else:
                             pricing_model = yieldspace_pm.YieldspacePricingModel()
-                        market, _, _ = sim_utils.get_initialized_market(pricing_model, config)
+                        market, _, _ = sim_utils.get_initialized_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,
@@ -52,6 +54,7 @@ class SimUtilsTest(unittest.TestCase):
                                 trade_fee_percent=market.market_state.trade_fee_percent,
                                 redemption_fee_percent=market.market_state.redemption_fee_percent,
                             ),
+                            block_time=BlockTime(),
                             position_duration=market.position_duration,
                         )
                         share_reserves = target_liquidity / market_direct.market_state.share_price
