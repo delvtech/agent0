@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from numpy.random._generator import Generator
 
-
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
@@ -164,7 +163,7 @@ class Config:
     log_level: int = field(
         default=logging.INFO, metadata=types.to_description("Logging level, as defined by stdlib logging")
     )
-    log_filename: str = field(default="simulation.log", metadata=types.to_description("filename for output logs"))
+    log_filename: str = field(default="simulation", metadata=types.to_description("filename for output logs"))
 
     # numerical
     precision: int = field(default=64, metadata=types.to_description("precision of calculations; max is 64"))

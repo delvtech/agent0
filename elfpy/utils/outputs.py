@@ -425,11 +425,17 @@ def setup_logging(
     r"""Setup logging and handlers with default settings"""
     if log_filename is None:
         handler = logging.StreamHandler(sys.stdout)
-    else:
+    else:  # we have a filename
         log_dir, log_name = os.path.split(log_filename)
-        if not os.path.exists(log_dir):
+        if not log_name.endswith(".log"):
+            log_name += ".log"
+        if log_dir == "":  # we have just a filename, log to default .logging directory
+            base_folder = os.path.dirname(os.path.dirname(os.path.abspath(elfpy.__file__)))
+            log_dir = os.path.join(base_folder, ".logging")
+        if not os.path.exists(log_dir):  # create log_dir if necessary
             os.makedirs(log_dir)
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
+
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
     handler.setFormatter(logging.Formatter(elfpy.DEFAULT_LOG_FORMATTER, elfpy.DEFAULT_LOG_DATETIME))
     logging.getLogger().handlers = [handler]  # overwrite handlers with the desired one
