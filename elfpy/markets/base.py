@@ -2,19 +2,19 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
-from dataclasses import dataclass
 
 import numpy as np
 
 import elfpy
 import elfpy.agents.wallet as wallet
-from elfpy.time.time import BlockTime
 import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
+    from elfpy.time.time import BlockTime
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
