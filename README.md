@@ -106,7 +106,16 @@ run:
 anvil
 ```
 
-npm link the hyperdrive repo, then run:
+clone and sym link the hyperdrive repo, into hyperdrive/, i.e.:
+
+```bash
+cd ..
+git clone https://github.com/element-fi/hyperdrive.git
+cd elf-simulations
+ln -s ../hyperdrive .
+```
+
+then run:
 
 ```bash
 python -m pip install eth-ape==0.5.9
