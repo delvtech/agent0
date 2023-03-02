@@ -1,0 +1,41 @@
+name: coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    name: coverage
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-${{ matrix.python-version }}.txt
+          python -m pip install . # Install the elfpy module
+          python -m pip install coverage
+          rm tests/test_max_short.py
+          rm tests/test_market.py
+      - name: Run tests with coverage
+        run: |
+          coverage run --source=elfpy -m unittest discover tests
+      - name: Generate coverage report
+        run: |
+          coverage xml -i report -m
+          coverage xml -i html
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          flags: unittests
+          fail_ci_if_error: true

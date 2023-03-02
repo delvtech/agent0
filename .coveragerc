@@ -1,0 +1,11 @@
+[run]
+omit =
+    tests/test_max_short.py
+    tests/test_notebooks.py
+
+[report]
+omit =
+        *test*
+        */__init__.py
+
+ignore_errors = True

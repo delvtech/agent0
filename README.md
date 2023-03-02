@@ -1,6 +1,8 @@
 [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![testing: pytest](https://img.shields.io/badge/testing-pytest-blue.svg)](https://docs.pytest.org/en/latest/contents.html)
+[![codecov](https://codecov.io/gh/element-fi/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://codecov.io/gh/element-fi/elf-simulations)
+[![codecov](https://codecov.io/gh/element-fi/elf-simulations/branch/main/graph/badge.svg?token=1S60MD42ZP)](https://codecov.io/gh/element-fi/elf-simulations/branch/main/graphs/tree.svg?token=1S60MD42ZP)
 
 # [Element Finance](https://element.fi) market simulation and analysis
 
@@ -55,10 +57,42 @@ docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host 
 
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
 
+## Coverage
+
+To run coverage locally you can follow these steps:
+
+install coverage.py:
+
+```
+pip install coverage
+```
+
+parse the repo:
+
+```
+coverage run --source=elfpy --omit=tests/test_notebooks.py -m unittest discover tests
+```
+
+generate the report:
+
+```
+coverage xml -i report -m
+```
+
+generate html report:
+
+```
+coverage xml -i html
+```
+
+then just open `htmlcov/index.html` to view the report!
+
 ## Apeworks and Contract Integration
+
 [Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
 
 run:
+
 ```
 anvil
 ```
