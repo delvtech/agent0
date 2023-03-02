@@ -545,6 +545,12 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         tuple[MarketDeltas, wallet.Wallet]
             The deltas that should be applied to the market and agent
         """
+        if base_amount > self.market_state.bond_reserves:
+            raise AssertionError(
+                "ERROR: cannot open a long with more than the available bond resereves, "
+                f"but {base_amount=} > {self.market_state.bond_reserves=}."
+            )
+
         # Perform the trade.
         trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         self.pricing_model.check_input_assertions(
