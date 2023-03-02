@@ -15,6 +15,8 @@ import elfpy.simulators.simulators as simulators
 
 
 class SimUtilsTest(unittest.TestCase):
+    """Tests for the sim utils"""
+
     def test_get_initialized_market(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
         output_utils.setup_logging(log_filename="test_sim_utils", log_level=logging.DEBUG)

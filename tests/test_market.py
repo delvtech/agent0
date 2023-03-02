@@ -45,6 +45,7 @@ class BaseMarketTest(unittest.TestCase):
             )
 
     def test_market_state_copy(self):
+        """Test the market state ability to deep copy itself"""
         market_state = hyperdrive_market.MarketState()
         market_state_copy = market_state.copy()
         assert market_state is not market_state_copy  # not the same object

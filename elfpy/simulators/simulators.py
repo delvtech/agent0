@@ -202,7 +202,11 @@ class Config:
 
     def copy(self) -> Config:
         """Returns a new copy of self"""
-        return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
+        if hasattr(self, "__dataclass_fields__"):
+            # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member when we're in the conditional
+            # pylint: disable=no-member
+            return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
+        raise AttributeError("Config was not instantiated & cannot be copied")
 
     def check_variable_apr(self) -> None:
         r"""Verify that the variable_apr is the right length"""
