@@ -1,4 +1,4 @@
-contracts_folder: node_modules/hyperdrive/contracts
+contracts_folder: hyperdrive/contracts
 
 plugins:
   - name: solidity==0.5.4
