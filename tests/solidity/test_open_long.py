@@ -93,16 +93,14 @@ class TestOpenLong(unittest.TestCase):
             market_state_before.share_price,
             msg=f"{self.hyperdrive.market_state.share_price=} is not correct",
         )
-        self.assertAlmostEqual(
+        self.assertEqual(
             self.hyperdrive.market_state.longs_outstanding,
             market_state_before.longs_outstanding + unsigned_bond_amount,
-            delta=10 * elfpy.WEI,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
-        self.assertAlmostEqual(
+        self.assertEqual(
             self.hyperdrive.market_state.long_average_maturity_time,
             maturity_time,
-            delta=100 * elfpy.WEI,
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         )
         self.assertEqual(
