@@ -546,7 +546,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         tuple[MarketDeltas, wallet.Wallet]
             The deltas that should be applied to the market and agent
         """
-        if base_amount > self.market_state.bond_reserves:
+        if base_amount > self.market_state.bond_reserves * self.spot_price:
             raise AssertionError(
                 "ERROR: cannot open a long with more than the available bond resereves, "
                 f"but {base_amount=} > {self.market_state.bond_reserves=}."

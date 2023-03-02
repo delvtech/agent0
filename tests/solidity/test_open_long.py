@@ -149,10 +149,9 @@ class TestOpenLong(unittest.TestCase):
 
     def test_open_long_failure_extreme_amount(self):
         """Purchasing more bonds than exist fails"""
-        # TODO: Shouldn't this be a function of the contribution amount?
-        # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
+        base_amount = self.hyperdrive.market_state.bond_reserves
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet.address, self.hyperdrive.market_state.bond_reserves)
+            self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
 
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
