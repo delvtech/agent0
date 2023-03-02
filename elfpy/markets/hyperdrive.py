@@ -574,11 +574,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             True,
         )
         d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
-        # d_long_average_maturity_time = (
-        #     self.market_state.long_average_maturity_time
-        #     if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
-        #     else d_long_average_maturity_time
-        # )
         # TODO: don't use 1 for time_remaining once we have checkpointing
         base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
         longs_outstanding = trade_result.user_result.d_bonds
@@ -653,11 +648,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
-        d_long_average_maturity_time = (
-            self.market_state.long_average_maturity_time
-            if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
-            else d_long_average_maturity_time
-        )
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)

@@ -163,11 +163,6 @@ class YieldspacePricingModel(PricingModel):
         ) - market_state.bond_reserves
 
         annualized_time = time.norm_days(time_remaining.days, 365)
-        # bond_reserves = (market_state.share_reserves / 2) * (
-        #     market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
-        #     - market_state.share_price
-        # )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
-        # return bond_reserves
         logging.debug(
             (
                 "inputs:\n\tlp_in=%g,\n\tshare_reserves=%d, "
