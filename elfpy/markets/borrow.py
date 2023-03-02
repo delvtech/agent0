@@ -209,7 +209,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         self.market_state: MarketState = market_state
         super().__init__(pricing_model=self.pricing_model, market_state=market_state)
 
-    def initialize_market(
+    def initialize(
         self,
         wallet_address: int,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
