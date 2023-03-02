@@ -1,5 +1,6 @@
 """Testing for the ElfPy package modules"""
-from __future__ import annotations  # types are strings by default in 3.11
+from __future__ import annotations
+import builtins  # types are strings by default in 3.11
 
 import logging
 import unittest
@@ -81,7 +82,7 @@ class TestSimulator(unittest.TestCase):
         goal_writes = simulation_state_num_writes[0]
         try:
             np.testing.assert_equal(simulation_state_num_writes, goal_writes)
-        except Exception as exc:
+        except builtins.BaseException as exc:
             bad_keys = [
                 key
                 for key in simulator.simulation_state.__dict__

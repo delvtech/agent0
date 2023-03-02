@@ -279,6 +279,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # for each position, specify how to forumulate trade and then execute
         market_deltas = MarketDeltas()
         agent_deltas = wallet.Wallet(address=0)
+        # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
+        # should handle these in the simulator, not in the market.  The market should throw errors.
         try:
             if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
                 market_deltas, agent_deltas = self.open_long(
@@ -393,7 +395,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.time + self.position_duration.days / 365
+        maturity_time = self.position_duration.days / 365
         short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
@@ -475,7 +477,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.time + self.position_duration.days / 365
+        maturity_time = self.position_duration.days / 365
         short_average_maturity_time = self.update_weighted_average(
             self.market_state.short_average_maturity_time,
             self.market_state.shorts_outstanding,
@@ -484,11 +486,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
-        d_short_average_maturity_time = (
-            self.market_state.short_average_maturity_time
-            if self.market_state.short_average_maturity_time + d_short_average_maturity_time < 0
-            else d_short_average_maturity_time
-        )
 
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -499,8 +496,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         base_volume = self.calculate_base_volume(
             trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
         )
-        print("\nclose_short")
-        print(f"{base_volume=}\n")
         market_deltas = MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
@@ -564,7 +559,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.time + self.position_duration.days / 365
+        maturity_time = self.position_duration.days / 365
         long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
@@ -573,11 +568,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             True,
         )
         d_long_average_maturity_time = long_average_maturity_time - self.market_state.long_average_maturity_time
-        d_long_average_maturity_time = (
-            self.market_state.long_average_maturity_time
-            if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
-            else d_long_average_maturity_time
-        )
+        # d_long_average_maturity_time = (
+        #     self.market_state.long_average_maturity_time
+        #     if self.market_state.long_average_maturity_time + d_long_average_maturity_time < 0
+        #     else d_long_average_maturity_time
+        # )
         # TODO: don't use 1 for time_remaining once we have checkpointing
         base_volume = self.calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
         longs_outstanding = trade_result.user_result.d_bonds
@@ -643,7 +638,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
 
         # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.time + self.position_duration.days / 365
+        maturity_time = self.position_duration.days / 365
         long_average_maturity_time = self.update_weighted_average(
             self.market_state.long_average_maturity_time,
             self.market_state.longs_outstanding,
@@ -773,20 +768,20 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_remaining=self.position_duration,
         )
         # perform the trade
-        lp_in, d_base_reserves, d_bond_reserves = self.pricing_model.calc_tokens_out_given_lp_in(
+        lp_in, d_base, d_bond = self.pricing_model.calc_tokens_out_given_lp_in(
             lp_in=trade_amount,
             rate=self.fixed_apr,
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
         market_deltas = MarketDeltas(
-            d_base_asset=-d_base_reserves,
-            d_bond_asset=-d_bond_reserves,
+            d_base_asset=-d_base,
+            d_bond_asset=-d_bond,
             d_lp_total_supply=-lp_in,
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            balance=types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
+            balance=types.Quantity(amount=d_base, unit=types.TokenType.BASE),
             lp_tokens=-lp_in,
         )
         return market_deltas, agent_deltas

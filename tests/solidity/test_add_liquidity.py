@@ -150,8 +150,10 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet.address, self.contribution)
-        # self.assertAlmostEqual(wallet_deltas.balance, self.contribution)
+        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+            self.bob.wallet.address, self.bob.wallet.lp_tokens
+        )
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, 6)
 
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
@@ -181,5 +183,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet.address, self.contribution)
-        # self.assertAlmostEqual(wallet_deltas.balance, self.contribution)
+        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+            self.bob.wallet.address, self.bob.wallet.lp_tokens
+        )
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)

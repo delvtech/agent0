@@ -147,20 +147,27 @@ class YieldspacePricingModel(PricingModel):
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
         """
-        d_base = (
-            market_state.share_price
-            * (market_state.share_reserves - market_state.base_buffer)
-            * lp_in
-            / market_state.lp_total_supply
+        # d_z = (z - b_x / c) * (dl / l)
+        # d_x = (c * z - b_x) * (dl / l)
+        d_base = (market_state.share_price * market_state.share_reserves - market_state.base_buffer) * (
+            lp_in / market_state.lp_total_supply
         )
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
         # rate is an APR, which is annual, so we normalize time by 365 to correct for units
         annualized_time = time.norm_days(time_remaining.days, 365)
-        d_bonds = (market_state.share_reserves - d_shares) / 2 * (
+
+        d_bonds = ((market_state.share_reserves - d_shares) / 2) * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
+
+        annualized_time = time.norm_days(time_remaining.days, 365)
+        # bond_reserves = (market_state.share_reserves / 2) * (
+        #     market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+        #     - market_state.share_price
+        # )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
+        # return bond_reserves
         logging.debug(
             (
                 "inputs:\n\tlp_in=%g,\n\tshare_reserves=%d, "
