@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, make_dataclass
 import pandas as pd
 import numpy as np
 from numpy.random._generator import Generator
+from elfpy.time.time import BlockTime
 
 import elfpy.types as types
 import elfpy.time as time
@@ -43,14 +44,14 @@ class SimulationState:
     daily_block_number: list[int] = field(
         default_factory=list, metadata=types.to_description("integer, block index in a given day")
     )
-    current_market_time: list[float] = field(
-        default_factory=list, metadata=types.to_description("float, current market time in years")
+    current_time: list[float] = field(
+        default_factory=list, metadata=types.to_description("float, current block time in years")
     )
     trade_number: list[int] = field(
         default_factory=list, metadata=types.to_description("integer, trade number in a given simulation")
     )
-    market_step_size: list[float] = field(
-        default_factory=list, metadata=types.to_description("minimum time discretization for market time step")
+    time_step_size: list[float] = field(
+        default_factory=list, metadata=types.to_description("minimum time discretization for a time step")
     )
     position_duration: list[time.StretchedTime] = field(
         default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
@@ -234,7 +235,7 @@ class RunSimVariables:
     market_init: hyperdrive.MarketState = field(
         metadata=types.to_description("initial market state for this simulation run")
     )
-    market_step_size: float = field(metadata=types.to_description("minimum time discretization for market time step"))
+    time_step: float = field(metadata=types.to_description("minimum time discretization for time step in years"))
     position_duration: time.StretchedTime = field(
         metadata=types.to_description("time lapse between token mint and expiry in years")
     )
@@ -257,7 +258,7 @@ class BlockSimVariables:
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     day: int = field(metadata=types.to_description("day index in a given simulation"))
     block_number: int = field(metadata=types.to_description("integer, block index in a given simulation"))
-    market_time: float = field(metadata=types.to_description("float, current market time in years"))
+    time: float = field(metadata=types.to_description("float, current time in years"))
 
 
 @dataclass
@@ -379,11 +380,13 @@ class Simulator:
         self,
         config: Config,
         market: Market,
+        time: BlockTime,
     ):
         # User specified variables
         self.config = config.copy()
         logging.info("%s", self.config)
         self.market = market
+        self.time = time
         self.set_rng(config.rng)
         self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
@@ -434,8 +437,8 @@ class Simulator:
         return "\n".join(strings)
 
     @property
-    def market_step_size(self) -> float:
-        r"""Returns minimum time increment
+    def time_step(self) -> float:
+        r"""Returns minimum time increment in years
 
         Returns
         -------
@@ -590,7 +593,7 @@ class Simulator:
                     config=self.config,
                     agent_init=[agent.wallet for agent in self.agents.values()],
                     market_init=self.market.market_state,
-                    market_step_size=self.market_step_size,
+                    time_step=self.time_step,
                     position_duration=self.market.position_duration,
                 )
             )
@@ -628,13 +631,13 @@ class Simulator:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.market.time)
+                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.time.time)
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
                 self.market.log_market_step_string()
                 if not last_block_in_sim:
-                    self.market.tick(self.market_step_size)
+                    self.time.tick(self.time_step)
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
@@ -653,9 +656,9 @@ class Simulator:
         self.simulation_state.day.append(self.day)
         self.simulation_state.block_number.append(self.block_number)
         self.simulation_state.daily_block_number.append(self.daily_block_number)
-        self.simulation_state.current_market_time.append(self.market.time)
+        self.simulation_state.current_time.append(self.time.time)
         self.simulation_state.trade_number.append(self.trade_number)
-        self.simulation_state.market_step_size.append(self.market_step_size)
+        self.simulation_state.time_step_size.append(self.time_step)
         self.simulation_state.position_duration.append(self.market.position_duration)
         self.simulation_state.fixed_apr.append(self.market.fixed_apr)
         self.simulation_state.current_variable_apr.append(self.config.variable_apr[self.day])

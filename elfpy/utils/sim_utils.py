@@ -10,6 +10,7 @@ import elfpy.time as time
 import elfpy.markets.hyperdrive as hyperdrive
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
+from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -40,8 +41,9 @@ def get_simulator(
     config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
-    market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, config)
-    simulator = simulators.Simulator(config=config, market=market)
+    block_time = BlockTime()
+    market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, block_time, config)
+    simulator = simulators.Simulator(config=config, market=market, time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
         init_agent = get_policy("init_lp")(wallet_address=0, budget=0)
@@ -55,7 +57,7 @@ def get_simulator(
                 config=config,
                 agent_init=[agent.wallet for agent in simulator.agents.values()],
                 market_init=simulator.market.market_state,
-                market_step_size=simulator.market_step_size,
+                time_step=simulator.time_step,
                 position_duration=simulator.market.position_duration,
             ),
             day_vars=simulators.DaySimVariables(
@@ -68,7 +70,7 @@ def get_simulator(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 block_number=simulator.block_number,
-                market_time=market.time,
+                time=simulator.time.time,
             ),
         )
         # TODO: init_lp_agent should execute a trade that calls initialize market
@@ -98,6 +100,7 @@ def get_simulator(
 
 def get_initialized_market(
     pricing_model: PricingModel,
+    block_time: BlockTime,
     config: simulators.Config,
 ) -> tuple[hyperdrive.Market, wallet.Wallet, hyperdrive.MarketDeltas]:
     r"""Setup market
@@ -133,6 +136,7 @@ def get_initialized_market(
     )
     market = hyperdrive.Market(
         pricing_model=pricing_model,
+        block_time=block_time,
         market_state=hyperdrive.MarketState(
             init_share_price=config.init_share_price,
             share_price=config.init_share_price,
