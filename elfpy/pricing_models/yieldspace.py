@@ -330,7 +330,7 @@ class YieldspacePricingModel(PricingModel):
             #
             # without_fee = d_y'
             base_of_exponent = init_share_price * (out_reserves - d_shares)
-            if base_of_exponent > 0:
+            if base_of_exponent < 0:
                 raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
             without_fee = (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed) - in_reserves
             # The fees are calculated as the difference between the bonds paid
@@ -390,7 +390,7 @@ class YieldspacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             base_of_exponent = out_reserves - d_bonds
-            if base_of_exponent > 0:
+            if base_of_exponent < 0:
                 raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
             without_fee = (
                 (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
@@ -566,7 +566,7 @@ class YieldspacePricingModel(PricingModel):
             #
             # d_y' = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
             base_of_exponent = init_share_price * (in_reserves + d_shares)
-            if base_of_exponent > 0:
+            if base_of_exponent < 0:
                 raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
             without_fee = out_reserves - (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed)
             # The fees are calculated as the difference between the bonds
@@ -615,7 +615,7 @@ class YieldspacePricingModel(PricingModel):
             #
             # without_fee = d_x'
             base_of_exponent = in_reserves + d_bonds
-            if base_of_exponent > 0:
+            if base_of_exponent < 0:
                 raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
             without_fee = (
                 share_reserves
