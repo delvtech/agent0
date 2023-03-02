@@ -48,6 +48,14 @@ class BaseMarketTest(unittest.TestCase):
                 position_duration=pd_nonorm,
             )
 
+    def test_market_state_copy(self):
+        market_state = hyperdrive_market.MarketState()
+        market_state_copy = market_state.copy()
+        assert market_state is not market_state_copy  # not the same object
+        assert market_state == market_state_copy  # they have the same attribute values
+        market_state_copy.share_reserves += 10
+        assert market_state != market_state_copy  # now they should have different attribute values
+
     def test_market_init(self):
         """Unit tests for the pricing model calc_liquidity function
 
