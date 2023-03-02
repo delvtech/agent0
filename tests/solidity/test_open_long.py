@@ -49,7 +49,7 @@ class TestOpenLong(unittest.TestCase):
         contribution: float,
         base_amount: float,
         unsigned_bond_amount: float,
-        maturity_time: int,
+        maturity_time: float,
         apr_before: float,
     ):
         """Open a long then make sure the market state is correct"""
@@ -106,36 +106,40 @@ class TestOpenLong(unittest.TestCase):
             delta=10 * elfpy.WEI,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
-
         # self.assertAlmostEqual(
         #    self.hyperdrive.market_state.long_average_maturity_time,
         #    maturity_time,
-        #    100 * elfpy.WEI,
+        #    delta=100 * elfpy.WEI,
+        #    msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.long_base_volume,
-        #     base_amount,
-        # )
+        self.assertEqual(
+            self.hyperdrive.market_state.long_base_volume,
+            base_amount,
+            msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
+        )
         # checkpoint_time = maturity_time - self.position_duration
         # self.assertEqual(
-        #     self.hyperdrive.long_base_volume_checkpoints(checkpoint_time),
-        #     base_amount
+        #    self.hyperdrive.long_base_volume_checkpoints(checkpoint_time),
+        #    base_amount,
         # )
+        self.assertEqual(
+            self.hyperdrive.market_state.shorts_outstanding,
+            market_state_before.shorts_outstanding,
+            msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
+        )
+        self.assertEqual(
+            self.hyperdrive.market_state.short_average_maturity_time,
+            0,
+            msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} is not correct",
+        )
+        self.assertEqual(
+            self.hyperdrive.market_state.short_base_volume,
+            0,
+            msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
+        )
         # self.assertEqual(
-        #     self.hyperdrive.market_state.shorts_outstanding,
-        #     market_state_before.shorts_outstanding,
-        # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_average_maturity_time,
-        #     0,
-        # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_base_volume,
-        #     0,
-        # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        #     0,
+        #    self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
+        #    0,
         # )
 
     def test_open_long_failure_zero_amount(self):
@@ -160,6 +164,11 @@ class TestOpenLong(unittest.TestCase):
         market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.bob.update_wallet(agent_deltas)
+        # TODO: maturity time in solidity is be latest_checkpoint() + position_duration,
+        # where latest_checkpoint:
+        #    block.timestamp - (block.timestamp % CHECKPOINT_DURATION);
+        # That being said, in this case I think that all comes out to position_duration,
+        # so the value for long_average_maturity_time is still incorrect
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
