@@ -66,7 +66,6 @@ class TestOpenLong(unittest.TestCase):
             msg=f"{hyperdrive_base_amount=} is not correct",
         )
         # verify that opening a long doesn't make the APR go up
-        # TODO: The above comment is from the solidity code; but I think it means to say "DOES" make the apr go up?
         self.assertGreater(
             apr_before,
             self.hyperdrive.fixed_apr,
