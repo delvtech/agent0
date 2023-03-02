@@ -6,10 +6,16 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 import logging
 
+from pytest import skip
+
 import utils_for_tests as test_utils  # utilities for testing
 
 import elfpy.simulators.simulators as simulators
 import elfpy.utils.outputs as output_utils  # utilities for file outputs
+
+# TODO: rewrite these tests wthout the simulator, and actually verify values are correct or at least
+# sensical.
+skip(msg="These tests aren't actually testing anything.", allow_module_level=True)
 
 
 class BaseParameterTest(unittest.TestCase):

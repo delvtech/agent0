@@ -1,4 +1,5 @@
 """Testing for example notebooks"""
+import builtins
 import matplotlib
 
 matplotlib.use("Agg")  # headless backend so that plots won't render
@@ -91,5 +92,5 @@ class TestNotebook(unittest.TestCase):
                     ), redirect_stderr(tmp_file):
                         global_env = {}
                         exec(cleaned_source, global_env)  # pylint: disable=exec-used
-            except Exception as exc:
+            except builtins.BaseException as exc:
                 raise AssertionError(f"notebook {file} failed") from exc
