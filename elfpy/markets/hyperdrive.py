@@ -167,8 +167,7 @@ class MarketState(base_market.BaseMarketState):
         self.short_withdrawal_share_proceeds += delta.short_withdrawal_share_proceeds
 
     def copy(self) -> MarketState:
-        """Returns a new copy of self
-        TODO: Add a test for this in test_market.py"""
+        """Returns a new copy of self"""
         return MarketState(**self.__dict__)
 
 
