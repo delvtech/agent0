@@ -383,7 +383,7 @@ class Simulator:
         self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
-        # self.config.freeze()  # type: ignore
+        self.config.freeze()  # type: ignore
         self.agents: dict[int, Agent] = {}
 
         # Simulation variables
