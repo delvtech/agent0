@@ -11,17 +11,32 @@ import elfpy.types as types
 class BlockTime:
     r"""Global time."""
 
-    time_in_years: float = 0
+    # time in years
+    time: float = 0
     block_number: float = 0
+    # defaults to 1 day
+    step_size: float = 1 / 365
 
     @property
     def time_in_seconds(self) -> float:
         """1 year = 31,556,952 seconds"""
-        return self.time_in_years * 31_556_952
+        return self.time * 31_556_952
 
     def tick(self, delta_years: float) -> None:
         """ticks the time by delta_time amount"""
-        self.time_in_years += delta_years
+        self.time += delta_years
+
+    def step(self) -> None:
+        """ticks the time by step_size"""
+        self.time += self.step_size
+
+    def set_time(self, time: float) -> None:
+        """Sets the time"""
+        self.time = time
+
+    def set_step_size(self, step_size: float) -> None:
+        """Sets the step_size for tick"""
+        self.step_size = step_size
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
