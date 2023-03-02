@@ -160,7 +160,6 @@ class PricingModel(ABC):
 
         .. todo:: Write a test for this function
         """
-
         # y = (z / 2) * (mu * (1 + rt)**(1/tau) - c)
         # z = (2 * y) / (mu * (1 + rt)**(1/tau) - c)
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
@@ -174,7 +173,6 @@ class PricingModel(ABC):
                 - init_share_price
             )
         )
-
         return share_reserves
 
     def calc_base_for_target_apr(
@@ -204,16 +202,13 @@ class PricingModel(ABC):
         float
             The base amount for a given bond at the target_apr.
         """
-
         # delta_z / delta_y = p = 1 - r
         # delta_z = delta_y * (1 - r)
         # delta_x = c * delta_y * (1 - r)
-
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
         annualized_time = time.norm_days(position_duration.days, 365)
         base = share_price * bond * (1 - target_apr * annualized_time)
-
         assert base >= 0, "base value negative"
         return base
 
@@ -244,16 +239,13 @@ class PricingModel(ABC):
         float
             The bond amount for a given base in at the target APR
         """
-
         # delta_z / delta_y = p = 1 - r
         # delta_y = delta_z / (1 - r)
         # delta_y = (delta_x / c) / (1 - r)
-
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
         annualized_time = time.norm_days(position_duration.days, 365)
         bond = (base / share_price) / (1 - target_apr * annualized_time)
-
         assert bond >= 0, "bond value negative"
         return bond
 
@@ -372,8 +364,7 @@ class PricingModel(ABC):
             market_state,
             time_remaining,
         )
-        apr = price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
-        return apr
+        return price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
 
     def get_max_long(
         self,
