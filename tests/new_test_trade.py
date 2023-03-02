@@ -99,7 +99,7 @@ class TradeTests(unittest.TestCase):
         simulator.add_agents([policy(wallet_address=wallet_address, budget=trade.amount)])
         actual_market_deltas, actual_agent_deltas = simulator.market.open_long(
             wallet_address=1,
-            trade_amount=trade.amount,
+            base_amount=trade.amount,
         )
         # check that the deltas are the same
         self.assertEqual(expected_market_deltas, actual_market_deltas, msg="market deltas did not match")
@@ -122,6 +122,7 @@ class TradeTests(unittest.TestCase):
             market_state=simulator.market.market_state,
             time_remaining=simulator.market.position_duration,
         )
+        expected_result_close
         expected_market_deltas = hyperdrive_market.MarketDeltas(
             d_base_asset=expected_result.market_result.d_base,
             d_bond_asset=expected_result.market_result.d_bonds,
@@ -151,7 +152,7 @@ class TradeTests(unittest.TestCase):
             mint_time=0,
             wallet_address=1,
             # in bonds: that's the thing in your wallet you want to sell
-            trade_amount=amount_of_bonds_purchased,
+            bond_amount=amount_of_bonds_purchased,
         )
         # check that the deltas are the same
         self.assertEqual(expected_market_deltas, actual_market_deltas, msg="market deltas did not match")

@@ -139,7 +139,7 @@ class BaseMarketTest(unittest.TestCase):
             #   3mo duration; 36.97812836141986 time_stretch (targets 3% APR);
             #   2 init share price; 2 share price; Hyperdrive
             {
-                "target_liquidity": 10_000_000,  # Targeting 10M liquidity
+                "target_liquidity": 10_000_000,  # targeting 10M liquidity
                 "target_apr": 0.03,  # fixed rate APR you'd get from purchasing bonds; r = 0.03
                 "position_duration": time.StretchedTime(
                     days=91.25,
@@ -249,7 +249,7 @@ class BaseMarketTest(unittest.TestCase):
 
     def test_market_init_apr_and_liquidity(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""
-        output_utils.setup_logging(log_filename=".logging/test_trades.log", log_level=logging.DEBUG)
+        output_utils.setup_logging(log_filename="test_trades", log_level=logging.DEBUG)
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 1.1):
                 for num_position_days in [90, 365]:
