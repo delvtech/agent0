@@ -10,6 +10,7 @@ import numpy as np
 
 import elfpy
 import elfpy.agents.wallet as wallet
+from elfpy.time.time import BlockTime
 import elfpy.types as types
 
 if TYPE_CHECKING:
@@ -102,10 +103,11 @@ class Market(Generic[State, Deltas]):
         self,
         pricing_model: PricingModel,
         market_state: State,
+        block_time: BlockTime,
     ):
         self.pricing_model = pricing_model
         self.market_state = market_state
-        self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.block_time = block_time
 
     def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
@@ -123,7 +125,3 @@ class Market(Generic[State, Deltas]):
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
         self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold
-
-    def tick(self, delta_time: float) -> None:
-        """Increments the time member variable"""
-        self.time += delta_time
