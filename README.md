@@ -56,18 +56,20 @@ docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host 
 Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.html). You can run all tests from the repository root directory by runing `python -m pytest`, or you can pick a specific test in the `tests/` folder with `python -m pytest tests/{test_file.py}`.
 
 ## Apeworks and Contract Integration
+[Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
 
-First, open the hyperdrive contracts repo on the ape-jupyter-sc-integration branch. Follow instructions for nstalling forge, then run anvil.
-Next, deploy contracts by running `yarn testnet`
+run:
+```
+anvil
+```
 
-Then in the sim repo run:
+npm link the hyperdrive repo, then run:
 
 ```bash
 python -m pip install eth-ape==0.5.9
 ape plugins list -a
 ape plugins install .
 ape compile
-ape notebook
 ```
 
 ## Examples
