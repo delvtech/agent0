@@ -200,6 +200,10 @@ class Config:
         # cls arg tells json how to handle numpy objects and nested dataclasses
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
+    def copy(self) -> Config:
+        """Returns a new copy of self"""
+        return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
+
     def check_variable_apr(self) -> None:
         r"""Verify that the variable_apr is the right length"""
         if not isinstance(self.variable_apr, list):
@@ -372,14 +376,14 @@ class Simulator:
         market: Market,
     ):
         # User specified variables
-        self.config = config
+        self.config = config.copy()
         logging.info("%s", self.config)
         self.market = market
         self.set_rng(config.rng)
         self.config.check_variable_apr()
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
-        self.config.freeze()  # type: ignore
+        # self.config.freeze()  # type: ignore
         self.agents: dict[int, Agent] = {}
 
         # Simulation variables
