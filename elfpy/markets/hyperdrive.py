@@ -167,7 +167,8 @@ class MarketState(base_market.BaseMarketState):
         self.short_withdrawal_share_proceeds += delta.short_withdrawal_share_proceeds
 
     def copy(self) -> MarketState:
-        """Returns a new copy of self"""
+        """Returns a new copy of self
+        TODO: Add a test for this in test_market.py"""
         return MarketState(**self.__dict__)
 
 
@@ -537,7 +538,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         ----------
         wallet_address: int
             integer address for the agent's wallet
-        trade_amount: float
+        base_amount: float
             amount in base that the agent wishes to trade
 
         Returns
