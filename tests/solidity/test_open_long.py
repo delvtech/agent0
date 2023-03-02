@@ -32,7 +32,7 @@ class TestOpenLong(unittest.TestCase):
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
-        self.hyperdrive = hyperdrive_market.Market(  # TODO: is this going to reset for each test func?
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(
