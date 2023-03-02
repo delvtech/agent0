@@ -160,5 +160,5 @@ class TestOpenLong(unittest.TestCase):
         """Purchasing more bonds than exist fails"""
         # TODO: Shouldn't this be a function of the contribution amount?
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             self.hyperdrive.open_short(self.bob.wallet.address, self.hyperdrive.market_state.bond_reserves * 2)
