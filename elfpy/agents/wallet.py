@@ -21,9 +21,11 @@ class Long:
     ----------
     balance : float
         The amount of bonds that the position is long.
+
+    .. todo:: make balance a Quantity to enforce units
     """
 
-    balance: float
+    balance: float  # bonds
 
 
 @dataclass
