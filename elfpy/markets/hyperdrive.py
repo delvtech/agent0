@@ -293,7 +293,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
                 mint_time = float(agent_action.mint_time or 0)
                 market_deltas, agent_deltas = self.close_long(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                     mint_time=mint_time,
                 )
@@ -600,7 +600,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def close_long(
+    def _calc_close_long(
         self,
         wallet_address: int,
         bond_amount: float,  # in bonds
@@ -666,6 +666,22 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             longs={mint_time: wallet.Long(trade_result.user_result.d_bonds)},
             fees_paid=trade_result.breakdown.fee,
         )
+        return market_deltas, agent_deltas
+
+    def close_long(
+        self,
+        agent_wallet: wallet.Wallet,
+        bond_amount: float,  # in bonds
+        mint_time: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """
+        take trade spec & turn it into trade details
+        compute wallet update spec with specific details
+        will be conditional on the pricing model
+        """
+        market_deltas, agent_deltas = self._calc_close_long(agent_wallet.address, bond_amount, mint_time)
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def initialize(

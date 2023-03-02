@@ -52,7 +52,7 @@ class TestInitialize(unittest.TestCase):
             contribution=self.contribution,
             target_apr=self.target_apr,
         )
-        self.alice.update_wallet(wallet_deltas)
+        self.alice.wallet.update(wallet_deltas)
 
     def test_initialize_failure(self):
         """Markets should not be able to be initialized twice.

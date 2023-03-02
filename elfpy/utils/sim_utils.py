@@ -47,7 +47,7 @@ def get_simulator(
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
         init_agent = get_policy("init_lp")(wallet_address=0, budget=0)
-        init_agent.update_wallet(init_agent_deltas)
+        init_agent.wallet.update(init_agent_deltas)
         simulator.add_agents([init_agent])
     if config.do_dataframe_states:
         # update state with day & block = 0 for the initialization trades

@@ -1,12 +1,14 @@
 """Implements abstract classes that control user behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+import logging
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 import elfpy.types as types
 
 if TYPE_CHECKING:
+    from typing import Iterable
     from elfpy.markets.hyperdrive import Market
     from typing import Any
 
@@ -111,6 +113,131 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
+    def update(self, wallet_deltas: Wallet) -> None:
+        """Update the agent's wallet
+
+        Parameters
+        ----------
+        wallet_deltas : Wallet
+            The agent's wallet that tracks the amount of assets this agent holds
+        market : Market
+            The market on which this agent will be executing trades (MarketActions)
+
+        Returns
+        -------
+        This method has no returns. It updates the Agent's Wallet according to the passed parameters
+        """
+        # track over time the agent's weighted average spend, for return calculation
+        for key, value_or_dict in wallet_deltas.__dict__.items():
+            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
+                continue
+            if key in ["lp_tokens", "fees_paid"]:
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    getattr(self, key),
+                    getattr(self, key) + value_or_dict,
+                    value_or_dict,
+                )
+                self[key] += value_or_dict
+            # handle updating a Quantity
+            elif key == "balance":
+                logging.debug(
+                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
+                    self.address,
+                    key,
+                    getattr(self, key).amount,
+                    getattr(self, key).amount + value_or_dict.amount,
+                    value_or_dict.amount,
+                )
+                getattr(self, key).amount += value_or_dict.amount
+            # handle updating a dict, which have mint_time attached
+            elif key == "borrows":
+                if value_or_dict:  # could be empty
+                    self._update_borrows(value_or_dict)
+            elif key == "longs":
+                self._update_longs(value_or_dict.items())
+            elif key == "shorts":
+                self._update_shorts(value_or_dict.items())
+            else:
+                raise ValueError(f"wallet_key={key} is not allowed.")
+
+    def _update_borrows(self, borrow_summary: Borrow) -> None:
+        if borrow_summary.start_time in self.borrows:  #  entry already exists for this mint_time, so add to it
+            self.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
+        else:
+            self.borrows.update({borrow_summary.start_time: borrow_summary})
+        if self.borrows[borrow_summary.start_time].borrow_amount == 0:
+            # Removing the empty borrows allows us to check existance
+            # of open borrows using `if self.borrows`
+            del self.borrows[borrow_summary.start_time]
+
+    def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
+
+        Parameters
+        ----------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Long object
+            and its market-relative mint time
+        """
+        for mint_time, long in longs:
+            if long.balance != 0:
+                logging.debug(
+                    "agent #%g trade longs, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    self.address,
+                    mint_time,
+                    self.longs,
+                    long,
+                )
+                if mint_time in self.longs:  #  entry already exists for this mint_time, so add to it
+                    self.longs[mint_time].balance += long.balance
+                else:
+                    self.longs.update({mint_time: long})
+            if self.longs[mint_time].balance == 0:
+                # Removing the empty borrows allows us to check existance
+                # of open longs using `if wallet.longs`
+                del self.longs[mint_time]
+
+    def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
+
+        Parameters
+        ----------
+        shorts : Iterable[tuple[float, Short]]
+            A list (or other Iterable type) of tuples that contain a Short object
+            and its market-relative mint time
+        """
+        for mint_time, short in shorts:
+            if short.balance != 0:
+                logging.debug(
+                    "agent #%g trade shorts, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    self.address,
+                    mint_time,
+                    self.shorts,
+                    short,
+                )
+                if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
+                    self.shorts[mint_time].balance += short.balance
+                    old_balance = self.shorts[mint_time].balance
+
+                    # if the balance is positive, we are opening a short, therefore do a weighted
+                    # mean for the open share price.  this covers an edge case where two shorts are
+                    # opened for the same account in the same block.  if the balance is negative, we
+                    # don't want to update the open_short_price
+                    if short.balance > 0:
+                        old_share_price = self.shorts[mint_time].open_share_price
+                        self.shorts[mint_time].open_share_price = (
+                            short.open_share_price * short.balance + old_share_price * old_balance
+                        ) / (short.balance + old_balance)
+                else:
+                    self.shorts.update({mint_time: short})
+            if self.shorts[mint_time].balance == 0:
+                # Removing the empty borrows allows us to check existance
+                # of open shorts using `if wallet.shorts`
+                del self.shorts[mint_time]
+
     def get_state(self, market: Market) -> dict[str, float]:
         r"""The wallet's current state of public variables
 
@@ -131,7 +258,7 @@ class Wallet:
         longs_value_no_mock = 0
         for mint_time, long in self.longs.items():
             if long.balance > 0 and share_reserves:
-                balance = market.close_long(self.address, long.balance, mint_time)[1].balance.amount
+                balance = market._calc_close_long(self.address, long.balance, mint_time)[1].balance.amount
             else:
                 balance = 0.0
             longs_value += balance

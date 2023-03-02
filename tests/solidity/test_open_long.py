@@ -43,7 +43,7 @@ class TestOpenLong(unittest.TestCase):
             ),
         )
         _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
-        self.alice.update_wallet(wallet_deltas)
+        self.alice.wallet.update(wallet_deltas)
 
     def verify_open_long(
         self,
@@ -160,7 +160,7 @@ class TestOpenLong(unittest.TestCase):
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
         self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(agent_deltas)
+        self.bob.wallet.update(agent_deltas)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
@@ -180,7 +180,7 @@ class TestOpenLong(unittest.TestCase):
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
         self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(agent_deltas)
+        self.bob.wallet.update(agent_deltas)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
