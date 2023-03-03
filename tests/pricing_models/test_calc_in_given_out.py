@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import decimal
 import unittest
-import numpy as np
 
+import numpy as np
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
+    CalcInGivenOutSuccessByModelTestResult,
     CalcInGivenOutSuccessTestCase,
     CalcInGivenOutSuccessTestResult,
-    CalcInGivenOutSuccessByModelTestResult,
 )
 
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 from elfpy.markets.hyperdrive import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -300,7 +300,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     redemption_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
-                exception_type=(AssertionError, decimal.InvalidOperation),
+                exception_type=(ValueError, decimal.InvalidOperation),
             ),
             CalcInGivenOutFailureTestCase(
                 out=types.Quantity(amount=100, unit=types.TokenType.BASE),
