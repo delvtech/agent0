@@ -260,7 +260,7 @@ class Wallet:
         longs_value_no_mock = 0
         for mint_time, long in self.longs.items():
             if long.balance > 0 and share_reserves:
-                balance = market._calc_close_long(self.address, long.balance, mint_time)[1].balance.amount
+                balance = market.calc_close_long(self.address, long.balance, mint_time)[1].balance.amount
             else:
                 balance = 0.0
             longs_value += balance

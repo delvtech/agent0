@@ -197,6 +197,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
     It also has some helper variables for assessing pricing model values given market conditions.
     """
 
+    # TODO: We need to break this file up
+    # pylint: disable=too-many-public-methods
+
     def __init__(
         self,
         pricing_model: PricingModel,
@@ -600,7 +603,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def _calc_close_long(
+    def calc_close_long(
         self,
         wallet_address: int,
         bond_amount: float,  # in bonds
@@ -679,7 +682,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         compute wallet update spec with specific details
         will be conditional on the pricing model
         """
-        market_deltas, agent_deltas = self._calc_close_long(agent_wallet.address, bond_amount, mint_time)
+        market_deltas, agent_deltas = self.calc_close_long(agent_wallet.address, bond_amount, mint_time)
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
