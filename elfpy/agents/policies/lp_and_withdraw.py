@@ -40,7 +40,7 @@ class Policy(Agent):
                 )
             )
         elif has_lp:
-            enough_time_has_passed = market.time > self.time_to_withdraw
+            enough_time_has_passed = market.block_time.time > self.time_to_withdraw
             if enough_time_has_passed:
                 action_list.append(
                     types.Trade(

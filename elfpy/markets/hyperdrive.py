@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Optional, Generic
 from dataclasses import dataclass, field
 
 import numpy as np
+from elfpy.time.time import BlockTime
 
 import elfpy.utils.price as price_utils
 import elfpy.time as time
@@ -201,6 +202,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         pricing_model: PricingModel,
         market_state: MarketState,
         position_duration: time.StretchedTime,
+        block_time: BlockTime,
     ):
         # market state variables
         assert (
@@ -212,7 +214,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
-        super().__init__(pricing_model=pricing_model, market_state=market_state)
+        super().__init__(pricing_model=pricing_model, market_state=market_state, block_time=block_time)
 
     @property
     def annualized_position_duration(self) -> float:
@@ -361,10 +363,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_remaining=self.position_duration,
         )
 
-    def tick(self, delta_time: float) -> None:
-        """Increments the time member variable"""
-        self.time += delta_time
-
     def open_short(
         self,
         wallet_address: int,
@@ -429,7 +427,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
-            shorts={self.time: wallet.Short(balance=bond_amount, open_share_price=self.market_state.share_price)},
+            shorts={
+                self.block_time.time: wallet.Short(balance=bond_amount, open_share_price=self.market_state.share_price)
+            },
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -455,7 +455,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
-            market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
+            market_time=self.block_time.time,
+            mint_time=mint_time,
+            position_duration_years=self.position_duration.days / 365,
         )  # all args in units of years
         time_remaining = time.StretchedTime(
             days=years_remaining * 365,  # converting years to days
@@ -593,7 +595,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-            longs={self.time: wallet.Long(trade_result.user_result.d_bonds)},
+            longs={self.block_time.time: wallet.Long(trade_result.user_result.d_bonds)},
             fees_paid=trade_result.breakdown.fee,
         )
         return market_deltas, agent_deltas
@@ -611,7 +613,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         """
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
-            market_time=self.time, mint_time=mint_time, position_duration_years=self.position_duration.days / 365
+            market_time=self.block_time.time,
+            mint_time=mint_time,
+            position_duration_years=self.position_duration.days / 365,
         )  # all args in units of years
         time_remaining = time.StretchedTime(
             days=years_remaining * 365,  # converting years to days
@@ -772,11 +776,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
     def calculate_short_adjustment(self) -> float:
         """Calculates an adjustment amount for lp shares"""
-        if self.time > self.market_state.short_average_maturity_time:
+        if self.block_time.time > self.market_state.short_average_maturity_time:
             return 0
 
         # (year_end - year_start) / (normalizing_constant / 365)
-        normalized_time_remaining = (self.market_state.short_average_maturity_time - self.time) / (
+        normalized_time_remaining = (self.market_state.short_average_maturity_time - self.block_time.time) / (
             self.position_duration.normalizing_constant / 365
         )
 
@@ -789,11 +793,11 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
     def calculate_long_adjustment(self) -> float:
         """Calculates an adjustment amount for lp shares"""
-        if self.time > self.market_state.long_average_maturity_time:
+        if self.block_time.time > self.market_state.long_average_maturity_time:
             return 0
 
         # (year_end - year_start) / (normalizing_constant / 365)
-        normalized_time_remaining = (self.market_state.long_average_maturity_time - self.time) / (
+        normalized_time_remaining = (self.market_state.long_average_maturity_time - self.block_time.time) / (
             self.position_duration.normalizing_constant / 365
         )
 
@@ -909,7 +913,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 "\np = %s"
                 "\npool apr = %s"
             ),
-            self.time,
+            self.block_time.time,
             self.market_state.share_reserves * self.market_state.share_price,
             self.market_state.bond_reserves,
             self.market_state.lp_total_supply,

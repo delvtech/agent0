@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
-from dataclasses import dataclass
 
 import numpy as np
 
@@ -14,6 +14,7 @@ import elfpy.types as types
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
+    from elfpy.time.time import BlockTime
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
@@ -102,10 +103,11 @@ class Market(Generic[State, Deltas]):
         self,
         pricing_model: PricingModel,
         market_state: State,
+        block_time: BlockTime,
     ):
         self.pricing_model = pricing_model
         self.market_state = market_state
-        self.time: float = 0  # t: time normalized to 1 year, i.e. 0.5 = 1/2 year
+        self.block_time = block_time
 
     def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
@@ -123,7 +125,3 @@ class Market(Generic[State, Deltas]):
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
         self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold
-
-    def tick(self, delta_time: float) -> None:
-        """Increments the time member variable"""
-        self.time += delta_time

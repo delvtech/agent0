@@ -195,7 +195,7 @@ class Agent:
         actions = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
             if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
-                action.trade.mint_time = market.time
+                action.trade.mint_time = market.block_time.time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative
@@ -370,7 +370,9 @@ class Agent:
                     )
                 )
         if self.wallet.lp_tokens > 0:
-            logging.debug("evaluating closing lp: mint_time=%g, position=%s", market.time, self.wallet.lp_tokens)
+            logging.debug(
+                "evaluating closing lp: mint_time=%g, position=%s", market.block_time.time, self.wallet.lp_tokens
+            )
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
@@ -378,7 +380,7 @@ class Agent:
                         action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
-                        mint_time=market.time,
+                        mint_time=market.block_time.time,
                     ),
                 )
             )
@@ -430,7 +432,7 @@ class Agent:
             self.wallet.address,
             lost_or_made,
             profit_and_loss,
-            market.time,
+            market.block_time.time,
             total_value,
             balance,
             sum(long.balance for long in longs),

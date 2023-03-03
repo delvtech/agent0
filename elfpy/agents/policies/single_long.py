@@ -21,7 +21,7 @@ class Policy(Agent):
         action_list = []
         if has_opened_long:
             mint_time = list(self.wallet.longs)[-1]
-            enough_time_has_passed = market.time - mint_time > 0.01
+            enough_time_has_passed = market.block_time.time - mint_time > 0.01
             if enough_time_has_passed:
                 action_list.append(
                     types.Trade(

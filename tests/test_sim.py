@@ -113,7 +113,7 @@ class TestSimulator(unittest.TestCase):
                 "config": [simulators.Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
                 "market_init": [hyperdrive.MarketState()],
-                "market_step_size": [0.001],
+                "time_step": [0.001],
                 "position_duration": [90],
             }
         )
@@ -130,7 +130,7 @@ class TestSimulator(unittest.TestCase):
                 "run_number": [0] * total_num_blocks,
                 "day": [0, 0, 1, 1, 2, 2],
                 "block_number": [0, 1, 2, 3, 4, 5],
-                "market_time": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+                "time": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
             }
         )
         trades = pd.DataFrame(

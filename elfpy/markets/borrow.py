@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any
 import elfpy.markets.base as base_market
 from elfpy.pricing_models.base import PricingModel
 import elfpy.agents.wallet as wallet
+from elfpy.time.time import BlockTime
 
 import elfpy.types as types
 
@@ -202,12 +203,13 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
 
     def __init__(
         self,
+        block_time: BlockTime,
         market_state: MarketState,
     ):
         # market state variables
         self.time: float = 0  # t: time unit is time normalized to 1 year, i.e. 0.5 = 1/2 year
         self.market_state: MarketState = market_state
-        super().__init__(pricing_model=self.pricing_model, market_state=market_state)
+        super().__init__(pricing_model=self.pricing_model, market_state=market_state, block_time=block_time)
 
     def initialize(
         self,
