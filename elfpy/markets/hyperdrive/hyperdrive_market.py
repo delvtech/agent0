@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from typing import TYPE_CHECKING, Optional, Generic
+from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -16,7 +16,7 @@ import elfpy.markets.base as base_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 
 if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
+    from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 # TODO: for now...
 # pylint: disable=duplicate-code
@@ -125,23 +125,6 @@ class MarketState(base_market.BaseMarketState):
         return MarketState(**self.__dict__)
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
-@dataclass
-class MarketAction(Generic[base_market.Action]):
-    r"""Market action specification"""
-
-    # these two variables are required to be set by the strategy
-    action_type: hyperdrive_actions.MarketActionType
-    # amount to supply for the action
-    trade_amount: float  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
-    # the agent's wallet
-    wallet: wallet.Wallet
-    # min amount to receive for the action
-    min_amount_out: float = 0
-    # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: Optional[float] = None
-
-
 class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
     r"""Market state simulator
 
@@ -155,7 +138,7 @@ class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
 
     def __init__(
         self,
-        pricing_model: PricingModel,
+        pricing_model: HyperdrivePricingModel,
         market_state: MarketState,
         position_duration: time.StretchedTime,
         block_time: BlockTime,
@@ -177,7 +160,7 @@ class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
         r"""Returns the position duration in years"""
         return self.position_duration.days / 365
 
-    def check_action(self, agent_action: MarketAction) -> None:
+    def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
         Parameters
@@ -200,7 +183,7 @@ class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
             raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
 
     def perform_action(
-        self, action_details: tuple[int, MarketAction]
+        self, action_details: tuple[int, hyperdrive_actions.MarketAction]
     ) -> tuple[int, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
         r"""Execute a trade in the simulated market
 
@@ -357,83 +340,20 @@ class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
         self.update_market(market_deltas)
         return market_deltas, agent_deltas
 
-    def calc_open_short(
-        self,
-        wallet_address: int,
-        bond_amount: float,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        """
-        shorts need their margin account to cover the worst case scenario (p=1)
-        margin comes from 2 sources:
-        - the proceeds from your short sale (p)
-        - the max value you cover with base deposted from your wallet (1-p)
-        these two components are both priced in base, yet happily add up to 1.0 units of bonds
-        so we have the following identity:
-        total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
-        this guarantees that bonds in the system are always fully backed by an equal amount of base
-        """
-        # Perform the trade.
-        trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
-        self.pricing_model.check_input_assertions(
-            quantity=trade_quantity,
-            market_state=self.market_state,
-            time_remaining=self.position_duration,
-        )
-        trade_result = self.pricing_model.calc_out_given_in(
-            in_=trade_quantity,
-            market_state=self.market_state,
-            time_remaining=self.position_duration,
-        )
-
-        # Update accouting for average maturity time, base volume and longs outstanding
-        maturity_time = self.position_duration.days / 365
-        short_average_maturity_time = self.update_weighted_average(
-            self.market_state.short_average_maturity_time,
-            self.market_state.shorts_outstanding,
-            maturity_time,
-            bond_amount,
-            True,
-        )
-        d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
-        d_short_average_maturity_time = (
-            self.market_state.short_average_maturity_time
-            if self.market_state.short_average_maturity_time + d_short_average_maturity_time < 0
-            else d_short_average_maturity_time
-        )
-        # calculate_base_volume needs a positive base, so we use the value from user_result
-        base_volume = self.calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
-
-        # Make sure the trade is valid
-        self.pricing_model.check_output_assertions(trade_result=trade_result)
-
-        # Return the market and wallet deltas.
-        market_deltas = hyperdrive_actions.MarketDeltas(
-            d_base_asset=trade_result.market_result.d_base,
-            d_bond_asset=trade_result.market_result.d_bonds,
-            d_bond_buffer=bond_amount,
-            short_base_volume=base_volume,
-            shorts_outstanding=bond_amount,
-            short_average_maturity_time=d_short_average_maturity_time,
-        )
-        # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
-        max_loss = bond_amount - trade_result.user_result.d_base
-        agent_deltas = wallet.Wallet(
-            address=wallet_address,
-            balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
-            shorts={
-                self.block_time.time: wallet.Short(balance=bond_amount, open_share_price=self.market_state.share_price)
-            },
-            fees_paid=trade_result.breakdown.fee,
-        )
-        return market_deltas, agent_deltas
-
     def open_short(
         self,
         agent_wallet: wallet.Wallet,
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
-        market_deltas, agent_deltas = self.calc_open_short(agent_wallet.address, bond_amount)
+        market_deltas, agent_deltas = hyperdrive_actions.calc_open_short(
+            agent_wallet.address,
+            bond_amount,
+            self.pricing_model,
+            self.market_state,
+            self.position_duration,
+            self.time,
+        )
         self.update_market(market_deltas)
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
