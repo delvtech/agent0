@@ -1,15 +1,19 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 
-from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from typing import TYPE_CHECKING
+
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.agents.agent as agent
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """
     simple long
     only has one long open at a time
@@ -27,7 +31,7 @@ class Policy(Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_market.MarketAction(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             wallet=self.wallet,
@@ -40,7 +44,7 @@ class Policy(Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_market.MarketAction(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
                         wallet=self.wallet,
