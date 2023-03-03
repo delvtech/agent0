@@ -3,26 +3,28 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
 import argparse
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # external
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-from elfpy.agents.agent import Agent
 import elfpy
-import elfpy.simulators as simulators
-import elfpy.types as types
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.simulators as simulators
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
+import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    import elfpy.agents.agent as agent
 
 
 # pylint: disable=duplicate-code
 
 
-class CustomShorter(Agent):
+class CustomShorter(agent.Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts
     """
@@ -44,7 +46,7 @@ class CustomShorter(Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_market.MarketAction(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=self.pt_to_short,
                             wallet=self.wallet,
@@ -56,7 +58,7 @@ class CustomShorter(Agent):
                     action_list.append(
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive_market.MarketAction(
+                            trade=hyperdrive_actions.MarketAction(
                                 action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                                 trade_amount=self.pt_to_short,
                                 wallet=self.wallet,
@@ -67,7 +69,7 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
