@@ -4,7 +4,6 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 import logging
 from typing import TYPE_CHECKING
-import math
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.time as time
