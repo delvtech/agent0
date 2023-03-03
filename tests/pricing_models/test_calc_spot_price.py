@@ -6,7 +6,7 @@ import numpy as np
 from elfpy.pricing_models.base import PricingModel
 import elfpy.utils.price as price_utils
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 # pylint: disable=duplicate-code

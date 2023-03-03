@@ -14,12 +14,10 @@ import elfpy.time as time
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
 import elfpy.markets.base as base_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as actions
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
-
-# TODO: for now...
-# pylint: disable=duplicate-code
 
 
 class MarketActionType(Enum):
@@ -62,7 +60,7 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult(base_market.MarketTradeResult):
+class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
 
     d_base: float

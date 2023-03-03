@@ -3,7 +3,7 @@
 import unittest
 
 import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive as hyperdrive_markets
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
 from elfpy.time import StretchedTime

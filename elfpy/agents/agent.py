@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import logging
 
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 
 if TYPE_CHECKING:
@@ -81,7 +81,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: hyperdrive.Market) -> float:
+    def get_max_long(self, market: hyperdrive_market.Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -108,7 +108,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: hyperdrive.Market) -> float:
+    def get_max_short(self, market: hyperdrive_market.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -202,7 +202,7 @@ class Agent:
         # issue #57
         return actions
 
-    def get_liquidation_trades(self, market: hyperdrive.Market) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -222,8 +222,8 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_LONG,
+                        trade=hyperdrive_market.MarketAction(
+                            action_type=hyperdrive_market.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -236,8 +236,8 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                        trade=hyperdrive_market.MarketAction(
+                            action_type=hyperdrive_market.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -251,8 +251,8 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive.MarketAction(
-                        action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
+                    trade=hyperdrive_market.MarketAction(
+                        action_type=hyperdrive_market.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
                         mint_time=market.block_time.time,
@@ -270,7 +270,7 @@ class Agent:
             self.wallet.fees_paid or 0,
         )
 
-    def log_final_report(self, market: hyperdrive.Market) -> None:
+    def log_final_report(self, market: hyperdrive_market.Market) -> None:
         """Logs a report of the agent's state
 
         Parameters

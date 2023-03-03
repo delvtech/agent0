@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.time as time
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.pricing_models.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import MarketState
+    from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 class YieldspacePricingModel(PricingModel):
@@ -361,7 +361,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
@@ -420,7 +420,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
@@ -586,7 +586,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
@@ -638,7 +638,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )

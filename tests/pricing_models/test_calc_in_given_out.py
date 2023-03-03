@@ -14,7 +14,7 @@ from calc_test_dataclasses import (
 
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.hyperdrive import MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel

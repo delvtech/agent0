@@ -48,7 +48,7 @@ class MarketDeltas:
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult:
+class MarketActionResult:
     r"""The result to a market of performing a trade"""
 
 

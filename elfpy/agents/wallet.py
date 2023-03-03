@@ -9,7 +9,7 @@ import elfpy.types as types
 
 if TYPE_CHECKING:
     from typing import Iterable
-    from elfpy.markets.hyperdrive import Market
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market
     from typing import Any
 
 

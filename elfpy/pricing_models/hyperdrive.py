@@ -5,14 +5,14 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive import MarketState
+    from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 class HyperdrivePricingModel(YieldspacePricingModel):
@@ -151,7 +151,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 d_base=out.amount,
                 d_bonds=float(-flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -160,7 +160,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 d_base=float(-flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=float(flat_with_fee + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -303,7 +303,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 d_base=-in_.amount,
                 d_bonds=float(flat_with_fee + Decimal(curve.user_result.d_bonds)),
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -312,7 +312,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 d_base=float(flat_with_fee + Decimal(curve.user_result.d_base)),
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive.MarketTradeResult(
+            market_result = hyperdrive_market.MarketActionResult(
                 d_base=float(-flat_with_fee + Decimal(curve.market_result.d_base)),
                 d_bonds=curve.market_result.d_bonds,
             )

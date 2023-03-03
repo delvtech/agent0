@@ -1,6 +1,6 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
 from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
@@ -17,7 +17,7 @@ class Policy(Agent):
         self.amount_to_lp = 100
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: hyperdrive.Market) -> "list[types.Trade]":
+    def action(self, _market: hyperdrive_market.Market) -> "list[types.Trade]":
         """
         implement user strategy
         LP if you can, but only do it once
@@ -29,9 +29,9 @@ class Policy(Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive.MarketAction(
+                    trade=hyperdrive_market.MarketAction(
                         # these two variables are required to be set by the strategy
-                        action_type=hyperdrive.MarketActionType.ADD_LIQUIDITY,
+                        action_type=hyperdrive_market.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,
                     ),

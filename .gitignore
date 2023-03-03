@@ -1,7 +1,6 @@
 # Repo specific
 .logging
 .build
-hyperdrive
 
 # Ape
 .cache

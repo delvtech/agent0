@@ -10,6 +10,10 @@ import numpy as np
 import pandas as pd
 from numpy.random._generator import Generator
 
+import elfpy.types as types
+import elfpy.time as time
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.time as time
@@ -19,7 +23,7 @@ from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive import Market, MarketDeltas
+    from elfpy.markets.hyperdrive.hyperdrive_market import Market, MarketDeltas
 
 
 @dataclass
@@ -232,7 +236,7 @@ class RunSimVariables:
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     config: Config = field(metadata=types.to_description("the simulation config"))
     agent_init: list[wallet.Wallet] = field(metadata=types.to_description("initial wallets for the agents"))
-    market_init: hyperdrive.MarketState = field(
+    market_init: hyperdrive_market.MarketState = field(
         metadata=types.to_description("initial market state for this simulation run")
     )
     time_step: float = field(metadata=types.to_description("minimum time discretization for time step in years"))
@@ -598,7 +602,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive.MarketDeltas(
+                delta = hyperdrive_market.MarketDeltas(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
                         / 365  # convert annual yield to daily

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators as simulators
 import elfpy.time as time
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 from elfpy.time.time import BlockTime
@@ -102,7 +103,7 @@ def get_initialized_market(
     pricing_model: PricingModel,
     block_time: BlockTime,
     config: simulators.Config,
-) -> tuple[hyperdrive.Market, wallet.Wallet, hyperdrive.MarketDeltas]:
+) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_market.MarketDeltas]:
     r"""Setup market
 
     Parameters
@@ -134,7 +135,7 @@ def get_initialized_market(
         time_stretch=pricing_model.calc_time_stretch(config.target_fixed_apr),
         normalizing_constant=config.num_position_days,
     )
-    market = hyperdrive.Market(
+    market = hyperdrive_market.Market(
         pricing_model=pricing_model,
         block_time=block_time,
         market_state=hyperdrive.MarketState(

@@ -10,6 +10,7 @@ import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators.simulators as simulators
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 from elfpy.time.time import BlockTime

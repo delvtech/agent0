@@ -9,7 +9,7 @@ from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.types as types
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketDeltas, MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketDeltas, MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 

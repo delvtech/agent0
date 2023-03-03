@@ -17,7 +17,7 @@ from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.time as time
-from elfpy.markets.hyperdrive import MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 # pylint: disable=duplicate-code
 # pylint: disable=too-many-lines
