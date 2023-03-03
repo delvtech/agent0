@@ -288,14 +288,14 @@ class Agent:
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
         # Calculate the total pnl of the trader.
-        longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
+        longs_value = (sum(long.balance for long in longs) if longs else 0) * price
         shorts_value = (
             sum(
                 # take the interest from the margin and subtract the bonds shorted at the current price
                 (market.market_state.share_price / short.open_share_price) * short.balance - price * short.balance
                 for short in shorts
             )
-            if len(shorts) > 0
+            if shorts
             else 0
         )
         total_value = balance + longs_value + shorts_value
