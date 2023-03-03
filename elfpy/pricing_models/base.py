@@ -2,24 +2,26 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from abc import ABC
-import decimal
-from decimal import Decimal
+from decimal import Decimal, getcontext
+from typing import TYPE_CHECKING
 
 from elfpy import (
     MAX_RESERVES_DIFFERENCE,
     WEI,
 )
+import elfpy.pricing_models.trades as trades
 import elfpy.utils.price as price_utils
 import elfpy.time as time
-import elfpy.pricing_models.trades as trades
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 # Set the Decimal precision to be higher than the default of 28. This ensures
 # that the pricing models can safely a lowest possible input of 1e-18 with an
 # reserves difference of up to 20 billion.
-decimal.getcontext().prec = 30
+getcontext().prec = 30
 
 
 class PricingModel(ABC):
