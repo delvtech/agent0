@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import logging
 
-import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
     import elfpy.markets.base as base_market
 
 
@@ -222,7 +222,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_market.MarketAction(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
@@ -236,7 +236,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_market.MarketAction(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
@@ -251,7 +251,7 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_market.MarketAction(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
