@@ -14,11 +14,11 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.simulators as simulators
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
+import elfpy.agents.agent as agent
 import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-    import elfpy.agents.agent as agent
 
 
 # pylint: disable=duplicate-code
@@ -73,9 +73,9 @@ def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
-        agent = CustomShorter(address)
-        agent.log_status_report()
-        agents += [agent]
+        example_agent = CustomShorter(address)
+        example_agent.log_status_report()
+        agents += [example_agent]
     return agents
 
 
