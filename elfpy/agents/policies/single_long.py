@@ -6,8 +6,8 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    import elfpy.agents.agent as agent
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    import elfpy.agents.agent as agent
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

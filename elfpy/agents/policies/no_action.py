@@ -6,11 +6,10 @@ subclasses of BasicPolicy will implement trade actions
 from __future__ import annotations  # types will be strings by default in 3.11
 from typing import TYPE_CHECKING
 
-import elfpy.types as types
-
 if TYPE_CHECKING:
     import elfpy.agents.agent as agent
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    import elfpy.types as types
 
 
 class NoAction(agent.Agent):

@@ -1,8 +1,12 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
-from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from typing import TYPE_CHECKING
+
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    import elfpy.agents.agent as agent
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance
@@ -10,7 +14,7 @@ import elfpy.types as types
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """simple LP that only has one LP open at a time"""
 
     def __init__(self, wallet_address, budget=1000):
@@ -31,7 +35,6 @@ class Policy(Agent):
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive_market.MarketAction(
-                        # these two variables are required to be set by the strategy
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,

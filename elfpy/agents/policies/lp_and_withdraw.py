@@ -1,13 +1,17 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
-from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+from typing import TYPE_CHECKING
+
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+    import elfpy.agents.agent as agent
 
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """
     simple LP
     only has one LP open at a time
@@ -46,7 +50,7 @@ class Policy(Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_market.MarketAction(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=self.wallet.lp_tokens,
                             wallet=self.wallet,
