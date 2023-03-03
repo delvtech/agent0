@@ -13,7 +13,7 @@ import elfpy.time as time
 import elfpy.agents.wallet as wallet
 import elfpy.types as types
 import elfpy.markets.base as base_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as actions
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 
 if TYPE_CHECKING:
     from elfpy.pricing_models.base import PricingModel
@@ -99,7 +99,7 @@ class MarketState(base_market.BaseMarketState):
     # the proceeds that have accrued to the short withdrawal shares.
     short_withdrawal_share_proceeds: float = field(default=0.0)
 
-    def apply_delta(self, delta: actions.MarketDeltas) -> None:
+    def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_bond_asset
@@ -131,7 +131,7 @@ class MarketAction(Generic[base_market.Action]):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
-    action_type: actions.MarketActionType
+    action_type: hyperdrive_actions.MarketActionType
     # amount to supply for the action
     trade_amount: float  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
@@ -142,7 +142,7 @@ class MarketAction(Generic[base_market.Action]):
     mint_time: Optional[float] = None
 
 
-class Market(base_market.Market[MarketState, actions.MarketDeltas]):
+class Market(base_market.Market[MarketState, hyperdrive_actions.MarketDeltas]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -192,8 +192,8 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         if (
             agent_action.action_type
             in [
-                actions.MarketActionType.CLOSE_LONG,
-                actions.MarketActionType.CLOSE_SHORT,
+                hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
             ]
             and agent_action.mint_time is None
         ):
@@ -201,7 +201,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
 
     def perform_action(
         self, action_details: tuple[int, MarketAction]
-    ) -> tuple[int, wallet.Wallet, actions.MarketDeltas]:
+    ) -> tuple[int, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         check which of 6 action types are being executed, and handles each case:
@@ -237,17 +237,17 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         # issue 216
         self.check_action(agent_action)
         # for each position, specify how to forumulate trade and then execute
-        market_deltas = actions.MarketDeltas()
+        market_deltas = hyperdrive_actions.MarketDeltas()
         agent_deltas = wallet.Wallet(address=0)
         # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
         # should handle these in the simulator, not in the market.  The market should throw errors.
         try:
-            if agent_action.action_type == actions.MarketActionType.OPEN_LONG:  # buy to open long
+            if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
                 market_deltas, agent_deltas = self.open_long(
                     agent_wallet=agent_action.wallet,
                     base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
                 )
-            elif agent_action.action_type == actions.MarketActionType.CLOSE_LONG:  # sell to close long
+            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
                 # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
                 mint_time = float(agent_action.mint_time or 0)
                 market_deltas, agent_deltas = self.close_long(
@@ -255,12 +255,12 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
                     mint_time=mint_time,
                 )
-            elif agent_action.action_type == actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
+            elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
                 market_deltas, agent_deltas = self.open_short(
                     agent_wallet=agent_action.wallet,
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
                 )
-            elif agent_action.action_type == actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
+            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
                 # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
                 mint_time = float(agent_action.mint_time or 0)
                 open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
@@ -270,12 +270,12 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
                     mint_time=mint_time,
                     open_share_price=open_share_price,
                 )
-            elif agent_action.action_type == actions.MarketActionType.ADD_LIQUIDITY:
+            elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
                 market_deltas, agent_deltas = self.add_liquidity(
                     agent_wallet=agent_action.wallet,
                     trade_amount=agent_action.trade_amount,
                 )
-            elif agent_action.action_type == actions.MarketActionType.REMOVE_LIQUIDITY:
+            elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
                 market_deltas, agent_deltas = self.remove_liquidity(
                     agent_wallet=agent_action.wallet,
                     trade_amount=agent_action.trade_amount,
@@ -330,7 +330,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         wallet_address: int,
         contribution: float,
         target_apr: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Market Deltas so that an LP can initialize the market"""
         if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
             raise AssertionError("The market appears to already be initialized.")
@@ -344,7 +344,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
                 share_price=self.market_state.share_price,
             ),
         )
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=contribution,
             d_bond_asset=bond_reserves,
             d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
@@ -361,7 +361,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         wallet_address: int,
         bond_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """
         shorts need their margin account to cover the worst case scenario (p=1)
         margin comes from 2 sources:
@@ -407,7 +407,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self.pricing_model.check_output_assertions(trade_result=trade_result)
 
         # Return the market and wallet deltas.
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=bond_amount,
@@ -431,7 +431,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         agent_wallet: wallet.Wallet,
         bond_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         market_deltas, agent_deltas = self.calc_open_short(agent_wallet.address, bond_amount)
         self.update_market(market_deltas)
@@ -444,7 +444,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         open_share_price: float,
         bond_amount: float,
         mint_time: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """
         when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
         the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
@@ -495,7 +495,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         base_volume = self.calculate_base_volume(
             trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
         )
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
             d_bond_buffer=-bond_amount,
@@ -526,7 +526,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         open_share_price: float,
         bond_amount: float,
         mint_time: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
         market_deltas, agent_deltas = self.calc_close_short(
             agent_wallet.address, open_share_price, bond_amount, mint_time
@@ -539,7 +539,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         wallet_address: int,
         base_amount: float,  # in base
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """
         When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
         proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
@@ -596,7 +596,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         # super().check_output_assertions
         self.pricing_model.check_output_assertions(trade_result=trade_result)
         # Get the market and wallet deltas to return.
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
             d_base_buffer=trade_result.user_result.d_bonds,
@@ -616,7 +616,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         agent_wallet: wallet.Wallet,
         base_amount: float,  # in base
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
         market_deltas, agent_deltas = self.calc_open_long(agent_wallet.address, base_amount)
         self.market_state.apply_delta(market_deltas)
@@ -628,7 +628,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         wallet_address: int,
         bond_amount: float,  # in bonds
         mint_time: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """
         take trade spec & turn it into trade details
         compute wallet update spec with specific details
@@ -675,7 +675,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         )
         # TODO: add accounting for withdrawal shares
         # Return the market and wallet deltas.
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=trade_result.market_result.d_base,
             d_bond_asset=trade_result.market_result.d_bonds,
             d_base_buffer=-bond_amount,
@@ -696,7 +696,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         agent_wallet: wallet.Wallet,
         bond_amount: float,  # in bonds
         mint_time: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         market_deltas, agent_deltas = self.calc_close_long(agent_wallet.address, bond_amount, mint_time)
         self.market_state.apply_delta(market_deltas)
@@ -707,7 +707,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         wallet_address: int,
         trade_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
         if (
@@ -731,7 +731,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=d_base_reserves,
             d_bond_asset=d_bond_reserves,
             d_lp_total_supply=lp_out,
@@ -747,7 +747,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         agent_wallet: wallet.Wallet,
         trade_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         market_deltas, agent_deltas = self.calc_add_liquidity(agent_wallet.address, trade_amount)
         self.market_state.apply_delta(market_deltas)
@@ -758,7 +758,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         wallet_address: int,
         trade_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         # sanity check inputs
         self.pricing_model.check_input_assertions(
@@ -775,7 +775,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
-        market_deltas = actions.MarketDeltas(
+        market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=-d_base,
             d_bond_asset=-d_bond,
             d_lp_total_supply=-lp_in,
@@ -791,7 +791,7 @@ class Market(base_market.Market[MarketState, actions.MarketDeltas]):
         self,
         agent_wallet: wallet.Wallet,
         trade_amount: float,
-    ) -> tuple[actions.MarketDeltas, wallet.Wallet]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         market_deltas, agent_deltas = self.calc_remove_liquidity(agent_wallet.address, trade_amount)
         self.market_state.apply_delta(market_deltas)
