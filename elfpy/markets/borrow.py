@@ -294,7 +294,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
-            loan_to_value_ratio=self.market_state.loan_to_value_ratio, collateral=collateral, spot_price=spot_price
+            loan_to_value_ratio=self.market_state.loan_to_value_ratio,
+            collateral=collateral,
+            spot_price=spot_price,
         )
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increase because they're being lent out

@@ -2,6 +2,7 @@
 
 from elfpy.agents.agent import Agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 # pylint: disable=too-many-arguments
@@ -27,7 +28,7 @@ class Policy(Agent):
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive_market.MarketAction(
-                            action_type=hyperdrive_market.MarketActionType.CLOSE_LONG,
+                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -40,7 +41,7 @@ class Policy(Agent):
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
                     trade=hyperdrive_market.MarketAction(
-                        action_type=hyperdrive_market.MarketActionType.OPEN_LONG,
+                        action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
                         wallet=self.wallet,
                     ),

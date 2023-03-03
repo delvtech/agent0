@@ -16,6 +16,11 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
+# TODO: clean up to avoid these
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
+
+
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""
 
@@ -56,7 +61,7 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult(base_market.MarketActionResult):
+class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
 
     d_base: float

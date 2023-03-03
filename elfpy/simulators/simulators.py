@@ -12,7 +12,6 @@ from numpy.random._generator import Generator
 
 import elfpy.types as types
 import elfpy.time as time
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.utils.outputs as output_utils
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive as hyperdrive
@@ -20,10 +19,11 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 from elfpy.time.time import BlockTime
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market, MarketDeltas
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 @dataclass
@@ -277,7 +277,9 @@ class TradeSimVariables:
     trade_number: int = field(metadata=types.to_description("trade number in a given simulation"))
     fixed_apr: float = field(metadata=types.to_description("apr of the AMM pool"))
     spot_price: float = field(metadata=types.to_description("price of shares"))
-    market_deltas: MarketDeltas = field(metadata=types.to_description("deltas used to update the market state"))
+    market_deltas: hyperdrive_actions.MarketDeltas = field(
+        metadata=types.to_description("deltas used to update the market state")
+    )
     agent_address: int = field(metadata=types.to_description("address of the agent that is executing the trade"))
     agent_deltas: wallet.Wallet = field(metadata=types.to_description("deltas used to update the market state"))
 
@@ -383,7 +385,7 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        market: Market,
+        market: hyperdrive_market.Market,
         block_time: BlockTime,
     ):
         # User specified variables
@@ -602,7 +604,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive_market.MarketDeltas(
+                delta = hyperdrive_actions.MarketDeltas(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
                         / 365  # convert annual yield to daily

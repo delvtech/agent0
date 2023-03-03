@@ -11,6 +11,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators.simulators as simulators
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 from elfpy.time.time import BlockTime
@@ -68,7 +69,7 @@ class SimUtilsTest(unittest.TestCase):
                             ** (1 / market_direct.position_duration.stretched_time)
                             - market_direct.market_state.share_price
                         )
-                        market_deltas = hyperdrive_market.MarketDeltas(
+                        market_deltas = hyperdrive_actions.MarketDeltas(
                             d_base_asset=target_liquidity,
                             d_bond_asset=bond_reserves,
                             d_lp_total_supply=market_direct.market_state.share_price * share_reserves + bond_reserves,

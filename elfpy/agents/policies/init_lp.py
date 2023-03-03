@@ -4,6 +4,7 @@ Special reserved user strategy that is used to initialize a market with a desire
 """
 from elfpy.agents.agent import Agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 
 import elfpy.types as types
 
@@ -23,7 +24,7 @@ class Policy(Agent):
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
                 trade=hyperdrive_market.MarketAction(
-                    action_type=hyperdrive_market.MarketActionType.ADD_LIQUIDITY,
+                    action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=self.budget,
                     wallet=self.wallet,
                 ),

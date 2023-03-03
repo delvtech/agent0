@@ -14,6 +14,7 @@ import elfpy
 import elfpy.simulators as simulators
 import elfpy.types as types
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
 
@@ -44,7 +45,7 @@ class CustomShorter(Agent):
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive_market.MarketAction(
-                            action_type=hyperdrive_market.MarketActionType.OPEN_SHORT,
+                            action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=self.pt_to_short,
                             wallet=self.wallet,
                         ),
@@ -56,7 +57,7 @@ class CustomShorter(Agent):
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
                             trade=hyperdrive_market.MarketAction(
-                                action_type=hyperdrive_market.MarketActionType.CLOSE_SHORT,
+                                action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                                 trade_amount=self.pt_to_short,
                                 wallet=self.wallet,
                                 mint_time=list(self.wallet.shorts.keys())[0],

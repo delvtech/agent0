@@ -14,6 +14,7 @@ from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
     import elfpy.agents.wallet as wallet
     from elfpy.agents.agent import Agent
     from elfpy.pricing_models.base import PricingModel
@@ -103,7 +104,7 @@ def get_initialized_market(
     pricing_model: PricingModel,
     block_time: BlockTime,
     config: simulators.Config,
-) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_market.MarketDeltas]:
+) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 
     Parameters

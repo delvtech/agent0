@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.time as time
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 from elfpy.agents.agent import AgentTradeResult
 import elfpy.pricing_models.trades as trades
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 class YieldspacePricingModel(PricingModel):
@@ -40,7 +40,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -116,7 +116,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         d_base: float,
         rate: float,
-        market_state: MarketState,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -140,7 +140,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         lp_in: float,
         rate: float,
-        market_state: MarketState,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
@@ -205,7 +205,7 @@ class YieldspacePricingModel(PricingModel):
     def calc_in_given_out(
         self,
         out: types.Quantity,
-        market_state: MarketState,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -361,7 +361,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = hyperdrive_market.MarketActionResult(
+            market_result = hyperdrive_actions.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
@@ -420,7 +420,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive_market.MarketActionResult(
+            market_result = hyperdrive_actions.MarketActionResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
@@ -446,7 +446,7 @@ class YieldspacePricingModel(PricingModel):
     def calc_out_given_in(
         self,
         in_: types.Quantity,
-        market_state: MarketState,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
@@ -586,7 +586,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = hyperdrive_market.MarketActionResult(
+            market_result = hyperdrive_actions.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
@@ -638,7 +638,7 @@ class YieldspacePricingModel(PricingModel):
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive_market.MarketActionResult(
+            market_result = hyperdrive_actions.MarketActionResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
@@ -658,7 +658,7 @@ class YieldspacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: MarketState, time_remaining: time.StretchedTime) -> Decimal:
+    def _calc_k_const(self, market_state: hyperdrive_market.MarketState, time_remaining: time.StretchedTime) -> Decimal:
         """
         Returns the 'k' constant variable for trade mathematics
 

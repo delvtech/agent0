@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import elfpy.types as types
 import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -48,5 +48,5 @@ class TradeResult:
     """
 
     user_result: agent.AgentTradeResult
-    market_result: hyperdrive_market.MarketActionResult
+    market_result: hyperdrive_actions.MarketActionResult
     breakdown: TradeBreakdown
