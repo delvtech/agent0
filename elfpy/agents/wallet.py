@@ -275,7 +275,7 @@ class Wallet:
                 and share_reserves > 0
                 and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
             ):
-                balance = market.close_short(self.address, short.open_share_price, short.balance, mint_time)[
+                balance = market.calc_close_short(self.address, short.open_share_price, short.balance, mint_time)[
                     1
                 ].balance.amount
             shorts_value += balance

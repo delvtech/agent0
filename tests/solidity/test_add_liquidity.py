@@ -45,7 +45,7 @@ class TestAddLiquidity(unittest.TestCase):
     def test_add_liquidity_failure_zero_amount(self):
         """Test adding zero liquidity fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.add_liquidity(self.bob.wallet.address, 0)
+            self.hyperdrive.add_liquidity(self.bob.wallet, 0)
 
     def test_add_liquidity_identical_lp_shares(self):
         """Test adding liquidity equal to the total liquidity of the pool creates the same number of
@@ -53,9 +53,7 @@ class TestAddLiquidity(unittest.TestCase):
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(wallet_deltas)
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
@@ -76,14 +74,12 @@ class TestAddLiquidity(unittest.TestCase):
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Celine opens a long.
-        market_deltas, wallet_deltas = self.hyperdrive.open_long(self.celine.wallet.address, 50_000_000)
+        market_deltas, wallet_deltas = self.hyperdrive.calc_open_long(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
 
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(wallet_deltas)
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
@@ -105,14 +101,12 @@ class TestAddLiquidity(unittest.TestCase):
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Celine opens a short.
-        market_deltas, wallet_deltas = self.hyperdrive.open_short(self.celine.wallet.address, 50_000_000)
+        market_deltas, wallet_deltas = self.hyperdrive.calc_open_short(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
 
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(wallet_deltas)
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
@@ -130,20 +124,18 @@ class TestAddLiquidity(unittest.TestCase):
     def test_add_liquidity_with_long_at_maturity(self):
         """Test adding liquidity with a long at maturity."""
         # Celine opens a long.
-        market_deltas, wallet_deltas = self.hyperdrive.open_long(self.celine.wallet.address, 50_000_000)
+        market_deltas, wallet_deltas = self.hyperdrive.calc_open_long(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
 
         self.block_time.tick(1)
 
         # Mock having Celine's long auto closed from checkpointing.
-        market_deltas_close_long, _ = self.hyperdrive.close_long(self.celine.wallet, 50_000_000, 0)
+        market_deltas_close_long, _ = self.hyperdrive.calc_close_long(self.celine.wallet.address, 50_000_000, 0)
         self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
 
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(wallet_deltas)
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
@@ -155,7 +147,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+        market_deltas, wallet_deltas = self.hyperdrive.calc_remove_liquidity(
             self.bob.wallet.address, self.bob.wallet.lp_tokens
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, 6)
@@ -163,18 +155,18 @@ class TestAddLiquidity(unittest.TestCase):
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
         # Celine opens a short.
-        market_deltas, wallet_deltas = self.hyperdrive.open_short(self.celine.wallet.address, 50_000_000)
+        market_deltas, wallet_deltas = self.hyperdrive.calc_open_short(self.celine.wallet.address, 50_000_000)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
 
         self.block_time.tick(1)
 
         # Mock having Celine's long auto closed from checkpointing.
-        market_deltas_close_short, _ = self.hyperdrive.close_short(self.celine.wallet.address, 1, 50_000_000, 0)
+        market_deltas_close_short, _ = self.hyperdrive.calc_close_short(self.celine.wallet.address, 1, 50_000_000, 0)
         self.hyperdrive.market_state.apply_delta(market_deltas_close_short)
 
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet.address, self.contribution)
+        market_deltas, wallet_deltas = self.hyperdrive.calc_add_liquidity(self.bob.wallet.address, self.contribution)
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.bob.wallet.update(wallet_deltas)
 
@@ -188,7 +180,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+        market_deltas, wallet_deltas = self.hyperdrive.calc_remove_liquidity(
             self.bob.wallet.address, self.bob.wallet.lp_tokens
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)

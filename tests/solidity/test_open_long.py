@@ -143,13 +143,13 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet.address, 0)
+            self.hyperdrive.open_long(self.bob.wallet, 0)
 
     def test_open_long_failure_extreme_amount(self):
         """Purchasing more bonds than exist fails"""
         base_amount = self.hyperdrive.market_state.bond_reserves
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
+            self.hyperdrive.open_long(self.bob.wallet, base_amount)
 
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
@@ -158,9 +158,7 @@ class TestOpenLong(unittest.TestCase):
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(agent_deltas)
+        market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
@@ -178,9 +176,7 @@ class TestOpenLong(unittest.TestCase):
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(agent_deltas)
+        market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,

@@ -536,16 +536,7 @@ class Simulator:
             # agent ID, market, and market action before sending the info off to the correct market
             action_details = (trade[0], trade[1].trade)
             agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
-            agent = self.agents[agent_id]
-            logging.debug(
-                "agent #%g wallet deltas:\n%s",
-                agent.wallet.address,
-                agent_deltas,
-            )
-            if trade[1].trade.action_type.name.lower() != "close_long":
-                self.market.update_market(market_deltas)
-                agent.wallet.update(agent_deltas)
-            agent.log_status_report()
+            self.agents[agent_id].log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
             self.update_simulation_state()
@@ -636,7 +627,6 @@ class Simulator:
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
-                self.market.log_market_step_string()
                 if not last_block_in_sim:
                     self.block_time.tick(self.time_step)
                     self.block_number += 1

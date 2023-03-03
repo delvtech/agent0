@@ -289,7 +289,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         try:
             if agent_action.action_type == MarketActionType.OPEN_LONG:  # buy to open long
                 market_deltas, agent_deltas = self.open_long(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
                 )
             elif agent_action.action_type == MarketActionType.CLOSE_LONG:  # sell to close long
@@ -302,7 +302,7 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 )
             elif agent_action.action_type == MarketActionType.OPEN_SHORT:  # sell PT to open short
                 market_deltas, agent_deltas = self.open_short(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
                 )
             elif agent_action.action_type == MarketActionType.CLOSE_SHORT:  # buy PT to close short
@@ -310,19 +310,19 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
                 mint_time = float(agent_action.mint_time or 0)
                 open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
                 market_deltas, agent_deltas = self.close_short(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
                     mint_time=mint_time,
                     open_share_price=open_share_price,
                 )
             elif agent_action.action_type == MarketActionType.ADD_LIQUIDITY:
                 market_deltas, agent_deltas = self.add_liquidity(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     trade_amount=agent_action.trade_amount,
                 )
             elif agent_action.action_type == MarketActionType.REMOVE_LIQUIDITY:
                 market_deltas, agent_deltas = self.remove_liquidity(
-                    wallet_address=agent_action.wallet.address,
+                    agent_wallet=agent_action.wallet,
                     trade_amount=agent_action.trade_amount,
                 )
             else:
@@ -366,7 +366,43 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_remaining=self.position_duration,
         )
 
-    def open_short(
+    def tick(self, delta_time: float) -> None:
+        """Increments the time member variable"""
+        self.time += delta_time
+
+    def initialize(
+        self,
+        wallet_address: int,
+        contribution: float,
+        target_apr: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Market Deltas so that an LP can initialize the market"""
+        if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
+            raise AssertionError("The market appears to already be initialized.")
+        share_reserves = contribution / self.market_state.share_price
+        bond_reserves = self.pricing_model.calc_bond_reserves(
+            target_apr=target_apr,
+            time_remaining=self.position_duration,
+            market_state=MarketState(
+                share_reserves=share_reserves,
+                init_share_price=self.market_state.init_share_price,
+                share_price=self.market_state.share_price,
+            ),
+        )
+        market_deltas = MarketDeltas(
+            d_base_asset=contribution,
+            d_bond_asset=bond_reserves,
+            d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
+        )
+        agent_deltas = wallet.Wallet(
+            address=wallet_address,
+            balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
+            lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,
+        )
+        self.update_market(market_deltas)
+        return market_deltas, agent_deltas
+
+    def calc_open_short(
         self,
         wallet_address: int,
         bond_amount: float,
@@ -379,7 +415,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         these two components are both priced in base, yet happily add up to 1.0 units of bonds
         so we have the following identity:
         total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
-
         this guarantees that bonds in the system are always fully backed by an equal amount of base
         """
         # Perform the trade.
@@ -437,7 +472,18 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def close_short(
+    def open_short(
+        self,
+        agent_wallet: wallet.Wallet,
+        bond_amount: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
+        market_deltas, agent_deltas = self.calc_open_short(agent_wallet.address, bond_amount)
+        self.update_market(market_deltas)
+        agent_wallet.update(agent_deltas)
+        return market_deltas, agent_deltas
+
+    def calc_close_short(
         self,
         wallet_address: int,
         open_share_price: float,
@@ -452,10 +498,8 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
         for more on short accounting, see the open short method
         """
-
         if bond_amount > self.market_state.bond_reserves - self.market_state.bond_buffer:
             raise AssertionError("not enough reserves to close short")
-
         # Compute the time remaining given the mint time.
         years_remaining = time.get_years_remaining(
             market_time=self.block_time.time,
@@ -467,7 +511,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             time_stretch=self.position_duration.time_stretch,
             normalizing_constant=self.position_duration.normalizing_constant,
         )
-
         # Perform the trade.
         trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         self.pricing_model.check_input_assertions(
@@ -480,7 +523,6 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             market_state=self.market_state,
             time_remaining=time_remaining,
         )
-
         # Update accouting for average maturity time, base volume and longs outstanding
         maturity_time = self.position_duration.days / 365
         short_average_maturity_time = self.update_weighted_average(
@@ -491,12 +533,9 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             False,
         )
         d_short_average_maturity_time = short_average_maturity_time - self.market_state.short_average_maturity_time
-
         # Make sure the trade is valid
         self.pricing_model.check_output_assertions(trade_result=trade_result)
-
         # TODO: add accounting for withdrawal shares
-
         # Return the market and wallet deltas.
         base_volume = self.calculate_base_volume(
             trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time
@@ -526,7 +565,22 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def open_long(
+    def close_short(
+        self,
+        agent_wallet: wallet.Wallet,
+        open_share_price: float,
+        bond_amount: float,
+        mint_time: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Calculate the deltas from closing a short and then update the agent wallet & market state"""
+        market_deltas, agent_deltas = self.calc_close_short(
+            agent_wallet.address, open_share_price, bond_amount, mint_time
+        )
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
+        return market_deltas, agent_deltas
+
+    def calc_open_long(
         self,
         wallet_address: int,
         base_amount: float,  # in base
@@ -603,6 +657,17 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
+    def open_long(
+        self,
+        agent_wallet: wallet.Wallet,
+        base_amount: float,  # in base
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Calculate the deltas from opening a long and then update the agent wallet & market state"""
+        market_deltas, agent_deltas = self.calc_open_long(agent_wallet.address, base_amount)
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
+        return market_deltas, agent_deltas
+
     def calc_close_long(
         self,
         wallet_address: int,
@@ -677,50 +742,13 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         bond_amount: float,  # in bonds
         mint_time: float,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """
-        take trade spec & turn it into trade details
-        compute wallet update spec with specific details
-        will be conditional on the pricing model
-        """
+        """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         market_deltas, agent_deltas = self.calc_close_long(agent_wallet.address, bond_amount, mint_time)
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
-    def initialize(
-        self,
-        wallet_address: int,
-        contribution: float,
-        target_apr: float,
-    ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """Market Deltas so that an LP can initialize the market"""
-        if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
-            raise AssertionError("The market appears to already be initialized.")
-
-        share_reserves = contribution / self.market_state.share_price
-        bond_reserves = self.pricing_model.calc_bond_reserves(
-            target_apr=target_apr,
-            time_remaining=self.position_duration,
-            market_state=MarketState(
-                share_reserves=share_reserves,
-                init_share_price=self.market_state.init_share_price,
-                share_price=self.market_state.share_price,
-            ),
-        )
-        market_deltas = MarketDeltas(
-            d_base_asset=contribution,
-            d_bond_asset=bond_reserves,
-            d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
-        )
-        agent_deltas = wallet.Wallet(
-            address=wallet_address,
-            balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
-            lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,
-        )
-        self.update_market(market_deltas)
-        return market_deltas, agent_deltas
-
-    def add_liquidity(
+    def calc_add_liquidity(
         self,
         wallet_address: int,
         trade_amount: float,
@@ -760,7 +788,18 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
         )
         return market_deltas, agent_deltas
 
-    def remove_liquidity(
+    def add_liquidity(
+        self,
+        agent_wallet: wallet.Wallet,
+        trade_amount: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Computes new deltas for bond & share reserves after liquidity is added"""
+        market_deltas, agent_deltas = self.calc_add_liquidity(agent_wallet.address, trade_amount)
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
+        return market_deltas, agent_deltas
+
+    def calc_remove_liquidity(
         self,
         wallet_address: int,
         trade_amount: float,
@@ -791,6 +830,17 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             balance=types.Quantity(amount=d_base, unit=types.TokenType.BASE),
             lp_tokens=-lp_in,
         )
+        return market_deltas, agent_deltas
+
+    def remove_liquidity(
+        self,
+        agent_wallet: wallet.Wallet,
+        trade_amount: float,
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
+        """Computes new deltas for bond & share reserves after liquidity is removed"""
+        market_deltas, agent_deltas = self.calc_remove_liquidity(agent_wallet.address, trade_amount)
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def calculate_short_adjustment(self) -> float:
@@ -909,36 +959,3 @@ class Market(base_market.Market[MarketState, MarketDeltas]):
             lp_out = d_shares
 
         return lp_out, d_base, d_bonds
-
-    def log_market_step_string(self) -> None:
-        """Logs the current market step"""
-        # TODO: This is a HACK to prevent test_sim from failing on market shutdown
-        # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if self.market_state.share_reserves <= 0:
-            spot_price = str(np.nan)
-            rate = str(np.nan)
-        else:
-            spot_price = self.spot_price
-            rate = self.fixed_apr
-        logging.debug(
-            (
-                "t = %g"
-                "\nx = %g"
-                "\ny = %g"
-                "\nlp = %g"
-                "\nz = %g"
-                "\nx_b = %g"
-                "\ny_b = %g"
-                "\np = %s"
-                "\npool apr = %s"
-            ),
-            self.block_time.time,
-            self.market_state.share_reserves * self.market_state.share_price,
-            self.market_state.bond_reserves,
-            self.market_state.lp_total_supply,
-            self.market_state.share_reserves,
-            self.market_state.base_buffer,
-            self.market_state.bond_buffer,
-            str(spot_price),
-            str(rate),
-        )
