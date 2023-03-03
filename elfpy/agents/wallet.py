@@ -8,9 +8,8 @@ from dataclasses import dataclass, field
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from typing import Iterable
-    from elfpy.markets.hyperdrive.hyperdrive_market import Market
-    from typing import Any
+    from typing import Iterable, Any
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 @dataclass
@@ -240,7 +239,7 @@ class Wallet:
                 # of open shorts using `if wallet.shorts`
                 del self.shorts[mint_time]
 
-    def get_state(self, market: Market) -> dict[str, float]:
+    def get_state(self, market: hyperdrive_market.Market) -> dict[str, float]:
         r"""The wallet's current state of public variables
 
         .. todo:: This will go away once we finish refactoring the state
