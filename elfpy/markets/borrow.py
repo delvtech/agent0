@@ -183,7 +183,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         self,
         wallet_address: int,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """Market Deltas so that an LP can initialize the market"""
+        """Construct a borrow market."""
         market_deltas = MarketDeltas()
         borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
@@ -297,9 +297,8 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: Optional[float] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """
-        execute a borrow as requested by the agent, return the market and agent deltas
-        agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
+        """Execute a borrow as requested by the agent and return the market and agent deltas.
+        Agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
         market_deltas, agent_deltas = self.calc_open_borrow(agent_wallet.address, collateral, spot_price)
         self.market_state.apply_delta(market_deltas)
@@ -349,9 +348,8 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: Optional[float] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
-        """
-        close a borrow as requested by the agent, return the market and agent deltas
-        agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
+        """Close a borrow as requested by the agent and return the market and agent deltas.
+        Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """
         market_deltas, agent_deltas = self.calc_close_borrow(agent_wallet.address, collateral, spot_price)
         self.market_state.apply_delta(market_deltas)

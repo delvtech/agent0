@@ -122,8 +122,6 @@ class Wallet:
         ----------
         wallet_deltas : Wallet
             The agent's wallet that tracks the amount of assets this agent holds
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
 
         Returns
         -------

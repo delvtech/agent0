@@ -218,7 +218,7 @@ class Market(
             As time passes, an amount of the longs proportional to the time that has
             passed are considered to be “mature” and can be redeemed one-to-one.
             The remaining amount of longs are sold on the internal AMM. The trader
-            doesn not receive any variable interest from their long positions,
+            does not receive any variable interest from their long positions,
             so the only money they make on closing is from the long maturing and the
             fixed rate changing.
 
@@ -234,21 +234,20 @@ class Market(
             money the AMM committed at the beginning of the trade and the money the
             short has to pay when closing the trade.
 
-
         Add liquidity
-            When a trader redeems their Liquidity Provider (LP) shares, they will receive a combination of base
-            tokens and “withdrawal shares”. Since some of the LPs capital may be backing
-            open positions, we give them withdrawal shares which pay out when the positions
-            are closed. These withdrawal shares receive a steady stream of proceeds from long
-            and short positions when they are closed or mature.
-
-        Remove liquidity
             When a trader adds liquidity, they put up base tokens and receive LP shares.
             If there are not any open positions, the LP receives the same amount of LP shares
             that they would if they were supplying liquidity to uniswap.
             To make sure that new LPs do not get rugged (or rug previous LPs),
             we modify the share reserves used in the LP share calculation by subtracting
             the present value of open longs and adding the present value of the open shorts.
+
+        Remove liquidity
+            When a trader redeems their Liquidity Provider (LP) shares, they will receive a combination of base
+            tokens and “withdrawal shares”. Since some of the LPs capital may be backing
+            open positions, we give them withdrawal shares which pay out when the positions
+            are closed. These withdrawal shares receive a steady stream of proceeds from long
+            and short positions when they are closed or mature.
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used

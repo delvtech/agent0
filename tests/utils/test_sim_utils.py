@@ -44,7 +44,7 @@ class SimUtilsTest(unittest.TestCase):
                             pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         else:
                             pricing_model = yieldspace_pm.YieldspacePricingModel()
-                        market, _, _ = sim_utils.get_initialized_market(pricing_model, block_time, config)
+                        market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,

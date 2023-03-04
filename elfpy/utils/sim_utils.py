@@ -41,7 +41,7 @@ def get_simulator(
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
     block_time = time.BlockTime()
-    market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, block_time, config)
+    market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
@@ -97,7 +97,7 @@ def get_simulator(
     return simulator
 
 
-def get_initialized_market(
+def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel,
     block_time: time.BlockTime,
     config: simulators.Config,

@@ -111,15 +111,15 @@ def calc_open_short(
     bond_amount: float,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """
-    shorts need their margin account to cover the worst case scenario (p=1)
-    margin comes from 2 sources:
-    - the proceeds from your short sale (p)
-    - the max value you cover with base deposted from your wallet (1-p)
-    these two components are both priced in base, yet happily add up to 1.0 units of bonds
-    so we have the following identity:
-    total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
-    this guarantees that bonds in the system are always fully backed by an equal amount of base
+    """Calculate the agent & market deltas for opening a short position.
+    Shorts need their margin account to cover the worst case scenario (p=1).
+    The margin comes from 2 sources:
+        - the proceeds from your short sale (p)
+        - the max value you cover with base deposted from your wallet (1-p)
+    These two components are both priced in base, yet happily add up to 1.0 units of bonds.
+    This gives us the following identity:
+        total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
+    This guarantees that bonds in the system are always fully backed by an equal amount of base.
     """
     # perform the trade
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
@@ -338,10 +338,8 @@ def calc_close_long(
     market: hyperdrive_market.Market,
     mint_time: float,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """
-    take trade spec & turn it into trade details
-    compute wallet update spec with specific details
-    will be conditional on the pricing model
+    """Calculations for closing a long position.
+    This function takes the trade spec & turn it into trade details.
     """
     # Compute the time remaining given the mint time.
     years_remaining = time.get_years_remaining(
