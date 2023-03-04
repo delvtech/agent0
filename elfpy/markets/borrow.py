@@ -142,7 +142,6 @@ class PricingModel(base_pm.PricingModel):
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
             collateral_value_in_base = collateral.amount * (spot_price or 1)
-        print(loan_to_value_ratio)
         borrow_amount_in_base = collateral_value_in_base * loan_to_value_ratio[collateral.unit]  # type: ignore
         return collateral_value_in_base, borrow_amount_in_base
 
@@ -160,6 +159,25 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     """
 
     available_actions = [MarketActionType.OPEN_BORROW, MarketActionType.CLOSE_BORROW]
+
+    @property
+    def total_profit(self) -> float:
+        """
+        From the market's perspective, the profit is the difference between the borrowed and deposited assets
+        This is composed of two parts:
+            uncollected profit = borrow_shares * share_price - borrow_outstanding
+            collected profit = borrow_closed_interest
+        """
+        return (
+            self.market_state.borrow_shares * self.market_state.borrow_share_price
+            - self.market_state.borrow_outstanding
+            + self.market_state.borrow_closed_interest
+        )
+
+    @property
+    def borrow_rate(self) -> float:
+        """The borrow rate is the lending rate multiplied by the spread ratio"""
+        return self.market_state.lending_rate * self.market_state.spread_ratio
 
     def initialize(
         self,
@@ -352,25 +370,6 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
             )
         )
         self.update_market(delta)  # save the delta of borrow share price into the market
-
-    @property
-    def total_profit(self) -> float:
-        """
-        From the market's perspective, the profit is the difference between the borrowed and deposited assets
-        This is composed of two parts:
-            uncollected profit = borrow_shares * share_price - borrow_outstanding
-            collected profit = borrow_closed_interest
-        """
-        return (
-            self.market_state.borrow_shares * self.market_state.borrow_share_price
-            - self.market_state.borrow_outstanding
-            + self.market_state.borrow_closed_interest
-        )
-
-    @property
-    def borrow_rate(self) -> float:
-        """The borrow rate is the lending rate multiplied by the spread ratio"""
-        return self.market_state.lending_rate * self.market_state.spread_ratio
 
     def log_market_step_string(self) -> None:
         """Logs the current market step"""

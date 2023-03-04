@@ -157,7 +157,7 @@ class Wallet:
             # handle updating a dict, which have mint_time attached
             elif key == "borrows":
                 if value_or_dict:  # could be empty
-                    self._update_borrows(value_or_dict)
+                    self._update_borrows(value_or_dict.items())
             elif key == "longs":
                 self._update_longs(value_or_dict.items())
             elif key == "shorts":
@@ -165,15 +165,20 @@ class Wallet:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def _update_borrows(self, borrow_summary: Borrow) -> None:
-        if borrow_summary.start_time in self.borrows:  #  entry already exists for this mint_time, so add to it
-            self.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
-        else:
-            self.borrows.update({borrow_summary.start_time: borrow_summary})
-        if self.borrows[borrow_summary.start_time].borrow_amount == 0:
-            # Removing the empty borrows allows us to check existance
-            # of open borrows using `if self.borrows`
-            del self.borrows[borrow_summary.start_time]
+    def _update_borrows(self, borrows: Iterable[tuple[float, Borrow]]) -> None:
+        for mint_time, borrow_summary in borrows:
+            if mint_time != borrow_summary.start_time:
+                raise ValueError(
+                    f"The borrow summary key, {mint_time=}, must equal the start time, {borrow_summary.start_time=}"
+                )
+            if borrow_summary.start_time in self.borrows:  #  entry already exists for this mint_time, so add to it
+                self.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
+            else:
+                self.borrows.update({borrow_summary.start_time: borrow_summary})
+            if self.borrows[borrow_summary.start_time].borrow_amount == 0:
+                # Removing the empty borrows allows us to check existance
+                # of open borrows using `if self.borrows`
+                del self.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
