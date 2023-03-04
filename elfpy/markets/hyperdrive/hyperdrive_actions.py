@@ -13,6 +13,7 @@ import elfpy.markets.base as base_market
 
 if TYPE_CHECKING:
     import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+    import elfpy.pricing_models.yieldspace as yieldspace_pm
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
 
 class MarketActionType(Enum):
     r"""The descriptor of an action in a market"""
-
     INITIALIZE_MARKET = "initialize_market"
 
     ADD_LIQUIDITY = "add_liquidity"
@@ -63,7 +63,6 @@ class MarketDeltas(base_market.MarketDeltas):
 @dataclass
 class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
-
     d_base: float
     d_bonds: float
 
@@ -72,7 +71,6 @@ class MarketActionResult(base_market.MarketActionResult):
 @dataclass
 class MarketAction(Generic[base_market.Action]):
     r"""Market action specification"""
-
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
@@ -111,7 +109,7 @@ def check_action(agent_action: MarketAction) -> None:
 def calc_open_short(
     wallet_address: int,
     bond_amount: float,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     market_time: float,
@@ -180,7 +178,7 @@ def calc_open_short(
 def calc_close_short(
     wallet_address: int,
     bond_amount: float,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     market_time: float,
@@ -199,7 +197,9 @@ def calc_close_short(
         raise AssertionError("not enough reserves to close short")
     # Compute the time remaining given the mint time.
     years_remaining = time.get_years_remaining(
-        market_time=market_time, mint_time=mint_time, position_duration_years=position_duration.days / 365
+        market_time=market_time,
+        mint_time=mint_time,
+        position_duration_years=position_duration.days / 365,
     )  # all args in units of years
     time_remaining = time.StretchedTime(
         days=years_remaining * 365,  # converting years to days
@@ -260,8 +260,8 @@ def calc_close_short(
 
 def calc_open_long(
     wallet_address: int,
-    base_amount: float,  # in base
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    base_amount: float,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     market_time: float,
@@ -342,8 +342,8 @@ def calc_open_long(
 
 def calc_close_long(
     wallet_address: int,
-    bond_amount: float,  # in bonds
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    bond_amount: float,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     market_time: float,
@@ -411,11 +411,10 @@ def calc_close_long(
 def calc_add_liquidity(
     wallet_address: int,
     bond_amount: float,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     market_time: float,
-    time_remaining: time.StretchedTime,
     fixed_apr: float,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is added"""
@@ -437,9 +436,8 @@ def calc_add_liquidity(
         d_base=bond_amount,
         rate=rate,
         market_state=market_state,
-        position_duration=position_duration,
         market_time=market_time,
-        time_remaining=time_remaining,
+        position_duration=position_duration,
     )
     market_deltas = MarketDeltas(
         d_base_asset=d_base_reserves,
@@ -457,7 +455,7 @@ def calc_add_liquidity(
 def calc_remove_liquidity(
     wallet_address: int,
     bond_amount: float,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
+    pricing_model: yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
     fixed_apr: float,
@@ -581,9 +579,8 @@ def calc_lp_out_given_tokens_in(
     d_base: float,
     rate: float,
     market_state: hyperdrive_market.MarketState,
-    position_duration: time.StretchedTime,
     market_time: float,
-    time_remaining: time.StretchedTime,
+    position_duration: time.StretchedTime,
 ) -> tuple[float, float, float]:
     r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -595,9 +592,9 @@ def calc_lp_out_given_tokens_in(
     times.
     """
     d_shares = d_base / market_state.share_price
-    annualized_time = time.norm_days(time_remaining.days, 365)
+    annualized_time = time.norm_days(position_duration.days, 365)
     d_bonds = (market_state.share_reserves + d_shares) / 2 * (
-        market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
+        market_state.init_share_price * (1 + rate * annualized_time) ** (1 / position_duration.stretched_time)
         - market_state.share_price
     ) - market_state.bond_reserves
     if market_state.share_reserves > 0:  # normal case where we have some share reserves

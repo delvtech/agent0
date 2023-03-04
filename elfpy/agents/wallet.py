@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 if TYPE_CHECKING:
@@ -259,7 +260,15 @@ class Wallet:
         longs_value_no_mock = 0
         for mint_time, long in self.longs.items():
             if long.balance > 0 and share_reserves:
-                balance = market.calc_close_long(self.address, long.balance, mint_time)[1].balance.amount
+                balance = hyperdrive_actions.calc_close_long(
+                    wallet_address=self.address,
+                    bond_amount=long.balance,
+                    pricing_model=market.pricing_model,
+                    market_state=market.market_state,
+                    position_duration=market.position_duration,
+                    market_time=market.block_time.time,
+                    mint_time=mint_time,
+                )[1].balance.amount
             else:
                 balance = 0.0
             longs_value += balance
@@ -274,9 +283,16 @@ class Wallet:
                 and share_reserves > 0
                 and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
             ):
-                balance = market.calc_close_short(self.address, short.open_share_price, short.balance, mint_time)[
-                    1
-                ].balance.amount
+                balance = hyperdrive_actions.calc_close_short(
+                    wallet_address=self.address,
+                    bond_amount=short.balance,
+                    pricing_model=market.pricing_model,
+                    market_state=market.market_state,
+                    position_duration=market.position_duration,
+                    market_time=market.block_time.time,
+                    mint_time=mint_time,
+                    open_share_price=short.open_share_price,
+                )[1].balance.amount
             shorts_value += balance
             base_no_mock = short.balance * (1 - market.spot_price)
             shorts_value_no_mock += base_no_mock

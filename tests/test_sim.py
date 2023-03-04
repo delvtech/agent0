@@ -113,7 +113,7 @@ class TestSimulator(unittest.TestCase):
                 "config": [simulators.Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
                 "market_init": [hyperdrive_market.MarketState()],
-                "market_step_size": [0.001],
+                "time_step": [0.001],
                 "position_duration": [90],
             }
         )

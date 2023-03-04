@@ -9,8 +9,7 @@ from elfpy.time.time import BlockTime
 
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.markets.borrow import Market as BorrowMarket
-from elfpy.markets.borrow import MarketState as BorrowMarketState
+import elfpy.markets.borrow as borrow_market
 
 
 class TestBorrow(unittest.TestCase):
@@ -32,10 +31,12 @@ class TestBorrow(unittest.TestCase):
                     types.TokenType.BASE: loan_to_value / 100,
                     types.TokenType.PT: loan_to_value / 100,
                 }
-                borrow_market = BorrowMarket(
-                    block_time=BlockTime(), market_state=BorrowMarketState(loan_to_value_ratio=loan_to_value_ratios)
+                borrow = borrow_market.Market(
+                    pricing_model=borrow_market.PricingModel(),
+                    block_time=BlockTime(),
+                    market_state=borrow_market.MarketState(loan_to_value_ratio=loan_to_value_ratios),
                 )
-                market_deltas, agent_deltas = borrow_market.open_borrow(
+                market_deltas, agent_deltas = borrow.calc_open_borrow(
                     wallet_address=1,
                     collateral=collateral,
                     spot_price=spot_price,
@@ -47,10 +48,10 @@ class TestBorrow(unittest.TestCase):
                     collateral_amount,
                     expected_borrow_amount,
                     market_deltas.d_borrow_shares,
-                    agent_deltas.borrows.borrow_amount,
+                    agent_deltas.borrows[0].borrow_amount,
                 )
                 np.testing.assert_almost_equal(market_deltas.d_borrow_shares, expected_borrow_amount)
-                np.testing.assert_almost_equal(agent_deltas.borrows.borrow_amount, expected_borrow_amount)
+                np.testing.assert_almost_equal(agent_deltas.borrows[0].borrow_amount, expected_borrow_amount)
                 if delete_logs:
                     output_utils.close_logging()
 
@@ -63,9 +64,10 @@ class TestBorrow(unittest.TestCase):
         loan_to_value = 1
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
-        borrow_market = BorrowMarket(
+        borrow = borrow_market.Market(
+            pricing_model=borrow_market.PricingModel(),
             block_time=BlockTime(),
-            market_state=BorrowMarketState(
+            market_state=borrow_market.MarketState(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
                 borrow_shares=100,
                 collateral={},
@@ -74,7 +76,7 @@ class TestBorrow(unittest.TestCase):
             ),
         )
 
-        market_deltas = borrow_market.close_borrow(
+        market_deltas = borrow.calc_close_borrow(
             wallet_address=1,
             collateral=collateral,
             spot_price=0.9,

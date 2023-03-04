@@ -6,7 +6,6 @@ import unittest
 
 import numpy as np
 
-import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators.simulators as simulators

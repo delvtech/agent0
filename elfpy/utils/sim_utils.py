@@ -5,19 +5,16 @@ import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, Optional
 
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.simulators as simulators
-import elfpy.time as time
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldspacePricingModel
-from elfpy.time.time import BlockTime
+import elfpy.time as time
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
     import elfpy.agents.wallet as wallet
     from elfpy.agents.agent import Agent
-    from elfpy.pricing_models.base import PricingModel
 
 
 def get_simulator(
@@ -43,7 +40,7 @@ def get_simulator(
     config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
     pricing_model = get_pricing_model(config.pricing_model_name)
-    block_time = BlockTime()
+    block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
@@ -101,8 +98,8 @@ def get_simulator(
 
 
 def get_initialized_market(
-    pricing_model: PricingModel,
-    block_time: BlockTime,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel,
+    block_time: time.BlockTime,
     config: simulators.Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
@@ -139,7 +136,7 @@ def get_initialized_market(
     market = hyperdrive_market.Market(
         pricing_model=pricing_model,
         block_time=block_time,
-        market_state=hyperdrive.MarketState(
+        market_state=hyperdrive_market.MarketState(
             init_share_price=config.init_share_price,
             share_price=config.init_share_price,
             variable_apr=config.variable_apr[0],
@@ -157,7 +154,7 @@ def get_initialized_market(
     return market, agent_deltas, market_deltas
 
 
-def get_pricing_model(model_name: str) -> PricingModel:
+def get_pricing_model(model_name: str) -> yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel:
     r"""Get a PricingModel object from the config passed in
 
     Parameters
@@ -172,9 +169,9 @@ def get_pricing_model(model_name: str) -> PricingModel:
     """
     logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
     if model_name.lower() == "hyperdrive":
-        pricing_model = HyperdrivePricingModel()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     elif model_name.lower() == "yieldspace":
-        pricing_model = YieldspacePricingModel()
+        pricing_model = yieldspace_pm.YieldspacePricingModel()
     else:
         raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
     return pricing_model

@@ -10,16 +10,11 @@ import numpy as np
 import pandas as pd
 from numpy.random._generator import Generator
 
-import elfpy.types as types
-import elfpy.time as time
-import elfpy.utils.outputs as output_utils
-import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive as hyperdrive
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.utils.outputs as output_utils
-from elfpy.time.time import BlockTime
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.agents.wallet as wallet
+import elfpy.time as time
+import elfpy.types as types
+import elfpy.utils.outputs as output_utils
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
@@ -386,7 +381,7 @@ class Simulator:
         self,
         config: Config,
         market: hyperdrive_market.Market,
-        block_time: BlockTime,
+        block_time: time.BlockTime,
     ):
         # User specified variables
         self.config = config.copy()
