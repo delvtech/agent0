@@ -4,7 +4,6 @@ import unittest
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy.time.time import BlockTime
 import elfpy.types as types
 import elfpy.time as time
 
@@ -22,7 +21,7 @@ class TestOpenLong(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: BlockTime
+    block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -31,7 +30,7 @@ class TestOpenLong(unittest.TestCase):
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
-        self.block_time = BlockTime()
+        self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(

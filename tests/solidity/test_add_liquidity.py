@@ -2,13 +2,11 @@
 
 import unittest
 
-import elfpy.agents.agent as agent
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-
-from elfpy.time import StretchedTime
-from elfpy.time.time import BlockTime
+import elfpy.agents.agent as agent
+import elfpy.time as time
 
 
 class TestAddLiquidity(unittest.TestCase):
@@ -20,23 +18,23 @@ class TestAddLiquidity(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_markets.Market
-    block_time: BlockTime
+    block_time: time.BlockTime
 
     def setUp(self):
 
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=1, budget=self.contribution)
-        self.block_time = BlockTime()
+        self.block_time = time.BlockTime()
 
-        pricing_model = HyperdrivePricingModel()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_markets.MarketState()
 
         self.hyperdrive = hyperdrive_markets.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
-            position_duration=StretchedTime(
+            position_duration=time.StretchedTime(
                 days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
             ),
         )

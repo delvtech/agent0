@@ -5,8 +5,8 @@ import itertools
 import unittest
 
 import numpy as np
-from elfpy.time.time import BlockTime
 
+import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.markets.borrow as borrow_market
@@ -33,7 +33,7 @@ class TestBorrow(unittest.TestCase):
                 }
                 borrow = borrow_market.Market(
                     pricing_model=borrow_market.PricingModel(),
-                    block_time=BlockTime(),
+                    block_time=time.BlockTime(),
                     market_state=borrow_market.MarketState(loan_to_value_ratio=loan_to_value_ratios),
                 )
                 market_deltas, agent_deltas = borrow.calc_open_borrow(
@@ -66,7 +66,7 @@ class TestBorrow(unittest.TestCase):
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
         borrow = borrow_market.Market(
             pricing_model=borrow_market.PricingModel(),
-            block_time=BlockTime(),
+            block_time=time.BlockTime(),
             market_state=borrow_market.MarketState(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
                 borrow_shares=100,

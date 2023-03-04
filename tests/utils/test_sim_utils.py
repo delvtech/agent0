@@ -13,7 +13,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-from elfpy.time.time import BlockTime
+import elfpy.time as time
 
 # pylint: disable=too-many-locals
 
@@ -39,7 +39,7 @@ class SimUtilsTest(unittest.TestCase):
                         config.variable_apr = [0.05] * config.num_trading_days
                         config.num_position_days = num_position_days
                         # construct the market via sim utils
-                        block_time = BlockTime()
+                        block_time = time.BlockTime()
                         if pricing_model_name.lower() == "hyperdrive":
                             pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         else:
@@ -57,7 +57,7 @@ class SimUtilsTest(unittest.TestCase):
                                 trade_fee_percent=market.market_state.trade_fee_percent,
                                 redemption_fee_percent=market.market_state.redemption_fee_percent,
                             ),
-                            block_time=BlockTime(),
+                            block_time=time.BlockTime(),
                             position_duration=market.position_duration,
                         )
                         share_reserves = target_liquidity / market_direct.market_state.share_price

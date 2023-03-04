@@ -280,10 +280,7 @@ class Agent:
         """
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if market.market_state.share_reserves > 0:
-            price = market.spot_price
-        else:
-            price = 0
+        price = market.spot_price if market.market_state.share_reserves > 0 else 0
         balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())

@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from typing import Union
 
 import numpy as np
-from elfpy.time.time import BlockTime
 
 import elfpy.utils.price as price_utils
 import elfpy.time as time
@@ -143,7 +142,7 @@ class Market(
         pricing_model: hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel,
         market_state: MarketState,
         position_duration: time.StretchedTime,
-        block_time: BlockTime,
+        block_time: time.BlockTime,
     ):
         # market state variables
         assert (
@@ -214,31 +213,42 @@ class Market(
 
         check which of 6 action types are being executed, and handles each case:
 
-        open_long
-        .. todo:: link to description in the open long func
+        Open & close a long
+            When a trader opens a long, they put up base and are given long tokens.
+            As time passes, an amount of the longs proportional to the time that has
+            passed are considered to be “mature” and can be redeemed one-to-one.
+            The remaining amount of longs are sold on the internal AMM. The trader
+            doesn not receive any variable interest from their long positions,
+            so the only money they make on closing is from the long maturing and the
+            fixed rate changing.
 
-        close_long
-        .. todo:: link to description in the close long func
+        Open & close a short
+            When a trader opens a short, they put up base (typically much smaller
+            than the amount that longs have to pay) and are given short tokens. As
+            time passes, an amount of the shorts proportional to the time that has
+            passed are considered to be “mature” and must be paid for one-to-one by
+            the short. The remaining amount of shorts are sold on the internal AMM
+            and the short has to pay the price. The short receives any variable
+            interest collected on the full amount of base that underlies the short
+            (equal to the face value of the short) as well as the spread between the
+            money the AMM committed at the beginning of the trade and the money the
+            short has to pay when closing the trade.
 
-        open_short
-        .. todo:: link to description in the open short func
 
-        close_short
-        .. todo:: link to description in the close short func
+        Add liquidity
+            When a trader redeems their Liquidity Provider (LP) shares, they will receive a combination of base
+            tokens and “withdrawal shares”. Since some of the LPs capital may be backing
+            open positions, we give them withdrawal shares which pay out when the positions
+            are closed. These withdrawal shares receive a steady stream of proceeds from long
+            and short positions when they are closed or mature.
 
-        add_liquidity
-            pricing model computes new market deltas
-            market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
-            LP tokens are also stored in user wallet as fungible amounts, for ease of use
-
-        remove_liquidity
-            market figures out how much the user has contributed (calcualtes their fee weighting)
-            market resolves fees, adds this to the agent_action (optional function, to check AMM logic)
-            pricing model computes new market deltas
-            market updates its "liquidity pool" wallet, which stores each trade's mint time and user address
-            LP tokens are also stored in user wallet as fungible amounts, for ease of use
-
-        .. todo:: We should update the market inside here, like we do for init
+        Remove liquidity
+            When a trader adds liquidity, they put up base tokens and receive LP shares.
+            If there are not any open positions, the LP receives the same amount of LP shares
+            that they would if they were supplying liquidity to uniswap.
+            To make sure that new LPs do not get rugged (or rug previous LPs),
+            we modify the share reserves used in the LP share calculation by subtracting
+            the present value of open longs and adding the present value of the open shorts.
         """
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
@@ -453,37 +463,3 @@ class Market(
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
-
-    def calculate_short_adjustment(self) -> float:
-        """Calculates an adjustment amount for lp shares"""
-        if self.block_time.time > self.market_state.short_average_maturity_time:
-            return 0
-
-        # (year_end - year_start) / (normalizing_constant / 365)
-        normalized_time_remaining = (self.market_state.short_average_maturity_time - self.block_time.time) / (
-            self.position_duration.normalizing_constant / 365
-        )
-
-        return hyperdrive_actions.calculate_lp_allocation_adjustment(
-            self.market_state.shorts_outstanding,
-            self.market_state.short_base_volume,
-            normalized_time_remaining,
-            self.market_state.share_price,
-        )
-
-    def calculate_long_adjustment(self) -> float:
-        """Calculates an adjustment amount for lp shares"""
-        if self.block_time.time > self.market_state.long_average_maturity_time:
-            return 0
-
-        # (year_end - year_start) / (normalizing_constant / 365)
-        normalized_time_remaining = (self.market_state.long_average_maturity_time - self.block_time.time) / (
-            self.position_duration.normalizing_constant / 365
-        )
-
-        return hyperdrive_actions.calculate_lp_allocation_adjustment(
-            self.market_state.longs_outstanding,
-            self.market_state.long_base_volume,
-            normalized_time_remaining,
-            self.market_state.share_price,
-        )

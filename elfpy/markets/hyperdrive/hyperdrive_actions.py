@@ -124,7 +124,7 @@ def calc_open_short(
     total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
     this guarantees that bonds in the system are always fully backed by an equal amount of base
     """
-    # Perform the trade.
+    # perform the trade
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     pricing_model.check_input_assertions(
         quantity=trade_quantity,
@@ -136,7 +136,7 @@ def calc_open_short(
         market_state=market_state,
         time_remaining=position_duration,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
+    # update accouting for average maturity time, base volume and longs outstanding
     maturity_time = position_duration.days / 365
     short_average_maturity_time = update_weighted_average(
         market_state.short_average_maturity_time,
@@ -153,9 +153,9 @@ def calc_open_short(
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
-    # Make sure the trade is valid
+    # make sure the trade is valid
     pricing_model.check_output_assertions(trade_result=trade_result)
-    # Return the market and wallet deltas.
+    # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
