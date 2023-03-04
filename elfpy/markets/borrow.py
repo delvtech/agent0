@@ -114,17 +114,7 @@ class MarketState(base_market.BaseMarketState):
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
-        return MarketState(
-            loan_to_value_ratio=self.loan_to_value_ratio,
-            borrow_shares=self.borrow_shares,
-            collateral=self.collateral,
-            borrow_outstanding=self.borrow_outstanding,
-            borrow_closed_interest=self.borrow_closed_interest,
-            borrow_share_price=self.borrow_share_price,
-            collateral_spot_price=self.collateral_spot_price,
-            lending_rate=self.lending_rate,
-            spread_ratio=self.spread_ratio,
-        )
+        return MarketState(**self.__dict__)
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -152,6 +142,7 @@ class PricingModel(base_pm.PricingModel):
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
             collateral_value_in_base = collateral.amount * (spot_price or 1)
+        print(loan_to_value_ratio)
         borrow_amount_in_base = collateral_value_in_base * loan_to_value_ratio[collateral.unit]  # type: ignore
         return collateral_value_in_base, borrow_amount_in_base
 
@@ -308,7 +299,9 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
         """
         _, borrow_amount_in_base = self.pricing_model.value_collateral(
-            loan_to_value_ratio=self.market_state.loan_to_value_ratio, collateral=collateral, spot_price=spot_price
+            loan_to_value_ratio=self.market_state.loan_to_value_ratio,
+            collateral=collateral,
+            spot_price=spot_price,
         )
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increases because it's being repaid
