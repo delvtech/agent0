@@ -2,7 +2,7 @@
 import unittest
 
 import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy.time.time import BlockTime
@@ -52,7 +52,7 @@ class TestInitialize(unittest.TestCase):
             contribution=self.contribution,
             target_apr=self.target_apr,
         )
-        self.alice.update_wallet(wallet_deltas)
+        self.alice.wallet.update(wallet_deltas)
 
     def test_initialize_failure(self):
         """Markets should not be able to be initialized twice.

@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import logging
 
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from typing import Iterable
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
     import elfpy.markets.base as base_market
 
 
@@ -81,7 +81,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: hyperdrive.Market) -> float:
+    def get_max_long(self, market: hyperdrive_market.Market) -> float:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -108,7 +108,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: hyperdrive.Market) -> float:
+    def get_max_short(self, market: hyperdrive_market.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -202,132 +202,7 @@ class Agent:
         # issue #57
         return actions
 
-    def update_wallet(self, wallet_deltas: wallet.Wallet) -> None:
-        """Update the agent's wallet
-
-        Parameters
-        ----------
-        wallet_deltas : Wallet
-            The agent's wallet that tracks the amount of assets this agent holds
-        market : Market
-            The market on which this agent will be executing trades (MarketActions)
-
-        Returns
-        -------
-        This method has no returns. It updates the Agent's Wallet according to the passed parameters
-        """
-        # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.__dict__.items():
-            if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
-                continue
-            if key in ["lp_tokens", "fees_paid"]:
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.wallet.address,
-                    key,
-                    self.wallet[key],
-                    self.wallet[key] + value_or_dict,
-                    value_or_dict,
-                )
-                self.wallet[key] += value_or_dict
-            # handle updating a Quantity
-            elif key == "balance":
-                logging.debug(
-                    "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
-                    self.wallet.address,
-                    key,
-                    self.wallet[key].amount,
-                    self.wallet[key].amount + value_or_dict.amount,
-                    value_or_dict.amount,
-                )
-                self.wallet[key].amount += value_or_dict.amount
-            # handle updating a dict, which have mint_time attached
-            elif key == "borrows":
-                if value_or_dict:  # could be empty
-                    self._update_borrows(value_or_dict)
-            elif key == "longs":
-                self._update_longs(value_or_dict.items())
-            elif key == "shorts":
-                self._update_shorts(value_or_dict.items())
-            else:
-                raise ValueError(f"wallet_key={key} is not allowed.")
-
-    def _update_borrows(self, borrow_summary: wallet.Borrow) -> None:
-        if borrow_summary.start_time in self.wallet.borrows:  #  entry already exists for this mint_time, so add to it
-            self.wallet.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
-        else:
-            self.wallet.borrows.update({borrow_summary.start_time: borrow_summary})
-        if self.wallet.borrows[borrow_summary.start_time].borrow_amount == 0:
-            # Removing the empty borrows allows us to check existance
-            # of open borrows using `if self.wallet.borrows`
-            del self.wallet.borrows[borrow_summary.start_time]
-
-    def _update_longs(self, longs: Iterable[tuple[float, wallet.Long]]) -> None:
-        """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
-
-        Parameters
-        ----------
-        shorts : Iterable[tuple[float, Short]]
-            A list (or other Iterable type) of tuples that contain a Long object
-            and its market-relative mint time
-        """
-        for mint_time, long in longs:
-            if long.balance != 0:
-                logging.debug(
-                    "agent #%g trade longs, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.wallet.address,
-                    mint_time,
-                    self.wallet.longs,
-                    long,
-                )
-                if mint_time in self.wallet.longs:  #  entry already exists for this mint_time, so add to it
-                    self.wallet.longs[mint_time].balance += long.balance
-                else:
-                    self.wallet.longs.update({mint_time: long})
-            if self.wallet.longs[mint_time].balance == 0:
-                # Removing the empty borrows allows us to check existance
-                # of open longs using `if self.wallet.longs`
-                del self.wallet.longs[mint_time]
-
-    def _update_shorts(self, shorts: Iterable[tuple[float, wallet.Short]]) -> None:
-        """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
-
-        Parameters
-        ----------
-        shorts : Iterable[tuple[float, Short]]
-            A list (or other Iterable type) of tuples that contain a Short object
-            and its market-relative mint time
-        """
-        for mint_time, short in shorts:
-            if short.balance != 0:
-                logging.debug(
-                    "agent #%g trade shorts, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
-                    self.wallet.address,
-                    mint_time,
-                    self.wallet.shorts,
-                    short,
-                )
-                if mint_time in self.wallet.shorts:  #  entry already exists for this mint_time, so add to it
-                    self.wallet.shorts[mint_time].balance += short.balance
-                    old_balance = self.wallet.shorts[mint_time].balance
-
-                    # if the balance is positive, we are opening a short, therefore do a weighted
-                    # mean for the open share price.  this covers an edge case where two shorts are
-                    # opened for the same account in the same block.  if the balance is negative, we
-                    # don't want to update the open_short_price
-                    if short.balance > 0:
-                        old_share_price = self.wallet.shorts[mint_time].open_share_price
-                        self.wallet.shorts[mint_time].open_share_price = (
-                            short.open_share_price * short.balance + old_share_price * old_balance
-                        ) / (short.balance + old_balance)
-                else:
-                    self.wallet.shorts.update({mint_time: short})
-            if self.wallet.shorts[mint_time].balance == 0:
-                # Removing the empty borrows allows us to check existance
-                # of open shorts using `if self.wallet.shorts`
-                del self.wallet.shorts[mint_time]
-
-    def get_liquidation_trades(self, market: hyperdrive.Market) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Parameters
@@ -347,8 +222,8 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_LONG,
+                        trade=hyperdrive_actions.MarketAction(
+                            action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -361,8 +236,8 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                        trade=hyperdrive_actions.MarketAction(
+                            action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
                             mint_time=mint_time,
@@ -376,8 +251,8 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive.MarketAction(
-                        action_type=hyperdrive.MarketActionType.REMOVE_LIQUIDITY,
+                    trade=hyperdrive_actions.MarketAction(
+                        action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
                         mint_time=market.block_time.time,
@@ -395,7 +270,7 @@ class Agent:
             self.wallet.fees_paid or 0,
         )
 
-    def log_final_report(self, market: hyperdrive.Market) -> None:
+    def log_final_report(self, market: hyperdrive_market.Market) -> None:
         """Logs a report of the agent's state
 
         Parameters
@@ -405,22 +280,19 @@ class Agent:
         """
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if market.market_state.share_reserves > 0:
-            price = market.spot_price
-        else:
-            price = 0
+        price = market.spot_price if market.market_state.share_reserves > 0 else 0
         balance = self.wallet.balance.amount
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
         # Calculate the total pnl of the trader.
-        longs_value = (sum(long.balance for long in longs) if len(longs) > 0 else 0) * price
+        longs_value = (sum(long.balance for long in longs) if longs else 0) * price
         shorts_value = (
             sum(
                 # take the interest from the margin and subtract the bonds shorted at the current price
                 (market.market_state.share_price / short.open_share_price) * short.balance - price * short.balance
                 for short in shorts
             )
-            if len(shorts) > 0
+            if shorts
             else 0
         )
         total_value = balance + longs_value + shorts_value

@@ -3,25 +3,28 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
 import argparse
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 # external
 from stochastic.processes import GeometricBrownianMotion
 
 # elfpy core repo
-from elfpy.agents.agent import Agent
 import elfpy
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.simulators as simulators
-import elfpy.types as types
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
+import elfpy.agents.agent as agent
+import elfpy.types as types
+
+if TYPE_CHECKING:
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 # pylint: disable=duplicate-code
 
 
-class CustomShorter(Agent):
+class CustomShorter(agent.Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts
     """
@@ -31,7 +34,7 @@ class CustomShorter(Agent):
         self.pt_to_short = 1_000
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive.Market) -> "list[Any]":
+    def action(self, market: hyperdrive_market.Market) -> "list[Any]":
         """Implement a custom user strategy"""
         shorts = list(self.wallet.shorts.values())
         has_opened_short = bool(any((short.balance > 0 for short in shorts)))
@@ -43,8 +46,8 @@ class CustomShorter(Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive.MarketAction(
-                            action_type=hyperdrive.MarketActionType.OPEN_SHORT,
+                        trade=hyperdrive_actions.MarketAction(
+                            action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=self.pt_to_short,
                             wallet=self.wallet,
                         ),
@@ -55,8 +58,8 @@ class CustomShorter(Agent):
                     action_list.append(
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive.MarketAction(
-                                action_type=hyperdrive.MarketActionType.CLOSE_SHORT,
+                            trade=hyperdrive_actions.MarketAction(
+                                action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                                 trade_amount=self.pt_to_short,
                                 wallet=self.wallet,
                                 mint_time=list(self.wallet.shorts.keys())[0],
@@ -66,13 +69,13 @@ class CustomShorter(Agent):
         return action_list
 
 
-def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
-        agent = CustomShorter(address)
-        agent.log_status_report()
-        agents += [agent]
+        example_agent = CustomShorter(address)
+        example_agent.log_status_report()
+        agents += [example_agent]
     return agents
 
 

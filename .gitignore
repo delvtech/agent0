@@ -1,7 +1,8 @@
 # Repo specific
 .logging
 .build
-hyperdrive
+# smart contracts symlink
+./hyperdrive 
 
 # Ape
 .cache

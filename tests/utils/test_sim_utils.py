@@ -6,13 +6,14 @@ import unittest
 
 import numpy as np
 
-import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators.simulators as simulators
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-from elfpy.time.time import BlockTime
+import elfpy.time as time
 
 # pylint: disable=too-many-locals
 
@@ -38,12 +39,12 @@ class SimUtilsTest(unittest.TestCase):
                         config.variable_apr = [0.05] * config.num_trading_days
                         config.num_position_days = num_position_days
                         # construct the market via sim utils
-                        block_time = BlockTime()
+                        block_time = time.BlockTime()
                         if pricing_model_name.lower() == "hyperdrive":
                             pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         else:
                             pricing_model = yieldspace_pm.YieldspacePricingModel()
-                        market, _, _ = sim_utils.get_initialized_market(pricing_model, block_time, config)
+                        market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,
@@ -56,7 +57,7 @@ class SimUtilsTest(unittest.TestCase):
                                 trade_fee_percent=market.market_state.trade_fee_percent,
                                 redemption_fee_percent=market.market_state.redemption_fee_percent,
                             ),
-                            block_time=BlockTime(),
+                            block_time=time.BlockTime(),
                             position_duration=market.position_duration,
                         )
                         share_reserves = target_liquidity / market_direct.market_state.share_price
@@ -67,7 +68,7 @@ class SimUtilsTest(unittest.TestCase):
                             ** (1 / market_direct.position_duration.stretched_time)
                             - market_direct.market_state.share_price
                         )
-                        market_deltas = hyperdrive_market.MarketDeltas(
+                        market_deltas = hyperdrive_actions.MarketDeltas(
                             d_base_asset=target_liquidity,
                             d_bond_asset=bond_reserves,
                             d_lp_total_supply=market_direct.market_state.share_price * share_reserves + bond_reserves,

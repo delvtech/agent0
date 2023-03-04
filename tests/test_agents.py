@@ -4,24 +4,23 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 from importlib import import_module
+from typing import Union
 from os import path, walk
 
 import numpy as np
 import utils_for_tests as test_utils  # utilities for testing
 
-import elfpy.markets.hyperdrive as hyperdrive_market
-import elfpy.pricing_models.base as base_pm
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.agents import policies  # type: ignore # TODO: Investigate why this raises a type issue in pyright.
-from elfpy.agents.agent import Agent
-from elfpy.time.time import BlockTime
+import elfpy.agents.agent as agent
+import elfpy.agents.policies as policies
 
 
-class TestErrorPolicy(Agent):
+class TestErrorPolicy(agent.Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
 
     # Purposefully incorrectly implemented
@@ -71,7 +70,7 @@ class TestAgent(unittest.TestCase):
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         time_remaining.freeze()  # pylint: disable=no-member # type: ignore
-        block_time = BlockTime()
+        block_time = time.BlockTime()
         market = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
@@ -95,9 +94,9 @@ class TestAgent(unittest.TestCase):
         # setup a simulation environment
         simulator = test_utils.setup_simulation_entities(simulators.Config(), agent_policies)
         simulator.collect_and_execute_trades()
-        for agent in simulator.agents.values():
-            wallet_state = agent.wallet.get_state(simulator.market)
-            wallet_keys = agent.wallet.get_state_keys()
+        for example_agent in simulator.agents.values():
+            wallet_state = example_agent.wallet.get_state(simulator.market)
+            wallet_keys = example_agent.wallet.get_state_keys()
             assert np.all(list(wallet_state.keys()) == wallet_keys)
 
     def test_get_max_safety(self):
@@ -105,7 +104,7 @@ class TestAgent(unittest.TestCase):
         Ensures that get_max_long and get_max_short will not exceed the balance
         of an agent in a variety of market conditions.
         """
-        models: list[base_pm.PricingModel] = [
+        models: list[Union[yieldspace_pm.YieldspacePricingModel, hyperdrive_pm.HyperdrivePricingModel]] = [
             hyperdrive_pm.HyperdrivePricingModel(),
             yieldspace_pm.YieldspacePricingModel(),
         ]
@@ -240,7 +239,7 @@ class TestAgent(unittest.TestCase):
         ]
         for test_case in test_cases:
             for pricing_model in models:
-                block_time = BlockTime()
+                block_time = time.BlockTime()
                 market = hyperdrive_market.Market(
                     pricing_model=pricing_model,
                     market_state=test_case.market_state,
@@ -249,10 +248,10 @@ class TestAgent(unittest.TestCase):
                 )
                 # Ensure safety for Agents with different budgets.
                 for budget in (1e-3 * 10 ** (3 * x) for x in range(5)):
-                    agent = Agent(wallet_address=0, budget=budget)
+                    example_agent = agent.Agent(wallet_address=0, budget=budget)
                     # Ensure that get_max_long is safe.
-                    max_long = agent.get_max_long(market)
-                    self.assertGreaterEqual(agent.wallet.balance.amount, max_long)
+                    max_long = example_agent.get_max_long(market)
+                    self.assertGreaterEqual(example_agent.wallet.balance.amount, max_long)
                     (market_max_long, _) = market.pricing_model.get_max_long(
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
@@ -262,14 +261,14 @@ class TestAgent(unittest.TestCase):
                         market_max_long,
                     )
                     # Ensure that get_max_short is safe.
-                    max_short = agent.get_max_short(market)
+                    max_short = example_agent.get_max_short(market)
                     trade_result = market.pricing_model.calc_out_given_in(
                         in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
                     )
                     max_loss = max_short - trade_result.user_result.d_base
-                    self.assertGreaterEqual(agent.wallet.balance.amount, max_loss)
+                    self.assertGreaterEqual(example_agent.wallet.balance.amount, max_loss)
                     (_, market_max_short) = market.pricing_model.get_max_short(
                         market_state=market.market_state,
                         time_remaining=market.position_duration,
@@ -285,9 +284,9 @@ class TestAgent(unittest.TestCase):
         # Instantiate a test market
         market = self.setup_market()
         # Instantiate a wrongly implemented agent policy
-        agent = TestErrorPolicy(wallet_address=1)
+        example_agent = TestErrorPolicy(wallet_address=1)
         with self.assertRaises(NotImplementedError):
-            agent.action(market)
+            example_agent.action(market)
         # Get the list of policies in the elfpy/policies directory
         agent_policies = self.get_implemented_policies()
         # Instantiate an agent for each policy
@@ -323,11 +322,11 @@ class TestAgent(unittest.TestCase):
                     )
                 )
         # For each agent policy, call their action() method
-        for agent in agent_list:
-            actions_list = agent.get_trade_list(market)
+        for example_agent in agent_list:
+            actions_list = example_agent.get_trade_list(market)
             for market_action in actions_list:
                 # Ensure trade size is smaller than wallet size
-                self.assertGreaterEqual(market_action.trade_amount, agent.budget)
+                self.assertGreaterEqual(market_action.trade_amount, example_agent.budget)
 
     def test_wallet_state(self):
         """Tests for Agent wallet state initialization"""
@@ -342,11 +341,11 @@ class TestAgent(unittest.TestCase):
                     wallet_address=wallet_address,  # first policy goes to init_lp_agent
                 )
             )
-        for agent in agent_list:
+        for example_agent in agent_list:
             expected_keys = [
-                f"agent_{agent.address}_base",
-                f"agent_{agent.address}_lp_tokens",
-                f"agent_{agent.address}_total_longs",
-                f"agent_{agent.address}_total_shorts",
+                f"agent_{example_agent.address}_base",
+                f"agent_{example_agent.address}_lp_tokens",
+                f"agent_{example_agent.address}_total_longs",
+                f"agent_{example_agent.address}_total_shorts",
             ]
-            assert expected_keys == list(agent.wallet.state)
+            assert expected_keys == list(example_agent.wallet.state)

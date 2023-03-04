@@ -11,7 +11,7 @@ from numpy.random import RandomState
 
 import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive as hyperdrive
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 from elfpy.utils import sim_utils  # utilities for setting up a simulation
 import elfpy.utils.outputs as output_utils
 
@@ -112,7 +112,7 @@ class TestSimulator(unittest.TestCase):
                 "run_number": [0] * num_runs,
                 "config": [simulators.Config()],
                 "agent_init": [[wallet.Wallet(address) for address in range(2)]],
-                "market_init": [hyperdrive.MarketState()],
+                "market_init": [hyperdrive_market.MarketState()],
                 "time_step": [0.001],
                 "position_duration": [90],
             }

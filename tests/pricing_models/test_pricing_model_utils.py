@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import elfpy.pricing_models.base as base_pm
-from elfpy.markets.hyperdrive import MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.utils import sim_utils
 import elfpy.time as time
 

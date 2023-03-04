@@ -11,11 +11,9 @@ import elfpy.types as types
 class BlockTime:
     r"""Global time."""
 
-    # time in years
-    time: float = 0
+    time: float = 0  # time in years
     block_number: float = 0
-    # defaults to 1 day
-    step_size: float = 1 / 365
+    step_size: float = 1 / 365  # defaults to 1 day
 
     @property
     def time_in_seconds(self) -> float:

@@ -10,16 +10,15 @@ import numpy as np
 import pandas as pd
 from numpy.random._generator import Generator
 
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.agents.wallet as wallet
-import elfpy.markets.hyperdrive as hyperdrive
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.time.time import BlockTime
 
 if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
-    from elfpy.markets.hyperdrive import Market, MarketDeltas
+    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 @dataclass
@@ -232,7 +231,7 @@ class RunSimVariables:
     run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
     config: Config = field(metadata=types.to_description("the simulation config"))
     agent_init: list[wallet.Wallet] = field(metadata=types.to_description("initial wallets for the agents"))
-    market_init: hyperdrive.MarketState = field(
+    market_init: hyperdrive_market.MarketState = field(
         metadata=types.to_description("initial market state for this simulation run")
     )
     time_step: float = field(metadata=types.to_description("minimum time discretization for time step in years"))
@@ -273,7 +272,9 @@ class TradeSimVariables:
     trade_number: int = field(metadata=types.to_description("trade number in a given simulation"))
     fixed_apr: float = field(metadata=types.to_description("apr of the AMM pool"))
     spot_price: float = field(metadata=types.to_description("price of shares"))
-    market_deltas: MarketDeltas = field(metadata=types.to_description("deltas used to update the market state"))
+    market_deltas: hyperdrive_actions.MarketDeltas = field(
+        metadata=types.to_description("deltas used to update the market state")
+    )
     agent_address: int = field(metadata=types.to_description("address of the agent that is executing the trade"))
     agent_deltas: wallet.Wallet = field(metadata=types.to_description("deltas used to update the market state"))
 
@@ -379,8 +380,8 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        market: Market,
-        block_time: BlockTime,
+        market: hyperdrive_market.Market,
+        block_time: time.BlockTime,
     ):
         # User specified variables
         self.config = config.copy()
@@ -536,15 +537,7 @@ class Simulator:
             # agent ID, market, and market action before sending the info off to the correct market
             action_details = (trade[0], trade[1].trade)
             agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
-            self.market.update_market(market_deltas)
-            agent = self.agents[agent_id]
-            logging.debug(
-                "agent #%g wallet deltas:\n%s",
-                agent.wallet.address,
-                agent_deltas,
-            )
-            agent.update_wallet(agent_deltas)
-            agent.log_status_report()
+            self.agents[agent_id].log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
             self.update_simulation_state()
@@ -606,7 +599,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive.MarketDeltas(
+                delta = hyperdrive_actions.MarketDeltas(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
                         / 365  # convert annual yield to daily
@@ -635,7 +628,6 @@ class Simulator:
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
-                self.market.log_market_step_string()
                 if not last_block_in_sim:
                     self.block_time.tick(self.time_step)
                     self.block_number += 1

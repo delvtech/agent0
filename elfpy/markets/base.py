@@ -13,13 +13,14 @@ import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel
+    from elfpy.pricing_models.base import PricingModel as BasePricingModel
     from elfpy.time.time import BlockTime
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
 State = TypeVar("State", bound="BaseMarketState")
 Deltas = TypeVar("Deltas", bound="MarketDeltas")
+PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
 
 
 class MarketActionType(Enum):
@@ -34,10 +35,8 @@ class MarketActionType(Enum):
 class MarketAction(Generic[Action]):
     r"""Market action specification"""
 
-    # these two variables are required to be set by the strategy
-    action_type: Enum
-    # the agent's wallet
-    wallet: wallet.Wallet
+    action_type: Enum  # these two variables are required to be set by the strategy
+    wallet: wallet.Wallet  # the agent's wallet
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -48,7 +47,7 @@ class MarketDeltas:
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketTradeResult:
+class MarketActionResult:
     r"""The result to a market of performing a trade"""
 
 
@@ -91,7 +90,7 @@ class BaseMarketState:
                     ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
 
 
-class Market(Generic[State, Deltas]):
+class Market(Generic[State, Deltas, PricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

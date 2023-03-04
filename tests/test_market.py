@@ -5,13 +5,11 @@ import unittest
 
 import numpy as np
 
-import elfpy.pricing_models.base as base_pm
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.borrow as borrow
 import elfpy.time as time
-from elfpy.time.time import BlockTime
 
 
 class BaseMarketTest(unittest.TestCase):
@@ -33,19 +31,20 @@ class BaseMarketTest(unittest.TestCase):
             time_stretch=1,
             normalizing_constant=36,
         )
-        _ = hyperdrive_market.Market(
-            pricing_model=base_pm.PricingModel(),
-            market_state=hyperdrive_market.MarketState(),
-            block_time=BlockTime(),
-            position_duration=pd_good,
-        )
-        with self.assertRaises(AssertionError):
+        for pricing_model in [yieldspace_pm.YieldspacePricingModel(), hyperdrive_pm.HyperdrivePricingModel()]:
             _ = hyperdrive_market.Market(
-                pricing_model=base_pm.PricingModel(),
+                pricing_model=pricing_model,
                 market_state=hyperdrive_market.MarketState(),
-                block_time=BlockTime(),
-                position_duration=pd_nonorm,
+                block_time=time.BlockTime(),
+                position_duration=pd_good,
             )
+            with self.assertRaises(AssertionError):
+                _ = hyperdrive_market.Market(
+                    pricing_model=pricing_model,
+                    market_state=hyperdrive_market.MarketState(),
+                    block_time=time.BlockTime(),
+                    position_duration=pd_nonorm,
+                )
 
     def test_market_state_copy(self):
         """Test the market state ability to deep copy itself"""
@@ -188,7 +187,7 @@ class BaseMarketTest(unittest.TestCase):
             },
             # test 7:  Borrow market is initialized empty
             {
-                "pricing_model": borrow.BorrowPricingModel(),
+                "pricing_model": borrow.PricingModel(),
                 "borrow_amount": 0.0,
                 "borrow_shares": 0.0,
                 "borrow_outstanding": 0.0,
@@ -197,8 +196,12 @@ class BaseMarketTest(unittest.TestCase):
         # Loop through the test cases & pricing model
         for test_index, test_case in enumerate(test_cases):
             test_number = test_index + 1
-            if isinstance(test_case["pricing_model"], borrow.BorrowPricingModel):
-                market = borrow.Market(block_time=BlockTime(), market_state=borrow.MarketState())
+            if isinstance(test_case["pricing_model"], borrow.PricingModel):
+                market = borrow.Market(
+                    pricing_model=test_case["pricing_model"],
+                    block_time=time.BlockTime(),
+                    market_state=borrow.MarketState(),
+                )
                 market_deltas, _ = market.initialize(wallet_address=0)
                 market.market_state.apply_delta(market_deltas)
                 np.testing.assert_equal(
@@ -223,7 +226,7 @@ class BaseMarketTest(unittest.TestCase):
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
-                    block_time=BlockTime(),
+                    block_time=time.BlockTime(),
                     pricing_model=test_case["pricing_model"],
                 )
                 _ = market.initialize(

@@ -2,9 +2,8 @@
 import unittest
 
 import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy.time.time import BlockTime
 import elfpy.types as types
 import elfpy.time as time
 
@@ -22,7 +21,7 @@ class TestOpenLong(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: BlockTime
+    block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -31,7 +30,7 @@ class TestOpenLong(unittest.TestCase):
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
-        self.block_time = BlockTime()
+        self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(
@@ -43,7 +42,7 @@ class TestOpenLong(unittest.TestCase):
             ),
         )
         _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
-        self.alice.update_wallet(wallet_deltas)
+        self.alice.wallet.update(wallet_deltas)
 
     def verify_open_long(
         self,
@@ -143,13 +142,13 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet.address, 0)
+            self.hyperdrive.open_long(self.bob.wallet, 0)
 
     def test_open_long_failure_extreme_amount(self):
         """Purchasing more bonds than exist fails"""
         base_amount = self.hyperdrive.market_state.bond_reserves
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
+            self.hyperdrive.open_long(self.bob.wallet, base_amount)
 
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
@@ -158,9 +157,7 @@ class TestOpenLong(unittest.TestCase):
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(agent_deltas)
+        market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,
@@ -178,9 +175,7 @@ class TestOpenLong(unittest.TestCase):
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, agent_deltas = self.hyperdrive.open_long(self.bob.wallet.address, base_amount)
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(agent_deltas)
+        market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
         self.verify_open_long(
             user=self.bob,
             market_state_before=market_state_before,

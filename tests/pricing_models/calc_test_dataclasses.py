@@ -7,7 +7,7 @@ from typing import Optional, Type
 
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.hyperdrive import MarketState
+from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
 @dataclass

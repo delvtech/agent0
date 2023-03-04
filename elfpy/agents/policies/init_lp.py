@@ -2,18 +2,18 @@
 
 Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
 """
-from elfpy.agents.agent import Agent
-import elfpy.markets.hyperdrive as hyperdrive
-
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.agents.agent as agent
 import elfpy.types as types
 
 # pylint: disable=duplicate-code
 
 
-class Policy(Agent):
+class Policy(agent.Agent):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive.Market) -> "list[types.Trade]":
+    def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
         """
         User strategy adds liquidity and then takes no additional actions
         """
@@ -22,8 +22,8 @@ class Policy(Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive.MarketAction(
-                    action_type=hyperdrive.MarketActionType.ADD_LIQUIDITY,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=self.budget,
                     wallet=self.wallet,
                 ),
