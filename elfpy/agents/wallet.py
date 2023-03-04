@@ -268,10 +268,7 @@ class Wallet:
                 balance = hyperdrive_actions.calc_close_long(
                     wallet_address=self.address,
                     bond_amount=long.balance,
-                    pricing_model=market.pricing_model,
-                    market_state=market.market_state,
-                    position_duration=market.position_duration,
-                    market_time=market.block_time.time,
+                    market=market,
                     mint_time=mint_time,
                 )[1].balance.amount
             else:
@@ -291,10 +288,7 @@ class Wallet:
                 balance = hyperdrive_actions.calc_close_short(
                     wallet_address=self.address,
                     bond_amount=short.balance,
-                    pricing_model=market.pricing_model,
-                    market_state=market.market_state,
-                    position_duration=market.position_duration,
-                    market_time=market.block_time.time,
+                    market=market,
                     mint_time=mint_time,
                     open_share_price=short.open_share_price,
                 )[1].balance.amount

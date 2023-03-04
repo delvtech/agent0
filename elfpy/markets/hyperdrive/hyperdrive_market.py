@@ -211,7 +211,7 @@ class Market(
     ) -> tuple[int, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
         r"""Execute a trade in the simulated market
 
-        check which of 6 action types are being executed, and handles each case:
+        Checks which of 6 action types are being executed, and handles each case:
 
         Open & close a long
             When a trader opens a long, they put up base and are given long tokens.
@@ -357,10 +357,7 @@ class Market(
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_short(
             agent_wallet.address,
             bond_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.block_time.time,
+            self,
         )
         self.update_market(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -375,14 +372,11 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_short(
-            agent_wallet.address,
-            bond_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.block_time.time,
-            mint_time,
-            open_share_price,
+            wallet_address=agent_wallet.address,
+            bond_amount=bond_amount,
+            market=self,
+            mint_time=mint_time,
+            open_share_price=open_share_price,
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -395,13 +389,9 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_long(
-            agent_wallet.address,
-            base_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.block_time.time,
-            self.spot_price,
+            wallet_address=agent_wallet.address,
+            base_amount=base_amount,
+            market=self,
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -415,13 +405,10 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_long(
-            agent_wallet.address,
-            bond_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.block_time.time,
-            mint_time,
+            wallet_address=agent_wallet.address,
+            bond_amount=bond_amount,
+            market=self,
+            mint_time=mint_time,
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -434,13 +421,9 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
-            agent_wallet.address,
-            trade_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.block_time.time,
-            self.fixed_apr,
+            wallet_address=agent_wallet.address,
+            bond_amount=trade_amount,
+            market=self,
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
@@ -453,12 +436,9 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
-            agent_wallet.address,
-            bond_amount,
-            self.pricing_model,
-            self.market_state,
-            self.position_duration,
-            self.fixed_apr,
+            wallet_address=agent_wallet.address,
+            bond_amount=bond_amount,
+            market=self,
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)

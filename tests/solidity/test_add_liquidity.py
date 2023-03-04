@@ -76,11 +76,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
             wallet_address=self.celine.wallet.address,
             base_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
-            spot_price=self.hyperdrive.spot_price,
+            market=self.hyperdrive,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
@@ -111,10 +107,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_short(
             wallet_address=self.celine.wallet.address,
             bond_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.block_time.time,
+            market=self.hyperdrive,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
@@ -141,11 +134,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
             wallet_address=self.celine.wallet.address,
             base_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
-            spot_price=self.hyperdrive.spot_price,
+            market=self.hyperdrive,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
@@ -156,10 +145,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas_close_long, _ = hyperdrive_actions.calc_close_long(
             wallet_address=self.celine.wallet.address,
             bond_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
+            market=self.hyperdrive,
             mint_time=0,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
@@ -180,10 +166,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=self.bob.wallet.address,
             bond_amount=self.bob.wallet.lp_tokens,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            fixed_apr=self.hyperdrive.fixed_apr,
+            market=self.hyperdrive,
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, 6)
 
@@ -193,10 +176,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_open_short(
             wallet_address=self.celine.wallet.address,
             bond_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
+            market=self.hyperdrive,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.celine.wallet.update(wallet_deltas)
@@ -207,10 +187,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas_close_short, _ = hyperdrive_actions.calc_close_short(
             wallet_address=self.celine.wallet.address,
             bond_amount=50_000_000,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
+            market=self.hyperdrive,
             mint_time=0,
             open_share_price=1,
         )
@@ -220,11 +197,7 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=self.bob.wallet.address,
             bond_amount=self.contribution,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            market_time=self.hyperdrive.block_time.time,
-            fixed_apr=self.hyperdrive.fixed_apr,
+            market=self.hyperdrive,
         )
         self.hyperdrive.market_state.apply_delta(market_deltas)
         self.bob.wallet.update(wallet_deltas)
@@ -242,9 +215,6 @@ class TestAddLiquidity(unittest.TestCase):
         market_deltas, wallet_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=self.bob.wallet.address,
             bond_amount=self.bob.wallet.lp_tokens,
-            pricing_model=self.hyperdrive.pricing_model,
-            market_state=self.hyperdrive.market_state,
-            position_duration=self.hyperdrive.position_duration,
-            fixed_apr=self.hyperdrive.fixed_apr,
+            market=self.hyperdrive,
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)
