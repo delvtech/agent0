@@ -2,6 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
+import copy
 from dataclasses import dataclass, field
 from typing import Union
 
@@ -120,7 +121,7 @@ class MarketState(base_market.BaseMarketState):
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
-        return MarketState(**self.__dict__)
+        return MarketState(**copy.deepcopy(self.__dict__))
 
 
 class Market(
