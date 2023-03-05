@@ -69,7 +69,7 @@ class MarketActionResult(base_market.MarketActionResult):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketAction(Generic[base_market.Action]):
+class MarketAction(base_market.MarketAction):
     r"""Market action specification"""
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
