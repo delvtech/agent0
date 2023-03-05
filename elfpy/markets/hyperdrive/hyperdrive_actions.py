@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Generic
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 import elfpy.time as time
@@ -12,8 +12,6 @@ import elfpy.markets.base as base_market
 
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-    import elfpy.pricing_models.yieldspace as yieldspace_pm
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
