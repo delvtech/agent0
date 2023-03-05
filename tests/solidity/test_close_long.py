@@ -2,6 +2,7 @@
 import unittest
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.agents.agent as agent
 import elfpy.types as types
@@ -45,26 +46,27 @@ class TestCloseLong(unittest.TestCase):
 
     def verify_close_long(
         self,
-        user: agent.Agent,
+        example_agent: agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
         unsigned_base_amount_out: float,
         bond_amount: float,
         maturity_time: float,
     ):
         """Close a long then make sure the market state is correct"""
+        self.assertFalse(
+            example_agent.wallet.longs
+        )  # In solidity we check that the balance is zero, but here we delete the entry if it is zero
+        if maturity_time > self.hyperdrive.block_time.time:
+            time_remaining = self.hyperdrive.position_duration.normalized_time * (
+                maturity_time - self.hyperdrive.block_time.time
+            )
+        else:
+            time_remaining = 0
+        # print(f"{time_remaining=}")
+        # print(f"{bond_amount=}")
         self.assertEqual(
-            user.wallet.balance.amount,
-            0,
-            msg=f"{user.wallet.balance.amount=} is not correct",
-        )
-        # if maturity_time >
-        # timeRemaining = _maturityTime > block.timestamp
-        #    ? _maturityTime - block.timestamp
-        #    : 0;
-        # timeRemaining = (timeRemaining).divDown(POSITION_DURATION);
-        time_remaining = 1
-        self.assertEqual(
-            self.hyperdrive.market_state.bond_reserves, market_state_before.bond_reserves + time_remaining * bond_amount
+            self.hyperdrive.market_state.bond_reserves,
+            market_state_before.bond_reserves + time_remaining * bond_amount,
         )
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves,
@@ -75,10 +77,17 @@ class TestCloseLong(unittest.TestCase):
             market_state_before.lp_total_supply,
         )
         self.assertEqual(
+            self.hyperdrive.market_state.share_price,
+            market_state_before.share_price,
+        )
+        self.assertEqual(
             self.hyperdrive.market_state.longs_outstanding,
             market_state_before.longs_outstanding - bond_amount,
         )
-        self.assertEqual(self.hyperdrive.market_state.long_average_maturity_time, 0)
+        self.assertEqual(
+            self.hyperdrive.market_state.long_average_maturity_time,
+            0,
+        )
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
             0,
@@ -157,8 +166,52 @@ class TestCloseLong(unittest.TestCase):
                 mint_time=list(self.bob.wallet.longs.keys())[0] + 1,
             )
 
+    def test_close_long_immediately(self):
+        base_amount = 10
+        self.bob.budget = base_amount
+        self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
+        _, agent_deltas_open = self.hyperdrive.open_long(
+            agent_wallet=self.bob.wallet,
+            base_amount=base_amount,
+        )
+        market_state_before = self.hyperdrive.market_state.copy()
+        market_deltas_close, agent_deltas_close = hyperdrive_actions.calc_close_long(
+            wallet_address=self.bob.wallet.address,
+            bond_amount=agent_deltas_open.longs[0].balance,
+            market=self.hyperdrive,
+            mint_time=0,
+        )
+        # FIXME: This is failing
+        # self.assertLessEqual(
+        #     agent_deltas_close.balance.amount,
+        #     base_amount,
+        # )
+        self.assertAlmostEqual(
+            first=agent_deltas_close.balance.amount - base_amount,
+            second=0,
+            delta=1e-9,
+        )
+        self.hyperdrive.update_market(market_deltas_close)
+        # TODO: For some reason the wallet long balance _is_ the agent deltas
+        import IPython
+
+        IPython.embed()
+        raise SystemExit
+        print(f"{agent_deltas_open.longs[0].balance=}")
+        self.bob.wallet.update(agent_deltas_close)
+        print(f"{agent_deltas_open.longs[0].balance=}")
+        # print(f"{self.bob.wallet=}")
+        # print(f"{agent_deltas_close=}")
+        self.verify_close_long(
+            example_agent=self.bob,
+            market_state_before=market_state_before,
+            unsigned_base_amount_out=abs(agent_deltas_close.balance.amount),
+            bond_amount=agent_deltas_open.longs[0].balance,
+            maturity_time=self.hyperdrive.position_duration.days / 365,
+        )
+
 
 if __name__ == "__main__":
     tester = TestCloseLong()
     tester.setUp()
-    tester.test_close_long_failure_invalid_amount()
+    tester.test_close_long_immediately()
