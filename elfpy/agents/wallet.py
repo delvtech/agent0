@@ -2,6 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
+import copy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
@@ -115,6 +116,10 @@ class Wallet:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
+    def copy(self) -> Wallet:
+        """Returns a new copy of self"""
+        return Wallet(**copy.deepcopy(self.__dict__))
+
     def update(self, wallet_deltas: Wallet) -> None:
         """Update the agent's wallet
 
@@ -128,7 +133,7 @@ class Wallet:
         This method has no returns. It updates the Agent's Wallet according to the passed parameters
         """
         # track over time the agent's weighted average spend, for return calculation
-        for key, value_or_dict in wallet_deltas.__dict__.items():
+        for key, value_or_dict in wallet_deltas.copy().__dict__.items():
             if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
                 continue
             if key in ["lp_tokens", "fees_paid"]:
