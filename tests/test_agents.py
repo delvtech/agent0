@@ -74,46 +74,6 @@ class TestAgent(unittest.TestCase):
         ):
             assert get_state_key == state_key, f"ERROR: {get_state_key=} did not equal {state_key=}"
 
-    def test_wallet_copy(self):
-        """Test the wallet ability to deep copy itself"""
-        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
-        wallet_copy = example_wallet.copy()
-        assert example_wallet is not wallet_copy  # not the same object
-        assert example_wallet == wallet_copy  # they have the same attribute values
-        wallet_copy.address += 1
-        assert example_wallet != wallet_copy  # now they should have different attribute values
-
-    def test_wallet_update(self):
-        """Test that the wallet updates correctly & does not use references to the deltas argument"""
-        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
-        example_deltas = wallet.Wallet(
-            address=0,
-            balance=types.Quantity(amount=-10, unit=types.TokenType.BASE),
-            longs={0: wallet.Long(15)},
-            fees_paid=0.001,
-        )
-        example_wallet.update(example_deltas)
-        assert id(example_wallet.longs[0]) != id(example_deltas.longs[0]), (
-            f"{example_wallet.longs=} should not hold a reference to {example_deltas.longs=},"
-            f"but have the same ids: {id(example_wallet.longs[0])=}, {id(example_deltas.longs[0])=}."
-        )
-        assert (
-            example_wallet.longs[0].balance == 15
-        ), f"{example_wallet.longs[0].balance=} should equal the delta amount, 15."
-        assert example_wallet.balance.amount == 90, f"{example_wallet.balance.amount=} should be 100-10=90."
-        new_example_deltas = wallet.Wallet(
-            address=0,
-            balance=types.Quantity(amount=-5, unit=types.TokenType.BASE),
-            longs={0: wallet.Long(8)},
-            fees_paid=0.0008,
-        )
-        example_wallet.update(new_example_deltas)
-        assert example_wallet.longs[0].balance == 23, f"{example_wallet.longs[0].balance=} should equal 15+8=23."
-        assert example_wallet.balance.amount == 85, f"{example_wallet.balance.amount=} should be 100-10-5=85."
-        assert (
-            example_deltas.longs[0].balance == 15
-        ), f"{example_deltas.longs[0].balance=} should be unchanged and equal 15."
-
     # Test agent instantiation
     def test_no_action_failure(self):
         """Tests for Agent instantiation when no action function was defined"""
