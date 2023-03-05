@@ -304,9 +304,9 @@ class Wallet:
             f"agent_{self.address}_total_shorts_no_mock": shorts_value_no_mock,
         }
 
-    def get_state_keys(self) -> list:
+    def get_state_keys(self) -> tuple[str, ...]:
         """Get state keys for a wallet."""
-        return [
+        return (
             f"agent_{self.address}_base",
             f"agent_{self.address}_lp_tokens",
             f"agent_{self.address}_num_longs",
@@ -315,4 +315,4 @@ class Wallet:
             f"agent_{self.address}_total_shorts",
             f"agent_{self.address}_total_longs_no_mock",
             f"agent_{self.address}_total_shorts_no_mock",
-        ]
+        )
