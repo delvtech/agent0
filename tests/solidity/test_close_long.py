@@ -91,6 +91,7 @@ class TestCloseLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
             0,
+            msg=f"The long base volume should be zero, not {self.hyperdrive.market_state.long_base_volume=}.",
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
@@ -167,6 +168,7 @@ class TestCloseLong(unittest.TestCase):
             )
 
     def test_close_long_immediately(self):
+        """Open a position, close it, and then verify that the close long updates were correct"""
         base_amount = 10
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
@@ -181,7 +183,7 @@ class TestCloseLong(unittest.TestCase):
             market=self.hyperdrive,
             mint_time=0,
         )
-        # FIXME: This is failing
+        # TODO: This is failing
         # self.assertLessEqual(
         #     agent_deltas_close.balance.amount,
         #     base_amount,
@@ -192,16 +194,7 @@ class TestCloseLong(unittest.TestCase):
             delta=1e-9,
         )
         self.hyperdrive.update_market(market_deltas_close)
-        # TODO: For some reason the wallet long balance _is_ the agent deltas
-        import IPython
-
-        IPython.embed()
-        raise SystemExit
-        print(f"{agent_deltas_open.longs[0].balance=}")
         self.bob.wallet.update(agent_deltas_close)
-        print(f"{agent_deltas_open.longs[0].balance=}")
-        # print(f"{self.bob.wallet=}")
-        # print(f"{agent_deltas_close=}")
         self.verify_close_long(
             example_agent=self.bob,
             market_state_before=market_state_before,
