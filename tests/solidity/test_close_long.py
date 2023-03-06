@@ -211,14 +211,18 @@ class TestCloseLong(unittest.TestCase):
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before_open = self.hyperdrive.market_state.copy()
-        print(f"{market_state_before_open=}")
+        print("PRE TRADE DETAILS:")
+        print(f"{market_state_before_open.share_reserves=}")
         print(f"{self.target_apr=}")
         print(f"{self.hyperdrive.position_duration.time_stretch=}")
+        print(f"{base_amount=}")
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
             base_amount=base_amount,
         )
-        # advance time (which also causes the share price to change
+        print("POST OPEN DETAILS:")
+        print(f"{agent_deltas_open.longs[0].balance=}")
+        # advance time (which also causes the share price to change)
         time_delta = 0.5
         self.hyperdrive.block_time.set_time(self.hyperdrive.position_duration.normalized_time * time_delta)
         self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
@@ -226,6 +230,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # get the reserves before closing the long
         market_state_before_close = self.hyperdrive.market_state.copy()
+        print("CLOSE DETAILS:")
         # Bob closes his long half way to maturity
         _, agent_deltas_close = self.hyperdrive.close_long(
             agent_wallet=self.bob.wallet,
@@ -241,8 +246,8 @@ class TestCloseLong(unittest.TestCase):
         # dy ~= agent base proceeds because the base proceeds are mostly determined by the flat portion
         base_proceeds = agent_deltas_close.balance.amount
         realized_apr = (base_proceeds - base_amount) / (base_amount * (1 - time_delta))
+        print("POST CLOSE DETAILS:")
         print(f"{base_proceeds=}")
-        print(f"{base_amount=}")
         print(f"{realized_apr=}")
         self.assertAlmostEqual(
             realized_apr,

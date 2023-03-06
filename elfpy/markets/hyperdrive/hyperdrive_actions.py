@@ -348,6 +348,7 @@ def calc_close_long(
         time_stretch=market.position_duration.time_stretch,
         normalizing_constant=market.position_duration.normalizing_constant,
     )
+    print(f"{time_remaining.normalized_time=}")
     # Perform the trade.
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     market.pricing_model.check_input_assertions(
@@ -360,6 +361,8 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
+    print(f"{trade_result.market_result.d_bonds=}")
+    print(f"{trade_result.market_result.d_base=}")
     # Update accouting for average maturity time, base volume and longs outstanding
     maturity_time = market.position_duration.days / 365
     long_average_maturity_time = update_weighted_average(
