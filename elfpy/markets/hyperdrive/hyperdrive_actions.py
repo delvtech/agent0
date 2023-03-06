@@ -1,15 +1,14 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
-from dataclasses import dataclass
 
-import elfpy.time as time
-import elfpy.types as types
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
-
+import elfpy.time as time
+import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
