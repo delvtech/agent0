@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class NoAction(agent.Agent):
+class Policy(agent.Agent):
     """Most basic policy setup, which implements a noop agent that performs no action"""
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:

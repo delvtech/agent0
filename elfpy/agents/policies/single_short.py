@@ -12,14 +12,11 @@ class Policy(agent.Agent):
 
     def __init__(self, wallet_address, budget=100):
         """call basic policy init then add custom stuff"""
-        self.amount_to_trade = 100
+        self.amount_to_trade = budget
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
-        """
-        implement user strategy
-        short if you can, only once
-        """
+        """Implement user strategy: short if you can, only once."""
         action_list = []
         shorts = list(self.wallet.shorts.values())
         has_opened_short = len(shorts) > 0

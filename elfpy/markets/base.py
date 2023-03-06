@@ -9,18 +9,18 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 import numpy as np
 
 import elfpy
-import elfpy.agents.wallet as wallet
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from elfpy.pricing_models.base import PricingModel as BasePricingModel
-    from elfpy.time.time import BlockTime
+    import elfpy.pricing_models.base as base_pm
+    import elfpy.agents.wallet as wallet
+    import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
 State = TypeVar("State", bound="BaseMarketState")
 Deltas = TypeVar("Deltas", bound="MarketDeltas")
-PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
+PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
 
 
 class MarketActionType(Enum):
@@ -102,7 +102,7 @@ class Market(Generic[State, Deltas, PricingModel]):
         self,
         pricing_model: PricingModel,
         market_state: State,
-        block_time: BlockTime,
+        block_time: time.BlockTime,
     ):
         self.pricing_model = pricing_model
         self.market_state = market_state

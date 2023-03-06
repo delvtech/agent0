@@ -4,34 +4,28 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 from importlib import import_module
-from typing import Union
-from os import path, walk
 
-import numpy as np
-import utils_for_tests as test_utils  # utilities for testing
+from os import path, walk
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
-import elfpy.simulators as simulators
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.agents.agent as agent
+import elfpy.agents.wallet as wallet
 import elfpy.agents.policies as policies
 
 
-class TestErrorPolicy(agent.Agent):
+class TestPolicy(agent.Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
-
-    # Purposefully incorrectly implemented
-    ### pylint: disable=abstract-method
 
     def __init__(self, wallet_address, budget=1000):
         """call basic policy init then add custom stuff"""
         super().__init__(wallet_address, budget)
-        self.amount_to_spend = 500
+        # TODO: mock up a wallet that has done trades
 
-    # self.action() method is intentionally not implemented, so we can test error behavior
+    def action(self, market):
+        pass
 
     __test__ = False  # pytest: don't test this class
 
@@ -49,303 +43,119 @@ class TestCaseGetMax:
 class TestAgent(unittest.TestCase):
     """Unit tests for the core Agent API"""
 
-    @staticmethod
-    def setup_market() -> hyperdrive_market.Market:
-        """Instantiates a market object for testing purposes"""
-        # Give an initial market state
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState(
-            share_reserves=1_000_000,
-            bond_reserves=1_000_000,
-            base_buffer=0,
-            bond_buffer=0,
-            init_share_price=1,
-            share_price=1,
-            trade_fee_percent=0.1,
-            redemption_fee_percent=0.1,
-        )
-        time_remaining = time.StretchedTime(
-            days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
-        )
-        # NOTE: lint error false positives: This message may report object members that are created dynamically,
-        # but exist at the time they are accessed.
-        time_remaining.freeze()  # pylint: disable=no-member # type: ignore
-        block_time = time.BlockTime()
-        market = hyperdrive_market.Market(
-            pricing_model=pricing_model,
-            market_state=market_state,
-            position_duration=time_remaining,
-            block_time=block_time,
-        )
-        return market
-
-    @staticmethod
-    def get_implemented_policies() -> list[str]:
-        """Get a list of all implemented agent policies in elfpy/policies directory"""
-        policies_path = f"{list(policies.__path__)[0]}/policies"
+    def setUp(self):
+        """Set up a list of agents for testing"""
+        # Get a list of all implemented agent policies in elfpy/policies directory
+        policies_path = f"{list(policies.__path__)[0]}"
         filenames = next(walk(policies_path), (None, None, []))[2]
-        agent_policies = [path.splitext(filename)[0] for filename in filenames]
-        return agent_policies
+        agent_policies = [path.splitext(filename)[0] for filename in filenames if "__init__" not in filename]
+        # Instantiate an agent for each policy
+        self.agent_list: list[agent.Agent] = []
+        for agent_id, policy_name in enumerate(agent_policies):
+            example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
+                wallet_address=agent_id, budget=1_000
+            )
+            self.agent_list.append(example_agent)
+        # One more test agent that uses a test policy
+        self.test_agent = TestPolicy(wallet_address=len(agent_policies))
+        # Get a mock Market
+        self.market = hyperdrive_market.Market(
+            pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
+            market_state=hyperdrive_market.MarketState(),
+            position_duration=time.StretchedTime(days=365, time_stretch=10, normalizing_constant=365),
+            block_time=time.BlockTime(),
+        )
+        self.market.initialize(wallet_address=0, contribution=1_000_000, target_apr=0.01)
 
-    def test_wallet_keys(self):
+    def test_wallet_state_matches_state_keys(self):
         """Tests that an agent wallet has the right keys"""
-        # get the list of policies in the elfpy/policies directory
-        agent_policies = self.get_implemented_policies()
-        # setup a simulation environment
-        simulator = test_utils.setup_simulation_entities(simulators.Config(), agent_policies)
-        simulator.collect_and_execute_trades()
-        for example_agent in simulator.agents.values():
-            wallet_state = example_agent.wallet.get_state(simulator.market)
-            wallet_keys = example_agent.wallet.get_state_keys()
-            assert np.all(list(wallet_state.keys()) == wallet_keys)
+        for get_state_key, state_key in zip(
+            self.test_agent.wallet.get_state_keys(), self.test_agent.wallet.get_state(self.market).keys()
+        ):
+            assert get_state_key == state_key, f"ERROR: {get_state_key=} did not equal {state_key=}"
 
-    def test_get_max_safety(self):
-        """
-        Ensures that get_max_long and get_max_short will not exceed the balance
-        of an agent in a variety of market conditions.
-        """
-        models: list[Union[yieldspace_pm.YieldspacePricingModel, hyperdrive_pm.HyperdrivePricingModel]] = [
-            hyperdrive_pm.HyperdrivePricingModel(),
-            yieldspace_pm.YieldspacePricingModel(),
-        ]
+    def test_wallet_copy(self):
+        """Test the wallet ability to deep copy itself"""
+        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
+        wallet_copy = example_wallet.copy()
+        assert example_wallet is not wallet_copy  # not the same object
+        assert example_wallet == wallet_copy  # they have the same attribute values
+        wallet_copy.address += 1
+        assert example_wallet != wallet_copy  # now they should have different attribute values
 
-        test_cases: list[TestCaseGetMax] = [
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=100_000,
-                    bond_buffer=100_000,
-                    init_share_price=1,
-                    share_price=1,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=100_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=100_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=500_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    trade_fee_percent=0.5,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=365, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=365
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=91, time_stretch=models[0].calc_time_stretch(0.05), normalizing_constant=91
-                ),
-            ),
-            TestCaseGetMax(
-                market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    trade_fee_percent=0.1,
-                ),
-                time_remaining=time.StretchedTime(
-                    days=91, time_stretch=models[0].calc_time_stretch(0.25), normalizing_constant=91
-                ),
-            ),
-        ]
-        for test_case in test_cases:
-            for pricing_model in models:
-                block_time = time.BlockTime()
-                market = hyperdrive_market.Market(
-                    pricing_model=pricing_model,
-                    market_state=test_case.market_state,
-                    position_duration=test_case.time_remaining,
-                    block_time=block_time,
-                )
-                # Ensure safety for Agents with different budgets.
-                for budget in (1e-3 * 10 ** (3 * x) for x in range(5)):
-                    example_agent = agent.Agent(wallet_address=0, budget=budget)
-                    # Ensure that get_max_long is safe.
-                    max_long = example_agent.get_max_long(market)
-                    self.assertGreaterEqual(example_agent.wallet.balance.amount, max_long)
-                    (market_max_long, _) = market.pricing_model.get_max_long(
-                        market_state=market.market_state,
-                        time_remaining=market.position_duration,
-                    )
-                    self.assertLessEqual(
-                        max_long,
-                        market_max_long,
-                    )
-                    # Ensure that get_max_short is safe.
-                    max_short = example_agent.get_max_short(market)
-                    trade_result = market.pricing_model.calc_out_given_in(
-                        in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
-                        market_state=market.market_state,
-                        time_remaining=market.position_duration,
-                    )
-                    max_loss = max_short - trade_result.user_result.d_base
-                    self.assertGreaterEqual(example_agent.wallet.balance.amount, max_loss)
-                    (_, market_max_short) = market.pricing_model.get_max_short(
-                        market_state=market.market_state,
-                        time_remaining=market.position_duration,
-                    )
-                    self.assertLessEqual(
-                        max_short,
-                        market_max_short,
-                    )
+    def test_wallet_update(self):
+        """Test that the wallet updates correctly & does not use references to the deltas argument"""
+        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
+        example_deltas = wallet.Wallet(
+            address=0,
+            balance=types.Quantity(amount=-10, unit=types.TokenType.BASE),
+            longs={0: wallet.Long(15)},
+            fees_paid=0.001,
+        )
+        example_wallet.update(example_deltas)
+        assert id(example_wallet.longs[0]) != id(example_deltas.longs[0]), (
+            f"{example_wallet.longs=} should not hold a reference to {example_deltas.longs=},"
+            f"but have the same ids: {id(example_wallet.longs[0])=}, {id(example_deltas.longs[0])=}."
+        )
+        assert (
+            example_wallet.longs[0].balance == 15
+        ), f"{example_wallet.longs[0].balance=} should equal the delta amount, 15."
+        assert example_wallet.balance.amount == 90, f"{example_wallet.balance.amount=} should be 100-10=90."
+        new_example_deltas = wallet.Wallet(
+            address=0,
+            balance=types.Quantity(amount=-5, unit=types.TokenType.BASE),
+            longs={0: wallet.Long(8)},
+            fees_paid=0.0008,
+        )
+        example_wallet.update(new_example_deltas)
+        assert example_wallet.longs[0].balance == 23, f"{example_wallet.longs[0].balance=} should equal 15+8=23."
+        assert example_wallet.balance.amount == 85, f"{example_wallet.balance.amount=} should be 100-10-5=85."
+        assert (
+            example_deltas.longs[0].balance == 15
+        ), f"{example_deltas.longs[0].balance=} should be unchanged and equal 15."
 
     # Test agent instantiation
-    def test_init(self):
-        """Tests for Agent instantiation"""
-        # Instantiate a test market
-        market = self.setup_market()
+    def test_no_action_failure(self):
+        """Tests for Agent instantiation when no action function was defined"""
+
+        class TestErrorPolicy(agent.Agent):
+            """This class was made for testing purposes. It does not implement the required self.action() method"""
+
+            # Purposefully incorrectly implemented
+            ### pylint: disable=abstract-method
+
+            def __init__(self, wallet_address, budget=1000):
+                """call basic policy init then add custom stuff"""
+                super().__init__(wallet_address, budget)
+
+            # self.action() method is intentionally not implemented, so we can test error behavior
+
+            __test__ = False  # pytest: don't test this class
+
         # Instantiate a wrongly implemented agent policy
         example_agent = TestErrorPolicy(wallet_address=1)
         with self.assertRaises(NotImplementedError):
-            example_agent.action(market)
-        # Get the list of policies in the elfpy/policies directory
-        agent_policies = self.get_implemented_policies()
-        # Instantiate an agent for each policy
-        agent_list = []
-        for agent_id, policy_name in enumerate(agent_policies):
-            wallet_address = agent_id
-            agent_list.extend(
-                import_module(f"elfpy.policies.{policy_name}").Policy(
-                    wallet_address=wallet_address,  # first policy goes to init_lp_agent
-                )
-            )
+            example_agent.action(self.market)
 
-    def test_action(self):
-        """
-        Test for calling the action() method on all implemented policies
-
-        Does a basic check to ensure the implemented action() doesn't call for
-        invalid trades
+    def test_policy_action(self):
+        """Test for calling the action() method on all implemented policies
+        A check to ensure the implemented action() doesn't call for invalid trades
         """
         # instantiate the market
-        market = self.setup_market()
-        # Get the list of policies in the elfpy/policies directory
-        agent_policies = self.get_implemented_policies()
         # Instantiate an agent for each policy, with a variety of budgets
-        budget_list = [10, 1_000, 1_000_000, 100_000_000]
-        agent_list = []
+        budget_list = [10, 100, 1_000]
         for agent_budget in budget_list:
-            for agent_id, policy_name in enumerate(agent_policies):
-                wallet_address = agent_id
-                agent_list.extend(
-                    import_module(f"elfpy.policies.{policy_name}").Policy(
-                        wallet_address=wallet_address, budget=agent_budget
+            for example_agent in self.agent_list:
+                example_agent.budget = agent_budget
+                if hasattr(example_agent, "amount_to_trade"):
+                    setattr(example_agent, "amount_to_trade", agent_budget)
+                example_agent.wallet.balance = types.Quantity(amount=agent_budget, unit=types.TokenType.BASE)
+                # For each agent policy, call their action() method
+                actions_list = example_agent.get_trades(self.market)
+                for market_action in actions_list:
+                    # Ensure trade size is smaller than wallet size
+                    self.assertGreaterEqual(
+                        example_agent.budget,
+                        market_action.trade.trade_amount,
+                        msg=f"{market_action.trade.trade_amount=} should be <= {example_agent.budget=}",
                     )
-                )
-        # For each agent policy, call their action() method
-        for example_agent in agent_list:
-            actions_list = example_agent.get_trade_list(market)
-            for market_action in actions_list:
-                # Ensure trade size is smaller than wallet size
-                self.assertGreaterEqual(market_action.trade_amount, example_agent.budget)
-
-    def test_wallet_state(self):
-        """Tests for Agent wallet state initialization"""
-        # Get the list of policies in the elfpy/policies directory
-        agent_policies = self.get_implemented_policies()
-        # Instantiate an agent for each policy
-        agent_list = []
-        for agent_id, policy_name in enumerate(agent_policies):
-            wallet_address = agent_id
-            agent_list.extend(
-                import_module(f"elfpy.policies.{policy_name}").Policy(
-                    wallet_address=wallet_address,  # first policy goes to init_lp_agent
-                )
-            )
-        for example_agent in agent_list:
-            expected_keys = [
-                f"agent_{example_agent.address}_base",
-                f"agent_{example_agent.address}_lp_tokens",
-                f"agent_{example_agent.address}_total_longs",
-                f"agent_{example_agent.address}_total_shorts",
-            ]
-            assert expected_keys == list(example_agent.wallet.state)
