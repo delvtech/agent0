@@ -203,6 +203,40 @@ class TestCloseLong(unittest.TestCase):
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
 
+    def test_close_long_halfway_through_term(self):
+        base_amount = 10
+        self.bob.budget = base_amount
+        self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
+        _, agent_deltas_open = self.hyperdrive.open_long(
+            agent_wallet=self.bob.wallet,
+            base_amount=base_amount,
+        )
+        time_delta = 0.5
+        self.hyperdrive.block_time.set_time(self.hyperdrive.position_duration.normalized_time * time_delta)
+        share_delta = hyperdrive_actions.MarketDeltas(
+            d_share_price=self.hyperdrive.market_state.share_price * (1 + self.target_apr * time_delta)
+        )
+        self.hyperdrive.update_market(share_delta)
+        market_state_before = self.hyperdrive.market_state.copy()
+        market_deltas_close, agent_deltas_close = hyperdrive_actions.calc_close_long(
+            wallet_address=self.bob.wallet.address,
+            bond_amount=agent_deltas_open.longs[0].balance,
+            market=self.hyperdrive,
+            mint_time=0,
+        )
+        self.assertEqual(
+            self.hyperdrive.fixed_apr,
+            self.target_apr,
+            msg=f"The realized {self.hyperdrive.fixed_apr=} should be equal to {self.target_apr=}",
+        )
+        self.verify_close_long(
+            example_agent=self.bob,
+            market_state_before=market_state_before,
+            unsigned_base_amount_out=abs(agent_deltas_close.balance.amount),
+            bond_amount=agent_deltas_open.longs[0].balance,
+            maturity_time=self.hyperdrive.position_duration.days / 365,
+        )
+
 
 if __name__ == "__main__":
     tester = TestCloseLong()
