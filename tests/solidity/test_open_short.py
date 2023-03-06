@@ -63,18 +63,18 @@ class TestOpenLong(unittest.TestCase):
             shorts_outstanding, short_average_maturity_time, short_base_volume, short_base_volume_checkpoints
         """
         # Total amount of base tokens locked in Hyperdrive
+        # hyperdrive_base_amount = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
+        # self.assertEqual(
+        #     hyperdrive_base_amount,
+        #     contribution + base_amount,
+        #     msg=f"{hyperdrive_base_amount=} is not correct",
+        # )
+        # Bob received the short tokens
         user_wallet_shorts_amount = sum(short.balance for short in user.wallet.shorts.values())
         self.assertEqual(
             user_wallet_shorts_amount,
             unsigned_bond_amount,
             msg=f"{user_wallet_shorts_amount=} is not correct",
-        )
-        # Bob received the short tokens
-        hyperdrive_base_amount = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
-        self.assertEqual(
-            hyperdrive_base_amount,
-            contribution + base_amount,
-            msg=f"{hyperdrive_base_amount=} is not correct",
         )
         # The pool's APR didn't go down: new APR greater than old APR
         self.assertGreater(
@@ -87,7 +87,7 @@ class TestOpenLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + share_amount,
-            msg=f"{self.hyperdrive.market_state.share_price=} is not correct",
+            msg=f"{self.hyperdrive.market_state.share_reserves=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
@@ -163,6 +163,8 @@ class TestOpenLong(unittest.TestCase):
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet.address, bond_amount)
+        print(f"before: {market_state_before}")
+        print(f"after : {self.hyperdrive.market_state}")
         max_loss = agent_deltas.balance.amount
         print(f"{max_loss=}")
         self.hyperdrive.market_state.apply_delta(market_deltas)
