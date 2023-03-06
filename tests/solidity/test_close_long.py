@@ -223,7 +223,9 @@ class TestCloseLong(unittest.TestCase):
         print(f"{agent_deltas_open.longs[0].balance=}")
         # advance time (which also causes the share price to change)
         time_delta = 0.5
-        self.hyperdrive.block_time.set_time(self.hyperdrive.position_duration.normalized_time * time_delta)
+        self.hyperdrive.block_time.set_time(
+            self.hyperdrive.block_time.time + self.hyperdrive.position_duration.normalized_time * time_delta
+        )
         self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
             1 + self.target_apr * time_delta
         )
