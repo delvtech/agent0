@@ -212,7 +212,8 @@ class TestCloseLong(unittest.TestCase):
             base_amount=base_amount,
         )
         time_delta = 0.5
-        self.hyperdrive.block_time.set_time(self.hyperdrive.position_duration.normalized_time * time_delta)
+        time_remaining = self.hyperdrive.position_duration.normalized_time * time_delta
+        self.hyperdrive.block_time.set_time(time_remaining)
         share_delta = hyperdrive_actions.MarketDeltas(
             d_share_price=self.hyperdrive.market_state.share_price * (1 + self.target_apr * time_delta)
         )
@@ -224,16 +225,23 @@ class TestCloseLong(unittest.TestCase):
             market=self.hyperdrive,
             mint_time=0,
         )
+        # price = dx / dy
+        #       =>
+        # rate = (1 - p) / (p * t) = (1 - dx / dy) * (dx / dy * t)
+        #       =>
+        # apr = (dy - dx) / (dx * t)
+        bond_amount = agent_deltas_open.longs[0].balance
+        realized_apr = (bond_amount - base_amount) / (base_amount * (1 - time_delta))
         self.assertEqual(
-            self.hyperdrive.fixed_apr,
+            realized_apr,
             self.target_apr,
-            msg=f"The realized {self.hyperdrive.fixed_apr=} should be equal to {self.target_apr=}",
+            msg=f"The realized {realized_apr=} should be equal to {self.target_apr=}",
         )
         self.verify_close_long(
             example_agent=self.bob,
             market_state_before=market_state_before,
-            unsigned_base_amount_out=abs(agent_deltas_close.balance.amount),
-            bond_amount=agent_deltas_open.longs[0].balance,
+            unsigned_base_amount_out=abs(base_amount),
+            bond_amount=bond_amount,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
 
