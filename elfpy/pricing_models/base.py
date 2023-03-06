@@ -5,14 +5,11 @@ from abc import ABC
 from decimal import Decimal, getcontext
 from typing import TYPE_CHECKING
 
-from elfpy import (
-    MAX_RESERVES_DIFFERENCE,
-    WEI,
-)
 import elfpy.pricing_models.trades as trades
-import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.types as types
+import elfpy.utils.price as price_utils
+from elfpy import MAX_RESERVES_DIFFERENCE, WEI
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
