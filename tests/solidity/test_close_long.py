@@ -1,4 +1,4 @@
-"""Open long market trade tests that match those being executed in the solidity repo"""
+"""Close long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -32,7 +32,10 @@ class TestCloseLong(unittest.TestCase):
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState()
+        market_state = hyperdrive_market.MarketState(
+            trade_fee_percent=0.0,
+            redemption_fee_percent=0.0,
+        )
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
@@ -90,18 +93,15 @@ class TestCloseLong(unittest.TestCase):
             self.hyperdrive.market_state.long_average_maturity_time,
             0,
         )
-        self.assertEqual(
+        self.assertAlmostEqual(
             self.hyperdrive.market_state.long_base_volume,
             0,
+            delta=1e-9,
             msg=f"The long base volume should be zero, not {self.hyperdrive.market_state.long_base_volume=}.",
         )
-        # TODO: once we add checkpointing we will need to switch to this
+        # TODO: once we add checkpointing we will need to add checkpoint long test
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
-        self.assertEqual(
-            self.hyperdrive.market_state.long_base_volume,
-            0,
-        )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
@@ -178,11 +178,10 @@ class TestCloseLong(unittest.TestCase):
             agent_wallet=self.bob.wallet,
             base_amount=base_amount,
         )
-        market_state_before = self.hyperdrive.market_state.copy()
-        market_deltas_close, agent_deltas_close = hyperdrive_actions.calc_close_long(
-            wallet_address=self.bob.wallet.address,
+        market_state_before_close = self.hyperdrive.market_state.copy()
+        _, agent_deltas_close = self.hyperdrive.close_long(
+            agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.longs[0].balance,
-            market=self.hyperdrive,
             mint_time=0,
         )
         # TODO: This is failing
@@ -195,11 +194,9 @@ class TestCloseLong(unittest.TestCase):
             second=0,
             delta=1e-9,
         )
-        self.hyperdrive.update_market(market_deltas_close)
-        self.bob.wallet.update(agent_deltas_close)
         self.verify_close_long(
             example_agent=self.bob,
-            market_state_before=market_state_before,
+            market_state_before=market_state_before_close,
             unsigned_base_amount_out=abs(agent_deltas_close.balance.amount),
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
@@ -211,16 +208,18 @@ class TestCloseLong(unittest.TestCase):
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before_open = self.hyperdrive.market_state.copy()
-        print("PRE TRADE DETAILS:")
+        print("\nPRE TRADE DETAILS:")
         print(f"{market_state_before_open.share_reserves=}")
-        print(f"{self.target_apr=}")
         print(f"{self.hyperdrive.position_duration.time_stretch=}")
-        print(f"{base_amount=}")
+        print(f"{self.hyperdrive.market_state.trade_fee_percent=}")
+        print(f"{self.hyperdrive.market_state.redemption_fee_percent=}")
+        print(f"{self.target_apr=}")
+        print(f"open_{base_amount=}")
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
             base_amount=base_amount,
         )
-        print("POST OPEN DETAILS:")
+        print("\nPOST OPEN DETAILS:")
         print(f"{agent_deltas_open.longs[0].balance=}")
         # advance time (which also causes the share price to change)
         time_delta = 0.5
@@ -230,7 +229,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # get the reserves before closing the long
         market_state_before_close = self.hyperdrive.market_state.copy()
-        print("CLOSE DETAILS:")
+        print("\nCLOSE DETAILS:")
         # Bob closes his long half way to maturity
         _, agent_deltas_close = self.hyperdrive.close_long(
             agent_wallet=self.bob.wallet,
@@ -246,13 +245,13 @@ class TestCloseLong(unittest.TestCase):
         # dy ~= agent base proceeds because the base proceeds are mostly determined by the flat portion
         base_proceeds = agent_deltas_close.balance.amount
         realized_apr = (base_proceeds - base_amount) / (base_amount * (1 - time_delta))
-        print("POST CLOSE DETAILS:")
+        print("\nPOST CLOSE DETAILS:")
         print(f"{base_proceeds=}")
         print(f"{realized_apr=}")
         self.assertAlmostEqual(
             realized_apr,
             self.target_apr,
-            delta=0.01,  # 1e-8,
+            delta=1e-8,
             msg=f"The realized {realized_apr=} should be equal to {self.target_apr=}",
         )
         # verify that the close long updates were correct

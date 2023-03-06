@@ -303,6 +303,7 @@ def calc_open_long(
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
+    print(f"OPEN: d_{base_volume=}")
     longs_outstanding = trade_result.user_result.d_bonds
     # TODO: add accounting for withdrawal shares
     # Make sure the trade is valid
@@ -377,6 +378,7 @@ def calc_close_long(
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: update base volume logic here when we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
+    print(f"CLOSE: d_{base_volume=}")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
