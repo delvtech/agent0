@@ -53,21 +53,23 @@ class TestCloseLong(unittest.TestCase):
         maturity_time: float,
     ):
         """Close a long then make sure the market state is correct"""
+        # verify that all of Bob's bonds were burned
         self.assertFalse(
             example_agent.wallet.longs
         )  # In solidity we check that the balance is zero, but here we delete the entry if it is zero
+        # verify that the bond reserves were updated according to flat+curve
+        # the adjustment should be equal to timeRemaining * bondAmount
         if maturity_time > self.hyperdrive.block_time.time:
             time_remaining = self.hyperdrive.position_duration.normalized_time * (
                 maturity_time - self.hyperdrive.block_time.time
             )
         else:
             time_remaining = 0
-        # print(f"{time_remaining=}")
-        # print(f"{bond_amount=}")
         self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves + time_remaining * bond_amount,
         )
+        # verify that the other states were correct
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves - unsigned_base_amount_out / market_state_before.share_price,
@@ -204,44 +206,56 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_halfway_through_term(self):
+        # Bob opens a long
         base_amount = 10
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
+        market_state_before_open = self.hyperdrive.market_state.copy()
+        print(f"{market_state_before_open=}")
+        print(f"{self.target_apr=}")
+        print(f"{self.hyperdrive.position_duration.time_stretch=}")
         _, agent_deltas_open = self.hyperdrive.open_long(
             agent_wallet=self.bob.wallet,
             base_amount=base_amount,
         )
+        # advance time (which also causes the share price to change
         time_delta = 0.5
-        time_remaining = self.hyperdrive.position_duration.normalized_time * time_delta
-        self.hyperdrive.block_time.set_time(time_remaining)
-        share_delta = hyperdrive_actions.MarketDeltas(
-            d_share_price=self.hyperdrive.market_state.share_price * (1 + self.target_apr * time_delta)
+        self.hyperdrive.block_time.set_time(self.hyperdrive.position_duration.normalized_time * time_delta)
+        self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
+            1 + self.target_apr * time_delta
         )
-        self.hyperdrive.update_market(share_delta)
-        market_state_before = self.hyperdrive.market_state.copy()
-        market_deltas_close, agent_deltas_close = hyperdrive_actions.calc_close_long(
-            wallet_address=self.bob.wallet.address,
+        # get the reserves before closing the long
+        market_state_before_close = self.hyperdrive.market_state.copy()
+        # Bob closes his long half way to maturity
+        _, agent_deltas_close = self.hyperdrive.close_long(
+            agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.longs[0].balance,
-            market=self.hyperdrive,
             mint_time=0,
         )
+        # ensure that the realized APR is approximately equal to the pool APR
         # price = dx / dy
         #       =>
         # rate = (1 - p) / (p * t) = (1 - dx / dy) * (dx / dy * t)
         #       =>
-        # apr = (dy - dx) / (dx * t)
-        bond_amount = agent_deltas_open.longs[0].balance
-        realized_apr = (bond_amount - base_amount) / (base_amount * (1 - time_delta))
-        self.assertEqual(
+        # realized_apr = (dy - dx) / (dx * t)
+        # dy ~= agent base proceeds because the base proceeds are mostly determined by the flat portion
+        base_proceeds = agent_deltas_close.balance.amount
+        realized_apr = (base_proceeds - base_amount) / (base_amount * (1 - time_delta))
+        print(f"{base_proceeds=}")
+        print(f"{base_amount=}")
+        print(f"{realized_apr=}")
+        self.assertAlmostEqual(
             realized_apr,
             self.target_apr,
+            delta=0.01,  # 1e-8,
             msg=f"The realized {realized_apr=} should be equal to {self.target_apr=}",
         )
+        # verify that the close long updates were correct
         self.verify_close_long(
             example_agent=self.bob,
-            market_state_before=market_state_before,
-            unsigned_base_amount_out=abs(base_amount),
-            bond_amount=bond_amount,
+            market_state_before=market_state_before_close,
+            unsigned_base_amount_out=abs(base_proceeds),
+            bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
 
