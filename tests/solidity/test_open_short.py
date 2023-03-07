@@ -40,14 +40,13 @@ class TestOpenShort(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        market_deltas, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
+        _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
         self.alice.wallet.update(agent_deltas)
 
     def verify_open_short(
         self,
         user: agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
-        contribution: float,  # budget given to the agents
         base_amount: float,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: float,  # number of PTs shorted
         maturity_time: int,  # maturity of the opened short
@@ -64,7 +63,8 @@ class TestOpenShort(unittest.TestCase):
             shorts_outstanding, short_average_maturity_time, short_base_volume, short_base_volume_checkpoints
         """
         # Total amount of base tokens locked in Hyperdrive
-        # hyperdrive_base_amount = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
+        # hyperdrive_base_amount
+        #     = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
         # self.assertEqual(
         #     hyperdrive_base_amount,
         #     contribution + base_amount,
@@ -173,19 +173,17 @@ class TestOpenShort(unittest.TestCase):
             self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
             market_state_before = self.hyperdrive.market_state.copy()
             apr_before = self.hyperdrive.fixed_apr
-            market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-            max_loss = agent_deltas.balance.amount
+            market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
             base_amount = market_deltas.d_base_asset
             bond_amount = market_deltas.d_bond_asset
             self.verify_open_short(
                 user=self.bob,
                 market_state_before=market_state_before,
-                contribution=self.contribution,
                 base_amount=base_amount,
                 unsigned_bond_amount=bond_amount,
                 maturity_time=int(self.term_length / 365),
                 apr_before=apr_before,
             )
-        except Exception as e:
+        except Exception as exception:
             msg = f"{self._testMethodName} failed: {self._testMethodDoc}"
-            raise RuntimeError(msg) from e
+            raise RuntimeError(msg) from exception
