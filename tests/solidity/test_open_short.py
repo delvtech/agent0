@@ -1,7 +1,6 @@
 """Test opening a short in hyperdrive"""
 import unittest
 
-import elfpy
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -23,6 +22,7 @@ class TestOpenLong(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_market.Market
+    block_time: time.BlockTime
 
     def setUp(self):
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
@@ -30,9 +30,10 @@ class TestOpenLong(unittest.TestCase):
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
-        self.hyperdrive = hyperdrive_market.Market(  # TODO: is this going to reset for each test func?
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
+            block_time=self.block_time,
             position_duration=time.StretchedTime(
                 days=self.term_length,
                 time_stretch=pricing_model.calc_time_stretch(self.target_apr),
@@ -84,64 +85,69 @@ class TestOpenLong(unittest.TestCase):
         )
         # The reserves were updated correctly
         share_amount = base_amount / self.hyperdrive.market_state.share_price
-        self.assertEqual(
+        self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + share_amount,
             msg=f"{self.hyperdrive.market_state.share_reserves=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # bond reserves
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves + unsigned_bond_amount,
             msg=f"{self.hyperdrive.market_state.bond_reserves=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # lp total supply
             self.hyperdrive.market_state.lp_total_supply,
             market_state_before.lp_total_supply,
             msg=f"{self.hyperdrive.market_state.lp_total_supply=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # share price
             self.hyperdrive.market_state.share_price,
             market_state_before.share_price,
             msg=f"{self.hyperdrive.market_state.share_price=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # longs outstanding
             self.hyperdrive.market_state.longs_outstanding,
             market_state_before.longs_outstanding + unsigned_bond_amount,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
-        #
-        # self.assertAlmostEqual(
-        #     self.hyperdrive.market_state.long_average_maturity_time,
-        #     maturity_time,
-        #     100,
-        # )
+        self.assertEqual(
+            self.hyperdrive.market_state.long_average_maturity_time,
+            maturity_time,
+            msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
+        )
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
             base_amount,
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
         )
+        # TODO: once we add checkpointing we will need to switch to this
+        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
-        # self.assertEqual(
-        #     self.hyperdrive.long_base_volume_checkpoints(checkpoint_time),
-        #     base_amount
-        # )
+        self.assertEqual(
+            self.hyperdrive.market_state.long_base_volume,
+            base_amount,
+        )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
             msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
         )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_average_maturity_time,
-        #     0,
-        # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_base_volume,
-        #     0,
-        # )
-        # self.assertEqual(
-        #     self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        #     0,
-        # )
+        self.assertEqual(
+            self.hyperdrive.market_state.short_average_maturity_time,
+            0,
+            msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} is not correct",
+        )
+        self.assertEqual(
+            self.hyperdrive.market_state.short_base_volume,
+            0,
+            msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
+        )
+        # TODO: once we add checkpointing we will need to switch to this
+        # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
+        self.assertEqual(
+            self.hyperdrive.market_state.short_base_volume,
+            0,
+        )
 
     def test_open_short_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
