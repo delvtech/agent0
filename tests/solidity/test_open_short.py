@@ -1,5 +1,6 @@
 """Test opening a short in hyperdrive"""
 import unittest
+import decimal
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -162,7 +163,7 @@ class TestOpenShort(unittest.TestCase):
         # TODO: Shouldn't this be a function of the contribution amount?
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
         bond_amount = self.hyperdrive.market_state.bond_reserves * 2
-        with self.assertRaises(ValueError):
+        with self.assertRaises(decimal.InvalidOperation):
             self.hyperdrive.open_short(self.bob.wallet, bond_amount)
 
     def test_open_short(self):
