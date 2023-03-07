@@ -15,8 +15,6 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
-# pylint: disable=too-many-statements
-
 
 class YieldspacePricingModel(PricingModel):
     """
@@ -333,15 +331,10 @@ class YieldspacePricingModel(PricingModel):
             # d_y' = (k - (c / mu) * (mu * (z - d_z))**(1 - tau))**(1 / (1 - tau)) - (2y + cz)
             #
             # without_fee = d_y'
-            first_base_of_exponent = init_share_price * (out_reserves - d_shares)
-            if first_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {first_base_of_exponent=} <= 0")
-            k_new = first_base_of_exponent**time_elapsed
-            second_base_of_exponent = k - scale * k_new
-            if second_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {second_base_of_exponent=} <= 0")
-            reserves_new = second_base_of_exponent ** (1 / time_elapsed)
-            without_fee = reserves_new - in_reserves
+            base_of_exponent = init_share_price * (out_reserves - d_shares)
+            if base_of_exponent < 0:
+                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
+            without_fee = (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed) - in_reserves
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
@@ -398,15 +391,12 @@ class YieldspacePricingModel(PricingModel):
             # user pays. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
-            first_base_of_exponent = out_reserves - d_bonds
-            if first_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {first_base_of_exponent=} <= 0")
-            k_new = first_base_of_exponent**time_elapsed
-            second_base_of_exponent = (k - k_new) / scale
-            if second_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {second_base_of_exponent=} <= 0")
+            base_of_exponent = out_reserves - d_bonds
+            if base_of_exponent < 0:
+                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
             without_fee = (
-                (1 / init_share_price) * second_base_of_exponent ** (1 / time_elapsed) - in_reserves
+                (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
+                - in_reserves
             ) * share_price
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
@@ -577,14 +567,10 @@ class YieldspacePricingModel(PricingModel):
             # without including fees:
             #
             # d_y' = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
-            first_base_of_exponent = init_share_price * (in_reserves + d_shares)
-            if first_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {first_base_of_exponent=} <= 0")
-            k_new = first_base_of_exponent**time_elapsed
-            second_base_of_exponent = k - scale * k_new
-            if second_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {second_base_of_exponent=} <= 0")
-            without_fee = out_reserves - second_base_of_exponent ** (1 / time_elapsed)
+            base_of_exponent = init_share_price * (in_reserves + d_shares)
+            if base_of_exponent < 0:
+                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
+            without_fee = out_reserves - (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed)
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
@@ -615,7 +601,6 @@ class YieldspacePricingModel(PricingModel):
             #
             # p * d_y
             without_fee_or_slippage = spot_price * d_bonds
-            print(f"w{without_fee_or_slippage=}")
             # We solve the YieldSpace invariant for the base received from
             # selling the specified amount of bonds. We set up the invariant
             # where the user pays d_y bonds and receives d_z' shares:
@@ -631,16 +616,13 @@ class YieldspacePricingModel(PricingModel):
             # user receives without fees. This is given by d_x' = c * d_z'.
             #
             # without_fee = d_x'
-            first_base_of_exponent = in_reserves + d_bonds
-            if first_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {first_base_of_exponent=} <= 0")
-            k_new = first_base_of_exponent**time_elapsed
-            second_base_of_exponent = (k - k_new) / scale
-            if second_base_of_exponent < 0:
-                raise ValueError(f"ERROR: {second_base_of_exponent=} <= 0")
-            shares_new = (1 / init_share_price) * second_base_of_exponent ** (1 / time_elapsed)
-            without_fee = (share_reserves - shares_new) * share_price
-
+            base_of_exponent = in_reserves + d_bonds
+            if base_of_exponent < 0:
+                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
+            without_fee = (
+                share_reserves
+                - (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
+            ) * share_price
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
