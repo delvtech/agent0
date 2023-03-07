@@ -303,7 +303,6 @@ def calc_open_long(
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
-    print(f"OPEN: d_{base_volume=}")
     longs_outstanding = trade_result.user_result.d_bonds
     # TODO: add accounting for withdrawal shares
     # Make sure the trade is valid
@@ -349,7 +348,6 @@ def calc_close_long(
         time_stretch=market.position_duration.time_stretch,
         normalizing_constant=market.position_duration.normalizing_constant,
     )
-    print(f"{time_remaining.normalized_time=}")
     # Perform the trade.
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     market.pricing_model.check_input_assertions(
@@ -362,8 +360,6 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    print(f"{trade_result.market_result.d_bonds=}")
-    print(f"{trade_result.market_result.d_base=}")
     # Update accouting for average maturity time, base volume and longs outstanding
     maturity_time = market.position_duration.days / 365
     long_average_maturity_time = update_weighted_average(
@@ -377,8 +373,9 @@ def calc_close_long(
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: update base volume logic here when we have checkpointing
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
-    print(f"CLOSE: d_{base_volume=}")
+    base_volume = -1 * calculate_base_volume(
+        abs(trade_result.market_result.d_base), bond_amount, time_remaining.normalized_time
+    )
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
@@ -528,11 +525,11 @@ def calculate_lp_allocation_adjustment(
 
 
 def calculate_base_volume(base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
-    """Calculates the base volume of an open trade given the base amount,
-    the bond amount, and the time remaining. Since the base amount takes into account
-    backdating, we can't use this as our base volume. Since we linearly interpolate between the
-    base volume and the bond amount as the time remaining goes from 1 to 0, the base volume is
-    can be determined as follows:
+    """Calculates the base volume of an open trade.
+    Output is given the base amount, the bond amount, and the time remaining.
+    Since the base amount takes into account backdating, we can't use this as our base volume.
+    Since we linearly interpolate between the base volume and the bond amount as the time
+    remaining goes from 1 to 0, the base volume can be determined as follows:
 
         base_amount = t * base_volume + (1 - t) * bond_amount
                             =>
