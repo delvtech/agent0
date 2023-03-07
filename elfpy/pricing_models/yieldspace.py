@@ -15,6 +15,8 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
+# pylint: disable=too-many-statements
+
 
 class YieldspacePricingModel(PricingModel):
     """
@@ -613,6 +615,7 @@ class YieldspacePricingModel(PricingModel):
             #
             # p * d_y
             without_fee_or_slippage = spot_price * d_bonds
+            print(f"w{without_fee_or_slippage=}")
             # We solve the YieldSpace invariant for the base received from
             # selling the specified amount of bonds. We set up the invariant
             # where the user pays d_y bonds and receives d_z' shares:
@@ -632,11 +635,12 @@ class YieldspacePricingModel(PricingModel):
             if first_base_of_exponent < 0:
                 raise ValueError(f"ERROR: {first_base_of_exponent=} <= 0")
             k_new = first_base_of_exponent**time_elapsed
-            second_base_of_exponent = (1 / init_share_price) * ((k - k_new) / scale)
+            second_base_of_exponent = (k - k_new) / scale
             if second_base_of_exponent < 0:
                 raise ValueError(f"ERROR: {second_base_of_exponent=} <= 0")
-            shares_new = second_base_of_exponent ** (1 / time_elapsed)
+            shares_new = (1 / init_share_price) * second_base_of_exponent ** (1 / time_elapsed)
             without_fee = (share_reserves - shares_new) * share_price
+
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
