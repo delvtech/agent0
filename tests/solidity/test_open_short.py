@@ -2,13 +2,13 @@
 import unittest
 
 import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.types as types
 import elfpy.time as time
 
 
-class TestOpenLong(unittest.TestCase):
+class TestOpenShort(unittest.TestCase):
     """
     Test opening a short in hyperdrive, with the following cases:
         open a short of 0 size (failure)
@@ -22,7 +22,7 @@ class TestOpenLong(unittest.TestCase):
     bob: agent.Agent
     celine: agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTime
+    block_time: time.BlockTime = time.BlockTime()
 
     def setUp(self):
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
@@ -41,7 +41,7 @@ class TestOpenLong(unittest.TestCase):
             ),
         )
         market_deltas, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
-        self.alice.update_wallet(agent_deltas)
+        self.alice.wallet.update(agent_deltas)
 
     def verify_open_short(
         self,
@@ -85,6 +85,8 @@ class TestOpenLong(unittest.TestCase):
         )
         # The reserves were updated correctly
         share_amount = base_amount / self.hyperdrive.market_state.share_price
+        print(f"{share_amount=}")
+        print(f"{base_amount=}")
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + share_amount,
@@ -107,17 +109,17 @@ class TestOpenLong(unittest.TestCase):
         )
         self.assertEqual(  # longs outstanding
             self.hyperdrive.market_state.longs_outstanding,
-            market_state_before.longs_outstanding + unsigned_bond_amount,
+            market_state_before.longs_outstanding,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.long_average_maturity_time,
-            maturity_time,
+            0,
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
-            base_amount,
+            0,
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this
@@ -125,62 +127,65 @@ class TestOpenLong(unittest.TestCase):
         # checkpoint_time = maturity_time - self.position_duration
         self.assertEqual(
             self.hyperdrive.market_state.long_base_volume,
-            base_amount,
+            0,
         )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
-            market_state_before.shorts_outstanding,
+            market_state_before.shorts_outstanding + unsigned_bond_amount,
             msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_average_maturity_time,
-            0,
+            maturity_time,
             msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_base_volume,
-            0,
+            abs(base_amount),
             msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
         self.assertEqual(
             self.hyperdrive.market_state.short_base_volume,
-            0,
+            abs(base_amount),
+            msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
         )
 
     def test_open_short_failure_zero_amount(self):
-        """Purchasing bonds with zero base fails"""
+        """shorting bonds with zero base fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_short(self.bob.wallet.address, 0)
+            self.hyperdrive.open_short(self.bob.wallet, 0)
 
     def test_open_short_failure_extreme_amount(self):
-        """Purchasing more bonds than exist fails"""
+        """shorting more bonds than there is base in the market fails"""
         # TODO: Shouldn't this be a function of the contribution amount?
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
+        bond_amount = self.hyperdrive.market_state.bond_reserves * 2
         with self.assertRaises(ValueError):
-            self.hyperdrive.open_short(self.bob.wallet.address, self.hyperdrive.market_state.bond_reserves * 2)
+            self.hyperdrive.open_short(self.bob.wallet, bond_amount)
 
-    def test_open_short(self):
+    def test_open_short_exact(self):
         """Open a short & check that accounting is done correctly"""
-        bond_amount = 10
-        self.bob.budget = bond_amount
-        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
-        market_state_before = self.hyperdrive.market_state.copy()
-        apr_before = self.hyperdrive.fixed_apr
-        market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet.address, bond_amount)
-        print(f"before: {market_state_before}")
-        print(f"after : {self.hyperdrive.market_state}")
-        max_loss = agent_deltas.balance.amount
-        print(f"{max_loss=}")
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.update_wallet(agent_deltas)
-        self.verify_open_short(
-            user=self.bob,
-            market_state_before=market_state_before,
-            contribution=self.contribution,
-            base_amount=max_loss,
-            unsigned_bond_amount=bond_amount,
-            maturity_time=0,
-            apr_before=apr_before,
-        )
+        try:
+            bond_amount = 10
+            self.bob.budget = bond_amount
+            self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
+            market_state_before = self.hyperdrive.market_state.copy()
+            apr_before = self.hyperdrive.fixed_apr
+            market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+            max_loss = agent_deltas.balance.amount
+            base_amount = market_deltas.d_base_asset
+            bond_amount = market_deltas.d_bond_asset
+            self.verify_open_short(
+                user=self.bob,
+                market_state_before=market_state_before,
+                contribution=self.contribution,
+                base_amount=base_amount,
+                unsigned_bond_amount=bond_amount,
+                maturity_time=int(self.term_length / 365),
+                apr_before=apr_before,
+            )
+        except Exception as e:
+            msg = f"{self._testMethodName} failed: {self._testMethodDoc}"
+            raise RuntimeError(msg) from e
