@@ -168,46 +168,38 @@ class TestOpenShort(unittest.TestCase):
 
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
-        try:
-            bond_amount = 10
-            self.bob.budget = bond_amount
-            self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
-            market_state_before = self.hyperdrive.market_state.copy()
-            apr_before = self.hyperdrive.fixed_apr
-            market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-            base_amount = market_deltas.d_base_asset
-            bond_amount = market_deltas.d_bond_asset
-            self.verify_open_short(
-                user=self.bob,
-                market_state_before=market_state_before,
-                base_amount=base_amount,
-                unsigned_bond_amount=bond_amount,
-                maturity_time=int(self.term_length / 365),
-                apr_before=apr_before,
-            )
-        except Exception as exception:
-            msg = f"{self._testMethodName} failed: {self._testMethodDoc}"
-            raise RuntimeError(msg) from exception
+        bond_amount = 10
+        self.bob.budget = bond_amount
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
+        market_state_before = self.hyperdrive.market_state.copy()
+        apr_before = self.hyperdrive.fixed_apr
+        market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        base_amount = market_deltas.d_base_asset
+        bond_amount = market_deltas.d_bond_asset
+        self.verify_open_short(
+            user=self.bob,
+            market_state_before=market_state_before,
+            base_amount=base_amount,
+            unsigned_bond_amount=bond_amount,
+            maturity_time=int(self.term_length / 365),
+            apr_before=apr_before,
+        )
 
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
-        try:
-            bond_amount = 0.01
-            self.bob.budget = bond_amount
-            self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
-            market_state_before = self.hyperdrive.market_state.copy()
-            apr_before = self.hyperdrive.fixed_apr
-            market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-            base_amount = market_deltas.d_base_asset
-            bond_amount = market_deltas.d_bond_asset
-            self.verify_open_short(
-                user=self.bob,
-                market_state_before=market_state_before,
-                base_amount=base_amount,
-                unsigned_bond_amount=bond_amount,
-                maturity_time=int(self.term_length / 365),
-                apr_before=apr_before,
-            )
-        except Exception as exception:
-            msg = f"{self._testMethodName} failed: {self._testMethodDoc}"
-            raise RuntimeError(msg) from exception
+        bond_amount = 0.01
+        self.bob.budget = bond_amount
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
+        market_state_before = self.hyperdrive.market_state.copy()
+        apr_before = self.hyperdrive.fixed_apr
+        market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        base_amount = market_deltas.d_base_asset
+        bond_amount = market_deltas.d_bond_asset
+        self.verify_open_short(
+            user=self.bob,
+            market_state_before=market_state_before,
+            base_amount=base_amount,
+            unsigned_bond_amount=bond_amount,
+            maturity_time=int(self.term_length / 365),
+            apr_before=apr_before,
+        )
