@@ -166,53 +166,6 @@ class PricingModel(ABC):
             market_state.init_share_price * market_state.share_reserves * interest_factor - market_state.lp_total_supply
         )
 
-    def calc_share_reserves(
-        self,
-        target_apr: float,
-        bond_reserves: float,
-        time_remaining: time.StretchedTime,
-        init_share_price: float = 1,
-    ):
-        """Returns the assumed share (i.e. base asset) reserve amounts given
-        the bond (i.e. token asset) reserves and APR
-
-        Parameters
-        ----------
-        target_apr : float
-            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
-        bond_reserves : float
-            Token asset (pt) reserves in the pool
-        days_remaining : float
-            Amount of days left until bond maturity
-        time_stretch : float
-            Time stretch parameter, in years
-        init_share_price : float
-            Original share price when the pool started
-        share_price : float
-            Current share price
-
-        Returns
-        -------
-        float
-            The expected amount of base asset in the pool, calculated from the provided parameters
-
-        .. todo:: Write a test for this function
-        """
-        # y = (z / 2) * (mu * (1 + rt)**(1/tau) - c)
-        # z = (2 * y) / (mu * (1 + rt)**(1/tau) - c)
-        # Only want to renormalize time for APR ("annual", so hard coded to 365)
-        # Don't want to renormalize stretched time
-        annualized_time = time.norm_days(time_remaining.days, 365)
-        share_reserves = (
-            2
-            * bond_reserves
-            / (
-                init_share_price * (1 - target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
-                - init_share_price
-            )
-        )
-        return share_reserves
-
     def calc_base_for_target_apr(
         self,
         target_apr: float,
