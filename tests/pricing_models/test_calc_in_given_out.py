@@ -411,6 +411,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                         trade_result=trade_result,
                     )
 
+
 # Test cases where token_in = TokenType.BASE indicating that bonds are being
 # purchased for base.
 #
