@@ -226,18 +226,13 @@ class PricingModel(ABC):
         Decimal
             The spot price of principal tokens.
         """
-        # TODO: in general s != y + c*z, we'll want to update this to have s = lp_total_supply
-        # issue #94
-        # s = y + c*z
-        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
-            market_state.share_reserves
-        )
-        # p = ((y + s)/(mu*z))^(-tau) = ((2y + cz)/(mu*z))^(-tau)
-        spot_price = (
-            (Decimal(market_state.bond_reserves) + total_reserves)
-            / (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves))
-        ) ** Decimal(-time_remaining.stretched_time)
-        return spot_price
+        init_share_price = Decimal(market_state.init_share_price)  # mu
+        share_reserves = Decimal(market_state.share_reserves)  # z
+        bond_reserves = Decimal(market_state.bond_reserves)  # y
+        lp_total_supply = Decimal(market_state.lp_total_supply)  # s
+        tau = Decimal(time_remaining.stretched_time)  # tau = days / duration / time_stretch
+        # p = ((mu * z) / (y + s))^(tau)
+        return ((init_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** tau
 
     def calc_apr_from_reserves(
         self,
@@ -267,6 +262,7 @@ class PricingModel(ABC):
         r"""
         Calculates the maximum long the market can support
 
+        # FIXME: is this still accurate?
         .. math::
             \begin{align}
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
@@ -310,6 +306,7 @@ class PricingModel(ABC):
         Calculates the maximum short the market can support using the bisection
         method.
 
+        # FIXME: is this still accurate?
         \begin{align}
         \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
         \end{align}
