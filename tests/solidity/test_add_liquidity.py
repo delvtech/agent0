@@ -21,7 +21,6 @@ class TestAddLiquidity(unittest.TestCase):
     block_time: time.BlockTime
 
     def setUp(self):
-
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=1, budget=self.contribution)

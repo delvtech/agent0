@@ -78,7 +78,7 @@ class TestOpenLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + share_amount,
-            msg=f"{self.hyperdrive.market_state.share_price=} is not correct",
+            msg=f"{self.hyperdrive.market_state.share_reserves=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
