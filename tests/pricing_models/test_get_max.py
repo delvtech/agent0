@@ -50,7 +50,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -66,7 +65,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -82,7 +80,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=101_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -98,7 +95,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=1_834_954,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.27), normalizing_constant=365
@@ -114,7 +110,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=1_500_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -130,7 +125,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -146,7 +140,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -162,7 +155,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -178,7 +170,6 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
-                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365
@@ -189,6 +180,11 @@ class TestGetMax(unittest.TestCase):
         for test_number, test_case in enumerate(test_cases):
             for pricing_model in pricing_models:
                 print(f"\ntest {test_number=} with \n{test_case=}\nand {pricing_model=}")
+                # Initialize lp_total_supply to y + x
+                test_case.market_state.lp_total_supply = (
+                    test_case.market_state.share_reserves * test_case.market_state.init_share_price
+                    + test_case.market_state.bond_reserves
+                )
                 # Get the max long.
                 (max_long, _) = pricing_model.get_max_long(
                     market_state=test_case.market_state,
