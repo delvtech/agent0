@@ -258,7 +258,6 @@ class PricingModel(ABC):
         r"""
         Calculates the maximum long the market can support
 
-        # FIXME: is this still accurate?
         .. math::
             \begin{align}
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
@@ -302,7 +301,6 @@ class PricingModel(ABC):
         Calculates the maximum short the market can support using the bisection
         method.
 
-        # FIXME: is this still accurate?
         \begin{align}
         \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
         \end{align}
