@@ -529,7 +529,8 @@ class Market(
         # or is in the future, it's an invalid checkpoint and we should
         # revert.
         latest_checkpoint = self.get_latest_checkpoint_time()
-        if checkpoint_time % self.market_state.checkpoint_duration != 0 or latest_checkpoint < checkpoint_time:
+        # TODO: this modulo check should be just > 0, but floats are weird
+        if checkpoint_time % self.market_state.checkpoint_duration > 1e17 or latest_checkpoint < checkpoint_time:
             raise errors.InvalidCheckpointTime()
 
         # if the checkpoint time is the latest checkpoint, we use the current
