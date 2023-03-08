@@ -5,6 +5,7 @@ import decimal
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+from elfpy.time.time import StretchedTime
 import elfpy.types as types
 import elfpy.time as time
 
@@ -86,8 +87,6 @@ class TestOpenShort(unittest.TestCase):
         )
         # The reserves were updated correctly
         share_amount = base_amount / self.hyperdrive.market_state.share_price
-        print(f"{share_amount=}")
-        print(f"{base_amount=}")
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + share_amount,
@@ -162,7 +161,7 @@ class TestOpenShort(unittest.TestCase):
         """shorting more bonds than there is base in the market fails"""
         # TODO: Shouldn't this be a function of the contribution amount?
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
-        bond_amount = self.hyperdrive.market_state.bond_reserves * 2
+        bond_amount = self.hyperdrive.market_state.share_reserves * 2
         with self.assertRaises(decimal.InvalidOperation):
             self.hyperdrive.open_short(self.bob.wallet, bond_amount)
 
@@ -170,17 +169,15 @@ class TestOpenShort(unittest.TestCase):
         """Open a short & check that accounting is done correctly"""
         bond_amount = 10
         self.bob.budget = bond_amount
-        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-        base_amount = market_deltas.d_base_asset
-        bond_amount = market_deltas.d_bond_asset
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
-            base_amount=base_amount,
-            unsigned_bond_amount=bond_amount,
+            base_amount=market_deltas.d_base_asset,
+            unsigned_bond_amount=market_deltas.d_bond_asset,
             maturity_time=int(self.term_length / 365),
             apr_before=apr_before,
         )
@@ -189,17 +186,15 @@ class TestOpenShort(unittest.TestCase):
         """Open a tiny short & check that accounting is done correctly"""
         bond_amount = 0.01
         self.bob.budget = bond_amount
-        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-        base_amount = market_deltas.d_base_asset
-        bond_amount = market_deltas.d_bond_asset
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
-            base_amount=base_amount,
-            unsigned_bond_amount=bond_amount,
+            base_amount=market_deltas.d_base_asset,
+            unsigned_bond_amount=market_deltas.d_bond_asset,
             maturity_time=int(self.term_length / 365),
             apr_before=apr_before,
         )
