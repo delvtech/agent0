@@ -435,24 +435,21 @@ class PricingModel(ABC):
         Returns
         -------
         float
-            The maximum amount of base that can be used to short bonds.
+            The max loss associated with the maximum short, that a short seller needs to cover.
         float
             The maximum amount of bonds that can be shorted.
         """
-        bonds = self.calc_in_given_out(
+        base_amount = market_state.share_reserves * market_state.share_price - market_state.base_buffer
+        max_short_pt = self.calc_in_given_out(
             out=types.Quantity(
-                market_state.share_reserves - market_state.base_buffer / market_state.share_price,
-                unit=types.TokenType.PT,
+                base_amount,
+                unit=types.TokenType.BASE,
             ),
             market_state=market_state,
             time_remaining=time_remaining,
-        ).breakdown.with_fee
-        base = self.calc_out_given_in(
-            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        return (base, bonds)
+        ).breakdown.without_fee
+        max_short_max_loss = max_short_pt - base_amount
+        return max_short_max_loss, max_short_pt
 
     def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
