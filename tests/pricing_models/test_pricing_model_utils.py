@@ -4,7 +4,6 @@ from typing import Union
 
 import numpy as np
 
-import elfpy.pricing_models.base as base_pm
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
