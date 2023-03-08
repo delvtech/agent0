@@ -38,7 +38,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
-                print(f"\nattempting to trade test {test_number=} with\n{test_case=}")
+                print(f"\n{test_number=} with\n{test_case=}")
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
