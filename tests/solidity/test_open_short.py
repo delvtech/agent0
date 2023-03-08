@@ -12,8 +12,12 @@ import elfpy.time as time
 class TestOpenShort(unittest.TestCase):
     """
     Test opening a short in hyperdrive, with the following cases:
-        open a short of 0 size (failure)
-        open a short of extreme size (failure)
+        success cases:
+            open a short of of 10 bonds
+            open a short of of 0.01 bonds
+        failure cases:
+            open a short of 0 size
+            open a short of extreme size
     """
 
     contribution: float = 500_000_000
