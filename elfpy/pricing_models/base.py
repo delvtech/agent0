@@ -176,12 +176,8 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-<<<<<<< HEAD
                 p &= (\frac{2y + cz}{\mu z})^{-\tau}
                   &= \frac{\mu * z}{y + s}^{\tau}
-=======
-            p = (\frac{\mu z}{y + s})^{\tau}
->>>>>>> 1353e7f (fixes docstrings for calc_spot_price_from_reserves)
             \end{align}
 
         Parameters
