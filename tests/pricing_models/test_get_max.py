@@ -40,7 +40,7 @@ class TestGetMax(unittest.TestCase):
         pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldspacePricingModel()]
 
         test_cases: list[TestCaseGetMax] = [
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 0
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -50,12 +50,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 1
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -65,12 +66,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 2
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=100_000_000,
                     bond_reserves=1_000_000,
@@ -80,12 +82,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=101_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 3
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=834_954,
@@ -95,12 +98,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=1_834_954,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.27), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 4
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=500_000,
                     bond_reserves=1_000_000,
@@ -110,12 +114,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=1_500_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 5
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -125,12 +130,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 6
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -140,12 +146,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.5,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 7
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -155,12 +162,13 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
                 ),
             ),
-            TestCaseGetMax(
+            TestCaseGetMax(  # Test 8
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=1_000_000,
                     bond_reserves=1_000_000,
@@ -170,6 +178,7 @@ class TestGetMax(unittest.TestCase):
                     share_price=2,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                    lp_total_supply=2_000_000,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365
@@ -177,8 +186,9 @@ class TestGetMax(unittest.TestCase):
             ),
         ]
 
-        for test_case in test_cases:
+        for test_number, test_case in enumerate(test_cases):
             for pricing_model in pricing_models:
+                print(f"\ntest {test_number=} with \n{test_case=}\nand {pricing_model=}")
                 # Get the max long.
                 (max_long, _) = pricing_model.get_max_long(
                     market_state=test_case.market_state,
@@ -194,6 +204,7 @@ class TestGetMax(unittest.TestCase):
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
+                print("long test")
                 self._ensure_market_safety(
                     pricing_model=pricing_model, trade_result=trade_result, test_case=test_case, is_long=True
                 )
@@ -213,6 +224,7 @@ class TestGetMax(unittest.TestCase):
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
+                print("short test")
                 self._ensure_market_safety(
                     pricing_model=pricing_model,
                     trade_result=trade_result,
@@ -236,7 +248,7 @@ class TestGetMax(unittest.TestCase):
                 d_bond_asset=trade_result.market_result.d_bonds,
                 d_base_buffer=trade_result.breakdown.with_fee,
             )
-        else:
+        else:  # is a short
             delta = hyperdrive_actions.MarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
                 d_bond_asset=trade_result.market_result.d_bonds,
