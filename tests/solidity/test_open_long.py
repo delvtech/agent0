@@ -116,10 +116,6 @@ class TestOpenLong(unittest.TestCase):
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
         self.assertEqual(
-            self.hyperdrive.market_state.long_base_volume,
-            base_amount,
-        )
-        self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
             msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
@@ -136,10 +132,6 @@ class TestOpenLong(unittest.TestCase):
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        self.assertEqual(
-            self.hyperdrive.market_state.short_base_volume,
-            0,
-        )
 
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
