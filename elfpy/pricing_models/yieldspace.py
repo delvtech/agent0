@@ -740,8 +740,9 @@ class YieldspacePricingModel(PricingModel):
         init_share_price: Decimal,
     ) -> Decimal:
         """Calculates the amount of bonds a agent must provide the pool to receive a specified amount of shares.
-        Arguments
-        ---------
+
+        Parameters
+        ----------
             share_reserves: Decimal
                 "z"; Amount of share reserves in the pool.
             bond_reserves: Decimal
@@ -783,8 +784,9 @@ class YieldspacePricingModel(PricingModel):
         init_share_price: Decimal,
     ) -> Decimal:
         """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
-        Arguments
-        ---------
+
+        Parameters
+        ----------
             share_reserves: Decimal
                 "z"; Amount of share reserves in the pool.
             bond_reserves: Decimal
@@ -826,6 +828,7 @@ class YieldspacePricingModel(PricingModel):
         init_share_price: Decimal,
     ) -> Decimal:
         """Calculates the amount of shares a agent must provide the pool to receive a specified amount of bonds.
+
         Parameters
         ----------
             share_reserves: Decimal
@@ -869,6 +872,7 @@ class YieldspacePricingModel(PricingModel):
         init_share_price: Decimal,
     ) -> Decimal:
         """Calculates the amount of shares a agent will receive from the pool by providing a specified amount of bonds.
+
         Parameters
         ----------
             share_reserves: Decimal
@@ -915,6 +919,7 @@ class YieldspacePricingModel(PricingModel):
         """Helper function to derive invariant constant K
         .. math::
             k = \frac{c / mu} (mu z)^{1 - \tau} + (y + s)^(1 - \tau)
+
         Parameters
         ----------
             share_reserves: Decimal
