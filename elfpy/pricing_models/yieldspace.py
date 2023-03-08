@@ -764,10 +764,10 @@ class YieldspacePricingModel(PricingModel):
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, total_supply, time_elapsed, share_price, init_share_price
         )
-        # z_ = (c / mu) * (mu * (z - dz))**(1 - t)
+        # z_ = (c / mu) * (mu * (z - dz))**(1 - tau)
         adjusted_shares = scale * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
-        # dy = y + s - (k - (c / mu) * (mu * (z + dz))**(1 - tau))**(1 / (1 - tau))
-        return (yieldspace_const - adjusted_shares) ** (1 / time_elapsed) - bond_reserves
+        # dy = (k - (c / mu) * (mu * (z - dz))**(1 - tau))**(1 / (1 - tau)) - (y + s)
+        return (yieldspace_const - adjusted_shares) ** (1 / time_elapsed) - (bond_reserves + total_supply)
 
     def calc_bonds_out_given_shares_in(
         self,

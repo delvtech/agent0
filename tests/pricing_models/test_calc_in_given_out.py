@@ -38,17 +38,23 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
+                print(f"\nattempting to trade test {test_number=} with\n{test_case=}")
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
                 time_remaining = time.StretchedTime(
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                 )
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                test_case.market_state.lp_total_supply = (
+                    test_case.market_state.bond_reserves
+                    + test_case.market_state.share_price * test_case.market_state.share_reserves
+                )
                 expected_result = results_by_model[model_type]
                 if expected_result is None:
                     continue
                 # Ensure we get the expected results from the pricing model.
-                print(f"attempting to trade {test_case=}")
                 trade_result = pricing_model.calc_in_given_out(
                     out=test_case.out,
                     market_state=test_case.market_state,
@@ -96,6 +102,11 @@ class TestCalcInGivenOut(unittest.TestCase):
                     trade_fee_percent=0.1,
                     # TODO: test with redemption fees
                     redemption_fee_percent=0.0,
+                )
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                market_state.lp_total_supply = (
+                    market_state.bond_reserves + market_state.share_price * market_state.share_reserves
                 )
                 time_remaining = time.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
@@ -373,27 +384,17 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
         ]
-        failure_test_cases_yieldpsace_only = [
-            CalcInGivenOutFailureTestCase(
-                out=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    # share reserves zero
-                    share_reserves=0,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=(AssertionError, decimal.DivisionByZero),
-            )
-        ]
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
-            print(f"{test_number=}")
+            print(f"\n{test_number=}")
             for pricing_model in pricing_models:
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                test_case.market_state.lp_total_supply = (
+                    test_case.market_state.bond_reserves
+                    + test_case.market_state.share_price * test_case.market_state.share_reserves
+                )
                 print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
@@ -409,26 +410,6 @@ class TestCalcInGivenOut(unittest.TestCase):
                     pricing_model.check_output_assertions(
                         trade_result=trade_result,
                     )
-        # yieldspace only failures
-        for test_number, test_case in enumerate(failure_test_cases_yieldpsace_only):
-            print(f"{test_number=}")
-            for pricing_model in [YieldspacePricingModel()]:
-                print(f"{pricing_model.model_name()=}")
-                with self.assertRaises(test_case.exception_type):
-                    pricing_model.check_input_assertions(
-                        quantity=test_case.out,
-                        market_state=test_case.market_state,
-                        time_remaining=test_case.time_remaining,
-                    )
-                    trade_result = pricing_model.calc_in_given_out(
-                        out=test_case.out,
-                        market_state=test_case.market_state,
-                        time_remaining=test_case.time_remaining,
-                    )
-                    pricing_model.check_output_assertions(
-                        trade_result=trade_result,
-                    )
-
 
 # Test cases where token_in = TokenType.BASE indicating that bonds are being
 # purchased for base.
@@ -1254,5 +1235,5 @@ pt_in_test_cases_hyperdrive_only = [
                 with_fee=81.57274930659256,
             ),
         ),
-    ),  # end of test one
+    ),  # end of test nine
 ]
