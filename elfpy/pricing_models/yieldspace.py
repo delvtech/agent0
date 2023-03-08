@@ -15,6 +15,8 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
+# pylint: disable=too-many-arguments
+
 
 class YieldspacePricingModel(PricingModel):
     """
@@ -294,22 +296,13 @@ class YieldspacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_supply = Decimal(market_state.lp_total_supply)
-        total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        scale = share_price / init_share_price
-        # We precompute the YieldSpace constant k using the current reserves and
-        # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
         if out.unit == types.TokenType.BASE:
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
             d_shares = out_amount / share_price
             # The amount the agent pays without fees or slippage is simply the
             # amount of base the agent would receive times the inverse of the
@@ -339,10 +332,6 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            base_of_exponent = init_share_price * (out_reserves - d_shares)
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            old_without_fee = (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed) - in_reserves
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
@@ -374,8 +363,6 @@ class YieldspacePricingModel(PricingModel):
                 d_bonds=float(with_fee),
             )
         elif out.unit == types.TokenType.PT:
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
             # The amount the agent pays without fees or slippage is simply
             # the amount of bonds the agent would receive times the spot price of
@@ -409,13 +396,6 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert to base
             )
-            base_of_exponent = out_reserves - d_bonds
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            old_without_fee = (
-                (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
-                - in_reserves
-            ) * share_price
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
@@ -549,26 +529,17 @@ class YieldspacePricingModel(PricingModel):
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
-        scale = share_price / init_share_price
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         total_supply = Decimal(market_state.lp_total_supply)
-        total_reserves = share_price * share_reserves + bond_reserves
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        # We precompute the YieldSpace constant k using the current reserves and
-        # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
             # The amount the agent would receive without fees or slippage is
             # the amount of base the agent pays times inverse of the spot price
             # of base in terms of bonds. If we let p be the conventional spot
@@ -595,10 +566,6 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            base_of_exponent = init_share_price * (in_reserves + d_shares)
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            old_without_fee = out_reserves - (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed)
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
@@ -620,8 +587,6 @@ class YieldspacePricingModel(PricingModel):
             )
         elif in_.unit == types.TokenType.PT:
             d_bonds = in_amount
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
             # The amount the agent would receive without fees or slippage is the
             # amount of bonds the agent pays times the spot price of base in
             # terms of bonds. If we let p be the conventional spot price, then
@@ -654,13 +619,6 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            base_of_exponent = in_reserves + d_bonds
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            old_without_fee = (
-                share_reserves
-                - (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
-            ) * share_price
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
@@ -694,35 +652,6 @@ class YieldspacePricingModel(PricingModel):
                 without_fee=float(without_fee),
                 fee=float(fee),
             ),
-        )
-
-    def _calc_k_const(self, market_state: hyperdrive_market.MarketState, time_remaining: time.StretchedTime) -> Decimal:
-        """
-        Returns the 'k' constant variable for trade mathematics
-
-        .. math::
-            k = \frac{c / mu} (mu z)^{1 - \tau} + (2y + c z)^(1 - \tau)
-
-        Parameters
-        ----------
-        market_state : MarketState
-            The state of the AMM
-        time_remaining : StretchedTime
-            Time until expiry for the token
-
-        Returns
-        -------
-        Decimal
-            'k' constant used for trade mathematics, calculated from the provided parameters
-        """
-        scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
-        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
-            market_state.share_reserves
-        )
-        time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
-        return (
-            scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
-            + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
         )
 
     def calc_bonds_in_given_shares_out(
