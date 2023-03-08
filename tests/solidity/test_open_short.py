@@ -63,6 +63,7 @@ class TestOpenShort(unittest.TestCase):
             longs_outstanding, long_average_maturity_time, long_base_volume, long_base_volume_checkpoints,
             shorts_outstanding, short_average_maturity_time, short_base_volume, short_base_volume_checkpoints
         """
+        # TODO: this can be enabled if we add a metric that measures total TVL deposited into the smart contract
         # Total amount of base tokens locked in Hyperdrive
         # hyperdrive_base_amount
         #     = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
@@ -111,12 +112,12 @@ class TestOpenShort(unittest.TestCase):
             market_state_before.longs_outstanding,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # long average maturity time
             self.hyperdrive.market_state.long_average_maturity_time,
             0,
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # long base volume
             self.hyperdrive.market_state.long_base_volume,
             0,
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
@@ -124,32 +125,23 @@ class TestOpenShort(unittest.TestCase):
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
-        self.assertEqual(
-            self.hyperdrive.market_state.long_base_volume,
-            0,
-        )
-        self.assertEqual(
+        self.assertEqual(  # shorts outstanding
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding + unsigned_bond_amount,
             msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # short average maturity time
             self.hyperdrive.market_state.short_average_maturity_time,
             maturity_time,
             msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} is not correct",
         )
-        self.assertEqual(
+        self.assertEqual(  # short base volume
             self.hyperdrive.market_state.short_base_volume,
             abs(base_amount),
             msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        self.assertEqual(
-            self.hyperdrive.market_state.short_base_volume,
-            abs(base_amount),
-            msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
-        )
 
     def test_open_short_failure_zero_amount(self):
         """shorting bonds with zero base fails"""
@@ -158,7 +150,6 @@ class TestOpenShort(unittest.TestCase):
 
     def test_open_short_failure_extreme_amount(self):
         """shorting more bonds than there is base in the market fails"""
-        # TODO: Shouldn't this be a function of the contribution amount?
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
         bond_amount = self.hyperdrive.market_state.share_reserves * 2
         with self.assertRaises(decimal.InvalidOperation):
