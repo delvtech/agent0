@@ -75,15 +75,9 @@ class SimUtilsTest(unittest.TestCase):
                         )
                         market_direct.update_market(market_deltas)
                         total_liquidity_direct = (
-                            market_direct.pricing_model.calc_total_liquidity_from_reserves_and_price(
-                                market_state=market_direct.market_state,
-                                share_price=market_direct.market_state.share_price,
-                            )
+                            market_direct.market_state.share_reserves * market_direct.market_state.share_price
                         )
-                        total_liquidity_agent = market.pricing_model.calc_total_liquidity_from_reserves_and_price(
-                            market_state=market.market_state,
-                            share_price=market.market_state.share_price,
-                        )
+                        total_liquidity_agent = market.market_state.share_reserves * market.market_state.share_price
                         # compare outputs
                         logging.debug(
                             (
