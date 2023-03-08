@@ -87,6 +87,12 @@ class TestSpotPriceCalculations(unittest.TestCase):
         ]
         pricing_model = PricingModel()
         for test_number, test_case in enumerate(test_cases):
+            # TODO: convert these tests to use total supply, not the approximation
+            # approximation of total supply
+            test_case["market_state"].lp_total_supply = (
+                test_case["market_state"].bond_reserves
+                + test_case["market_state"].share_price * test_case["market_state"].share_reserves
+            )
             spot_price = pricing_model.calc_spot_price_from_reserves(
                 market_state=test_case["market_state"],
                 time_remaining=test_case["time_remaining"],
@@ -222,6 +228,13 @@ class TestSpotPriceCalculations(unittest.TestCase):
         ]
         pricing_model = PricingModel()
         for test_number, test_case in enumerate(test_cases):
+
+            # TODO: convert these tests to use total supply, not the approximation
+            # approximation of total supply
+            test_case["market_state"].lp_total_supply = (
+                test_case["market_state"].bond_reserves
+                + test_case["market_state"].share_price * test_case["market_state"].share_reserves
+            )
             pm_spot_price = pricing_model.calc_spot_price_from_reserves(
                 market_state=test_case["market_state"],
                 time_remaining=test_case["time_remaining"],

@@ -603,7 +603,7 @@ class YieldspacePricingModel(PricingModel):
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
             #
-            # ((1 / p) - 1) * phi * c * d_z
+            # ((1 / p) - 1) * phi * c * dz
             fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
@@ -665,7 +665,7 @@ class YieldspacePricingModel(PricingModel):
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
             #
-            # fee = (1 - p) * phi * d_y
+            # fee = (1 - p) * phi * dy
             fee = (1 - spot_price) * trade_fee_percent * d_bonds
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
