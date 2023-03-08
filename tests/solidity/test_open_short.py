@@ -5,7 +5,6 @@ import decimal
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-from elfpy.time.time import StretchedTime
 import elfpy.types as types
 import elfpy.time as time
 
