@@ -86,9 +86,45 @@ class PricingModel(ABC):
         """Unique identifier given to the model, should be lower snake_cased name"""
         raise NotImplementedError
 
-    def _calc_k_const(self, market_state: hyperdrive_market.MarketState, time_remaining: time.StretchedTime) -> Decimal:
-        """Returns the 'k' constant variable for trade mathematics"""
-        raise NotImplementedError
+    def calc_initial_bond_reserves(
+        self,
+        target_apr: float,
+        time_remaining: time.StretchedTime,
+        market_state: hyperdrive_market.MarketState,
+    ) -> float:
+        """Returns the assumed bond (i.e. token asset) reserve amounts given
+        the share (i.e. base asset) reserves and APR for an initialized market
+
+        Parameters
+        ----------
+        target_apr : float
+            Target fixed APR in decimal units (for example, 5% APR would be 0.05)
+        time_remaining : StretchedTime
+            Amount of time left until bond maturity
+        market_state : MarketState
+            MarketState object; the following attributes are used:
+                share_reserves : float
+                    Base asset reserves in the pool
+                init_share_price : float
+                    Original share price when the pool started
+                share_price : float
+                    Current share price
+
+        Returns
+        -------
+        float
+            The expected amount of bonds (token asset) in the pool, given the inputs
+
+        .. todo:: test_market.test_initialize_market uses this, but this should also have a unit test
+        """
+        # Only want to renormalize time for APR ("annual", so hard coded to 365)
+        # Don't want to renormalize stretched time
+        annualized_time = time.norm_days(time_remaining.days, 365)
+        # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
+        return (market_state.share_reserves / 2) * (
+            market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+            - market_state.share_price
+        )
 
     def calc_bond_reserves(
         self,
@@ -119,16 +155,16 @@ class PricingModel(ABC):
         float
             The expected amount of bonds (token asset) in the pool, given the inputs
 
-        .. todo:: test_market.test_initialize_market uses this, but this should also have a unit test
+        .. todo:: Test this function
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
-        # Don't want to renormalize stretched time
         annualized_time = time.norm_days(time_remaining.days, 365)
-        bond_reserves = (market_state.share_reserves / 2) * (
-            market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
-            - market_state.share_price
-        )  # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
-        return bond_reserves
+        # (1 + r * t) ** (1 / tau)
+        interest_factor = (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+        # mu * z * (1 + apr * t) ** (1 / tau) - l
+        return (
+            market_state.init_share_price * market_state.share_reserves * interest_factor - market_state.lp_total_supply
+        )
 
     def calc_share_reserves(
         self,
