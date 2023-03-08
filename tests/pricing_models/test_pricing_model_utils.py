@@ -1,8 +1,11 @@
 """Testing for the utility methods in the pricing models"""
 import unittest
+from typing import Union
+
 import numpy as np
 
-import elfpy.pricing_models.base as base_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.utils import sim_utils
 import elfpy.time as time
@@ -11,7 +14,9 @@ import elfpy.time as time
 class BasePricingModelUtilsTest(unittest.TestCase):
     """Unit tests for price utilities"""
 
-    def run_calc_k_const_test(self, pricing_model: base_pm.PricingModel):
+    def run_calc_k_const_test(
+        self, pricing_model: Union[hyperdrive_pm.HyperdrivePricingModel, yieldspace_pm.YieldspacePricingModel]
+    ):
         """Unit tests for calc_k_const function
 
         .. todo:: fix comments to actually reflect test case values
@@ -142,7 +147,9 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 )
                 np.testing.assert_almost_equal(k, test_case["expected_result"], err_msg="unexpected k")
 
-    def run_calc_bond_for_target_apr(self, pricing_model: base_pm.PricingModel):
+    def run_calc_bond_for_target_apr(
+        self, pricing_model: Union[hyperdrive_pm.HyperdrivePricingModel, yieldspace_pm.YieldspacePricingModel]
+    ):
         """Unit tests for calc_bond_for_target_apr"""
         test_cases = [
             {
@@ -253,7 +260,9 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 )
                 np.testing.assert_almost_equal(bond, test_case["expected_result"], err_msg="unexpected bond")
 
-    def run_calc_base_for_target_apr(self, pricing_model: base_pm.PricingModel):
+    def run_calc_base_for_target_apr(
+        self, pricing_model: Union[hyperdrive_pm.HyperdrivePricingModel, yieldspace_pm.YieldspacePricingModel]
+    ):
         """Unit tests for calc_base_for_target_apr"""
         test_cases = [
             {

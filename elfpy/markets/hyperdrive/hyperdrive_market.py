@@ -326,7 +326,7 @@ class Market(
         if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
             raise AssertionError("The market appears to already be initialized.")
         share_reserves = contribution / self.market_state.share_price
-        bond_reserves = self.pricing_model.calc_bond_reserves(
+        bond_reserves = self.pricing_model.calc_initial_bond_reserves(
             target_apr=target_apr,
             time_remaining=self.position_duration,
             market_state=MarketState(
