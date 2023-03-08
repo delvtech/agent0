@@ -171,15 +171,17 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> float:
-        r"""
-        Calculates the spot price of base in terms of bonds.
-
+        r"""Calculates the spot price of base in terms of bonds.
         The spot price is defined as:
 
         .. math::
             \begin{align}
+<<<<<<< HEAD
                 p &= (\frac{2y + cz}{\mu z})^{-\tau}
                   &= \frac{\mu * z}{y + s}^{\tau}
+=======
+            p = (\frac{\mu z}{y + s})^{\tau}
+>>>>>>> 1353e7f (fixes docstrings for calc_spot_price_from_reserves)
             \end{align}
 
         Parameters
@@ -203,15 +205,13 @@ class PricingModel(ABC):
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> Decimal:
-        r"""
-        Calculates the current market spot price of base in terms of bonds.
+        r"""Calculates the current market spot price of base in terms of bonds.
         This variant returns the result in a high precision format.
-
         The spot price is defined as:
 
         .. math::
             \begin{align}
-            p = (\frac{2y + cz}{\mu z})^{-\tau}
+            p = (\frac{\mu z}{y + s})^{\tau}
             \end{align}
 
         Parameters
