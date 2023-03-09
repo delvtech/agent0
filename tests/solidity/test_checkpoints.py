@@ -82,7 +82,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertAlmostEqual(
             apr_before,
             apr_after,
-            delta=8,
+            places=8,
         )
         checkpoint = self.hyperdrive.market_state.checkpoints[checkpoint_time]
         # Ensure that the checkpoint contains the share price prior to the share price update.
