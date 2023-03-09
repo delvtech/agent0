@@ -1,15 +1,14 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
-from dataclasses import dataclass
 
-import elfpy.time as time
-import elfpy.types as types
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
-
+import elfpy.time as time
+import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -294,11 +293,10 @@ def calc_open_long(
         time_remaining=market.position_duration,
     )
     # Update accouting for average maturity time, base volume and longs outstanding
-    maturity_time = market.position_duration.days / 365
     long_average_maturity_time = update_weighted_average(
         market.market_state.long_average_maturity_time,
         market.market_state.longs_outstanding,
-        maturity_time,
+        market.annualized_position_duration,
         base_amount,
         True,
     )
@@ -324,7 +322,7 @@ def calc_open_long(
     agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        longs={market.block_time.time: wallet.Long(trade_result.user_result.d_bonds)},
+        longs={market.latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
