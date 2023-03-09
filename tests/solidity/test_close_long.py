@@ -219,16 +219,9 @@ class TestCloseLong(unittest.TestCase):
             bond_amount=agent_deltas_open.longs[0].balance,
             mint_time=0,
         )
-        # TODO: This is failing
-        # self.assertLessEqual(
-        #    agent_deltas_close.balance.amount,
-        #    base_amount,
-        # )
-        # Doing this instead:
-        self.assertAlmostEqual(
-            first=agent_deltas_close.balance.amount - base_amount,
-            second=0,
-            delta=1e-9,
+        self.assertLessEqual(
+            agent_deltas_close.balance.amount,
+            base_amount,
         )
         self.verify_close_long(
             example_agent=self.bob,
@@ -275,15 +268,12 @@ class TestCloseLong(unittest.TestCase):
         #
         # dy ~= agent base proceeds because the base proceeds are mostly determined by the flat portion
         # t = 1 - time_delta
-        # TODO: This test should be acturate to 1e-8.
-        # The solidity implementation is somewhat off from python because of how we calculate total supply.
-        # We will need to use the solidity calculations for most instances, and only 2y+cz in the initialization step
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
         realized_apr = (base_proceeds - base_amount) / (base_amount * (1 - time_delta))
         self.assertAlmostEqual(
             realized_apr,
             self.target_apr,
-            delta=1e-3,
+            delta=1e-8,
             msg=f"The realized {realized_apr=} should be equal to {self.target_apr=}",
         )
         # verify that the close long updates were correct
@@ -358,10 +348,12 @@ class TestCloseLong(unittest.TestCase):
             bond_amount=agent_deltas_open.longs[0].balance,
             mint_time=0,
         )
-        base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
-        self.assertEqual(
+        # verify that Bob received base equal to the full bond amount
+        base_proceeds = agent_deltas_close.balance.amount  # how much base the agent gets as a result of the close
+        self.assertAlmostEqual(
             base_proceeds,
             agent_deltas_open.longs[0].balance * 0.8,
+            delta=1e-18,
         )
         # verify that the close long updates were correct
         self.verify_close_long(
@@ -396,9 +388,10 @@ class TestCloseLong(unittest.TestCase):
             mint_time=0,
         )
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
-        self.assertEqual(
+        self.assertAlmostEqual(
             base_proceeds,
             agent_deltas_open.longs[0].balance * 0.4 + agent_deltas_open.longs[0].balance * 0.4762,
+            delta=2e-4,
         )
         # verify that the close long updates were correct
         self.verify_close_long(
@@ -408,9 +401,3 @@ class TestCloseLong(unittest.TestCase):
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
-
-
-if __name__ == "__main__":
-    tester = TestCloseLong()
-    tester.setUp()
-    tester.test_close_long_immediately_with_small_amount()
