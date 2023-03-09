@@ -1,11 +1,13 @@
 """Testing for the utility methods in the pricing models"""
 import unittest
+import logging
 from typing import Union
 
 import numpy as np
 
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.utils.outputs as output_utils
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.utils import sim_utils
 
@@ -20,7 +22,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
 
         .. todo:: fix comments to actually reflect test case values
         """
-
+        output_utils.setup_logging("test_pricing_model_utils")
         test_cases = [
             # test 0: 500k share_reserves; 500k bond_reserves
             #   1 share price; 1 init_share_price; 3mo elapsed
@@ -120,7 +122,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 test_case["market_state"].bond_reserves
                 + test_case["market_state"].share_price * test_case["market_state"].share_reserves
             )
-            print(f"{test_number=} with\n{test_case=}")
+            logging.info(f"{test_number=} with\n{test_case=}")
             # Check if this test case is supposed to fail
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
@@ -148,6 +150,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     )
                 )
                 np.testing.assert_almost_equal(k, test_case["expected_result"], err_msg="unexpected k")
+
+        output_utils.close_logging()
 
 
 class TestPricingModelUtils(BasePricingModelUtilsTest):
