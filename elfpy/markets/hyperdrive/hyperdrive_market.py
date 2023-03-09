@@ -379,14 +379,14 @@ class Market(
             bond_amount,
             self,
         )
-        checkpoint_time = self.get_latest_checkpoint_time()
+        # apply deltas
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
         # create/update the checkpoint
+        checkpoint_time = self.latest_checkpoint_time
         self.apply_checkpoint(checkpoint_time, self.market_state.share_price)
         self.market_state.checkpoints[checkpoint_time].short_base_volume += market_deltas.short_base_volume
         self.market_state.total_supply_shorts[checkpoint_time] += market_deltas.shorts_outstanding
-        # apply other deltas
-        self.market_state.apply_delta(market_deltas)
-        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def close_short(
@@ -404,8 +404,9 @@ class Market(
             mint_time=mint_time,
             open_share_price=open_share_price,
         )
+        # apply deltas
         self.market_state.apply_delta(market_deltas)
-
+        agent_wallet.update(agent_deltas)
         # Get the total supply of shorts in the checkpoint of the shorts being closed. If the shorts
         # are closed before maturity, we add the amount of shorts being closed since the total
         # supply is decreased when burning the short tokens.
@@ -413,7 +414,6 @@ class Market(
         maturity_time = mint_time + self.position_duration.days / 365
         if self.block_time.time < maturity_time:
             checkpoint_amount += bond_amount
-
         # If all of the shorts in the checkpoint are being closed, delete the base volume in the
         # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
         if bond_amount == checkpoint_amount:
@@ -425,8 +425,6 @@ class Market(
             )
             self.market_state.short_base_volume -= proportional_base_volume
             self.market_state.checkpoints[mint_time].short_base_volume -= proportional_base_volume
-
-        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def open_long(
@@ -440,14 +438,14 @@ class Market(
             base_amount=base_amount,
             market=self,
         )
-        checkpoint_time = self.get_latest_checkpoint_time()
+        # apply deltas
+        self.market_state.apply_delta(market_deltas)
+        agent_wallet.update(agent_deltas)
+        checkpoint_time = self.latest_checkpoint_time
         # create/update the checkpoint
         self.apply_checkpoint(checkpoint_time, self.market_state.share_price)
         self.market_state.checkpoints[checkpoint_time].long_base_volume += market_deltas.long_base_volume
         self.market_state.total_supply_longs[checkpoint_time] += market_deltas.longs_outstanding
-        # apply other deltas
-        self.market_state.apply_delta(market_deltas)
-        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def close_long(
@@ -463,17 +461,16 @@ class Market(
             market=self,
             mint_time=mint_time,
         )
+        # apply deltas
         self.market_state.apply_delta(market_deltas)
-
-        checkpoint_amount = self.market_state.total_supply_longs[mint_time]
-
+        agent_wallet.update(agent_deltas)
         # Get the total supply of longs in the checkpoint of the longs being closed. If the longs
         # are closed before maturity, we add the amount of longs being closed since the total supply
         # is decreased when burning the long tokens.
         maturity_time = mint_time + self.position_duration.days / 365
+        checkpoint_amount = self.market_state.total_supply_longs[mint_time]
         if self.block_time.time < maturity_time:
             checkpoint_amount += bond_amount
-
         # If all of the longs in the checkpoint are being closed, delete the base volume in the
         # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
         mint_time_checkpoint = self.market_state.checkpoints[mint_time]
@@ -484,8 +481,6 @@ class Market(
             proportional_base_volume = mint_time_checkpoint.long_base_volume * (bond_amount / checkpoint_amount)
             self.market_state.long_base_volume -= proportional_base_volume
             mint_time_checkpoint.long_base_volume -= proportional_base_volume
-
-        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def add_liquidity(
@@ -518,21 +513,18 @@ class Market(
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
-    def checkpoint(self, checkpoint_time: float):
+    def checkpoint(self, checkpoint_time: float) -> None:
         """allows anyone to mint a new checkpoint."""
         # if the checkpoint has already been set, return early.
-
         if self.market_state.checkpoints[checkpoint_time].share_price != 0:
             return
-
         # if the checkpoint time isn't divisible by the checkpoint duration
         # or is in the future, it's an invalid checkpoint and we should
         # revert.
-        latest_checkpoint = self.get_latest_checkpoint_time()
+        latest_checkpoint = self.latest_checkpoint_time
         # TODO: this modulo check should be just > 0, but floats are weird
         if checkpoint_time % self.market_state.checkpoint_duration > 1e17 or latest_checkpoint < checkpoint_time:
             raise errors.InvalidCheckpointTime()
-
         # if the checkpoint time is the latest checkpoint, we use the current
         # share price. otherwise, we use a linear search to find the closest
         # share price and use that to perform the checkpoint.
@@ -549,48 +541,33 @@ class Market(
                     break
                 _time += self.market_state.checkpoint_duration
 
-    def get_latest_checkpoint_time(self):
+    @property
+    def latest_checkpoint_time(self) -> float:
         """gets the most recent checkpoint time."""
-        # NOTE: modulus doesn't work well with floats, checkpoints are days right now so multiply by 365
-        latest_checkpoint = (
-            (self.block_time.time * 365)
-            - ((self.block_time.time * 365) % (self.market_state.checkpoint_duration * 365))
-        ) / 365
-        return latest_checkpoint
+        # NOTE: modulus doesn't work well with floats, checkpoints are days right now so multiply by
+        # 365 so we can get integer values.
+        latest_checkpoint = int(
+            int(self.block_time.time * 365)
+            - (int(self.block_time.time * 365) % int(self.market_state.checkpoint_duration * 365))
+        )
+        # divide the result by 365 again to get years
+        return latest_checkpoint / 365
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
         """creates a new checkpoint if necessary."""
         # return early if the checkpoint has already been updated.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0 or checkpoint_time > self.block_time.time:
             return self.market_state.checkpoints[checkpoint_time].share_price
-
         # create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
-
         # TODO: pay out the long withdrawal pool for longs that have matured.
         mint_time = checkpoint_time - self.position_duration.days / 365
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             self.close_long(wallet.Wallet(0), matured_longs_amount, mint_time)
-
         # TODO: pay out the short withdrawal pool for shorts that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
             self.close_short(wallet.Wallet(0), open_share_price, matured_shorts_amount, mint_time)
-
         return self.market_state.checkpoints[checkpoint_time].share_price
-
-    def _apply_close_long(
-        self, bond_amount: float, pool_bond_delta: float, share_proceeds: float, maturity_time: float
-    ) -> None:
-        pass
-
-    def _apply_close_short(
-        self,
-        bond_amount: float,
-        pool_bond_delta: float,
-        share_payment: float,
-        maturity_time: float,
-    ) -> None:
-        pass

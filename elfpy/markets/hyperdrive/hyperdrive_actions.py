@@ -322,7 +322,7 @@ def calc_open_long(
     agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        longs={market.get_latest_checkpoint_time(): wallet.Long(trade_result.user_result.d_bonds)},
+        longs={market.latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas

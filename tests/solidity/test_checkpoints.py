@@ -73,7 +73,8 @@ class TestCheckpoint(unittest.TestCase):
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
         # create a checkpoint
-        self.hyperdrive.checkpoint(self.hyperdrive.get_latest_checkpoint_time())
+        checkpoint_time = self.hyperdrive.latest_checkpoint_time
+        self.hyperdrive.checkpoint(checkpoint_time)
         apr_after = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
@@ -83,7 +84,6 @@ class TestCheckpoint(unittest.TestCase):
             apr_after,
             delta=8,
         )
-        checkpoint_time = self.hyperdrive.get_latest_checkpoint_time()
         checkpoint = self.hyperdrive.market_state.checkpoints[checkpoint_time]
         # Ensure that the checkpoint contains the share price prior to the share price update.
         self.assertEqual(share_price_before, checkpoint.share_price)
@@ -105,14 +105,14 @@ class TestCheckpoint(unittest.TestCase):
         apr_before = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.hyperdrive.checkpoint(self.hyperdrive.get_latest_checkpoint_time())
+        self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
         # Ensure that the pool's APR wasn't changed by the checkpoint.
         apr_after = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
         self.assertEqual(apr_after, apr_before)
         # Ensure that the checkpoint contains the latest share price.
-        checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.get_latest_checkpoint_time()]
+        checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.latest_checkpoint_time]
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
     def test_checkpoint_in_the_past(self):
@@ -123,11 +123,15 @@ class TestCheckpoint(unittest.TestCase):
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Advance a term by the position duration.
         self.block_time.time += self.hyperdrive.position_duration.days / 365
+        print(f"{self.block_time.time=}")
         # Create a checkpoint.
-        self.hyperdrive.checkpoint(self.hyperdrive.get_latest_checkpoint_time())
+        self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
+        print(f"{self.hyperdrive.latest_checkpoint_time=}")
         previous_checkpoint_time = (
-            self.hyperdrive.get_latest_checkpoint_time() - self.hyperdrive.market_state.checkpoint_duration
+            self.hyperdrive.latest_checkpoint_time - self.hyperdrive.market_state.checkpoint_duration
         )
+        print(f"{previous_checkpoint_time=}")
+        print(f"{self.hyperdrive.latest_checkpoint_time - previous_checkpoint_time=}")
         self.hyperdrive.checkpoint(previous_checkpoint_time)
 
         # TODO: This should be either removed or uncommented when we decide
@@ -139,7 +143,8 @@ class TestCheckpoint(unittest.TestCase):
 
         # Ensure that the checkpoint contains the share price prior to the
         # share price update.
-        last_checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.get_latest_checkpoint_time()]
+        print(f"{self.hyperdrive.latest_checkpoint_time=}")
+        last_checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.latest_checkpoint_time]
         self.assertEqual(last_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the previous checkpoint contains the closest share price.
         previous_checkpoint = self.hyperdrive.market_state.checkpoints[previous_checkpoint_time]
