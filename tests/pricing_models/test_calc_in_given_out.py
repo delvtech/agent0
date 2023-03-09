@@ -42,7 +42,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
-                logging.info(f"\n{test_number=} with\n{test_case=}")
+                logging.info("test_number = %s with\ntest_case = %s", test_number, test_case)
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
