@@ -176,7 +176,7 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-                p &= (\frac{2y + cz}{\mu z})^{-\tau}
+                p &= (\frac{2y + cz}{\mu z})^{-\tau} \\
                   &= \frac{\mu * z}{y + s}^{\tau}
             \end{align}
 
@@ -206,9 +206,7 @@ class PricingModel(ABC):
         The spot price is defined as:
 
         .. math::
-            \begin{align}
             p = (\frac{\mu z}{y + s})^{\tau}
-            \end{align}
 
         Parameters
         ----------
@@ -259,10 +257,8 @@ class PricingModel(ABC):
         Calculates the maximum long the market can support
 
         .. math::
-            \begin{align}
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
             -c \cdot z
-            \end{align}
 
         Parameters
         ----------
@@ -301,9 +297,8 @@ class PricingModel(ABC):
         Calculates the maximum short the market can support using the bisection
         method.
 
-        \begin{align}
-        \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
-        \end{align}
+        .. math::
+            \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
 
         Parameters
         ----------
