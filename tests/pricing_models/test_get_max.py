@@ -183,7 +183,7 @@ class TestGetMax(unittest.TestCase):
                 logging.info("\ntest=%s with \n %s \n and %s", test_number, test_case, pricing_model)
                 # Initialize lp_total_supply to y + x
                 test_case.market_state.lp_total_supply = (
-                    test_case.market_state.share_reserves * test_case.market_state.init_share_price
+                    test_case.market_state.share_reserves * test_case.market_state.share_price
                     + test_case.market_state.bond_reserves
                 )
                 # Get the max long.

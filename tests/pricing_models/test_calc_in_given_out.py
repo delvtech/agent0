@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import decimal
+import logging
 import unittest
 
 import numpy as np
+
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessByModelTestResult,
@@ -14,6 +16,7 @@ from calc_test_dataclasses import (
 
 import elfpy.time as time
 import elfpy.types as types
+import elfpy.utils.outputs as output_utils
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
@@ -28,6 +31,7 @@ class TestCalcInGivenOut(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
+        output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
@@ -38,7 +42,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
         ) in enumerate(success_test_cases):
             for pricing_model in pricing_models:
-                print(f"\n{test_number=} with\n{test_case=}")
+                logging.info(f"\n{test_number=} with\n{test_case=}")
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
@@ -83,15 +87,18 @@ class TestCalcInGivenOut(unittest.TestCase):
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be or "YieldSpace", not {model_name}')
+        output_utils.close_logging()
 
     def test_calc_in_given_out_precision(self):
         """
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
+        output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
+                logging.info("pricing_model=%s\ntrade_amount=%s", pricing_model, trade_amount)
                 # out is in base, in is in bonds
                 trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
                 market_state = MarketState(
@@ -137,11 +144,13 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_remaining=time_remaining,
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, 0.0)
+        output_utils.close_logging()
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     # issue #57
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
+        output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
         failure_test_cases = [
@@ -387,7 +396,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
-            print(f"\n{test_number=}")
+            logging.info("test_number=%s", test_number)
             for pricing_model in pricing_models:
                 # TODO: convert these tests to use total supply, not the approximation
                 # approximation of total supply
@@ -395,7 +404,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     test_case.market_state.bond_reserves
                     + test_case.market_state.share_price * test_case.market_state.share_reserves
                 )
-                print(f"{pricing_model.model_name()=}")
+                logging.info("pricing_model_name=%s", pricing_model.model_name())
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(
                         quantity=test_case.out,
@@ -410,6 +419,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     pricing_model.check_output_assertions(
                         trade_result=trade_result,
                     )
+        output_utils.close_logging()
 
 
 # Test cases where token_in = TokenType.BASE indicating that bonds are being
