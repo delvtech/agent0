@@ -218,7 +218,7 @@ class YieldspacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & s \;\;\;\; = \;\;\;\; \text{lp_total_supply}\\
             & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & in' \;\;\:  = \;\;\:
@@ -295,7 +295,7 @@ class YieldspacePricingModel(PricingModel):
         share_price = Decimal(market_state.share_price)
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
-        total_supply = Decimal(market_state.lp_total_supply)
+        lp_total_supply = Decimal(market_state.lp_total_supply)
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
@@ -326,7 +326,7 @@ class YieldspacePricingModel(PricingModel):
             without_fee = self.calc_bonds_in_given_shares_out(
                 share_reserves=share_reserves,
                 bond_reserves=bond_reserves,
-                total_supply=total_supply,
+                lp_total_supply=lp_total_supply,
                 d_shares=d_shares,
                 time_elapsed=time_elapsed,
                 share_price=share_price,
@@ -388,7 +388,7 @@ class YieldspacePricingModel(PricingModel):
                 self.calc_shares_in_given_bonds_out(
                     share_reserves=share_reserves,
                     bond_reserves=bond_reserves,
-                    total_supply=total_supply,
+                    lp_total_supply=lp_total_supply,
                     d_bonds=d_bonds,
                     time_elapsed=time_elapsed,
                     share_price=share_price,
@@ -455,7 +455,7 @@ class YieldspacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & s \;\;\;\; = \;\;\;\; \text{lp_total_supply}\\
             & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & out'\;\; = \;\;
@@ -531,7 +531,7 @@ class YieldspacePricingModel(PricingModel):
         share_price = Decimal(market_state.share_price)
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
-        total_supply = Decimal(market_state.lp_total_supply)
+        lp_total_supply = Decimal(market_state.lp_total_supply)
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
@@ -560,7 +560,7 @@ class YieldspacePricingModel(PricingModel):
             without_fee = self.calc_bonds_out_given_shares_in(
                 share_reserves=share_reserves,
                 bond_reserves=bond_reserves,
-                total_supply=total_supply,
+                lp_total_supply=lp_total_supply,
                 d_shares=d_shares,
                 time_elapsed=time_elapsed,
                 share_price=share_price,
@@ -611,7 +611,7 @@ class YieldspacePricingModel(PricingModel):
                 self.calc_shares_out_given_bonds_in(
                     share_reserves=share_reserves,
                     bond_reserves=bond_reserves,
-                    total_supply=total_supply,
+                    lp_total_supply=lp_total_supply,
                     d_bonds=d_bonds,
                     time_elapsed=time_elapsed,
                     share_price=share_price,
@@ -658,7 +658,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         share_reserves: Decimal,
         bond_reserves: Decimal,
-        total_supply: Decimal,
+        lp_total_supply: Decimal,
         d_shares: Decimal,
         time_elapsed: Decimal,
         share_price: Decimal,
@@ -672,8 +672,8 @@ class YieldspacePricingModel(PricingModel):
                 "z"; Amount of share reserves in the pool.
             bond_reserves: Decimal
                 "y"; Amount of bond reserves in the pool.
-            total_supply: Decimal
-                "s"; An optional adjustment to the bond reserve.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
             d_shares: Decimal
                 "dz"; Amount of shares agent wants to provide.
             time_elapsed: Decimal
@@ -691,18 +691,18 @@ class YieldspacePricingModel(PricingModel):
         scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
-            share_reserves, bond_reserves, total_supply, time_elapsed, share_price, init_share_price
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
         # z_ = (c / mu) * (mu * (z - dz))**(1 - tau)
         adjusted_shares = scale * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
         # dy = (k - (c / mu) * (mu * (z - dz))**(1 - tau))**(1 / (1 - tau)) - (y + s)
-        return (yieldspace_const - adjusted_shares) ** (1 / time_elapsed) - (bond_reserves + total_supply)
+        return (yieldspace_const - adjusted_shares) ** (1 / time_elapsed) - (bond_reserves + lp_total_supply)
 
     def calc_bonds_out_given_shares_in(
         self,
         share_reserves: Decimal,
         bond_reserves: Decimal,
-        total_supply: Decimal,
+        lp_total_supply: Decimal,
         d_shares: Decimal,
         time_elapsed: Decimal,
         share_price: Decimal,
@@ -716,8 +716,8 @@ class YieldspacePricingModel(PricingModel):
                 "z"; Amount of share reserves in the pool.
             bond_reserves: Decimal
                 "y"; Amount of bond reserves in the pool.
-            total_supply: Decimal
-                "s"; An optional adjustment to the bond reserve.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
             d_shares: Decimal
                 "dz"; Amount of shares agent wants to provide.
             time_elapsed: Decimal
@@ -735,18 +735,18 @@ class YieldspacePricingModel(PricingModel):
         scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
-            share_reserves, bond_reserves, total_supply, time_elapsed, share_price, init_share_price
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
         # z_ = (c / mu) * (mu * (z + dz))**(1 - tau)
         adj_shares = scale * (init_share_price * (share_reserves + d_shares)) ** time_elapsed
         # dy = y + s - (k - (c / mu) * (mu * (z + dz))**(1 - tau))**(1 / (1 - tau))
-        return (bond_reserves + total_supply) - (yieldspace_const - adj_shares) ** (1 / time_elapsed)
+        return (bond_reserves + lp_total_supply) - (yieldspace_const - adj_shares) ** (1 / time_elapsed)
 
     def calc_shares_in_given_bonds_out(
         self,
         share_reserves: Decimal,
         bond_reserves: Decimal,
-        total_supply: Decimal,
+        lp_total_supply: Decimal,
         d_bonds: Decimal,
         time_elapsed: Decimal,
         share_price: Decimal,
@@ -760,8 +760,8 @@ class YieldspacePricingModel(PricingModel):
                 "z"; Amount of share reserves in the pool.
             bond_reserves: Decimal
                 "y"; Amount of bond reserves in the pool.
-            total_supply: Decimal
-                "s"; An optional adjustment to the bond reserve.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
             d_bonds: Decimal
                 "dy"; Amount of bonds agent wants to provide.
             time_elapsed: Decimal
@@ -779,10 +779,10 @@ class YieldspacePricingModel(PricingModel):
         scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
-            share_reserves, bond_reserves, total_supply, time_elapsed, share_price, init_share_price
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
         # y_ = (y + s - dy)**(1 - tau)
-        adj_bonds = (bond_reserves + total_supply - d_bonds) ** time_elapsed
+        adj_bonds = (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed
         # dz = (1 / mu) * ((k - (y + s - dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
         return (1 / init_share_price) * ((yieldspace_const - adj_bonds) / scale) ** (1 / time_elapsed) - share_reserves
 
@@ -790,7 +790,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         share_reserves: Decimal,
         bond_reserves: Decimal,
-        total_supply: Decimal,
+        lp_total_supply: Decimal,
         d_bonds: Decimal,
         time_elapsed: Decimal,
         share_price: Decimal,
@@ -804,8 +804,8 @@ class YieldspacePricingModel(PricingModel):
                 "z"; The amount of share reserves in the pool.
             bond_reserves: Decimal
                 "y"; The amount of bond reserves in the pool.
-            total_supply: Decimal
-                "s"; The supply adjusts the bond reserves, and is usually indicated by market_state.lp_total_supply
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
             d_bonds: Decimal
                 "dy"; The amount of bonds the agent wants to provide.
             time_elapsed: Decimal
@@ -824,11 +824,11 @@ class YieldspacePricingModel(PricingModel):
         scale = share_price / init_share_price  # c / mu
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
-            share_reserves, bond_reserves, total_supply, time_elapsed, share_price, init_share_price
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
         # adjust the bond reserve to shift the curve around the inflection point
         # y_adj = (y + s + dy)**(1 - tau)
-        adj_bonds = (bond_reserves + total_supply + d_bonds) ** time_elapsed
+        adj_bonds = (bond_reserves + lp_total_supply + d_bonds) ** time_elapsed
         # dz = z - (1 / mu) * ((k - (y + s + dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau))
         return share_reserves - (1 / init_share_price) * ((yieldspace_const - adj_bonds) / scale) ** (1 / time_elapsed)
 
@@ -836,7 +836,7 @@ class YieldspacePricingModel(PricingModel):
         self,
         share_reserves: Decimal,
         bond_reserves: Decimal,
-        total_supply: Decimal,
+        lp_total_supply: Decimal,
         time_elapsed: Decimal,
         share_price: Decimal,
         init_share_price: Decimal,
@@ -851,8 +851,8 @@ class YieldspacePricingModel(PricingModel):
                 "z"; The amount of share reserves in the pool.
             bond_reserves: Decimal
                 "y"; The amount of bond reserves in the pool.
-            total_supply: Decimal
-                "s"; The supply adjusts the bond reserves, and is usually indicated by market_state.lp_total_supply
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
             time_elapsed: Decimal
                 "t"; Amount of time elapsed since term start.
                 This is also depicted as (1 - tau), where tau is stretched_time.
@@ -871,5 +871,6 @@ class YieldspacePricingModel(PricingModel):
         # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
         scale = share_price / init_share_price
         return (
-            scale * (init_share_price * share_reserves) ** time_elapsed + (bond_reserves + total_supply) ** time_elapsed
+            scale * (init_share_price * share_reserves) ** time_elapsed
+            + (bond_reserves + lp_total_supply) ** time_elapsed
         )

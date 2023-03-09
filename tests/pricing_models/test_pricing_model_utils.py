@@ -129,7 +129,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         pricing_model.calc_yieldspace_const(
                             share_reserves=test_case["market_state"].share_reserves,
                             bond_reserves=test_case["market_state"].bond_reserves,
-                            total_supply=test_case["market_state"].lp_total_supply,
+                            lp_total_supply=test_case["market_state"].lp_total_supply,
                             time_elapsed=test_case["time_elapsed"],
                             share_price=test_case["market_state"].share_price,
                             init_share_price=test_case["market_state"].init_share_price,
@@ -141,7 +141,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     pricing_model.calc_yieldspace_const(
                         share_reserves=test_case["market_state"].share_reserves,
                         bond_reserves=test_case["market_state"].bond_reserves,
-                        total_supply=test_case["market_state"].lp_total_supply,
+                        lp_total_supply=test_case["market_state"].lp_total_supply,
                         time_elapsed=test_case["time_elapsed"],
                         share_price=test_case["market_state"].share_price,
                         init_share_price=test_case["market_state"].init_share_price,
