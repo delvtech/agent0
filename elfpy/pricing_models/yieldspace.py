@@ -688,15 +688,15 @@ class YieldspacePricingModel(PricingModel):
             d_bonds: Decimal
                 "dy"; Amount of bonds in required to get the d_shares out.
         """
-        scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        # z_ = (c / mu) * (mu * (z - dz))**(1 - tau)
-        adjusted_shares = scale * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
         # dy = (k - (c / mu) * (mu * (z - dz))**(1 - tau))**(1 / (1 - tau)) - (y + s)
-        return (yieldspace_const - adjusted_shares) ** (1 / time_elapsed) - (bond_reserves + lp_total_supply)
+        return (
+            yieldspace_const
+            - (share_price / init_share_price) * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
+        ) ** (1 / time_elapsed) - (bond_reserves + lp_total_supply)
 
     def calc_bonds_out_given_shares_in(
         self,
@@ -732,15 +732,15 @@ class YieldspacePricingModel(PricingModel):
             d_bonds: Decimal
                 "dy"; Amount of bonds for the input shares amount.
         """
-        scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        # z_ = (c / mu) * (mu * (z + dz))**(1 - tau)
-        adj_shares = scale * (init_share_price * (share_reserves + d_shares)) ** time_elapsed
         # dy = y + s - (k - (c / mu) * (mu * (z + dz))**(1 - tau))**(1 / (1 - tau))
-        return (bond_reserves + lp_total_supply) - (yieldspace_const - adj_shares) ** (1 / time_elapsed)
+        return (bond_reserves + lp_total_supply) - (
+            yieldspace_const
+            - (share_price / init_share_price) * (init_share_price * (share_reserves + d_shares)) ** time_elapsed
+        ) ** (1 / time_elapsed)
 
     def calc_shares_in_given_bonds_out(
         self,
@@ -776,15 +776,15 @@ class YieldspacePricingModel(PricingModel):
             delta_shares: Decimal
                 "dz"; The amount of bonds the agent wants to provide.
         """
-        scale = share_price / init_share_price
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        # y_ = (y + s - dy)**(1 - tau)
-        adj_bonds = (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed
         # dz = (1 / mu) * ((k - (y + s - dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
-        return (1 / init_share_price) * ((yieldspace_const - adj_bonds) / scale) ** (1 / time_elapsed) - share_reserves
+        return (1 / init_share_price) * (
+            (yieldspace_const - (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed)
+            / (share_price / init_share_price)
+        ) ** (1 / time_elapsed) - share_reserves
 
     def calc_shares_out_given_bonds_in(
         self,
@@ -821,16 +821,15 @@ class YieldspacePricingModel(PricingModel):
             delta_shares: Decimal
                 "dz"; The change in shares that resulted from bonds coming in.
         """
-        scale = share_price / init_share_price  # c / mu
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        # adjust the bond reserve to shift the curve around the inflection point
-        # y_adj = (y + s + dy)**(1 - tau)
-        adj_bonds = (bond_reserves + lp_total_supply + d_bonds) ** time_elapsed
         # dz = z - (1 / mu) * ((k - (y + s + dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau))
-        return share_reserves - (1 / init_share_price) * ((yieldspace_const - adj_bonds) / scale) ** (1 / time_elapsed)
+        return share_reserves - (1 / init_share_price) * (
+            (yieldspace_const - (bond_reserves + lp_total_supply + d_bonds) ** time_elapsed)
+            / (share_price / init_share_price)
+        ) ** (1 / time_elapsed)
 
     def calc_yieldspace_const(
         self,
@@ -858,8 +857,6 @@ class YieldspacePricingModel(PricingModel):
                 This is also depicted as (1 - tau), where tau is stretched_time.
             share_price: Decimal
                 "c"; The conversion rate between base and shares.
-            share_price: Decimal
-                "c"; The conversion rate between base and shares.
             init_share_price: Decimal
                 "mu"; The interest normalization factor for shares, aka the conversion rate at time=0.
 
@@ -869,8 +866,6 @@ class YieldspacePricingModel(PricingModel):
                 "k"; The yieldspace constant.
         """
         # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
-        scale = share_price / init_share_price
-        return (
-            scale * (init_share_price * share_reserves) ** time_elapsed
-            + (bond_reserves + lp_total_supply) ** time_elapsed
-        )
+        return (share_price / init_share_price) * (init_share_price * share_reserves) ** time_elapsed + (
+            bond_reserves + lp_total_supply
+        ) ** time_elapsed
