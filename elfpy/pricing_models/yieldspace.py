@@ -840,7 +840,7 @@ class YieldspacePricingModel(PricingModel):
         share_price: Decimal,
         init_share_price: Decimal,
     ) -> Decimal:
-        """Helper function to derive invariant constant K
+        r"""Helper function to derive invariant constant K
 
         .. math::
             k = \frac{c}{mu} (mu z)^{1 - \tau} + (y + s)^(1 - \tau)
