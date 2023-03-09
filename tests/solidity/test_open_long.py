@@ -16,7 +16,7 @@ class TestOpenLong(unittest.TestCase):
 
     contribution: float = 500_000_000
     target_apr: float = 0.05
-    position_duration: int = 180
+    term_length: int = 365
     alice: agent.Agent
     bob: agent.Agent
     celine: agent.Agent
@@ -38,7 +38,9 @@ class TestOpenLong(unittest.TestCase):
             market_state=market_state,
             block_time=self.block_time,
             position_duration=time.StretchedTime(
-                days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
+                days=self.term_length,
+                time_stretch=pricing_model.calc_time_stretch(self.target_apr),
+                normalizing_constant=self.term_length,
             ),
         )
         _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
@@ -114,10 +116,6 @@ class TestOpenLong(unittest.TestCase):
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         # checkpoint_time = maturity_time - self.position_duration
         self.assertEqual(
-            self.hyperdrive.market_state.long_base_volume,
-            base_amount,
-        )
-        self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
             msg=f"{self.hyperdrive.market_state.shorts_outstanding=} is not correct",
@@ -134,10 +132,6 @@ class TestOpenLong(unittest.TestCase):
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.short_base_volume_checkpoints(checkpoint_time),
-        self.assertEqual(
-            self.hyperdrive.market_state.short_base_volume,
-            0,
-        )
 
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""

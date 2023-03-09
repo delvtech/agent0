@@ -1316,6 +1316,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
                 expected_result = results_by_model[model_type]
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                test_case.market_state.lp_total_supply = (
+                    test_case.market_state.bond_reserves
+                    + test_case.market_state.share_price * test_case.market_state.share_reserves
+                )
                 # Ensure we get the expected results from the pricing model.
                 trade_result = pricing_model.calc_out_given_in(
                     in_=test_case.in_,
@@ -1367,6 +1373,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     init_share_price=1,
                     trade_fee_percent=0.1,
                     redemption_fee_percent=0.1,
+                )
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                market_state.lp_total_supply = (
+                    market_state.bond_reserves + market_state.share_price * market_state.share_reserves
                 )
                 time_remaining = time.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
@@ -1648,6 +1659,12 @@ class TestCalcOutGivenIn(unittest.TestCase):
         for test_number, test_case in enumerate(failure_test_cases):
             print(f"{test_number=}")
             for pricing_model in pricing_models:
+                # TODO: convert these tests to use total supply, not the approximation
+                # approximation of total supply
+                test_case.market_state.lp_total_supply = (
+                    test_case.market_state.bond_reserves
+                    + test_case.market_state.share_price * test_case.market_state.share_reserves
+                )
                 print(f"{pricing_model.model_name()=}")
                 with self.assertRaises(test_case.exception_type):
                     pricing_model.check_input_assertions(

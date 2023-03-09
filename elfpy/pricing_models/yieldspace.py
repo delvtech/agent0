@@ -15,6 +15,8 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
+# pylint: disable=too-many-arguments
+
 
 class YieldspacePricingModel(PricingModel):
     """
@@ -216,7 +218,7 @@ class YieldspacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & s \;\;\;\; = \;\;\;\; \text{lp_total_supply}\\
             & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & in' \;\;\:  = \;\;\:
@@ -265,7 +267,7 @@ class YieldspacePricingModel(PricingModel):
         Parameters
         ----------
         out : Quantity
-            The quantity of tokens that the user wants to receive (the amount
+            The quantity of tokens that the agent wants to receive (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -275,66 +277,61 @@ class YieldspacePricingModel(PricingModel):
         Returns
         -------
         float
-            The amount the user pays without fees or slippage. The units
+            The amount the agent pays without fees or slippage. The units
             are always in terms of bonds or base.
         float
-            The amount the user pays with fees and slippage. The units are
+            The amount the agent pays with fees and slippage. The units are
             always in terms of bonds or base.
         float
-            The amount the user pays with slippage and no fees. The units are
+            The amount the agent pays with slippage and no fees. The units are
             always in terms of bonds or base.
         float
-            The fee the user pays. The units are always in terms of bonds or
+            The fee the agent pays. The units are always in terms of bonds or
             base.
         """
         # Calculate some common values up front
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
-        scale = share_price / init_share_price
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
-        total_reserves = share_price * share_reserves + bond_reserves
+        lp_total_supply = Decimal(market_state.lp_total_supply)
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        # We precompute the YieldSpace constant k using the current reserves and
-        # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
         if out.unit == types.TokenType.BASE:
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
             d_shares = out_amount / share_price
-            # The amount the user pays without fees or slippage is simply the
-            # amount of base the user would receive times the inverse of the
-            # spot price of base in terms of bonds. The amount of base the user
-            # receives is given by c * d_z where d_z is the number of shares the
-            # pool will need to unwrap to give the user their base. If we let p
+            # The amount the agent pays without fees or slippage is simply the
+            # amount of base the agent would receive times the inverse of the
+            # spot price of base in terms of bonds. The amount of base the agent
+            # receives is given by c * dz where dz is the number of shares the
+            # pool will need to unwrap to give the agent their base. If we let p
             # be the conventional spot price, then we can write this as:
             #
-            # without_fee_or_slippage = (1 / p) * c * d_z
+            # without_fee_or_slippage = (1 / p) * c * dz
             without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
             # We solve the YieldSpace invariant for the bonds paid to receive
             # the requested amount of base. We set up the invariant where the
-            # user pays d_y' bonds and receives d_z shares:
+            # agent pays dy bonds and receives dz shares:
             #
-            # (c / mu) * (mu * (z - d_z))**(1 - tau) + (2y + cz + d_y')**(1 - tau)) = k
+            # k = (c / mu) * (mu * (z - dz))**(1 - tau) + (y + s + dy)**(1 - tau)
             #
-            # Solving for d_y' gives us the amount of bonds the user must pay
+            # Solving for dy (without_fee) gives us the amount of bonds the agent must pay
             # without including fees:
             #
-            # d_y' = (k - (c / mu) * (mu * (z - d_z))**(1 - tau))**(1 / (1 - tau)) - (2y + cz)
-            #
-            # without_fee = d_y'
-            base_of_exponent = init_share_price * (out_reserves - d_shares)
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            without_fee = (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed) - in_reserves
+            # dy = (k - (c / mu) * (mu * (z - dz))**(1 - tau))**(1 / (1 - tau)) - (y + s)
+            without_fee = self.calc_bonds_in_given_shares_out(
+                share_reserves=share_reserves,
+                bond_reserves=bond_reserves,
+                lp_total_supply=lp_total_supply,
+                d_shares=d_shares,
+                time_elapsed=time_elapsed,
+                share_price=share_price,
+                init_share_price=init_share_price,
+            )
             # The fees are calculated as the difference between the bonds paid
             # without slippage and the base received times the fee percentage.
             # This can also be expressed as:
@@ -356,7 +353,7 @@ class YieldspacePricingModel(PricingModel):
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
-            # Create the user and market trade results.
+            # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
@@ -366,38 +363,39 @@ class YieldspacePricingModel(PricingModel):
                 d_bonds=float(with_fee),
             )
         elif out.unit == types.TokenType.PT:
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
             d_bonds = out_amount
-            # The amount the user pays without fees or slippage is simply
-            # the amount of bonds the user would receive times the spot price of
+            # The amount the agent pays without fees or slippage is simply
+            # the amount of bonds the agent would receive times the spot price of
             # base in terms of bonds. If we let p be the conventional spot price,
             # then we can write this as:
             #
-            # without_fee_or_slippage = p * d_y
+            # without_fee_or_slippage = p * dy
             without_fee_or_slippage = spot_price * d_bonds
             # We solve the YieldSpace invariant for the base paid for the
-            # requested amount of bonds. We set up the invariant where the user
+            # requested amount of bonds. We set up the invariant where the agent
             # pays d_z' shares and receives d_y bonds:
             #
-            # (c / mu) * (mu * (z + d_z'))**(1 - tau) + (2y + cz - d_y)**(1 - tau) = k
+            # k = (c / mu) * (mu * (z + dz))**(1 - tau) + (y + s - dy)**(1 - tau)
             #
-            # Solving for d_z' gives us the amount of shares the user pays
+            # Solving for dz gives us the amount of shares the agent pays
             # without including fees:
             #
-            # d_z' = (1 / mu) * ((k - (2y + cz - d_y)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
+            # dz = (1 / mu) * ((k - (y + s - dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
             #
-            # We really want to know the value of d_x', the amount of base the
-            # user pays. This is given by d_x' = c * d_z'.
-            #
-            # without_fee = d_x'
-            base_of_exponent = out_reserves - d_bonds
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
+            # We really want to know the value of dx (without_fee), the amount of base the
+            # agent pays. This is given by dx = c * dz.
             without_fee = (
-                (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
-                - in_reserves
-            ) * share_price
+                self.calc_shares_in_given_bonds_out(
+                    share_reserves=share_reserves,
+                    bond_reserves=bond_reserves,
+                    lp_total_supply=lp_total_supply,
+                    d_bonds=d_bonds,
+                    time_elapsed=time_elapsed,
+                    share_price=share_price,
+                    init_share_price=init_share_price,
+                )
+                * share_price  # convert to base
+            )
             # The fees are calculated as the difference between the bonds
             # received and the base paid without slippage times the fee
             # percentage. This can also be expressed as:
@@ -415,7 +413,7 @@ class YieldspacePricingModel(PricingModel):
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
             with_fee = without_fee + fee
-            # Create the user and market trade results.
+            # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
@@ -457,7 +455,7 @@ class YieldspacePricingModel(PricingModel):
 
         .. math::
             \begin{align*}
-            & s \;\;\;\; = \;\;\;\; \text{total_supply}\\
+            & s \;\;\;\; = \;\;\;\; \text{lp_total_supply}\\
             & p \;\;\;\; = \;\;\;\; \Bigg(\dfrac{y + s}{\mu z}\Bigg)^{-\tau}
             \\\\
             & out'\;\; = \;\;
@@ -505,7 +503,7 @@ class YieldspacePricingModel(PricingModel):
         Parameters
         ----------
         in_ : Quantity
-            The quantity of tokens that the user wants to pay (the amount
+            The quantity of tokens that the agent wants to pay (the amount
             and the unit of the tokens).
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -515,73 +513,70 @@ class YieldspacePricingModel(PricingModel):
         Returns
         -------
         float
-            The amount the user receives without fees or slippage. The units
+            The amount the agent receives without fees or slippage. The units
             are always in terms of bonds or base.
         float
-            The amount the user receives with fees and slippage. The units are
+            The amount the agent receives with fees and slippage. The units are
             always in terms of bonds or base.
         float
-            The amount the user receives with slippage and no fees. The units are
+            The amount the agent receives with slippage and no fees. The units are
             always in terms of bonds or base.
         float
-            The fee the user pays. The units are always in terms of bonds or
+            The fee the agent pays. The units are always in terms of bonds or
             base.
         """
         # Calculate some common values up front
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)
         init_share_price = Decimal(market_state.init_share_price)
         share_price = Decimal(market_state.share_price)
-        scale = share_price / init_share_price
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
-        total_reserves = share_price * share_reserves + bond_reserves
+        lp_total_supply = Decimal(market_state.lp_total_supply)
         spot_price = self._calc_spot_price_from_reserves_high_precision(
             market_state,
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        # We precompute the YieldSpace constant k using the current reserves and
-        # share price:
-        #
-        # k = (c / mu) * (mu * z)**(1 - tau) + (2y + cz)**(1 - tau)
-        k = self._calc_k_const(market_state, time_remaining)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
-            in_reserves = share_reserves
-            out_reserves = bond_reserves + total_reserves
-            # The amount the user would receive without fees or slippage is
-            # the amount of base the user pays times inverse of the spot price
+            # The amount the agent would receive without fees or slippage is
+            # the amount of base the agent pays times inverse of the spot price
             # of base in terms of bonds. If we let p be the conventional spot
             # price, then we can write this as:
             #
-            # (1 / p) * c * d_z
+            # (1 / p) * c * dz
             without_fee_or_slippage = (1 / spot_price) * share_price * d_shares
             # We solve the YieldSpace invariant for the bonds received from
             # paying the specified amount of base. We set up the invariant where
-            # the user pays d_z shares and receives d_y' bonds:
+            # the agent pays dz shares and receives dy bonds:
             #
-            # (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau) = k
+            # k = (c / mu) * (mu * (z + dz))**(1 - tau) + (y + s - dy)**(1 - tau)
             #
-            # Solving for d_y' gives us the amount of bonds the user receives
-            # without including fees:
+            # Where the left hand side, k, is defined above. Solving for dy (without_fee) gives
+            # us the amount of bonds the agent receives without including fees:
             #
-            # d_y' = 2y + cz - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
-            base_of_exponent = init_share_price * (in_reserves + d_shares)
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
-            without_fee = out_reserves - (k - scale * base_of_exponent**time_elapsed) ** (1 / time_elapsed)
+            # dy = y + s - (k - (c / mu) * (mu * (z + dz))**(1 - tau))**(1 / (1 - tau))
+            without_fee = self.calc_bonds_out_given_shares_in(
+                share_reserves=share_reserves,
+                bond_reserves=bond_reserves,
+                lp_total_supply=lp_total_supply,
+                d_shares=d_shares,
+                time_elapsed=time_elapsed,
+                share_price=share_price,
+                init_share_price=init_share_price,
+            )
             # The fees are calculated as the difference between the bonds
             # received without slippage and the base paid times the fee
             # percentage. This can also be expressed as:
             #
-            # ((1 / p) - 1) * phi * c * d_z
+            # ((1 / p) - 1) * phi * c * dz
             fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
-            # Create the user and market trade results.
+            # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
@@ -592,48 +587,49 @@ class YieldspacePricingModel(PricingModel):
             )
         elif in_.unit == types.TokenType.PT:
             d_bonds = in_amount
-            in_reserves = bond_reserves + total_reserves
-            out_reserves = share_reserves
-            # The amount the user would receive without fees or slippage is the
-            # amount of bonds the user pays times the spot price of base in
+            # The amount the agent would receive without fees or slippage is the
+            # amount of bonds the agent pays times the spot price of base in
             # terms of bonds. If we let p be the conventional spot price, then
             # we can write this as:
             #
-            # p * d_y
+            # p * dy
             without_fee_or_slippage = spot_price * d_bonds
             # We solve the YieldSpace invariant for the base received from
             # selling the specified amount of bonds. We set up the invariant
-            # where the user pays d_y bonds and receives d_z' shares:
+            # where the agent pays dy bonds and receives dz shares:
             #
-            # (c / mu) * (mu * (z - d_z'))**(1 - tau) + (2y + cz + d_y)**(1 - tau) = k
+            # k = (c / mu) * (mu * (z - dz))**(1 - tau) + (y + s + dy)**(1 - tau)
             #
-            # Solving for d_z' gives us the amount of shares the user receives
+            # Solving for dz gives us the amount of shares the agent receives
             # without fees:
             #
-            # d_z' = z - (1 / mu) * ((k - (2y + cz + d_y)**(1 - tau)) / (c / mu))**(1 / (1 - tau))
+            # dz = z - (1 / mu) * ((k - (y + s + dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau))
             #
-            # We really want to know the value of d_x', the amount of base the
-            # user receives without fees. This is given by d_x' = c * d_z'.
-            #
-            # without_fee = d_x'
-            base_of_exponent = in_reserves + d_bonds
-            if base_of_exponent < 0:
-                raise ValueError(f"ERROR: {base_of_exponent=} <= 0")
+            # We really want to know the value of dx (without_fee), the amount of base the
+            # agent receives without fees. This is given by dx = c * dz.
             without_fee = (
-                share_reserves
-                - (1 / init_share_price) * ((k - base_of_exponent**time_elapsed) / scale) ** (1 / time_elapsed)
-            ) * share_price
+                self.calc_shares_out_given_bonds_in(
+                    share_reserves=share_reserves,
+                    bond_reserves=bond_reserves,
+                    lp_total_supply=lp_total_supply,
+                    d_bonds=d_bonds,
+                    time_elapsed=time_elapsed,
+                    share_price=share_price,
+                    init_share_price=init_share_price,
+                )
+                * share_price  # convert back to base
+            )
             # The fees are calculated as the difference between the bonds paid
             # and the base received without slippage times the fee percentage.
             # This can also be expressed as:
             #
-            # fee = (1 - p) * phi * d_y
+            # fee = (1 - p) * phi * dy
             fee = (1 - spot_price) * trade_fee_percent * d_bonds
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - fee
-            # Create the user and market trade results.
+            # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
@@ -658,31 +654,219 @@ class YieldspacePricingModel(PricingModel):
             ),
         )
 
-    def _calc_k_const(self, market_state: hyperdrive_market.MarketState, time_remaining: time.StretchedTime) -> Decimal:
-        """
-        Returns the 'k' constant variable for trade mathematics
-
-        .. math::
-            k = \frac{c / mu} (mu z)^{1 - \tau} + (2y + c z)^(1 - \tau)
+    def calc_bonds_in_given_shares_out(
+        self,
+        share_reserves: Decimal,
+        bond_reserves: Decimal,
+        lp_total_supply: Decimal,
+        d_shares: Decimal,
+        time_elapsed: Decimal,
+        share_price: Decimal,
+        init_share_price: Decimal,
+    ) -> Decimal:
+        """Calculates the amount of bonds a agent must provide the pool to receive a specified amount of shares.
 
         Parameters
         ----------
-        market_state : MarketState
-            The state of the AMM
-        time_remaining : StretchedTime
-            Time until expiry for the token
+            share_reserves: Decimal
+                "z"; Amount of share reserves in the pool.
+            bond_reserves: Decimal
+                "y"; Amount of bond reserves in the pool.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
+            d_shares: Decimal
+                "dz"; Amount of shares agent wants to provide.
+            time_elapsed: Decimal
+                "1 - tau"; Amount of time elapsed since term start.
+            share_price: Decimal
+                "c"; Conversion rate between base and shares.
+            init_share_price: Decimal
+                "mu"; Interest normalization factor for shares.
 
         Returns
         -------
-        Decimal
-            'k' constant used for trade mathematics, calculated from the provided parameters
+            d_bonds: Decimal
+                "dy"; Amount of bonds in required to get the d_shares out.
         """
-        scale = Decimal(market_state.share_price) / Decimal(market_state.init_share_price)
-        total_reserves = Decimal(market_state.bond_reserves) + Decimal(market_state.share_price) * Decimal(
-            market_state.share_reserves
+        # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
+        yieldspace_const = self.calc_yieldspace_const(
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        time_elapsed = Decimal(1) - Decimal(time_remaining.stretched_time)
+        # dy = (k - (c / mu) * (mu * (z - dz))**(1 - tau))**(1 / (1 - tau)) - (y + s)
         return (
-            scale * (Decimal(market_state.init_share_price) * Decimal(market_state.share_reserves)) ** time_elapsed
-            + (Decimal(market_state.bond_reserves) + Decimal(total_reserves)) ** time_elapsed
+            yieldspace_const
+            - (share_price / init_share_price) * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
+        ) ** (1 / time_elapsed) - (bond_reserves + lp_total_supply)
+
+    def calc_bonds_out_given_shares_in(
+        self,
+        share_reserves: Decimal,
+        bond_reserves: Decimal,
+        lp_total_supply: Decimal,
+        d_shares: Decimal,
+        time_elapsed: Decimal,
+        share_price: Decimal,
+        init_share_price: Decimal,
+    ) -> Decimal:
+        """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
+
+        Parameters
+        ----------
+            share_reserves: Decimal
+                "z"; Amount of share reserves in the pool.
+            bond_reserves: Decimal
+                "y"; Amount of bond reserves in the pool.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
+            d_shares: Decimal
+                "dz"; Amount of shares agent wants to provide.
+            time_elapsed: Decimal
+                "1 - tau"; Amount of time elapsed since term start.
+            share_price: Decimal
+                "c"; Conversion rate between base and shares.
+            init_share_price: Decimal
+                "mu"; Interest normalization factor for shares.
+
+        Returns
+        -------
+            d_bonds: Decimal
+                "dy"; Amount of bonds for the input shares amount.
+        """
+        # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
+        yieldspace_const = self.calc_yieldspace_const(
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
+        # dy = y + s - (k - (c / mu) * (mu * (z + dz))**(1 - tau))**(1 / (1 - tau))
+        return (bond_reserves + lp_total_supply) - (
+            yieldspace_const
+            - (share_price / init_share_price) * (init_share_price * (share_reserves + d_shares)) ** time_elapsed
+        ) ** (1 / time_elapsed)
+
+    def calc_shares_in_given_bonds_out(
+        self,
+        share_reserves: Decimal,
+        bond_reserves: Decimal,
+        lp_total_supply: Decimal,
+        d_bonds: Decimal,
+        time_elapsed: Decimal,
+        share_price: Decimal,
+        init_share_price: Decimal,
+    ) -> Decimal:
+        """Calculates the amount of shares a agent must provide the pool to receive a specified amount of bonds.
+
+        Parameters
+        ----------
+            share_reserves: Decimal
+                "z"; Amount of share reserves in the pool.
+            bond_reserves: Decimal
+                "y"; Amount of bond reserves in the pool.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
+            d_bonds: Decimal
+                "dy"; Amount of bonds agent wants to provide.
+            time_elapsed: Decimal
+                "1 - tau"; Amount of time elapsed since term start.
+            share_price: Decimal
+                "c"; Conversion rate between base and shares.
+            init_share_price: Decimal
+                "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
+
+        Returns
+        -------
+            delta_shares: Decimal
+                "dz"; The amount of bonds the agent wants to provide.
+        """
+        # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
+        yieldspace_const = self.calc_yieldspace_const(
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
+        )
+        # dz = (1 / mu) * ((k - (y + s - dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
+        return (1 / init_share_price) * (
+            (yieldspace_const - (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed)
+            / (share_price / init_share_price)
+        ) ** (1 / time_elapsed) - share_reserves
+
+    def calc_shares_out_given_bonds_in(
+        self,
+        share_reserves: Decimal,
+        bond_reserves: Decimal,
+        lp_total_supply: Decimal,
+        d_bonds: Decimal,
+        time_elapsed: Decimal,
+        share_price: Decimal,
+        init_share_price: Decimal,
+    ) -> Decimal:
+        """Calculates the amount of shares a agent will receive from the pool by providing a specified amount of bonds.
+
+        Parameters
+        ----------
+            share_reserves: Decimal
+                "z"; The amount of share reserves in the pool.
+            bond_reserves: Decimal
+                "y"; The amount of bond reserves in the pool.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
+            d_bonds: Decimal
+                "dy"; The amount of bonds the agent wants to provide.
+            time_elapsed: Decimal
+                "1 - tau"; Amount of time elapsed since term start.
+                Elsewhere, this is also depicted as (1 - tau), where tau is stretched_time.
+            share_price: Decimal
+                "c"; Conversion rate between base and shares.
+            init_share_price: Decimal
+                "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
+
+        Returns
+        -------
+            delta_shares: Decimal
+                "dz"; The change in shares that resulted from bonds coming in.
+        """
+        # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
+        yieldspace_const = self.calc_yieldspace_const(
+            share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
+        )
+        # dz = z - (1 / mu) * ((k - (y + s + dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau))
+        return share_reserves - (1 / init_share_price) * (
+            (yieldspace_const - (bond_reserves + lp_total_supply + d_bonds) ** time_elapsed)
+            / (share_price / init_share_price)
+        ) ** (1 / time_elapsed)
+
+    def calc_yieldspace_const(
+        self,
+        share_reserves: Decimal,
+        bond_reserves: Decimal,
+        lp_total_supply: Decimal,
+        time_elapsed: Decimal,
+        share_price: Decimal,
+        init_share_price: Decimal,
+    ) -> Decimal:
+        r"""Helper function to derive invariant constant K
+
+        .. math::
+            k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^{1 - \tau}
+
+        Parameters
+        ----------
+            share_reserves: Decimal
+                "z"; The amount of share reserves in the pool.
+            bond_reserves: Decimal
+                "y"; The amount of bond reserves in the pool.
+            lp_total_supply: Decimal
+                "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
+            time_elapsed: Decimal
+                "t"; Amount of time elapsed since term start.
+                This is also depicted as (1 - tau), where tau is stretched_time.
+            share_price: Decimal
+                "c"; The conversion rate between base and shares.
+            init_share_price: Decimal
+                "mu"; The interest normalization factor for shares, aka the conversion rate at time=0.
+
+        Returns
+        -------
+            yieldspace_constant: Decimal
+                "k"; The yieldspace constant.
+        """
+        # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
+        return (share_price / init_share_price) * (init_share_price * share_reserves) ** time_elapsed + (
+            bond_reserves + lp_total_supply
+        ) ** time_elapsed
