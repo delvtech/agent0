@@ -843,7 +843,7 @@ class YieldspacePricingModel(PricingModel):
         r"""Helper function to derive invariant constant K
 
         .. math::
-            k = \frac{c}{mu} (mu z)^{1 - \tau} + (y + s)^(1 - \tau)
+            k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^(1 - \tau)
 
         Parameters
         ----------
