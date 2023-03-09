@@ -180,7 +180,7 @@ class TestGetMax(unittest.TestCase):
         ]
         for test_number, test_case in enumerate(test_cases):
             for pricing_model in pricing_models:
-                logging.info(f"\ntest {test_number=} with \n{test_case=}\nand {pricing_model=}")
+                logging.info("\ntest=%s with \n %s \n and %s", test_number, test_case, pricing_model)
                 # Initialize lp_total_supply to y + x
                 test_case.market_state.lp_total_supply = (
                     test_case.market_state.share_reserves * test_case.market_state.init_share_price

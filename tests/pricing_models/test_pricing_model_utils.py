@@ -122,7 +122,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 test_case["market_state"].bond_reserves
                 + test_case["market_state"].share_price * test_case["market_state"].share_reserves
             )
-            logging.info(f"{test_number=} with\n{test_case=}")
+            logging.info("test_number=%s with\n%s", test_number, test_case)
             # Check if this test case is supposed to fail
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
