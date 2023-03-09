@@ -20,7 +20,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
     ):
         """Unit tests for calc_k_const function
 
-        .. todo:: fix comments to actually reflect test case values
+        .. todo:: fix test to use new y+s expected value instead of 2y+cz
         """
         output_utils.setup_logging("test_pricing_model_utils")
         test_cases = [
