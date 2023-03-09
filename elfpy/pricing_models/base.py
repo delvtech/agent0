@@ -176,8 +176,8 @@ class PricingModel(ABC):
 
         .. math::
             \begin{align}
-                p &= (\frac{2y + cz}{\mu z})^{-\tau} \\
-                  &= \frac{\mu * z}{y + s}^{\tau}
+                p &= (\frac{y + s}{\mu z})^{-\tau} \\
+                  &= (\frac{\mu * z}{y + s})^{\tau}
             \end{align}
 
         Parameters
