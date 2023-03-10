@@ -19,6 +19,9 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 
+# dataclasses can have many attributes
+# pylint: disable=too-many-instance-attributes
+
 
 @dataclass
 class Checkpoint:
@@ -76,9 +79,6 @@ class MarketState(base_market.BaseMarketState):
 
     def __setitem__(self, key, value):
         return setattr(self, key, value)
-
-    # dataclasses can have many attributes
-    # pylint: disable=too-many-instance-attributes
 
     # lp reserves
     lp_total_supply: float = field(default=0.0)
