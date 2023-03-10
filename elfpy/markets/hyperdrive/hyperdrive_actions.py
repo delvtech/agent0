@@ -373,7 +373,7 @@ def calc_close_long(
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: update base volume logic here when we have checkpointing
-    base_volume = -1 * calculate_base_volume(
+    base_volume = calculate_base_volume(
         abs(trade_result.market_result.d_base), bond_amount, time_remaining.normalized_time
     )
     # TODO: add accounting for withdrawal shares
@@ -382,7 +382,7 @@ def calc_close_long(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=-bond_amount,
-        long_base_volume=base_volume,
+        long_base_volume=-base_volume,
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
     )
