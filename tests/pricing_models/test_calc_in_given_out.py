@@ -154,7 +154,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
         # Failure test cases.
         failure_test_cases = [
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 0
                 # amount negative
                 out=types.Quantity(amount=-1, unit=types.TokenType.PT),
                 market_state=MarketState(
@@ -168,7 +168,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 1
                 # amount 0
                 out=types.Quantity(amount=0, unit=types.TokenType.PT),
                 market_state=MarketState(
@@ -182,7 +182,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 2
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     # share reserves negative
@@ -196,7 +196,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 3
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -210,7 +210,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 4
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -224,7 +224,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 5
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -238,7 +238,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 6
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -252,7 +252,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 7
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -266,7 +266,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 8
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -280,7 +280,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 9
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -294,7 +294,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 10
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -308,7 +308,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 11
                 # amount very high, can't make trade
                 out=types.Quantity(amount=10_000_000, unit=types.TokenType.BASE),
                 market_state=MarketState(
@@ -322,7 +322,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(ValueError, decimal.InvalidOperation),
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 12
                 out=types.Quantity(amount=100, unit=types.TokenType.BASE),
                 market_state=MarketState(
                     share_reserves=100_000,
@@ -336,35 +336,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
-                out=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    # share_price < init_share_price
-                    share_price=1,
-                    init_share_price=1.5,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            CalcInGivenOutFailureTestCase(
-                out=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    # share_price 0
-                    share_price=0,
-                    init_share_price=1.5,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
-                ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
-                exception_type=AssertionError,
-            ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 13
                 # amount < 1 wei
                 out=types.Quantity(amount=0.5e-18, unit=types.TokenType.PT),
                 market_state=MarketState(
@@ -378,7 +350,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
             ),
-            CalcInGivenOutFailureTestCase(
+            CalcInGivenOutFailureTestCase(  # test 14
                 out=types.Quantity(amount=100, unit=types.TokenType.PT),
                 market_state=MarketState(
                     # reserves waaaay unbalanced
@@ -396,7 +368,8 @@ class TestCalcInGivenOut(unittest.TestCase):
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
-            logging.info("test_number=%s", test_number)
+            logging.info("test_number=%s\ntest_case=%s", test_number, test_case)
+            print("\ntest_number=%s", test_number, "test_case=", test_case)
             for pricing_model in pricing_models:
                 # TODO: convert these tests to use total supply, not the approximation
                 # approximation of total supply

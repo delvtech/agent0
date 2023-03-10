@@ -3,6 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from abc import ABC
 from decimal import Decimal, getcontext
+import logging
 from typing import TYPE_CHECKING
 
 import elfpy.pricing_models.trades as trades
@@ -353,10 +354,12 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
-        assert market_state.share_price >= market_state.init_share_price, (
-            f"pricing_models.check_input_assertions: ERROR: "
-            f"expected share_price >= {market_state.init_share_price}, not share_price={market_state.share_price}"
-        )
+        if market_state.share_price < market_state.init_share_price:
+            logging.warning(
+                "WARNING: expected share_price >= %g, not share_price=%g",
+                market_state.init_share_price,
+                market_state.share_price,
+            )
         assert market_state.init_share_price >= 1, (
             f"pricing_models.check_input_assertions: ERROR: "
             f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"

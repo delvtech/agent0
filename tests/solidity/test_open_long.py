@@ -52,7 +52,7 @@ class TestOpenLong(unittest.TestCase):
         market_state_before: hyperdrive_market.MarketState,
         contribution: float,
         base_amount: float,
-        unsigned_bond_amount: float,
+        unsigned_bond_amount_out: float,
         maturity_time: float,
         apr_before: float,
     ):
@@ -84,7 +84,7 @@ class TestOpenLong(unittest.TestCase):
         )
         self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
-            market_state_before.bond_reserves - unsigned_bond_amount,
+            market_state_before.bond_reserves - unsigned_bond_amount_out,
             msg=f"{self.hyperdrive.market_state.bond_reserves=} is not correct",
         )
         self.assertEqual(
@@ -99,7 +99,7 @@ class TestOpenLong(unittest.TestCase):
         )
         self.assertEqual(
             self.hyperdrive.market_state.longs_outstanding,
-            market_state_before.longs_outstanding + unsigned_bond_amount,
+            market_state_before.longs_outstanding + unsigned_bond_amount_out,
             msg=f"{self.hyperdrive.market_state.longs_outstanding=} is not correct",
         )
         self.assertEqual(
@@ -157,7 +157,7 @@ class TestOpenLong(unittest.TestCase):
             market_state_before=market_state_before,
             contribution=self.contribution,
             base_amount=base_amount,
-            unsigned_bond_amount=abs(market_deltas.d_bond_asset),
+            unsigned_bond_amount_out=abs(market_deltas.d_bond_asset),
             maturity_time=self.hyperdrive.position_duration.days / 365,
             apr_before=apr_before,
         )
@@ -175,7 +175,7 @@ class TestOpenLong(unittest.TestCase):
             market_state_before=market_state_before,
             contribution=self.contribution,
             base_amount=base_amount,
-            unsigned_bond_amount=abs(market_deltas.d_bond_asset),
+            unsigned_bond_amount_out=abs(market_deltas.d_bond_asset),
             maturity_time=self.hyperdrive.position_duration.days / 365,
             apr_before=apr_before,
         )
