@@ -420,7 +420,7 @@ class Market(
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         # apply checkpointing
-        self.apply_close_short_checkpointing(mint_time, bond_amount)
+        self.apply_close_checkpointing(mint_time, bond_amount, "short")
         return market_deltas, agent_deltas
 
     def open_long(
@@ -461,7 +461,7 @@ class Market(
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         # apply checkpointing
-        self.apply_close_long_checkpointing(mint_time, bond_amount)
+        self.apply_close_checkpointing(mint_time, bond_amount, "long")
         return market_deltas, agent_deltas
 
     def add_liquidity(
