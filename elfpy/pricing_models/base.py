@@ -354,7 +354,7 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
         )
-        if market_state.share_price >= market_state.init_share_price:
+        if market_state.share_price <= market_state.init_share_price:
             logging.warning(
                 "WARNING: expected share_price >= %g, not share_price=%g",
                 market_state.init_share_price,
