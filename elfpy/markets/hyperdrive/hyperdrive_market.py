@@ -548,7 +548,7 @@ class Market(
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
-                wallet.Wallet(0), matured_longs_amount, self, mint_time
+                wallet.Wallet(0).address, matured_longs_amount, self, mint_time
             )
             self.market_state.apply_delta(market_deltas)
             self.apply_close_checkpointing(mint_time, matured_longs_amount, "long")
@@ -558,7 +558,7 @@ class Market(
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short(
-                wallet.Wallet(0), matured_shorts_amount, self, mint_time, open_share_price
+                wallet.Wallet(0).address, matured_shorts_amount, self, mint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
             self.apply_close_checkpointing(mint_time, matured_longs_amount, "short")
