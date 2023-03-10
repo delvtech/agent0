@@ -70,55 +70,79 @@ class TestCloseLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves + time_remaining * bond_amount,
+            msg=(
+                f"{self.hyperdrive.market_state.bond_reserves=} should equal the "
+                f"time adjusted amount: {(market_state_before.bond_reserves + time_remaining * bond_amount)=}."
+            ),
         )
         # verify that the other states were correct
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves - unsigned_base_amount_out / market_state_before.share_price,
+            msg=(
+                f"{self.hyperdrive.market_state.share_reserves=} should equal the time adjusted amount: "
+                f"{(market_state_before.share_reserves - unsigned_base_amount_out / market_state_before.share_price)=}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.lp_total_supply,
             market_state_before.lp_total_supply,
+            msg=(
+                f"{self.hyperdrive.market_state.lp_total_supply=} should be unchanged after "
+                f"the trade, and thus equal {market_state_before.lp_total_supply=}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.share_price,
             market_state_before.share_price,
+            msg=(
+                f"{self.hyperdrive.market_state.share_price=} should be unchanged after "
+                f"the trade, and thus equal {market_state_before.share_price=}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.longs_outstanding,
             market_state_before.longs_outstanding - bond_amount,
+            msg=(
+                f"{self.hyperdrive.market_state.longs_outstanding=} should be "
+                f"{(market_state_before.longs_outstanding - bond_amount)=}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.long_average_maturity_time,
             0,
+            msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} should be 0.",
         )
-        # TODO: This should pass once we implement checkpointing
-        # self.assertAlmostEqual(
-        #     self.hyperdrive.market_state.long_base_volume,
-        #     0,
-        #     delta=1e-9,
-        #     msg=f"The long base volume should be zero, not {self.hyperdrive.market_state.long_base_volume=}.",
-        # )
-        # TODO: once we add checkpointing we will also need to add the checkpoint long test
-        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
-        # checkpoint_time = maturity_time - self.position_duration
+        checkpoint_time = maturity_time - self.position_duration
+        self.assertEqual(
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
+            0,
+            msg=f"The long base volume at {checkpoint_time=} should be zero, not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}.",
+        )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding,
+            msg=(
+                f"The {self.hyperdrive.market_state.shorts_outstanding} should be unchanged, "
+                f"and thus unchanged from {market_state_before.shorts_outstanding}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_average_maturity_time,
             0,
+            msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} should be 0.",
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_base_volume,
             0,
+            msg=f"{self.hyperdrive.market_state.short_base_volume=} should be 0.",
         )
         # TODO: once we add checkpointing we will need to switch to this
         # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         self.assertEqual(
-            self.hyperdrive.market_state.short_base_volume,
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
             0,
+            msg=f"The short base volume should at {checkpoint_time=} be zero, not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}.",
         )
 
     def test_close_long_failure_zero_amount(self):
