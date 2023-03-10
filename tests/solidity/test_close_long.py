@@ -117,7 +117,10 @@ class TestCloseLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
             0,
-            msg=f"The long base volume at {checkpoint_time=} should be zero, not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}.",
+            msg=(
+                f"The long base volume at {checkpoint_time=} should be zero, "
+                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+            ),
         )
         self.assertEqual(
             self.hyperdrive.market_state.shorts_outstanding,
@@ -142,7 +145,10 @@ class TestCloseLong(unittest.TestCase):
         self.assertEqual(
             self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
             0,
-            msg=f"The short base volume should at {checkpoint_time=} be zero, not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}.",
+            msg=(
+                f"The short base volume should at {checkpoint_time=} be zero,"
+                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+            ),
         )
 
     def test_close_long_failure_zero_amount(self):
