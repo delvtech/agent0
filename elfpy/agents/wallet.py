@@ -209,7 +209,7 @@ class Wallet:
                 # Removing the empty borrows allows us to check existance
                 # of open longs using `if wallet.longs`
                 del self.longs[mint_time]
-            if mint_time in self.longs.keys() and self.longs[mint_time].balance < 0:
+            if mint_time in self.longs and self.longs[mint_time].balance < 0:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
