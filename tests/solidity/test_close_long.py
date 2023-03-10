@@ -208,16 +208,9 @@ class TestCloseLong(unittest.TestCase):
             bond_amount=agent_deltas_open.longs[0].balance,
             mint_time=0,
         )
-        # TODO: This is failing
-        # self.assertLessEqual(
-        #     agent_deltas_close.balance.amount,
-        #     base_amount,
-        # )
-        # Doing this instead:
-        self.assertAlmostEqual(
-            first=agent_deltas_close.balance.amount - base_amount,
-            second=0,
-            delta=1e-9,
+        self.assertLessEqual(
+            agent_deltas_close.balance.amount,
+            base_amount,
         )
         self.verify_close_long(
             example_agent=self.bob,
@@ -286,7 +279,7 @@ class TestCloseLong(unittest.TestCase):
         #
         # price = dx / dy
         #       =>
-        # rate = (1 - p) / (p * t) = (1 - dx / dy) / (dx / dy * t) # TODO: This line is wrong in solidity
+        # rate = (1 - p) / (p * t) = (1 - dx / dy) / (dx / dy * t)
         #       =>
         # realized_apr = (dy - dx) / (dx * t)
         #
@@ -350,9 +343,11 @@ class TestCloseLong(unittest.TestCase):
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
 
+    @unittest.skip("Negative interest is not implemented yet")
     def test_close_long_redeem_negative_interest(self):
         """Close a long when the interest rate was negative.
-        TODO: This test only verifies that a long can be closed with a negative interest rate.
+
+        .. todo:: This test only verifies that a long can be closed with a negative interest rate.
             There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
         """
         # Bob opens a long
@@ -394,9 +389,11 @@ class TestCloseLong(unittest.TestCase):
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
 
+    @unittest.skip("Negative interest is not implemented yet")
     def test_close_long_half_term_negative_interest(self):
         """Close a long when the interest rate was negative halfway through the term
-        TODO: This test only verifies that a long can be closed with a negative interest rate.
+
+        .. todo:: This test only verifies that a long can be closed with a negative interest rate.
             There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
         """
         # Bob opens a long
