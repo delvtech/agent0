@@ -2,7 +2,6 @@
 import unittest
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.agents.agent as agent
 import elfpy.types as types
@@ -232,6 +231,7 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_halfway_through_term(self):
+        """Close a long halfway through the term and check the apr realized was the target apr"""
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount
@@ -286,6 +286,7 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_redeem(self):
+        """Close long at the end of term"""
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount
@@ -326,6 +327,10 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_redeem_negative_interest(self):
+        """Close a long when the interest rate was negative.
+        TODO: This test only verifies that a long can be closed with a negative interest rate.
+            There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
+        """
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount
@@ -366,6 +371,10 @@ class TestCloseLong(unittest.TestCase):
         )
 
     def test_close_long_half_term_negative_interest(self):
+        """Close a long when the interest rate was negative halfway through the term
+        TODO: This test only verifies that a long can be closed with a negative interest rate.
+            There is a commented assert on the accounting that should pass after withdrawl shares are implemented.
+        """
         # Bob opens a long
         base_amount = 10  # how much base the agent is using to open a long
         self.bob.budget = base_amount

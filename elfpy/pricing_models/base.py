@@ -356,8 +356,9 @@ class PricingModel(ABC):
         )
         if market_state.share_price >= market_state.init_share_price:
             logging.warning(
-                f"WARNING: "
-                f"expected share_price >= {market_state.init_share_price}, not share_price={market_state.share_price}"
+                "WARNING: expected share_price >= %g, not share_price=%g",
+                market_state.init_share_price,
+                market_state.share_price,
             )
         assert market_state.init_share_price >= 1, (
             f"pricing_models.check_input_assertions: ERROR: "
