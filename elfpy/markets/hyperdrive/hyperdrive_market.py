@@ -407,24 +407,8 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # Get the total supply of shorts in the checkpoint of the shorts being closed. If the shorts
-        # are closed before maturity, we add the amount of shorts being closed since the total
-        # supply is decreased when burning the short tokens.
-        checkpoint_amount = self.market_state.total_supply_shorts[mint_time]
-        maturity_time = mint_time + self.position_duration.days / 365
-        if self.block_time.time < maturity_time:
-            checkpoint_amount += bond_amount
-        # If all of the shorts in the checkpoint are being closed, delete the base volume in the
-        # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
-        if bond_amount == checkpoint_amount:
-            self.market_state.short_base_volume -= self.market_state.checkpoints[mint_time].short_base_volume
-            self.market_state.checkpoints[mint_time].short_base_volume = 0
-        else:
-            proportional_base_volume = (
-                self.market_state.checkpoints[mint_time].short_base_volume * (bond_amount) / (checkpoint_amount)
-            )
-            self.market_state.short_base_volume -= proportional_base_volume
-            self.market_state.checkpoints[mint_time].short_base_volume -= proportional_base_volume
+        # apply checkpointing
+        self.apply_close_short_checkpointing(mint_time, bond_amount)
         return market_deltas, agent_deltas
 
     def open_long(
@@ -464,23 +448,8 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # Get the total supply of longs in the checkpoint of the longs being closed. If the longs
-        # are closed before maturity, we add the amount of longs being closed since the total supply
-        # is decreased when burning the long tokens.
-        maturity_time = mint_time + self.position_duration.days / 365
-        checkpoint_amount = self.market_state.total_supply_longs[mint_time]
-        if self.block_time.time < maturity_time:
-            checkpoint_amount += bond_amount
-        # If all of the longs in the checkpoint are being closed, delete the base volume in the
-        # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
-        mint_time_checkpoint = self.market_state.checkpoints[mint_time]
-        if bond_amount == checkpoint_amount:
-            self.market_state.long_base_volume -= mint_time_checkpoint.long_base_volume
-            self.market_state.checkpoints[mint_time].long_base_volume = 0
-        else:
-            proportional_base_volume = mint_time_checkpoint.long_base_volume * (bond_amount / checkpoint_amount)
-            self.market_state.long_base_volume -= proportional_base_volume
-            mint_time_checkpoint.long_base_volume -= proportional_base_volume
+        # apply checkpointing
+        self.apply_close_long_checkpointing(mint_time, bond_amount)
         return market_deltas, agent_deltas
 
     def add_liquidity(
@@ -561,14 +530,66 @@ class Market(
             return self.market_state.checkpoints[checkpoint_time].share_price
         # create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
-        # TODO: pay out the long withdrawal pool for longs that have matured.
         mint_time = checkpoint_time - self.position_duration.days / 365
+
+        # TODO: pay out the long withdrawal pool for longs that have matured.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
-            self.close_long(wallet.Wallet(0), matured_longs_amount, mint_time)
+            market_deltas, _ = hyperdrive_actions.calc_close_long(
+                wallet.Wallet(0), matured_longs_amount, self, mint_time
+            )
+            self.market_state.apply_delta(market_deltas)
+            self.apply_close_long_checkpointing(mint_time, matured_longs_amount)
+
         # TODO: pay out the short withdrawal pool for shorts that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
-            self.close_short(wallet.Wallet(0), open_share_price, matured_shorts_amount, mint_time)
+            market_deltas, _ = hyperdrive_actions.calc_close_short(
+                wallet.Wallet(0), matured_shorts_amount, self, mint_time, open_share_price
+            )
+            self.market_state.apply_delta(market_deltas)
+            self.apply_close_short_checkpointing(mint_time, matured_shorts_amount)
         return self.market_state.checkpoints[checkpoint_time].share_price
+
+    def apply_close_short_checkpointing(self, mint_time: float, bond_amount: float) -> None:
+        """Close any outstanding shorts at the mint_time"""
+        # Get the total supply of shorts in the checkpoint of the shorts being closed. If the shorts
+        # are closed before maturity, we add the amount of shorts being closed since the total
+        # supply is decreased when burning the short tokens.
+        checkpoint_amount = self.market_state.total_supply_shorts[mint_time]
+        maturity_time = mint_time + self.position_duration.days / 365
+        if self.block_time.time < maturity_time:
+            checkpoint_amount += bond_amount
+        # If all of the shorts in the checkpoint are being closed, delete the base volume in the
+        # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
+        if bond_amount == checkpoint_amount:
+            self.market_state.short_base_volume -= self.market_state.checkpoints[mint_time].short_base_volume
+            self.market_state.checkpoints[mint_time].short_base_volume = 0
+        else:
+            proportional_base_volume = (
+                self.market_state.checkpoints[mint_time].short_base_volume * (bond_amount) / (checkpoint_amount)
+            )
+            self.market_state.short_base_volume -= proportional_base_volume
+            self.market_state.checkpoints[mint_time].short_base_volume -= proportional_base_volume
+
+    def apply_close_long_checkpointing(self, mint_time: float, bond_amount: float) -> None:
+        """Close any outstanding longs at the mint_time"""
+        # Get the total supply of longs in the checkpoint of the longs being closed. If the longs
+        # are closed before maturity, we add the amount of longs being closed since the total supply
+        # is decreased when burning the long tokens.
+        maturity_time = mint_time + self.position_duration.days / 365
+        checkpoint_amount = self.market_state.total_supply_longs[mint_time]
+        if self.block_time.time < maturity_time:
+            checkpoint_amount += bond_amount
+        # If all of the longs in the checkpoint are being closed, delete the base volume in the
+        # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
+        if bond_amount == checkpoint_amount:
+            self.market_state.long_base_volume -= self.market_state.checkpoints[mint_time].long_base_volume
+            self.market_state.checkpoints[mint_time].long_base_volume = 0
+        else:
+            proportional_base_volume = self.market_state.checkpoints[mint_time].long_base_volume * (
+                bond_amount / checkpoint_amount
+            )
+            self.market_state.long_base_volume -= proportional_base_volume
+            self.market_state.checkpoints[mint_time].long_base_volume -= proportional_base_volume
