@@ -551,7 +551,7 @@ class Market(
                 wallet.Wallet(0), matured_longs_amount, self, mint_time
             )
             self.market_state.apply_delta(market_deltas)
-            self.apply_close_long_checkpointing(mint_time, matured_longs_amount)
+            self.apply_close_checkpointing(mint_time, matured_longs_amount, "long")
 
         # TODO: pay out the short withdrawal pool for shorts that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
@@ -561,18 +561,10 @@ class Market(
                 wallet.Wallet(0), matured_shorts_amount, self, mint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
-            self.apply_close_short_checkpointing(mint_time, matured_shorts_amount)
+            self.apply_close_checkpointing(mint_time, matured_longs_amount, "short")
         return self.market_state.checkpoints[checkpoint_time].share_price
 
-    def apply_close_short_checkpointing(self, mint_time: float, bond_amount: float) -> None:
-        """Close any outstanding shorts at the mint_time"""
-        self._apply_close_checkpointing(mint_time, bond_amount, "short")
-
-    def apply_close_long_checkpointing(self, mint_time: float, bond_amount: float) -> None:
-        """Close any outstanding longs at the mint_time"""
-        self._apply_close_checkpointing(mint_time, bond_amount, "long")
-
-    def _apply_close_checkpointing(
+    def apply_close_checkpointing(
         self, mint_time: float, bond_amount: float, position: Literal["short", "long"]
     ) -> None:
         """Close any outstanding positions at the mint_time"""
