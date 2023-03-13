@@ -561,7 +561,7 @@ class Market(
                 wallet.Wallet(0).address, matured_shorts_amount, self, mint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
-            self.apply_close_checkpointing(mint_time, matured_longs_amount, "short")
+            self.apply_close_checkpointing(mint_time, matured_shorts_amount, "short")
         return self.market_state.checkpoints[checkpoint_time].share_price
 
     def apply_close_checkpointing(
