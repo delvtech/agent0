@@ -3,6 +3,7 @@
 .build
 # smart contracts symlink (should only ignore top level folder)
 hyperdrive
+!*/hyperdrive
 
 # Ape
 .cache
