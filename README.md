@@ -118,11 +118,13 @@ ln -s ../hyperdrive .
 then run:
 
 ```bash
-python -m pip install eth-ape==0.5.9
+python -m pip install eth-ape==0.6.5
 ape plugins list -a
 ape plugins install .
 ape compile
 ```
+
+NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworks, although our examples should run without dealing with the incompatibility.
 
 ## Examples
 
