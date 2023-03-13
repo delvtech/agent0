@@ -1,10 +1,10 @@
-contracts_folder: hyperdrive/contracts/src
+contracts_folder: hyperdrive/contracts
 
 plugins:
-  - name: solidity==0.5.4
-  - name: foundry==0.5.2
-  - name: notebook==0.5.0a2
-  - name: etherscan==0.5.5
+  - name: notebook
+  - name: etherscan
+  - name: solidity
+  - name: foundry
 
 dependencies:
   - name: OpenZeppelin
