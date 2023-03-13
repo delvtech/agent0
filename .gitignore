@@ -1,8 +1,8 @@
 # Repo specific
 .logging
 .build
-# smart contracts symlink
-./hyperdrive 
+# smart contracts symlink (should only ignore top level folder)
+hyperdrive
 
 # Ape
 .cache
