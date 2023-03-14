@@ -401,7 +401,6 @@ class Market(
         agent_wallet.update(agent_deltas)
         # create/update the checkpoint
         checkpoint_time = self.latest_checkpoint_time
-        print("OPEN SHORT:")
         self.apply_checkpoint(checkpoint_time, self.market_state.share_price)
         self.market_state.checkpoints[checkpoint_time].short_base_volume += market_deltas.short_base_volume
         self.market_state.total_supply_shorts[checkpoint_time] += market_deltas.shorts_outstanding
@@ -472,10 +471,7 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
-        print(f"ADD: {self.latest_checkpoint_time=}")
-        print(f"ADD LIQUIDITY BEFORE: {self.market_state.checkpoints[self.latest_checkpoint_time].short_base_volume=}")
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
-        print(f"ADD LIQUIDITY AFTER: {self.market_state.checkpoints[self.latest_checkpoint_time].short_base_volume=}")
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
             bond_amount=bond_amount,
@@ -483,7 +479,6 @@ class Market(
         )
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        print(f"ADD LIQUIDITY: {self.market_state.short_base_volume=}")
         return market_deltas, agent_deltas
 
     def remove_liquidity(
@@ -492,24 +487,14 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
-        print(f"\nREMOVE: {self.latest_checkpoint_time=}")
-        print(
-            f"REMOVE LIQUIDITY BEFORE: {self.market_state.checkpoints[self.latest_checkpoint_time].short_base_volume=}"
-        )
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
-        print(
-            f"REMOVE LIQUIDITY AFTER: {self.market_state.checkpoints[self.latest_checkpoint_time].short_base_volume=}"
-        )
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=agent_wallet.address,
             bond_amount=bond_amount,
             market=self,
         )
-        print(f"{market_deltas=}")
-        print(f"{agent_deltas=}")
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        print(f"{self.market_state.short_base_volume=}")
         return market_deltas, agent_deltas
 
     def checkpoint(self, checkpoint_time: float) -> None:
@@ -555,7 +540,6 @@ class Market(
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
         """creates a new checkpoint if necessary."""
-        print(f"{checkpoint_time=}")
         # return early if the checkpoint has already been updated.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0 or checkpoint_time > self.block_time.time:
             return self.market_state.checkpoints[checkpoint_time].share_price
@@ -564,7 +548,6 @@ class Market(
         mint_time = checkpoint_time - self.position_duration.days / 365
         # TODO: pay out the long withdrawal pool for longs that have matured.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
-        print(f"{matured_longs_amount=}")
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
                 wallet.Wallet(0).address, matured_longs_amount, self, mint_time
@@ -573,7 +556,6 @@ class Market(
 
         # TODO: pay out the short withdrawal pool for shorts that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
-        print(f"{matured_shorts_amount=}")
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short(
