@@ -4,8 +4,9 @@ from __future__ import annotations  # types are strings by default in 3.11
 import unittest
 from dataclasses import dataclass
 from importlib import import_module
-
 from os import path, walk
+
+import numpy as np
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -52,9 +53,17 @@ class TestAgent(unittest.TestCase):
         # Instantiate an agent for each policy
         self.agent_list: list[agent.Agent] = []
         for agent_id, policy_name in enumerate(agent_policies):
-            example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
-                wallet_address=agent_id, budget=1_000
-            )
+            if policy_name == "random_agent":
+                example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
+                    rng=np.random.default_rng(seed=1234),
+                    trade_chance=1.0,
+                    wallet_address=agent_id,
+                    budget=1_000,
+                )
+            else:
+                example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
+                    wallet_address=agent_id, budget=1_000
+                )
             self.agent_list.append(example_agent)
         # One more test agent that uses a test policy
         self.test_agent = TestPolicy(wallet_address=len(agent_policies))
