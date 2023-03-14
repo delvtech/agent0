@@ -543,22 +543,20 @@ class Market(
             return self.market_state.checkpoints[checkpoint_time].share_price
         # create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
-        mint_time = checkpoint_time - self.position_duration.days / 365
-
         # TODO: pay out the long withdrawal pool for longs that have matured.
-        matured_longs_amount = self.market_state.total_supply_longs[mint_time]
+        matured_longs_amount = self.market_state.total_supply_longs[checkpoint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
-                wallet.Wallet(0).address, matured_longs_amount, self, mint_time
+                wallet.Wallet(0).address, matured_longs_amount, self, checkpoint_time
             )
             self.market_state.apply_delta(market_deltas)
 
         # TODO: pay out the short withdrawal pool for shorts that have matured.
-        matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
+        matured_shorts_amount = self.market_state.total_supply_shorts[checkpoint_time]
         if matured_shorts_amount > 0:
-            open_share_price = self.market_state.checkpoints[mint_time].share_price
+            open_share_price = self.market_state.checkpoints[checkpoint_time].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short(
-                wallet.Wallet(0).address, matured_shorts_amount, self, mint_time, open_share_price
+                wallet.Wallet(0).address, matured_shorts_amount, self, checkpoint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
         return self.market_state.checkpoints[checkpoint_time].share_price
