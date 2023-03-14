@@ -396,6 +396,8 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_short(
             agent_wallet.address,
@@ -405,8 +407,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         return market_deltas, agent_deltas
 
     def close_short(
@@ -436,6 +436,8 @@ class Market(
         base_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_long(
             wallet_address=agent_wallet.address,
@@ -445,8 +447,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         return market_deltas, agent_deltas
 
     def close_long(
