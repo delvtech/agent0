@@ -52,9 +52,9 @@ class MarketState(base_market.BaseMarketState):
     ----------
     lp_total_supply: float
         Amount of lp tokens
-    share_reserves: float
+    share_reserves: Decimal
         Quantity of shares stored in the market
-    bond_reserves: float
+    bond_reserves: Decimal
         Quantity of bonds stored in the market
     base_buffer: float
         Base amount set aside to account for open longs
@@ -62,10 +62,10 @@ class MarketState(base_market.BaseMarketState):
         Bond amount set aside to account for open shorts
     variable_apr: float
         apr of underlying yield-bearing source
-    share_price: float
+    share_price: Decimal
         ratio of value of base & shares that are stored in the underlying vault,
         i.e. share_price = base_value / share_value
-    init_share_price: float
+    init_share_price: Decimal
         share price at pool initialization
     trade_fee_percent : float
         The percentage of the difference between the amount paid without
@@ -94,8 +94,8 @@ class MarketState(base_market.BaseMarketState):
 
     # share price
     variable_apr: float = field(default=0.0)
-    share_price: float = field(default=1.0)
-    init_share_price: float = field(default=1.0)
+    share_price: Decimal = field(default=Decimal(0))
+    init_share_price: Decimal = field(default=Decimal(0))
 
     # fee percents
     trade_fee_percent: float = field(default=0.0)
