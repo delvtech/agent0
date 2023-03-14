@@ -428,8 +428,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         return market_deltas, agent_deltas
 
     def open_long(
@@ -468,8 +466,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         return market_deltas, agent_deltas
 
     def add_liquidity(

@@ -309,7 +309,7 @@ def calc_open_long(
         average=market.market_state.long_average_maturity_time,
         total_weight=market.market_state.longs_outstanding,
         delta=market.annualized_position_duration,
-        delta_weight=trade_result.market_result.d_bonds,  # FIXME: @matt can you verify that this should be d_bonds and not -d_bonds?
+        delta_weight=-trade_result.market_result.d_bonds,
         is_adding=True,
     )
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
