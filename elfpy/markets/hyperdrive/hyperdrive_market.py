@@ -328,7 +328,7 @@ class Market(
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
                 market_deltas, agent_deltas = self.add_liquidity(
                     agent_wallet=agent_action.wallet,
-                    trade_amount=agent_action.trade_amount,
+                    bond_amount=agent_action.trade_amount,
                 )
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
                 market_deltas, agent_deltas = self.remove_liquidity(
@@ -468,13 +468,13 @@ class Market(
     def add_liquidity(
         self,
         agent_wallet: wallet.Wallet,
-        trade_amount: float,
+        bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
-            bond_amount=trade_amount,
+            bond_amount=bond_amount,
             market=self,
         )
         self.market_state.apply_delta(market_deltas)

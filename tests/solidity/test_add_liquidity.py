@@ -169,8 +169,11 @@ class TestAddLiquidity(unittest.TestCase):
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(
             agent_wallet=self.bob.wallet,
-            trade_amount=self.contribution,
+            bond_amount=self.contribution,
         )
+
+        # Ensure that the agent lost money from their wallet
+        self.assertAlmostEqual(wallet_deltas.balance.amount, -self.contribution)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
