@@ -245,8 +245,6 @@ class TestCloseShort(unittest.TestCase):
             open_share_price=1,
         )
         base_proceeds = abs(agent_deltas_close.balance.amount)
-        print(f"\n{base_proceeds=}")
-        print(f"    {base_paid=}")
         self.assertAlmostEqual(  # your balance after closing is zero
             base_proceeds,
             base_paid,
@@ -272,7 +270,6 @@ class TestCloseShort(unittest.TestCase):
             agent_wallet=self.bob.wallet,
             bond_amount=trade_amount,
         )
-        base_paid = abs(agent_deltas_open.balance.amount)
         # advance time (which also causes the share price to change)
         time_delta = 1
         self.hyperdrive.block_time.set_time(

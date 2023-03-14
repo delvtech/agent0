@@ -143,8 +143,6 @@ class TestCloseLong(unittest.TestCase):
             0,
             msg=f"{self.hyperdrive.market_state.short_base_volume=} should be 0.",
         )
-        # TODO: once we add checkpointing we will need to switch to this
-        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
         self.assertEqual(
             self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
             0,
