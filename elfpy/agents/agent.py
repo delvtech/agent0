@@ -1,5 +1,6 @@
 """Implements abstract classes that control agent behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
+from decimal import Decimal
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -19,8 +20,8 @@ if TYPE_CHECKING:
 class AgentTradeResult:
     r"""The result to a user of performing a trade"""
 
-    d_base: float
-    d_bonds: float
+    d_base: Decimal
+    d_bonds: Decimal
 
 
 class Agent:
