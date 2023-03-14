@@ -113,7 +113,11 @@ class TestCloseLong(unittest.TestCase):
             0,
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} should be 0.",
         )
-        self.assertEqual(self.hyperdrive.market_state.long_base_volume, 0)
+        self.assertEqual(
+            self.hyperdrive.market_state.long_base_volume,
+            0,
+            msg=f"{self.hyperdrive.market_state.long_base_volume=} should be 0.",
+        )
         checkpoint_time = maturity_time - self.position_duration
         self.assertEqual(
             self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
