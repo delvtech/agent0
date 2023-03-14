@@ -143,10 +143,10 @@ class Policy(agent.Agent):
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
             return self.open_short_with_random_amount(market)
-        elif action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
+        if action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
             return self.close_random_short()
-        elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
+        if action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
             return self.open_long_with_random_amount(market)
-        elif action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
+        if action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
             return self.close_random_long()
         return []

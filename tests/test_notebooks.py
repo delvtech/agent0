@@ -1,5 +1,4 @@
 """Testing for example notebooks"""
-import builtins
 import matplotlib
 
 matplotlib.use("Agg")  # headless backend so that plots won't render
@@ -7,6 +6,8 @@ matplotlib.use("Agg")  # headless backend so that plots won't render
 # pylint: disable=wrong-import-order
 # pylint: disable=wrong-import-position
 import unittest
+import builtins
+import logging
 import os
 import pathlib
 import ast
@@ -17,6 +18,8 @@ import astunparse
 from IPython.core.inputtransformer2 import TransformerManager
 import nbformat
 
+import elfpy.utils.outputs as output_utils
+
 
 class TestNotebook(unittest.TestCase):
     """Test functions for Jupyter notebooks"""
@@ -25,12 +28,14 @@ class TestNotebook(unittest.TestCase):
         """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error"""
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
+        output_utils.setup_logging("test_notebooks")
         isp = TransformerManager()  # module for converting jupyter cell into source code
         notebook_location = os.path.join(
             os.path.dirname(pathlib.Path(__file__).parent.resolve()),
             os.path.join("examples", "notebooks"),
         )
         for file in os.listdir(notebook_location):
+            logging.info("file=%s", file)
             if not file.endswith(".ipynb"):
                 continue
             # Read the notebook cell by cell, grab the code & add it to a string
@@ -58,6 +63,7 @@ class TestNotebook(unittest.TestCase):
                     code_lines.append(line)
                 cell_source = isp.transform_cell("\n".join(code_lines))  # recombine lines
                 file_source += cell_source + "\n"
+            logging.info("file_source=\n%s\n------------\n", file_source)
             # Convert the source code into a syntax tree to modify some config values
             tree = ast.parse(file_source)
             for node_idx, node in enumerate(tree.body):
@@ -72,7 +78,7 @@ class TestNotebook(unittest.TestCase):
                 obj = target.value.id  # object being modified
                 attrib = target.attr  # attribute of object
                 if obj == "config" and attrib in ["num_trading_days", "num_blocks_per_day"]:
-                    test_value = 2  # reduces the total number of trades to keep things fast
+                    test_value = 4  # reduces the total number of trades to keep things fast
                     tree.body[node_idx] = ast.Assign(
                         targets=[target],
                         value=ast.Constant(value=test_value, kind=None),
@@ -94,3 +100,4 @@ class TestNotebook(unittest.TestCase):
                         exec(cleaned_source, global_env)  # pylint: disable=exec-used
             except builtins.BaseException as exc:
                 raise AssertionError(f"notebook {file} failed") from exc
+        output_utils.close_logging()
