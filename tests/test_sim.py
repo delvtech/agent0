@@ -12,8 +12,10 @@ from numpy.random import RandomState
 import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-from elfpy.utils import sim_utils  # utilities for setting up a simulation
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
+import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
+import elfpy.types as types
 
 
 class TestSimulator(unittest.TestCase):
@@ -141,6 +143,17 @@ class TestSimulator(unittest.TestCase):
                 "trade_number": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
                 "fixed_apr": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
                 "spot_price": [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1],
+                "trade_action": [
+                    types.Trade(
+                        market=types.MarketType.HYPERDRIVE,
+                        trade=hyperdrive_actions.MarketAction(
+                            action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
+                            trade_amount=10,
+                            wallet=wallet.Wallet(0),
+                        ),
+                    )
+                ]
+                * total_num_trades,
                 "market_deltas": [[idx, 8] for idx in range(total_num_trades)],
                 "agent_address": [0] * total_num_trades,
                 "agent_deltas": [[idx, 9] for idx in range(total_num_trades)],
