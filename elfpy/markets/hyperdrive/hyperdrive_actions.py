@@ -1,5 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
+from decimal import Decimal
 
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -65,8 +66,8 @@ class MarketDeltas(base_market.MarketDeltas):
 @dataclass
 class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
-    d_base: float
-    d_bonds: float
+    d_base: Decimal
+    d_bonds: Decimal
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
