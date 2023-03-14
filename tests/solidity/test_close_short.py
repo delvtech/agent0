@@ -83,6 +83,7 @@ class TestCloseShort(unittest.TestCase):
             msg="bond_reserves is wrong",
         )
         # verify that the other states were correct
+        print("=== verify_close_short ===")
         print(f"{self.hyperdrive.market_state.share_reserves=}")
         print(f"{bond_amount=}")
         print(f"{base_proceeds=}")
@@ -90,7 +91,7 @@ class TestCloseShort(unittest.TestCase):
         print(f"{market_state_before.share_price=}")
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
-            market_state_before.share_reserves + (bond_amount - base_paid) / market_state_before.share_price,
+            market_state_before.share_reserves + (bond_amount - base_proceeds) / market_state_before.share_price,
             msg="share_reserves is wrong",
         )
         self.assertEqual(  # lp total supply
@@ -303,7 +304,11 @@ class TestCloseShort(unittest.TestCase):
             open_share_price=1,
         )
         market_base_proceeds = market_deltas_close.d_base_asset
+        print("\n=== test_close_short_redeem_at_maturity_zero_variable_interest ===")
+        print(f"bond amount {agent_deltas_open.shorts[0].balance}")
+        print(f"{market_base_proceeds=}")
         agent_base_proceeds = agent_deltas_close.balance.amount
+        print(f"{agent_base_proceeds=}")
         self.assertEqual(  # market swaps the whole position at maturity
             market_base_proceeds,
             agent_deltas_open.shorts[0].balance,
@@ -317,7 +322,7 @@ class TestCloseShort(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             base_paid=base_paid,
-            base_proceeds=market_base_proceeds,
+            base_proceeds=agent_base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
