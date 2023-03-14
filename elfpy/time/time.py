@@ -1,6 +1,7 @@
 """Helper functions for converting time units"""
 
 from dataclasses import dataclass
+from decimal import Decimal
 
 import numpy as np
 
@@ -88,7 +89,7 @@ def get_years_remaining(market_time: float, mint_time: float, position_duration_
     return time_remaining
 
 
-def norm_days(days: float, normalizing_constant: float = 365) -> float:
+def norm_days(days: float, normalizing_constant: float = 365) -> Decimal:
     r"""Returns days normalized, with a default assumption of a year-long scale
 
     Parameters
@@ -103,10 +104,12 @@ def norm_days(days: float, normalizing_constant: float = 365) -> float:
     float
         Amount of days provided, converted to fractions of a year
     """
-    return days / normalizing_constant
+    return Decimal(days) / Decimal(normalizing_constant)
 
 
-def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
+def days_to_time_remaining(
+    days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365
+) -> Decimal:
     r"""Converts remaining pool length in days to normalized and stretched time
 
     Parameters
@@ -126,7 +129,7 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    return normed_days_remaining / time_stretch
+    return normed_days_remaining / Decimal(time_stretch)
 
 
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
