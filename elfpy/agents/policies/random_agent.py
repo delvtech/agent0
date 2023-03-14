@@ -1,4 +1,5 @@
 """User strategy that opens or closes a random position with a random allowed amount"""
+from __future__ import annotations
 
 import numpy as np
 from numpy.random._generator import Generator as numpyGenerator
@@ -24,8 +25,8 @@ class Policy(agent.Agent):
 
     def get_available_actions(
         self,
-        disallowed_actions: "list[hyperdrive_actions.MarketActionType] | None" = None,
-    ) -> "list[hyperdrive_actions.MarketActionType]":
+        disallowed_actions: list[hyperdrive_actions.MarketActionType] | None = None,
+    ) -> list[hyperdrive_actions.MarketActionType]:
         """Get all available actions, excluding those listed in disallowed_actions"""
         # prevent accidental override
         if disallowed_actions is None:
@@ -42,7 +43,7 @@ class Policy(agent.Agent):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market) -> "list[types.Trade]":
+    def open_short_with_random_amount(self, market) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         max_short = self.get_max_short(market)
@@ -63,7 +64,7 @@ class Policy(agent.Agent):
             )
         ]
 
-    def open_long_with_random_amount(self, market) -> "list[types.Trade]":
+    def open_long_with_random_amount(self, market) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         max_long = self.get_max_long(market)
@@ -83,7 +84,7 @@ class Policy(agent.Agent):
             )
         ]
 
-    def close_random_short(self) -> "list[types.Trade]":
+    def close_random_short(self) -> list[types.Trade]:
         """Fully close the short balance for a random mint time"""
         short_time = self.rng.choice(list(self.wallet.shorts)).item()  # choose a random short time to close
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
@@ -99,7 +100,7 @@ class Policy(agent.Agent):
             )
         ]
 
-    def close_random_long(self) -> "list[types.Trade]":
+    def close_random_long(self) -> list[types.Trade]:
         """Fully close the long balance for a random mint time"""
         long_time = self.rng.choice(list(self.wallet.longs)).item()  # choose a random long time to close
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
@@ -115,7 +116,7 @@ class Policy(agent.Agent):
             )
         ]
 
-    def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
