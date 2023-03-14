@@ -11,3 +11,4 @@ pytest
 scipy
 stochastic
 tomli
+pytest-custom-report
