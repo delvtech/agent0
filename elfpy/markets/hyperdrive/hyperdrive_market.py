@@ -89,7 +89,7 @@ class MarketState(base_market.BaseMarketState):
     bond_reserves: Decimal = field(default=Decimal(0))
 
     # trading buffers
-    base_buffer: float = field(default=0.0)
+    base_buffer: Decimal = field(default=Decimal(0))
     bond_buffer: float = field(default=0.0)
 
     # share price
