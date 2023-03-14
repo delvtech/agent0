@@ -135,13 +135,15 @@ def calc_open_short(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+    # make sure the trade is valid
+    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # update accouting for average maturity time, base volume and longs outstanding
     short_average_maturity_time = update_weighted_average(
-        market.market_state.short_average_maturity_time,
-        market.market_state.shorts_outstanding,
-        market.annualized_position_duration,
-        bond_amount,
-        True,
+        average=market.market_state.short_average_maturity_time,
+        total_weight=market.market_state.shorts_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=True,
     )
     d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     d_short_average_maturity_time = (
@@ -151,8 +153,6 @@ def calc_open_short(
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
-    # make sure the trade is valid
-    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -217,17 +217,17 @@ def calc_close_short(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
-    short_average_maturity_time = update_weighted_average(
-        market.market_state.short_average_maturity_time,
-        market.market_state.shorts_outstanding,
-        market.annualized_position_duration,
-        bond_amount,
-        False,
-    )
-    d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
+    # Update accouting for average maturity time, base volume and longs outstanding
+    short_average_maturity_time = update_weighted_average(
+        average=market.market_state.short_average_maturity_time,
+        total_weight=market.market_state.shorts_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=False,
+    )
+    d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
@@ -299,22 +299,23 @@ def calc_open_long(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
-    long_average_maturity_time = update_weighted_average(
-        average=market.market_state.long_average_maturity_time,
-        total_weight=market.market_state.longs_outstanding,
-        delta=market.annualized_position_duration,
-        delta_weight=base_amount,
-        is_adding=True,
-    )
-    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
-    # TODO: don't use 1 for time_remaining once we have checkpointing
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
     # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
     # this should be in hyperdrive.check_output_assertions which then calls
     # super().check_output_assertions
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
+    # Update accouting for average maturity time, base volume and longs outstanding
+    long_average_maturity_time = update_weighted_average(
+        average=market.market_state.long_average_maturity_time,
+        total_weight=market.market_state.longs_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=trade_result.market_result.d_bonds,  # FIXME: @matt can you verify that this should be d_bonds and not -d_bonds?
+        is_adding=True,
+    )
+    # (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
+    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
+    # TODO: don't use 1 for time_remaining once we have checkpointing
+    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
     # TODO: add accounting for withdrawal shares
     # Get the market and wallet deltas to return.
     market_deltas = MarketDeltas(
@@ -368,17 +369,17 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
-    long_average_maturity_time = update_weighted_average(
-        market.market_state.long_average_maturity_time,
-        market.market_state.longs_outstanding,
-        market.annualized_position_duration,
-        bond_amount,
-        False,
-    )
-    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
+    # Update accouting for average maturity time, base volume and longs outstanding
+    long_average_maturity_time = update_weighted_average(
+        average=market.market_state.long_average_maturity_time,
+        total_weight=market.market_state.longs_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=False,
+    )
+    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
