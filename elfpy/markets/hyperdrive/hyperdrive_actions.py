@@ -312,7 +312,6 @@ def calc_open_long(
         delta_weight=trade_result.market_result.d_bonds,  # FIXME: @matt can you verify that this should be d_bonds and not -d_bonds?
         is_adding=True,
     )
-    # (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
