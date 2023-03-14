@@ -100,31 +100,28 @@ then just open `htmlcov/index.html` to view the report!
 
 [Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
 
-run:
+You can optionally run
 
 ```
 anvil
 ```
 
-clone and sym link the hyperdrive repo, into hyperdrive/, i.e.:
+if you wish to execute ape CLI. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
 
 ```bash
-cd ..
-git clone https://github.com/element-fi/hyperdrive.git
-cd elf-simulations
-ln -s ../hyperdrive .
+git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
+ln -s ../hyperdrive hyperdrive_solidity
 ```
 
 then run:
 
 ```bash
 python -m pip install eth-ape==0.6.5
-ape plugins list -a
 ape plugins install .
 ape compile
 ```
 
-NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworks, although our examples should run without dealing with the incompatibility.
+NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.
 
 ## Examples
 

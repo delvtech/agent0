@@ -1,4 +1,4 @@
-contracts_folder: hyperdrive/contracts
+contracts_folder: hyperdrive_solidity/contracts
 
 plugins:
   - name: notebook
