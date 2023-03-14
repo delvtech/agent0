@@ -40,11 +40,11 @@ class YieldspacePricingModel(PricingModel):
 
     def calc_lp_out_given_tokens_in(
         self,
-        d_base: float,
-        rate: float,
+        d_base: Decimal,
+        rate: Decimal,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> tuple[Decimal, Decimal, Decimal]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -116,11 +116,11 @@ class YieldspacePricingModel(PricingModel):
     # TODO: Delete this function from here & base? It is not used or tested.
     def calc_lp_in_given_tokens_out(
         self,
-        d_base: float,
-        rate: float,
+        d_base: Decimal,
+        rate: Decimal,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> tuple[Decimal, Decimal, Decimal]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -140,11 +140,11 @@ class YieldspacePricingModel(PricingModel):
 
     def calc_tokens_out_given_lp_in(
         self,
-        lp_in: float,
-        rate: float,
+        lp_in: Decimal,
+        rate: Decimal,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> tuple[Decimal, Decimal, Decimal]:
         """Calculate how many tokens should be returned for a given lp addition
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
@@ -276,18 +276,30 @@ class YieldspacePricingModel(PricingModel):
 
         Returns
         -------
-        float
-            The amount the agent pays without fees or slippage. The units
-            are always in terms of bonds or base.
-        float
-            The amount the agent pays with fees and slippage. The units are
-            always in terms of bonds or base.
-        float
-            The amount the agent pays with slippage and no fees. The units are
-            always in terms of bonds or base.
-        float
-            The fee the agent pays. The units are always in terms of bonds or
-            base.
+        trades.TradeResult
+            contains all of the results of a trade, including the following
+        user_result: AgentTradeResult
+            contains the results of a trade for the agent, consisting of:
+                d_base: Decimal
+                d_bonds: Decimal
+        market_result = MarketActionResult
+            contains the results of a trade for the market, consisting of:
+                d_base: Decimal
+                d_bonds: Decimal
+        breakdown = TradeBreakdown
+            contains detailed trade results straight from the pricing model, consisting of:
+                without_fee_or_slippage: float
+                    The amount the user pays without fees or slippage. The units
+                    are always in terms of bonds or base, depending on input.
+                with_fee: float
+                    The fee the user pays. The units are always in terms of bonds or
+                    base.
+                without_fee: float
+                    The amount the user pays with fees and slippage. The units are
+                    always in terms of bonds or base.
+                fee: float
+                    The amount the user pays with slippage and no fees. The units are
+                    always in terms of bonds or base.
         """
         # Calculate some common values up front
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)
@@ -512,18 +524,30 @@ class YieldspacePricingModel(PricingModel):
 
         Returns
         -------
-        float
-            The amount the agent receives without fees or slippage. The units
-            are always in terms of bonds or base.
-        float
-            The amount the agent receives with fees and slippage. The units are
-            always in terms of bonds or base.
-        float
-            The amount the agent receives with slippage and no fees. The units are
-            always in terms of bonds or base.
-        float
-            The fee the agent pays. The units are always in terms of bonds or
-            base.
+        trades.TradeResult
+            contains all of the results of a trade, including the following
+        user_result: AgentTradeResult
+            contains the results of a trade for the agent, consisting of:
+                d_base: Decimal
+                d_bonds: Decimal
+        market_result = MarketActionResult
+            contains the results of a trade for the market, consisting of:
+                d_base: Decimal
+                d_bonds: Decimal
+        breakdown = TradeBreakdown
+            contains detailed trade results straight from the pricing model, consisting of:
+                without_fee_or_slippage: float
+                    The amount the user pays without fees or slippage. The units
+                    are always in terms of bonds or base, depending on input.
+                with_fee: float
+                    The fee the user pays. The units are always in terms of bonds or
+                    base.
+                without_fee: float
+                    The amount the user pays with fees and slippage. The units are
+                    always in terms of bonds or base.
+                fee: float
+                    The amount the user pays with slippage and no fees. The units are
+                    always in terms of bonds or base.
         """
         # Calculate some common values up front
         time_elapsed = 1 - Decimal(time_remaining.stretched_time)

@@ -6,6 +6,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Union
+from decimal import Decimal
 
 import numpy as np
 
@@ -84,8 +85,8 @@ class MarketState(base_market.BaseMarketState):
     lp_total_supply: float = field(default=0.0)
 
     # trading reserves
-    share_reserves: float = field(default=0.0)
-    bond_reserves: float = field(default=0.0)
+    share_reserves: Decimal = field(default=Decimal(0))
+    bond_reserves: Decimal = field(default=Decimal(0))
 
     # trading buffers
     base_buffer: float = field(default=0.0)
