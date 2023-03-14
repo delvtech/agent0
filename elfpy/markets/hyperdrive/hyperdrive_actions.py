@@ -607,16 +607,12 @@ def get_close_checkpoint_deltas(
     # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
     d_checkpoints = defaultdict(float)
     if bond_amount == checkpoint_amount:
-        # market.market_state[base_volume] -= market.market_state.checkpoints[mint_time][base_volume]
         d_base_volume = -market.market_state.checkpoints[mint_time][base_volume]
-        # market.market_state.checkpoints[mint_time][base_volume] = 0
         d_checkpoints[mint_time] = -float(market.market_state.checkpoints[mint_time][base_volume])
     else:
         proportional_base_volume = float(
             market.market_state.checkpoints[mint_time][base_volume] * (bond_amount / checkpoint_amount)
         )
-        # market.market_state[base_volume] -= proportional_base_volume
         d_base_volume = -proportional_base_volume
-        # market.market_state.checkpoints[mint_time][base_volume] -= proportional_base_volume
         d_checkpoints[mint_time] = -proportional_base_volume
     return (d_base_volume, d_checkpoints)
