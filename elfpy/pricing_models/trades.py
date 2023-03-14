@@ -1,6 +1,6 @@
 """Trade related classes and functions"""
 from dataclasses import dataclass
-
+from decimal import Decimal
 
 import elfpy.types as types
 import elfpy.agents.agent as agent
@@ -30,10 +30,10 @@ class TradeBreakdown:
         always in terms of bonds or base.
     """
 
-    without_fee_or_slippage: float
-    with_fee: float
-    without_fee: float
-    fee: float
+    without_fee_or_slippage: Decimal
+    with_fee: Decimal
+    without_fee: Decimal
+    fee: Decimal
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
