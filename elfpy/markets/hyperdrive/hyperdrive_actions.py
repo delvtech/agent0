@@ -1,9 +1,10 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Literal
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
@@ -54,6 +55,10 @@ class MarketDeltas(base_market.MarketDeltas):
     short_withdrawal_shares_outstanding: float = 0
     long_withdrawal_share_proceeds: float = 0
     short_withdrawal_share_proceeds: float = 0
+    long_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    short_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -130,14 +135,15 @@ def calc_open_short(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+    # make sure the trade is valid
+    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # update accouting for average maturity time, base volume and longs outstanding
-    maturity_time = market.position_duration.days / 365
     short_average_maturity_time = update_weighted_average(
-        market.market_state.short_average_maturity_time,
-        market.market_state.shorts_outstanding,
-        maturity_time,
-        bond_amount,
-        True,
+        average=market.market_state.short_average_maturity_time,
+        total_weight=market.market_state.shorts_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=True,
     )
     d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     d_short_average_maturity_time = (
@@ -147,8 +153,6 @@ def calc_open_short(
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
-    # make sure the trade is valid
-    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -157,6 +161,8 @@ def calc_open_short(
         short_base_volume=base_volume,
         shorts_outstanding=bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
+        short_checkpoints=defaultdict(float, {market.latest_checkpoint_time: base_volume}),
+        total_supply_shorts=defaultdict(float, {market.latest_checkpoint_time: bond_amount}),
     )
     # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
     max_loss = bond_amount - trade_result.user_result.d_base
@@ -211,28 +217,29 @@ def calc_close_short(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
-    maturity_time = market.position_duration.days / 365
-    short_average_maturity_time = update_weighted_average(
-        market.market_state.short_average_maturity_time,
-        market.market_state.shorts_outstanding,
-        maturity_time,
-        bond_amount,
-        False,
-    )
-    d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
+    # Update accouting for average maturity time, base volume and longs outstanding
+    short_average_maturity_time = update_weighted_average(
+        average=market.market_state.short_average_maturity_time,
+        total_weight=market.market_state.shorts_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=False,
+    )
+    d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
+    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_bond_buffer=-bond_amount,
-        short_base_volume=-base_volume,
+        short_base_volume=d_base_volume,
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
+        short_checkpoints=d_checkpoints,
+        total_supply_shorts=defaultdict(float, {mint_time: -bond_amount}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -292,32 +299,33 @@ def calc_open_long(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+    # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
+    # this should be in hyperdrive.check_output_assertions which then calls
+    # super().check_output_assertions
+    # Make sure the trade is valid
+    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     long_average_maturity_time = update_weighted_average(
-        market.market_state.long_average_maturity_time,
-        market.market_state.longs_outstanding,
-        market.annualized_position_duration,
-        base_amount,
-        True,
+        average=market.market_state.long_average_maturity_time,
+        total_weight=market.market_state.longs_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=-trade_result.market_result.d_bonds,
+        is_adding=True,
     )
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
-    longs_outstanding = trade_result.user_result.d_bonds
     # TODO: add accounting for withdrawal shares
-    # Make sure the trade is valid
-    # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
-    # this should be in hyperdrive.check_output_assertions which then calls
-    # super().check_output_assertions
-    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # Get the market and wallet deltas to return.
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=trade_result.user_result.d_bonds,
         long_base_volume=base_volume,
-        longs_outstanding=longs_outstanding,
+        longs_outstanding=trade_result.user_result.d_bonds,
         long_average_maturity_time=d_long_average_maturity_time,
+        long_checkpoints=defaultdict(float, {market.latest_checkpoint_time: base_volume}),
+        total_supply_longs=defaultdict(float, {market.latest_checkpoint_time: trade_result.user_result.d_bonds}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -360,31 +368,29 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    # Update accouting for average maturity time, base volume and longs outstanding
-    maturity_time = market.position_duration.days / 365
-    long_average_maturity_time = update_weighted_average(
-        market.market_state.long_average_maturity_time,
-        market.market_state.longs_outstanding,
-        maturity_time,
-        bond_amount,
-        False,
-    )
-    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
-    # TODO: update base volume logic here when we have checkpointing
-    base_volume = calculate_base_volume(
-        abs(trade_result.market_result.d_base), bond_amount, time_remaining.normalized_time
+    # Update accouting for average maturity time, base volume and longs outstanding
+    long_average_maturity_time = update_weighted_average(
+        average=market.market_state.long_average_maturity_time,
+        total_weight=market.market_state.longs_outstanding,
+        delta=market.annualized_position_duration,
+        delta_weight=bond_amount,
+        is_adding=False,
     )
+    d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
+    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=-bond_amount,
-        long_base_volume=-base_volume,
+        long_base_volume=d_base_volume,
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
+        long_checkpoints=d_checkpoints,
+        total_supply_longs=defaultdict(float, {mint_time: -bond_amount}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -588,3 +594,46 @@ def calc_lp_out_given_tokens_in(
     else:  # initial case where we have 0 share reserves or final case where it has been removed
         lp_out = d_shares
     return lp_out, d_base, d_bonds
+
+
+def calc_checkpoint_deltas(
+    market: hyperdrive_market.Market, checkpoint_time: float, bond_amount: float, position: Literal["short", "long"]
+) -> tuple[float, defaultdict[float, float]]:
+    """Compute deltas to close any outstanding positions at the checkpoint_time
+
+    Parameters
+    ----------
+    market: hyperdrive_market.Market
+        Deltas are computed for this market.
+    checkpoint_time: float
+        The checkpoint time to be used for updating.
+    bond_amount: float
+        The amount of bonds used to close the position.
+    position: str
+        Either "short" or "long", indicating what type of position is being closed.
+
+    Returns
+    -------
+    d_base_volume: float
+        The change in base volume for the given position.
+    d_checkpoints: defaultdict[float, float]
+        The change in checkpoint volume for the given checkpoint_time (key) and position (value).
+    """
+    total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
+    base_volume = "short_base_volume" if position == "short" else "long_base_volume"
+    # Get the total supply of positions in the checkpoint.
+    checkpoint_amount = market.market_state[total_supply][checkpoint_time]
+    # If the checkpoint has nothing stored, then do not update
+    if checkpoint_amount == 0:
+        return (0, defaultdict(float, {checkpoint_time: 0}))
+    # If all of the positions in the checkpoint are being closed, delete the base volume in the
+    # checkpoint and reduce the aggregates by the checkpoint amount. Otherwise, decrease the
+    # both the checkpoints and aggregates by a proportional amount.
+    if bond_amount == checkpoint_amount:
+        d_base_volume = -market.market_state.checkpoints[checkpoint_time][base_volume]
+    else:
+        d_base_volume = -float(
+            market.market_state.checkpoints[checkpoint_time][base_volume] * (bond_amount / checkpoint_amount)
+        )
+    d_checkpoints = defaultdict(float, {checkpoint_time: d_base_volume})
+    return (d_base_volume, d_checkpoints)

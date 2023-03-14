@@ -639,7 +639,12 @@ class Simulator:
                         block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.block_time.time)
                     )
                 self.collect_and_execute_trades(liquidate)
-                logging.debug("day = %d, daily_block_number = %d\n", self.day, self.daily_block_number)
+                logging.debug(
+                    "day = %g, daily_block_number = %g, block_time = %g\n",
+                    self.day,
+                    self.daily_block_number,
+                    self.block_time.time,
+                )
                 if not last_block_in_sim:
                     self.block_time.tick(self.time_step)
                     self.block_number += 1

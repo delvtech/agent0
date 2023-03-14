@@ -5,7 +5,7 @@ import copy
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Literal, Union
+from typing import Union
 
 import numpy as np
 
@@ -150,6 +150,16 @@ class MarketState(base_market.BaseMarketState):
         self.short_withdrawal_shares_outstanding += delta.short_withdrawal_shares_outstanding
         self.long_withdrawal_share_proceeds += delta.long_withdrawal_share_proceeds
         self.short_withdrawal_share_proceeds += delta.short_withdrawal_share_proceeds
+
+        for mint_time, delta_checkpoint in delta.long_checkpoints.items():
+            self.checkpoints[mint_time].long_base_volume += delta_checkpoint
+        for mint_time, delta_checkpoint in delta.short_checkpoints.items():
+            self.checkpoints[mint_time].short_base_volume += delta_checkpoint
+
+        for mint_time, delta_supply in delta.total_supply_longs.items():
+            self.total_supply_longs[mint_time] += delta_supply
+        for mint_time, delta_supply in delta.total_supply_shorts.items():
+            self.total_supply_shorts[mint_time] += delta_supply
 
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
@@ -323,7 +333,7 @@ class Market(
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
                 market_deltas, agent_deltas = self.add_liquidity(
                     agent_wallet=agent_action.wallet,
-                    trade_amount=agent_action.trade_amount,
+                    bond_amount=agent_action.trade_amount,
                 )
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
                 market_deltas, agent_deltas = self.remove_liquidity(
@@ -386,6 +396,9 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_short(
             agent_wallet.address,
             bond_amount,
@@ -394,11 +407,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # create/update the checkpoint
-        checkpoint_time = self.latest_checkpoint_time
-        self.apply_checkpoint(checkpoint_time, self.market_state.share_price)
-        self.market_state.checkpoints[checkpoint_time].short_base_volume += market_deltas.short_base_volume
-        self.market_state.total_supply_shorts[checkpoint_time] += market_deltas.shorts_outstanding
         return market_deltas, agent_deltas
 
     def close_short(
@@ -409,6 +417,9 @@ class Market(
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(mint_time, self.market_state.share_price)
+        # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_short(
             wallet_address=agent_wallet.address,
             bond_amount=bond_amount,
@@ -419,16 +430,17 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # apply checkpointing
-        self.apply_close_checkpointing(mint_time, bond_amount, "short")
         return market_deltas, agent_deltas
 
     def open_long(
         self,
         agent_wallet: wallet.Wallet,
-        base_amount: float,  # in base
+        base_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_long(
             wallet_address=agent_wallet.address,
             base_amount=base_amount,
@@ -437,20 +449,18 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        checkpoint_time = self.latest_checkpoint_time
-        # create/update the checkpoint
-        self.apply_checkpoint(checkpoint_time, self.market_state.share_price)
-        self.market_state.checkpoints[checkpoint_time].long_base_volume += market_deltas.long_base_volume
-        self.market_state.total_supply_longs[checkpoint_time] += market_deltas.longs_outstanding
         return market_deltas, agent_deltas
 
     def close_long(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,  # in bonds
+        bond_amount: float,
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(mint_time, self.market_state.share_price)
+        # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_long(
             wallet_address=agent_wallet.address,
             bond_amount=bond_amount,
@@ -460,19 +470,18 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # apply checkpointing
-        self.apply_close_checkpointing(mint_time, bond_amount, "long")
         return market_deltas, agent_deltas
 
     def add_liquidity(
         self,
         agent_wallet: wallet.Wallet,
-        trade_amount: float,
+        bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
-            bond_amount=trade_amount,
+            bond_amount=bond_amount,
             market=self,
         )
         self.market_state.apply_delta(market_deltas)
@@ -485,6 +494,7 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=agent_wallet.address,
             bond_amount=bond_amount,
@@ -536,24 +546,36 @@ class Market(
         return latest_checkpoint / 365
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
-        """creates a new checkpoint if necessary."""
-        # return early if the checkpoint has already been updated.
+        """Creates a new checkpoint if necessary and closes matured positions.
+
+        Parameters
+        ----------
+        checkpoint_time: float
+            The block time for the checkpoint to be created or cleared.
+        share_price: float
+            The share price of the market at the checkpoint time.
+
+        Returns
+        -------
+        float
+            The share price for the checkpoint after mature positions have been closed.
+        """
+        # Return early if the checkpoint has already been updated.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0 or checkpoint_time > self.block_time.time:
             return self.market_state.checkpoints[checkpoint_time].share_price
-        # create the share price checkpoint.
+        # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
-        mint_time = checkpoint_time - self.position_duration.days / 365
-
+        mint_time = checkpoint_time - self.annualized_position_duration
         # TODO: pay out the long withdrawal pool for longs that have matured.
+        # Close out any matured long positions.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
                 wallet.Wallet(0).address, matured_longs_amount, self, mint_time
             )
             self.market_state.apply_delta(market_deltas)
-            self.apply_close_checkpointing(mint_time, matured_longs_amount, "long")
-
         # TODO: pay out the short withdrawal pool for shorts that have matured.
+        # Close out any matured short positions.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
@@ -561,32 +583,4 @@ class Market(
                 wallet.Wallet(0).address, matured_shorts_amount, self, mint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
-            self.apply_close_checkpointing(mint_time, matured_shorts_amount, "short")
-        return self.market_state.checkpoints[checkpoint_time].share_price
-
-    def apply_close_checkpointing(
-        self, mint_time: float, bond_amount: float, position: Literal["short", "long"]
-    ) -> None:
-        """Close any outstanding positions at the mint_time"""
-        # Get the total supply of positions in the checkpoint of the shorts being closed. If the
-        # positions are closed before maturity, we add the amount of the positions being closed
-        # since the total supply is decreased when burning the tokens.
-
-        total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
-        base_volume = "short_base_volume" if position == "short" else "long_base_volume"
-
-        checkpoint_amount = self.market_state[total_supply][mint_time]
-        maturity_time = mint_time + self.position_duration.days / 365
-        if self.block_time.time < maturity_time:
-            checkpoint_amount += bond_amount
-        # If all of the shorts in the checkpoint are being closed, delete the base volume in the
-        # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
-        if bond_amount == checkpoint_amount:
-            self.market_state[base_volume] -= self.market_state.checkpoints[mint_time][base_volume]
-            self.market_state.checkpoints[mint_time][base_volume] = 0
-        else:
-            proportional_base_volume = (
-                self.market_state.checkpoints[mint_time][base_volume] * (bond_amount) / (checkpoint_amount)
-            )
-            self.market_state[base_volume] -= proportional_base_volume
-            self.market_state.checkpoints[mint_time][base_volume] -= proportional_base_volume
+        return self.market_state.checkpoints[mint_time].share_price

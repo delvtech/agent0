@@ -118,7 +118,8 @@ class TestCheckpoint(unittest.TestCase):
     def test_checkpoint_in_the_past(self):
         """Test that checkpoints created in the past work as expected"""
         # Open a long and a short.
-        self.hyperdrive.open_long(self.bob.wallet, 10_000_000)
+        long_amount = 10_000_000
+        self.hyperdrive.open_long(self.bob.wallet, long_amount)
         short_amount = 50_000
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Advance a term by the position duration.
