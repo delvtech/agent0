@@ -65,7 +65,7 @@ class TestCloseLong(unittest.TestCase):
             time_remaining = maturity_time - self.hyperdrive.block_time.time
         else:
             time_remaining = 0
-        self.assertAlmostEqual(
+        self.assertEqual(
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves + time_remaining * bond_amount,
             msg=(
