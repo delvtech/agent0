@@ -83,13 +83,32 @@ class TestPrecision(unittest.TestCase):
         self.verify_slippage(agent_deltas_close.balance.amount, base_amount)
 
     def test_precision_short_open(self):
-        """Make sure we have slippage on a short trade"""
+        """Make sure we have slippage on a short open"""
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
+        base_paid_without_slippage = (1 - self.hyperdrive.spot_price) * trade_amount
         _, agent_deltas_open = self.hyperdrive.open_short(
             agent_wallet=self.bob.wallet,
             bond_amount=trade_amount,
+        )
+        base_paid = agent_deltas_open.balance.amount
+        self.verify_slippage(base_paid, base_paid_without_slippage)
+
+    def test_precision_short_close(self):
+        """Make sure we have slippage on a short open and close round trip"""
+        trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
+        self.bob.budget = trade_amount
+        self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
+        base_paid_without_slippage = (1 - self.hyperdrive.spot_price) * trade_amount
+        _, agent_deltas_open = self.hyperdrive.open_short(
+            agent_wallet=self.bob.wallet,
+            bond_amount=trade_amount,
+        )
+        base_paid = abs(agent_deltas_open.balance.amount)
+        self.assertLess(
+            base_paid_without_slippage,
+            base_paid,  # should pay more with slippage
         )
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
@@ -97,4 +116,5 @@ class TestPrecision(unittest.TestCase):
             mint_time=0,
             open_share_price=1,
         )
-        self.verify_slippage(agent_deltas_close.balance.amount, trade_amount)
+        base_received = agent_deltas_close.balance.amount
+        self.verify_slippage(base_received, base_paid)
