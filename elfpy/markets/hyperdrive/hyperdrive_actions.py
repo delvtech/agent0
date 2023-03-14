@@ -233,7 +233,7 @@ def calc_close_short(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_bond_buffer=-bond_amount,
-        short_base_volume=-d_base_volume,
+        short_base_volume=d_base_volume,
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
         short_checkpoints=d_checkpoints,
@@ -603,9 +603,6 @@ def get_close_checkpoint_deltas(
     total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
     base_volume = "short_base_volume" if position == "short" else "long_base_volume"
     checkpoint_amount = market.market_state[total_supply][mint_time]
-    maturity_time = mint_time + market.position_duration.days / 365
-    if market.block_time.time < maturity_time:
-        checkpoint_amount += bond_amount
     # If all of the shorts in the checkpoint are being closed, delete the base volume in the
     # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
     d_checkpoints = defaultdict(float)

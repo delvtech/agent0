@@ -424,8 +424,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # apply checkpointing
-        # self.apply_close_checkpointing(mint_time, bond_amount, "short")
         return market_deltas, agent_deltas
 
     def open_long(
@@ -465,8 +463,6 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
-        # apply checkpointing
-        # self.apply_close_checkpointing(mint_time, bond_amount, "long")
         return market_deltas, agent_deltas
 
     def add_liquidity(
@@ -556,7 +552,6 @@ class Market(
                 wallet.Wallet(0).address, matured_longs_amount, self, mint_time
             )
             self.market_state.apply_delta(market_deltas)
-            # self.apply_close_checkpointing(mint_time, matured_longs_amount, "long")
 
         # TODO: pay out the short withdrawal pool for shorts that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
@@ -566,5 +561,4 @@ class Market(
                 wallet.Wallet(0).address, matured_shorts_amount, self, mint_time, open_share_price
             )
             self.market_state.apply_delta(market_deltas)
-            # self.apply_close_checkpointing(mint_time, matured_shorts_amount, "short")
         return self.market_state.checkpoints[checkpoint_time].share_price
