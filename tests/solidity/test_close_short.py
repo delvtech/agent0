@@ -60,7 +60,6 @@ class TestCloseShort(unittest.TestCase):
         self,
         example_agent: agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
-        base_paid: float,
         base_proceeds: float,
         bond_amount: float,
         maturity_time: float,
@@ -224,7 +223,6 @@ class TestCloseShort(unittest.TestCase):
         self.verify_close_short(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            base_paid=base_paid,
             base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
@@ -263,7 +261,6 @@ class TestCloseShort(unittest.TestCase):
         self.verify_close_short(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            base_paid=base_paid,
             base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
@@ -309,7 +306,6 @@ class TestCloseShort(unittest.TestCase):
         self.verify_close_short(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            base_paid=base_paid,
             base_proceeds=agent_base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
@@ -357,7 +353,6 @@ class TestCloseShort(unittest.TestCase):
         self.verify_close_short(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            base_paid=base_paid,
             base_proceeds=market_base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
@@ -404,7 +399,6 @@ class TestCloseShort(unittest.TestCase):
         self.verify_close_short(
             example_agent=self.bob,
             market_state_before=market_state_before_close,
-            base_paid=base_paid,
             base_proceeds=market_base_proceeds,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
