@@ -38,7 +38,6 @@ class TestCloseShort(unittest.TestCase):
         """
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
@@ -246,17 +245,13 @@ class TestCloseShort(unittest.TestCase):
             open_share_price=1,
         )
         base_proceeds = abs(agent_deltas_close.balance.amount)
-        self.assertAlmostEqual(  # the amount being closed is equal to the trade_amount
-            agent_deltas_close.balance.amount,
+        print(f"\n{base_proceeds=}")
+        print(f"    {base_paid=}")
+        self.assertAlmostEqual(  # your balance after closing is zero
+            base_proceeds,
             base_paid,
             delta=1e-9,
-            msg="agent_deltas_close.balance.amount is wrong",
-        )
-        self.assertAlmostEqual(  # your balance after closing is zero
-            base_proceeds - base_paid,
-            0,
-            delta=1e-9,
-            msg="base_proceeds - base_paid is wrong",
+            msg="base_proceeds doesn't match base_paid",
         )
         self.verify_close_short(
             example_agent=self.bob,

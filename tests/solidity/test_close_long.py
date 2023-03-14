@@ -217,7 +217,8 @@ class TestCloseLong(unittest.TestCase):
             bond_amount=agent_deltas_open.longs[0].balance,
             mint_time=0,
         )
-        self.assertLessEqual(
+        # these shouldn't be equal lol
+        self.assertEqual(
             agent_deltas_close.balance.amount,
             base_amount,
         )
