@@ -417,6 +417,8 @@ class Market(
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_short(
             wallet_address=agent_wallet.address,
@@ -456,6 +458,8 @@ class Market(
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
+        # create/update the checkpoint
+        self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_long(
             wallet_address=agent_wallet.address,
