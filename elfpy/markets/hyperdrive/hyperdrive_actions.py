@@ -228,7 +228,6 @@ def calc_close_short(
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
-    # base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
     d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -378,9 +377,6 @@ def calc_close_long(
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: update base volume logic here when we have checkpointing
-    base_volume = calculate_base_volume(
-        abs(trade_result.market_result.d_base), bond_amount, time_remaining.normalized_time
-    )
     d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
