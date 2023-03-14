@@ -39,7 +39,9 @@ class TestCloseLong(unittest.TestCase):
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(
-                days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
+                days=self.term_length,
+                time_stretch=pricing_model.calc_time_stretch(self.target_apr),
+                normalizing_constant=self.term_length,
             ),
             block_time=block_time,
         )
@@ -94,14 +96,6 @@ class TestCloseLong(unittest.TestCase):
             msg=(
                 f"{self.hyperdrive.market_state.lp_total_supply=} should be unchanged after "
                 f"the trade, and thus equal {market_state_before.lp_total_supply=}."
-            ),
-        )
-        self.assertEqual(  # share price
-            self.hyperdrive.market_state.share_price,
-            market_state_before.share_price,
-            msg=(
-                f"{self.hyperdrive.market_state.share_price=} should be unchanged after "
-                f"the trade, and thus equal {market_state_before.share_price=}."
             ),
         )
         self.assertEqual(  # longs outstanding

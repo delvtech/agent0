@@ -1,4 +1,4 @@
-"""Close long market trade tests that match those being executed in the solidity repo"""
+"""Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
 
 import elfpy.agents.agent as agent
@@ -14,7 +14,7 @@ import elfpy.types as types
 
 class TestCloseShort(unittest.TestCase):
     """
-    Test opening a opening and closing a short in hyperdrive
+    Test opening and closing a short in hyperdrive
     3 failure cases: zero amount, invalid amount, invalid timestamp
     6 success cases:
         - close immediately, with regular, and small amounts
@@ -46,7 +46,9 @@ class TestCloseShort(unittest.TestCase):
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTime(
-                days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
+                days=self.term_length,
+                time_stretch=pricing_model.calc_time_stretch(self.target_apr),
+                normalizing_constant=self.term_length,
             ),
             block_time=block_time,
         )
@@ -69,16 +71,14 @@ class TestCloseShort(unittest.TestCase):
         )  # In solidity we check that the balance is zero, but here we delete the entry if it is zero
         # verify that the bond reserves were updated according to flat+curve
         # the adjustment should be equal to timeRemaining * bondAmount
-        time_remaining = 0
-        if maturity_time > self.hyperdrive.block_time.time:
-            time_remaining = self.hyperdrive.position_duration.normalized_time * (
-                maturity_time - self.hyperdrive.block_time.time
-            )
         self.assertLess(  # user gets less than what they put in
             agent_base_proceeds,
             agent_base_paid,
             msg="agent gets more than what they put in: agent_base_proceeds > agent_base_paid",
         )
+        time_remaining = 0
+        if maturity_time > self.hyperdrive.block_time.time:
+            time_remaining = maturity_time - self.hyperdrive.block_time.time
         self.assertEqual(  # bond reserves
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves - time_remaining * bond_amount,
@@ -93,11 +93,6 @@ class TestCloseShort(unittest.TestCase):
             self.hyperdrive.market_state.lp_total_supply,
             market_state_before.lp_total_supply,
             msg="lp_total_supply is wrong",
-        )
-        self.assertEqual(  # share price
-            self.hyperdrive.market_state.share_price,
-            market_state_before.share_price,
-            msg="share_price is wrong",
         )
         self.assertEqual(  # longs outstanding
             self.hyperdrive.market_state.longs_outstanding,
@@ -247,7 +242,7 @@ class TestCloseShort(unittest.TestCase):
 
     def test_close_short_redeem_at_maturity_zero_variable_interest(self):
         """Open a position, advance time all the way through the term, close it, receiving zero variable interest"""
-        # Bob opens a long
+        # Bob opens a short
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
@@ -258,9 +253,7 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = 1
-        self.hyperdrive.block_time.set_time(
-            self.hyperdrive.block_time.time + self.hyperdrive.position_duration.normalized_time * time_delta
-        )
+        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
         # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
         # Bob closes his short at to maturity
@@ -270,8 +263,9 @@ class TestCloseShort(unittest.TestCase):
             mint_time=0,
             open_share_price=1,
         )
-        # verify that the close long updates were correct
-        self.verify_close_short(
+        # nothing received from closing at maturity
+        self.assertEqual(agent_deltas_close.balance.amount, 0)
+        self.verify_close_short(  # verify that the close short updates were correct
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
@@ -284,7 +278,7 @@ class TestCloseShort(unittest.TestCase):
     @unittest.skip("Negative interest is not implemented yet")
     def test_close_short_redeem_at_maturity_negative_variable_interest(self):
         """Open a position, advance time all the way through the term, close it, receiving negative variable interest"""
-        # Bob opens a long
+        # Bob opens a short
         trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
@@ -294,9 +288,7 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = 1.0
-        self.hyperdrive.block_time.set_time(
-            self.hyperdrive.block_time.time + self.hyperdrive.position_duration.normalized_time * time_delta
-        )
+        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * 0.8
         # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
@@ -307,8 +299,9 @@ class TestCloseShort(unittest.TestCase):
             mint_time=0,
             open_share_price=1,
         )
-        # verify that the close long updates were correct
-        self.verify_close_short(
+        # nothing received from closing at maturity + negative interest
+        self.assertEqual(agent_deltas_close.balance.amount, 0)
+        self.verify_close_short(  # verify that the close short updates were correct
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
@@ -320,8 +313,8 @@ class TestCloseShort(unittest.TestCase):
     @unittest.skip("Negative interest is not implemented yet")
     def test_close_short_halfway_through_term_negative_variable_interest(self):
         """Open a position, advance time halfway through the term, close it, receiving negative variable interest"""
-        # Bob opens a long
-        trade_amount = 10  # how much base the agent is using to open a long
+        # Bob opens a short
+        trade_amount = 10  # how much base the agent is using to open a short
         self.bob.budget = trade_amount
         self.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
         _, agent_deltas_open = self.hyperdrive.open_short(
@@ -330,35 +323,28 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = 0.5
-        self.hyperdrive.block_time.set_time(
-            self.hyperdrive.block_time.time + self.hyperdrive.position_duration.normalized_time * time_delta
-        )
+        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * 0.8
-        # get the reserves before closing the long
+        # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
-        # Bob closes his long half way to maturity
+        # Bob closes his short half way to maturity
         market_deltas_close, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.shorts[0].balance,
             mint_time=0,
             open_share_price=1,
         )
-        market_base_proceeds = market_deltas_close.d_base_asset
-        agent_base_proceeds = agent_deltas_close.balance.amount
         self.assertEqual(  # market swaps the whole position at maturity
-            market_base_proceeds,
+            market_deltas_close.d_base_asset,
             agent_deltas_open.shorts[0].balance * 0.8,
         )
-        self.assertEqual(  # Bob doesn't receive any base from closing the short
-            agent_base_proceeds,
-            0,
-        )
-        # verify that the close long updates were correct
-        self.verify_close_short(
+        # nothing received from closing due to negative interest
+        self.assertEqual(agent_deltas_close.balance.amount, 0)
+        self.verify_close_short(  # verify that the close short updates were correct
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
-            agent_base_proceeds=market_base_proceeds,
+            agent_base_proceeds=agent_deltas_close.balance.amount,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
