@@ -1,9 +1,10 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Literal
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
@@ -54,6 +55,8 @@ class MarketDeltas(base_market.MarketDeltas):
     short_withdrawal_shares_outstanding: float = 0
     long_withdrawal_share_proceeds: float = 0
     short_withdrawal_share_proceeds: float = 0
+    long_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    short_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -225,14 +228,16 @@ def calc_close_short(
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
+    # base_volume = calculate_base_volume(trade_result.market_result.d_base, bond_amount, time_remaining.normalized_time)
+    d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_bond_buffer=-bond_amount,
-        short_base_volume=-base_volume,
+        short_base_volume=-d_base_volume,
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
+        short_checkpoints=d_checkpoints,
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -376,15 +381,17 @@ def calc_close_long(
     base_volume = calculate_base_volume(
         abs(trade_result.market_result.d_base), bond_amount, time_remaining.normalized_time
     )
+    d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=-bond_amount,
-        long_base_volume=-base_volume,
+        long_base_volume=d_base_volume,
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
+        long_checkpoints=d_checkpoints,
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -588,3 +595,35 @@ def calc_lp_out_given_tokens_in(
     else:  # initial case where we have 0 share reserves or final case where it has been removed
         lp_out = d_shares
     return lp_out, d_base, d_bonds
+
+
+def get_close_checkpoint_deltas(
+    market: hyperdrive_market.Market, mint_time: float, bond_amount: float, position: Literal["short", "long"]
+) -> tuple[float, defaultdict[float, float]]:
+    """Close any outstanding positions at the mint_time"""
+    # Get the total supply of positions in the checkpoint of the shorts being closed. If the
+    # positions are closed before maturity, we add the amount of the positions being closed
+    # since the total supply is decreased when burning the tokens.
+    total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
+    base_volume = "short_base_volume" if position == "short" else "long_base_volume"
+    checkpoint_amount = market.market_state[total_supply][mint_time]
+    maturity_time = mint_time + market.position_duration.days / 365
+    if market.block_time.time < maturity_time:
+        checkpoint_amount += bond_amount
+    # If all of the shorts in the checkpoint are being closed, delete the base volume in the
+    # checkpoint. Otherwise, decrease the base volume aggregates by a proportional amount.
+    d_checkpoints = defaultdict(float)
+    if bond_amount == checkpoint_amount:
+        # market.market_state[base_volume] -= market.market_state.checkpoints[mint_time][base_volume]
+        d_base_volume = -market.market_state.checkpoints[mint_time][base_volume]
+        # market.market_state.checkpoints[mint_time][base_volume] = 0
+        d_checkpoints[mint_time] = -float(market.market_state.checkpoints[mint_time][base_volume])
+    else:
+        proportional_base_volume = float(
+            market.market_state.checkpoints[mint_time][base_volume] * (bond_amount / checkpoint_amount)
+        )
+        # market.market_state[base_volume] -= proportional_base_volume
+        d_base_volume = -proportional_base_volume
+        # market.market_state.checkpoints[mint_time][base_volume] -= proportional_base_volume
+        d_checkpoints[mint_time] = -proportional_base_volume
+    return (d_base_volume, d_checkpoints)
