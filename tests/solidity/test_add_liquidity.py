@@ -137,13 +137,6 @@ class TestAddLiquidity(unittest.TestCase):
 
         self.block_time.tick(1)
 
-        # Mock having Celine's long auto closed from checkpointing.
-        _ = self.hyperdrive.close_long(
-            agent_wallet=self.celine.wallet,
-            bond_amount=50_000_000,
-            mint_time=0,
-        )
-
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
 
@@ -157,12 +150,11 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_remove_liquidity(
-            wallet_address=self.bob.wallet.address,
+        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+            agent_wallet=self.bob.wallet,
             bond_amount=self.bob.wallet.lp_tokens,
-            market=self.hyperdrive,
         )
-        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, 6)
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, places=6)
 
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
@@ -174,22 +166,11 @@ class TestAddLiquidity(unittest.TestCase):
 
         self.block_time.tick(1)
 
-        # Mock having Celine's short auto closed from checkpointing.
-        _ = self.hyperdrive.close_short(
-            agent_wallet=self.celine.wallet,
-            bond_amount=50_000_000,
-            mint_time=0,
-            open_share_price=1,
-        )
-
         # Add liquidity with the same amount as the original contribution.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_add_liquidity(
-            wallet_address=self.bob.wallet.address,
-            bond_amount=self.contribution,
-            market=self.hyperdrive,
+        market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(
+            agent_wallet=self.bob.wallet,
+            trade_amount=self.contribution,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.bob.wallet.update(wallet_deltas)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
@@ -201,9 +182,8 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertAlmostEqual(pool_apr, self.target_apr, 1)
 
         # Ensure that if the new LP withdraws, they get their money back.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_remove_liquidity(
-            wallet_address=self.bob.wallet.address,
+        market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
+            agent_wallet=self.bob.wallet,
             bond_amount=self.bob.wallet.lp_tokens,
-            market=self.hyperdrive,
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)

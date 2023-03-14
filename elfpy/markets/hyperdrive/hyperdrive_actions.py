@@ -228,7 +228,7 @@ def calc_close_short(
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
-    d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "short")
+    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
@@ -376,7 +376,7 @@ def calc_close_long(
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
-    d_base_volume, d_checkpoints = get_close_checkpoint_deltas(market, mint_time, bond_amount, "long")
+    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
@@ -592,7 +592,7 @@ def calc_lp_out_given_tokens_in(
     return lp_out, d_base, d_bonds
 
 
-def get_close_checkpoint_deltas(
+def calc_checkpoint_deltas(
     market: hyperdrive_market.Market, checkpoint_time: float, bond_amount: float, position: Literal["short", "long"]
 ) -> tuple[float, defaultdict[float, float]]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
