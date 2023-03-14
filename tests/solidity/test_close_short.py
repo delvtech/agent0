@@ -1,8 +1,6 @@
 """Close long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import pytest
-
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
