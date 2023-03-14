@@ -565,7 +565,7 @@ class Market(
             return self.market_state.checkpoints[checkpoint_time].share_price
         # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
-        mint_time = checkpoint_time - self.position_duration.days / 365
+        mint_time = checkpoint_time - self.annualized_position_duration
         # TODO: pay out the long withdrawal pool for longs that have matured.
         # Close out any matured long positions.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
