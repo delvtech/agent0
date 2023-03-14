@@ -356,11 +356,11 @@ class YieldspacePricingModel(PricingModel):
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=out.amount,
-                d_bonds=float(-with_fee),
+                d_bonds=-with_fee,
             )
             market_result = hyperdrive_actions.MarketActionResult(
                 d_base=-out.amount,
-                d_bonds=float(with_fee),
+                d_bonds=with_fee,
             )
         elif out.unit == types.TokenType.PT:
             d_bonds = out_amount
@@ -415,11 +415,11 @@ class YieldspacePricingModel(PricingModel):
             with_fee = without_fee + fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
-                d_base=float(-with_fee),
+                d_base=-with_fee,
                 d_bonds=out.amount,
             )
             market_result = hyperdrive_actions.MarketActionResult(
-                d_base=float(with_fee),
+                d_base=with_fee,
                 d_bonds=-out.amount,
             )
         else:
@@ -431,10 +431,10 @@ class YieldspacePricingModel(PricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=trades.TradeBreakdown(
-                without_fee_or_slippage=float(without_fee_or_slippage),
-                with_fee=float(with_fee),
-                without_fee=float(without_fee),
-                fee=float(fee),
+                without_fee_or_slippage=without_fee_or_slippage,
+                with_fee=with_fee,
+                without_fee=without_fee,
+                fee=fee,
             ),
         )
 
@@ -579,11 +579,11 @@ class YieldspacePricingModel(PricingModel):
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
-                d_bonds=float(with_fee),
+                d_bonds=with_fee,
             )
             market_result = hyperdrive_actions.MarketActionResult(
                 d_base=in_.amount,
-                d_bonds=float(-with_fee),
+                d_bonds=-with_fee,
             )
         elif in_.unit == types.TokenType.PT:
             d_bonds = in_amount
@@ -631,11 +631,11 @@ class YieldspacePricingModel(PricingModel):
             with_fee = without_fee - fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
-                d_base=float(with_fee),
+                d_base=with_fee,
                 d_bonds=-in_.amount,
             )
             market_result = hyperdrive_actions.MarketActionResult(
-                d_base=float(-with_fee),
+                d_base=-with_fee,
                 d_bonds=in_.amount,
             )
         else:
@@ -647,10 +647,10 @@ class YieldspacePricingModel(PricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=trades.TradeBreakdown(
-                without_fee_or_slippage=float(without_fee_or_slippage),
-                with_fee=float(with_fee),
-                without_fee=float(without_fee),
-                fee=float(fee),
+                without_fee_or_slippage=without_fee_or_slippage,
+                with_fee=with_fee,
+                without_fee=without_fee,
+                fee=fee,
             ),
         )
 
