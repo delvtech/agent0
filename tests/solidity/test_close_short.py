@@ -83,12 +83,6 @@ class TestCloseShort(unittest.TestCase):
             msg="bond_reserves is wrong",
         )
         # verify that the other states were correct
-        print("=== verify_close_short ===")
-        print(f"{self.hyperdrive.market_state.share_reserves=}")
-        print(f"{bond_amount=}")
-        print(f"{base_proceeds=}")
-        print(f"{base_paid=}")
-        print(f"{market_state_before.share_price=}")
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + (bond_amount - base_proceeds) / market_state_before.share_price,
@@ -207,7 +201,6 @@ class TestCloseShort(unittest.TestCase):
             agent_wallet=self.bob.wallet,
             bond_amount=trade_amount,
         )
-        print(f"  after open short_base_volume: {self.hyperdrive.market_state.short_base_volume}")
         base_paid = abs(agent_deltas_open.balance.amount)
         market_state_before_close = self.hyperdrive.market_state.copy()
         _, agent_deltas_close = self.hyperdrive.close_short(
@@ -217,7 +210,6 @@ class TestCloseShort(unittest.TestCase):
             open_share_price=1,
         )
         base_proceeds = abs(agent_deltas_close.balance.amount)
-        print(f"  after close short_base_volume: {self.hyperdrive.market_state.short_base_volume}")
         self.assertLessEqual(  # user gets same on close as paid on open
             base_proceeds,
             base_paid,
@@ -304,11 +296,7 @@ class TestCloseShort(unittest.TestCase):
             open_share_price=1,
         )
         market_base_proceeds = market_deltas_close.d_base_asset
-        print("\n=== test_close_short_redeem_at_maturity_zero_variable_interest ===")
-        print(f"bond amount {agent_deltas_open.shorts[0].balance}")
-        print(f"{market_base_proceeds=}")
         agent_base_proceeds = agent_deltas_close.balance.amount
-        print(f"{agent_base_proceeds=}")
         self.assertEqual(  # market swaps the whole position at maturity
             market_base_proceeds,
             agent_deltas_open.shorts[0].balance,
