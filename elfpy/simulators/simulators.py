@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import pandas as pd
-from numpy.random._generator import Generator
+from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.agents.wallet as wallet
@@ -32,34 +32,30 @@ class SimulationState:
 
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
-    model_name: list[str] = field(
-        default_factory=list, metadata=types.to_description("the name of the pricing model that is used in simulation")
-    )
-    run_number: list[int] = field(default_factory=list, metadata=types.to_description("simulation index"))
-    day: list[int] = field(default_factory=list, metadata=types.to_description("day index in a given simulation"))
-    block_number: list[int] = field(
-        default_factory=list, metadata=types.to_description("integer, block index in a given simulation")
-    )
-    daily_block_number: list[int] = field(
-        default_factory=list, metadata=types.to_description("integer, block index in a given day")
-    )
-    current_time: list[float] = field(
-        default_factory=list, metadata=types.to_description("float, current block time in years")
-    )
-    trade_number: list[int] = field(
-        default_factory=list, metadata=types.to_description("integer, trade number in a given simulation")
-    )
-    time_step_size: list[float] = field(
-        default_factory=list, metadata=types.to_description("minimum time discretization for a time step")
-    )
-    position_duration: list[time.StretchedTime] = field(
-        default_factory=list, metadata=types.to_description("time lapse between token mint and expiry in years")
-    )
-    current_variable_apr: list[float] = field(
-        default_factory=list, metadata=types.to_description("variable apr on a given day")
-    )
-    fixed_apr: list[float] = field(default_factory=list, metadata=types.to_description("apr of the AMM pool"))
-    spot_price: list[float] = field(default_factory=list, metadata=types.to_description("price of shares"))
+    # the name of the pricing model that is used in simulation"
+    model_name: list[str] = field(default_factory=list)
+    # simulation index
+    run_number: list[int] = field(default_factory=list)
+    # day index in a given simulation
+    day: list[int] = field(default_factory=list)
+    # block index in a given simulation
+    block_number: list[int] = field(default_factory=list)
+    # block index in a given day
+    daily_block_number: list[int] = field(default_factory=list)
+    # current block time in years
+    current_time: list[float] = field(default_factory=list)
+    # trade number in a given simulation
+    trade_number: list[int] = field(default_factory=list)
+    # minimum time discretization for a time step
+    time_step_size: list[float] = field(default_factory=list)
+    # time lapse between token mint and expiry in years
+    position_duration: list[time.StretchedTime] = field(default_factory=list)
+    # variable apr on a given day
+    current_variable_apr: list[float] = field(default_factory=list)
+    # apr of the AMM pool
+    fixed_apr: list[float] = field(default_factory=list)
+    # price of shares
+    spot_price: list[float] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
         r"""Adds keys & values of input ditionary to the simulation state
@@ -107,72 +103,71 @@ class Config:
     do_dataframe_states: bool = False
 
     # Market
-    target_liquidity: float = field(
-        default=1e6, metadata=types.to_description("total size of the market pool (bonds + shares)")
-    )
-    target_volume: float = field(default=0.01, metadata=types.to_description("fraction of pool liquidity"))
-    init_vault_age: float = field(default=0, metadata=types.to_description("years since the vault was opened"))
-    # NOTE: We ignore the type error since the value will never be None after
-    # initialization, and we don't want the value to be set to None downstream.
-    variable_apr: list[float] = field(  # default is overridden in __post_init__
-        default_factory=lambda: [-1],
-        metadata=types.to_description("the underlying variable (e.g. from a vault) APR at each time step"),
-    )  # TODO: Move this out of config, it should be computed in simulator init based on config values
-    init_share_price: float = field(  # default is overridden in __post_init__
-        default=-1, metadata=types.to_description("initial market share price for the vault asset")  # type: ignore
-    )  # TODO: Move this out of config, it should be computed in simulator init based on config values
+    # total size of the market pool (shares)
+    target_liquidity: float = field(default=1e6)
+    # fraction of pool liquidity
+    target_volume: float = field(default=0.01)
+    # years since the vault was opened
+    init_vault_age: float = field(default=0)
+
+    # TODO: Move this out of config, it should be computed in simulator init based on config values
+    # the underlying variable (e.g. from a vault) APR at each time step; the default is overridden in __post_init__
+    variable_apr: list[float] = field(default_factory=lambda: [-1])
+
+    # TODO: Move this out of config, it should be computed in simulator init based on config values
+    # initial market share price for the vault asset; default is overridden in __post_init__
+    init_share_price: float = field(default=-1)
 
     # AMM
-    pricing_model_name: str = field(
-        default="Hyperdrive", metadata=types.to_description('Must be "Hyperdrive", or "YieldSpace"')
-    )
-    trade_fee_percent: float = field(
-        default=0.05, metadata=types.to_description("LP fee factor (decimal) to charge for trades")
-    )
-    redemption_fee_percent: float = field(
-        default=0.05, metadata=types.to_description("LP fee factor (decimal) to charge for redemption")
-    )
-    target_fixed_apr: float = field(default=0.1, metadata=types.to_description("desired fixed apr for as a decimal"))
-    floor_fee: float = field(default=0, metadata=types.to_description("minimum fee percentage (bps)"))
+    # Must be "Hyperdrive", or "YieldSpace"
+    pricing_model_name: str = field(default="Hyperdrive")
+    # LP fee factor (decimal) to charge for trades
+    trade_fee_percent: float = field(default=0.05)
+    # LP fee factor (decimal) to charge for redemption
+    redemption_fee_percent: float = field(default=0.05)
+    # desired fixed apr for as a decimal
+    target_fixed_apr: float = field(default=0.1)
+    # minimum fee percentage (bps)
+    floor_fee: float = field(default=0)
 
     # Simulation
     # durations
-    title: str = field(default="elfpy simulation", metadata=types.to_description("Text description of the simulation"))
-    num_trading_days: int = field(default=3, metadata=types.to_description("in days; should be <= pool_duration"))
-    num_blocks_per_day: int = field(default=3, metadata=types.to_description("int; agents execute trades each block"))
-    num_position_days: int = field(
-        default=90, metadata=types.to_description("time lapse between token mint and expiry as days")
-    )
+    # Text description of the simulation
+    title: str = field(default="elfpy simulation")
+    # in days; should be <= pool_duration
+    num_trading_days: int = field(default=3)
+    # agents execute trades each block
+    num_blocks_per_day: int = field(default=3)
+    # time lapse between token mint and expiry as days
+    num_position_days: int = field(default=90)
 
     # users
-    shuffle_users: bool = field(
-        default=True, metadata=types.to_description("Shuffle order of action (as if random gas paid)")
-    )
-    agent_policies: list = field(
-        default_factory=list, metadata=types.to_description("List of strings naming user policies")
-    )
-    init_lp: bool = field(default=True, metadata=types.to_description("If True, use an initial LP agent to seed pool"))
+    # shuffle order of action (as if random gas paid)
+    shuffle_users: bool = field(default=True)
+    # list of strings naming user policies
+    agent_policies: list = field(default_factory=list)
+    # if True, use an initial LP agent to seed pool
+    init_lp: bool = field(default=True)
 
     # vault
-    compound_variable_apr: bool = field(
-        default=True,
-        metadata=types.to_description("Whether or not to use compounding revenue for the underlying yield source"),
-    )
+    # whether or not to use compounding revenue for the underlying yield source
+    compound_variable_apr: bool = field(default=True)
 
     # logging
-    log_level: int = field(
-        default=logging.INFO, metadata=types.to_description("Logging level, as defined by stdlib logging")
-    )
-    log_filename: str = field(default="simulation", metadata=types.to_description("filename for output logs"))
+    # logging level, as defined by stdlib logging
+    log_level: int = field(default=logging.INFO)
+    # filename for output logs
+    log_filename: str = field(default="simulation")
 
     # numerical
-    precision: int = field(default=64, metadata=types.to_description("precision of calculations; max is 64"))
+    # precision of calculations; max is 64
+    precision: int = field(default=64)
 
     # random
-    random_seed: int = field(default=1, metadata=types.to_description("int to be used for the random seed"))
-    rng: Generator = field(
-        init=False, compare=False, metadata=types.to_description("random number generator used in the simulation")
-    )
+    # int to be used for the random seed
+    random_seed: int = field(default=1)
+    # random number generator used in the simulation
+    rng: NumpyGenerator = field(init=False, compare=False)
 
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
@@ -228,36 +223,46 @@ class Config:
 class RunSimVariables:
     """Simulation state variables that change by run"""
 
-    run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
-    config: Config = field(metadata=types.to_description("the simulation config"))
-    agent_init: list[wallet.Wallet] = field(metadata=types.to_description("initial wallets for the agents"))
-    market_init: hyperdrive_market.MarketState = field(
-        metadata=types.to_description("initial market state for this simulation run")
-    )
-    time_step: float = field(metadata=types.to_description("minimum time discretization for time step in years"))
-    position_duration: time.StretchedTime = field(
-        metadata=types.to_description("time lapse between token mint and expiry in years")
-    )
+    # incremented each time run_simulation is called
+    run_number: int
+    # the simulation config
+    config: Config
+    # initial wallets for the agents
+    agent_init: list[wallet.Wallet]
+    # initial market state for this simulation run
+    market_init: hyperdrive_market.MarketState
+    # minimum time discretization for time step in years
+    time_step: float
+    # time lapse between token mint and expiry in years
+    position_duration: time.StretchedTime
 
 
 @dataclass
 class DaySimVariables:
     """Simulation state variables that change by day"""
 
-    run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
-    day: int = field(metadata=types.to_description("day index in a given simulation"))
-    variable_apr: float = field(metadata=types.to_description("variable apr on a given day"))
-    share_price: float = field(metadata=types.to_description("share price for the underlying vault"))
+    # incremented each time run_simulation is called
+    run_number: int
+    # day index in a given simulation
+    day: int
+    # variable apr on a given day
+    variable_apr: float
+    # share price for the underlying vault
+    share_price: float
 
 
 @dataclass
 class BlockSimVariables:
     """Simulation state variables that change by block"""
 
-    run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
-    day: int = field(metadata=types.to_description("day index in a given simulation"))
-    block_number: int = field(metadata=types.to_description("integer, block index in a given simulation"))
-    time: float = field(metadata=types.to_description("float, current time in years"))
+    # incremented each time run_simulation is called
+    run_number: int
+    # day index in a given simulation
+    day: int
+    # integer, block index in a given simulation
+    block_number: int
+    # float, current time in years
+    time: float
 
 
 @dataclass
@@ -266,17 +271,24 @@ class TradeSimVariables:
 
     # pylint: disable=too-many-instance-attributes
 
-    run_number: int = field(metadata=types.to_description("incremented each time run_simulation is called"))
-    day: int = field(metadata=types.to_description("day index in a given simulation"))
-    block_number: int = field(metadata=types.to_description("integer, block index in a given simulation"))
-    trade_number: int = field(metadata=types.to_description("trade number in a given simulation"))
-    fixed_apr: float = field(metadata=types.to_description("apr of the AMM pool"))
-    spot_price: float = field(metadata=types.to_description("price of shares"))
-    market_deltas: hyperdrive_actions.MarketDeltas = field(
-        metadata=types.to_description("deltas used to update the market state")
-    )
-    agent_address: int = field(metadata=types.to_description("address of the agent that is executing the trade"))
-    agent_deltas: wallet.Wallet = field(metadata=types.to_description("deltas used to update the market state"))
+    # incremented each time run_simulation is called
+    run_number: int
+    # day index in a given simulation
+    day: int
+    # block index in a given simulation
+    block_number: int
+    # trade number in a given simulation
+    trade_number: int
+    # apr of the AMM pool
+    fixed_apr: float
+    # price of shares
+    spot_price: float
+    # deltas used to update the market state
+    market_deltas: hyperdrive_actions.MarketDeltas
+    # address of the agent that is executing the trade
+    agent_address: int
+    # deltas used to update the market state
+    agent_deltas: wallet.Wallet
 
 
 def simulation_state_aggreagator(constructor):
@@ -407,7 +419,7 @@ class Simulator:
             self.new_simulation_state = NewSimulationState()
         self.simulation_state = SimulationState()
 
-    def set_rng(self, rng: Generator) -> None:
+    def set_rng(self, rng: NumpyGenerator) -> None:
         r"""Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
 
@@ -416,7 +428,7 @@ class Simulator:
         rng : Generator
             Random number generator, constructed using np.random.default_rng(seed)
         """
-        if not isinstance(rng, Generator):
+        if not isinstance(rng, NumpyGenerator):
             raise TypeError(f"rng type must be a random number generator, not {type(rng)}.")
         self.rng = rng
 

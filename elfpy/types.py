@@ -6,11 +6,6 @@ from functools import wraps
 from typing import Type, Any
 
 
-def to_description(description: str) -> dict[str, str]:
-    r"""A dataclass helper that constructs metadata containing a description."""
-    return {"description": description}
-
-
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
