@@ -130,24 +130,19 @@ class TestAddLiquidity(unittest.TestCase):
     def test_add_liquidity_with_long_at_maturity(self):
         """Test adding liquidity with a long at maturity."""
         # Celine opens a long.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
-            wallet_address=self.celine.wallet.address,
+        market_deltas, wallet_deltas = self.hyperdrive.open_long(
+            agent_wallet=self.celine.wallet,
             base_amount=50_000_000,
-            market=self.hyperdrive,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.celine.wallet.update(wallet_deltas)
 
         self.block_time.tick(1)
 
         # Mock having Celine's long auto closed from checkpointing.
-        market_deltas_close_long, _ = hyperdrive_actions.calc_close_long(
-            wallet_address=self.celine.wallet.address,
+        _ = self.hyperdrive.close_long(
+            agent_wallet=self.celine.wallet,
             bond_amount=50_000_000,
-            market=self.hyperdrive,
             mint_time=0,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas_close_long)
 
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
@@ -172,25 +167,20 @@ class TestAddLiquidity(unittest.TestCase):
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
         # Celine opens a short.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_open_short(
-            wallet_address=self.celine.wallet.address,
+        market_deltas, wallet_deltas = self.hyperdrive.open_short(
+            agent_wallet=self.celine.wallet,
             bond_amount=50_000_000,
-            market=self.hyperdrive,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.celine.wallet.update(wallet_deltas)
 
         self.block_time.tick(1)
 
-        # Mock having Celine's long auto closed from checkpointing.
-        market_deltas_close_short, _ = hyperdrive_actions.calc_close_short(
-            wallet_address=self.celine.wallet.address,
+        # Mock having Celine's short auto closed from checkpointing.
+        _ = self.hyperdrive.close_short(
+            agent_wallet=self.celine.wallet,
             bond_amount=50_000_000,
-            market=self.hyperdrive,
             mint_time=0,
             open_share_price=1,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas_close_short)
 
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = hyperdrive_actions.calc_add_liquidity(
