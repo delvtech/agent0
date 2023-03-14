@@ -84,7 +84,6 @@ class TestCloseShort(unittest.TestCase):
             market_state_before.bond_reserves - time_remaining * bond_amount,
             msg="bond_reserves is wrong",
         )
-        # verify that the other states were correct
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves + (bond_amount - agent_base_proceeds) / market_state_before.share_price,
@@ -110,16 +109,20 @@ class TestCloseShort(unittest.TestCase):
             0,
             msg="long_average_maturity_time is wrong",
         )
-        # TODO: This should pass once we implement checkpointing
-        # self.assertAlmostEqual(
-        #     self.hyperdrive.market_state.long_base_volume,
-        #     0,
-        #     delta=1e-9,
-        #     msg=f"The long base volume should be zero, not {self.hyperdrive.market_state.long_base_volume=}.",
-        # )
-        # TODO: once we add checkpointing we will also need to add the checkpoint long test
-        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
-        # checkpoint_time = maturity_time - self.position_duration
+        self.assertEqual(  # long base volume
+            self.hyperdrive.market_state.long_base_volume,
+            0,
+            msg="long_base_volume is wrong",
+        )
+        checkpoint_time = maturity_time - self.term_length
+        self.assertEqual(  # checkpoint long base volume
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
+            0,
+            msg=(
+                f"The long base volume at {checkpoint_time=} should be zero, "
+                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+            ),
+        )
         self.assertEqual(  # shorts outstanding
             self.hyperdrive.market_state.shorts_outstanding,
             market_state_before.shorts_outstanding - bond_amount,
@@ -130,18 +133,16 @@ class TestCloseShort(unittest.TestCase):
             0,
             msg="short_average_maturity_time is wrong",
         )
-        self.assertEqual(  # long base volume
-            self.hyperdrive.market_state.long_base_volume,
-            0,
-            msg="long_base_volume is wrong",
-        )
         self.assertAlmostEqual(  # short base volume
             self.hyperdrive.market_state.short_base_volume,
             0,
             msg="short_base_volume is wrong",
         )
-        # TODO: once we add checkpointing we will need to switch to this
-        # self.hyperdrive.market_state.long_base_volume_checkpoints(checkpoint_time),
+        self.assertEqual(  # checkpoint short base volume
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
+            0,
+            msg="checkpoint short base volume is wrong",
+        )
 
     def test_close_short_failure_zero_amount(self):
         """Attempt to close shorts using zero bond_amount. This should fail."""
