@@ -16,7 +16,7 @@ class TestCloseLong(unittest.TestCase):
 
     contribution: float = 500_000_000
     target_apr: float = 0.05
-    term_length: int = 180
+    term_length: int = 365
     alice: agent.Agent
     bob: agent.Agent
     celine: agent.Agent
