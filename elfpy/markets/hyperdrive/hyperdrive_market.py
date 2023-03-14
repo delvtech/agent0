@@ -542,22 +542,36 @@ class Market(
         return latest_checkpoint / 365
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
-        """creates a new checkpoint if necessary."""
-        # return early if the checkpoint has already been updated.
+        """Creates a new checkpoint if necessary and closes matured positions.
+
+        Parameters
+        ----------
+        checkpoint_time: float
+            The block time for the checkpoint to be created or cleared.
+        share_price: float
+            The share price of the market at the checkpoint time.
+
+        Returns
+        -------
+        float
+            The share price for the checkpoint after mature positions have been closed.
+        """
+        # Return early if the checkpoint has already been updated.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0 or checkpoint_time > self.block_time.time:
             return self.market_state.checkpoints[checkpoint_time].share_price
-        # create the share price checkpoint.
+        # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
         mint_time = checkpoint_time - self.position_duration.days / 365
         # TODO: pay out the long withdrawal pool for longs that have matured.
+        # Close out any matured long positions.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
                 wallet.Wallet(0).address, matured_longs_amount, self, mint_time
             )
             self.market_state.apply_delta(market_deltas)
-
         # TODO: pay out the short withdrawal pool for shorts that have matured.
+        # Close out any matured short positions.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
