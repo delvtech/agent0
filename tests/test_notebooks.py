@@ -28,6 +28,7 @@ class TestNotebook(unittest.TestCase):
         """Tests notebooks in the `examples/notebooks` folder to ensure that they run without error"""
         # pylint: disable=too-many-locals
         # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         output_utils.setup_logging("test_notebooks")
         isp = TransformerManager()  # module for converting jupyter cell into source code
         notebook_location = os.path.join(
