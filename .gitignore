@@ -2,8 +2,7 @@
 .logging
 .build
 # smart contracts symlink (should only ignore top level folder)
-hyperdrive
-!*/hyperdrive
+solidity
 
 # Ape
 .cache

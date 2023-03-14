@@ -109,17 +109,15 @@ anvil
 clone and sym link the hyperdrive repo, into hyperdrive/, i.e.:
 
 ```bash
-cd ..
-git clone https://github.com/element-fi/hyperdrive.git
-cd elf-simulations
-ln -s ../hyperdrive .
+git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
+mkdir ./solidity
+ln -s ../hyperdrive ./solidity/
 ```
 
 then run:
 
 ```bash
 python -m pip install eth-ape==0.6.5
-ape plugins list -a
 ape plugins install .
 ape compile
 ```
