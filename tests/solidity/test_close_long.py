@@ -202,7 +202,7 @@ class TestCloseLong(unittest.TestCase):
                 mint_time=list(self.bob.wallet.longs.keys())[0] + 1,
             )
 
-    def test_close_long_immediately(self):
+    def test_close_long_immediately_with_regular_amount(self):
         """Open a position, close it, and then verify that the close long updates were correct"""
         base_amount = 10
         self.bob.budget = base_amount
