@@ -50,7 +50,7 @@ class MarketState(base_market.BaseMarketState):
 
     Attributes
     ----------
-    lp_total_supply: float
+    lp_total_supply: Decimal
         Amount of lp tokens
     share_reserves: Decimal
         Quantity of shares stored in the market
@@ -82,7 +82,7 @@ class MarketState(base_market.BaseMarketState):
         return setattr(self, key, value)
 
     # lp reserves
-    lp_total_supply: float = field(default=0.0)
+    lp_total_supply: Decimal = field(default=Decimal(0))
 
     # trading reserves
     share_reserves: Decimal = field(default=Decimal(0))
