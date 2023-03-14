@@ -26,6 +26,7 @@ class Policy(agent.Agent):
         self,
         disallowed_actions: "list[hyperdrive_actions.MarketActionType] | None" = None,
     ) -> "list[hyperdrive_actions.MarketActionType]":
+        """Get all available actions, excluding those listed in disallowed_actions"""
         # prevent accidental override
         if disallowed_actions is None:
             disallowed_actions = []
@@ -40,6 +41,79 @@ class Policy(agent.Agent):
             all_available_actions.append(hyperdrive_actions.MarketActionType.CLOSE_SHORT)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
+
+    def open_short_with_random_amount(self, market) -> "list[types.Trade]":
+        """Open a short with a random allowable amount"""
+        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        max_short = self.get_max_short(market)
+        if max_short < elfpy.WEI:  # no short is possible
+            return []
+        trade_amount = np.maximum(
+            elfpy.WEI, np.minimum(max_short, initial_trade_amount)
+        )  # WEI <= trade_amount <= max_short
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                    mint_time=market.block_time.time,
+                ),
+            )
+        ]
+
+    def open_long_with_random_amount(self, market) -> "list[types.Trade]":
+        """Open a long with a random allowable amount"""
+        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        max_long = self.get_max_long(market)
+        if max_long < elfpy.WEI:  # no trade is possible
+            return []
+        # WEI <= trade_amount <= max_short
+        trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                    mint_time=market.block_time.time,
+                ),
+            )
+        ]
+
+    def close_random_short(self) -> "list[types.Trade]":
+        """Fully close the short balance for a random mint time"""
+        short_time = self.rng.choice(list(self.wallet.shorts)).item()  # choose a random short time to close
+        trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                    mint_time=short_time,
+                ),
+            )
+        ]
+
+    def close_random_long(self) -> "list[types.Trade]":
+        """Fully close the long balance for a random mint time"""
+        long_time = self.rng.choice(list(self.wallet.longs)).item()  # choose a random long time to close
+        trade_amount = self.wallet.longs[long_time].balance  # close the full trade
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                    mint_time=long_time,
+                ),
+            )
+        ]
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
         """Implement a random user strategy
@@ -68,68 +142,11 @@ class Policy(agent.Agent):
         action_type = self.rng.choice(np.array(available_actions), size=1).item()  # choose one random trade type
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
-            initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
-            max_short = self.get_max_short(market)
-            if max_short > elfpy.WEI:  # if max_short is greater than the minimum eth amount
-                trade_amount = np.maximum(
-                    elfpy.WEI, np.minimum(max_short, initial_trade_amount)
-                )  # WEI <= trade_amount <= max_short
-                action_list = [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
-                            action_type=action_type,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-            else:  # no short is possible
-                action_list = []
-        elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
-            initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
-            max_long = self.get_max_long(market)
-            if max_long > elfpy.WEI:  # if max_long is greater than the minimum eth amount
-                trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
-                action_list = [
-                    types.Trade(
-                        market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
-                            action_type=action_type,
-                            trade_amount=trade_amount,
-                            wallet=self.wallet,
-                            mint_time=market.block_time.time,
-                        ),
-                    )
-                ]
-            else:
-                action_list = []
+            return self.open_short_with_random_amount(market)
         elif action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
-            short_time = self.rng.choice(list(self.wallet.shorts)).item()  # choose a random short time to close
-            trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
-            action_list = [
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
-                        action_type=action_type, trade_amount=trade_amount, wallet=self.wallet, mint_time=short_time
-                    ),
-                )
-            ]
+            return self.close_random_short()
+        elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
+            return self.open_long_with_random_amount(market)
         elif action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
-            long_time = self.rng.choice(list(self.wallet.longs)).item()  # choose a random long time to close
-            trade_amount = self.wallet.longs[long_time].balance  # close the full trade
-            action_list = [
-                types.Trade(
-                    market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
-                        action_type=action_type,
-                        trade_amount=trade_amount,
-                        wallet=self.wallet,
-                        mint_time=long_time,
-                    ),
-                )
-            ]
-        else:
-            action_list = []
-        return action_list
+            return self.close_random_long()
+        return []
