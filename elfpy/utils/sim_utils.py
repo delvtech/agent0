@@ -46,7 +46,7 @@ def get_simulator(
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
-        init_agent = get_policy("init_lp")(wallet_address=0, budget=0)
+        init_agent = get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)
         init_agent_action = init_agent.action(market)[0]
         init_agent.wallet.update(init_agent_deltas)
         simulator.add_agents([init_agent])
@@ -86,7 +86,7 @@ def get_simulator(
                         trade_number=0,
                         fixed_apr=simulator.market.fixed_apr,
                         spot_price=simulator.market.spot_price,
-                        trade_action=init_agent_action,
+                        trade_action=init_agent_action.trade,
                         market_deltas=market_deltas,
                         agent_address=0,
                         agent_deltas=init_agent_deltas,
@@ -180,7 +180,7 @@ def get_pricing_model(model_name: str) -> yieldspace_pm.YieldspacePricingModel |
     return pricing_model
 
 
-def get_policy(agent_type: str) -> Policy:  # TODO: Figure out a better type for output
+def get_policy(agent_type: str) -> Policy:
     """Returns an uninstantiated agent
 
     Parameters
@@ -192,5 +192,6 @@ def get_policy(agent_type: str) -> Policy:  # TODO: Figure out a better type for
     -------
     Uninstantiated agent policy
 
+    .. todo:: Figure out a better type for output (Wrap in @abstractmethod to return uninstantiated class?)
     """
     return import_module(f"elfpy.agents.policies.{agent_type}").Policy
