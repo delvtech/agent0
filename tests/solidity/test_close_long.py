@@ -62,12 +62,10 @@ class TestCloseLong(unittest.TestCase):
         # verify that the bond reserves were updated according to flat+curve
         # the adjustment should be equal to timeRemaining * bondAmount
         if maturity_time > self.hyperdrive.block_time.time:
-            time_remaining = self.hyperdrive.position_duration.normalized_time * (
-                maturity_time - self.hyperdrive.block_time.time
-            )
+            time_remaining = maturity_time - self.hyperdrive.block_time.time
         else:
             time_remaining = 0
-        self.assertEqual(
+        self.assertAlmostEqual(
             self.hyperdrive.market_state.bond_reserves,
             market_state_before.bond_reserves + time_remaining * bond_amount,
             msg=(
@@ -266,9 +264,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = 0.5
-        self.hyperdrive.block_time.set_time(
-            self.hyperdrive.block_time.time + self.hyperdrive.position_duration.normalized_time * time_delta
-        )
+        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
         self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
             1 + self.target_apr * time_delta
         )

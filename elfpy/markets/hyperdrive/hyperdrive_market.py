@@ -459,9 +459,12 @@ class Market(
         )
         # apply deltas
         self.market_state.apply_delta(market_deltas)
-        agent_wallet.update(agent_deltas)
         # apply checkpointing
         self.apply_close_checkpointing(mint_time, bond_amount, "long")
+        # update total supply
+        self.market_state.total_supply_longs[mint_time] -= bond_amount
+        # pay agent
+        agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
     def add_liquidity(
