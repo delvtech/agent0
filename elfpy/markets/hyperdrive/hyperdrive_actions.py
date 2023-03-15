@@ -180,10 +180,10 @@ def calc_open_short(
 
 def calc_close_short(
     wallet_address: int,
-    bond_amount: float,
+    bond_amount: Decimal,
     market: hyperdrive_market.Market,
     mint_time: Decimal,
-    open_share_price: float,
+    open_share_price: Decimal,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """
     when closing a short, the number of bonds being closed out, at face value, give us the total margin returned

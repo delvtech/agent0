@@ -120,10 +120,10 @@ class MarketState(base_market.BaseMarketState):
 
     # trading buffers
     base_buffer: Decimal = field(default=Decimal(0))
-    bond_buffer: float = field(default=0.0)
+    bond_buffer: Decimal = field(default=Decimal(0))
 
     # share price
-    variable_apr: float = field(default=0.0)
+    variable_apr: Decimal = field(default=Decimal(0))
     share_price: Decimal = field(default=Decimal(0))
     init_share_price: Decimal = field(default=Decimal(0))
 
@@ -443,8 +443,8 @@ class Market(
     def close_short(
         self,
         agent_wallet: wallet.Wallet,
-        open_share_price: float,
-        bond_amount: float,
+        open_share_price: Decimals,
+        bond_amount: Decimal,
         mint_time: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
