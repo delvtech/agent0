@@ -446,7 +446,7 @@ def calc_add_liquidity(
 
 def calc_remove_liquidity(
     wallet_address: int,
-    bond_amount: float,
+    bond_amount: Decimal,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed"""

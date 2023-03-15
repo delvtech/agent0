@@ -236,7 +236,7 @@ class Market(
         return self.position_duration.days / 365
 
     @property
-    def fixed_apr(self) -> float:
+    def fixed_apr(self) -> Decimal:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         # TODO: Negative values should never happen, but do because of rounding errors.
@@ -244,7 +244,7 @@ class Market(
         # issue #146
 
         if self.market_state.share_reserves <= 0:  # market is empty; negative value likely due to rounding error
-            return np.nan
+            return Decimal(np.nan)
         return price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
 
     @property
@@ -466,7 +466,7 @@ class Market(
     def open_long(
         self,
         agent_wallet: wallet.Wallet,
-        base_amount: float,
+        base_amount: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
         # create/update the checkpoint
@@ -485,7 +485,7 @@ class Market(
     def close_long(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        bond_amount: Decimal,
         mint_time: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
@@ -506,7 +506,7 @@ class Market(
     def add_liquidity(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        bond_amount: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
@@ -522,7 +522,7 @@ class Market(
     def remove_liquidity(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        bond_amount: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)

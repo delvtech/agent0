@@ -83,13 +83,13 @@ class Wallet:
         The base assets that held by the agent.
     lp_tokens : float
         The LP tokens held by the agent.
-    longs : Dict[float, Long]
+    longs : Dict[Decimal, Long]
         The long positions held by the agent.
-    shorts : Dict[float, Short]
+    shorts : Dict[Decimal, Short]
         The short positions held by the agent.
-    borrows : Dict[float, Borrow]
+    borrows : Dict[Decimal, Borrow]
         The borrow positions held by the agent.
-    fees_paid : float
+    fees_paid : Decimal
         The fees paid by the agent.
     """
 
@@ -106,12 +106,12 @@ class Wallet:
     lp_tokens: Decimal = field(default_factory=Decimal)
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: dict[float, Long] = field(default_factory=dict)
-    shorts: dict[float, Short] = field(default_factory=dict)
+    longs: dict[Decimal, Long] = field(default_factory=dict)
+    shorts: dict[Decimal, Short] = field(default_factory=dict)
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
-    borrows: dict[float, Borrow] = field(default_factory=dict)
-    fees_paid: float = 0
+    borrows: dict[Decimal, Borrow] = field(default_factory=dict)
+    fees_paid: Decimal = 0
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
