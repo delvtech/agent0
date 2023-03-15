@@ -185,7 +185,7 @@ class TestCloseShort(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
-                bond_amount=abs(market_deltas.d_bond_asset),
+                bond_amount=market_deltas.d_bond_asset,
                 mint_time=list(self.bob.wallet.shorts.keys())[0] + 1,
                 open_share_price=1,
             )
@@ -210,7 +210,7 @@ class TestCloseShort(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
-            agent_base_proceeds=abs(agent_deltas_close.balance.amount),
+            agent_base_proceeds=agent_deltas_close.balance.amount,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -235,7 +235,7 @@ class TestCloseShort(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
-            agent_base_proceeds=abs(agent_deltas_close.balance.amount),
+            agent_base_proceeds=agent_deltas_close.balance.amount,
             bond_amount=agent_deltas_open.shorts[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )

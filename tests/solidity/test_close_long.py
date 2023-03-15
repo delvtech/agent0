@@ -180,7 +180,7 @@ class TestCloseLong(unittest.TestCase):
         with self.assertRaises(AssertionError):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
-                bond_amount=abs(market_deltas.d_bond_asset) + 1,
+                bond_amount=market_deltas.d_bond_asset + 1,
                 mint_time=list(self.bob.wallet.longs.keys())[0],
             )
 
@@ -196,7 +196,7 @@ class TestCloseLong(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
-                bond_amount=abs(market_deltas.d_bond_asset),
+                bond_amount=market_deltas.d_bond_asset,
                 mint_time=list(self.bob.wallet.longs.keys())[0] + 1,
             )
 
@@ -219,7 +219,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=base_amount,
-            agent_base_proceeds=abs(agent_deltas_close.balance.amount),
+            agent_base_proceeds=agent_deltas_close.balance.amount,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -247,7 +247,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=base_amount,
-            agent_base_proceeds=abs(agent_deltas_close.balance.amount),
+            agent_base_proceeds=agent_deltas_close.balance.amount,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -290,7 +290,7 @@ class TestCloseLong(unittest.TestCase):
         # t = 1 - time_delta
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
         realized_apr = (base_proceeds - base_amount) / (base_amount * (1 - time_delta))
-        self.assertAlmostEqual(
+        self.assertAlmostEqual(  # realized return
             realized_apr,
             self.target_apr,
             delta=1e-8,
@@ -301,7 +301,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=agent_deltas_open.longs[0].balance,  # not starting amount since we're at maturity
-            agent_base_proceeds=abs(base_proceeds),
+            agent_base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -341,7 +341,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=agent_deltas_open.longs[0].balance,  # not starting amount since we're at maturity
-            agent_base_proceeds=abs(base_proceeds),
+            agent_base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -386,7 +386,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=base_amount,
-            agent_base_proceeds=abs(base_proceeds),
+            agent_base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
@@ -430,7 +430,7 @@ class TestCloseLong(unittest.TestCase):
             example_agent=self.bob,
             market_state_before=market_state_before_close,
             agent_base_paid=base_amount,
-            agent_base_proceeds=abs(base_proceeds),
+            agent_base_proceeds=base_proceeds,
             bond_amount=agent_deltas_open.longs[0].balance,
             maturity_time=self.hyperdrive.position_duration.days / 365,
         )
