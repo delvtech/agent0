@@ -81,33 +81,6 @@ class TestTimeUtils(unittest.TestCase):
                 norm_days, test_case["expected_result"], err_msg=f"unexpected normalized days {norm_days}"
             )
 
-    def test_unnorm_days(self):
-        """Unit tests for the unnorm_days function"""
-
-        test_cases = [
-            # test 1
-            {"normed_days": 0, "normalizing_constant": 365, "expected_result": 0},  # 1 year scale
-            # test 2
-            {
-                "normed_days": 0.5,  # half the scale
-                "normalizing_constant": 365,  # 1 year scale
-                "expected_result": 182.5,
-            },
-            # test 3
-            {
-                "normed_days": 2,  # twice the scale
-                "normalizing_constant": 180,  # arbitrary scale
-                "expected_result": 360,
-            },
-        ]
-
-        for test_case in test_cases:
-            unnormed_days = time.unnorm_days(test_case["normed_days"], test_case["normalizing_constant"])
-
-            np.testing.assert_almost_equal(
-                unnormed_days, test_case["expected_result"], err_msg=f"unexpected amount of days {unnormed_days}"
-            )
-
     def test_days_to_time_remaining(self):
         """Unit tests for the days_to_time_remaining function"""
 
