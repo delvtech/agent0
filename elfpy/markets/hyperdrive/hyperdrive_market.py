@@ -73,6 +73,36 @@ class MarketState(base_market.BaseMarketState):
         as a fee.
     redemption_fee_percent : float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    longs_outstanding: Decimal
+        Amount of bonds that agents have long positions on, in units of bonds
+    shorts_outstanding: Decimal
+        Amount of bonds that agents have long positions on, in units of bonds
+    long_average_maturity_time: Decimal
+        Average maturity time of long positions
+    short_average_maturity_time: Decimal
+        Average maturity time of short positions
+    long_base_volume: Decimal
+        Amount of base that agents have paid to open long positions, in units of base
+    short_base_volume: Decimal
+        Amount of base that agents have paid to open short positions, in units of base
+    checkpoints: defaultdict[float, Checkpoint]
+        Checkpoints are used to avoid poking in periods that have LP or trading activity.
+        The checkpoints contain the starting share price from the checkpoint as well as
+        aggregate volume values.
+    checkpoint_duration: float
+        Time between checkpoints, defaults to 1 day
+    total_supply_longs: defaultdict[float, float]
+        Checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
+    total_supply_shorts: defaultdict[float, float]
+        Checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
+    long_withdrawal_shares_outstanding: float
+        The amount of long withdrawal shares that are still open.
+    short_withdrawal_shares_outstanding: float
+        The amount of short withdrawal shares that are still open.
+    long_withdrawal_share_proceeds: float
+        The amount that has accrued to long withdrawal shares.
+    short_withdrawal_share_proceeds: float
+        The amount that has accrued to short withdrawal shares.
     """
 
     def __getitem__(self, key):
