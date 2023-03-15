@@ -95,22 +95,22 @@ class PricingModel(ABC):
 
         Parameters
         ----------
-        target_apr : float
+        target_apr : Decimal
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
         time_remaining : StretchedTime
             Amount of time left until bond maturity
         market_state : MarketState
             MarketState object; the following attributes are used:
-                share_reserves : float
+                share_reserves : Decimal
                     Base asset reserves in the pool
-                init_share_price : float
+                init_share_price : Decimal
                     Original share price when the pool started
-                share_price : float
+                share_price : Decimal
                     Current share price
 
         Returns
         -------
-        float
+        Decimal
             The expected amount of bonds (token asset) in the pool, given the inputs
 
         .. todo:: test_market.test_initialize_market uses this, but this should also have a unit test
