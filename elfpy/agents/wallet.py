@@ -21,13 +21,13 @@ class Long:
 
     Parameters
     ----------
-    balance : float
+    balance : Decimal
         The amount of bonds that the position is long.
 
     .. todo:: make balance a Quantity to enforce units
     """
 
-    balance: float  # bonds
+    balance: Decimal  # bonds
 
 
 @dataclass
@@ -36,14 +36,14 @@ class Short:
 
     Parameters
     ----------
-    balance : float
+    balance : Decimal
         The amount of bonds that the position is short.
-    open_share_price: float
+    open_share_price: Decimal
         The share price at the time the short was opened.
     """
 
-    balance: float
-    open_share_price: float
+    balance: Decimal
+    open_share_price: Decimal
 
 
 @dataclass

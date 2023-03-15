@@ -412,7 +412,7 @@ def calc_add_liquidity(
     if (
         market.market_state.share_reserves == 0 and market.market_state.bond_reserves == 0
     ):  # pool has not been initialized
-        rate = 0
+        rate = Decimal(0)
     else:
         rate = market.fixed_apr
     # sanity check inputs
