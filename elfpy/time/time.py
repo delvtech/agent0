@@ -130,7 +130,7 @@ def days_to_time_remaining(
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
-    return normed_days_remaining / Decimal(time_stretch)
+    return normed_days_remaining / time_stretch
 
 
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
