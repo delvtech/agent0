@@ -1,7 +1,6 @@
 """The Hyperdrive pricing model"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
@@ -108,9 +107,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         """
 
         # Calculate some common values up front
-        out_amount = Decimal(out.amount)
-        normalized_time = Decimal(time_remaining.normalized_time)
-        share_price = Decimal(market_state.share_price)
+        out_amount = out.amount
+        normalized_time = time_remaining.normalized_time
+        share_price = market_state.share_price
         d_bonds = out_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
 
@@ -119,11 +118,11 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         # TODO: This is somewhat strange since these updates never actually hit the reserves.
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         if out.unit == types.TokenType.BASE:
-            market_state.share_reserves -= float(d_shares)
-            market_state.bond_reserves += float(d_bonds)
+            market_state.share_reserves -= d_shares
+            market_state.bond_reserves += d_bonds
         elif out.unit == types.TokenType.PT:
-            market_state.share_reserves += float(d_shares)
-            market_state.bond_reserves -= float(d_bonds)
+            market_state.share_reserves += d_shares
+            market_state.bond_reserves -= d_bonds
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
@@ -131,7 +130,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=types.Quantity(amount=float(out_amount * normalized_time), unit=out.unit),
+            out=types.Quantity(amount=out_amount * normalized_time, unit=out.unit),
             market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -142,14 +141,14 @@ class HyperdrivePricingModel(YieldspacePricingModel):
 
         # Compute flat part with fee
         flat_without_fee = out_amount * (1 - normalized_time)
-        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
+        redemption_fee = flat_without_fee * market_state.redemption_fee_percent
         flat_with_fee = flat_without_fee + redemption_fee
 
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if out.unit == types.TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=out.amount,
-                d_bonds=float(-flat_with_fee + Decimal(curve.user_result.d_bonds)),
+                d_bonds=-flat_with_fee + curve.user_result.d_bonds,
             )
             market_result = hyperdrive_actions.MarketActionResult(
                 d_base=-out.amount,
@@ -157,11 +156,11 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         elif out.unit == types.TokenType.PT:
             user_result = AgentTradeResult(
-                d_base=float(-flat_with_fee + Decimal(curve.user_result.d_base)),
+                d_base=-flat_with_fee + curve.user_result.d_base,
                 d_bonds=out.amount,
             )
             market_result = hyperdrive_actions.MarketActionResult(
-                d_base=float(flat_with_fee + Decimal(curve.market_result.d_base)),
+                d_base=flat_with_fee + curve.market_result.d_base,
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -173,10 +172,10 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=trades.TradeBreakdown(
-                without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
-                without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
-                fee=float(redemption_fee + Decimal(curve.breakdown.fee)),
-                with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
+                without_fee_or_slippage=flat_without_fee + curve.breakdown.without_fee_or_slippage,
+                without_fee=flat_without_fee + curve.breakdown.without_fee,
+                fee=redemption_fee + curve.breakdown.fee,
+                with_fee=flat_with_fee + curve.breakdown.with_fee,
             ),
         )
 
@@ -258,19 +257,19 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             The result of performing the trade.
         """
         # Calculate some common values up front
-        in_amount = Decimal(in_.amount)
-        normalized_time = Decimal(time_remaining.normalized_time)
-        share_price = Decimal(market_state.share_price)
+        in_amount = in_.amount
+        normalized_time = time_remaining.normalized_time
+        share_price = market_state.share_price
         d_bonds = in_amount * (1 - normalized_time)
         d_shares = d_bonds / share_price
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         market_state = market_state.copy()  # don't want to modify the actual market state
         if in_.unit == types.TokenType.BASE:
-            market_state.share_reserves += float(d_shares)
-            market_state.bond_reserves -= float(d_bonds)
+            market_state.share_reserves += d_shares
+            market_state.bond_reserves -= d_bonds
         elif in_.unit == types.TokenType.PT:
-            market_state.share_reserves -= float(d_shares)
-            market_state.bond_reserves += float(d_bonds)
+            market_state.share_reserves -= d_shares
+            market_state.bond_reserves += d_bonds
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
@@ -278,7 +277,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=types.Quantity(amount=float(in_amount * normalized_time), unit=in_.unit),
+            in_=types.Quantity(amount=in_amount * normalized_time, unit=in_.unit),
             market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for the curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -288,13 +287,13 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         )
         # Compute flat part with fee
         flat_without_fee = in_amount * (1 - normalized_time)
-        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
+        redemption_fee = flat_without_fee * market_state.redemption_fee_percent
         flat_with_fee = flat_without_fee - redemption_fee
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if in_.unit == types.TokenType.BASE:
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
-                d_bonds=float(flat_with_fee + Decimal(curve.user_result.d_bonds)),
+                d_bonds=flat_with_fee + curve.user_result.d_bonds,
             )
             market_result = hyperdrive_actions.MarketActionResult(
                 d_base=in_.amount,
@@ -302,11 +301,11 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         elif in_.unit == types.TokenType.PT:
             user_result = AgentTradeResult(
-                d_base=float(flat_with_fee + Decimal(curve.user_result.d_base)),
+                d_base=flat_with_fee + curve.user_result.d_base,
                 d_bonds=-in_.amount,
             )
             market_result = hyperdrive_actions.MarketActionResult(
-                d_base=float(-flat_with_fee + Decimal(curve.market_result.d_base)),
+                d_base=-flat_with_fee + curve.market_result.d_base,
                 d_bonds=curve.market_result.d_bonds,
             )
         else:
@@ -318,9 +317,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             user_result=user_result,
             market_result=market_result,
             breakdown=trades.TradeBreakdown(
-                without_fee_or_slippage=float(flat_without_fee + Decimal(curve.breakdown.without_fee_or_slippage)),
-                without_fee=float(flat_without_fee + Decimal(curve.breakdown.without_fee)),
-                fee=float(Decimal(curve.breakdown.fee) + redemption_fee),
-                with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
+                without_fee_or_slippage=flat_without_fee + curve.breakdown.without_fee_or_slippage,
+                without_fee=flat_without_fee + curve.breakdown.without_fee,
+                fee=curve.breakdown.fee + redemption_fee,
+                with_fee=flat_with_fee + curve.breakdown.with_fee,
             ),
         )
