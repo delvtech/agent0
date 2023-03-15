@@ -519,11 +519,11 @@ def calculate_long_adjustment(
 
 
 def calculate_lp_allocation_adjustment(
-    positions_outstanding: float,
-    base_volume: float,
-    average_time_remaining: float,
-    share_price: float,
-) -> float:
+    positions_outstanding: Decimal,
+    base_volume: Decimal,
+    average_time_remaining: Decimal,
+    share_price: Decimal,
+) -> Decimal:
     """Calculates an adjustment amount for lp shares"""
     # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
     base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
