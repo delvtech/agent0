@@ -3,6 +3,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.agents.agent as agent
 import elfpy.types as types
+from decimal import Decimal
 
 # pylint: disable=duplicate-code
 
@@ -10,7 +11,7 @@ import elfpy.types as types
 class Policy(agent.Agent):
     """simple short thatonly has one long open at a time"""
 
-    def __init__(self, wallet_address, budget=100):
+    def __init__(self, wallet_address, budget: Decimal = Decimal(100)):
         """call basic policy init then add custom stuff"""
         self.amount_to_trade = budget
         super().__init__(wallet_address, budget)

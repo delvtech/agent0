@@ -9,6 +9,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.agents.agent as agent
 import elfpy.types as types
+from decimal import Decimal
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
@@ -17,7 +18,9 @@ import elfpy.types as types
 class Policy(agent.Agent):
     """Random agent"""
 
-    def __init__(self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: Decimal = Decimal(10_000)
+    ) -> None:
         """Adds custom attributes"""
         self.trade_chance = trade_chance
         self.rng = rng
@@ -45,13 +48,11 @@ class Policy(agent.Agent):
 
     def open_short_with_random_amount(self, market) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         max_short = self.get_max_short(market)
         if max_short < elfpy.WEI:  # no short is possible
             return []
-        trade_amount = np.maximum(
-            elfpy.WEI, np.minimum(max_short, initial_trade_amount)
-        )  # WEI <= trade_amount <= max_short
+        trade_amount = np.max(elfpy.WEI, np.min(max_short, initial_trade_amount))  # WEI <= trade_amount <= max_short
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -66,12 +67,12 @@ class Policy(agent.Agent):
 
     def open_long_with_random_amount(self, market) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         max_long = self.get_max_long(market)
         if max_long < elfpy.WEI:  # no trade is possible
             return []
         # WEI <= trade_amount <= max_short
-        trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        trade_amount = np.maximum(elfpy.WEI, np.min(max_long, initial_trade_amount))
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -86,7 +87,8 @@ class Policy(agent.Agent):
 
     def close_random_short(self) -> list[types.Trade]:
         """Fully close the short balance for a random mint time"""
-        short_time = self.rng.choice(list(self.wallet.shorts)).item()  # choose a random short time to close
+        random_index = self.rng.integers(0, len(self.wallet.shorts))
+        short_time = list(self.wallet.shorts.keys())[random_index]  # choose a random short time to close
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
         return [
             types.Trade(
@@ -102,7 +104,8 @@ class Policy(agent.Agent):
 
     def close_random_long(self) -> list[types.Trade]:
         """Fully close the long balance for a random mint time"""
-        long_time = self.rng.choice(list(self.wallet.longs)).item()  # choose a random long time to close
+        random_index = self.rng.integers(0, len(self.wallet.longs))
+        long_time = list(self.wallet.longs.keys())[random_index]  # choose a random long time to close
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
         return [
             types.Trade(

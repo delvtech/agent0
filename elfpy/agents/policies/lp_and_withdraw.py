@@ -3,6 +3,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.agents.agent as agent
 import elfpy.types as types
+from decimal import Decimal
 
 # pylint: disable=duplicate-code
 
@@ -13,10 +14,10 @@ class Policy(agent.Agent):
     only has one LP open at a time
     """
 
-    def __init__(self, wallet_address, budget=1000):
+    def __init__(self, wallet_address: int, budget: Decimal = Decimal(1000)):
         """call basic policy init then add custom stuff"""
-        self.time_to_withdraw = 1.0
-        self.amount_to_lp = 100
+        self.time_to_withdraw = Decimal(1)
+        self.amount_to_lp = Decimal(100)
         super().__init__(wallet_address, budget)
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
