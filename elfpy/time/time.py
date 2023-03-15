@@ -106,24 +106,6 @@ def norm_days(days: float, normalizing_constant: float = 365) -> float:
     return days / normalizing_constant
 
 
-def unnorm_days(normed_days: float, normalizing_constant: float = 365) -> float:
-    r"""Returns days from a value between 0 and 1
-
-    Parameters
-    ----------
-    normed_days : float
-        Normalized amount of days, according to a normalizing constant
-    normalizing_constant : float
-        Amount of days to use as a normalization factor. Defaults to 365
-
-    Returns
-    -------
-    float
-        Amount of days, calculated from the provided parameters
-    """
-    return normed_days * normalizing_constant
-
-
 def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     r"""Converts remaining pool length in days to normalized and stretched time
 
@@ -166,4 +148,4 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
         Time remaining until term maturity, in days
     """
     normed_days_remaining = time_remaining * time_stretch
-    return unnorm_days(normed_days_remaining, normalizing_constant)
+    return normed_days_remaining * normalizing_constant
