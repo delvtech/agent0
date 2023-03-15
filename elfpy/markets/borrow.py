@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict
+from decimal import Decimal
 
 import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
@@ -28,7 +29,9 @@ class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
 
     d_borrow_shares: float = 0.0  # borrow is always in DAI
-    d_collateral: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.PT))
+    d_collateral: types.Quantity = field(
+        default_factory=lambda: types.Quantity(amount=Decimal(0), unit=types.TokenType.PT)
+    )
     d_borrow_outstanding: float = 0.0  # changes based on borrow_shares * borrow_share_price
     d_borrow_closed_interest: float = 0.0  # realized interest from closed borrows
     d_borrow_share_price: float = 0.0  # used only when time ticks and interest accrues
@@ -77,7 +80,7 @@ class MarketState(base_market.BaseMarketState):
 
     # trading reserves
     borrow_shares: float = field(default=0.0)  # allows tracking the increasing value of loans over time
-    collateral: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral: Dict[types.TokenType, Decimal] = field(default_factory=dict)
 
     borrow_outstanding: float = field(default=0.0)  # sum of Dai that went out the door
     borrow_closed_interest: float = field(default=0.0)  # interested collected from closed borrows
@@ -86,7 +89,7 @@ class MarketState(base_market.BaseMarketState):
     borrow_share_price: float = field(default=1.0)
     init_borrow_share_price: float = field(default=borrow_share_price)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
-    collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral_spot_price: Dict[types.TokenType, Decimal] = field(default_factory=dict)
 
     # borrow and lending rates
     lending_rate: float = field(default=0.01)  # 1% per year
@@ -99,7 +102,7 @@ class MarketState(base_market.BaseMarketState):
         return self.borrow_shares * self.borrow_share_price
 
     @property
-    def deposit_amount(self) -> dict[types.TokenType, float]:
+    def deposit_amount(self) -> dict[types.TokenType, Decimal]:
         """The amount of deposited asset in the market"""
         return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
@@ -136,12 +139,12 @@ class PricingModel(base_pm.PricingModel):
         self,
         loan_to_value_ratio: Dict[types.TokenType, float],
         collateral: types.Quantity,
-        spot_price: Optional[float] = None,
+        spot_price: Optional[Decimal] = None,
     ):
         """Values collateral and returns how much the agent can borrow against it"""
         collateral_value_in_base = collateral.amount  # if collateral is BASE
         if collateral.unit == types.TokenType.PT:
-            collateral_value_in_base = collateral.amount * (spot_price or 1)
+            collateral_value_in_base = collateral.amount * (spot_price or Decimal(1))
         borrow_amount_in_base = collateral_value_in_base * loan_to_value_ratio[collateral.unit]  # type: ignore
         return collateral_value_in_base, borrow_amount_in_base
 
@@ -187,13 +190,13 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         market_deltas = MarketDeltas()
         borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
-            borrow_amount=0,
-            borrow_shares=0,
+            borrow_amount=Decimal(0),
+            borrow_shares=Decimal(0),
             collateral_token=types.TokenType.BASE,
-            collateral_amount=0,
-            start_time=0,
+            collateral_amount=Decimal(0),
+            start_time=Decimal(0),
         )
-        agent_deltas = wallet.Wallet(address=wallet_address, borrows={0: borrow_summary})
+        agent_deltas = wallet.Wallet(address=wallet_address, borrows={Decimal(0): borrow_summary})
         return (market_deltas, agent_deltas)
 
     def check_action(self, agent_action: MarketAction) -> None:
@@ -255,7 +258,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         self,
         wallet_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
-        spot_price: Optional[float] = None,
+        spot_price: Optional[Decimal] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas
@@ -295,7 +298,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         self,
         agent_wallet: wallet.Wallet,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
-        spot_price: Optional[float] = None,
+        spot_price: Optional[Decimal] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
         Agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
@@ -309,7 +312,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         self,
         wallet_address: int,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
-        spot_price: Optional[float] = None,
+        spot_price: Optional[Decimal] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         close a borrow as requested by the agent, return the market and agent deltas
@@ -346,7 +349,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         self,
         agent_wallet: wallet.Wallet,
         collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
-        spot_price: Optional[float] = None,
+        spot_price: Optional[Decimal] = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Close a borrow as requested by the agent and return the market and agent deltas.
         Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
