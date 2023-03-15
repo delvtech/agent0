@@ -200,6 +200,10 @@ class Market(
         super().__init__(pricing_model=pricing_model, market_state=market_state, block_time=block_time)
 
     @property
+    def time_stretch_constant(self) -> float:
+        return self.position_duration.time_stretch
+
+    @property
     def annualized_position_duration(self) -> float:
         r"""Returns the position duration in years"""
         return self.position_duration.days / 365
