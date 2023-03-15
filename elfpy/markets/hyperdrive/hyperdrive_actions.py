@@ -111,7 +111,7 @@ def check_action(agent_action: MarketAction) -> None:
 
 def calc_open_short(
     wallet_address: int,
-    bond_amount: float,
+    bond_amount: Decimal,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Calculate the agent & market deltas for opening a short position.
@@ -550,17 +550,17 @@ def calculate_base_volume(base_amount: Decimal, bond_amount: Decimal, normalized
 
 
 def update_weighted_average(  # pylint: disable=too-many-arguments
-    average: float,
-    total_weight: float,
-    delta: float,
-    delta_weight: float,
-    is_adding: float,
-) -> float:
+    average: Decimal,
+    total_weight: Decimal,
+    delta: Decimal,
+    delta_weight: Decimal,
+    is_adding: Decimal,
+) -> Decimal:
     """Updates a weighted average by adding or removing a weighted delta."""
     if is_adding:
         return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
     if total_weight == delta_weight:
-        return 0
+        return Decimal(0)
     return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
 
 
