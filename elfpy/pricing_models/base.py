@@ -130,7 +130,7 @@ class PricingModel(ABC):
         target_apr: float,
         time_remaining: time.StretchedTime,
         market_state: hyperdrive_market.MarketState,
-    ) -> float:
+    ) -> Decimal:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
@@ -151,15 +151,15 @@ class PricingModel(ABC):
 
         Returns
         -------
-        float
+        Decimal
             The expected amount of bonds (token asset) in the pool, given the inputs
 
         .. todo:: Test this function
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
         # (1 + r * t) ** (1 / tau)
-        interest_factor = (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)
+        interest_factor = (1 + Decimal(target_apr) * annualized_time) ** (1 / time_remaining.stretched_time)
         # mu * z * (1 + apr * t) ** (1 / tau) - l
         return (
             market_state.init_share_price * market_state.share_reserves * interest_factor - market_state.lp_total_supply
