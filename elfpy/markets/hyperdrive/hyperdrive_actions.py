@@ -56,10 +56,10 @@ class MarketDeltas(base_market.MarketDeltas):
     short_withdrawal_shares_outstanding: float = 0
     long_withdrawal_share_proceeds: float = 0
     short_withdrawal_share_proceeds: float = 0
-    long_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-    short_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-    total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-    total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    long_checkpoints: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
+    short_checkpoints: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
+    total_supply_longs: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
+    total_supply_shorts: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -182,7 +182,7 @@ def calc_close_short(
     wallet_address: int,
     bond_amount: float,
     market: hyperdrive_market.Market,
-    mint_time: float,
+    mint_time: Decimal,
     open_share_price: float,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """
@@ -341,7 +341,7 @@ def calc_close_long(
     wallet_address: int,
     bond_amount: float,
     market: hyperdrive_market.Market,
-    mint_time: float,
+    mint_time: Decimal,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.

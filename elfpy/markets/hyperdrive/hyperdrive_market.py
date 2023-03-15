@@ -146,11 +146,11 @@ class MarketState(base_market.BaseMarketState):
     # time delimited checkpoints
     checkpoints: defaultdict[Decimal, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
     # time between checkpoints, defaults to 1 day
-    checkpoint_duration: float = field(default=1 / 365)
+    checkpoint_duration: Decimal = field(default=Decimal(1 / 365))
     # checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
-    total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    total_supply_longs: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
     # checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
-    total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+    total_supply_shorts: defaultdict[Decimal, Decimal] = field(default_factory=lambda: defaultdict(Decimal))
 
     # the amount of long withdrawal shares that haven't been paid out.
     long_withdrawal_shares_outstanding: float = field(default=0.0)
@@ -445,7 +445,7 @@ class Market(
         agent_wallet: wallet.Wallet,
         open_share_price: float,
         bond_amount: float,
-        mint_time: float,
+        mint_time: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
         # create/update the checkpoint
@@ -486,7 +486,7 @@ class Market(
         self,
         agent_wallet: wallet.Wallet,
         bond_amount: float,
-        mint_time: float,
+        mint_time: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
@@ -535,7 +535,7 @@ class Market(
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
-    def checkpoint(self, checkpoint_time: float) -> None:
+    def checkpoint(self, checkpoint_time: Decimal) -> None:
         """allows anyone to mint a new checkpoint."""
         # if the checkpoint has already been set, return early.
         if self.market_state.checkpoints[checkpoint_time].share_price != 0:
@@ -578,14 +578,14 @@ class Market(
 
         Parameters
         ----------
-        checkpoint_time: float
+        checkpoint_time: Decimal
             The block time for the checkpoint to be created or cleared.
-        share_price: float
+        share_price: Decimal
             The share price of the market at the checkpoint time.
 
         Returns
         -------
-        float
+        Decimal
             The share price for the checkpoint after mature positions have been closed.
         """
         # Return early if the checkpoint has already been updated.
