@@ -261,7 +261,7 @@ def calc_close_short(
 
 def calc_open_long(
     wallet_address: int,
-    base_amount: float,
+    base_amount: Decimal,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """
@@ -339,7 +339,7 @@ def calc_open_long(
 
 def calc_close_long(
     wallet_address: int,
-    bond_amount: float,
+    bond_amount: Decimal,
     market: hyperdrive_market.Market,
     mint_time: Decimal,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
@@ -404,7 +404,7 @@ def calc_close_long(
 
 def calc_add_liquidity(
     wallet_address: int,
-    bond_amount: float,
+    bond_amount: Decimal,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is added"""
@@ -505,7 +505,7 @@ def calculate_long_adjustment(
 ) -> Decimal:
     """Calculates an adjustment amount for lp shares"""
     if market_time > market_state.long_average_maturity_time:
-        return 0
+        return Decimal(0)
     # (year_end - year_start) / (normalizing_constant / 365)
     normalized_time_remaining = (market_state.long_average_maturity_time - market_time) / (
         position_duration.normalizing_constant / 365
@@ -581,7 +581,7 @@ def calc_lp_out_given_tokens_in(
     times.
     """
     d_shares = d_base / market_state.share_price
-    annualized_time = time.norm_days(position_duration.days, 365)
+    annualized_time = time.norm_days(position_duration.days, Decimal(365))
     d_bonds = (market_state.share_reserves + d_shares) / 2 * (
         market_state.init_share_price * (1 + rate * annualized_time) ** (1 / position_duration.stretched_time)
         - market_state.share_price
@@ -598,26 +598,26 @@ def calc_lp_out_given_tokens_in(
 
 
 def calc_checkpoint_deltas(
-    market: hyperdrive_market.Market, checkpoint_time: float, bond_amount: float, position: Literal["short", "long"]
-) -> tuple[float, defaultdict[float, float]]:
+    market: hyperdrive_market.Market, checkpoint_time: Decimal, bond_amount: Decimal, position: Literal["short", "long"]
+) -> tuple[Decimal, defaultdict[Decimal, Decimal]]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
 
     Parameters
     ----------
     market: hyperdrive_market.Market
         Deltas are computed for this market.
-    checkpoint_time: float
+    checkpoint_time: Decimal
         The checkpoint time to be used for updating.
-    bond_amount: float
+    bond_amount: Decimal
         The amount of bonds used to close the position.
     position: str
         Either "short" or "long", indicating what type of position is being closed.
 
     Returns
     -------
-    d_base_volume: float
+    d_base_volume: Decimal
         The change in base volume for the given position.
-    d_checkpoints: defaultdict[float, float]
+    d_checkpoints: defaultdict[Decimal, Decimal]
         The change in checkpoint volume for the given checkpoint_time (key) and position (value).
     """
     total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
@@ -626,15 +626,15 @@ def calc_checkpoint_deltas(
     checkpoint_amount = market.market_state[total_supply][checkpoint_time]
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == 0:
-        return (0, defaultdict(float, {checkpoint_time: 0}))
+        return (0, defaultdict(Decimal, {checkpoint_time: Decimal(0)}))
     # If all of the positions in the checkpoint are being closed, delete the base volume in the
     # checkpoint and reduce the aggregates by the checkpoint amount. Otherwise, decrease the
     # both the checkpoints and aggregates by a proportional amount.
     if bond_amount == checkpoint_amount:
         d_base_volume = -market.market_state.checkpoints[checkpoint_time][base_volume]
     else:
-        d_base_volume = -float(
-            market.market_state.checkpoints[checkpoint_time][base_volume] * (bond_amount / checkpoint_amount)
+        d_base_volume = -market.market_state.checkpoints[checkpoint_time][base_volume] * (
+            bond_amount / checkpoint_amount
         )
-    d_checkpoints = defaultdict(float, {checkpoint_time: d_base_volume})
-    return (d_base_volume, d_checkpoints)
+    d_checkpoints = defaultdict(Decimal, {checkpoint_time: d_base_volume})
+    return d_base_volume, d_checkpoints

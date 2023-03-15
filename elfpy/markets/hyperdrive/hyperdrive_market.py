@@ -415,7 +415,7 @@ class Market(
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
+            balance=-types.Quantity(amount=Decimal(contribution), unit=types.TokenType.BASE),
             lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,
         )
         self.update_market(market_deltas)
@@ -443,7 +443,7 @@ class Market(
     def close_short(
         self,
         agent_wallet: wallet.Wallet,
-        open_share_price: Decimals,
+        open_share_price: Decimal,
         bond_amount: Decimal,
         mint_time: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
