@@ -5,6 +5,7 @@ import logging
 import copy
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
@@ -102,7 +103,7 @@ class Wallet:
     balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
     # TODO: Support multiple typed balances:
     #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
-    lp_tokens: float = 0
+    lp_tokens: Decimal = field(default_factory=Decimal)
 
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: dict[float, Long] = field(default_factory=dict)
