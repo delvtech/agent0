@@ -188,7 +188,7 @@ class Wallet:
                 # of open borrows using `if self.borrows`
                 del self.borrows[borrow_summary.start_time]
 
-    def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[Decimal, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
         Parameters
@@ -217,7 +217,7 @@ class Wallet:
             if mint_time in self.longs and self.longs[mint_time].balance < 0:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
-    def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[Decimal, Short]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
         Parameters
@@ -257,7 +257,7 @@ class Wallet:
             if mint_time in self.shorts and self.shorts[mint_time].balance < 0:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.shorts[mint_time]}.")
 
-    def get_state(self, market: hyperdrive_market.Market) -> dict[str, float]:
+    def get_state(self, market: hyperdrive_market.Market) -> dict[str, Decimal | int]:
         r"""The wallet's current state of public variables
 
         .. todo:: This will go away once we finish refactoring the state
@@ -273,8 +273,8 @@ class Wallet:
             lp_token_value = pool_value * share_of_pool  # in base
         share_reserves = market.market_state.share_reserves
         # compute long values in units of base
-        longs_value = 0
-        longs_value_no_mock = 0
+        longs_value = Decimal(0)
+        longs_value_no_mock = Decimal(0)
         for mint_time, long in self.longs.items():
             if long.balance > 0 and share_reserves:
                 balance = hyperdrive_actions.calc_close_long(
@@ -284,14 +284,14 @@ class Wallet:
                     mint_time=mint_time,
                 )[1].balance.amount
             else:
-                balance = 0.0
+                balance = Decimal(0)
             longs_value += balance
             longs_value_no_mock += long.balance * market.spot_price
         # compute short values in units of base
         shorts_value = 0
         shorts_value_no_mock = 0
         for mint_time, short in self.shorts.items():
-            balance = 0.0
+            balance = Decimal(0)
             if (
                 short.balance > 0
                 and share_reserves > 0
