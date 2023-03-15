@@ -105,7 +105,7 @@ def norm_days(days: Decimal, normalizing_constant: Decimal = Decimal(365)) -> De
     float
         Amount of days provided, converted to fractions of a year
     """
-    return Decimal(days) / Decimal(normalizing_constant)
+    return days / normalizing_constant
 
 
 def days_to_time_remaining(
