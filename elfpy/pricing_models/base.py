@@ -221,7 +221,7 @@ class PricingModel(ABC):
         self,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float]:
+    ) -> tuple[Decimal, Decimal]:
         r"""
         Calculates the maximum long the market can support
 
@@ -233,16 +233,16 @@ class PricingModel(ABC):
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
-        fee_percent : float
+        fee_percent : Decimal
             The fee percent charged by the market
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch)
 
         Returns
         -------
-        float
+        Decimal
             The maximum amount of base that can be used to purchase bonds.
-        float
+        Decimal
             The maximum amount of bonds that can be purchased.
         """
         base = self.calc_in_given_out(
@@ -255,7 +255,7 @@ class PricingModel(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return base, bonds
 
     def get_max_short(
         self,
