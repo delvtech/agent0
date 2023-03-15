@@ -63,29 +63,31 @@ class StretchedTime:
         )
 
 
-def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
+def get_years_remaining(market_time: Decimal, mint_time: Decimal, position_duration_years: Decimal) -> Decimal:
     r"""Get the time remaining in years on a token
 
     Parameters
     ----------
-    market_time : float
+    market_time : Decimal
         Time that has elapsed in the given market, in years
-    mint_time : float
+    mint_time : Decimal
         Time at which the token in question was minted, relative to market_time,
         in yearss. Should be less than market_time.
-    position_duration_years: float
+    position_duration_years: Decimal
         Total duration of the token's term, in years
 
     Returns
     -------
-    float
+    Decimal
         Time left until token maturity, in years
     """
     if mint_time > market_time:
         raise ValueError(f"elfpy.utils.time.get_years_remaining: ERROR: {mint_time=} must be less than {market_time=}.")
     years_elapsed = market_time - mint_time
     # if we are closing after the position duration has completed, then just set time_remaining to zero
-    return np.maximum(position_duration_years - years_elapsed, 0)
+    return (
+        position_duration_years - years_elapsed if position_duration_years - years_elapsed > Decimal(0) else Decimal(0)
+    )
 
 
 def norm_days(days: Decimal, normalizing_constant: Decimal = Decimal(365)) -> Decimal:

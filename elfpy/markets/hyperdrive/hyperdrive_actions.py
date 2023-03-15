@@ -391,7 +391,7 @@ def calc_close_long(
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
         long_checkpoints=d_checkpoints,
-        total_supply_longs=defaultdict(float, {mint_time: -bond_amount}),
+        total_supply_longs=defaultdict(Decimal, {mint_time: -bond_amount}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
