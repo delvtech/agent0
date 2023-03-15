@@ -106,9 +106,9 @@ class MarketState(base_market.BaseMarketState):
     # the amount of shorts that are still open.
     shorts_outstanding: float = field(default=0.0)
     # the average maturity time of long positions.
-    long_average_maturity_time: float = field(default=0.0)
+    long_average_maturity_time: Decimal = field(default=Decimal(0))
     # the average maturity time of short positions.
-    short_average_maturity_time: float = field(default=0.0)
+    short_average_maturity_time: Decimal = field(default=Decimal(0))
     # the amount of base paid by outstanding longs.
     long_base_volume: float = field(default=0.0)
     # the amount of base paid to outstanding shorts.

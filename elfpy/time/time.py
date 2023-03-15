@@ -45,9 +45,9 @@ class StretchedTime:
 
     .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
     """
-    days: float
-    time_stretch: float
-    normalizing_constant: float
+    days: Decimal
+    time_stretch: Decimal
+    normalizing_constant: Decimal
 
     @property
     def stretched_time(self):
@@ -85,11 +85,10 @@ def get_years_remaining(market_time: float, mint_time: float, position_duration_
         raise ValueError(f"elfpy.utils.time.get_years_remaining: ERROR: {mint_time=} must be less than {market_time=}.")
     years_elapsed = market_time - mint_time
     # if we are closing after the position duration has completed, then just set time_remaining to zero
-    time_remaining = np.maximum(position_duration_years - years_elapsed, 0)
-    return time_remaining
+    return np.maximum(position_duration_years - years_elapsed, 0)
 
 
-def norm_days(days: float, normalizing_constant: float = 365) -> Decimal:
+def norm_days(days: Decimal, normalizing_constant: Decimal = Decimal(365)) -> Decimal:
     r"""Returns days normalized, with a default assumption of a year-long scale
 
     Parameters
@@ -108,24 +107,24 @@ def norm_days(days: float, normalizing_constant: float = 365) -> Decimal:
 
 
 def days_to_time_remaining(
-    days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365
+    days_remaining: Decimal, time_stretch: Decimal = Decimal(1), normalizing_constant: Decimal = Decimal(365)
 ) -> Decimal:
     r"""Converts remaining pool length in days to normalized and stretched time
 
     Parameters
     ----------
-    days_remaining : float
+    days_remaining : Decimal
         Time left until term maturity, in days
-    time_stretch : float
+    time_stretch : Decimal
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to 1
-    normalizing_constant : float
+    normalizing_constant : Decimal
         Amount of days to use as a normalization factor
         Defaults to 365
 
     Returns
     -------
-    float
+    Decimal
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
