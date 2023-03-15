@@ -144,7 +144,7 @@ class MarketState(base_market.BaseMarketState):
     # the amount of base paid to outstanding shorts.
     short_base_volume: Decimal = field(default=Decimal(0))
     # time delimited checkpoints
-    checkpoints: defaultdict[float, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
+    checkpoints: defaultdict[Decimal, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
     # time between checkpoints, defaults to 1 day
     checkpoint_duration: float = field(default=1 / 365)
     # checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
@@ -565,18 +565,15 @@ class Market(
                 _time += self.market_state.checkpoint_duration
 
     @property
-    def latest_checkpoint_time(self) -> float:
+    def latest_checkpoint_time(self) -> Decimal:
         """gets the most recent checkpoint time."""
-        # NOTE: modulus doesn't work well with floats, checkpoints are days right now so multiply by
-        # 365 so we can get integer values.
-        latest_checkpoint = int(
-            int(self.block_time.time * 365)
-            - (int(self.block_time.time * 365) % int(self.market_state.checkpoint_duration * 365))
+        latest_checkpoint = (self.block_time.time * 365) - (
+            (self.block_time.time * 365) % (self.market_state.checkpoint_duration * 365)
         )
         # divide the result by 365 again to get years
         return latest_checkpoint / 365
 
-    def apply_checkpoint(self, checkpoint_time: float, share_price: Decimal) -> float:
+    def apply_checkpoint(self, checkpoint_time: Decimal, share_price: Decimal) -> Decimal:
         """Creates a new checkpoint if necessary and closes matured positions.
 
         Parameters
