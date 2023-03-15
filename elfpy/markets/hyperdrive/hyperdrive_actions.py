@@ -531,7 +531,7 @@ def calculate_lp_allocation_adjustment(
     return base_adjustment / share_price
 
 
-def calculate_base_volume(base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
+def calculate_base_volume(base_amount: Decimal, bond_amount: Decimal, normalized_time_remaining: Decimal) -> Decimal:
     """Calculates the base volume of an open trade.
     Output is given the base amount, the bond amount, and the time remaining.
     Since the base amount takes into account backdating, we can't use this as our base volume.
@@ -545,7 +545,7 @@ def calculate_base_volume(base_amount: float, bond_amount: float, normalized_tim
     # If the time remaining is 0, the position has already matured and doesn't have an impact on
     # LP's ability to withdraw. This is a pathological case that should never arise.
     if normalized_time_remaining == 0:
-        return 0
+        return Decimal(0)
     return (base_amount - (1 - normalized_time_remaining) * bond_amount) / normalized_time_remaining
 
 
