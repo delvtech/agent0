@@ -60,7 +60,7 @@ class YieldspacePricingModel(PricingModel):
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -131,7 +131,7 @@ class YieldspacePricingModel(PricingModel):
             market_state.share_reserves - market_state.base_buffer / market_state.share_price
         )
         # TODO: Move this calculation to a helper function.
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
         d_bonds = (market_state.share_reserves - d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
@@ -157,14 +157,14 @@ class YieldspacePricingModel(PricingModel):
         d_shares = d_base / market_state.share_price
         # TODO: Move this calculation to a helper function.
         # rate is an APR, which is annual, so we normalize time by 365 to correct for units
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
 
         d_bonds = ((market_state.share_reserves - d_shares) / 2) * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
         ) - market_state.bond_reserves
 
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
         logging.debug(
             (
                 "inputs:\n\tlp_in=%g,\n\tshare_reserves=%d, "
@@ -308,10 +308,7 @@ class YieldspacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         lp_total_supply = Decimal(market_state.lp_total_supply)
-        spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            time_remaining,
-        )
+        spot_price = self.calc_spot_price_from_reserves(market_state, time_remaining)
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         if out.unit == types.TokenType.BASE:
@@ -556,10 +553,7 @@ class YieldspacePricingModel(PricingModel):
         share_reserves = Decimal(market_state.share_reserves)
         bond_reserves = Decimal(market_state.bond_reserves)
         lp_total_supply = Decimal(market_state.lp_total_supply)
-        spot_price = self._calc_spot_price_from_reserves_high_precision(
-            market_state,
-            time_remaining,
-        )
+        spot_price = self.calc_spot_price_from_reserves(market_state, time_remaining)
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         if in_.unit == types.TokenType.BASE:
