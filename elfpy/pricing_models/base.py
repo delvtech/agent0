@@ -261,7 +261,7 @@ class PricingModel(ABC):
         self,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float]:
+    ) -> tuple[Decimal, Decimal]:
         r"""
         Calculates the maximum short the market can support using the bisection
         method.
@@ -280,9 +280,9 @@ class PricingModel(ABC):
 
         Returns
         -------
-        float
+        Decimal
             The maximum amount of base that can be used to short bonds.
-        float
+        Decimal
             The maximum amount of bonds that can be shorted.
         """
         bonds = self.calc_in_given_out(
@@ -298,7 +298,7 @@ class PricingModel(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return base, bonds
 
     def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""

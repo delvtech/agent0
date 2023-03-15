@@ -5,6 +5,7 @@ from decimal import Decimal
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 import logging
+import numpy as np
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.agents.wallet as wallet
@@ -48,9 +49,9 @@ class Agent:
         Wallet object which tracks the agent's asset balances
     """
 
-    def __init__(self, wallet_address: int, budget: float):
+    def __init__(self, wallet_address: int, budget: Decimal):
         """Set up initial conditions"""
-        self.budget: float = budget
+        self.budget: Decimal = budget
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
@@ -101,7 +102,7 @@ class Agent:
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
-        return min(
+        return np.min(
             self.wallet.balance.amount,
             max_long,
         )
@@ -131,8 +132,8 @@ class Agent:
         # short, we can simply return the maximum short.
         if self.wallet.balance.amount >= max_short_max_loss:
             return max_short
-        last_maybe_max_short = 0
-        bond_percent = 1
+        last_maybe_max_short = Decimal(0)
+        bond_percent = Decimal(1)
         num_iters = 25
         for step_size in [1 / (2 ** (x + 1)) for x in range(num_iters)]:
             # Compute the amount of base returned by selling the specified
