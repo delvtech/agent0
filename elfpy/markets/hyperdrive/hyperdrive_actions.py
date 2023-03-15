@@ -40,18 +40,18 @@ class MarketActionType(Enum):
 class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
-    d_base_asset: float = 0
-    d_bond_asset: float = 0
-    d_base_buffer: float = 0
+    d_base_asset: Decimal = field(default_factory=Decimal)
+    d_bond_asset: Decimal = field(default_factory=Decimal)
+    d_base_buffer: Decimal = field(default_factory=Decimal)
     d_bond_buffer: float = 0
-    d_lp_total_supply: float = 0
-    d_share_price: float = 0
-    longs_outstanding: float = 0
-    shorts_outstanding: float = 0
-    long_average_maturity_time: float = 0
-    short_average_maturity_time: float = 0
-    long_base_volume: float = 0
-    short_base_volume: float = 0
+    d_lp_total_supply: Decimal = field(default_factory=Decimal)
+    d_share_price: Decimal = field(default_factory=Decimal)
+    longs_outstanding: Decimal = field(default_factory=Decimal)
+    shorts_outstanding: Decimal = field(default_factory=Decimal)
+    long_average_maturity_time: Decimal = field(default_factory=Decimal)
+    short_average_maturity_time: Decimal = field(default_factory=Decimal)
+    long_base_volume: Decimal = field(default_factory=Decimal)
+    short_base_volume: Decimal = field(default_factory=Decimal)
     long_withdrawal_shares_outstanding: float = 0
     short_withdrawal_shares_outstanding: float = 0
     long_withdrawal_share_proceeds: float = 0
