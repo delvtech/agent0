@@ -4,6 +4,7 @@ from enum import Enum
 from dataclasses import dataclass
 from functools import wraps
 from typing import Type, Any
+from decimal import Decimal
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
@@ -62,7 +63,7 @@ class TokenType(Enum):
 class Quantity:
     r"""An amount with a unit"""
 
-    amount: float
+    amount: Decimal
     unit: TokenType
 
     def __neg__(self):
