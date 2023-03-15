@@ -169,36 +169,6 @@ class PricingModel(ABC):
         self,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> float:
-        r"""Calculates the spot price of base in terms of bonds.
-        The spot price is defined as:
-
-        .. math::
-            \begin{align}
-                p &= (\frac{y + s}{\mu z})^{-\tau} \\
-                  &= (\frac{\mu z}{y + s})^{\tau}
-            \end{align}
-
-        Parameters
-        ----------
-        market_state: MarketState
-            The reserves and prices in the pool.
-        time_remaining : StretchedTime
-            The time remaining for the asset (uses time stretch).
-
-        Returns
-        -------
-        float
-            The spot price of principal tokens.
-        """
-        return float(
-            self._calc_spot_price_from_reserves_high_precision(market_state=market_state, time_remaining=time_remaining)
-        )
-
-    def _calc_spot_price_from_reserves_high_precision(
-        self,
-        market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTime,
     ) -> Decimal:
         r"""Calculates the current market spot price of base in terms of bonds.
         This variant returns the result in a high precision format.

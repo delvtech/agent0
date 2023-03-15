@@ -248,11 +248,11 @@ class Market(
         return price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
 
     @property
-    def spot_price(self) -> float:
+    def spot_price(self) -> Decimal:
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
-            return np.nan
+            return Decimal(np.nan)
         return self.pricing_model.calc_spot_price_from_reserves(
             market_state=self.market_state,
             time_remaining=self.position_duration,

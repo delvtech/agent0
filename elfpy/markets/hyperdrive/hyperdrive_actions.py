@@ -43,7 +43,7 @@ class MarketDeltas(base_market.MarketDeltas):
     d_base_asset: Decimal = field(default=Decimal(0))
     d_bond_asset: Decimal = field(default=Decimal(0))
     d_base_buffer: Decimal = field(default=Decimal(0))
-    d_bond_buffer: float = 0
+    d_bond_buffer: Decimal = field(default=Decimal(0))
     d_lp_total_supply: Decimal = field(default=Decimal(0))
     d_share_price: Decimal = field(default=Decimal(0))
     longs_outstanding: Decimal = field(default=Decimal(0))
@@ -162,8 +162,8 @@ def calc_open_short(
         short_base_volume=base_volume,
         shorts_outstanding=bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
-        short_checkpoints=defaultdict(float, {market.latest_checkpoint_time: base_volume}),
-        total_supply_shorts=defaultdict(float, {market.latest_checkpoint_time: bond_amount}),
+        short_checkpoints=defaultdict(Decimal, {market.latest_checkpoint_time: base_volume}),
+        total_supply_shorts=defaultdict(Decimal, {market.latest_checkpoint_time: bond_amount}),
     )
     # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
     max_loss = bond_amount - trade_result.user_result.d_base
@@ -240,7 +240,7 @@ def calc_close_short(
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
         short_checkpoints=d_checkpoints,
-        total_supply_shorts=defaultdict(float, {mint_time: -bond_amount}),
+        total_supply_shorts=defaultdict(Decimal, {mint_time: -bond_amount}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -251,7 +251,7 @@ def calc_close_short(
         shorts={
             mint_time: wallet.Short(
                 balance=-bond_amount,
-                open_share_price=0,
+                open_share_price=Decimal(0),
             )
         },
         fees_paid=trade_result.breakdown.fee,
@@ -626,7 +626,7 @@ def calc_checkpoint_deltas(
     checkpoint_amount = market.market_state[total_supply][checkpoint_time]
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == 0:
-        return (0, defaultdict(Decimal, {checkpoint_time: Decimal(0)}))
+        return (Decimal(0), defaultdict(Decimal, {checkpoint_time: Decimal(0)}))
     # If all of the positions in the checkpoint are being closed, delete the base volume in the
     # checkpoint and reduce the aggregates by the checkpoint amount. Otherwise, decrease the
     # both the checkpoints and aggregates by a proportional amount.
