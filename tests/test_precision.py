@@ -2,8 +2,10 @@
 import unittest
 from decimal import getcontext
 import inspect
+import logging
 
 import pytest
+import pandas as pd
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -55,15 +57,39 @@ class HyperdriveMock(unittest.TestCase):
         self.alice.wallet.update(wallet_deltas)
 
 
-def verify_slippage(self, base_output, base_input, precision, func):
-    self.assertLess(  # user gets less than what they put in
+def print(msg):
+    """Override print to log"""
+    logging.debug(msg=msg)
+
+
+def verify_and_print_slippage(market, base_output, base_input, precision, func):
+    """Verify slippage and print results"""
+    abs_base_output = abs(base_output)
+    slippage = abs_base_output - base_input
+    result = pd.DataFrame(
+        {
+            "func": [func],
+            "precision": [precision],
+            "output": [abs_base_output],
+            "input": [base_input],
+            "slippage": [slippage],
+            "slippage_percent": [slippage / base_input],
+        }
+    )
+    try:
+        f = open("test_precision.csv")  # if file exists, check if empty, otherwise fail and write header
+        header = len(f.readlines()) == 0  # if file is empty, write header
+    except IOError:
+        header = True
+    result.to_csv("test_precision.csv", mode="a", header=header, index=False)
+    market.assertLess(  # user gets less than what they put in
         base_output,
         base_input,
         msg=f"{func}(precision={precision:.0f}) has no slippage",
     )
 
 
-precision = range(18, 27)
+precision = range(12, 29)
 
 
 def func():
@@ -88,7 +114,13 @@ def test_precision_long_open(precision):
         agent_wallet=hyperdrive.bob.wallet,
         base_amount=base_amount,
     )
-    verify_slippage(hyperdrive, agent_deltas_open.balance.amount, base_amount, precision, func())
+    verify_and_print_slippage(
+        market=hyperdrive,
+        base_output=agent_deltas_open.balance.amount,
+        base_input=base_amount,
+        precision=precision,
+        func=func(),
+    )
 
 
 @pytest.mark.parametrize("precision", precision, ids=idfn)
@@ -108,7 +140,13 @@ def test_precision_long_close(precision):
         bond_amount=agent_deltas_open.longs[0].balance,
         mint_time=0,
     )
-    verify_slippage(hyperdrive, agent_deltas_close.balance.amount, base_amount, precision, func())
+    verify_and_print_slippage(
+        market=hyperdrive,
+        base_output=agent_deltas_close.balance.amount,
+        base_input=base_amount,
+        precision=precision,
+        func=func(),
+    )
 
 
 @pytest.mark.parametrize("precision", precision, ids=idfn)
@@ -125,7 +163,14 @@ def test_precision_short_open(precision):
         bond_amount=trade_amount,
     )
     base_paid = agent_deltas_open.balance.amount
-    verify_slippage(hyperdrive, base_paid, base_paid_without_slippage, precision, func())
+
+    verify_and_print_slippage(
+        market=hyperdrive,
+        base_input=base_paid,
+        base_output=base_paid_without_slippage,
+        precision=precision,
+        func=func(),
+    )
 
 
 @pytest.mark.parametrize("precision", precision, ids=idfn)
@@ -153,4 +198,10 @@ def test_precision_short_close(precision):
         open_share_price=1,
     )
     base_received = agent_deltas_close.balance.amount
-    verify_slippage(hyperdrive, base_received, base_paid, precision, func())
+    verify_and_print_slippage(
+        market=hyperdrive,
+        base_input=base_received,
+        base_output=base_paid,
+        precision=precision,
+        func=func(),
+    )
