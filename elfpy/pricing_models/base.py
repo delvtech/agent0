@@ -201,8 +201,8 @@ class PricingModel(ABC):
         self,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> float:
-        r"""Returns the apr given reserve amounts
+    ) -> Decimal:
+        r"""Returns the apr for given reserve amounts
 
         Parameters
         ----------
@@ -210,6 +210,11 @@ class PricingModel(ABC):
             The reserves and share prices of the pool
         time_remaining : StretchedTime
             The expiry time for the asset
+
+        Returns
+        -------
+        Decimal
+            The calculated APR
         """
         spot_price = self.calc_spot_price_from_reserves(
             market_state,
