@@ -128,8 +128,8 @@ class MarketState(base_market.BaseMarketState):
     init_share_price: Decimal = field(default=Decimal(0))
 
     # fee percents
-    trade_fee_percent: float = field(default=0.0)
-    redemption_fee_percent: float = field(default=0.0)
+    trade_fee_percent: Decimal = field(default=Decimal(0))
+    redemption_fee_percent: Decimal = field(default=Decimal(0))
 
     # The amount of longs that are still open.
     longs_outstanding: Decimal = field(default=Decimal(0))
