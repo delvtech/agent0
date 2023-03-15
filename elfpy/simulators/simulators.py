@@ -5,6 +5,7 @@ import json
 import logging
 from dataclasses import dataclass, field, make_dataclass
 from typing import TYPE_CHECKING, Optional
+from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -53,9 +54,9 @@ class SimulationState:
     # variable apr on a given day
     current_variable_apr: list[float] = field(default_factory=list)
     # apr of the AMM pool
-    fixed_apr: list[float] = field(default_factory=list)
+    fixed_apr: list[Decimal] = field(default_factory=list)
     # price of shares
-    spot_price: list[float] = field(default_factory=list)
+    spot_price: list[Decimal] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
         r"""Adds keys & values of input ditionary to the simulation state
@@ -246,9 +247,9 @@ class DaySimVariables:
     # day index in a given simulation
     day: int
     # variable apr on a given day
-    variable_apr: float
+    variable_apr: Decimal
     # share price for the underlying vault
-    share_price: float
+    share_price: Decimal
 
 
 @dataclass
@@ -280,9 +281,9 @@ class TradeSimVariables:
     # trade number in a given simulation
     trade_number: int
     # apr of the AMM pool
-    fixed_apr: float
+    fixed_apr: Decimal
     # price of shares
-    spot_price: float
+    spot_price: Decimal
     # deltas used to update the market state
     market_deltas: hyperdrive_actions.MarketDeltas
     # address of the agent that is executing the trade
@@ -556,15 +557,15 @@ class Simulator:
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
                     trade_vars=TradeSimVariables(
-                        self.run_number,
-                        self.day,
-                        self.block_number,
-                        self.trade_number,
-                        self.market.fixed_apr,
-                        self.market.spot_price,
-                        market_deltas,
-                        agent_id,
-                        agent_deltas,
+                        run_number=self.run_number,
+                        day=self.day,
+                        block_number=self.block_number,
+                        trade_number=self.trade_number,
+                        fixed_apr=self.market.fixed_apr,
+                        spot_price=self.market.spot_price,
+                        market_deltas=market_deltas,
+                        agent_address=agent_id,
+                        agent_deltas=agent_deltas,
                     )
                 )
             self.trade_number += 1
@@ -604,7 +605,7 @@ class Simulator:
             )
         for day in range(self.config.num_trading_days):
             self.day = day
-            self.market.market_state.variable_apr = self.config.variable_apr[self.day]
+            self.market.market_state.variable_apr = Decimal(self.config.variable_apr[self.day])
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 if self.config.compound_variable_apr:  # Apply return to latest price (full compounding)
@@ -622,10 +623,10 @@ class Simulator:
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
                     day_vars=DaySimVariables(
-                        self.run_number,
-                        self.day,
-                        self.market.market_state.variable_apr,
-                        self.market.market_state.share_price,
+                        run_number=self.run_number,
+                        day=self.day,
+                        variable_apr=self.market.market_state.variable_apr,
+                        share_price=self.market.market_state.share_price,
                     )
                 )
             for daily_block_number in range(self.config.num_blocks_per_day):
@@ -636,7 +637,12 @@ class Simulator:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.block_time.time)
+                        block_vars=BlockSimVariables(
+                            run_number=self.run_number,
+                            day=self.day,
+                            block_number=self.block_number,
+                            time=self.block_time.time,
+                        )
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug(
@@ -680,4 +686,4 @@ class Simulator:
         if self.market.market_state.share_reserves > 0:  # there is money in the market
             self.simulation_state.spot_price.append(self.market.spot_price)
         else:
-            self.simulation_state.spot_price.append(np.nan)
+            self.simulation_state.spot_price.append(Decimal(np.nan))
