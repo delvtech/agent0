@@ -231,7 +231,7 @@ class Market(
         super().__init__(pricing_model=pricing_model, market_state=market_state, block_time=block_time)
 
     @property
-    def annualized_position_duration(self) -> float:
+    def annualized_position_duration(self) -> Decimal:
         r"""Returns the position duration in years"""
         return self.position_duration.days / 365
 
