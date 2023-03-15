@@ -95,14 +95,14 @@ def norm_days(days: Decimal, normalizing_constant: Decimal = Decimal(365)) -> De
 
     Parameters
     ----------
-    days : float
+    days : Decimal
         Amount of days to normalize
-    normalizing_constant : float
+    normalizing_constant : Decimal
         Amount of days to use as a normalization factor. Defaults to 365
 
     Returns
     -------
-    float
+    Decimal
         Amount of days provided, converted to fractions of a year
     """
     return days / normalizing_constant
