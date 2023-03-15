@@ -153,7 +153,9 @@ def calc_open_short(
         else d_short_average_maturity_time
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
-    base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
+    base_volume = calculate_base_volume(
+        base_amount=trade_result.user_result.d_base, bond_amount=bond_amount, normalized_time_remaining=Decimal(1)
+    )
     # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -315,7 +317,11 @@ def calc_open_long(
     )
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
-    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
+    base_volume = calculate_base_volume(
+        base_amount=trade_result.market_result.d_base,
+        bond_amount=base_amount,
+        normalized_time_remaining=Decimal(1),
+    )
     # TODO: add accounting for withdrawal shares
     # Get the market and wallet deltas to return.
     market_deltas = MarketDeltas(
@@ -325,8 +331,8 @@ def calc_open_long(
         long_base_volume=base_volume,
         longs_outstanding=trade_result.user_result.d_bonds,
         long_average_maturity_time=d_long_average_maturity_time,
-        long_checkpoints=defaultdict(float, {market.latest_checkpoint_time: base_volume}),
-        total_supply_longs=defaultdict(float, {market.latest_checkpoint_time: trade_result.user_result.d_bonds}),
+        long_checkpoints=defaultdict(Decimal, {market.latest_checkpoint_time: base_volume}),
+        total_supply_longs=defaultdict(Decimal, {market.latest_checkpoint_time: trade_result.user_result.d_bonds}),
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
