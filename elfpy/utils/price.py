@@ -2,23 +2,24 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import elfpy.time as time
+from decimal import Decimal
 
 
 ### Spot Price and APR ###
-def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
+def calc_apr_from_spot_price(price: Decimal, time_remaining: time.StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
     Parameters
     ----------
-    price : float
+    price : Decimal
         Spot price of bonds in terms of base
     time_remaining : StretchedTime
         Time remaining until bond maturity, in years
 
     Returns
     -------
-    float
+    Decimal
         APR (decimal) calculated from the provided parameters
     """
     assert price > 0, (
@@ -29,7 +30,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"time_remaining.normalized_time should be greater than zero, not {time_remaining.normalized_time}"
     )
-    annualized_time = time.norm_days(time_remaining.days, 365)
+    annualized_time = time.norm_days(time_remaining.days, Decimal(365))
     return (1 - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
