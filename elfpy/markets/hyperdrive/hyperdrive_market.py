@@ -424,7 +424,7 @@ class Market(
     def open_short(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        bond_amount: Decimal,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
