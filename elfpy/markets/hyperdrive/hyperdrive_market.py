@@ -38,9 +38,9 @@ class Checkpoint:
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
-    share_price: float = field(default=0.0)
-    long_base_volume: float = field(default=0.0)
-    short_base_volume: float = field(default=0.0)
+    share_price: Decimal = field(default_factory=Decimal)
+    long_base_volume: Decimal = field(default_factory=Decimal)
+    short_base_volume: Decimal = field(default_factory=Decimal)
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -576,7 +576,7 @@ class Market(
         # divide the result by 365 again to get years
         return latest_checkpoint / 365
 
-    def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
+    def apply_checkpoint(self, checkpoint_time: float, share_price: Decimal) -> float:
         """Creates a new checkpoint if necessary and closes matured positions.
 
         Parameters
