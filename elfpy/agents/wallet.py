@@ -54,21 +54,21 @@ class Borrow:
     ----------
     borrow_token : TokenType
     .. todo: add explanation
-    borrow_amount : float
+    borrow_amount : Decimal
     .. todo: add explanation
     collateral_token : TokenType
     .. todo: add explanation
-    collateral_amount: float
+    collateral_amount: Decimal
     .. todo: add explanation
-    start_time : float
+    start_time : Decimal
     .. todo: add explanation
     """
     borrow_token: types.TokenType
-    borrow_amount: float
-    borrow_shares: float
+    borrow_amount: Decimal
+    borrow_shares: Decimal
     collateral_token: types.TokenType
-    collateral_amount: float
-    start_time: float
+    collateral_amount: Decimal
+    start_time: Decimal
 
 
 @dataclass()
@@ -100,10 +100,12 @@ class Wallet:
     address: int
 
     # fungible
-    balance: types.Quantity = field(default_factory=lambda: types.Quantity(amount=0, unit=types.TokenType.BASE))
+    balance: types.Quantity = field(
+        default_factory=lambda: types.Quantity(amount=Decimal(0), unit=types.TokenType.BASE)
+    )
     # TODO: Support multiple typed balances:
     #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)
-    lp_tokens: Decimal = field(default_factory=Decimal)
+    lp_tokens: Decimal = field(default=Decimal(0))
 
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: dict[Decimal, Long] = field(default_factory=dict)
@@ -111,7 +113,7 @@ class Wallet:
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[Decimal, Borrow] = field(default_factory=dict)
-    fees_paid: Decimal = 0
+    fees_paid: Decimal = field(default=Decimal(0))
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -171,7 +173,7 @@ class Wallet:
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
 
-    def _update_borrows(self, borrows: Iterable[tuple[float, Borrow]]) -> None:
+    def _update_borrows(self, borrows: Iterable[tuple[Decimal, Borrow]]) -> None:
         for mint_time, borrow_summary in borrows:
             if mint_time != borrow_summary.start_time:
                 raise ValueError(
