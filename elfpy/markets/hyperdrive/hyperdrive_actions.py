@@ -565,12 +565,12 @@ def update_weighted_average(  # pylint: disable=too-many-arguments
 
 
 def calc_lp_out_given_tokens_in(
-    d_base: float,
-    rate: float,
+    d_base: Decimal,
+    rate: Decimal,
     market_state: hyperdrive_market.MarketState,
-    market_time: float,
+    market_time: Decimal,
     position_duration: time.StretchedTime,
-) -> tuple[float, float, float]:
+) -> tuple[Decimal, Decimal, Decimal]:
     r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
     .. math::
