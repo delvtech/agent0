@@ -110,7 +110,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: hyperdrive_market.Market) -> float:
+    def get_max_short(self, market: hyperdrive_market.Market) -> Decimal:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Parameters
@@ -120,7 +120,7 @@ class Agent:
 
         Returns
         -------
-        float
+        Decimal
             Amount of base that the agent can short in the current market
         """
         # Get the market level max short.
@@ -163,7 +163,7 @@ class Agent:
             time_remaining=market.position_duration,
         )
         max_loss = last_maybe_max_short - trade_result.user_result.d_base
-        last_step_size = 1 / (2**num_iters + 1)
+        last_step_size = Decimal(1 / (2**num_iters + 1))
         if max_loss > self.wallet.balance.amount:
             bond_percent -= last_step_size
             last_maybe_max_short = max_short * bond_percent
