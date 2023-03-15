@@ -86,10 +86,10 @@ class PricingModel(ABC):
 
     def calc_initial_bond_reserves(
         self,
-        target_apr: float,
+        target_apr: Decimal,
         time_remaining: time.StretchedTime,
         market_state: hyperdrive_market.MarketState,
-    ) -> float:
+    ) -> Decimal:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
 
@@ -117,7 +117,7 @@ class PricingModel(ABC):
         """
         # Only want to renormalize time for APR ("annual", so hard coded to 365)
         # Don't want to renormalize stretched time
-        annualized_time = time.norm_days(time_remaining.days, 365)
+        annualized_time = time.norm_days(time_remaining.days, Decimal(365))
         # y = z/2 * (mu * (1 + rt)**(1/tau) - c)
         return (market_state.share_reserves / 2) * (
             market_state.init_share_price * (1 + target_apr * annualized_time) ** (1 / time_remaining.stretched_time)

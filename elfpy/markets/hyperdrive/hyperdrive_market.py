@@ -398,7 +398,7 @@ class Market(
         """Market Deltas so that an LP can initialize the market"""
         if self.market_state.share_reserves > 0 or self.market_state.bond_reserves > 0:
             raise AssertionError("The market appears to already be initialized.")
-        share_reserves = contribution / self.market_state.share_price
+        share_reserves = Decimal(contribution) / self.market_state.share_price
         bond_reserves = self.pricing_model.calc_initial_bond_reserves(
             target_apr=target_apr,
             time_remaining=self.position_duration,
@@ -409,7 +409,7 @@ class Market(
             ),
         )
         market_deltas = hyperdrive_actions.MarketDeltas(
-            d_base_asset=contribution,
+            d_base_asset=Decimal(contribution),
             d_bond_asset=bond_reserves,
             d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
         )
