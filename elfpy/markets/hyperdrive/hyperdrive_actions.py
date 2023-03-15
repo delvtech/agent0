@@ -481,8 +481,8 @@ def calc_remove_liquidity(
 def calculate_short_adjustment(
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTime,
-    market_time: float,
-) -> float:
+    market_time: Decimal,
+) -> Decimal:
     """Calculates an adjustment amount for lp shares"""
     if market_time > market_state.short_average_maturity_time:
         return 0
