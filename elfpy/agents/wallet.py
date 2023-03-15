@@ -77,17 +77,19 @@ class Wallet:
     Parameters
     ----------
     address : int
-        The trader's address.
+        The agent's address.
     balance : Quantity
-        The base assets that held by the trader.
+        The base assets that held by the agent.
     lp_tokens : float
-        The LP tokens held by the trader.
+        The LP tokens held by the agent.
     longs : Dict[float, Long]
-        The long positions held by the trader.
+        The long positions held by the agent.
     shorts : Dict[float, Short]
-        The short positions held by the trader.
+        The short positions held by the agent.
+    borrows : Dict[float, Borrow]
+        The borrow positions held by the agent.
     fees_paid : float
-        The fees paid by the wallet.
+        The fees paid by the agent.
     """
 
     # pylint: disable=too-many-instance-attributes
