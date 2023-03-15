@@ -485,7 +485,7 @@ def calculate_short_adjustment(
 ) -> Decimal:
     """Calculates an adjustment amount for lp shares"""
     if market_time > market_state.short_average_maturity_time:
-        return 0
+        return Decimal(0)
     # (year_end - year_start) / (normalizing_constant / 365)
     normalized_time_remaining = (market_state.short_average_maturity_time - market_time) / (
         position_duration.normalizing_constant / 365
