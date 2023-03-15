@@ -189,11 +189,11 @@ class PricingModel(ABC):
         Decimal
             The spot price of principal tokens.
         """
-        init_share_price = Decimal(market_state.init_share_price)  # mu
-        share_reserves = Decimal(market_state.share_reserves)  # z
-        bond_reserves = Decimal(market_state.bond_reserves)  # y
-        lp_total_supply = Decimal(market_state.lp_total_supply)  # s
-        tau = Decimal(time_remaining.stretched_time)  # tau = days / duration / time_stretch
+        init_share_price = market_state.init_share_price  # mu
+        share_reserves = market_state.share_reserves  # z
+        bond_reserves = market_state.bond_reserves  # y
+        lp_total_supply = market_state.lp_total_supply  # s
+        tau = time_remaining.stretched_time  # tau = days / duration / time_stretch
         # p = ((mu * z) / (y + s))^(tau)
         return ((init_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** tau
 
