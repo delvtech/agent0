@@ -83,7 +83,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: hyperdrive_market.Market) -> float:
+    def get_max_long(self, market: hyperdrive_market.Market) -> Decimal:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -95,10 +95,10 @@ class Agent:
 
         Returns
         -------
-        float
+        Decimal
             Maximum amount the agent can use to open a long
         """
-        (max_long, _) = market.pricing_model.get_max_long(
+        max_long, _ = market.pricing_model.get_max_long(
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
