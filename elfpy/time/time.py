@@ -45,9 +45,9 @@ class StretchedTime:
 
     .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
     """
-    days: Decimal
-    time_stretch: Decimal
-    normalizing_constant: Decimal
+    days: float
+    time_stretch: float
+    normalizing_constant: float
 
     @property
     def stretched_time(self):
@@ -90,43 +90,41 @@ def get_years_remaining(market_time: Decimal, mint_time: Decimal, position_durat
     )
 
 
-def norm_days(days: Decimal, normalizing_constant: Decimal = Decimal(365)) -> Decimal:
+def norm_days(days: float, normalizing_constant: float = 365) -> float:
     r"""Returns days normalized, with a default assumption of a year-long scale
 
     Parameters
     ----------
-    days : Decimal
+    days : float
         Amount of days to normalize
-    normalizing_constant : Decimal
+    normalizing_constant : float
         Amount of days to use as a normalization factor. Defaults to 365
 
     Returns
     -------
-    Decimal
+    float
         Amount of days provided, converted to fractions of a year
     """
     return days / normalizing_constant
 
 
-def days_to_time_remaining(
-    days_remaining: Decimal, time_stretch: Decimal = Decimal(1), normalizing_constant: Decimal = Decimal(365)
-) -> Decimal:
+def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     r"""Converts remaining pool length in days to normalized and stretched time
 
     Parameters
     ----------
-    days_remaining : Decimal
+    days_remaining : float
         Time left until term maturity, in days
-    time_stretch : Decimal
+    time_stretch : float
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to 1
-    normalizing_constant : Decimal
+    normalizing_constant : float
         Amount of days to use as a normalization factor
         Defaults to 365
 
     Returns
     -------
-    Decimal
+    float
         Time remaining until term maturity, in normalized and stretched time
     """
     normed_days_remaining = norm_days(days_remaining, normalizing_constant)
