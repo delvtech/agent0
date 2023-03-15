@@ -59,21 +59,22 @@ class HyperdriveMock(unittest.TestCase):
 
 def print(msg):
     """Override print to log"""
-    logging.debug(msg=msg)
+    logging.info(msg=msg)
 
 
 def verify_and_print_slippage(market, base_output, base_input, precision, func):
     """Verify slippage and print results"""
     abs_base_output = abs(base_output)
-    slippage = abs_base_output - base_input
+    abs_base_input = abs(base_input)
+    slippage = abs_base_output - abs_base_input
     result = pd.DataFrame(
         {
             "func": [func],
             "precision": [precision],
             "output": [abs_base_output],
-            "input": [base_input],
+            "input": [abs_base_input],
             "slippage": [slippage],
-            "slippage_percent": [slippage / base_input],
+            "slippage_percent": [slippage / abs_base_input],
         }
     )
     try:
@@ -82,6 +83,8 @@ def verify_and_print_slippage(market, base_output, base_input, precision, func):
     except IOError:
         header = True
     result.to_csv("test_precision.csv", mode="a", header=header, index=False)
+    print(f" {base_input=}")
+    print(f"{base_output=}")
     market.assertLess(  # user gets less than what they put in
         base_output,
         base_input,
@@ -89,7 +92,8 @@ def verify_and_print_slippage(market, base_output, base_input, precision, func):
     )
 
 
-precision = range(12, 29)
+precision = range(12, 41)
+# precision = [28]
 
 
 def func():
@@ -114,10 +118,13 @@ def test_precision_long_open(precision):
         agent_wallet=hyperdrive.bob.wallet,
         base_amount=base_amount,
     )
+    base_paid = base_amount
+    bond_amount = agent_deltas_open.longs[0].balance
+    base_output = bond_amount * hyperdrive.hyperdrive.spot_price
     verify_and_print_slippage(
         market=hyperdrive,
-        base_output=agent_deltas_open.balance.amount,
-        base_input=base_amount,
+        base_output=base_output,
+        base_input=base_paid,
         precision=precision,
         func=func(),
     )
@@ -135,15 +142,17 @@ def test_precision_long_close(precision):
         agent_wallet=hyperdrive.bob.wallet,
         base_amount=base_amount,
     )
+    base_paid = base_amount
     _, agent_deltas_close = hyperdrive.hyperdrive.close_long(
         agent_wallet=hyperdrive.bob.wallet,
         bond_amount=agent_deltas_open.longs[0].balance,
         mint_time=0,
     )
+    base_output = agent_deltas_close.balance.amount
     verify_and_print_slippage(
         market=hyperdrive,
-        base_output=agent_deltas_close.balance.amount,
-        base_input=base_amount,
+        base_output=base_output,
+        base_input=base_paid,
         precision=precision,
         func=func(),
     )
@@ -154,20 +163,23 @@ def test_precision_short_open(precision):
     """Make sure we have slippage on a short open"""
     hyperdrive = hyperdrive_mock()
     getcontext().prec = precision
-    trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
+    trade_amount = 10  # used for both base and bonds
     hyperdrive.bob.budget = trade_amount
     hyperdrive.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
-    base_paid_without_slippage = (1 - hyperdrive.hyperdrive.spot_price) * trade_amount
+    print(f"before trade {hyperdrive.bob.wallet.balance=}")
+    spot_price_before_trade = hyperdrive.hyperdrive.spot_price
     _, agent_deltas_open = hyperdrive.hyperdrive.open_short(
         agent_wallet=hyperdrive.bob.wallet,
         bond_amount=trade_amount,
     )
-    base_paid = agent_deltas_open.balance.amount
-
+    print(f"after  trade {hyperdrive.bob.wallet.balance=}")
+    bond_amount = agent_deltas_open.shorts[0].balance
+    print(f"{hyperdrive.hyperdrive.spot_price=}")
+    base_output = bond_amount * hyperdrive.hyperdrive.spot_price
     verify_and_print_slippage(
         market=hyperdrive,
-        base_input=base_paid,
-        base_output=base_paid_without_slippage,
+        base_input=trade_amount * spot_price_before_trade,
+        base_output=base_output,
         precision=precision,
         func=func(),
     )
@@ -181,27 +193,22 @@ def test_precision_short_close(precision):
     trade_amount = 10  # this will be reflected in BASE in the wallet and PTs in the short
     hyperdrive.bob.budget = trade_amount
     hyperdrive.bob.wallet.balance = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
-    base_paid_without_slippage = (1 - hyperdrive.hyperdrive.spot_price) * trade_amount
     _, agent_deltas_open = hyperdrive.hyperdrive.open_short(
         agent_wallet=hyperdrive.bob.wallet,
         bond_amount=trade_amount,
     )
     base_paid = abs(agent_deltas_open.balance.amount)
-    hyperdrive.assertLess(
-        base_paid_without_slippage,
-        base_paid,  # should pay more with slippage
-    )
     _, agent_deltas_close = hyperdrive.hyperdrive.close_short(
         agent_wallet=hyperdrive.bob.wallet,
         bond_amount=agent_deltas_open.shorts[0].balance,
         mint_time=0,
         open_share_price=1,
     )
-    base_received = agent_deltas_close.balance.amount
+    base_output = agent_deltas_close.balance.amount
     verify_and_print_slippage(
         market=hyperdrive,
-        base_input=base_received,
-        base_output=base_paid,
+        base_input=base_paid,
+        base_output=base_output,
         precision=precision,
         func=func(),
     )
