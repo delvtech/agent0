@@ -340,7 +340,7 @@ class Market(
                 )
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
                 # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = float(agent_action.mint_time or 0)
+                mint_time = Decimal(agent_action.mint_time or 0)
                 market_deltas, agent_deltas = self.close_long(
                     agent_wallet=agent_action.wallet,
                     bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
@@ -353,7 +353,7 @@ class Market(
                 )
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
                 # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = float(agent_action.mint_time or 0)
+                mint_time = Decimal(agent_action.mint_time or 0)
                 open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
                 market_deltas, agent_deltas = self.close_short(
                     agent_wallet=agent_action.wallet,

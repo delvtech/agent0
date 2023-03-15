@@ -40,18 +40,18 @@ class MarketActionType(Enum):
 class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
-    d_base_asset: Decimal = field(default_factory=Decimal)
-    d_bond_asset: Decimal = field(default_factory=Decimal)
-    d_base_buffer: Decimal = field(default_factory=Decimal)
+    d_base_asset: Decimal = field(default=Decimal(0))
+    d_bond_asset: Decimal = field(default=Decimal(0))
+    d_base_buffer: Decimal = field(default=Decimal(0))
     d_bond_buffer: float = 0
-    d_lp_total_supply: Decimal = field(default_factory=Decimal)
-    d_share_price: Decimal = field(default_factory=Decimal)
-    longs_outstanding: Decimal = field(default_factory=Decimal)
-    shorts_outstanding: Decimal = field(default_factory=Decimal)
-    long_average_maturity_time: Decimal = field(default_factory=Decimal)
-    short_average_maturity_time: Decimal = field(default_factory=Decimal)
-    long_base_volume: Decimal = field(default_factory=Decimal)
-    short_base_volume: Decimal = field(default_factory=Decimal)
+    d_lp_total_supply: Decimal = field(default=Decimal(0))
+    d_share_price: Decimal = field(default=Decimal(0))
+    longs_outstanding: Decimal = field(default=Decimal(0))
+    shorts_outstanding: Decimal = field(default=Decimal(0))
+    long_average_maturity_time: Decimal = field(default=Decimal(0))
+    short_average_maturity_time: Decimal = field(default=Decimal(0))
+    long_base_volume: Decimal = field(default=Decimal(0))
+    short_base_volume: Decimal = field(default=Decimal(0))
     long_withdrawal_shares_outstanding: float = 0
     short_withdrawal_shares_outstanding: float = 0
     long_withdrawal_share_proceeds: float = 0
@@ -77,13 +77,13 @@ class MarketAction(base_market.MarketAction):
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    trade_amount: float  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
+    trade_amount: Decimal  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
     wallet: wallet.Wallet
     # min amount to receive for the action
-    min_amount_out: float = 0
+    min_amount_out: Decimal = Decimal(0)
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: Optional[float] = None
+    mint_time: Optional[Decimal] = None
 
 
 def check_action(agent_action: MarketAction) -> None:
