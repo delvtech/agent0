@@ -56,7 +56,7 @@ class MarketState(base_market.BaseMarketState):
         Quantity of shares stored in the market
     bond_reserves: Decimal
         Quantity of bonds stored in the market
-    base_buffer: float
+    base_buffer: Decimal
         Base amount set aside to account for open longs
     bond_buffer: float
         Bond amount set aside to account for open shorts
@@ -102,17 +102,17 @@ class MarketState(base_market.BaseMarketState):
     redemption_fee_percent: float = field(default=0.0)
 
     # The amount of longs that are still open.
-    longs_outstanding: float = field(default=0.0)
+    longs_outstanding: Decimal = field(default=Decimal(0))
     # the amount of shorts that are still open.
-    shorts_outstanding: float = field(default=0.0)
+    shorts_outstanding: Decimal = field(default=Decimal(0))
     # the average maturity time of long positions.
     long_average_maturity_time: Decimal = field(default=Decimal(0))
     # the average maturity time of short positions.
     short_average_maturity_time: Decimal = field(default=Decimal(0))
     # the amount of base paid by outstanding longs.
-    long_base_volume: float = field(default=0.0)
+    long_base_volume: Decimal = field(default=Decimal(0))
     # the amount of base paid to outstanding shorts.
-    short_base_volume: float = field(default=0.0)
+    short_base_volume: Decimal = field(default=Decimal(0))
     # time delimited checkpoints
     checkpoints: defaultdict[float, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
     # time between checkpoints, defaults to 1 day
