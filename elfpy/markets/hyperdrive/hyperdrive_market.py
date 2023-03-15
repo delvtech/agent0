@@ -191,9 +191,7 @@ class Market(
         assert (
             position_duration.days == position_duration.normalizing_constant
         ), "position_duration argument term length (days) should normalize to 1"
-        self.position_duration = time.StretchedTime(
-            position_duration.days, position_duration.time_stretch, position_duration.normalizing_constant
-        )
+        self.position_duration = position_duration
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.position_duration.freeze()  # pylint: disable=no-member # type: ignore
@@ -346,12 +344,8 @@ class Market(
                 )
             else:
                 raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
-        except AssertionError:
-            logging.debug(
-                "TRADE FAILED %s\npre_trade_market = %s",
-                agent_action,
-                self.market_state,
-            )
+        except AssertionError as err:
+            logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
 
         logging.debug(
             "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
