@@ -394,6 +394,9 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
+        print("\nOPEN_SHORT")
+        print(f"{self.block_time.time=}")
+        print(f"{agent_wallet.shorts=}")
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -405,6 +408,9 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
+        print("POST OPEN")
+        print(f"short mint times: {agent_deltas.shorts.keys()=}")
+        print(f"{agent_wallet=}")
         return market_deltas, agent_deltas
 
     def close_short(
@@ -415,6 +421,9 @@ class Market(
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
+        print("\nCLOSE_SHORT")
+        print(f"{self.block_time.time=}")
+        print(f"{agent_wallet.shorts=}")
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -428,6 +437,9 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
+        print("POST CLOSE")
+        print(f"short mint times: {agent_deltas.shorts.keys()=}")
+        print(f"{agent_wallet=}")
         return market_deltas, agent_deltas
 
     def open_long(
@@ -436,6 +448,9 @@ class Market(
         base_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
+        print("\nOPEN_LONG")
+        print(f"{self.block_time.time=}")
+        print(f"{agent_wallet.longs=}")
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -447,6 +462,9 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
+        print("POST OPEN")
+        print(f"{agent_wallet=}")
+        print(f"long mint time: {agent_deltas.longs.keys()=}")
         return market_deltas, agent_deltas
 
     def close_long(
@@ -456,6 +474,10 @@ class Market(
         mint_time: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
+        print("\nCLOSE_LONG")
+        print(f"{mint_time=}")
+        print(f"{self.block_time.time=}")
+        print(f"{agent_wallet.longs=}")
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
@@ -468,6 +490,9 @@ class Market(
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
+        print("POST CLOSE")
+        print(f"long mint time: {agent_deltas.longs.keys()=}")
+        print(f"{agent_wallet=}")
         return market_deltas, agent_deltas
 
     def add_liquidity(
@@ -533,7 +558,7 @@ class Market(
 
     @property
     def latest_checkpoint_time(self) -> float:
-        """gets the most recent checkpoint time."""
+        """Gets the most recent checkpoint time."""
         # NOTE: modulus doesn't work well with floats, checkpoints are days right now so multiply by
         # 365 so we can get integer values.
         latest_checkpoint = int(

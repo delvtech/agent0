@@ -504,8 +504,8 @@ class Simulator:
         # Collect trades from all of the agents.
         # TODO: This API causes a unnecessary double loop; first over agents, then trades,
         #       then we loop again over all trades. In the future we want to simulate something like
-        #       the mempool, which has all agent trades. But it would be better if we could get all
-        #       of the block's trades without an extra loop.
+        #       the mempool, which has all agent trades. But for now it would be better if we could
+        #       get all of the block's trades without an extra loop.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
         self.execute_trades(trades)
@@ -555,6 +555,7 @@ class Simulator:
             # agent ID, market, and market action before sending the info off to the correct market
             action_details = (trade[0], trade[1].trade)  # agent ID,
             agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
+            print(f"{trade[1].trade=}\n")
             self.agents[agent_id].log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215

@@ -59,7 +59,6 @@ class Policy(agent.Agent):
                     action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
-                    mint_time=market.block_time.time,
                 ),
             )
         ]
@@ -79,7 +78,6 @@ class Policy(agent.Agent):
                     action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
-                    mint_time=market.block_time.time,
                 ),
             )
         ]
