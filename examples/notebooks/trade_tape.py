@@ -173,12 +173,13 @@ with accounts.use_sender(sol_agents["agent_0"]):
 def open_short(hyperdrive_agent, bond_amount):
     with accounts.use_sender(hyperdrive_agent):
         # Mint DAI & approve ERC20 usage by contract
-        base_ERC20.mint(bond_amount)
-        base_ERC20.approve(hyperdrive, bond_amount)
+        base_ERC20.mint(bond_amount * 2)
+        base_ERC20.approve(hyperdrive, bond_amount * 2)
         # Open short
         max_deposit = bond_amount
         as_underlying = False
         print(f"\t{hyperdrive_agent=}")
+        print(f"\t{hyperdrive_agent.balance=}")
         print(f"\t{bond_amount=}")
         print(f"\t{max_deposit=}")
         print(f"\t{as_underlying=}")
@@ -212,6 +213,9 @@ def close_short(hyperdrive_agent, bond_amount, maturity_time):
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
+        my_contract = project.ContractContainer.at(address)
+        tx_receipt = my_contract.doSomething(args)
+        # ContractLogicError: Transaction failed.
         tx_receipt = hyperdrive.closeShort(
             maturity_time,
             bond_amount,
@@ -235,6 +239,7 @@ def open_long(hyperdrive_agent, base_amount):
         min_output = 0
         as_underlying = False
         print(f"\t{hyperdrive_agent=}")
+        print(f"\t{hyperdrive_agent.balance=}")
         print(f"\t{base_amount=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
@@ -330,9 +335,3 @@ for trade in sim_trades:
 
 # %%
 dir(trade_receipts[1])
-
-# %%
-trade_receipts[1].events
-
-# %%
-trade_receipts[1].events[3].event_name
