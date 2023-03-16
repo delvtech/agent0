@@ -191,10 +191,14 @@ def open_short(hyperdrive_agent, bond_amount):
         )
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
     # Return the updated pool state & transaction result
+    transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][0]
+    token_id = transfer_single_event["id"]
+    mask = (1 << 248) - 1
+    maturity_timestamp = token_id & mask
     pool_state = hyperdrive.getPoolInfo().__dict__
-    current_block = chain.provider.get_block(tx_receipt.block_number)
-    pool_state["block_number_"] = current_block.number
-    pool_state["timestamp_"] = current_block.timestamp
+    pool_state["block_number_"] = tx_receipt.block_number
+    pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+    pool_state["maturity_timestamp_"] = maturity_timestamp
     return pool_state, tx_receipt
 
 
@@ -218,9 +222,7 @@ def close_short(hyperdrive_agent, bond_amount, maturity_time):
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
     # Return the updated pool state & transaction result
     pool_state = hyperdrive.getPoolInfo().__dict__
-    current_block = chain.provider.get_block(tx_receipt.block_number)
-    pool_state["block_number_"] = current_block.number
-    pool_state["timestamp_"] = current_block.timestamp
+    pool_state["block_number_"] = tx_receipt.block_number
     return pool_state, tx_receipt
 
 
@@ -246,10 +248,14 @@ def open_long(hyperdrive_agent, base_amount):
         hyperdrive.query_manager.query
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
     # Return the updated pool state & transaction result
+    transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][0]
+    token_id = transfer_single_event["id"]
+    mask = (1 << 248) - 1
+    maturity_timestamp = token_id & mask
     pool_state = hyperdrive.getPoolInfo().__dict__
-    current_block = chain.provider.get_block(tx_receipt.block_number)
-    pool_state["block_number_"] = current_block.number
-    pool_state["timestamp_"] = current_block.timestamp
+    pool_state["block_number_"] = tx_receipt.block_number
+    pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+    pool_state["maturity_timestamp_"] = maturity_timestamp
     return pool_state, tx_receipt
 
 
@@ -273,19 +279,9 @@ def close_long(hyperdrive_agent, bond_amount, maturity_time):
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
     # Return the updated pool state & transaction result
     pool_state = hyperdrive.getPoolInfo().__dict__
-    current_block = chain.provider.get_block(tx_receipt.block_number)
-    pool_state["block_number_"] = current_block.number
-    pool_state["timestamp_"] = current_block.timestamp
+    pool_state["block_number_"] = tx_receipt.block_number
     return pool_state, tx_receipt
 
-
-# %%
-# contract: Union[AddressType, List[AddressType]]
-# event: EventABI
-# search_topics: Optional[Dict[str, Any]] = None
-ape.api.query.ContractEventQuery(
-    hyperdrive,
-)
 
 # %%
 # get current block
@@ -311,34 +307,32 @@ for trade in sim_trades:
 
     if trade.action_type.name == "OPEN_SHORT":
         new_state, trade_details = open_short(sol_agents[agent_key], trade_amount)
+        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
 
     elif trade.action_type.name == "CLOSE_SHORT":
-        maturity_time = int(sim_to_block_time[trade.mint_time] + position_duration_seconds)
-        print(f"\t{sim_to_block_time[trade.mint_time]=}")
+        maturity_time = int(sim_to_block_time[trade.mint_time])
+        print(f"\t{maturity_time=}")
         print(f"\t{position_duration_seconds=}")
         new_state, trade_details = close_short(sol_agents[agent_key], trade_amount, maturity_time)
 
     elif trade.action_type.name == "OPEN_LONG":
         new_state, trade_details = open_long(sol_agents[agent_key], trade_amount)
+        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
 
     elif trade.action_type.name == "CLOSE_LONG":
-        maturity_time = int(sim_to_block_time[trade.mint_time] + position_duration_seconds)
-        print(f"\t{sim_to_block_time[trade.mint_time]=}")
+        maturity_time = int(sim_to_block_time[trade.mint_time])
+        print(f"\t{maturity_time=}")
         print(f"\t{position_duration_seconds=}")
         new_state, trade_details = close_long(sol_agents[agent_key], trade_amount, maturity_time)
 
     trade_receipts.append(trade_details)
     pool_state.append(new_state)
-    sim_to_block_time[trade.mint_time] = new_state["timestamp_"]
 
 # %%
-dir(trade_receipts[0])
+dir(trade_receipts[1])
 
 # %%
-trade_receipts[0].events
+trade_receipts[1].events
 
 # %%
-
-
-# %%
-trade_receipts[2].block_number
+trade_receipts[1].events[3].event_name
