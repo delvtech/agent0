@@ -9,6 +9,12 @@ import elfpy.simulators as simulators
 import elfpy.utils.outputs as output_utils
 import elfpy.agents.policies.random_agent as random_agent
 
+import ape
+from ape.exceptions import ContractLogicError
+from pathlib import Path
+import pandas as pd
+import matplotlib.pyplot as plt
+
 # %% [markdown]
 # ### Setup experiment parameters
 
@@ -99,28 +105,23 @@ print("User trades:\n")
 print("\n\n".join([f"{trade}" for trade in sim_trades]))
 
 # %%
-import ape
-from ape import accounts, chain, networks, Project
-from pathlib import Path
-import pandas as pd
-import matplotlib.pyplot as plt
 
 # %% [markdown]
 # ### Apeworx Network setup
 
 # %%
-networks.parse_network_choice("ethereum:local:foundry").__enter__()
+provider = ape.networks.parse_network_choice("ethereum:local:foundry").__enter__()
 project_root = Path.cwd().parent.parent
-project = Project(path=project_root)
+project = ape.Project(path=project_root)
 
 # %% [markdown]
 # ### Generate agent accounts
 
 # %%
-governance = accounts.test_accounts.generate_test_account()
+governance = ape.accounts.test_accounts.generate_test_account()
 sol_agents = {"governance": governance}
 for agent_address, sim_agent in simulator.agents.items():
-    sol_agent = accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
+    sol_agent = ape.accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
     sol_agent.balance = int(sim_agent.budget * 10**18)
     sol_agents[f"agent_{agent_address}"] = sol_agent
 
@@ -161,7 +162,7 @@ hyperdrive_address = sol_agents["agent_0"].deploy(
 )
 hyperdrive = project.MockHyperdriveTestnet.at(hyperdrive_address)
 
-with accounts.use_sender(sol_agents["agent_0"]):
+with ape.accounts.use_sender(sol_agents["agent_0"]):
     base_ERC20.approve(hyperdrive, initial_supply)
     hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], False)
 
@@ -170,16 +171,16 @@ with accounts.use_sender(sol_agents["agent_0"]):
 # ### Define & execute trades
 
 # %%
-def open_short(hyperdrive_agent, bond_amount):
-    with accounts.use_sender(hyperdrive_agent):
+def open_short(agent_address, bond_amount):
+    with ape.accounts.use_sender(agent_address):
         # Mint DAI & approve ERC20 usage by contract
-        base_ERC20.mint(bond_amount * 2)
-        base_ERC20.approve(hyperdrive, bond_amount * 2)
+        base_ERC20.mint(bond_amount)
+        base_ERC20.approve(hyperdrive, bond_amount)
         # Open short
         max_deposit = bond_amount
         as_underlying = False
-        print(f"\t{hyperdrive_agent=}")
-        print(f"\t{hyperdrive_agent.balance=}")
+        print(f"\t{agent_address=}")
+        print(f"\t{agent_address.balance=}")
         print(f"\t{bond_amount=}")
         print(f"\t{max_deposit=}")
         print(f"\t{as_underlying=}")
@@ -187,40 +188,43 @@ def open_short(hyperdrive_agent, bond_amount):
         tx_receipt = hyperdrive.openShort(
             bond_amount,
             max_deposit,
-            hyperdrive_agent,
+            agent_address,
             as_underlying,
         )
+        # Return the updated pool state & transaction result
+        transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][
+            0
+        ]
+        token_id = transfer_single_event["id"]
+        mask = (1 << 248) - 1
+        maturity_timestamp = token_id & mask
+        pool_state = hyperdrive.getPoolInfo().__dict__
+        pool_state["block_number_"] = tx_receipt.block_number
+        pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+        pool_state["maturity_timestamp_"] = maturity_timestamp
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-    # Return the updated pool state & transaction result
-    transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][0]
-    token_id = transfer_single_event["id"]
-    mask = (1 << 248) - 1
-    maturity_timestamp = token_id & mask
-    pool_state = hyperdrive.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
-    pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
-    pool_state["maturity_timestamp_"] = maturity_timestamp
     return pool_state, tx_receipt
 
 
-def close_short(hyperdrive_agent, bond_amount, maturity_time):
-    with accounts.use_sender(hyperdrive_agent):
+def close_short(agent_address, bond_amount, maturity_time):
+    with ape.accounts.use_sender(agent_address):
         min_output = 0
         as_underlying = False
-        print(f"\t{hyperdrive_agent=}")
+        print(f"\t{agent_address=}")
         print(f"\t{bond_amount=}")
         print(f"\t{maturity_time=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-        my_contract = project.ContractContainer.at(address)
-        tx_receipt = my_contract.doSomething(args)
-        # ContractLogicError: Transaction failed.
+        short_asset_id = 1  # TODO: Setup enum
+        trade_asset_id = (short_asset_id << 248) | maturity_time
+        agent_balance = hyperdrive.balanceOf(trade_asset_id, agent_address)
+        trade_bond_amount = bond_amount if bond_amount < agent_balance else agent_balance
         tx_receipt = hyperdrive.closeShort(
             maturity_time,
-            bond_amount,
+            trade_bond_amount,
             min_output,
-            hyperdrive_agent,
+            agent_address,
             as_underlying,
         )
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
@@ -230,16 +234,16 @@ def close_short(hyperdrive_agent, bond_amount, maturity_time):
     return pool_state, tx_receipt
 
 
-def open_long(hyperdrive_agent, base_amount):
-    with accounts.use_sender(hyperdrive_agent):
+def open_long(agent_address, base_amount):
+    with ape.accounts.use_sender(agent_address):
         # Mint DAI & approve ERC20 usage by contract
         base_ERC20.mint(base_amount)
         base_ERC20.approve(hyperdrive, base_amount)
         # Open long
         min_output = 0
         as_underlying = False
-        print(f"\t{hyperdrive_agent=}")
-        print(f"\t{hyperdrive_agent.balance=}")
+        print(f"\t{agent_address=}")
+        print(f"\t{agent_address.balance=}")
         print(f"\t{base_amount=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
@@ -247,7 +251,7 @@ def open_long(hyperdrive_agent, base_amount):
         tx_receipt = hyperdrive.openLong(
             base_amount,
             min_output,
-            hyperdrive_agent,
+            agent_address,
             as_underlying,
         )
         hyperdrive.query_manager.query
@@ -264,21 +268,25 @@ def open_long(hyperdrive_agent, base_amount):
     return pool_state, tx_receipt
 
 
-def close_long(hyperdrive_agent, bond_amount, maturity_time):
-    with accounts.use_sender(hyperdrive_agent):
+def close_long(agent_address, bond_amount, maturity_time):
+    with ape.accounts.use_sender(agent_address):
         min_output = 0
         as_underlying = False
-        print(f"\t{hyperdrive_agent=}")
+        print(f"\t{agent_address=}")
         print(f"\t{bond_amount=}")
         print(f"\t{maturity_time=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
+        long_asset_id = 0  # TODO: Setup enum
+        trade_asset_id = (long_asset_id << 248) | maturity_time
+        agent_balance = hyperdrive.balanceOf(trade_asset_id, agent_address)
+        trade_bond_amount = bond_amount if bond_amount < agent_balance else agent_balance
         tx_receipt = hyperdrive.closeLong(
             maturity_time,
-            bond_amount,
+            trade_bond_amount,
             min_output,
-            hyperdrive_agent,
+            agent_address,
             as_underlying,
         )
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
@@ -290,8 +298,8 @@ def close_long(hyperdrive_agent, bond_amount, maturity_time):
 
 # %%
 # get current block
-genesis_block_number = chain.blocks[-1].number
-genesis_timestamp = chain.provider.get_block(genesis_block_number).timestamp
+genesis_block_number = ape.chain.blocks[-1].number
+genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp
 
 # set the current block?
 pool_state = [hyperdrive.getPoolInfo().__dict__]
