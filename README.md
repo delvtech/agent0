@@ -106,7 +106,7 @@ You can optionally run
 anvil
 ```
 
-if you wish to execute ape CLI. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
+if you wish to execute ape against a local foundry backend. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
 
 ```bash
 git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
