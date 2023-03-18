@@ -555,7 +555,7 @@ def update_weighted_average(  # pylint: disable=too-many-arguments
     total_weight: float,
     delta: float,
     delta_weight: float,
-    is_adding: float,
+    is_adding: bool,
 ) -> float:
     """Updates a weighted average by adding or removing a weighted delta."""
     if is_adding:
