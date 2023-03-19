@@ -1,5 +1,6 @@
 # %%
 from __future__ import annotations
+from enum import Enum
 
 from numpy.random._generator import Generator as NumpyGenerator
 
@@ -16,7 +17,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # %% [markdown]
-# ### Setup experiment parameters
+#  ### Setup experiment parameters
 
 # %%
 config = simulators.Config()
@@ -104,8 +105,6 @@ sim_trades = simulator.new_simulation_state.trade_updates.trade_action.tolist()
 print("User trades:\n")
 print("\n\n".join([f"{trade}" for trade in sim_trades]))
 
-# %%
-
 # %% [markdown]
 # ### Apeworx Network setup
 
@@ -171,6 +170,75 @@ with ape.accounts.use_sender(sol_agents["agent_0"]):
 # ### Define & execute trades
 
 # %%
+class AssetIdPrefix(Enum):
+    r"""The asset ID is used to encode the trade type in a transaction receipt"""
+    LONG = 0
+    SHORT = 1
+    WITHDRAWAL_SHARE = 2
+
+
+def encode_asset_id(prefix: int, timestamp: int) -> int:
+    r"""Encodes a prefix and a timestamp into an asset ID.
+
+    Asset IDs are used so that LP, long, and short tokens can all be represented
+    in a single MultiToken instance. The zero asset ID indicates the LP token.
+
+    Encode the asset ID by left-shifting the prefix by 248 bits,
+    then bitwise-or-ing the result with the timestamp.
+
+    Argments
+    --------
+    prefix: int
+        A one byte prefix that specifies the asset type.
+    timestamp: int
+        A timestamp associated with the asset.
+
+    Returns
+    -------
+    asset_id: int
+        The asset ID.
+    """
+    timestamp_mask = (1 << 248) - 1
+    if timestamp > timestamp_mask:
+        raise ValueError("Invalid timestamp")
+    asset_id = (prefix << 248) | timestamp
+    return asset_id
+
+
+def decode_asset_id(asset_id: int) -> Tuple[int, int]:
+    r"""Decodes a transaction asset ID into its constituent parts of an identifier, data, and a timestamp.
+
+    First calculate the prefix mask by left-shifting 1 by 248 bits and subtracting 1 from the result.
+    This gives us a bit-mask with 248 bits set to 1 and the rest set to 0.
+    Then apply this mask to the input ID using the bitwise-and operator `&` to extract
+    the lower 248 bits as the timestamp.
+
+    Arguments
+    ---------
+    asset_id: int
+        Encoded ID from a transaction. It is a concatenation, [identifier: 8 bits][timestamp: 248 bits]
+
+    Returns
+    -------
+    tuple[int, int]
+        identifier, timestamp
+    """
+    prefix_mask = (1 << 248) - 1
+    prefix = asset_id >> 248  # shr 248 bits
+    timestamp = asset_id & prefix_mask  # apply the prefix mask
+    return prefix, timestamp
+
+
+def get_transaction_trade_event(tx_receipt):
+    single_events = []
+    for tx_event in tx_receipt.events:
+        if tx_event.name == "TransferSingle":
+            single_events.append(tx_event)
+    assert len(single_events) == 1, "ERROR: Transaction should only have one event."
+    return single_events[0]
+
+
+# %%
 def open_short(agent_address, bond_amount):
     with ape.accounts.use_sender(agent_address):
         # Mint DAI & approve ERC20 usage by contract
@@ -192,17 +260,16 @@ def open_short(agent_address, bond_amount):
             as_underlying,
         )
         # Return the updated pool state & transaction result
-        transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][
-            0
-        ]
+        transfer_single_event = get_transaction_trade_event(tx_receipt)
         token_id = transfer_single_event["id"]
-        mask = (1 << 248) - 1
-        maturity_timestamp = token_id & mask
+        prefix, maturity_timestamp = decode_asset_id(token_id)
         pool_state = hyperdrive.getPoolInfo().__dict__
         pool_state["block_number_"] = tx_receipt.block_number
-        pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+        pool_state["prefix_"] = prefix
+        pool_state["token_id"] = token_id
         pool_state["maturity_timestamp_"] = maturity_timestamp
-        print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
+        pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+        print(f"\t{pool_state=}")
     return pool_state, tx_receipt
 
 
@@ -211,13 +278,13 @@ def close_short(agent_address, bond_amount, maturity_time):
         min_output = 0
         as_underlying = False
         print(f"\t{agent_address=}")
+        print(f"\t{agent_address.balance=}")
         print(f"\t{bond_amount=}")
-        print(f"\t{maturity_time=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
+        print(f"\t{maturity_time=}")
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-        short_asset_id = 1  # TODO: Setup enum
-        trade_asset_id = (short_asset_id << 248) | maturity_time
+        trade_asset_id = encode_asset_id(AssetIdPrefix.SHORT, maturity_time)
         agent_balance = hyperdrive.balanceOf(trade_asset_id, agent_address)
         trade_bond_amount = bond_amount if bond_amount < agent_balance else agent_balance
         tx_receipt = hyperdrive.closeShort(
@@ -227,10 +294,10 @@ def close_short(agent_address, bond_amount, maturity_time):
             agent_address,
             as_underlying,
         )
-        print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-    # Return the updated pool state & transaction result
-    pool_state = hyperdrive.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
+        # Return the updated pool state & transaction result
+        pool_state = hyperdrive.getPoolInfo().__dict__
+        pool_state["block_number_"] = tx_receipt.block_number
+        print(f"\t{pool_state=}")
     return pool_state, tx_receipt
 
 
@@ -255,16 +322,18 @@ def open_long(agent_address, base_amount):
             as_underlying,
         )
         hyperdrive.query_manager.query
-        print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-    # Return the updated pool state & transaction result
-    transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][0]
-    token_id = transfer_single_event["id"]
-    mask = (1 << 248) - 1
-    maturity_timestamp = token_id & mask
-    pool_state = hyperdrive.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
-    pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
-    pool_state["maturity_timestamp_"] = maturity_timestamp
+        # Return the updated pool state & transaction result
+        transfer_single_event = get_transaction_trade_event(tx_receipt)
+        # The ID is a concatenation of the current share price and the maturity time of the trade
+        token_id = transfer_single_event["id"]
+        prefix, maturity_timestamp = decode_asset_id(token_id)
+        pool_state = hyperdrive.getPoolInfo().__dict__
+        pool_state["block_number_"] = tx_receipt.block_number
+        pool_state["prefix_"] = prefix
+        pool_state["token_id_"] = token_id
+        pool_state["maturity_timestamp_"] = maturity_timestamp
+        pool_state["mint_timestamp_"] = maturity_timestamp - position_duration_seconds
+        print(f"\t{pool_state=}")
     return pool_state, tx_receipt
 
 
@@ -273,13 +342,13 @@ def close_long(agent_address, bond_amount, maturity_time):
         min_output = 0
         as_underlying = False
         print(f"\t{agent_address=}")
+        print(f"\t{agent_address.balance=}")
         print(f"\t{bond_amount=}")
-        print(f"\t{maturity_time=}")
         print(f"\t{min_output=}")
         print(f"\t{as_underlying=}")
+        print(f"\t{maturity_time=}")
         print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-        long_asset_id = 0  # TODO: Setup enum
-        trade_asset_id = (long_asset_id << 248) | maturity_time
+        trade_asset_id = encode_asset_id(AssetIdPrefix.LONG, maturity_time)
         agent_balance = hyperdrive.balanceOf(trade_asset_id, agent_address)
         trade_bond_amount = bond_amount if bond_amount < agent_balance else agent_balance
         tx_receipt = hyperdrive.closeLong(
@@ -289,10 +358,10 @@ def close_long(agent_address, bond_amount, maturity_time):
             agent_address,
             as_underlying,
         )
-        print(f"\t{hyperdrive.getPoolInfo().__dict__=}")
-    # Return the updated pool state & transaction result
-    pool_state = hyperdrive.getPoolInfo().__dict__
-    pool_state["block_number_"] = tx_receipt.block_number
+        # Return the updated pool state & transaction result
+        pool_state = hyperdrive.getPoolInfo().__dict__
+        pool_state["block_number_"] = tx_receipt.block_number
+        print(f"\t{pool_state=}")
     return pool_state, tx_receipt
 
 
@@ -320,6 +389,7 @@ for trade in sim_trades:
 
     if trade.action_type.name == "OPEN_SHORT":
         new_state, trade_details = open_short(sol_agents[agent_key], trade_amount)
+        print(f"\t{new_state['maturity_timestamp_']=}")
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
 
     elif trade.action_type.name == "CLOSE_SHORT":
@@ -330,6 +400,7 @@ for trade in sim_trades:
 
     elif trade.action_type.name == "OPEN_LONG":
         new_state, trade_details = open_long(sol_agents[agent_key], trade_amount)
+        print(f"\t{new_state['maturity_timestamp_']=}")
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
 
     elif trade.action_type.name == "CLOSE_LONG":
@@ -342,4 +413,70 @@ for trade in sim_trades:
     pool_state.append(new_state)
 
 # %%
-dir(trade_receipts[1])
+# transfer_single_event = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"][0]
+# token_id = transfer_single_event["id"]
+trade_receipts[1].events
+
+# %%
+mint_time = 0.0
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+long = 1710720000
+
+mint_time = 0.0027397260273972603
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+
+mint_time = 0.005479452054794521
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+
+mint_time = 0.00821917808219178
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+
+
+short = 452312848583266388373324160190187140051835877600158453279131187532621382656
+
+# %%
+mint_time = 0.00821917808219178
+mint_time = 0.00821917808219178
+
+maturity_time = 1710633600
+
+bond_amount = 85876187845282240659456
+bond_amount = 85876187845282240659456
+
+# %%
+averageMaturityTime = 130480601
+shortsOutstanding = 174947244152329825419264
+_maturityTime = 1710633600
+_bondAmount = 85876187845282240659456
+
+# %%
+average: float = averageMaturityTime
+total_weight: float = shortsOutstanding
+delta: float = _maturityTime
+delta_weight: float = _bondAmount
+is_adding: bool = False
+
+# %%
+def update_weighted_average(  # pylint: disable=too-many-arguments
+    average: float,
+    total_weight: float,
+    delta: float,
+    delta_weight: float,
+    is_adding: bool,
+) -> float:
+    """Updates a weighted average by adding or removing a weighted delta."""
+    if is_adding:
+        return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
+    if total_weight == delta_weight:
+        return 0
+    return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
+
+
+# %%
+update_weighted_average(average, total_weight, delta, delta_weight, is_adding)
+
+# %%
+sim_to_block_time
