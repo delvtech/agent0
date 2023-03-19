@@ -1,6 +1,6 @@
 # %%
 from __future__ import annotations
-from enum import Enum
+from enum import IntEnum
 
 from numpy.random._generator import Generator as NumpyGenerator
 
@@ -170,7 +170,7 @@ with ape.accounts.use_sender(sol_agents["agent_0"]):
 # ### Define & execute trades
 
 # %%
-class AssetIdPrefix(Enum):
+class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""
     LONG = 0
     SHORT = 1
@@ -232,7 +232,7 @@ def decode_asset_id(asset_id: int) -> Tuple[int, int]:
 def get_transaction_trade_event(tx_receipt):
     single_events = []
     for tx_event in tx_receipt.events:
-        if tx_event.name == "TransferSingle":
+        if tx_event.event_name == "TransferSingle":
             single_events.append(tx_event)
     assert len(single_events) == 1, "ERROR: Transaction should only have one event."
     return single_events[0]
