@@ -9,7 +9,10 @@ import ape
 
 if TYPE_CHECKING:
     from ape.api.transactions import ReceiptAPI, TransactionAPI
+    from ape.contracts import ContractEvent
+    from ape.types import ContractLog
     from ape.api.accounts import TestAccountAPI
+    from ape_ethereum.transactions import Receipt
 
 
 class AssetIdPrefix(IntEnum):
@@ -70,7 +73,7 @@ def decode_asset_id(asset_id: int) -> tuple[int, int]:
     return prefix, timestamp
 
 
-def get_transaction_trade_event(tx_receipt: ReceiptAPI) -> TransactionAPI:
+def get_transaction_trade_event(tx_receipt: Receipt) -> ContractLog:
     r"""Parse the transaction receipt to get the trade event
 
     FIXME: Types & links
@@ -85,7 +88,7 @@ def get_transaction_trade_event(tx_receipt: ReceiptAPI) -> TransactionAPI:
     TransactionAPI
         The primary emitted trade ("TransferSingle") event, excluding periferal events.
     """
-    single_events = []
+    single_events: list[ContractLog] = []
     for tx_event in tx_receipt.events:
         if tx_event.event_name == "TransferSingle":
             single_events.append(tx_event)
@@ -102,7 +105,7 @@ def ape_open_position(
     hyperdrive_contract: ApeWrappedContract,
     agent_address: TestAccountAPI,
     trade_amount: int,
-) -> tuple[dict[str, Any], ReceiptAPI]:
+) -> tuple[dict[str, Any], Receipt]:
     r"""Open a long trade on the Hyperdrive Solidity contract using apeworx.
 
     FIXME: Types & links
@@ -148,7 +151,7 @@ def ape_open_position(
         # Return the updated pool state & transaction result
         transfer_single_event = get_transaction_trade_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
-        token_id = transfer_single_event["id"]
+        token_id = int(transfer_single_event["id"])
         prefix, maturity_timestamp = decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number
@@ -165,7 +168,7 @@ def ape_close_position(
     agent_address: TestAccountAPI,
     bond_amount: int,
     maturity_time: int,
-) -> tuple[dict[str, Any], ReceiptAPI]:
+) -> tuple[dict[str, Any], Receipt]:
     r"""Close a long or short position on the Hyperdrive Solidity contract using apeworx.
 
     FIXME: Types & links
@@ -229,7 +232,7 @@ def ape_close_position(
         # Return the updated pool state & transaction result
         transfer_single_event = get_transaction_trade_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
-        token_id = transfer_single_event["id"]
+        token_id = int(transfer_single_event["id"])
         prefix, maturity_timestamp = decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
