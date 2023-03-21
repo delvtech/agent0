@@ -109,8 +109,6 @@ def ape_open_position(
 ) -> tuple[dict[str, Any], Receipt]:
     r"""Open a long trade on the Hyperdrive Solidity contract using apeworx.
 
-    FIXME: Types & links
-
     Arguments
     ---------
     trade_prefix: AssetIdPrefix
