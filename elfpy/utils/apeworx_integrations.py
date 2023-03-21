@@ -1,4 +1,5 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
+# type: ignore
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from enum import IntEnum
@@ -10,10 +11,10 @@ import logging
 import ape  # pyright: ignore
 
 if TYPE_CHECKING:
-    from ape.types import ContractLog  # pyright: ignore
-    from ape.api.accounts import AccountAPI  # pyright: ignore
-    from ape_ethereum.transactions import Receipt  # pyright: ignore
-    from ape.contracts.base import ContractInstance  # pyright: ignore
+    from ape.types import ContractLog
+    from ape.api.accounts import AccountAPI
+    from ape_ethereum.transactions import Receipt
+    from ape.contracts.base import ContractInstance
 
 
 class AssetIdPrefix(IntEnum):
