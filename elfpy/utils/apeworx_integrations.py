@@ -8,6 +8,7 @@ import logging
 
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
+# pylint: disable=import-error
 import ape  # type: ignore[reportMissingImports]
 
 if TYPE_CHECKING:
