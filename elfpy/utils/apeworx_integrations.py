@@ -1,3 +1,4 @@
+"""Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 from __future__ import annotations
 from enum import IntEnum
 
@@ -170,6 +171,7 @@ def ape_close_position(trade_prefix, hyperdrive_contract, agent_address, bond_am
         A tuple containing an update dictionary for the Hyperdrive pool state
         as well as the transaction receipt
     """
+    # pylint: disable=too-many-locals
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         # Ensure requested close amount is not greater than what is available in the pool
         trade_asset_id = encode_asset_id(trade_prefix, maturity_time)
