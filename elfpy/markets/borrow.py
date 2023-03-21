@@ -179,6 +179,11 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         """The borrow rate is the lending rate multiplied by the spread ratio"""
         return self.market_state.lending_rate * self.market_state.spread_ratio
 
+    @property
+    def latest_checkpoint_time(self) -> float:
+        """Gets the most recent checkpoint time."""
+        return 0
+
     def initialize(
         self,
         wallet_address: int,
