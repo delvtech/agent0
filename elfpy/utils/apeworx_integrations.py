@@ -5,13 +5,15 @@ from enum import IntEnum
 
 import logging
 
-import ape
+# TODO: apeworx is not worxing with github actions when it is listed in requirements
+# and pyright doesn't like imports that aren't also in requirements.
+import ape  # pyright: disable
 
 if TYPE_CHECKING:
-    from ape.types import ContractLog
-    from ape.api.accounts import AccountAPI
-    from ape_ethereum.transactions import Receipt
-    from ape.contracts.base import ContractInstance
+    from ape.types import ContractLog  # pyright: disable
+    from ape.api.accounts import AccountAPI  # pyright: disable
+    from ape_ethereum.transactions import Receipt  # pyright: disable
+    from ape.contracts.base import ContractInstance  # pyright: disable
 
 
 class AssetIdPrefix(IntEnum):
