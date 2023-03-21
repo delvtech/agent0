@@ -182,7 +182,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     @property
     def latest_checkpoint_time(self) -> float:
         """Gets the most recent checkpoint time."""
-        return 0
+        raise NotImplementedError
 
     def initialize(
         self,
