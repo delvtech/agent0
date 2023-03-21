@@ -1,5 +1,5 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
-# type: ignore
+
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from enum import IntEnum
@@ -8,13 +8,13 @@ import logging
 
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
-import ape  # pyright: ignore
+import ape  # type: ignore[reportMissingImports]
 
 if TYPE_CHECKING:
-    from ape.types import ContractLog
-    from ape.api.accounts import AccountAPI
-    from ape_ethereum.transactions import Receipt
-    from ape.contracts.base import ContractInstance
+    from ape.types import ContractLog  # type: ignore[reportMissingImports]
+    from ape.api.accounts import AccountAPI  # type: ignore[reportMissingImports]
+    from ape_ethereum.transactions import Receipt  # type: ignore[reportMissingImports]
+    from ape.contracts.base import ContractInstance  # type: ignore[reportMissingImports]
 
 
 class AssetIdPrefix(IntEnum):
