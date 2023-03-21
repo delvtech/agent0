@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import elfpy.simulators as simulators
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
