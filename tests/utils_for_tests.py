@@ -27,7 +27,8 @@ def setup_simulation_entities(config, agent_policies) -> simulators.Simulator:
         wallet_address = agent_id + 1
 
         policy = sim_utils.get_policy(policy_name)
-        agent = policy(wallet_address=wallet_address, budget=1000)  # first policy goes to init_lp_agent
+        # first policy goes to init_lp_agent
+        agent = policy(wallet_address=wallet_address, budget=1000)  # type: ignore
         for key, value in not_kwargs.items():
             if hasattr(agent, key):  # check if parameter exists
                 setattr(agent, key, value)

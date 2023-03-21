@@ -189,7 +189,8 @@ class TestSimulator(unittest.TestCase):
         simulator = sim_utils.get_simulator(
             config=config,
             agents=[
-                sim_utils.get_policy("single_long")(wallet_address=address, budget=1_000) for address in range(1, 3)
+                sim_utils.get_policy("single_long")(wallet_address=address, budget=1_000)  # type: ignore
+                for address in range(1, 3)
             ],
         )
         simulator.run_simulation()
