@@ -1,6 +1,6 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, NewType
+from typing import TYPE_CHECKING, Any
 from enum import IntEnum
 
 import logging
