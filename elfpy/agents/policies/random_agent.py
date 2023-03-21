@@ -65,12 +65,15 @@ class Policy(agent.Agent):
 
     def open_long_with_random_amount(self, market) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
+        # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        # get the maximum amount that can be traded, based on the budget & market reserve levels
         max_long = self.get_max_long(market)
         if max_long < elfpy.WEI:  # no trade is possible
             return []
         # WEI <= trade_amount <= max_short
         trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
