@@ -199,6 +199,7 @@ class Market(
 
     @property
     def time_stretch_constant(self) -> float:
+        r"""Returns the market time stretch constant"""
         return self.position_duration.time_stretch
 
     @property
