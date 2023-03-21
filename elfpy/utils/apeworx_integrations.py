@@ -205,7 +205,14 @@ def ape_close_position(trade_prefix, hyperdrive_contract, agent_address, bond_am
         else:
             raise ValueError(f"{trade_prefix=} must be 0 (long) or 1 (short).")
         # Return the updated pool state & transaction result
+        transfer_single_event = get_transaction_trade_event(tx_receipt)
+        # The ID is a concatenation of the current share price and the maturity time of the trade
+        token_id = transfer_single_event["id"]
+        prefix, maturity_timestamp = decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__
         pool_state["block_number_"] = tx_receipt.block_number
+        pool_state["token_id_"] = token_id
+        pool_state["prefix_"] = prefix
+        pool_state["maturity_timestamp_"] = maturity_timestamp
         logging.debug("hyperdrive_pool_state=%s", pool_state)
     return pool_state, tx_receipt
