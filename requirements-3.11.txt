@@ -11,4 +11,3 @@ pytest
 scipy
 stochastic
 tomli
-eth-ape==0.6.5

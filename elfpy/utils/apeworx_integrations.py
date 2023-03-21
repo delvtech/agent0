@@ -84,7 +84,9 @@ def get_transaction_trade_event(tx_receipt: Receipt) -> ContractLog:
     Returns
     -------
     ape.types.ContractLog
-        The primary emitted trade ("TransferSingle") event, excluding periferal events.
+        The primary emitted trade (a "TransferSingle" `ContractLog
+        <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
+        ) event, excluding periferal events.
     """
     single_events: list[ContractLog] = []
     for tx_event in tx_receipt.events:
@@ -110,7 +112,7 @@ def ape_open_position(
     trade_prefix: AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
-        Ape project `Contract
+        Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         wrapped around the initialized MockHyperdriveTestnet smart contract.
     agent_address: ape.api.accounts.AccountAPI
@@ -176,7 +178,7 @@ def ape_close_position(
     trade_prefix: AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
-        Ape project `Contract
+        Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         wrapped around the initialized MockHyperdriveTestnet smart contract.
     agent_address: ape.api.accounts.AccountAPI
