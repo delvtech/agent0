@@ -75,12 +75,11 @@ def decode_asset_id(asset_id: int) -> tuple[int, int]:
 def get_transaction_trade_event(tx_receipt: Receipt) -> ContractLog:
     r"""Parse the transaction receipt to get the trade event
 
-    FIXME: Types & links
-
     Arguments
     ---------
     tx_receipt: ape_ethereum.transactions.Receipt
-        Ape transaction receipt
+        `Ape transaction receipt
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
 
     Returns
     -------
@@ -111,9 +110,13 @@ def ape_open_position(
     trade_prefix: AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
-        [Ape project](url) wrapped around the initialized MockHyperdriveTestnet smart contract.
+        Ape project `Contract
+        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        wrapped around the initialized MockHyperdriveTestnet smart contract.
     agent_address: ape.api.accounts.AccountAPI
-        Ape address container, or [AccountAPI](url) representing the agent which is executing the action.
+        Ape address container, or `AccountAPI
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+        representing the agent which is executing the action.
     base_amount: int
         Unsigned int-256 representation of the base amount that the agent wishes to provide.
 
@@ -121,7 +124,8 @@ def ape_open_position(
     -------
     Tuple[dict[str, Any], ape_ethereum.transactions.Receipt]
         A tuple containing an update dictionary for the Hyperdrive pool state
-        as well as the [Ape Ethereum transaction receipt](ape url).
+        as well as the Ape-ethereum transaction `receipt
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_.
     """
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         if trade_prefix == AssetIdPrefix.LONG:  # open a long
@@ -167,16 +171,18 @@ def ape_close_position(
 ) -> tuple[dict[str, Any], Receipt]:
     r"""Close a long or short position on the Hyperdrive Solidity contract using apeworx.
 
-    FIXME: Types & links
-
     Arguments
     ---------
     trade_prefix: AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
-        [Ape project](url) wrapped around the initialized MockHyperdriveTestnet smart contract.
+        Ape project `Contract
+        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        wrapped around the initialized MockHyperdriveTestnet smart contract.
     agent_address: ape.api.accounts.AccountAPI
-        Ape address container, or [AccountAPI](url) representing the agent which is executing the action.
+        Ape address container, or `AccountAPI
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+        representing the agent which is executing the action.
     bond_amount: int
         Unsigned int-256 representation of the bond amount that the agent wishes to sell.
     maturity_time: int
@@ -188,7 +194,8 @@ def ape_close_position(
     -------
     Tuple[dict[str, Any], ape_ethereum.transactions.Receipt]
         A tuple containing an update dictionary for the Hyperdrive pool state
-        as well as the [Ape Ethereum transaction receipt](ape url).
+        as well as the Ape-ethereum transaction `receipt
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_.
     """
     # pylint: disable=too-many-locals
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
