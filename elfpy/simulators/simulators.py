@@ -553,7 +553,7 @@ class Simulator:
         for trade in agent_actions:
             # TODO: In a follow-up PR we will decompose the trade into the
             # agent ID, market, and market action before sending the info off to the correct market
-            action_details = (trade[0], trade[1].trade)  # agent ID,
+            action_details = (trade[0], trade[1].trade)
             agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
             print(f"{trade[1].trade=}\n")
             self.agents[agent_id].log_status_report()
