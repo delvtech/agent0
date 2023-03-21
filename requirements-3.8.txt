@@ -11,3 +11,4 @@ pytest==3.6.4
 scipy==1.7.3
 stochastic>=0.6.0
 tomli==2.0.1
+eth-ape==0.6.5

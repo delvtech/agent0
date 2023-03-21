@@ -96,33 +96,6 @@ coverage xml -i html
 
 then just open `htmlcov/index.html` to view the report!
 
-## Apeworks and Contract Integration
-
-[Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
-
-You can optionally run
-
-```
-anvil
-```
-
-if you wish to execute ape against a local foundry backend. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
-
-```bash
-git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
-ln -s ../hyperdrive hyperdrive_solidity
-```
-
-then run:
-
-```bash
-python -m pip install eth-ape==0.6.5
-ape plugins install .
-ape compile
-```
-
-NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.
-
 ## Examples
 
 Python files in the `examples/` folder should be executable from the repository root. Run them with the -h flag to see argument options. The Jupyter notebooks contained in `examples/notebooks/` should be run locally using [Jupyter](https://jupyter.org/install), [VS Code](https://code.visualstudio.com/docs/datascience/jupyter-notebooks), or something equivalent.
@@ -151,3 +124,32 @@ _now, we have completed our feature, so we create a PR to merge the branch into 
 Once the PR is approved, we perform a final rebase, if necessary, and then a _squash merge_. This means each PR results in a single commit to `main`.
 
 If two people are working in a branch then you should `git pull --rebase origin feature-branch` _before_ `git push origin feature-branch`. We also recommend that you start each working session with a `pull` and end it with a `push`, so that your colleagues can work asynchronously while you are not.
+
+## Apeworks and Contract Integration
+
+NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
+The following instructions will not work for anyone who is not a member of Element Finance.
+
+[Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
+
+You can optionally run
+
+```
+anvil
+```
+
+if you wish to execute ape against a local foundry backend. To use apeworx with elfpy, clone and sym link the hyperdrive repo, into `hyperdrive_solidity/`, i.e.:
+
+```bash
+git clone https://github.com/element-fi/hyperdrive.git ../hyperdrive
+ln -s ../hyperdrive hyperdrive_solidity
+```
+
+then run:
+
+```bash
+ape plugins install .
+ape compile
+```
+
+NOTE: `pip` might complain about dependency incompatibility between eth-ape and some plugins. This discrepancy comes from apeworx, although our examples should run without dealing with the incompatibility.
