@@ -1,10 +1,10 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import dataclass, field
 from collections import defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Literal
+from typing import TYPE_CHECKING, Literal, Optional
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
@@ -51,10 +51,9 @@ class MarketDeltas(base_market.MarketDeltas):
     short_average_maturity_time: float = 0
     long_base_volume: float = 0
     short_base_volume: float = 0
-    long_withdrawal_shares_outstanding: float = 0
-    short_withdrawal_shares_outstanding: float = 0
-    long_withdrawal_share_proceeds: float = 0
-    short_withdrawal_share_proceeds: float = 0
+    withdraw_shares_ready_to_withdraw: float = 0
+    withdraw_capital: float = 0
+    withdraw_interest: float = 0
     long_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     short_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))

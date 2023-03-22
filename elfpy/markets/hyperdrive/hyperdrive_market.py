@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import copy
 import logging
-from enum import IntEnum
 from collections import defaultdict
 from dataclasses import dataclass, field
+from enum import IntEnum
 from typing import Union
 
 import numpy as np
@@ -131,15 +131,14 @@ class MarketState(base_market.BaseMarketState):
     total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     # checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
     total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-
-    # the amount of long withdrawal shares that haven't been paid out.
-    long_withdrawal_shares_outstanding: float = field(default=0.0)
-    # the amount of short withdrawal shares that haven't been paid out.
-    short_withdrawal_shares_outstanding: float = field(default=0.0)
-    # the proceeds that have accrued to the long withdrawal shares.
-    long_withdrawal_share_proceeds: float = field(default=0.0)
-    # the proceeds that have accrued to the short withdrawal shares.
-    short_withdrawal_share_proceeds: float = field(default=0.0)
+    # total amount of withdraw shares outstanding
+    total_supply_withdraw_shares: float = field(default=0.0)
+    # shares that have been freed up to withdraw by withdraw_shares
+    withdraw_shares_ready_to_withdraw: float = field(default=0.0)
+    # the margin capital reclaimed by the withdraw process
+    withdraw_capital: float = field(default=0.0)
+    # the interest earned by the redemptions which put capital into the withdraw pool
+    withdraw_interest: float = field(default=0.0)
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
@@ -157,10 +156,9 @@ class MarketState(base_market.BaseMarketState):
         self.long_base_volume += delta.long_base_volume
         self.short_base_volume += delta.short_base_volume
 
-        self.long_withdrawal_shares_outstanding += delta.long_withdrawal_shares_outstanding
-        self.short_withdrawal_shares_outstanding += delta.short_withdrawal_shares_outstanding
-        self.long_withdrawal_share_proceeds += delta.long_withdrawal_share_proceeds
-        self.short_withdrawal_share_proceeds += delta.short_withdrawal_share_proceeds
+        self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
+        self.withdraw_capital += delta.withdraw_capital
+        self.withdraw_interest += delta.withdraw_interest
 
         for mint_time, delta_checkpoint in delta.long_checkpoints.items():
             self.checkpoints[mint_time].long_base_volume += delta_checkpoint
@@ -530,6 +528,7 @@ class Market(
         )
         # apply deltas
         self.market_state.apply_delta(market_deltas)
+
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
