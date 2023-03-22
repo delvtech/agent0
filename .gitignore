@@ -1,6 +1,11 @@
-# Repo specific
+# default logging directory
 .logging
+
+# smart contract compile directory
 .build
+
+# output directory for saved notebook figures
+figs
 
 # smart contracts symlink (should only ignore top level folder)
 hyperdrive_solidity

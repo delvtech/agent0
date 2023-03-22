@@ -170,7 +170,9 @@ def calc_open_short(
         address=wallet_address,
         balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
         shorts={
-            market.block_time.time: wallet.Short(balance=bond_amount, open_share_price=market.market_state.share_price)
+            market.latest_checkpoint_time: wallet.Short(
+                balance=bond_amount, open_share_price=market.market_state.share_price
+            )
         },
         fees_paid=trade_result.breakdown.fee,
     )
@@ -553,7 +555,7 @@ def update_weighted_average(  # pylint: disable=too-many-arguments
     total_weight: float,
     delta: float,
     delta_weight: float,
-    is_adding: float,
+    is_adding: bool,
 ) -> float:
     """Updates a weighted average by adding or removing a weighted delta."""
     if is_adding:

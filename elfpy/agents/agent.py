@@ -195,7 +195,7 @@ class Agent:
         actions = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
             if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
-                action.trade.mint_time = market.block_time.time
+                action.trade.mint_time = market.latest_checkpoint_time
         # TODO: Add safety checks
         # e.g. if trade amount > 0, whether there is enough money in the account
         # agent wallet Long and Short balances should not be able to be negative

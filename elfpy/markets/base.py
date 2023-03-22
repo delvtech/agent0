@@ -108,6 +108,11 @@ class Market(Generic[State, Deltas, PricingModel]):
         self.market_state = market_state
         self.block_time = block_time
 
+    @property
+    def latest_checkpoint_time(self) -> float:
+        """Gets the most recent checkpoint time."""
+        raise NotImplementedError
+
     def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError

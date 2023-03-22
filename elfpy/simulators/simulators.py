@@ -283,6 +283,8 @@ class TradeSimVariables:
     fixed_apr: float
     # price of shares
     spot_price: float
+    # trade being executed
+    trade_action: types.Trade
     # deltas used to update the market state
     market_deltas: hyperdrive_actions.MarketDeltas
     # address of the agent that is executing the trade
@@ -502,8 +504,8 @@ class Simulator:
         # Collect trades from all of the agents.
         # TODO: This API causes a unnecessary double loop; first over agents, then trades,
         #       then we loop again over all trades. In the future we want to simulate something like
-        #       the mempool, which has all agent trades. But it would be better if we could get all
-        #       of the block's trades without an extra loop.
+        #       the mempool, which has all agent trades. But for now it would be better if we could
+        #       get all of the block's trades without an extra loop.
         trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
         # Execute the trades
         self.execute_trades(trades)
@@ -543,6 +545,10 @@ class Simulator:
         ----------
         trades : list[tuple[int, list[Trade]]]
             A list of agent trades. These will be executed in order.
+            for trade in trades:
+                trade[0] is the agent wallet address;
+                trade[1].market is the trade market;
+                trade[1].trade is the action
         """
         for trade in agent_actions:
             # TODO: In a follow-up PR we will decompose the trade into the
@@ -562,6 +568,7 @@ class Simulator:
                         self.trade_number,
                         self.market.fixed_apr,
                         self.market.spot_price,
+                        trade[1].trade,
                         market_deltas,
                         agent_id,
                         agent_deltas,
