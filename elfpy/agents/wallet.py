@@ -1,16 +1,17 @@
 """Implements abstract classes that control user behavior"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import logging
 import copy
-from typing import TYPE_CHECKING
+import logging
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    from typing import Iterable, Any
+    from typing import Any, Iterable
+
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
@@ -105,6 +106,7 @@ class Wallet:
     # non-fungible (identified by key=mint_time, stored as dict)
     longs: dict[float, Long] = field(default_factory=dict)
     shorts: dict[float, Short] = field(default_factory=dict)
+    withdraw_shares: float = 0
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
     borrows: dict[float, Borrow] = field(default_factory=dict)

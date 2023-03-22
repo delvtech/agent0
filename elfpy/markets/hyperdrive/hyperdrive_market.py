@@ -528,7 +528,6 @@ class Market(
         )
         # apply deltas
         self.market_state.apply_delta(market_deltas)
-
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
@@ -644,3 +643,128 @@ class Market(
             )
             self.market_state.apply_delta(market_deltas)
         return self.market_state.checkpoints[mint_time].share_price
+
+    def redeem_withdraw_shares(
+        self,
+        agent_wallet: wallet.Wallet,
+        shares: float,
+        min_output: float,
+        as_underlying: bool,
+    ) -> float:
+        r"""
+        Redeems withdrawal shares if enough margin has been freed to do so.
+
+        Parameters
+        ----------
+        agent_wallet: wallet.Wallet
+            The agent's wallet
+        shares: float
+            The withdrawal shares to redeem.
+        min_output: float
+            The minimum amount of base the LP expects to receive.
+        as_underlying: bool
+            If true, the user is paid in underlying, if false the contract transfers in yield source
+            directly. Note - for some paths one choice may be disabled or blocked.
+
+        Returns
+        -------
+        float
+            The amount of base the LP received.
+        """
+
+        # create a new checkpoint if necessary, close positions at the checkpoint time one
+        # position_duration ago.
+        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        market_deltas, wallet_deltas = self.calc_redeem_withdraw_shares(shares, min_output, as_underlying)
+        self.update_market(market_deltas)
+        agent_wallet.update(wallet_deltas)
+
+        return wallet_deltas.balance
+
+    def calc_redeem_withdraw_shares(
+        self, shares: float, min_output: float, as_underlying: bool
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
+        r"""
+        Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
+        has been freed to do so.
+
+        Parameters
+        ----------
+        shares: float
+            The withdrawal shares to redeem.
+        min_output: float
+            The minimum amount of base the LP expects to receive.
+        as_underlying: bool
+            If true, the user is paid in underlying, if false the contract transfers in yield source
+            directly. Note - for some paths one choice may be disabled or blocked.
+
+        Returns
+        -------
+        tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]
+
+        """
+        market_deltas = hyperdrive_actions.MarketDeltas()
+        wallet_deltas = wallet.Wallet(address=0)
+
+        # We burn the shares from the user
+        wallet_deltas.withdraw_shares -= shares
+
+        # The user gets a refund on their margin equal to the face value of their withdraw shares
+        # times the percent of the withdraw pool which has been lost.
+        recovered_margin = (
+            shares * self.market_state.withdraw_capital / self.market_state.withdraw_shares_ready_to_withdraw
+        )
+
+        # The user gets interest equal to their percent of the withdraw pool times the withdraw pool
+        # interest
+        recovered_interest = (
+            shares * self.market_state.withdraw_interest / self.market_state.withdraw_shares_ready_to_withdraw
+        )
+
+        # Update the pool state
+        # Note - Will revert here if not enough margin has been reclaimed by checkpoints or by
+        #  position closes
+        market_deltas.withdraw_shares_ready_to_withdraw -= shares
+        market_deltas.withdraw_capital -= recovered_margin
+        market_deltas.withdraw_interest -= recovered_interest
+
+        # Withdraw for the user
+        (base_proceeds,) = self._withdraw(recovered_margin + recovered_interest, as_underlying)
+        # TODO: figure out how to keep track of hyperdrive's base asset amount.  market_deltas has
+        # a d_base_asset, but that is used to update the share_reserves :/.
+        # market_deltas.d_base_asset -= base_proceeds
+        wallet_deltas.balance += base_proceeds
+
+        # Enforce min user outputs
+        if min_output > base_proceeds:
+            raise errors.OutputLimit
+
+        return market_deltas, wallet_deltas
+
+    def _withdraw(self, shares: float, as_underlying: bool) -> tuple[float, float]:
+        r"""
+        Calculates the amount of base to withdraw for a given amount of shares.
+
+        Parameters
+        ----------
+        shares: float
+            The withdrawal shares to redeem.
+        as_underlying: bool
+            If true, the user is paid in underlying, if false the contract transfers in yield source
+            directly. Note - for some paths one choice may be disabled or blocked.
+
+        Returns
+        -------
+        tuple[float, float]
+          The withdraw_value and share_price as a tuple.
+        """
+
+        # This yield source doesn't accept the underlying since it's just base.
+        if not as_underlying:
+            raise errors.UnsupportedOption
+
+        # TODO: add step to accrue interest
+
+        # Get the amount of base to transfer.
+        amount_withdrawn = shares * self.market_state.share_price
+        return amount_withdrawn
