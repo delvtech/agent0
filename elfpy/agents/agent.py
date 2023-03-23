@@ -51,7 +51,7 @@ class Agent:
         """Set up initial conditions"""
         self.budget: float = budget
         self.wallet: wallet.Wallet = wallet.Wallet(
-            address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
+            address=wallet_address, balance=types.Quantity(amount=float(budget), unit=types.TokenType.BASE)
         )
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
