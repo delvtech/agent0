@@ -33,6 +33,7 @@ DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
 # Plotting defaults
 BLACK = "black"
+WHITE = "white"
 CYCLE = "colorblind"
 CMAPCYC = "twilight"
 CMAPDIV = "BuRd"
@@ -62,7 +63,6 @@ TICKMINOR = True
 TICKPAD = 2.0
 TICKWIDTHRATIO = 0.8  # very slight width reduction
 TITLEPAD = 5.0  # default is 6.0, previously was 3.0
-WHITE = "white"
 ZLINES = 2  # default zorder for lines
 ZPATCHES = 1
 
@@ -127,8 +127,10 @@ rc_params = {
     "savefig.directory": "",  # use the working directory
     "savefig.dpi": 1000,  # use academic journal recommendation
     "savefig.facecolor": WHITE,  # use white instead of 'auto'
-    "savefig.format": "pdf",  # use vector graphics
+    "savefig.format": "png",  # use vector graphics
     "savefig.transparent": False,
+    "savefig.bbox": "tight",
+    "savefig.edgecolor": "none",
     "text.usetex": MATHTEXT,
     "xtick.color": BLACK,
     "xtick.direction": TICKDIR,
@@ -151,4 +153,24 @@ rc_params = {
     "ytick.minor.width": LINEWIDTH * TICKWIDTHRATIO,
     "ytick.minor.visible": TICKMINOR,
 }
+
+# Dark mode
+c_grey = "#303030"
+c_lightgrey = "#737373"
+
+rc_params.update({"axes.edgecolor": c_lightgrey})
+rc_params.update({"axes.facecolor": c_grey})
+rc_params.update({"axes.labelcolor": WHITE})
+rc_params.update({"figure.facecolor": c_grey})
+rc_params.update({"lines.solid_capstyle": "round"})
+rc_params.update({"patch.edgecolor": c_grey})
+rc_params.update({"patch.force_edgecolor": True})
+rc_params.update({"text.color": WHITE})
+rc_params.update({"xtick.color": c_lightgrey})
+rc_params.update({"xtick.direction": "out"})
+rc_params.update({"ytick.color": c_lightgrey})
+rc_params.update({"ytick.direction": "out"})
+rc_params.update({"savefig.facecolor": c_grey})
+rc_params.update({"savefig.edgecolor": c_grey})
+
 mpl.rcParams.update(rc_params)
