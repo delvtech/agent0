@@ -141,7 +141,7 @@ class Policy(agent.Agent):
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions()
         # randomly choose one of the possible actions
-        action_type = self.rng.choice(np.array(available_actions), size=1).item()  # choose one random trade type
+        action_type = self.rng.choice(np.array(available_actions), size=1).item()
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
             return self.open_short_with_random_amount(market)
