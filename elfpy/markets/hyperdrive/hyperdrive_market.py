@@ -768,3 +768,44 @@ class Market(
         # Get the amount of base to transfer.
         amount_withdrawn = shares * self.market_state.share_price
         return amount_withdrawn
+
+    def _free_margin(
+        self, freed_capital: float, max_capital: float, interest: float
+    ) -> hyperdrive_actions.MarketDeltas:
+        """
+        Moves capital into the withdraw pool and marks shares ready for withdraw.
+
+        Parameters
+        ----------
+        freed_capital: float
+            The amount of capital to add to the withdraw pool, must not be more than the max capital.
+        max_capital: float
+            The margin which the LP used to back the position which is being closed.
+        interest: float
+            The interest earned by this margin position, fixed interest for LP shorts and variable for longs.
+
+        Returns
+        -------
+        hyperdrive_actions.MarketDeltas
+            the capital, interest and shares added to the withdraw pool
+        """
+
+        # If we don't have capital to free then simply return zero
+        withdraw_share_supply = self.market_state.total_supply_withdraw_shares
+        withdraw_shares_ready_to_withdraw = self.market_state.withdraw_shares_ready_to_withdraw
+        if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
+            return 0, 0
+
+        # If we have more capital freed than needed we adjust down all values
+        withdraw_pool_deltas = hyperdrive_actions.MarketDeltas()
+        if max_capital + withdraw_shares_ready_to_withdraw > withdraw_share_supply:
+            # in this case we want max_capital * adjustment + withdraw_shares_ready_to_withdraw = withdraw_share_supply
+            # so adjustment = (withdraw_share_supply - withdraw_shares_ready_to_withdraw) / max_capital
+            # we adjust max_capital and do corresponding reduction in freed_capital and interest
+            adjustment = withdraw_share_supply - withdraw_shares_ready_to_withdraw / max_capital
+            withdraw_pool_deltas.withdraw_shares_ready_to_withdraw = max_capital * adjustment
+            withdraw_pool_deltas.withdraw_capital = freed_capital * adjustment
+            withdraw_pool_deltas.withdraw_interest = interest * adjustment
+
+        # Finally return the amount used by this action and the caller can update reserves.
+        return withdraw_pool_deltas
