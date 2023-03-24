@@ -117,13 +117,13 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         d_shares = d_bonds / share_price
 
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
-        market_state_simulated = market_state.copy()
+        market_state = market_state.copy()
         if out.unit == types.TokenType.BASE:
-            market_state_simulated.share_reserves -= float(d_shares)
-            market_state_simulated.bond_reserves += float(d_bonds)
+            market_state.share_reserves -= float(d_shares)
+            market_state.bond_reserves += float(d_bonds)
         elif out.unit == types.TokenType.PT:
-            market_state_simulated.share_reserves += float(d_shares)
-            market_state_simulated.bond_reserves -= float(d_bonds)
+            market_state.share_reserves += float(d_shares)
+            market_state.bond_reserves -= float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_in_given_out: ERROR: "
@@ -132,7 +132,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
             out=types.Quantity(amount=float(out_amount * curve_portion), unit=out.unit),
-            market_state=market_state_simulated,
+            market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
@@ -273,23 +273,23 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         d_bonds = in_amount * flat_portion  # whether in_.unit is base or pt, at maturity d_bonds = d_base
         d_shares = d_bonds / share_price
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
-        market_state_simulated = market_state.copy()  # don't want to modify the actual market state
+        market_state = market_state.copy()  # don't want to modify the actual market state
         if in_.unit == types.TokenType.BASE:
-            market_state_simulated.share_reserves += float(d_shares)
-            market_state_simulated.bond_reserves -= float(d_bonds)
+            market_state.share_reserves += float(d_shares)
+            market_state.bond_reserves -= float(d_bonds)
         elif in_.unit == types.TokenType.PT:
-            market_state_simulated.share_reserves -= float(d_shares)
-            market_state_simulated.bond_reserves += float(d_bonds)
+            market_state.share_reserves -= float(d_shares)
+            market_state.bond_reserves += float(d_bonds)
         else:
             raise AssertionError(
                 "pricing_models.calc_out_given_in: ERROR: "
-                f"Expected in_.unit to be {types.TokenType.PT}, not {in_.unit}!"
+                f"Expected in_.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
             in_=types.Quantity(amount=float(in_amount * curve_portion), unit=in_.unit),
-            market_state=market_state_simulated,
+            market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for the curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,

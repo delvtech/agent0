@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
@@ -45,7 +45,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -121,7 +121,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -145,7 +145,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
@@ -643,7 +643,7 @@ class YieldspacePricingModel(PricingModel):
         spot_price: Decimal,
         market_state: hyperdrive_market.MarketState,
         func: str,
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """
         Calculate the "curve" portion of the fee (non-redemption)
         Total fees are a portion (trade_fee_percent) of the price discount from par (1-p)
@@ -657,17 +657,17 @@ class YieldspacePricingModel(PricingModel):
         # multiplying by time remaining is not required below, since the amount
         # passed into this function is already scaled down to the unmatured portion
         if func == "_calculateFeesOutGivenSharesIn":
-            d_z = amount
+            d_shares = amount
             # curve fee = ((1 / p) - 1) * d_z * c * t * phi_curve
-            curve_fee = abs(1 - spot_price) * phi_curve * d_z
+            curve_fee = abs(1 - spot_price) * phi_curve * d_shares
         elif func == "_calculateFeesInGivenBondsOut":
-            d_y = amount  # in bonds
+            d_bonds = amount
             # curve fee = ((1 - p) * d_y * t * phi_curve) / c
-            curve_fee = ((1 - spot_price) * d_y * phi_curve) / share_price
+            curve_fee = ((1 - spot_price) * d_bonds * phi_curve) / share_price
         elif func == "_calculateFeesOutGivenBondsIn":
-            d_y = amount  # in bonds
+            d_bonds = amount
             # curve fee = ((1 - p) * d_y * t * phi_curve) / c
-            curve_fee = ((1 - spot_price) * d_y * phi_curve) / share_price
+            curve_fee = ((1 - spot_price) * d_bonds * phi_curve) / share_price
         else:
             raise AssertionError(
                 f"pricing_models.calc_curve_fee_split: ERROR: expected func"

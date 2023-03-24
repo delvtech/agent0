@@ -111,7 +111,7 @@ class MarketState(base_market.BaseMarketState):
     governance_fee_percent: float = field(default=0.0)
 
     # governance fees that haven't been collected yet denominated in shares
-    gov_fees_accrued: Decimal = field(default=Decimal(0))
+    gov_fees_accrued: float = field(default=0.0)
     # the amount of longs that are still open.
     longs_outstanding: float = field(default=0.0)
     # the amount of shorts that are still open.
@@ -302,9 +302,9 @@ class Market(
             The amount of base collected in the governance fee.
         """
         # governance fees are stored as shares, so we need to convert them to base
-        proceeds_in_base = self.market_state.gov_fees_accrued * Decimal(self.market_state.share_price)
+        proceeds_in_base = self.market_state.gov_fees_accrued * self.market_state.share_price
         governance_wallet.balance.amount += float(proceeds_in_base)
-        self.market_state.gov_fees_accrued = Decimal(0)
+        self.market_state.gov_fees_accrued = 0
         return proceeds_in_base
 
     def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:

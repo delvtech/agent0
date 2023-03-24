@@ -89,11 +89,11 @@ def idfn(val):
     return f"amount={val:.0f}"
 
 
-def get_gov_fees_accrued(test, market_state=None) -> Decimal:
+def get_gov_fees_accrued(test, market_state=None) -> float:
     """Get the amount of gov fees that have accrued in the market state"""
     if market_state:
         return market_state.gov_fees_accrued * market_state.share_price
-    return test.hyperdrive.market_state.gov_fees_accrued * Decimal(test.hyperdrive.market_state.share_price)
+    return test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
 
 
 def warp(test, time_delta):
@@ -220,7 +220,7 @@ def test_collect_fees_short(amount):
     test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=1e-16 * test.trade_amount)
 
 
-def get_all_the_fees(test: TestFees, func: str) -> Tuple[Decimal, Decimal, Decimal, Decimal]:
+def get_all_the_fees(test: TestFees, func: str) -> Tuple[float, float, float, float]:
     """Get all the fees from the market state"""
     # calculate time remaining
     years_remaining = time.get_years_remaining(
@@ -245,14 +245,14 @@ def get_all_the_fees(test: TestFees, func: str) -> Tuple[Decimal, Decimal, Decim
         market_state=test.hyperdrive.market_state,
         func=func,
     )
-    test.hyperdrive.market_state.gov_fees_accrued += gov_curve_fee
+    test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
     gov_curve_fee = abs(get_gov_fees_accrued(test))
 
     # calculate flat fee
     flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
-    redemption_fee = Decimal(flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent)
-    gov_redemption_fee = redemption_fee * Decimal(test.hyperdrive.market_state.governance_fee_percent)
-    return curve_fee, redemption_fee, gov_curve_fee, gov_redemption_fee
+    redemption_fee = flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent
+    gov_redemption_fee = redemption_fee * test.hyperdrive.market_state.governance_fee_percent
+    return float(curve_fee), redemption_fee, gov_curve_fee, gov_redemption_fee
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)

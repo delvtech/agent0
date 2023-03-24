@@ -136,7 +136,7 @@ def calc_open_short(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
-    market.market_state.gov_fees_accrued += Decimal(trade_result.breakdown.gov_fee)
+    market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # update accouting for average maturity time, base volume and longs outstanding
@@ -172,7 +172,9 @@ def calc_open_short(
         address=wallet_address,
         balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
         shorts={
-            market.block_time.time: wallet.Short(balance=bond_amount, open_share_price=market.market_state.share_price)
+            market.latest_checkpoint_time: wallet.Short(
+                balance=bond_amount, open_share_price=market.market_state.share_price
+            )
         },
         fees_paid=trade_result.breakdown.fee,
     )
@@ -219,7 +221,7 @@ def calc_close_short(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    market.market_state.gov_fees_accrued += Decimal(trade_result.breakdown.gov_fee)
+    market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
@@ -302,7 +304,7 @@ def calc_open_long(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
-    market.market_state.gov_fees_accrued += Decimal(trade_result.breakdown.gov_fee)
+    market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
     # this should be in hyperdrive.check_output_assertions which then calls
     # super().check_output_assertions
@@ -372,7 +374,7 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    market.market_state.gov_fees_accrued += Decimal(trade_result.breakdown.gov_fee)
+    market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # Make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
