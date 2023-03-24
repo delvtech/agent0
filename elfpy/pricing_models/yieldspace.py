@@ -3,7 +3,8 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
+import numpy as np
 
 from elfpy.pricing_models.base import PricingModel
 import elfpy.time as time
@@ -44,7 +45,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> Tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -120,7 +121,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> Tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
@@ -144,7 +145,7 @@ class YieldspacePricingModel(PricingModel):
         rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> Tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition
 
         .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
@@ -301,7 +302,6 @@ class YieldspacePricingModel(PricingModel):
             time_remaining,
         )
         out_amount = Decimal(out.amount)
-        trade_fee_percent = Decimal(market_state.trade_fee_percent)
         if out.unit == types.TokenType.BASE:
             d_shares = out_amount / share_price
             # The amount the agent pays without fees or slippage is simply the
@@ -332,27 +332,16 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            # The fees are calculated as the difference between the bonds paid
-            # without slippage and the base received times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = ((1 / p) - 1) * phi * c * d_z
-            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
-            logging.debug(
-                (
-                    "fee = ((1 / spot_price) - 1) * _fee_percent * share_price * d_shares = "
-                    "((1 / %g) - 1) * %g * %g * %g = %g"
-                ),
-                spot_price,
-                trade_fee_percent,
-                share_price,
-                d_shares,
-                fee,
+            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
+                amount=d_shares * share_price,  # taking a cut of base
+                spot_price=1 / spot_price,  # when given shares, invert price
+                market_state=market_state,
+                func="_calculateFeesOutGivenSharesIn",
             )
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
-            with_fee = without_fee + fee
+            with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=out.amount,
@@ -396,23 +385,16 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert to base
             )
-            # The fees are calculated as the difference between the bonds
-            # received and the base paid without slippage times the fee
-            # percentage. This can also be expressed as:
-            #
-            # fee = (1 - p) * phi * d_y
-            fee = (1 - spot_price) * trade_fee_percent * d_bonds
-            logging.debug(
-                ("fee = (1 - spot_price) * _fee_percent * d_bonds = (1 - %g) * %g * %g = %g"),
-                spot_price,
-                trade_fee_percent,
-                d_bonds,
-                fee,
+            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
+                amount=d_bonds,
+                spot_price=spot_price,
+                market_state=market_state,
+                func="_calculateFeesOutGivenSharesIn",
             )
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
-            with_fee = without_fee + fee
+            with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(-with_fee),
@@ -434,7 +416,8 @@ class YieldspacePricingModel(PricingModel):
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
-                fee=float(fee),
+                curve_fee=float(curve_fee),
+                gov_curve_fee=float(gov_curve_fee),
             ),
         )
 
@@ -537,7 +520,6 @@ class YieldspacePricingModel(PricingModel):
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
-        trade_fee_percent = Decimal(market_state.trade_fee_percent)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             # The amount the agent would receive without fees or slippage is
@@ -566,16 +548,16 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            # The fees are calculated as the difference between the bonds
-            # received without slippage and the base paid times the fee
-            # percentage. This can also be expressed as:
-            #
-            # ((1 / p) - 1) * phi * c * dz
-            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
+            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
+                amount=d_shares * share_price,
+                spot_price=1 / spot_price,  # when given shares, invert price
+                market_state=market_state,
+                func="_calculateFeesOutGivenSharesIn",
+            )
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
+            with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
@@ -619,16 +601,16 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            # The fees are calculated as the difference between the bonds paid
-            # and the base received without slippage times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = (1 - p) * phi * dy
-            fee = (1 - spot_price) * trade_fee_percent * d_bonds
+            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
+                amount=d_bonds,
+                spot_price=spot_price,
+                market_state=market_state,
+                func="_calculateFeesOutGivenSharesIn",
+            )
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
+            with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(with_fee),
@@ -650,9 +632,50 @@ class YieldspacePricingModel(PricingModel):
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
-                fee=float(fee),
+                curve_fee=float(curve_fee),
+                gov_curve_fee=float(gov_curve_fee),
             ),
         )
+
+    def calc_curve_fee_split(
+        self,
+        amount: Decimal,
+        spot_price: Decimal,
+        market_state: hyperdrive_market.MarketState,
+        func: str,
+    ) -> Tuple[Decimal, Decimal]:
+        """
+        Calculate the "curve" portion of the fee (non-redemption)
+        Total fees are a portion (trade_fee_percent) of the price discount from par (1-p)
+        Governance fee is in shares, so it's calculated on the input or output amount, depending on the trade type
+        """
+        phi_curve = Decimal(market_state.trade_fee_percent)
+        governance_fee_percent = Decimal(market_state.governance_fee_percent)
+        share_price = Decimal(market_state.share_price)
+        curve_fee = Decimal(np.nan)
+
+        # multiplying by time remaining is not required below, since the amount
+        # passed into this function is already scaled down to the unmatured portion
+        if func == "_calculateFeesOutGivenSharesIn":
+            d_z = amount
+            # curve fee = ((1 / p) - 1) * d_z * c * t * phi_curve
+            curve_fee = abs(1 - spot_price) * phi_curve * d_z
+        elif func == "_calculateFeesInGivenBondsOut":
+            d_y = amount  # in bonds
+            # curve fee = ((1 - p) * d_y * t * phi_curve) / c
+            curve_fee = ((1 - spot_price) * d_y * phi_curve) / share_price
+        elif func == "_calculateFeesOutGivenBondsIn":
+            d_y = amount  # in bonds
+            # curve fee = ((1 - p) * d_y * t * phi_curve) / c
+            curve_fee = ((1 - spot_price) * d_y * phi_curve) / share_price
+        else:
+            raise AssertionError(
+                f"pricing_models.calc_curve_fee_split: ERROR: expected func"
+                f" to be one of _calculateFeesOutGivenSharesIn, _calculateFeesInGivenBondsOut,"
+                f"or _calculateFeesOutGivenBondsIn, not {func}!"
+            )
+        gov_curve_fee = curve_fee * governance_fee_percent
+        return curve_fee, gov_curve_fee
 
     def calc_bonds_in_given_shares_out(
         self,

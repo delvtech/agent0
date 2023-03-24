@@ -33,7 +33,20 @@ class TradeBreakdown:
     without_fee_or_slippage: float
     with_fee: float
     without_fee: float
-    fee: float
+    curve_fee: float
+    gov_curve_fee: float
+    redemption_fee: float = 0.0
+    gov_redemption_fee: float = 0.0
+
+    @property
+    def fee(self) -> float:
+        """Return the total fee, sum of all four fees."""
+        return self.redemption_fee + self.gov_redemption_fee + self.curve_fee + self.gov_curve_fee
+
+    @property
+    def gov_fee(self) -> float:
+        """Return the total governance fee, sum of flat and curve portions."""
+        return self.gov_redemption_fee + self.gov_curve_fee
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

@@ -121,10 +121,12 @@ class Config:
     # AMM
     # Must be "Hyperdrive", or "YieldSpace"
     pricing_model_name: str = field(default="Hyperdrive")
-    # LP fee factor (decimal) to charge for trades
+    # LP fee factor (float) to charge for trades
     trade_fee_percent: float = field(default=0.05)
-    # LP fee factor (decimal) to charge for redemption
+    # LP fee factor (float) to charge for redemption
     redemption_fee_percent: float = field(default=0.05)
+    # minimum fee for governance
+    governance_fee_percent: float = field(default=0)
     # desired fixed apr for as a decimal
     target_fixed_apr: float = field(default=0.1)
     # minimum fee percentage (bps)
