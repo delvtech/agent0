@@ -13,7 +13,6 @@ import elfpy.types as types
 
 # pylint: disable=duplicate-code
 
-ONEEMINUS18 = Decimal(10) ** -18
 AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 
 
