@@ -7,7 +7,6 @@ from enum import IntEnum
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Union
-from decimal import Decimal
 
 import numpy as np
 

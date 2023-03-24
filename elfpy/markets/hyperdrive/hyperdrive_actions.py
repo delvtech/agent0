@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, Optional, Literal
-from decimal import Decimal
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
