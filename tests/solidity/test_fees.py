@@ -16,12 +16,6 @@ import elfpy.types as types
 AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 
 
-@pytest.fixture(scope="class")
-def test_fees(*args, **kwargs):
-    """Test object"""
-    return TestFees(*args, **kwargs)
-
-
 class TestFees(unittest.TestCase):
     """Test case for fees applied to trades"""
 
@@ -112,7 +106,7 @@ def warp(test, time_delta):
 
 def test_did_we_get_fees():
     """Collect fees and test that the fees received in the governance address have earned interest."""
-    test = test_fees()  # set up test object
+    test = TestFees()  # set up test object
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
@@ -125,7 +119,7 @@ def test_did_we_get_fees():
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_gov_fee_accrual(amount):
     """Collect fees and test that the fees received in the governance address have earned interest."""
-    test = test_fees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=amount)  # set up test object
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
@@ -145,7 +139,7 @@ def test_gov_fee_accrual(amount):
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_collect_fees_long(amount):
     """Open a long and then close close to maturity; verify that gov fees are correct"""
-    test = test_fees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a long
     gov_fees_before_open_long = get_gov_fees_accrued(test)
@@ -186,7 +180,7 @@ def test_collect_fees_long(amount):
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_collect_fees_short(amount):
     """Open a short and then close close to maturity; verify that gov fees are correct"""
-    test = test_fees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a short
     gov_fees_before_open_short = get_gov_fees_accrued(test)
@@ -265,7 +259,7 @@ def get_all_the_fees(test: TestFees, func: str) -> Tuple[Decimal, Decimal, Decim
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
     """Test that the fees are calculated correctly at initiation"""
     # set up test object
-    test = test_fees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
 
@@ -279,7 +273,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
     """Test that the fees are calculated correctly at maturity"""
     # set up test object
-    test = test_fees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     warp(test, time_delta=1)  # hyperdrive into the future to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
@@ -294,7 +288,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
     """Test that the fees are calculated correctly at initiation"""
     # set up test object
-    test = test_fees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
 
@@ -308,7 +302,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
     """Test that the fees are calculated correctly at maturity"""
     # set up test object
-    test = test_fees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     warp(test, time_delta=1)  # hyperdrive into the future to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
@@ -323,7 +317,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
 def test_calc_fees_out_given_bonds_in_at_initiation(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = test_fees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenBondsIn")
 
@@ -335,7 +329,7 @@ def test_calc_fees_out_given_bonds_in_at_initiation(amount):
 def test_calc_fees_out_given_bonds_in_at_maturity(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = test_fees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     warp(test, time_delta=1)  # hyperdrive into the future to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenBondsIn")
@@ -348,7 +342,7 @@ def test_calc_fees_out_given_bonds_in_at_maturity(amount):
 def test_calc_fees_out_given_bonds_out_at_initiation(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = test_fees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesInGivenBondsOut")
 
@@ -362,7 +356,7 @@ def test_calc_fees_out_given_bonds_out_at_initiation(amount):
 def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = test_fees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     warp(test, time_delta=1)  # hyperdrive into the future to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesInGivenBondsOut")
