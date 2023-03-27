@@ -10,7 +10,6 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.pricing_models.trades as trades
 
 # pylint: disable=duplicate-code
 
