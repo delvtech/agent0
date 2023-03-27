@@ -301,6 +301,8 @@ class YieldspacePricingModel(PricingModel):
             market_state,
             time_remaining,
         )
+        trade_fee_percent = Decimal(market_state.trade_fee_percent)
+        governance_fee_percent = Decimal(market_state.governance_fee_percent)
         out_amount = Decimal(out.amount)
         if out.unit == types.TokenType.BASE:
             d_shares = out_amount / share_price
@@ -332,12 +334,8 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
-                amount=d_shares * share_price,  # taking a cut of base
-                spot_price=1 / spot_price,  # when given shares, invert price
-                market_state=market_state,
-                func="_calculateFeesOutGivenSharesIn",
-            )
+            curve_fee = abs(1 - (1 / spot_price)) * trade_fee_percent * d_shares
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
@@ -385,12 +383,8 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert to base
             )
-            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
-                amount=d_bonds,
-                spot_price=spot_price,
-                market_state=market_state,
-                func="_calculateFeesOutGivenSharesIn",
-            )
+            curve_fee = abs(1 - spot_price) * trade_fee_percent * d_bonds
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
@@ -519,6 +513,8 @@ class YieldspacePricingModel(PricingModel):
             market_state,
             time_remaining,
         )
+        trade_fee_percent = Decimal(market_state.trade_fee_percent)
+        governance_fee_percent = Decimal(market_state.governance_fee_percent)
         in_amount = Decimal(in_.amount)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
@@ -548,12 +544,9 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
-                amount=d_shares * share_price,
-                spot_price=1 / spot_price,  # when given shares, invert price
-                market_state=market_state,
-                func="_calculateFeesOutGivenSharesIn",
-            )
+            curve_fee = abs(1 - (1 / spot_price)) * trade_fee_percent * d_shares
+            gov_curve_fee = curve_fee * governance_fee_percent
+
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
@@ -601,12 +594,8 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            curve_fee, gov_curve_fee = self.calc_curve_fee_split(
-                amount=d_bonds,
-                spot_price=spot_price,
-                market_state=market_state,
-                func="_calculateFeesOutGivenSharesIn",
-            )
+            curve_fee = abs(1 - spot_price) * trade_fee_percent * d_bonds
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
