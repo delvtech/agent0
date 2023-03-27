@@ -128,7 +128,11 @@ def test_gov_fee_accrual(amount):
     gov_fees_after_open_long = get_gov_fees_accrued(test)
 
     # hyperdrive into the future
-    warp(test, time_delta=0.5)
+    time_delta = 0.5
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
 
     # collect fees to Governance Gary
     test.hyperdrive.collect_gov_fee(test.gary.wallet)
@@ -153,7 +157,11 @@ def test_collect_fees_long(amount):
     test.assertGreater(gov_fees_after_open_long, gov_fees_before_open_long)
 
     # hyperdrive into the future
-    warp(test, time_delta=0.5)
+    time_delta = 0.5
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
 
     # close long
     test.hyperdrive.close_long(
@@ -194,7 +202,11 @@ def test_collect_fees_short(amount):
     test.assertGreater(gov_fees_after_open_short, gov_fees_before_open_short)
 
     # hyperdrive into the future
-    warp(test, time_delta=0.5)
+    time_delta = 0.5
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
 
     # close short
     test.hyperdrive.close_short(
@@ -275,7 +287,11 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
     # set up test object
     test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
-    warp(test, time_delta=1)  # hyperdrive into the future to maturity
+    time_delta = 1  # hyperdrive into the future to maturity
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
 
     test.assertEqual(curve_fee, 0)
@@ -304,7 +320,11 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
     # set up test object
     test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
-    warp(test, time_delta=1)  # hyperdrive into the future to maturity
+    time_delta = 1  # hyperdrive into the future to maturity
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
 
     test.assertEqual(curve_fee, 0)
@@ -331,7 +351,11 @@ def test_calc_fees_out_given_bonds_in_at_maturity(amount):
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
-    warp(test, time_delta=1)  # hyperdrive into the future to maturity
+    time_delta = 1  # hyperdrive into the future to maturity
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenBondsIn")
 
     test.assertAlmostEqual(curve_fee + flat_fee, 0.1 * test.trade_amount, delta=1e-17 * test.trade_amount)
@@ -358,7 +382,11 @@ def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
-    warp(test, time_delta=1)  # hyperdrive into the future to maturity
+    time_delta = 1  # hyperdrive into the future to maturity
+    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
+        1 + test.target_apr * time_delta
+    )
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesInGivenBondsOut")
 
     test.assertAlmostEqual(curve_fee, 0, delta=1e-17)
