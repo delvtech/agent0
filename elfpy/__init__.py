@@ -152,6 +152,7 @@ rc_params = {
     "ytick.minor.size": TICKLEN * TICKLENRATIO,
     "ytick.minor.width": LINEWIDTH * TICKWIDTHRATIO,
     "ytick.minor.visible": TICKMINOR,
+    "lines.solid_capstyle": "round",
 }
 
 # Dark mode
@@ -162,14 +163,11 @@ rc_params.update({"axes.edgecolor": c_lightgrey})
 rc_params.update({"axes.facecolor": c_grey})
 rc_params.update({"axes.labelcolor": WHITE})
 rc_params.update({"figure.facecolor": c_grey})
-rc_params.update({"lines.solid_capstyle": "round"})
 rc_params.update({"patch.edgecolor": c_grey})
 rc_params.update({"patch.force_edgecolor": True})
 rc_params.update({"text.color": WHITE})
 rc_params.update({"xtick.color": c_lightgrey})
-rc_params.update({"xtick.direction": "out"})
 rc_params.update({"ytick.color": c_lightgrey})
-rc_params.update({"ytick.direction": "out"})
 rc_params.update({"savefig.facecolor": c_grey})
 rc_params.update({"savefig.edgecolor": c_grey})
 
