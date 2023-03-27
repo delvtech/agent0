@@ -94,7 +94,7 @@ def get_gov_fees_accrued(test, market_state=None) -> float:
     """Get the amount of gov fees that have accrued in the market state"""
     if market_state:
         return market_state.gov_fees_accrued * market_state.share_price
-    return test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    return
 
 
 def advance_time(test, time_delta):
@@ -103,6 +103,58 @@ def advance_time(test, time_delta):
     test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
         1 + test.target_apr * time_delta
     )
+
+
+def get_all_the_fees(
+    test: TestFees, in_unit: Optional[types.TokenType] = None, out_unit: Optional[types.TokenType] = None
+) -> Tuple[float, float, float, float]:
+    """Get all the fees from the market state"""
+    # calculate time remaining
+    years_remaining = time.get_years_remaining(
+        market_time=test.hyperdrive.block_time.time,
+        mint_time=0,
+        position_duration_years=test.hyperdrive.position_duration.days / 365,
+    )  # all args in units of years
+    time_remaining = time.StretchedTime(
+        days=years_remaining * 365,  # converting years to days
+        time_stretch=test.hyperdrive.position_duration.time_stretch,
+        normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
+    ).normalized_time
+
+    if in_unit is not None:
+        breakdown = test.hyperdrive.pricing_model.calc_out_given_in(
+            in_=types.Quantity(amount=test.trade_amount * time_remaining, unit=in_unit),  # scaled down unmatured amount
+            market_state=test.hyperdrive.market_state,
+            time_remaining=time.StretchedTime(
+                days=test.hyperdrive.position_duration.days,
+                time_stretch=test.hyperdrive.position_duration.time_stretch,
+                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
+            ),
+        ).breakdown
+    elif out_unit is not None:
+        breakdown = test.hyperdrive.pricing_model.calc_in_given_out(
+            out=types.Quantity(
+                amount=test.trade_amount * time_remaining, unit=out_unit
+            ),  # scaled down unmatured amount
+            market_state=test.hyperdrive.market_state,
+            time_remaining=time.StretchedTime(
+                days=test.hyperdrive.position_duration.days,
+                time_stretch=test.hyperdrive.position_duration.time_stretch,
+                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
+            ),
+        ).breakdown
+    else:
+        raise ValueError("Must specify either in_unit or out_unit")
+    curve_fee = breakdown.curve_fee
+    gov_curve_fee = breakdown.gov_curve_fee
+    test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
+    gov_curve_fee = abs(get_gov_fees_accrued(test))
+
+    # calculate redemption fee
+    flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
+    redemption_fee = flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent
+    gov_redemption_fee = redemption_fee * test.hyperdrive.market_state.governance_fee_percent
+    return float(curve_fee), redemption_fee, gov_curve_fee, gov_redemption_fee
 
 
 def test_did_we_get_fees():
@@ -219,58 +271,6 @@ def test_collect_fees_short(amount):
     test.assertGreater(gov_balance_after, gov_balance_before_open_short)
     # ensure that Governance Gary got the exaxt fees expected
     test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=1e-16 * test.trade_amount)
-
-
-def get_all_the_fees(
-    test: TestFees, in_unit: Optional[types.TokenType] = None, out_unit: Optional[types.TokenType] = None
-) -> Tuple[float, float, float, float]:
-    """Get all the fees from the market state"""
-    # calculate time remaining
-    years_remaining = time.get_years_remaining(
-        market_time=test.hyperdrive.block_time.time,
-        mint_time=0,
-        position_duration_years=test.hyperdrive.position_duration.days / 365,
-    )  # all args in units of years
-    time_remaining = time.StretchedTime(
-        days=years_remaining * 365,  # converting years to days
-        time_stretch=test.hyperdrive.position_duration.time_stretch,
-        normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
-    ).normalized_time
-
-    if in_unit is not None:
-        breakdown = test.hyperdrive.pricing_model.calc_out_given_in(
-            in_=types.Quantity(amount=test.trade_amount * time_remaining, unit=in_unit),  # scaled down unmatured amount
-            market_state=test.hyperdrive.market_state,
-            time_remaining=time.StretchedTime(
-                days=test.hyperdrive.position_duration.days,
-                time_stretch=test.hyperdrive.position_duration.time_stretch,
-                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
-            ),
-        ).breakdown
-    elif out_unit is not None:
-        breakdown = test.hyperdrive.pricing_model.calc_in_given_out(
-            out=types.Quantity(
-                amount=test.trade_amount * time_remaining, unit=out_unit
-            ),  # scaled down unmatured amount
-            market_state=test.hyperdrive.market_state,
-            time_remaining=time.StretchedTime(
-                days=test.hyperdrive.position_duration.days,
-                time_stretch=test.hyperdrive.position_duration.time_stretch,
-                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
-            ),
-        ).breakdown
-    else:
-        raise ValueError("Must specify either in_unit or out_unit")
-    curve_fee = breakdown.curve_fee
-    gov_curve_fee = breakdown.gov_curve_fee
-    test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
-    gov_curve_fee = abs(get_gov_fees_accrued(test))
-
-    # calculate redemption fee
-    flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
-    redemption_fee = flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent
-    gov_redemption_fee = redemption_fee * test.hyperdrive.market_state.governance_fee_percent
-    return float(curve_fee), redemption_fee, gov_curve_fee, gov_redemption_fee
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
