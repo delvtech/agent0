@@ -90,13 +90,6 @@ def idfn(val):
     return f"amount={val:.0f}"
 
 
-def get_gov_fees_accrued(test, market_state=None) -> float:
-    """Get the amount of gov fees that have accrued in the market state"""
-    if market_state:
-        return market_state.gov_fees_accrued * market_state.share_price
-    return
-
-
 def advance_time(test, time_delta):
     """Move time forward by time_delta and update the share price to simulate interest"""
     test.block_time.tick(delta_years=time_delta)
@@ -148,7 +141,7 @@ def get_all_the_fees(
     curve_fee = breakdown.curve_fee
     gov_curve_fee = breakdown.gov_curve_fee
     test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
-    gov_curve_fee = abs(get_gov_fees_accrued(test))
+    gov_curve_fee = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
 
     # calculate redemption fee
     flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
@@ -165,7 +158,7 @@ def test_did_we_get_fees():
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
 
     # capture fees right after the open long trade
-    gov_fees_after_open_long = get_gov_fees_accrued(test)
+    gov_fees_after_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertGreater(gov_fees_after_open_long, 0)
 
 
@@ -178,7 +171,7 @@ def test_gov_fee_accrual(amount):
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
 
     # capture fees right after the open long trade
-    gov_fees_after_open_long = get_gov_fees_accrued(test)
+    gov_fees_after_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
 
     # hyperdrive into the future
     advance_time(test, 0.5)
@@ -195,14 +188,14 @@ def test_collect_fees_long(amount):
     test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a long
-    gov_fees_before_open_long = get_gov_fees_accrued(test)
+    gov_fees_before_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertEqual(gov_fees_before_open_long, 0)
     gov_balance_before_open_long = test.gary.wallet.balance.amount
     test.assertEqual(gov_balance_before_open_long, 0)
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
-    gov_fees_after_open_long = get_gov_fees_accrued(test)
+    gov_fees_after_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertGreater(gov_fees_after_open_long, gov_fees_before_open_long)
 
     # hyperdrive into the future
@@ -216,12 +209,12 @@ def test_collect_fees_long(amount):
     )
 
     # ensure that gov fees have increased
-    gov_fees_after_close_long = get_gov_fees_accrued(test)
+    gov_fees_after_close_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertGreater(gov_fees_after_close_long, gov_fees_after_open_long)
 
     # collect fees to Governance Gary
     test.hyperdrive.collect_gov_fee(test.gary.wallet)
-    test.assertEqual(get_gov_fees_accrued(test), 0)
+    test.assertEqual(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, 0)
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
@@ -236,14 +229,16 @@ def test_collect_fees_short(amount):
     test = TestFees(trade_amount=amount)  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a short
-    gov_fees_before_open_short = get_gov_fees_accrued(test)
+    gov_fees_before_open_short = (
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    )
     test.assertEqual(gov_fees_before_open_short, 0)
     gov_balance_before_open_short = test.gary.wallet.balance.amount
     test.assertEqual(gov_balance_before_open_short, 0)
 
     # open short
     test.hyperdrive.open_short(test.bob.wallet, test.trade_amount)
-    gov_fees_after_open_short = get_gov_fees_accrued(test)
+    gov_fees_after_open_short = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertGreater(gov_fees_after_open_short, gov_fees_before_open_short)
 
     # hyperdrive into the future
@@ -258,12 +253,14 @@ def test_collect_fees_short(amount):
     )
 
     # ensure that gov fees have increased
-    gov_fees_after_close_short = get_gov_fees_accrued(test)
+    gov_fees_after_close_short = (
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    )
     test.assertGreater(gov_fees_after_close_short, gov_fees_after_open_short)
 
     # collect fees to Governance Gary
     test.hyperdrive.collect_gov_fee(test.gary.wallet)
-    gov_fees_after_collection = get_gov_fees_accrued(test)
+    gov_fees_after_collection = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertEqual(gov_fees_after_collection, 0)
 
     gov_balance_after = test.gary.wallet.balance.amount
