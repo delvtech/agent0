@@ -98,7 +98,7 @@ def get_gov_fees_accrued(test, market_state=None) -> float:
 
 def warp(test, time_delta):
     """Move time forward by time_delta and update the share price to simulate interest"""
-    test.hyperdrive.block_time.set_time(test.hyperdrive.block_time.time + time_delta)
+    test.block_time.tick(delta_years=time_delta)
     test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
         1 + test.target_apr * time_delta
     )
