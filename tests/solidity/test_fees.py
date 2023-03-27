@@ -10,6 +10,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+import elfpy.pricing_models.trades as trades
 
 # pylint: disable=duplicate-code
 
@@ -220,7 +221,9 @@ def test_collect_fees_short(amount):
     test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=1e-16 * test.trade_amount)
 
 
-def get_all_the_fees(test: TestFees, func: str) -> Tuple[float, float, float, float]:
+def get_all_the_fees(
+    test: TestFees, in_unit: Optional[types.TokenType] = None, out_unit: Optional[types.TokenType] = None
+) -> Tuple[float, float, float, float]:
     """Get all the fees from the market state"""
     # calculate time remaining
     years_remaining = time.get_years_remaining(
@@ -234,21 +237,36 @@ def get_all_the_fees(test: TestFees, func: str) -> Tuple[float, float, float, fl
         normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
     ).normalized_time
 
-    # calculate curve fee
-    spot_price_adjusted = test.hyperdrive.spot_price
-    if func == "_calculateFeesOutGivenSharesIn":  # input is in shares
-        spot_price_adjusted = 1 / test.hyperdrive.spot_price  # when given shares, invert price
-
-    curve_fee, gov_curve_fee = test.hyperdrive.pricing_model.calc_curve_fee_split(
-        amount=Decimal(test.trade_amount * time_remaining),  # sent only unmatured amount to curve trade
-        spot_price=Decimal(spot_price_adjusted),
-        market_state=test.hyperdrive.market_state,
-        func=func,
-    )
+    if in_unit is not None:
+        breakdown = test.hyperdrive.pricing_model.calc_out_given_in(
+            in_=types.Quantity(amount=test.trade_amount * time_remaining, unit=in_unit),  # scaled down unmatured amount
+            market_state=test.hyperdrive.market_state,
+            time_remaining=time.StretchedTime(
+                days=test.hyperdrive.position_duration.days,
+                time_stretch=test.hyperdrive.position_duration.time_stretch,
+                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
+            ),
+        ).breakdown
+    elif out_unit is not None:
+        breakdown = test.hyperdrive.pricing_model.calc_in_given_out(
+            out=types.Quantity(
+                amount=test.trade_amount * time_remaining, unit=out_unit
+            ),  # scaled down unmatured amount
+            market_state=test.hyperdrive.market_state,
+            time_remaining=time.StretchedTime(
+                days=test.hyperdrive.position_duration.days,
+                time_stretch=test.hyperdrive.position_duration.time_stretch,
+                normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
+            ),
+        ).breakdown
+    else:
+        raise ValueError("Must specify either in_unit or out_unit")
+    curve_fee = breakdown.curve_fee
+    gov_curve_fee = breakdown.gov_curve_fee
     test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
     gov_curve_fee = abs(get_gov_fees_accrued(test))
 
-    # calculate flat fee
+    # calculate redemption fee
     flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
     redemption_fee = flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent
     gov_redemption_fee = redemption_fee * test.hyperdrive.market_state.governance_fee_percent
@@ -261,7 +279,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
     # set up test object
     test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
     test.assertAlmostEqual(curve_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
     test.assertAlmostEqual(gov_curve_fee, 0.05 * test.trade_amount, delta=1e-16 * test.trade_amount)
@@ -276,7 +294,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
     test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
     test.assertEqual(curve_fee, 0)
     test.assertEqual(gov_curve_fee, 0)
@@ -290,7 +308,7 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
     # set up test object
     test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
     test.assertAlmostEqual(curve_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
     test.assertAlmostEqual(gov_curve_fee, 0.06 * test.trade_amount, delta=1e-16 * test.trade_amount)
@@ -305,7 +323,7 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
     test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
 
     advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenSharesIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
     test.assertEqual(curve_fee, 0)
     test.assertEqual(gov_curve_fee, 0)
@@ -319,7 +337,7 @@ def test_calc_fees_out_given_bonds_in_at_initiation(amount):
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenBondsIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
     test.assertAlmostEqual(curve_fee + flat_fee, 0.01 * test.trade_amount, delta=1e-17 * test.trade_amount)
     test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, 0.005 * test.trade_amount, delta=1e-17 * test.trade_amount)
@@ -332,7 +350,7 @@ def test_calc_fees_out_given_bonds_in_at_maturity(amount):
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesOutGivenBondsIn")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
     test.assertAlmostEqual(curve_fee + flat_fee, 0.1 * test.trade_amount, delta=1e-17 * test.trade_amount)
     test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, 0.05 * test.trade_amount, delta=1e-17 * test.trade_amount)
@@ -344,7 +362,7 @@ def test_calc_fees_out_given_bonds_out_at_initiation(amount):
     # set up test object
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesInGivenBondsOut")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
     test.assertAlmostEqual(curve_fee, 0.01 * test.trade_amount, delta=1e-17 * test.trade_amount)
     test.assertAlmostEqual(gov_curve_fee, 0.005 * test.trade_amount, delta=1e-17 * test.trade_amount)
@@ -359,7 +377,7 @@ def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
 
     advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
-    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, func="_calculateFeesInGivenBondsOut")
+    curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
     test.assertAlmostEqual(curve_fee, 0, delta=1e-17)
     test.assertAlmostEqual(gov_curve_fee, 0, delta=1e-17)

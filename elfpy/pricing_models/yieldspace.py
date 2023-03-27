@@ -626,46 +626,6 @@ class YieldspacePricingModel(PricingModel):
             ),
         )
 
-    def calc_curve_fee_split(
-        self,
-        amount: Decimal,
-        spot_price: Decimal,
-        market_state: hyperdrive_market.MarketState,
-        func: str,
-    ) -> tuple[Decimal, Decimal]:
-        """
-        Calculate the "curve" portion of the fee (non-redemption)
-        Total fees are a portion (trade_fee_percent) of the price discount from par (1-p)
-        Governance fee is in shares, so it's calculated on the input or output amount, depending on the trade type
-        """
-        phi_curve = Decimal(market_state.trade_fee_percent)
-        governance_fee_percent = Decimal(market_state.governance_fee_percent)
-        share_price = Decimal(market_state.share_price)
-        curve_fee = Decimal(np.nan)
-
-        # multiplying by time remaining is not required below, since the amount
-        # passed into this function is already scaled down to the unmatured portion
-        if func == "_calculateFeesOutGivenSharesIn":
-            d_shares = amount
-            # curve fee = ((1 / p) - 1) * d_z * c * t * phi_curve
-            curve_fee = abs(1 - spot_price) * phi_curve * d_shares
-        elif func == "_calculateFeesInGivenBondsOut":
-            d_bonds = amount
-            # curve fee = ((1 - p) * d_y * t * phi_curve) / c
-            curve_fee = ((1 - spot_price) * d_bonds * phi_curve) / share_price
-        elif func == "_calculateFeesOutGivenBondsIn":
-            d_bonds = amount
-            # curve fee = ((1 - p) * d_y * t * phi_curve) / c
-            curve_fee = ((1 - spot_price) * d_bonds * phi_curve) / share_price
-        else:
-            raise AssertionError(
-                f"pricing_models.calc_curve_fee_split: ERROR: expected func"
-                f" to be one of _calculateFeesOutGivenSharesIn, _calculateFeesInGivenBondsOut,"
-                f"or _calculateFeesOutGivenBondsIn, not {func}!"
-            )
-        gov_curve_fee = curve_fee * governance_fee_percent
-        return curve_fee, gov_curve_fee
-
     def calc_bonds_in_given_shares_out(
         self,
         share_reserves: Decimal,
