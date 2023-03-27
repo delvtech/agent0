@@ -110,10 +110,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
 
         # Calculate some common values up front
         out_amount = Decimal(out.amount)
-        curve_portion = Decimal(time_remaining.normalized_time)
-        flat_portion = 1 - curve_portion
+        time_remaining_ = Decimal(time_remaining.normalized_time)
         share_price = Decimal(market_state.share_price)
-        d_bonds = out_amount * flat_portion  # whether out_.unit is base or pt, at maturity d_bonds = d_base
+        d_bonds = out_amount * (1 - time_remaining_)  # whether out_.unit is base or pt, at maturity d_bonds = d_base
         d_shares = d_bonds / share_price
 
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
@@ -131,7 +130,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
-            out=types.Quantity(amount=float(out_amount * curve_portion), unit=out.unit),
+            out=types.Quantity(amount=float(out_amount * time_remaining_), unit=out.unit),
             market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -141,7 +140,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         )
 
         # Compute flat part with fee
-        flat_without_fee = out_amount * flat_portion
+        flat_without_fee = out_amount * (1 - time_remaining_)
         redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         gov_redemption_fee = redemption_fee * Decimal(market_state.governance_fee_percent)
         total_redemption_fee = redemption_fee + gov_redemption_fee
@@ -267,10 +266,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
 
         # Calculate some common values up front
         in_amount = Decimal(in_.amount)
-        curve_portion = Decimal(time_remaining.normalized_time)
-        flat_portion = 1 - curve_portion
+        time_remaining_ = Decimal(time_remaining.normalized_time)
         share_price = Decimal(market_state.share_price)
-        d_bonds = in_amount * flat_portion  # whether in_.unit is base or pt, at maturity d_bonds = d_base
+        d_bonds = in_amount * (1 - time_remaining_)  # whether in_.unit is base or pt, at maturity d_bonds = d_base
         d_shares = d_bonds / share_price
         # Redeem the matured bonds 1:1 and simulate these updates hitting the reserves.
         market_state = market_state.copy()  # don't want to modify the actual market state
@@ -288,7 +286,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
 
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
-            in_=types.Quantity(amount=float(in_amount * curve_portion), unit=in_.unit),
+            in_=types.Quantity(amount=float(in_amount * time_remaining_), unit=in_.unit),
             market_state=market_state,
             time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for the curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
@@ -298,7 +296,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         )
 
         # Compute flat part with fee
-        flat_without_fee = in_amount * flat_portion
+        flat_without_fee = in_amount * (1 - time_remaining_)
         redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
         gov_redemption_fee = redemption_fee * Decimal(market_state.governance_fee_percent)
         total_redemption_fee = redemption_fee + gov_redemption_fee
