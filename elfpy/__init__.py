@@ -34,6 +34,8 @@ DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 # Plotting defaults
 BLACK = "black"
 WHITE = "white"
+GREY = "#303030"
+LIGHTGREY = "#737373"
 CYCLE = "colorblind"
 CMAPCYC = "twilight"
 CMAPDIV = "BuRd"
@@ -123,7 +125,6 @@ rc_params = {
     "mathtext.sf": "regular",
     "mathtext.tt": "monospace",
     "patch.linewidth": LINEWIDTH,
-    "savefig.bbox": None,  # do not use 'tight'
     "savefig.directory": "",  # use the working directory
     "savefig.dpi": 1000,  # use academic journal recommendation
     "savefig.facecolor": WHITE,  # use white instead of 'auto'
@@ -156,19 +157,15 @@ rc_params = {
 }
 
 # Dark mode
-c_grey = "#303030"
-c_lightgrey = "#737373"
-
-rc_params.update({"axes.edgecolor": c_lightgrey})
-rc_params.update({"axes.facecolor": c_grey})
+rc_params.update({"axes.edgecolor": LIGHTGREY})
+rc_params.update({"axes.facecolor": GREY})
 rc_params.update({"axes.labelcolor": WHITE})
-rc_params.update({"figure.facecolor": c_grey})
-rc_params.update({"patch.edgecolor": c_grey})
+rc_params.update({"figure.facecolor": GREY})
+rc_params.update({"patch.edgecolor": GREY})
 rc_params.update({"patch.force_edgecolor": True})
 rc_params.update({"text.color": WHITE})
-rc_params.update({"xtick.color": c_lightgrey})
-rc_params.update({"ytick.color": c_lightgrey})
-rc_params.update({"savefig.facecolor": c_grey})
-rc_params.update({"savefig.edgecolor": c_grey})
+rc_params.update({"xtick.color": LIGHTGREY})
+rc_params.update({"ytick.color": LIGHTGREY})
+rc_params.update({"savefig.facecolor": GREY})
 
 mpl.rcParams.update(rc_params)
