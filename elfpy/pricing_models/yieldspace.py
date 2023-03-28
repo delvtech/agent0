@@ -543,7 +543,7 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            curve_fee = abs(in_amount - without_fee_or_slippage) * trade_fee_percent
+            curve_fee = (without_fee_or_slippage - in_amount) * trade_fee_percent
             gov_curve_fee = curve_fee * governance_fee_percent
 
             # To get the amount paid with fees, subtract the fee from the
