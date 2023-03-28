@@ -35,11 +35,14 @@ class Policy(agent.Agent):
         all_available_actions = [
             hyperdrive_actions.MarketActionType.OPEN_LONG,
             hyperdrive_actions.MarketActionType.OPEN_SHORT,
+            hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
         ]
         if self.wallet.longs:  # if the agent has open longs
             all_available_actions.append(hyperdrive_actions.MarketActionType.CLOSE_LONG)
         if self.wallet.shorts:  # if the agent has open shorts
             all_available_actions.append(hyperdrive_actions.MarketActionType.CLOSE_SHORT)
+        if self.wallet.lp_tokens:
+            all_available_actions.append(hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY)
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
@@ -79,6 +82,42 @@ class Policy(agent.Agent):
                 market=types.MarketType.HYPERDRIVE,
                 trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                ),
+            )
+        ]
+
+    def add_liquidity_with_random_amount(self, market) -> list[types.Trade]:
+        """Add liquidity with a random allowable amount"""
+        # take a guess at the trade amount, which should be about 10% of the agent’s budget
+        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        # WEI <= trade_amount <= max_short
+        trade_amount = np.maximum(elfpy.WEI, initial_trade_amount)
+        # return a trade using a specification that is parsable by the rest of the sim framework
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
+                    trade_amount=trade_amount,
+                    wallet=self.wallet,
+                ),
+            )
+        ]
+
+    def remove_liquidity_with_random_amount(self, market) -> list[types.Trade]:
+        """Remove liquidity with a random allowable amount"""
+        # take a guess at the trade amount, which should be about 10% of the agent’s budget
+        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        # WEI <= trade_amount <= lp_tokens
+        trade_amount = np.maximum(elfpy.WEI, np.minimum(self.wallet.lp_tokens, initial_trade_amount))
+        # return a trade using a specification that is parsable by the rest of the sim framework
+        return [
+            types.Trade(
+                market=types.MarketType.HYPERDRIVE,
+                trade=hyperdrive_actions.MarketAction(
+                    action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
                 ),
