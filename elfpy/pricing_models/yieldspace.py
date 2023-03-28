@@ -333,11 +333,8 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            print(f"{without_fee_or_slippage=}")
             curve_fee = abs(out_amount - without_fee_or_slippage) * trade_fee_percent
-            print(f"{curve_fee=}")
             gov_curve_fee = curve_fee * governance_fee_percent
-            print(f"{gov_curve_fee=}")
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
