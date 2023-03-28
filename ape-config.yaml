@@ -1,4 +1,6 @@
 contracts_folder: hyperdrive_solidity/contracts
+contracts_folder: hyperdrive_solidity/lib/aave-v3-core/contracts
+contracts_folder: hyperdrive_solidity/lib/forge-std/contracts
 
 plugins:
   - name: notebook
