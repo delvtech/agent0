@@ -292,25 +292,6 @@ class Market(
             time_remaining=self.position_duration,
         )
 
-    def collect_gov_fee(self, governance_wallet: wallet.Wallet):
-        r"""This function collects the governance fees accrued by the pool.
-
-        Parameters
-        ----------
-        governance_wallet: Wallet
-            Wallet that will receive the governance fees.
-
-        Returns
-        -------
-        proceeds_in_base: float
-            The amount of base collected in the governance fee.
-        """
-        # governance fees are stored as shares, so we need to convert them to base
-        proceeds_in_base = self.market_state.gov_fees_accrued * self.market_state.share_price
-        governance_wallet.balance.amount += float(proceeds_in_base)
-        self.market_state.gov_fees_accrued = 0
-        return proceeds_in_base
-
     def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 

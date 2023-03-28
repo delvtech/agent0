@@ -176,7 +176,10 @@ def test_gov_fee_accrual(amount):
     advance_time(test, 0.5)
 
     # collect fees to Governance Gary
-    test.hyperdrive.collect_gov_fee(test.gary.wallet)
+    test.gary.wallet.balance.amount += float(
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    )
+    test.hyperdrive.market_state.gov_fees_accrued = 0
     gov_balance_after = test.gary.wallet.balance.amount
     test.assertGreater(gov_balance_after, gov_fees_after_open_long)
 
@@ -212,7 +215,10 @@ def test_collect_fees_long(amount):
     test.assertGreater(gov_fees_after_close_long, gov_fees_after_open_long)
 
     # collect fees to Governance Gary
-    test.hyperdrive.collect_gov_fee(test.gary.wallet)
+    test.gary.wallet.balance.amount += float(
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    )
+    test.hyperdrive.market_state.gov_fees_accrued = 0
     test.assertEqual(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, 0)
 
     gov_balance_after = test.gary.wallet.balance.amount
@@ -258,7 +264,10 @@ def test_collect_fees_short(amount):
     test.assertGreater(gov_fees_after_close_short, gov_fees_after_open_short)
 
     # collect fees to Governance Gary
-    test.hyperdrive.collect_gov_fee(test.gary.wallet)
+    test.gary.wallet.balance.amount += float(
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
+    )
+    test.hyperdrive.market_state.gov_fees_accrued = 0
     gov_fees_after_collection = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     test.assertEqual(gov_fees_after_collection, 0)
 
