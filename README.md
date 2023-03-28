@@ -148,6 +148,7 @@ ln -s ../hyperdrive hyperdrive_solidity
 then run:
 
 ```bash
+pip install eth-ape
 ape plugins install .
 ape compile
 ```
