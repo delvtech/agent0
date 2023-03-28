@@ -75,11 +75,11 @@ class MarketState(base_market.BaseMarketState):
     init_share_price: float
         share price at pool initialization
     trade_fee_percent : float
-        The percentage of the difference between the amount paid without
-        slippage and the amount received that will be added to the input
-        as a fee.
+        The multiple applied to the price discount (1-p) to calculate the trade fee.
     redemption_fee_percent : float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    governance_fee_percent : float
+        The multiple applied to the trade and redemption fee to calculate the share paid to governance.
     """
 
     def __getitem__(self, key):
@@ -107,8 +107,11 @@ class MarketState(base_market.BaseMarketState):
     # fee percents
     trade_fee_percent: float = field(default=0.0)
     redemption_fee_percent: float = field(default=0.0)
+    governance_fee_percent: float = field(default=0.0)
 
-    # The amount of longs that are still open.
+    # governance fees that haven't been collected yet denominated in shares
+    gov_fees_accrued: float = field(default=0.0)
+    # the amount of longs that are still open.
     longs_outstanding: float = field(default=0.0)
     # the amount of shorts that are still open.
     shorts_outstanding: float = field(default=0.0)

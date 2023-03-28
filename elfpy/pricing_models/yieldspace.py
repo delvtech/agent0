@@ -302,6 +302,7 @@ class YieldspacePricingModel(PricingModel):
         )
         out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
+        governance_fee_percent = Decimal(market_state.governance_fee_percent)
         if out.unit == types.TokenType.BASE:
             d_shares = out_amount / share_price
             # The amount the agent pays without fees or slippage is simply the
@@ -332,27 +333,12 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            # The fees are calculated as the difference between the bonds paid
-            # without slippage and the base received times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = ((1 / p) - 1) * phi * c * d_z
-            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
-            logging.debug(
-                (
-                    "fee = ((1 / spot_price) - 1) * _fee_percent * share_price * d_shares = "
-                    "((1 / %g) - 1) * %g * %g * %g = %g"
-                ),
-                spot_price,
-                trade_fee_percent,
-                share_price,
-                d_shares,
-                fee,
-            )
+            curve_fee = abs(out_amount - without_fee_or_slippage) * trade_fee_percent
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
-            with_fee = without_fee + fee
+            with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=out.amount,
@@ -396,23 +382,12 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert to base
             )
-            # The fees are calculated as the difference between the bonds
-            # received and the base paid without slippage times the fee
-            # percentage. This can also be expressed as:
-            #
-            # fee = (1 - p) * phi * d_y
-            fee = (1 - spot_price) * trade_fee_percent * d_bonds
-            logging.debug(
-                ("fee = (1 - spot_price) * _fee_percent * d_bonds = (1 - %g) * %g * %g = %g"),
-                spot_price,
-                trade_fee_percent,
-                d_bonds,
-                fee,
-            )
+            curve_fee = abs(d_bonds - without_fee_or_slippage) * trade_fee_percent
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
-            with_fee = without_fee + fee
+            with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(-with_fee),
@@ -434,7 +409,8 @@ class YieldspacePricingModel(PricingModel):
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
-                fee=float(fee),
+                curve_fee=float(curve_fee),
+                gov_curve_fee=float(gov_curve_fee),
             ),
         )
 
@@ -538,6 +514,7 @@ class YieldspacePricingModel(PricingModel):
         )
         in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
+        governance_fee_percent = Decimal(market_state.governance_fee_percent)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             # The amount the agent would receive without fees or slippage is
@@ -566,16 +543,13 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            # The fees are calculated as the difference between the bonds
-            # received without slippage and the base paid times the fee
-            # percentage. This can also be expressed as:
-            #
-            # ((1 / p) - 1) * phi * c * dz
-            fee = ((1 / spot_price) - 1) * trade_fee_percent * share_price * d_shares
+            curve_fee = (without_fee_or_slippage - in_amount) * trade_fee_percent
+            gov_curve_fee = curve_fee * governance_fee_percent
+
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
+            with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=-in_.amount,
@@ -619,16 +593,12 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            # The fees are calculated as the difference between the bonds paid
-            # and the base received without slippage times the fee percentage.
-            # This can also be expressed as:
-            #
-            # fee = (1 - p) * phi * dy
-            fee = (1 - spot_price) * trade_fee_percent * d_bonds
+            curve_fee = (d_bonds - without_fee_or_slippage) * trade_fee_percent
+            gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
-            with_fee = without_fee - fee
+            with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
             user_result = AgentTradeResult(
                 d_base=float(with_fee),
@@ -650,7 +620,8 @@ class YieldspacePricingModel(PricingModel):
                 without_fee_or_slippage=float(without_fee_or_slippage),
                 with_fee=float(with_fee),
                 without_fee=float(without_fee),
-                fee=float(fee),
+                curve_fee=float(curve_fee),
+                gov_curve_fee=float(gov_curve_fee),
             ),
         )
 
