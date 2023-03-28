@@ -593,7 +593,7 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            curve_fee = abs(d_bonds - without_fee_or_slippage) * trade_fee_percent
+            curve_fee = (d_bonds - without_fee_or_slippage) * trade_fee_percent
             gov_curve_fee = curve_fee * governance_fee_percent
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
