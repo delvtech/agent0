@@ -73,16 +73,6 @@ class TestFees(unittest.TestCase):
         self.alice.wallet.update(wallet_deltas)
         self.market_state_before_open = self.hyperdrive.market_state.copy()
 
-    def assertAlmostEqual(self, first, second, places=None, msg=None, delta=None):
-        """
-        Assert that first and second are almost equal
-        Using this function to cast to Decimal to avoid type comparison errors without tons of casting
-        """
-        # pylint: disable=too-many-arguments
-        if delta is None:
-            delta = 10**-16
-        super().assertAlmostEqual(Decimal(first), Decimal(second), places=places, msg=msg, delta=delta)
-
 
 def idfn(val):
     """Custom id function for pytest parametrize"""
