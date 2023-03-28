@@ -1,7 +1,6 @@
 """Trade fee tests that match those being executed in the solidity repo"""
 import unittest
 from typing import Optional, Tuple
-from decimal import Decimal
 
 import pytest
 
