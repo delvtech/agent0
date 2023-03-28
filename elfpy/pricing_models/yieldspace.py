@@ -300,9 +300,9 @@ class YieldspacePricingModel(PricingModel):
             market_state,
             time_remaining,
         )
+        out_amount = Decimal(out.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         governance_fee_percent = Decimal(market_state.governance_fee_percent)
-        out_amount = Decimal(out.amount)
         if out.unit == types.TokenType.BASE:
             d_shares = out_amount / share_price
             # The amount the agent pays without fees or slippage is simply the
@@ -512,9 +512,9 @@ class YieldspacePricingModel(PricingModel):
             market_state,
             time_remaining,
         )
+        in_amount = Decimal(in_.amount)
         trade_fee_percent = Decimal(market_state.trade_fee_percent)
         governance_fee_percent = Decimal(market_state.governance_fee_percent)
-        in_amount = Decimal(in_.amount)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             # The amount the agent would receive without fees or slippage is
