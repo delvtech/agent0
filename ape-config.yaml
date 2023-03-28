@@ -1,6 +1,4 @@
 contracts_folder: hyperdrive_solidity/contracts
-contracts_folder: hyperdrive_solidity/lib/aave-v3-core/contracts
-contracts_folder: hyperdrive_solidity/lib/forge-std/contracts
 
 plugins:
   - name: notebook
@@ -12,10 +10,14 @@ dependencies:
   - name: OpenZeppelin
     github: OpenZeppelin/openzeppelin-contracts
     version: 4.8.1
+  - name: Aave
+    github: aave/aave-v3-core
+    version: 1.17.2
 
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=OpenZeppelin/4.8.1"
+    - "@aave=Aave/1.17.2"
 
 ethereum:
   default_network: local
