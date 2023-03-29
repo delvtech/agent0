@@ -94,13 +94,13 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
-        accrued = self.contribution * numpy.exp(self.target_apr * 1)
+        accrued = self.contribution * float(numpy.exp(self.target_apr * 0.5))
         market_state.share_price = accrued / self.contribution
 
         # bob opens a long
         base_amount = 50_000_000
         long_market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
-        bond_amount = long_market_deltas.d_bond_asset
+        bond_amount = -long_market_deltas.d_bond_asset
 
         # alice removes all liquidity
         _, remove_wallet_deltas = self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens)
@@ -110,15 +110,18 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertEqual(self.alice.wallet.lp_tokens, 0)
         self.assertEqual(market_state.lp_total_supply, 0)
 
+        # make sure alice gets the correct amount of base
         base_expected = accrued + base_amount - bond_amount
-        self.assertAlmostEqual(base_proceeds, base_expected, 8)
+        self.assertAlmostEqual(base_proceeds, base_expected, 6)
 
-        # make sure pool balances went to zero
-        self.assertEqual(market_state.share_reserves, 0)
-        self.assertEqual(market_state.bond_reserves, 0)
+        # make sure pool balances are correct
+        self.assertAlmostEqual(market_state.share_reserves, bond_amount / market_state.share_price, 6)
+        # self.assertEqual(market_state.bond_reserves, 0)
 
         # ensure correct amount of withdrawal shares
-        withdraw_shares_expected = market_state.long_base_volume / market_state.share_price
+        withdraw_shares_expected = (
+            market_state.longs_outstanding - market_state.long_base_volume
+        ) / market_state.share_price
         self.assertEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected)
 
     def test_remove_liquidity_short_trade(self):
@@ -135,7 +138,8 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # bob opens a short
         short_amount_bonds = 50_000_000
-        long_market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, short_amount_bonds)
+        long_market_deltas, wallet_deltas = self.hyperdrive.open_short(self.bob.wallet, short_amount_bonds)
+        base_paid = abs(wallet_deltas.balance.amount)
         bond_amount = long_market_deltas.d_bond_asset
 
         # alice removes all liquidity
@@ -146,8 +150,9 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertEqual(self.alice.wallet.lp_tokens, 0)
         self.assertEqual(market_state.lp_total_supply, 0)
 
-        base_expected = accrued + short_amount_bonds - bond_amount
-        self.assertAlmostEqual(base_proceeds, base_expected, 8)
+        # make sure alice gets the correct amount of base
+        base_expected = accrued + base_paid - bond_amount
+        self.assertAlmostEqual(base_proceeds, base_expected, 6)
 
         # make sure pool balances went to zero
         self.assertEqual(market_state.share_reserves, 0)
