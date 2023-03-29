@@ -138,72 +138,6 @@ class YieldspacePricingModel(PricingModel):
         ) - market_state.bond_reserves
         return lp_in, d_base, d_bonds
 
-    def calc_tokens_out_given_lp_in(
-        self,
-        lp_in: float,
-        rate: float,
-        market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
-        """Calculate how many tokens should be returned for a given lp addition
-
-        .. todo:: add test for this function; improve function documentation w/ parameters, returns, and equations used
-        """
-        # d_z = (z - b_x / c) * (dl / l)
-        # d_x = (c * z - b_x) * (dl / l)
-        d_base = (market_state.share_price * market_state.share_reserves - market_state.base_buffer) * (
-            lp_in / market_state.lp_total_supply
-        )
-        d_shares = d_base / market_state.share_price
-        # TODO: Move this calculation to a helper function.
-        # rate is an APR, which is annual, so we normalize time by 365 to correct for units
-        annualized_time = time.norm_days(time_remaining.days, 365)
-
-        d_bonds = ((market_state.share_reserves - d_shares) / 2) * (
-            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
-            - market_state.share_price
-        ) - market_state.bond_reserves
-
-        annualized_time = time.norm_days(time_remaining.days, 365)
-        logging.debug(
-            (
-                "inputs:\n\tlp_in=%g,\n\tshare_reserves=%d, "
-                "bond_reserves=%d,\n\tbase_buffer=%g, "
-                "init_share_price=%g,\n\tshare_price=%g,\n\tlp_reserves=%g,\n\t"
-                "rate=%g,\n\ttime_remaining=%g,\n\tstretched_time_remaining=%g\n\t"
-                "\n\td_shares=%g\n\t(d_base / share_price = %g / %g)"
-                "\n\td_bonds=%g"
-                "\n\t((share_reserves - d_shares) / 2 * (init_share_price * (1 + apr * annualized_time) "
-                "** (1 / stretched_time_remaining) - share_price) - bond_reserves = "
-                "\n\t((%g - %g) / 2 * (%g * (1 + %g * %g) "
-                "** (1 / %g) - %g) - %g =\n\t%g"
-            ),
-            lp_in,
-            market_state.share_reserves,
-            market_state.bond_reserves,
-            market_state.base_buffer,
-            market_state.init_share_price,
-            market_state.share_price,
-            market_state.lp_total_supply,
-            rate,
-            time_remaining.normalized_time,
-            time_remaining.stretched_time,
-            d_shares,
-            d_base,
-            market_state.share_price,
-            d_bonds,
-            market_state.share_reserves,
-            d_shares,
-            market_state.init_share_price,
-            rate,
-            annualized_time,
-            time_remaining.stretched_time,
-            market_state.share_price,
-            market_state.bond_reserves,
-            d_bonds,
-        )
-        return lp_in, d_base, d_bonds
-
     def calc_in_given_out(
         self,
         out: types.Quantity,
@@ -842,7 +776,7 @@ class YieldspacePricingModel(PricingModel):
             bond_reserves + lp_total_supply
         ) ** time_elapsed
 
-    def calc_shares_out_given_lp_in(
+    def calc_tokens_out_given_lp_in(
         self, lp_in: float, market_state: hyperdrive_market.MarketState
     ) -> tuple[float, float]:
         """

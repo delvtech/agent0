@@ -465,7 +465,7 @@ def calc_remove_liquidity(
     )
 
     # perform the trade
-    delta_shares, delta_bonds = market.pricing_model.calc_shares_out_given_lp_in(
+    delta_shares, delta_bonds = market.pricing_model.calc_tokens_out_given_lp_in(
         lp_in=lp_shares,
         market_state=market.market_state,
     )

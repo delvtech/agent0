@@ -328,7 +328,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             ),
         )
 
-    def calc_shares_out_given_lp_in(
+    def calc_tokens_out_given_lp_in(
         self, lp_in: float, market_state: hyperdrive_market.MarketState
     ) -> tuple[float, float]:
         """
