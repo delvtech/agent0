@@ -51,6 +51,7 @@ class MarketDeltas(base_market.MarketDeltas):
     short_average_maturity_time: float = 0
     long_base_volume: float = 0
     short_base_volume: float = 0
+    total_supply_withdraw_shares: float = 0
     withdraw_shares_ready_to_withdraw: float = 0
     withdraw_capital: float = 0
     withdraw_interest: float = 0
