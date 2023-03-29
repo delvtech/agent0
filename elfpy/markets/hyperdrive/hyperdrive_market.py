@@ -231,7 +231,7 @@ class Market(
     base_market.Market[
         MarketState,
         hyperdrive_actions.MarketDeltas,
-        Union[hyperdrive_pm.HyperdrivePricingModel, yieldspace_pm.YieldspacePricingModel],
+        hyperdrive_pm.HyperdrivePricingModel,
     ]
 ):
     r"""Market state simulator
@@ -243,7 +243,7 @@ class Market(
 
     def __init__(
         self,
-        pricing_model: hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel,
+        pricing_model: hyperdrive_pm.HyperdrivePricingModel,
         market_state: MarketState,
         position_duration: time.StretchedTime,
         block_time: time.BlockTime,
