@@ -6,7 +6,6 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Union
 
 import numpy as np
 
@@ -15,7 +14,6 @@ import elfpy.errors.errors as errors
 import elfpy.markets.base as base_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
