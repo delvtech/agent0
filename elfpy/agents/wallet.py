@@ -138,7 +138,7 @@ class Wallet:
         for key, value_or_dict in wallet_deltas.copy().__dict__.items():
             if value_or_dict is None or key in ["fees_paid", "address", "frozen", "no_new_attribs"]:
                 continue
-            if key in ["lp_tokens", "fees_paid"]:
+            if key in ["lp_tokens", "fees_paid", "withdraw_shares"]:
                 logging.debug(
                     "agent #%g %s pre-trade = %.0g\npost-trade = %1g\ndelta = %1g",
                     self.address,
@@ -148,6 +148,8 @@ class Wallet:
                     value_or_dict,
                 )
                 self[key] += value_or_dict
+                if self[key] < 0:
+                    raise ValueError(f"{key} value less than zero")
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(
