@@ -5,15 +5,15 @@ import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Optional
 
-import elfpy.simulators as simulators
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.time as time
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
+import elfpy.simulators as simulators
+import elfpy.time as time
 
 if TYPE_CHECKING:
-    import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
     import elfpy.agents.wallet as wallet
+    import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
     from elfpy.agents.agent import Agent
     from elfpy.agents.policies.no_action import Policy
 
@@ -40,7 +40,9 @@ def get_simulator(
     """
     config.check_variable_apr()  # quick check to make sure the vault apr is correctly set
     # Instantiate the market.
-    pricing_model = get_pricing_model(config.pricing_model_name)
+    # pricing model is hardcoded for now.  once we have support for more markets, we can add a
+    # config option for type of market
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
@@ -101,7 +103,7 @@ def get_simulator(
 
 
 def get_initialized_hyperdrive_market(
-    pricing_model: hyperdrive_pm.HyperdrivePricingModel | yieldspace_pm.YieldspacePricingModel,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: simulators.Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:

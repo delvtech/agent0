@@ -679,7 +679,7 @@ class Market(
         self.update_market(market_deltas)
         agent_wallet.update(wallet_deltas)
 
-        return wallet_deltas.balance
+        return wallet_deltas.balance.amount
 
     def calc_redeem_withdraw_shares(
         self, shares: float, min_output: float, as_underlying: bool
@@ -729,11 +729,11 @@ class Market(
         market_deltas.withdraw_interest -= recovered_interest
 
         # Withdraw for the user
-        (base_proceeds,) = self._withdraw(recovered_margin + recovered_interest, as_underlying)
+        base_proceeds = self._withdraw(recovered_margin + recovered_interest, as_underlying)
         # TODO: figure out how to keep track of hyperdrive's base asset amount.  market_deltas has
         # a d_base_asset, but that is used to update the share_reserves :/.
         # market_deltas.d_base_asset -= base_proceeds
-        wallet_deltas.balance += base_proceeds
+        wallet_deltas.balance.amount += base_proceeds
 
         # Enforce min user outputs
         if min_output > base_proceeds:
@@ -741,7 +741,7 @@ class Market(
 
         return market_deltas, wallet_deltas
 
-    def _withdraw(self, shares: float, as_underlying: bool) -> tuple[float, float]:
+    def _withdraw(self, shares: float, as_underlying: bool) -> float:
         r"""
         Calculates the amount of base to withdraw for a given amount of shares.
 
@@ -755,7 +755,7 @@ class Market(
 
         Returns
         -------
-        tuple[float, float]
+        float
           The withdraw_value and share_price as a tuple.
         """
 
@@ -793,11 +793,11 @@ class Market(
         # If we don't have capital to free then simply return zero
         withdraw_share_supply = self.market_state.total_supply_withdraw_shares
         withdraw_shares_ready_to_withdraw = self.market_state.withdraw_shares_ready_to_withdraw
+        withdraw_pool_deltas = hyperdrive_actions.MarketDeltas()
         if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
-            return 0, 0
+            return withdraw_pool_deltas
 
         # If we have more capital freed than needed we adjust down all values
-        withdraw_pool_deltas = hyperdrive_actions.MarketDeltas()
         if max_capital + withdraw_shares_ready_to_withdraw > withdraw_share_supply:
             # in this case we want max_capital * adjustment + withdraw_shares_ready_to_withdraw = withdraw_share_supply
             # so adjustment = (withdraw_share_supply - withdraw_shares_ready_to_withdraw) / max_capital
