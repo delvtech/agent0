@@ -156,6 +156,7 @@ class MarketState(base_market.BaseMarketState):
         self.long_base_volume += delta.long_base_volume
         self.short_base_volume += delta.short_base_volume
 
+        self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
@@ -401,7 +402,7 @@ class Market(
             elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
                 market_deltas, agent_deltas = self.remove_liquidity(
                     agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,
+                    lp_shares=agent_action.trade_amount,
                 )
             else:
                 raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
@@ -436,15 +437,16 @@ class Market(
                 share_price=self.market_state.share_price,
             ),
         )
+        lp_tokens = self.market_state.share_price * share_reserves + bond_reserves
+        # TODO: add lp_tokens to bond reserves per https://github.com/element-fi/hyperdrive/pull/140
+        # bond_reserves += lp_tokens
         market_deltas = hyperdrive_actions.MarketDeltas(
-            d_base_asset=contribution,
-            d_bond_asset=bond_reserves,
-            d_lp_total_supply=self.market_state.share_price * share_reserves + bond_reserves,
+            d_base_asset=contribution, d_bond_asset=bond_reserves, d_lp_total_supply=lp_tokens
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
-            lp_tokens=self.market_state.share_price * share_reserves + bond_reserves,
+            lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)
         return market_deltas, agent_deltas
@@ -550,13 +552,13 @@ class Market(
     def remove_liquidity(
         self,
         agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        lp_shares: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=agent_wallet.address,
-            bond_amount=bond_amount,
+            lp_shares=lp_shares,
             market=self,
         )
         self.market_state.apply_delta(market_deltas)

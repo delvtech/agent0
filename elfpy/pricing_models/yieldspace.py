@@ -1,16 +1,16 @@
 """The YieldSpace pricing model"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from decimal import Decimal
 import logging
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from elfpy.pricing_models.base import PricingModel
-import elfpy.time as time
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-from elfpy.agents.agent import AgentTradeResult
 import elfpy.pricing_models.trades as trades
+import elfpy.time as time
 import elfpy.types as types
+from elfpy.agents.agent import AgentTradeResult
+from elfpy.pricing_models.base import PricingModel
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market

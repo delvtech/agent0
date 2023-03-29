@@ -451,35 +451,45 @@ def calc_add_liquidity(
 
 def calc_remove_liquidity(
     wallet_address: int,
-    bond_amount: float,
+    lp_shares: float,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed"""
     # sanity check inputs
     market.pricing_model.check_input_assertions(
         quantity=types.Quantity(
-            amount=bond_amount, unit=types.TokenType.PT
+            amount=lp_shares, unit=types.TokenType.LP_SHARE
         ),  # temporary Quantity object just for this check
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+
     # perform the trade
-    lp_in, d_base, d_bond = market.pricing_model.calc_tokens_out_given_lp_in(
-        lp_in=bond_amount,
-        rate=market.fixed_apr,
+    delta_shares, delta_bonds = market.pricing_model.calc_shares_out_given_lp_in(
+        lp_in=lp_shares,
         market_state=market.market_state,
-        time_remaining=market.position_duration,
     )
+    delta_base = market.market_state.share_price * delta_shares
+
+    # calculate withdraw shares for the user
+    user_margin = market.market_state.longs_outstanding - market.market_state.long_base_volume
+    user_margin += market.market_state.short_base_volume
+    user_margin = user_margin * lp_shares / market.market_state.lp_total_supply
+    withdraw_shares = user_margin / market.market_state.share_price
+
     market_deltas = MarketDeltas(
-        d_base_asset=-d_base,
-        d_bond_asset=-d_bond,
-        d_lp_total_supply=-lp_in,
+        d_base_asset=-delta_base,
+        d_bond_asset=-delta_bonds,
+        d_lp_total_supply=-lp_shares,
+        total_supply_withdraw_shares=withdraw_shares,
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.Quantity(amount=d_base, unit=types.TokenType.BASE),
-        lp_tokens=-lp_in,
+        balance=types.Quantity(amount=delta_base, unit=types.TokenType.BASE),
+        lp_tokens=-lp_shares,
+        withdraw_shares=withdraw_shares,
     )
+
     return market_deltas, agent_deltas
 
 
