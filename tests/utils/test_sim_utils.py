@@ -9,7 +9,6 @@ import numpy as np
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators.simulators as simulators
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
