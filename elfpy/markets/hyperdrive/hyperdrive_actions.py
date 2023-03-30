@@ -463,20 +463,18 @@ def calc_remove_liquidity(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
-
     # perform the trade
     delta_shares, delta_bonds = market.pricing_model.calc_tokens_out_given_lp_in(
         lp_in=lp_shares,
         market_state=market.market_state,
     )
     delta_base = market.market_state.share_price * delta_shares
-
     # calculate withdraw shares for the user
     user_margin = market.market_state.longs_outstanding - market.market_state.long_base_volume
     user_margin += market.market_state.short_base_volume
     user_margin = user_margin * lp_shares / market.market_state.lp_total_supply
     withdraw_shares = user_margin / market.market_state.share_price
-
+    # create and return the deltas
     market_deltas = MarketDeltas(
         d_base_asset=-delta_base,
         d_bond_asset=-delta_bonds,
@@ -489,7 +487,6 @@ def calc_remove_liquidity(
         lp_tokens=-lp_shares,
         withdraw_shares=withdraw_shares,
     )
-
     return market_deltas, agent_deltas
 
 

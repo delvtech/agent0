@@ -332,7 +332,7 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         self, lp_in: float, market_state: hyperdrive_market.MarketState
     ) -> tuple[float, float]:
         """
-        Calculates the amount of base shares and bonds released from burning a a specified amount of
+        Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
         Parameters
@@ -353,10 +353,11 @@ class HyperdrivePricingModel(YieldspacePricingModel):
         percent_of_lp_shares = lp_in / market_state.lp_total_supply
         # dz = (z - o_l / c) * (dl / l)
         shares_delta = (
-            market_state.share_reserves - market_state.longs_outstanding / market_state.share_price
-        ) * percent_of_lp_shares
+            abs(market_state.share_reserves - market_state.longs_outstanding / market_state.share_price)
+            * percent_of_lp_shares
+        )
 
-        bonds_delta = (
+        bonds_delta = abs(
             market_state.bond_reserves
             - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
         )

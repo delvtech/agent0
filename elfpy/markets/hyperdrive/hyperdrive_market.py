@@ -5,6 +5,7 @@ import copy
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
+from decimal import Decimal
 from enum import IntEnum
 
 import numpy as np
@@ -87,40 +88,40 @@ class MarketState(base_market.BaseMarketState):
         return setattr(self, key, value)
 
     # lp reserves
-    lp_total_supply: float = field(default=0.0)
+    lp_total_supply: float = 0.0
 
     # trading reserves
-    share_reserves: float = field(default=0.0)
-    bond_reserves: float = field(default=0.0)
+    share_reserves: float = 0.0
+    bond_reserves: float = 0.0
 
     # trading buffers
-    base_buffer: float = field(default=0.0)
-    bond_buffer: float = field(default=0.0)
+    base_buffer: float = 0.0
+    bond_buffer: float = 0.0
 
     # share price
-    variable_apr: float = field(default=0.0)
-    share_price: float = field(default=1.0)
-    init_share_price: float = field(default=1.0)
+    variable_apr: float = 0.0
+    share_price: float = 1.0
+    init_share_price: float = 1.0
 
     # fee percents
-    trade_fee_percent: float = field(default=0.0)
-    redemption_fee_percent: float = field(default=0.0)
-    governance_fee_percent: float = field(default=0.0)
+    trade_fee_percent: float = 0.0
+    redemption_fee_percent: float = 0.0
+    governance_fee_percent: float = 0.0
 
     # governance fees that haven't been collected yet denominated in shares
-    gov_fees_accrued: float = field(default=0.0)
+    gov_fees_accrued: float = 0.0
     # the amount of longs that are still open.
-    longs_outstanding: float = field(default=0.0)
+    longs_outstanding: float = 0.0
     # the amount of shorts that are still open.
-    shorts_outstanding: float = field(default=0.0)
+    shorts_outstanding: float = 0.0
     # the average maturity time of long positions.
-    long_average_maturity_time: float = field(default=0.0)
+    long_average_maturity_time: float = 0.0
     # the average maturity time of short positions.
-    short_average_maturity_time: float = field(default=0.0)
+    short_average_maturity_time: float = 0.0
     # the amount of base paid by outstanding longs.
-    long_base_volume: float = field(default=0.0)
+    long_base_volume: float = 0.0
     # the amount of base paid to outstanding shorts.
-    short_base_volume: float = field(default=0.0)
+    short_base_volume: float = 0.0
     # time delimited checkpoints
     checkpoints: defaultdict[float, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
     # time between checkpoints, defaults to 1 day
@@ -130,13 +131,13 @@ class MarketState(base_market.BaseMarketState):
     # checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
     total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     # total amount of withdraw shares outstanding
-    total_supply_withdraw_shares: float = field(default=0.0)
+    total_supply_withdraw_shares: float = 0.0
     # shares that have been freed up to withdraw by withdraw_shares
-    withdraw_shares_ready_to_withdraw: float = field(default=0.0)
+    withdraw_shares_ready_to_withdraw: float = 0.0
     # the margin capital reclaimed by the withdraw process
-    withdraw_capital: float = field(default=0.0)
+    withdraw_capital: float = 0.0
     # the interest earned by the redemptions which put capital into the withdraw pool
-    withdraw_interest: float = field(default=0.0)
+    withdraw_interest: float = 0.0
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
@@ -605,7 +606,7 @@ class Market(
         return latest_checkpoint / 365
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
-        """Creates a new checkpoint if necessary and closes matured positions.
+        r"""Creates a new checkpoint if necessary and closes matured positions.
 
         Parameters
         ----------
@@ -651,13 +652,12 @@ class Market(
         min_output: float,
         as_underlying: bool,
     ) -> float:
-        r"""
-        Redeems withdrawal shares if enough margin has been freed to do so.
+        r"""Redeems withdrawal shares if enough margin has been freed to do so.
 
         Parameters
         ----------
         agent_wallet: wallet.Wallet
-            The agent's wallet
+            The agent's wallet.
         shares: float
             The withdrawal shares to redeem.
         min_output: float
@@ -682,10 +682,9 @@ class Market(
         return wallet_deltas.balance.amount
 
     def calc_redeem_withdraw_shares(
-        self, shares: float, min_output: float, as_underlying: bool
+        self, _shares: float, _min_output: float, as_underlying: bool
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
-        r"""
-        Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
+        r"""Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
         has been freed to do so.
 
         Parameters
@@ -703,30 +702,37 @@ class Market(
         tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]
 
         """
+        shares = Decimal(_shares)
+        min_output = Decimal(_min_output)
         market_deltas = hyperdrive_actions.MarketDeltas()
+        # TODO don't use a wallet. issue #315
         wallet_deltas = wallet.Wallet(address=0)
 
         # We burn the shares from the user
-        wallet_deltas.withdraw_shares -= shares
+        wallet_deltas.withdraw_shares -= _shares
 
         # The user gets a refund on their margin equal to the face value of their withdraw shares
         # times the percent of the withdraw pool which has been lost.
         recovered_margin = (
-            shares * self.market_state.withdraw_capital / self.market_state.withdraw_shares_ready_to_withdraw
+            shares
+            * Decimal(self.market_state.withdraw_capital)
+            / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
 
         # The user gets interest equal to their percent of the withdraw pool times the withdraw pool
         # interest
         recovered_interest = (
-            shares * self.market_state.withdraw_interest / self.market_state.withdraw_shares_ready_to_withdraw
+            shares
+            * Decimal(self.market_state.withdraw_interest)
+            / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
 
         # Update the pool state
         # Note - Will revert here if not enough margin has been reclaimed by checkpoints or by
         #  position closes
-        market_deltas.withdraw_shares_ready_to_withdraw -= shares
-        market_deltas.withdraw_capital -= recovered_margin
-        market_deltas.withdraw_interest -= recovered_interest
+        market_deltas.withdraw_shares_ready_to_withdraw -= float(shares)
+        market_deltas.withdraw_capital -= float(recovered_margin)
+        market_deltas.withdraw_interest -= float(recovered_interest)
 
         # Withdraw for the user
         base_proceeds = self._withdraw(recovered_margin + recovered_interest, as_underlying)
@@ -736,14 +742,13 @@ class Market(
         wallet_deltas.balance.amount += base_proceeds
 
         # Enforce min user outputs
-        if min_output > base_proceeds:
+        if min_output > Decimal(base_proceeds):
             raise errors.OutputLimit
 
         return market_deltas, wallet_deltas
 
     def _withdraw(self, shares: float, as_underlying: bool) -> float:
-        r"""
-        Calculates the amount of base to withdraw for a given amount of shares.
+        r"""Calculates the amount of base to withdraw for a given amount of shares.
 
         Parameters
         ----------
@@ -772,8 +777,7 @@ class Market(
     def _free_margin(
         self, freed_capital: float, max_capital: float, interest: float
     ) -> hyperdrive_actions.MarketDeltas:
-        """
-        Moves capital into the withdraw pool and marks shares ready for withdraw.
+        r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
 
         Parameters
         ----------
@@ -782,12 +786,12 @@ class Market(
         max_capital: float
             The margin which the LP used to back the position which is being closed.
         interest: float
-            The interest earned by this margin position, fixed interest for LP shorts and variable for longs.
+            The interest earned by this margin position, fixed interest for shorts and variable for longs.
 
         Returns
         -------
         hyperdrive_actions.MarketDeltas
-            the capital, interest and shares added to the withdraw pool
+            Market deltas that include the capital, interest and shares added to the withdraw pool.
         """
 
         # If we don't have capital to free then simply return zero
