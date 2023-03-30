@@ -1,15 +1,15 @@
 """Testing the Borrow Market"""
 
-import logging
 import itertools
+import logging
 import unittest
 
 import numpy as np
 
+import elfpy.markets.borrow as borrow_market
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-import elfpy.markets.borrow as borrow_market
 
 
 class TestBorrow(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestBorrow(unittest.TestCase):
         """Borrow 100 BASE"""
         output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
-            range(1, 100, 5), range(0, 8, 2), types.TokenType
+            range(1, 100, 5), range(0, 8, 2), [types.TokenType.BASE, types.TokenType.PT]
         ):
             spot_price_range = [1]
             if collateral_token == types.TokenType.PT:

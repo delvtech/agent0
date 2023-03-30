@@ -152,7 +152,7 @@ class TestAddLiquidity(unittest.TestCase):
         # Ensure that if the new LP withdraws, they get their money back.
         market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
             agent_wallet=self.bob.wallet,
-            bond_amount=self.bob.wallet.lp_tokens,
+            lp_shares=self.bob.wallet.lp_tokens,
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, places=6)
 
@@ -187,6 +187,6 @@ class TestAddLiquidity(unittest.TestCase):
         # Ensure that if the new LP withdraws, they get their money back.
         market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
             agent_wallet=self.bob.wallet,
-            bond_amount=self.bob.wallet.lp_tokens,
+            lp_shares=self.bob.wallet.lp_tokens,
         )
         self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)

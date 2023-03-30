@@ -6,14 +6,13 @@ import unittest
 
 import numpy as np
 
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
-import elfpy.simulators.simulators as simulators
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.simulators.simulators as simulators
+import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.time as time
 
 # pylint: disable=too-many-locals
 
@@ -27,7 +26,7 @@ class SimUtilsTest(unittest.TestCase):
         for target_liquidity in (1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1, 1.1):
                 for num_position_days in [90, 365]:
-                    for pricing_model_name in ["Yieldspace", "Hyperdrive"]:
+                    for pricing_model_name in ["Hyperdrive"]:
                         config = simulators.Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
@@ -40,10 +39,7 @@ class SimUtilsTest(unittest.TestCase):
                         config.num_position_days = num_position_days
                         # construct the market via sim utils
                         block_time = time.BlockTime()
-                        if pricing_model_name.lower() == "hyperdrive":
-                            pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-                        else:
-                            pricing_model = yieldspace_pm.YieldspacePricingModel()
+                        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(

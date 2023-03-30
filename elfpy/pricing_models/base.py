@@ -1,9 +1,9 @@
 """The base pricing model"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
+import logging
 from abc import ABC
 from decimal import Decimal, getcontext
-import logging
 from typing import TYPE_CHECKING
 
 import elfpy.pricing_models.trades as trades
@@ -69,9 +69,7 @@ class PricingModel(ABC):
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
-        rate: float,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTime,
     ) -> tuple[float, float, float]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError

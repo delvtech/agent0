@@ -1,9 +1,10 @@
 """Core types used across the repo"""
 from __future__ import annotations  # types will be strings by default in 3.11
-from enum import Enum
+
 from dataclasses import dataclass
+from enum import Enum
 from functools import wraps
-from typing import Type, Any
+from typing import Any, Type
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
@@ -56,6 +57,7 @@ class TokenType(Enum):
 
     BASE = "base"
     PT = "pt"
+    LP_SHARE = "lp_share"
 
 
 @dataclass

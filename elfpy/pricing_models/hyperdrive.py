@@ -4,12 +4,12 @@ from __future__ import annotations  # types will be strings by default in 3.11
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
-from elfpy.agents.agent import AgentTradeResult
 import elfpy.types as types
+from elfpy.agents.agent import AgentTradeResult
+from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -327,3 +327,37 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 gov_redemption_fee=float(gov_redemption_fee),
             ),
         )
+
+    def calc_tokens_out_given_lp_in(
+        self, lp_in: float, market_state: hyperdrive_market.MarketState
+    ) -> tuple[float, float]:
+        """
+        Calculates the amount of base shares and bonds released from burning a specified amount of
+        LP shares from the pool.
+
+        Parameters
+        ----------
+        lp_in: float
+            The amount of lp shares that are given back to the pool
+        market_state : MarketState
+            The state of the AMM's reserves and share prices.
+
+        Returns
+        -------
+        float
+            The amount of shares taken out of reserves
+        float
+            The amount of bonds taken out of reserves
+        """
+        # get the shares out to the user
+        percent_of_lp_shares = lp_in / market_state.lp_total_supply
+        # dz = (z - o_l / c) * (dl / l)
+        shares_delta = (
+            market_state.share_reserves - market_state.longs_outstanding / market_state.share_price
+        ) * percent_of_lp_shares
+        bonds_delta = (
+            market_state.bond_reserves
+            - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
+        )
+        # these are both positive values
+        return shares_delta, bonds_delta
