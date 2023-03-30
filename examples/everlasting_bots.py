@@ -384,32 +384,55 @@ if __name__ == "__main__":
     # Execute trades
     genesis_block_number = ape.chain.blocks[-1].number
     genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp
-    pool_state = hyperdrive.getPoolInfo().__dict__
-    pool_state["block_number_"] = genesis_block_number
-    simulator.market.market_state = hyperdrive_market.MarketState(
-        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
-        share_reserves=to_floating_point(pool_state["shareReserves_"]),
-        bond_reserves=to_floating_point(pool_state["bondReserves_"]),
-        # TODO: base_buffer=0,
-        # TODO: bond_buffer=0,
-        # TODO: variable_apr=0,
-        share_price=to_floating_point(pool_state["sharePrice"]),
-        init_share_price=to_floating_point(config.init_share_price),
-        trade_fee_percent=to_floating_point(config.trade_fee_percent),
-        redemption_fee_percent=to_floating_point(config.redemption_fee_percent),
-        longs_outstanding=to_floating_point(pool_state["longsOutstanding_"]),
-        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding_"]),
-        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime_"]),
-        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime_"]),
-        long_base_volume=to_floating_point(pool_state["longBaseVolume_"]),
-        short_base_volume=to_floating_point(pool_state["shortBaseVolume_"]),
-        # TODO: checkpoints=defaultdict
-        # TODO: checkpoint_duration=0,
-        # TODO: total_supply_longs=defaultdict,
-        # TODO: total_supply_shorts=defaultdict,
-        # TODO: total_supply_withdraw_shares=0,
-        # TODO: withdraw_shares_ready_to_withdraw=0,
-        # TODO: withdraw_capital=0,
-        # TODO: withdraw_interest=0,
-    )
+
+    """
+    option 1:
+        * intialize python & solidity markets; verify that they are the same
+        * execute trades on both markets
+            - sim market updates state correctly
+            - query agent for trade using up-to-date sim market
+        * after each trade check that states are equal
+
+        pros: I have all the state things for free
+        cons: slow -- 2x trades
+
+    option 2:
+        * initialzie only solidity market
+        * execute trade only on solidity
+        * when querying agent for trade, convert solidity market state to python market type
+    
+        pros: only 1x trade; 
+        cons: need to maintain hyperdrive market; also slow -- 
+    """
+
+    def solidity_market_to_python(hyperdrive, simulator):
+        pool_state = hyperdrive.getPoolInfo().__dict__
+        pool_state["block_number_"] = ape.chain.blocks[-1].number
+        simulator.market.market_state = hyperdrive_market.MarketState(
+            lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
+            share_reserves=to_floating_point(pool_state["shareReserves_"]),
+            bond_reserves=to_floating_point(pool_state["bondReserves_"]),
+            # TODO: base_buffer=0,
+            # TODO: bond_buffer=0,
+            # TODO: variable_apr=0,
+            share_price=to_floating_point(pool_state["sharePrice"]),
+            init_share_price=to_floating_point(config.init_share_price),
+            trade_fee_percent=to_floating_point(config.trade_fee_percent),
+            redemption_fee_percent=to_floating_point(config.redemption_fee_percent),
+            longs_outstanding=to_floating_point(pool_state["longsOutstanding_"]),
+            shorts_outstanding=to_floating_point(pool_state["shortsOutstanding_"]),
+            long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime_"]),
+            short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime_"]),
+            long_base_volume=to_floating_point(pool_state["longBaseVolume_"]),
+            short_base_volume=to_floating_point(pool_state["shortBaseVolume_"]),
+            # TODO: checkpoints=defaultdict
+            # TODO: checkpoint_duration=0,
+            # TODO: total_supply_longs=defaultdict,
+            # TODO: total_supply_shorts=defaultdict,
+            # TODO: total_supply_withdraw_shares=0,
+            # TODO: withdraw_shares_ready_to_withdraw=0,
+            # TODO: withdraw_capital=0,
+            # TODO: withdraw_interest=0,
+        )
+
     print(pool_state)
