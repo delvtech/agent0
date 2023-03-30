@@ -328,20 +328,13 @@ def get_simulator(config):
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
     return simulators.Simulator(config=config, market=market, block_time=block_time)
 
-def to_fixed_point(input, fractional_bits=18):  # quantize
-    scale = 2**fractional_bits  # forced to be binary
-    input_scaled = input * scale
-    input_fixed = np.round(input_scaled).type(np.int64)
-    int_bits = fractional_bits - 1
-    max_int = 2**scale - 1
-    input_fixed = np.minimum(max_int, np.maximum(min_int, x_fixed))
-    # x_fixed = x_fixed * (2 ** (bits - int_bits - 1))
-    return input_fixed
 
-def to_floating_point(x, fractional_bits=18):
-    scale = 1 / 2**fractional_bits
-    x_scaled = x * scale
-    return x_scaled
+def to_fixed_point(input, decimal_places=18):
+    return int(input * 10**decimal_places)
+
+
+def to_floating_point(input, decimal_places=18):
+    return float(input / 10**decimal_places)
 
 
 if __name__ == "__main__":
@@ -394,26 +387,29 @@ if __name__ == "__main__":
     pool_state = hyperdrive.getPoolInfo().__dict__
     pool_state["block_number_"] = genesis_block_number
     simulator.market.market_state = hyperdrive_market.MarketState(
-        lp_total_supply = pool_state["lpTotalSupply"] / 1e18
-        share_reserves = pool_state["shareReserves_"] / 1e18
-        bond_reserves = pool_state["bondReserves_"] / 1e18
-            Quantity of bonds stored in the market
-        base_buffer: float
-            Base amount set aside to account for open longs
-        bond_buffer: float
-            Bond amount set aside to account for open shorts
-        variable_apr: float
-            apr of underlying yield-bearing source
-        share_price: float
-            ratio of value of base & shares that are stored in the underlying vault,
-            i.e. share_price = base_value / share_value
-        init_share_price: float
-            share price at pool initialization
-        trade_fee_percent : float
-            The multiple applied to the price discount (1-p) to calculate the trade fee.
-        redemption_fee_percent : float
-            A flat fee applied to the output.  Not used in this equation for Yieldspace.
-        governance_fee_percent : float
-            The multiple applied to the trade and redemption fee to calculate the share paid to governance.
+        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
+        share_reserves=to_floating_point(pool_state["shareReserves_"]),
+        bond_reserves=to_floating_point(pool_state["bondReserves_"]),
+        # TODO: base_buffer=0,
+        # TODO: bond_buffer=0,
+        # TODO: variable_apr=0,
+        share_price=to_floating_point(pool_state["sharePrice"]),
+        init_share_price=to_floating_point(config.init_share_price),
+        trade_fee_percent=to_floating_point(config.trade_fee_percent),
+        redemption_fee_percent=to_floating_point(config.redemption_fee_percent),
+        longs_outstanding=to_floating_point(pool_state["longsOutstanding_"]),
+        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding_"]),
+        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime_"]),
+        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime_"]),
+        long_base_volume=to_floating_point(pool_state["longBaseVolume_"]),
+        short_base_volume=to_floating_point(pool_state["shortBaseVolume_"]),
+        # TODO: checkpoints=defaultdict
+        # TODO: checkpoint_duration=0,
+        # TODO: total_supply_longs=defaultdict,
+        # TODO: total_supply_shorts=defaultdict,
+        # TODO: total_supply_withdraw_shares=0,
+        # TODO: withdraw_shares_ready_to_withdraw=0,
+        # TODO: withdraw_capital=0,
+        # TODO: withdraw_interest=0,
     )
     print(pool_state)
