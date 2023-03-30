@@ -380,7 +380,8 @@ if __name__ == "__main__":
     hyperdrive = project.MockHyperdriveTestnet.at(hyperdrive_address)
     with ape.accounts.use_sender(sol_agents["agent_0"]):
         base_ERC20.approve(hyperdrive, initial_supply)
-        hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], False)
+        as_underlying = True
+        hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], as_underlying)
     # Execute trades
     genesis_block_number = ape.chain.blocks[-1].number
     genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp
