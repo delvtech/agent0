@@ -367,13 +367,13 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
-        assert 1 >= market_state.trade_fee_percent >= 0, (
+        assert 1 >= market_state.curve_fee_mult >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= trade_fee_percent >= 0, not {market_state.trade_fee_percent}!"
+            f"expected 1 >= curve_fee_mult >= 0, not {market_state.curve_fee_mult}!"
         )
-        assert 1 >= market_state.redemption_fee_percent >= 0, (
+        assert 1 >= market_state.flat_fee_percent >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
+            f"expected 1 >= flat_fee_percent >= 0, not {market_state.flat_fee_percent}!"
         )
         assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "

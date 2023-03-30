@@ -117,11 +117,11 @@ def get_initialized_hyperdrive_market(
                 the initial price of the yield bearing vault shares
             num_position_days : int
                 how much time between token minting and expiry, in days
-            redemption_fee_percent : float
-                portion of redemptions to be collected as fees for LPers, expressed as a decimal
+            flat_fee_percent : float
+                portion of flats to be collected as fees for LPers, expressed as a decimal
             target_fixed_apr : float
                 target apr, used for calculating the time stretch
-            trade_fee_percent : float
+            curve_fee_mult : float
                 portion of trades to be collected as fees for LPers, expressed as a decimal
             variable_apr : list
                 variable (often a valut) apr per day for the duration of the simulation
@@ -143,8 +143,8 @@ def get_initialized_hyperdrive_market(
             init_share_price=config.init_share_price,
             share_price=config.init_share_price,
             variable_apr=config.variable_apr[0],
-            trade_fee_percent=config.trade_fee_percent,
-            redemption_fee_percent=config.redemption_fee_percent,
+            curve_fee_mult=config.curve_fee_mult,
+            flat_fee_percent=config.flat_fee_percent,
         ),
         position_duration=position_duration,
     )

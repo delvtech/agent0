@@ -106,9 +106,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1,
                     share_price=2,
                     init_share_price=1,
-                    trade_fee_percent=0.1,
-                    # TODO: test with redemption fees
-                    redemption_fee_percent=0.0,
+                    curve_fee_mult=0.1,
+                    # TODO: test with flat fees
+                    flat_fee_percent=0.0,
                 )
                 # TODO: convert these tests to use total supply, not the approximation
                 # approximation of total supply
@@ -131,9 +131,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=10_000_000_000,
                     share_price=2,
                     init_share_price=1.2,
-                    trade_fee_percent=0.1,
-                    # TODO: test with redemption fees
-                    redemption_fee_percent=0.0,
+                    curve_fee_mult=0.1,
+                    # TODO: test with flat fees
+                    flat_fee_percent=0.0,
                 )
                 time_remaining = time.StretchedTime(
                     days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
@@ -162,8 +162,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -176,8 +176,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -190,8 +190,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -204,8 +204,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=-1,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -218,8 +218,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                     # trade fee negative
-                    trade_fee_percent=-1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=-1,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -231,9 +231,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    # redemption fee negative
-                    redemption_fee_percent=-1,
+                    curve_fee_mult=0.01,
+                    # flat fee negative
+                    flat_fee_percent=-1,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -246,8 +246,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=1,
                     init_share_price=1,
                     # trade fee above 1
-                    trade_fee_percent=1.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=1.1,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -259,9 +259,9 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    # redemption fee above 1
-                    redemption_fee_percent=1.1,
+                    curve_fee_mult=0.01,
+                    # flat fee above 1
+                    flat_fee_percent=1.1,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -273,8 +273,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=1.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=1.1,
+                    flat_fee_percent=0.01,
                 ),
                 # days remaining negative
                 time_remaining=time.StretchedTime(days=-91.25, time_stretch=1.1, normalizing_constant=365),
@@ -287,8 +287,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.1,
+                    flat_fee_percent=0.01,
                 ),
                 # days remaining == 365, will get divide by zero error
                 time_remaining=time.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
@@ -301,8 +301,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.1,
+                    flat_fee_percent=0.01,
                 ),
                 # days remaining > 365
                 time_remaining=time.StretchedTime(days=500, time_stretch=1.1, normalizing_constant=365),
@@ -316,8 +316,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.1,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=92.5, time_stretch=1.1, normalizing_constant=365),
                 exception_type=(ValueError, decimal.InvalidOperation),
@@ -330,8 +330,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     share_price=2,
                     # init_share_price 0
                     init_share_price=0,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.1,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -344,8 +344,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1_000_000,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -358,8 +358,8 @@ class TestCalcInGivenOut(unittest.TestCase):
                     bond_reserves=1,
                     share_price=1,
                     init_share_price=1,
-                    trade_fee_percent=0.01,
-                    redemption_fee_percent=0.01,
+                    curve_fee_mult=0.01,
+                    flat_fee_percent=0.01,
                 ),
                 time_remaining=time.StretchedTime(days=91.25, time_stretch=1.1, normalizing_constant=365),
                 exception_type=AssertionError,
@@ -431,8 +431,8 @@ base_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -476,8 +476,8 @@ base_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.2,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.2,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -521,8 +521,8 @@ base_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -566,8 +566,8 @@ base_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -612,8 +612,8 @@ base_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -659,8 +659,8 @@ base_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -706,8 +706,8 @@ base_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=91.25,  # 3 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -752,8 +752,8 @@ base_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=91.25,  # 3 months remaining
             time_stretch_apy=0.025,  # APY of 5% used to calculate time_stretch
@@ -800,8 +800,8 @@ pt_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -845,8 +845,8 @@ pt_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.2,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.2,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -890,8 +890,8 @@ pt_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -935,8 +935,8 @@ pt_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -980,8 +980,8 @@ pt_in_test_cases = [
                 bond_reserves=100_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -1027,8 +1027,8 @@ pt_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -1075,8 +1075,8 @@ pt_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=91.25,  # 3 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch
@@ -1122,8 +1122,8 @@ pt_in_test_cases = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=2,  # share price of the LP in the yield source
                 init_share_price=1.5,  # original share price pool started
-                trade_fee_percent=0.1,  # fee percent (normally 10%)
-                redemption_fee_percent=0.0,  # fee percent (normally 10%)
+                curve_fee_mult=0.1,  # fee percent (normally 10%)
+                flat_fee_percent=0.0,  # fee percent (normally 10%)
             ),
             days_remaining=91.25,  # 3 months remaining
             time_stretch_apy=0.025,  # APY of 5% used to calculate time_stretch
@@ -1170,8 +1170,8 @@ pt_in_test_cases_hyperdrive_only = [
                 bond_reserves=1_000_000,  # PT reserves
                 share_price=1,  # share price of the LP in the yield source
                 init_share_price=1,  # original share price pool started
-                trade_fee_percent=0.01,  # fee percent (normally 10%)
-                redemption_fee_percent=0.00,  # fee percent (normally 10%)
+                curve_fee_mult=0.01,  # fee percent (normally 10%)
+                flat_fee_percent=0.00,  # fee percent (normally 10%)
             ),
             days_remaining=182.5,  # 6 months remaining
             time_stretch_apy=0.05,  # APY of 5% used to calculate time_stretch

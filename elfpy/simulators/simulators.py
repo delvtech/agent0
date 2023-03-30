@@ -93,7 +93,7 @@ class SimulationState:
 class Config:
     """Data object for storing user simulation config parameters
 
-    .. todo:: Rename the {trade/redemption}_fee_percent variables so that they doesn't use "percent"
+    .. todo:: Rename the {trade/flat}_fee_percent variables so that they doesn't use "percent"
     """
 
     # lots of configs!
@@ -122,11 +122,11 @@ class Config:
     # Must be "Hyperdrive", or "YieldSpace"
     pricing_model_name: str = field(default="Hyperdrive")
     # LP fee factor (float) to charge for trades
-    trade_fee_percent: float = field(default=0.05)
-    # LP fee factor (float) to charge for redemption
-    redemption_fee_percent: float = field(default=0.05)
+    curve_fee_mult: float = field(default=0.05)
+    # LP fee factor (float) to charge for flat
+    flat_fee_percent: float = field(default=0.05)
     # minimum fee for governance
-    governance_fee_percent: float = field(default=0)
+    governance_fee_mult: float = field(default=0)
     # desired fixed apr for as a decimal
     target_fixed_apr: float = field(default=0.1)
     # minimum fee percentage (bps)

@@ -48,9 +48,9 @@ class TestFees(unittest.TestCase):
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
-            trade_fee_percent=0.1,  # 0.1e18, // curveFee
-            redemption_fee_percent=0.1,  # 0.1e18, //flatFee
-            governance_fee_percent=gov_fee,  # 0.5e18, //govFee
+            curve_fee_mult=0.1,  # 0.1e18, // curveFee
+            flat_fee_percent=0.1,  # 0.1e18, //flatFee
+            governance_fee_mult=gov_fee,  # 0.5e18, //govFee
         )
         super().__init__()
 
@@ -131,11 +131,11 @@ def get_all_the_fees(
     test.hyperdrive.market_state.gov_fees_accrued += float(gov_curve_fee)
     gov_curve_fee = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
 
-    # calculate redemption fee
+    # calculate flat fee
     flat_without_fee = test.trade_amount * test.hyperdrive.block_time.time
-    redemption_fee = flat_without_fee * test.hyperdrive.market_state.redemption_fee_percent
-    gov_redemption_fee = redemption_fee * test.hyperdrive.market_state.governance_fee_percent
-    return float(curve_fee), redemption_fee, gov_curve_fee, gov_redemption_fee
+    flat_fee = flat_without_fee * test.hyperdrive.market_state.flat_fee_percent
+    gov_flat_fee = flat_fee * test.hyperdrive.market_state.governance_fee_mult
+    return float(curve_fee), flat_fee, gov_curve_fee, gov_flat_fee
 
 
 def test_did_we_get_fees():

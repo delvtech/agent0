@@ -24,8 +24,8 @@ def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.Da
             variable_apr=combined_trades_df.market_init.iloc[0].variable_apr,
             share_price=combined_trades_df.market_init.iloc[0].share_price,
             init_share_price=combined_trades_df.market_init.iloc[0].init_share_price,
-            trade_fee_percent=combined_trades_df.market_init.iloc[0].trade_fee_percent,
-            redemption_fee_percent=combined_trades_df.market_init.iloc[0].redemption_fee_percent,
+            curve_fee_mult=combined_trades_df.market_init.iloc[0].curve_fee_mult,
+            flat_fee_percent=combined_trades_df.market_init.iloc[0].flat_fee_percent,
         )
         agent_wallets = list(combined_trades_df.iloc[0, :].agent_init)
         for trade_number in range(combined_trades_df.trade_number.max()):

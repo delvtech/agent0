@@ -127,9 +127,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         # Compute flat part with fee
         flat_without_fee = out_amount * (1 - normalized_time_remaining)
-        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
-        gov_redemption_fee = redemption_fee * Decimal(market_state.governance_fee_percent)
-        flat_with_fee = flat_without_fee + redemption_fee + gov_redemption_fee
+        flat_fee = flat_without_fee * Decimal(market_state.flat_fee_percent)
+        gov_flat_fee = flat_fee * Decimal(market_state.governance_fee_mult)
+        flat_with_fee = flat_without_fee + flat_fee + gov_flat_fee
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_in_given_out(
             out=types.Quantity(amount=float(out_amount * normalized_time_remaining), unit=out.unit),
@@ -173,8 +173,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
                 curve_fee=float(curve.breakdown.curve_fee),
                 gov_curve_fee=float(curve.breakdown.gov_curve_fee),
-                redemption_fee=float(redemption_fee),
-                gov_redemption_fee=float(gov_redemption_fee),
+                flat_fee=float(flat_fee),
+                gov_flat_fee=float(gov_flat_fee),
             ),
         )
 
@@ -277,9 +277,9 @@ class HyperdrivePricingModel(YieldspacePricingModel):
             )
         # Compute flat part with fee
         flat_without_fee = in_amount * (1 - normalized_time_remaining)
-        redemption_fee = flat_without_fee * Decimal(market_state.redemption_fee_percent)
-        gov_redemption_fee = redemption_fee * Decimal(market_state.governance_fee_percent)
-        flat_with_fee = flat_without_fee - (redemption_fee + gov_redemption_fee)
+        flat_fee = flat_without_fee * Decimal(market_state.flat_fee_percent)
+        gov_flat_fee = flat_fee * Decimal(market_state.governance_fee_mult)
+        flat_with_fee = flat_without_fee - (flat_fee + gov_flat_fee)
         # Trade the bonds that haven't matured on the YieldSpace curve.
         curve = super().calc_out_given_in(
             in_=types.Quantity(amount=float(in_amount * normalized_time_remaining), unit=in_.unit),
@@ -323,8 +323,8 @@ class HyperdrivePricingModel(YieldspacePricingModel):
                 with_fee=float(flat_with_fee + Decimal(curve.breakdown.with_fee)),
                 curve_fee=float(curve.breakdown.curve_fee),
                 gov_curve_fee=float(curve.breakdown.gov_curve_fee),
-                redemption_fee=float(redemption_fee),
-                gov_redemption_fee=float(gov_redemption_fee),
+                flat_fee=float(flat_fee),
+                gov_flat_fee=float(gov_flat_fee),
             ),
         )
 
