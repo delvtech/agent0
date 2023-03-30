@@ -735,7 +735,7 @@ class Market(
         market_deltas.withdraw_interest -= float(recovered_interest)
 
         # Withdraw for the user
-        base_proceeds = self._withdraw(recovered_margin + recovered_interest, as_underlying)
+        base_proceeds = self._withdraw(float(recovered_margin + recovered_interest), as_underlying)
         # TODO: figure out how to keep track of hyperdrive's base asset amount.  market_deltas has
         # a d_base_asset, but that is used to update the share_reserves :/.
         # market_deltas.d_base_asset -= base_proceeds
