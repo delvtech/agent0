@@ -77,7 +77,7 @@ def ape_open_position(
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         if trade_prefix == hyperdrive_market.AssetIdPrefix.LONG:  # open a long
             min_output = 0  # python sims does not support alternative min_output
-            as_underlying = False  # mockHyperdriveTestNet does not support as_underlying=True
+            as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
             tx_receipt = hyperdrive_contract.openLong(  # type: ignore
                 trade_amount,  # base
                 min_output,
@@ -86,7 +86,7 @@ def ape_open_position(
             )
         elif trade_prefix == hyperdrive_market.AssetIdPrefix.SHORT:  # open a short
             max_deposit = trade_amount  # python sims does not support alternative max_deposit
-            as_underlying = False  # mockHyperdriveTestNet does not support as_underlying=True
+            as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
             tx_receipt = hyperdrive_contract.openShort(  # type: ignore
                 trade_amount,  # bonds
                 max_deposit,
@@ -160,7 +160,7 @@ def ape_close_position(
             )
         # Close the position
         min_output = 0
-        as_underlying = False  # mockHyperdriveTestNet does not support as_underlying=True
+        as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
         if trade_prefix == hyperdrive_market.AssetIdPrefix.LONG:
             tx_receipt = hyperdrive_contract.closeLong(  # type: ignore
                 maturity_time,
