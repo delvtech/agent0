@@ -4,7 +4,7 @@ from __future__ import annotations
 # stdlib
 import argparse
 from pathlib import Path
-from dataclasses import make_dataclass
+from collections import defaultdict
 
 # external lib
 import ape
@@ -19,6 +19,7 @@ import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.utils.outputs as output_utils
 
@@ -337,6 +338,53 @@ def to_floating_point(input, decimal_places=18):
     return float(input / 10**decimal_places)
 
 
+def get_simulation_market_state_from_contract(
+    hyperdrive_contract, agent_address, position_duration_seconds, checkpoint_duration, variable_apr, config
+):
+    """
+    hyperdrive_contract: ape.contracts.base.ContractInstance
+        Ape project `ContractInstance
+        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        wrapped around the initialized MockHyperdriveTestnet smart contract.
+    agent_address: ape.api.accounts.AccountAPI
+        Ape address container, or `AccountAPI
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+        representing the agent which is executing the action.
+    """
+    pool_state = hyperdrive_contract.getPoolInfo().__dict__
+    with ape.accounts.use_sender(agent_address):  # sender for contract calls
+        asset_id = hyperdrive_market.encode_asset_id(
+            hyperdrive_market.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
+        )
+        total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)  # type: ignore
+    return hyperdrive_market.MarketState(
+        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
+        share_reserves=to_floating_point(pool_state["shareReserves"]),
+        bond_reserves=to_floating_point(pool_state["bondReserves"]),
+        base_buffer=pool_state["longsOutstanding"],  # so do we not need any buffers now?
+        # TODO: bond_buffer=0,
+        variable_apr=variable_apr,
+        share_price=to_floating_point(pool_state["sharePrice"]),
+        init_share_price=config.init_share_price,
+        trade_fee_percent=config.trade_fee_percent,
+        redemption_fee_percent=config.redemption_fee_percent,
+        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
+        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
+        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
+        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
+        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
+        # TODO: checkpoints=defaultdict
+        checkpoint_duration=checkpoint_duration,
+        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
+        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
+        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=to_floating_point(pool_state["capital"]),
+        withdraw_interest=to_floating_point(pool_state["interest"]),
+    )
+
+
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
@@ -348,22 +396,23 @@ if __name__ == "__main__":
     sol_agents, sim_agents = get_agents(config)
     # Instantiate the sim market
     simulator = get_simulator(config)
+    simulator.add_agents(sim_agents)
     # Use agent 0 to initialize the chain market
     base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)
     base_ERC20 = project.ERC20Mintable.at(base_address)
     fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)
     fixed_math = project.MockFixedPointMath.at(fixed_math_address)
-    base_ERC20.mint(int(config.target_liquidity * 10**18), sender=sol_agents["agent_0"])
+    base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])
     # Convert sim config to solidity format (fixed-point)
-    initial_supply = int(config.target_liquidity * 10**18)
-    initial_apr = int(config.target_fixed_apr * 10**18)
-    initial_share_price = int(config.init_share_price * 10**18)
+    initial_supply = to_fixed_point(config.target_liquidity)
+    initial_apr = to_fixed_point(config.target_fixed_apr)
+    initial_share_price = to_fixed_point(config.init_share_price)
     checkpoint_duration = 86400  # seconds = 1 day
     checkpoints_per_term = 365
     position_duration_seconds = checkpoint_duration * checkpoints_per_term
-    time_stretch = int(1 / simulator.market.time_stretch_constant * 10**18)
-    curve_fee = int(config.trade_fee_percent * 10**18)
-    flat_fee = int(config.redemption_fee_percent * 10**18)
+    time_stretch = to_fixed_point(1 / simulator.market.time_stretch_constant)
+    curve_fee = to_fixed_point(config.trade_fee_percent)
+    flat_fee = to_fixed_point(config.redemption_fee_percent)
     gov_fee = 0
     # Deploy hyperdrive on the chain
     hyperdrive_address = sol_agents["agent_0"].deploy(
@@ -386,52 +435,70 @@ if __name__ == "__main__":
     genesis_block_number = ape.chain.blocks[-1].number
     genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp
 
-    """
-    option 1:
-        * intialize python & solidity markets; verify that they are the same
-        * execute trades on both markets
-            - sim market updates state correctly
-            - query agent for trade using up-to-date sim market
-        * after each trade check that states are equal
+    simulator.market.market_state = get_simulation_market_state_from_contract(
+        hyperdrive,
+        sol_agents["agent_0"],
+        position_duration_seconds,
+        checkpoint_duration,
+        simulator.market.market_state.variable_apr,
+        config,
+    )
+    print(simulator.agents)
+    print(list(range(1, len(sim_agents))))
 
-        pros: I have all the state things for free
-        cons: slow -- 2x trades
-
-    option 2:
-        * initialzie only solidity market
-        * execute trade only on solidity
-        * when querying agent for trade, convert solidity market state to python market type
-    
-        pros: only 1x trade; 
-        cons: need to maintain hyperdrive market; also slow -- 
-    """
-
-    # pool_state = hyperdrive.getPoolInfo().__dict__
-    # print(pool_state)
-    # pool_state["block_number_"] = ape.chain.blocks[-1].number
-    # simulator.market.market_state = hyperdrive_market.MarketState(
-    #    lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
-    #    share_reserves=to_floating_point(pool_state["shareReserves_"]),
-    #    bond_reserves=to_floating_point(pool_state["bondReserves_"]),
-    #    # TODO: base_buffer=0,
-    #    # TODO: bond_buffer=0,
-    #    # TODO: variable_apr=0,
-    #    share_price=to_floating_point(pool_state["sharePrice"]),
-    #    init_share_price=to_floating_point(config.init_share_price),
-    #    trade_fee_percent=to_floating_point(config.trade_fee_percent),
-    #    redemption_fee_percent=to_floating_point(config.redemption_fee_percent),
-    #    longs_outstanding=to_floating_point(pool_state["longsOutstanding_"]),
-    #    shorts_outstanding=to_floating_point(pool_state["shortsOutstanding_"]),
-    #    long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime_"]),
-    #    short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime_"]),
-    #    long_base_volume=to_floating_point(pool_state["longBaseVolume_"]),
-    #    short_base_volume=to_floating_point(pool_state["shortBaseVolume_"]),
-    #    # TODO: checkpoints=defaultdict
-    #    # TODO: checkpoint_duration=0,
-    #    # TODO: total_supply_longs=defaultdict,
-    #    # TODO: total_supply_shorts=defaultdict,
-    #    # TODO: total_supply_withdraw_shares=0,
-    #    # TODO: withdraw_shares_ready_to_withdraw=0,
-    #    # TODO: withdraw_capital=0,
-    #    # TODO: withdraw_interest=0,
-    # )
+    sim_to_block_time = {}
+    for trade_number in range(15):
+        print(f"{trade_number=}")
+        # convert simulator bot outputs into just the tarde details
+        trades = [
+            trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
+        ]
+        for trade in trades:
+            agent_key = f"agent_{trade.wallet.address}"
+            trade_amount = to_fixed_point(trade.trade_amount)
+            if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
+                continue  # todo
+            if trade.action_type.name == "OPEN_SHORT":
+                with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+                    # Mint DAI & approve ERC20 usage by contract
+                    base_ERC20.mint(trade_amount)
+                    base_ERC20.approve(hyperdrive.address, trade_amount)
+                new_state, trade_details = ape_utils.ape_open_position(
+                    hyperdrive_market.AssetIdPrefix.SHORT,
+                    hyperdrive,
+                    sol_agents[agent_key],
+                    trade_amount,
+                )
+                sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
+            elif trade.action_type.name == "CLOSE_SHORT":
+                maturity_time = int(sim_to_block_time[trade.mint_time])
+                new_state, trade_details = ape_utils.ape_close_position(
+                    hyperdrive_market.AssetIdPrefix.SHORT,
+                    hyperdrive,
+                    sol_agents[agent_key],
+                    trade_amount,
+                    maturity_time,
+                )
+            elif trade.action_type.name == "OPEN_LONG":
+                with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+                    # Mint DAI & approve ERC20 usage by contract
+                    base_ERC20.mint(trade_amount)
+                    base_ERC20.approve(hyperdrive.address, trade_amount)
+                new_state, trade_details = ape_utils.ape_open_position(
+                    hyperdrive_market.AssetIdPrefix.LONG,
+                    hyperdrive,
+                    sol_agents[agent_key],
+                    trade_amount,
+                )
+                sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
+            elif trade.action_type.name == "CLOSE_LONG":
+                maturity_time = int(sim_to_block_time[trade.mint_time])
+                new_state, trade_details = ape_utils.ape_close_position(
+                    hyperdrive_market.AssetIdPrefix.LONG,
+                    hyperdrive,
+                    sol_agents[agent_key],
+                    trade_amount,
+                    maturity_time,
+                )
+            else:
+                raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
