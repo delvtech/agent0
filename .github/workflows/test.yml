@@ -26,5 +26,16 @@ jobs:
           python -m pip install stochastic --ignore-requires-python
           python -m pip install -r requirements-${{ matrix.python-version }}.txt
           python -m pip install .
-      - name: Running package tests
-        run: python -m pytest .
+          python -m pip install coverage
+      - name: Run pytest with coverage
+        run: |
+          coverage run -m pytest
+      - name: Generate coverage report
+        run: |
+          coverage xml -i report -m
+          coverage xml -i html
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          flags: unittests
+          fail_ci_if_error: true
