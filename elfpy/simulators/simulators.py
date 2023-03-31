@@ -171,6 +171,9 @@ class Config:
     # random number generator used in the simulation
     rng: NumpyGenerator = field(init=False, compare=False)
 
+    # scratch space for any application-specific & extraneous parameters
+    scratch: dict = field(default_factory=dict)
+
     def __post_init__(self) -> None:
         r"""init_share_price & rng are a function of other random variables"""
         self.rng = np.random.default_rng(self.random_seed)
@@ -180,8 +183,8 @@ class Config:
             self.init_share_price = (1 + self.variable_apr[0]) ** self.init_vault_age
         self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
-    def __getitem__(self, key) -> None:
-        return getattr(self, key)
+    def __getitem__(self, attrib) -> None:
+        return getattr(self, attrib)
 
     def __setattr__(self, attrib, value) -> None:
         #  variable_apr gets set to [-1] on init, then an appropriate value
@@ -482,16 +485,17 @@ class Simulator:
             for key in agent.wallet.get_state_keys():
                 setattr(self.simulation_state, key, [None] * self.trade_number)
 
-    def collect_and_execute_trades(self, last_block_in_sim: bool = False) -> None:
+    def collect_and_execute_trades(self, liquidate: bool = False) -> None:
         r"""Get trades from the agent list, execute them, and update states
 
         Parameters
         ----------
-        last_block_in_sim : bool
-            If True, indicates if the current set of trades are occuring on the final block in the simulation
+        liquidate : bool
+            If True, indicates if the current set of trades should be considered the final trades,
+            e.g. they are occuring on the final block in the simulation
         """
         if self.config.shuffle_users:
-            if last_block_in_sim:
+            if liquidate:
                 agent_ids: list[int] = self.rng.permutation(  # shuffle wallets except init_lp
                     [key for key in self.agents if key > 0]  # exclude init_lp before shuffling
                 ).tolist()
@@ -502,13 +506,13 @@ class Simulator:
                     list(self.agents)
                 ).tolist()  # random permutation of keys (agent wallet addresses)
         else:  # we are in a deterministic mode
-            agent_ids = list(self.agents)[::-1] if last_block_in_sim else list(self.agents)
+            agent_ids = list(self.agents)[::-1] if liquidate else list(self.agents)
         # Collect trades from all of the agents.
         # TODO: This API causes a unnecessary double loop; first over agents, then trades,
         #       then we loop again over all trades. In the future we want to simulate something like
         #       the mempool, which has all agent trades. But for now it would be better if we could
         #       get all of the block's trades without an extra loop.
-        trades = self.collect_trades(agent_ids, liquidate=last_block_in_sim)
+        trades = self.collect_trades(agent_ids, liquidate)
         # Execute the trades
         self.execute_trades(trades)
 
