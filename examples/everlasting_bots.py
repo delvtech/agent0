@@ -385,6 +385,57 @@ def get_simulation_market_state_from_contract(
     )
 
 
+def do_trade(trade):
+    agent_key = f"agent_{trade.wallet.address}"
+    trade_amount = to_fixed_point(trade.trade_amount)
+    # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
+    #    continue  # todo
+    if trade.action_type.name == "OPEN_SHORT":
+        with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+            # Mint DAI & approve ERC20 usage by contract
+            base_ERC20.mint(trade_amount)
+            base_ERC20.approve(hyperdrive.address, trade_amount)
+        new_state, trade_details = ape_utils.ape_open_position(
+            hyperdrive_market.AssetIdPrefix.SHORT,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
+    elif trade.action_type.name == "CLOSE_SHORT":
+        maturity_time = int(sim_to_block_time[trade.mint_time])
+        new_state, trade_details = ape_utils.ape_close_position(
+            hyperdrive_market.AssetIdPrefix.SHORT,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+            maturity_time,
+        )
+    elif trade.action_type.name == "OPEN_LONG":
+        with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+            # Mint DAI & approve ERC20 usage by contract
+            base_ERC20.mint(trade_amount)
+            base_ERC20.approve(hyperdrive.address, trade_amount)
+        new_state, trade_details = ape_utils.ape_open_position(
+            hyperdrive_market.AssetIdPrefix.LONG,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
+    elif trade.action_type.name == "CLOSE_LONG":
+        maturity_time = int(sim_to_block_time[trade.mint_time])
+        new_state, trade_details = ape_utils.ape_close_position(
+            hyperdrive_market.AssetIdPrefix.LONG,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+            maturity_time,
+        )
+    else:
+        raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
+
+
 if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
@@ -443,62 +494,18 @@ if __name__ == "__main__":
         simulator.market.market_state.variable_apr,
         config,
     )
-    print(simulator.agents)
-    print(list(range(1, len(sim_agents))))
-
     sim_to_block_time = {}
-    for trade_number in range(15):
-        print(f"{trade_number=}")
+    for trade_number in range(50):
         # convert simulator bot outputs into just the tarde details
         trades = [
             trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
         ]
         for trade in trades:
-            agent_key = f"agent_{trade.wallet.address}"
-            trade_amount = to_fixed_point(trade.trade_amount)
             if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
                 continue  # todo
-            if trade.action_type.name == "OPEN_SHORT":
-                with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
-                    # Mint DAI & approve ERC20 usage by contract
-                    base_ERC20.mint(trade_amount)
-                    base_ERC20.approve(hyperdrive.address, trade_amount)
-                new_state, trade_details = ape_utils.ape_open_position(
-                    hyperdrive_market.AssetIdPrefix.SHORT,
-                    hyperdrive,
-                    sol_agents[agent_key],
-                    trade_amount,
+            try:
+                do_trade(trade)
+            except Exception as exc:
+                print(
+                    f"\n----\n{trade_number=} failed with exception={exc}\n\n{trade=}\n\n{simulator.market.market_state=}\n----\n"
                 )
-                sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-            elif trade.action_type.name == "CLOSE_SHORT":
-                maturity_time = int(sim_to_block_time[trade.mint_time])
-                new_state, trade_details = ape_utils.ape_close_position(
-                    hyperdrive_market.AssetIdPrefix.SHORT,
-                    hyperdrive,
-                    sol_agents[agent_key],
-                    trade_amount,
-                    maturity_time,
-                )
-            elif trade.action_type.name == "OPEN_LONG":
-                with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
-                    # Mint DAI & approve ERC20 usage by contract
-                    base_ERC20.mint(trade_amount)
-                    base_ERC20.approve(hyperdrive.address, trade_amount)
-                new_state, trade_details = ape_utils.ape_open_position(
-                    hyperdrive_market.AssetIdPrefix.LONG,
-                    hyperdrive,
-                    sol_agents[agent_key],
-                    trade_amount,
-                )
-                sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-            elif trade.action_type.name == "CLOSE_LONG":
-                maturity_time = int(sim_to_block_time[trade.mint_time])
-                new_state, trade_details = ape_utils.ape_close_position(
-                    hyperdrive_market.AssetIdPrefix.LONG,
-                    hyperdrive,
-                    sol_agents[agent_key],
-                    trade_amount,
-                    maturity_time,
-                )
-            else:
-                raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
