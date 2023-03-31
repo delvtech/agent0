@@ -41,11 +41,11 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
     """
     if single_events := [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]:
         return single_events[-1]  # return last item
-    else:  # single_events is empty
-        raise ValueError(f'The transaction receipt should have one "TransferSingle" event, not {len(single_events)}.')
+    raise ValueError(f'The transaction receipt should have one "TransferSingle" event, not {len(single_events)}.')
 
 
 def get_pool_state(tx_receipt, hyperdrive_contract):
+    """Get the pool state by querying the smart contract directly"""
     transfer_single_event = get_transfer_single_event(tx_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])

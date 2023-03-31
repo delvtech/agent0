@@ -345,7 +345,6 @@ class Market(
         agent_deltas = wallet.Wallet(address=0)
         # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
         # should handle these in the simulator, not in the market.  The market should throw errors.
-        print(f"performing {agent_action.action_type} for agent {agent_id} with amount {agent_action.trade_amount}")
         try:
             if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
                 market_deltas, agent_deltas = self.open_long(

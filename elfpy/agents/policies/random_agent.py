@@ -88,11 +88,11 @@ class Policy(agent.Agent):
             )
         ]
 
-    def add_liquidity_with_random_amount(self, market) -> list[types.Trade]:
+    def add_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Add liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
-        # WEI <= trade_amount <= max_short
+        # WEI <= trade_amount
         trade_amount = np.maximum(elfpy.WEI, initial_trade_amount)
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
@@ -106,7 +106,7 @@ class Policy(agent.Agent):
             )
         ]
 
-    def remove_liquidity_with_random_amount(self, market) -> list[types.Trade]:
+    def remove_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Remove liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
@@ -174,6 +174,7 @@ class Policy(agent.Agent):
         -------
         action_list : list[MarketAction]
         """
+        # pylint: disable=too-many-return-statements
         # check if the agent will trade this block or not
         if not self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance]):
             return []
@@ -190,4 +191,8 @@ class Policy(agent.Agent):
             return self.open_long_with_random_amount(market)
         if action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
             return self.close_random_long()
+        if action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
+            return self.add_liquidity_with_random_amount()
+        if action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
+            return self.remove_liquidity_with_random_amount()
         return []
