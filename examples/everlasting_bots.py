@@ -1,4 +1,9 @@
-"""Example main.py file for illustrating a simulator workflow"""
+"""
+This function is a demo for executing an arbitrary number of trades from a pair of
+smart bots that track the fixed/variable rates using longs & shorts. It is meant to be
+a temporary demonstration, and will be gradually replaced with utilities in elfpy src.
+As such, we are relaxing some of the lint rules.
+"""
 from __future__ import annotations
 
 # stdlib
@@ -24,7 +29,9 @@ import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.utils.outputs as output_utils
 
-# pylint: disable=too-many-arguments
+# Apeworx does not get along well with pyright
+# Also ignoring a handful of pylint errors
+# pylint: disable=too-many-arguments,redefined-outer-name,invalid-name,unnecessary-dunder-call
 
 
 class FixedFrida(agentlib.Agent):
@@ -283,7 +290,7 @@ def get_config() -> simulators.Config:
 
 def get_agents(config):
     """Get python agents & corresponding solidity wallets"""
-    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)  # type: ignore
+    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)
     sim_agents = [init_agent]
     for address in range(1, 1 + config.scratch["num_fridas"]):
         risk_threshold = np.maximum(
@@ -330,7 +337,7 @@ def get_agents(config):
     sol_agents = {"governance": governance}
     for agent_address, sim_agent in enumerate(sim_agents):
         sol_agent = ape.accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
-        sol_agent.balance = to_fixed_point(sim_agent.budget)  # type: ignore
+        sol_agent.balance = to_fixed_point(sim_agent.budget)
         sol_agents[f"agent_{agent_address}"] = sol_agent
     return sol_agents, sim_agents
 
@@ -340,17 +347,17 @@ def get_simulator(config):
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
-    return simulators.Simulator(config=config, market=market, block_time=block_time)
+    return simulators.Simulator(config, market, block_time)
 
 
-def to_fixed_point(input, decimal_places=18):
-    """Convert floating point input to fixed point with desired number of decimals"""
-    return int(input * 10**decimal_places)
+def to_fixed_point(float_var, decimal_places=18):
+    """Convert floating point argument to fixed point with desired number of decimals"""
+    return int(float_var * 10**decimal_places)
 
 
-def to_floating_point(input, decimal_places=18):
-    """Convert fixed point input to floating point with specified number of decimals"""
-    return float(input / 10**decimal_places)
+def to_floating_point(float_var, decimal_places=18):
+    """Convert fixed point argument to floating point with specified number of decimals"""
+    return float(float_var / 10**decimal_places)
 
 
 def get_simulation_market_state_from_contract(
@@ -371,7 +378,7 @@ def get_simulation_market_state_from_contract(
         asset_id = hyperdrive_market.encode_asset_id(
             hyperdrive_market.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
         )
-        total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)  # type: ignore
+        total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
     return hyperdrive_market.MarketState(
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
         share_reserves=to_floating_point(pool_state["shareReserves"]),
@@ -411,7 +418,7 @@ def do_trade(trade):
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)
             base_ERC20.approve(hyperdrive.address, trade_amount)
-        new_state, trade_details = ape_utils.ape_open_position(
+        new_state, _ = ape_utils.ape_open_position(
             hyperdrive_market.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
@@ -420,7 +427,7 @@ def do_trade(trade):
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
     elif trade.action_type.name == "CLOSE_SHORT":
         maturity_time = int(sim_to_block_time[trade.mint_time])
-        new_state, trade_details = ape_utils.ape_close_position(
+        new_state, _ = ape_utils.ape_close_position(
             hyperdrive_market.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
@@ -432,18 +439,18 @@ def do_trade(trade):
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)
             base_ERC20.approve(hyperdrive.address, trade_amount)
-        new_state, trade_details = ape_utils.ape_open_position(
+        new_state, _ = ape_utils.ape_open_position(
             hyperdrive_market.AssetIdPrefix.LONG,
-            hyperdrive,
+            hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
         )
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
     elif trade.action_type.name == "CLOSE_LONG":
         maturity_time = int(sim_to_block_time[trade.mint_time])
-        new_state, trade_details = ape_utils.ape_close_position(
+        new_state, _ = ape_utils.ape_close_position(
             hyperdrive_market.AssetIdPrefix.LONG,
-            hyperdrive,
+            hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
             maturity_time,
@@ -491,7 +498,7 @@ if __name__ == "__main__":
     gov_fee = 0
     # Deploy hyperdrive on the chain
     hyperdrive_address = sol_agents["agent_0"].deploy(
-        project.MockHyperdriveTestnet,
+        project.MockHyperdriveTestnet,  # type:ignore
         base_ERC20,
         initial_apr,
         initial_share_price,
@@ -501,14 +508,13 @@ if __name__ == "__main__":
         (curve_fee, flat_fee, gov_fee),
         sol_agents["governance"],
     )
-    hyperdrive = project.MockHyperdriveTestnet.at(hyperdrive_address)
+    hyperdrive = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
     with ape.accounts.use_sender(sol_agents["agent_0"]):
-        base_ERC20.approve(hyperdrive, initial_supply)
-        as_underlying = True
-        hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], as_underlying)
+        base_ERC20.approve(hyperdrive, initial_supply)  # type:ignore
+        hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], True)  # type:ignore
     # Execute trades
     genesis_block_number = ape.chain.blocks[-1].number
-    genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp
+    genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
 
     simulator.market.market_state = get_simulation_market_state_from_contract(
         hyperdrive,
@@ -527,10 +533,4 @@ if __name__ == "__main__":
         for trade in trades:
             if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
                 continue  # todo
-            try:
-                do_trade(trade)
-            except Exception as exc:
-                print(
-                    f"\n----\n{trade_number=} failed with exception={exc}\n\n"
-                    f"{trade=}\n\n{simulator.market.market_state=}\n----\n"
-                )
+            do_trade(trade)
