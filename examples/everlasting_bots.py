@@ -395,7 +395,6 @@ def do_trade(trade):
     trade_amount = to_fixed_point(trade.trade_amount)
     # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
     #    continue  # todo
-    print(f"{trade.action_type.name=}")
     if trade.action_type.name == "OPEN_SHORT":
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
