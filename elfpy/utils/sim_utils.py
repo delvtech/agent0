@@ -1,13 +1,11 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Optional
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 
