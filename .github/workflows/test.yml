@@ -1,14 +1,12 @@
 name: test
 
 on:
+  paths-ignore:
+    - examples/everlasting_bots.py
   push:
     branches:
       - main
-    paths-ignore:
-      - examples/everlasting_bots.py
   pull_request:
-    paths-ignore:
-      - examples/everlasting_bots.py
 
 jobs:
   build:
