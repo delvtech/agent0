@@ -22,6 +22,17 @@ import elfpy.utils.price as price_utils
 # pylint: disable=too-many-instance-attributes
 
 
+<<<<<<< HEAD
+=======
+class AssetIdPrefix(IntEnum):
+    r"""The asset ID is used to encode the trade type in a transaction receipt"""
+    LONG = 0
+    SHORT = 1
+    WITHDRAWAL_SHARE = 2
+    LP = 3
+
+
+>>>>>>> 2c64d99 (run successfully for 5 days straight)
 @dataclass
 class Checkpoint:
     """
@@ -334,6 +345,7 @@ class Market(
         agent_deltas = wallet.Wallet(address=0)
         # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
         # should handle these in the simulator, not in the market.  The market should throw errors.
+        print(f"performing {agent_action.action_type} for agent {agent_id} with amount {agent_action.trade_amount}")
         try:
             if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
                 market_deltas, agent_deltas = self.open_long(
