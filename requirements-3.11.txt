@@ -11,4 +11,4 @@ pytest
 scipy
 stochastic
 tomli
-apeworx
+eth-ape
