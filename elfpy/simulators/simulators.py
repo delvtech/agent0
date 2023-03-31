@@ -182,6 +182,9 @@ class Config:
     def __getitem__(self, attrib) -> None:
         return getattr(self, attrib)
 
+    def __setitem__(self, attrib, value) -> None:
+        self.__setattr__(attrib, value)
+
     def __setattr__(self, attrib, value) -> None:
         #  variable_apr gets set to [-1] on init, then an appropriate value
         #  on post_init. So we need to check after it has been set, and only if
