@@ -73,12 +73,45 @@ class MarketState(base_market.BaseMarketState):
         i.e. share_price = base_value / share_value
     init_share_price: float
         share price at pool initialization
-    trade_fee_percent : float
+    trade_fee_percent: float
         The multiple applied to the price discount (1-p) to calculate the trade fee.
-    redemption_fee_percent : float
+    redemption_fee_percent: float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    governance_fee_percent : float
+    governance_fee_percent: float
         The multiple applied to the trade and redemption fee to calculate the share paid to governance.
+    trade_fee_percent: float
+        The percentage of the difference between the amount paid without slippage and the amount received
+        that will be added to the input as a fee.
+    redemption_fee_percent: float
+        A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    longs_outstanding: float
+        The amount of longs that are still open.
+    shorts_outstanding: float
+        The amount of shorts that are still open.
+    long_average_maturity_time: float
+        The average maturity time of long positions.
+    short_average_maturity_time: float
+        The average maturity time of short positions.
+    long_base_volume: float
+        The amount of base paid by outstanding longs.
+    short_base_volume: float
+        The amount of base paid to outstanding shorts.
+    checkpoints: defaultdict[float, Checkpoint]
+        Time delimited checkpoints
+    checkpoint_duration: float
+        Time between checkpoints, defaults to 1 day
+    total_supply_longs: defaultdict[float, float]
+        Checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
+    total_supply_shorts: defaultdict[float, float]
+        Checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
+    total_supply_withdraw_shares: float
+        Total amount of withdraw shares outstanding
+    withdraw_shares_ready_to_withdraw: float
+        Shares that have been freed up to withdraw by withdraw_shares
+    withdraw_capital: float
+        The margin capital reclaimed by the withdraw process
+    withdraw_interest: float
+        The interest earned by the redemptions which put capital into the withdraw pool
     """
 
     def __getitem__(self, key):
