@@ -1,8 +1,6 @@
 name: static
 
 on:
-  paths-ignore:
-    - examples/everlasting_bots.py
   push:
     branches:
       - main
@@ -28,3 +26,5 @@ jobs:
           python -m pip install . # Install the elfpy module
       - name: Analysing code with pyright
         run: python -m pyright .
+    paths-ignore:
+      - examples/everlasting_bots.py

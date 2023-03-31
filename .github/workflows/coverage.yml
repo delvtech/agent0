@@ -1,8 +1,6 @@
 name: coverage
 
 on:
-  paths-ignore:
-    - examples/everlasting_bots.py
   push:
     branches:
       - main
@@ -41,3 +39,5 @@ jobs:
         with:
           flags: unittests
           fail_ci_if_error: true
+    paths-ignore:
+      - examples/everlasting_bots.py

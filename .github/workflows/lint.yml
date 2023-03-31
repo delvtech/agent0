@@ -1,8 +1,6 @@
 name: lint
 
 on:
-  paths-ignore:
-    - examples/everlasting_bots.py
   push:
     branches:
       - main
@@ -33,3 +31,5 @@ jobs:
         run: python -m pylint $(git ls-files '*.py')
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
+    paths-ignore:
+      - examples/everlasting_bots.py
