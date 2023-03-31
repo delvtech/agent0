@@ -290,7 +290,7 @@ def get_config() -> simulators.Config:
 
 def get_agents(config):
     """Get python agents & corresponding solidity wallets"""
-    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)
+    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)  # type: ignore
     sim_agents = [init_agent]
     for address in range(1, 1 + config.scratch["num_fridas"]):
         risk_threshold = np.maximum(
