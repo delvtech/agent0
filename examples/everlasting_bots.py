@@ -238,6 +238,12 @@ def get_argparser() -> argparse.ArgumentParser:
         default=0.01,
         type=float,
     )
+    parser.add_argument(
+        "--trade_chance",
+        help="Decimal representation of the percent chance that a agent gets to trade on a given block (e.g. 0.1 = 10%)",
+        default=0.1,
+        type=float,
+    )
     return parser
 
 
@@ -252,7 +258,6 @@ def get_config() -> simulators.Config:
             config[key] = value
         else:
             config.scratch[key] = value
-    config.scratch["trade_chance"] = 0.1
     config.scratch["louie_risk_threshold"] = 0.0
     config.scratch["louie_budget_mean"] = 375_000
     config.scratch["louie_budget_std"] = 25_000
@@ -390,6 +395,7 @@ def do_trade(trade):
     trade_amount = to_fixed_point(trade.trade_amount)
     # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
     #    continue  # todo
+    print(f"{trade.action_type.name=}")
     if trade.action_type.name == "OPEN_SHORT":
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
@@ -434,6 +440,14 @@ def do_trade(trade):
         )
     else:
         raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
+    simulator.market.market_state = get_simulation_market_state_from_contract(
+        hyperdrive,
+        sol_agents[agent_key],
+        position_duration_seconds,
+        checkpoint_duration,
+        simulator.market.market_state.variable_apr,
+        config,
+    )
 
 
 if __name__ == "__main__":
@@ -495,7 +509,7 @@ if __name__ == "__main__":
         config,
     )
     sim_to_block_time = {}
-    for trade_number in range(50):
+    for trade_number in range(100):
         # convert simulator bot outputs into just the tarde details
         trades = [
             trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
