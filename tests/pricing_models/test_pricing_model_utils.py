@@ -9,7 +9,6 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.utils.outputs as output_utils
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
-from elfpy.utils import sim_utils
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):
@@ -159,5 +158,5 @@ class TestPricingModelUtils(BasePricingModelUtilsTest):
 
     def test_calc_k_const(self):
         """Execute the test"""
-        self.run_calc_k_const_test(sim_utils.get_pricing_model("hyperdrive"))
-        self.run_calc_k_const_test(sim_utils.get_pricing_model("yieldspace"))
+        self.run_calc_k_const_test(hyperdrive_pm.HyperdrivePricingModel())
+        self.run_calc_k_const_test(yieldspace_pm.YieldspacePricingModel())

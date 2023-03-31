@@ -1,13 +1,11 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-import logging
 from importlib import import_module
 from typing import TYPE_CHECKING, Optional
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
 
@@ -157,29 +155,6 @@ def get_initialized_hyperdrive_market(
         target_apr=config.target_fixed_apr,
     )
     return market, agent_deltas, market_deltas
-
-
-def get_pricing_model(model_name: str) -> yieldspace_pm.YieldspacePricingModel | hyperdrive_pm.HyperdrivePricingModel:
-    r"""Get a PricingModel object from the config passed in
-
-    Parameters
-    ----------
-    model_name : str
-        name of the desired pricing_model; can be "hyperdrive", or "yieldspace"
-
-    Returns
-    -------
-    PricingModel
-        instantiated pricing model matching the input argument
-    """
-    logging.info("%s %s %s", "#" * 20, model_name, "#" * 20)
-    if model_name.lower() == "hyperdrive":
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-    elif model_name.lower() == "yieldspace":
-        pricing_model = yieldspace_pm.YieldspacePricingModel()
-    else:
-        raise ValueError(f'pricing_model_name must be "Hyperdrive", or "YieldSpace", not {model_name}')
-    return pricing_model
 
 
 def get_policy(agent_type: str) -> Policy:
