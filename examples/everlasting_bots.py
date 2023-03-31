@@ -19,9 +19,12 @@ import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.utils.outputs as output_utils
+
+# pylint: disable=too-many-arguments
 
 
 class FixedFrida(agentlib.Agent):
@@ -240,7 +243,10 @@ def get_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--trade_chance",
-        help="Decimal representation of the percent chance that a agent gets to trade on a given block (e.g. 0.1 = 10%)",
+        help=(
+            "Decimal representation of the percent chance that a agent gets to "
+            "trade on a given block (e.g. 0.1 = 10%)"
+        ),
         default=0.1,
         type=float,
     )
@@ -248,6 +254,7 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 def get_config() -> simulators.Config:
+    """Set config values for the experiment"""
     args = get_argparser().parse_args()
     config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
@@ -275,7 +282,7 @@ def get_config() -> simulators.Config:
 
 
 def get_agents(config):
-    # Get agents
+    """Get python agents & corresponding solidity wallets"""
     init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)  # type: ignore
     sim_agents = [init_agent]
     for address in range(1, 1 + config.scratch["num_fridas"]):
@@ -323,23 +330,26 @@ def get_agents(config):
     sol_agents = {"governance": governance}
     for agent_address, sim_agent in enumerate(sim_agents):
         sol_agent = ape.accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
-        sol_agent.balance = int(sim_agent.budget * 10**18)
+        sol_agent.balance = to_fixed_point(sim_agent.budget)  # type: ignore
         sol_agents[f"agent_{agent_address}"] = sol_agent
     return sol_agents, sim_agents
 
 
 def get_simulator(config):
-    pricing_model = sim_utils.get_pricing_model(config.pricing_model_name)
+    """Get a python simulator"""
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
     return simulators.Simulator(config=config, market=market, block_time=block_time)
 
 
 def to_fixed_point(input, decimal_places=18):
+    """Convert floating point input to fixed point with desired number of decimals"""
     return int(input * 10**decimal_places)
 
 
 def to_floating_point(input, decimal_places=18):
+    """Convert fixed point input to floating point with specified number of decimals"""
     return float(input / 10**decimal_places)
 
 
@@ -391,6 +401,7 @@ def get_simulation_market_state_from_contract(
 
 
 def do_trade(trade):
+    """Execute agent trades on hyperdrive solidity contract"""
     agent_key = f"agent_{trade.wallet.address}"
     trade_amount = to_fixed_point(trade.trade_amount)
     # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
@@ -520,5 +531,6 @@ if __name__ == "__main__":
                 do_trade(trade)
             except Exception as exc:
                 print(
-                    f"\n----\n{trade_number=} failed with exception={exc}\n\n{trade=}\n\n{simulator.market.market_state=}\n----\n"
+                    f"\n----\n{trade_number=} failed with exception={exc}\n\n"
+                    f"{trade=}\n\n{simulator.market.market_state=}\n----\n"
                 )
