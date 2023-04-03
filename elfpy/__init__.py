@@ -172,8 +172,18 @@ rc_params.update({"savefig.facecolor": GREY})
 mpl.rcParams.update(rc_params)
 
 
-def check_non_zero(data):
-    r"""Checks that all market variables are non-zero within a precision threshold"""
+def check_non_zero(data) -> None:
+    r"""
+    Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+    Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
+    If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
+    If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.
+
+    Parameters
+    ----------
+    data : dict or class
+        The data to check for non-zero values.
+    """
     # TODO: issue #146
     # this is an imperfect solution to rounding errors, but it works for now
     try:
