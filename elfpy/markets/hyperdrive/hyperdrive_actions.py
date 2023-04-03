@@ -10,6 +10,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.markets.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -106,6 +107,179 @@ def check_action(agent_action: MarketAction) -> None:
         and agent_action.mint_time is None
     ):
         raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
+
+
+def calculate_lp_allocation_adjustment(
+    positions_outstanding: float,
+    base_volume: float,
+    average_time_remaining: float,
+    share_price: float,
+) -> float:
+    """Calculates an adjustment amount for lp shares"""
+    # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
+    base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
+    # adjustment = base_adjustment / c
+    return base_adjustment / share_price
+
+
+def calculate_short_adjustment(
+    market_state: hyperdrive_market.MarketState,
+    position_duration: time.StretchedTime,
+    market_time: float,
+) -> float:
+    """Calculates an adjustment amount for lp shares"""
+    if market_time > market_state.short_average_maturity_time:
+        return 0
+    # (year_end - year_start) / (normalizing_constant / 365)
+    normalized_time_remaining = (market_state.short_average_maturity_time - market_time) / (
+        position_duration.normalizing_constant / 365
+    )
+    return calculate_lp_allocation_adjustment(
+        market_state.shorts_outstanding,
+        market_state.short_base_volume,
+        normalized_time_remaining,
+        market_state.share_price,
+    )
+
+
+def calculate_long_adjustment(
+    market_state: hyperdrive_market.MarketState,
+    position_duration: time.StretchedTime,
+    market_time: float,
+) -> float:
+    """Calculates an adjustment amount for lp shares"""
+    if market_time > market_state.long_average_maturity_time:
+        return 0
+    # (year_end - year_start) / (normalizing_constant / 365)
+    normalized_time_remaining = (market_state.long_average_maturity_time - market_time) / (
+        position_duration.normalizing_constant / 365
+    )
+    return calculate_lp_allocation_adjustment(
+        market_state.longs_outstanding,
+        market_state.long_base_volume,
+        normalized_time_remaining,
+        market_state.share_price,
+    )
+
+
+def update_weighted_average(  # pylint: disable=too-many-arguments
+    average: float,
+    total_weight: float,
+    delta: float,
+    delta_weight: float,
+    is_adding: bool,
+) -> float:
+    """Updates a weighted average by adding or removing a weighted delta."""
+    if is_adding:
+        return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
+    if total_weight == delta_weight:
+        return 0
+    return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
+
+
+def calc_lp_out_given_tokens_in(
+    d_base: float,
+    rate: float,
+    market_state: hyperdrive_market.MarketState,
+    market_time: float,
+    position_duration: time.StretchedTime,
+) -> tuple[float, float, float]:
+    r"""Computes the amount of LP tokens to be minted for a given amount of base asset
+
+    .. math::
+        \Delta l = \frac{(l \cdot \Delta z)(z + a_s - a_l)}
+
+    where a_s and a_l are the short and long adjustments. In order to calculate these we need to
+    keep track of the long and short base volumes, amounts outstanding and average maturity
+    times.
+    """
+    d_shares = d_base / market_state.share_price
+    annualized_time = time.norm_days(position_duration.days, 365)
+    d_bonds = (market_state.share_reserves + d_shares) / 2 * (
+        market_state.init_share_price * (1 + rate * annualized_time) ** (1 / position_duration.stretched_time)
+        - market_state.share_price
+    ) - market_state.bond_reserves
+    if market_state.share_reserves > 0:  # normal case where we have some share reserves
+        short_adjustment = calculate_short_adjustment(market_state, position_duration, market_time)
+        long_adjustment = calculate_long_adjustment(market_state, position_duration, market_time)
+        lp_out = (d_shares * market_state.lp_total_supply) / (
+            market_state.share_reserves + short_adjustment - long_adjustment
+        )
+    else:  # initial case where we have 0 share reserves or final case where it has been removed
+        lp_out = d_shares
+    return lp_out, d_base, d_bonds
+
+
+def calculate_base_volume(base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
+    """Calculates the base volume of an open trade.
+    Output is given the base amount, the bond amount, and the time remaining.
+    Since the base amount takes into account backdating, we can't use this as our base volume.
+    Since we linearly interpolate between the base volume and the bond amount as the time
+    remaining goes from 1 to 0, the base volume can be determined as follows:
+
+        base_amount = t * base_volume + (1 - t) * bond_amount
+                            =>
+        base_volume = (base_amount - (1 - t) * bond_amount) / t
+    """
+    # If the time remaining is 0, the position has already matured and doesn't have an impact on
+    # LP's ability to withdraw. This is a pathological case that should never arise.
+    if normalized_time_remaining == 0:
+        return 0
+    return (base_amount - (1 - normalized_time_remaining) * bond_amount) / normalized_time_remaining
+
+
+def calc_checkpoint_deltas(
+    market: hyperdrive_market.Market, checkpoint_time: float, bond_amount: float, position: Literal["short", "long"]
+) -> tuple[float, defaultdict[float, float], float]:
+    """Compute deltas to close any outstanding positions at the checkpoint_time
+
+    Parameters
+    ----------
+    market: hyperdrive_market.Market
+        Deltas are computed for this market.
+    checkpoint_time: float
+        The checkpoint (mint) time to be used for updating.
+    bond_amount: float
+        The amount of bonds used to close the position.
+    position: str
+        Either "short" or "long", indicating what type of position is being closed.
+
+    Returns
+    -------
+    d_base_volume: float
+        The change in base volume for the given position.
+    d_checkpoints: defaultdict[float, float]
+        The change in checkpoint volume for the given checkpoint_time (key) and position (value).
+    lp_margin: float
+        The amount of margin that LPs provided on the long position.
+    """
+    total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
+    # base_volume = "short_base_volume" if position == "short" else "long_base_volume"
+    # Calculate the amount of margin that LPs provided on the long position and update the base
+    # volume aggregates.
+    lp_margin = 0.0
+    # Get the total supply of longs in the checkpoint of the longs being closed. If the longs are
+    # closed before maturity, we add the amount of longs being closed since the total supply is
+    # decreased when burning the long tokens.
+    checkpoint_amount = market.market_state[total_supply][checkpoint_time]
+    # maturity_timestamp = checkpoint_time + market.position_duration.days / 365
+
+    # TODO: remove this?  I think it wasn't in here because we aren't burning yet
+    # if market.block_time.time < maturity_timestamp:
+    #     checkpoint_amount += bond_amount
+
+    proportional_base_volume = (
+        market.market_state.checkpoints[checkpoint_time].long_base_volume * bond_amount / checkpoint_amount
+    )
+    d_base_volume = -proportional_base_volume
+    d_checkpoints = defaultdict(float, {checkpoint_time: d_base_volume})
+    lp_margin = bond_amount - proportional_base_volume
+
+    # If the checkpoint has nothing stored, then do not update
+    if checkpoint_amount == 0:
+        return (0, defaultdict(float, {checkpoint_time: 0}), 0)
+
+    return (d_base_volume, d_checkpoints, lp_margin)
 
 
 def calc_open_short(
@@ -232,9 +406,8 @@ def calc_close_short(
         is_adding=False,
     )
     d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
-    # TODO: add accounting for withdrawal shares
     # Return the market and wallet deltas.
-    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
+    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
@@ -274,7 +447,7 @@ def calc_open_long(
     from their long positions, so the only money they make on closing is from the long maturing and the fixed
     rate changing.
 
-    Arguments
+    Parameters
     ----------
     wallet_address: int
         integer address for the agent's wallet
@@ -385,18 +558,86 @@ def calc_close_long(
         is_adding=False,
     )
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
-    d_base_volume, d_checkpoints = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
-    # TODO: add accounting for withdrawal shares
+    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
+    # get the share adjustment amount
+    share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
+    bond_reserves_delta = trade_result.market_result.d_bonds
+    normalized_time_elapsed = (market.block_time.time - mint_time) / market.position_duration.years
+    share_proceeds = bond_amount * normalized_time_elapsed / market.market_state.share_price
+    maturity_time = mint_time + market.position_duration.years
+    close_share_price = (
+        market.market_state.share_price
+        if market.block_time.time < maturity_time
+        else market.market_state.checkpoints[mint_time].share_price
+    )
+    if market.market_state.init_share_price > close_share_price:
+        share_proceeds *= close_share_price / market.market_state.init_share_price
+    # The amount of liquidity that needs to be removed.
+    share_adjustment = -(share_proceeds - share_reserves_delta)
+
+    margin_needs_to_be_freed = (
+        market.market_state.total_supply_withdraw_shares > market.market_state.withdraw_shares_ready_to_withdraw
+    )
+    withdraw_pool_deltas = MarketDeltas()
+    if margin_needs_to_be_freed:
+        open_share_price = market.market_state.checkpoints[mint_time].long_share_price
+        # The withdrawal pool has preferential access to the proceeds generated from closing longs.
+        # The LP proceeds when longs are closed are equivalent to the proceeds of short positions.
+        withdrawal_proceeds = calc_short_proceeds(
+            bond_amount,
+            share_proceeds,
+            open_share_price,
+            market.market_state.share_price,
+            market.market_state.share_price,
+        )
+        lp_interest = calc_short_interest(
+            bond_amount,
+            open_share_price,
+            market.market_state.share_price,
+            market.market_state.share_price,
+        )
+        capital_freed = 0
+        if withdrawal_proceeds > lp_interest:
+            capital_freed = withdrawal_proceeds - lp_interest
+
+        # Pay out the withdrawal pool with the freed margin. The withdrawal proceeds are split into
+        # the margin pool and the interest pool. The proceeds that are distributed to the margin and
+        # interest pools are removed from the pool's liquidity.
+        withdraw_pool_deltas = market.calc_free_margin(
+            capital_freed,
+            # TODO: make sure that the withdrawal shares are actually instantiated with the open
+            # share price. Think more about this as it seems weird to have to convert back using an
+            # old share price considering that this may not have been the share price at the time
+            # the withdrawal was initiated.
+            lp_margin / open_share_price,
+            lp_interest,
+        )
+        withdrawal_proceeds = withdraw_pool_deltas.withdraw_capital + withdraw_pool_deltas.withdraw_interest
+        share_adjustment -= withdrawal_proceeds
+
+    # Remove the flat component of the trade as well as any LP proceeds paid to the withdrawal pool
+    # from the pool's liquidity.
+    share_reserves = market.market_state.share_reserves + share_reserves_delta
+    bond_reserves = market.market_state.bond_reserves + bond_reserves_delta
+    adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves(
+        share_reserves, bond_reserves, share_adjustment
+    )
+    share_reserves_delta = adjusted_share_reserves - market.market_state.share_reserves
+    bond_reserves_delta = adjusted_bond_reserves - market.market_state.bond_reserves
+
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
-        d_base_asset=trade_result.market_result.d_base,
-        d_bond_asset=trade_result.market_result.d_bonds,
+        d_base_asset=share_reserves_delta * market.market_state.share_price,
+        d_bond_asset=bond_reserves_delta,
         d_base_buffer=-bond_amount,
         long_base_volume=d_base_volume,
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
         long_checkpoints=d_checkpoints,
         total_supply_longs=defaultdict(float, {mint_time: -bond_amount}),
+        withdraw_capital=withdraw_pool_deltas.withdraw_capital,
+        withdraw_interest=withdraw_pool_deltas.withdraw_interest,
+        withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -405,6 +646,103 @@ def calc_close_long(
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
+
+
+def calc_update_reserves(share_reserves: float, bond_reserves: float, share_reserves_delta) -> tuple[float, float]:
+    """Calculates updates to the pool's liquidity and holds the pool's APR constant.
+
+    Parameters
+    ----------
+    share_reserves: float
+        The current total shares in reserve
+    bond_reserves: float
+        The current total bonds in reserve
+    share_reserves_delta:
+        The delta that should be applied to share reserves.
+    """
+    if share_reserves_delta == 0:
+        return 0, 0
+
+    updated_share_reserves = share_reserves + share_reserves_delta
+    updated_bond_reserves = bond_reserves * updated_share_reserves / share_reserves
+
+    return updated_share_reserves, updated_bond_reserves
+
+
+def calc_short_interest(
+    bond_amount: float, open_share_price: float, close_share_price: float, share_price: float
+) -> float:
+    """Calculates the interest in shares earned by a short position.
+    The math for the short's interest in shares is given by:
+
+         interest = ((c1 / c0 - 1) * dy) / c
+                  = (((c1 - c0) / c0) * dy) / c
+                  = ((c1 - c0) / (c0 * c)) * dy
+
+         In the event that the interest is negative, we mark the interest
+         to zero.
+
+    Parameters
+    ----------
+    bond_amount: float
+        The amount of bonds underlying the closed short.
+    open_share_price: float
+        The share price at the short's open.
+    close_share_price: float
+        The share price at the short's close.
+    share_price: float
+        the current share price.
+
+    Returns
+    -------
+    float
+        The short interest in shares.
+    """
+    share_interest = 0
+    if close_share_price > open_share_price:
+        share_interest = bond_amount * (close_share_price - open_share_price) / (open_share_price * share_price)
+    return share_interest
+
+
+def calc_short_proceeds(
+    bond_amount: float, share_amount: float, open_share_price: float, close_share_price: float, share_price: float
+) -> float:
+    """Calculates the proceeds in shares of closing a short position.
+
+    This takes into account the trading profits, the interest that was earned by the short, and the
+    amount of margin that was released by closing the short. The math for the short's proceeds in
+    base is given by:
+
+    proceeds = dy - c * dz + (c1 - c0) * (dy / c0) = dy - c * dz + (c1 / c0) * dy - dy = (c1 / c0) *
+    dy - c * dz
+
+    We convert the proceeds to shares by dividing by the current share price. In the event that the
+    interest is negative and outweighs the trading profits and margin released, the short's proceeds
+    are marked to zero.
+
+    Parameters
+    ----------
+    bond_amount: float
+        The amount of bonds underlying the closed short.
+    share_amount:
+        The amount of shares that it costs to close the short.
+    open_share_price:
+        the share price at the short's open.
+    close_share_price:
+        the share price at the short's close.
+    share_price:
+        The current share price.
+
+    Returns
+    -------
+    float
+        The short proceeds in shares as share_proceeds.
+    """
+    share_proceeds = 0
+    bond_factor = bond_amount * close_share_price / (open_share_price * share_price)
+    if bond_factor > share_amount:
+        share_proceeds = bond_factor - share_amount
+    return share_proceeds
 
 
 def calc_add_liquidity(
