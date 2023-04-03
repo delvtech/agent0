@@ -37,21 +37,43 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
     ape.types.ContractLog
         The primary emitted trade (a "TransferSingle" `ContractLog
         <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
-        ) event, excluding periferal events.
+        ) event, excluding peripheral events.
     """
     if single_events := [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]:
         return single_events[-1]  # return last item
     raise ValueError(f'The transaction receipt should have one "TransferSingle" event, not {len(single_events)}.')
 
 
-def get_pool_state(tx_receipt, hyperdrive_contract):
-    """Get the pool state by querying the smart contract directly"""
+def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
+    """
+    Aftering opening or closing a position, we query the smart contract for its updated pool info.
+    We return everything returned by getPoolInfo in the smart contracts, along with:
+        token_id: the id of the TransferSingle event (that isn't mint or burn), returned by get_transfer_single_event
+        block_number_: the block number of the transaction
+        prefix_: the prefix of the trade (long, short, or LP)
+        maturity_timestamp: the maturity time of the trade
+
+    Arguments
+    ---------
+    tx_receipt: ape_ethereum.transactions.Receipt
+        `Ape transaction receipt
+        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    hyperdrive_contract: ape.contracts.base.ContractInstance
+        Ape project `ContractInstance
+        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        wrapped around the initialized MockHyperdriveTestnet smart contract.
+
+    Returns
+    -------
+    dict[str, Any]
+        An update dictionary for the Hyperdrive pool state
+    """
     transfer_single_event = get_transfer_single_event(tx_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_market.decode_asset_id(token_id)
-    pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
-    pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
+    pool_state = hyperdrive_contract.getPoolInfo().__dict__
+    pool_state["block_number_"] = tx_receipt.block_number
     pool_state["token_id_"] = token_id
     pool_state["prefix_"] = prefix
     pool_state["maturity_timestamp_"] = maturity_timestamp  # in seconds
@@ -98,7 +120,7 @@ def ape_open_position(
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         if trade_prefix == hyperdrive_assets.AssetIdPrefix.LONG:  # open a long
             min_output = 0  # python sims does not support alternative min_output
-            tx_receipt = hyperdrive_contract.openLong(  # type: ignore
+            tx_receipt: Receipt = hyperdrive_contract.openLong(
                 trade_amount,  # base
                 min_output,
                 agent_address,
@@ -106,14 +128,14 @@ def ape_open_position(
             )
         elif trade_prefix == hyperdrive_assets.AssetIdPrefix.SHORT:  # open a short
             max_deposit = trade_amount  # python sims does not support alternative max_deposit
-            tx_receipt = hyperdrive_contract.openShort(  # type: ignore
+            tx_receipt: Receipt = hyperdrive_contract.openShort(
                 trade_amount,  # bonds
                 max_deposit,
                 agent_address,
                 as_underlying,
             )
         elif trade_prefix == hyperdrive_market.AssetIdPrefix.LP:  # open a LP
-            tx_receipt = hyperdrive_contract.addLiquidity(  # type: ignore
+            tx_receipt: Receipt = hyperdrive_contract.addLiquidity(
                 trade_amount,  # bonds
                 0,  # min apr
                 int(100 * 1e18),  # max apr
