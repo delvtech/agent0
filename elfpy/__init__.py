@@ -170,3 +170,30 @@ rc_params.update({"savefig.facecolor": GREY})
 
 # Set the params
 mpl.rcParams.update(rc_params)
+
+
+def check_non_zero(data):
+    r"""Checks that all market variables are non-zero within a precision threshold"""
+    # TODO: issue #146
+    # this is an imperfect solution to rounding errors, but it works for now
+    try:
+        if not isinstance(data, Dict):
+            data = data.__dict__
+    except AttributeError as exception:
+        raise TypeError("dct must be a dict or a class with __dict__") from exception
+    for key, value in data.items():
+        if isinstance(value, (int, float)):
+            if 0 > value > -PRECISION_THRESHOLD:
+                logging.debug(
+                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                    key,
+                    value,
+                    PRECISION_THRESHOLD,
+                )
+                setattr(data, key, 0)
+            else:
+                assert (
+                    value > -PRECISION_THRESHOLD
+                ), f"values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
+        elif isinstance(value, (list, tuple, Dict)):
+            check_non_zero(value)

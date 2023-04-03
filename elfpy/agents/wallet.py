@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import elfpy
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 if TYPE_CHECKING:
@@ -146,13 +147,6 @@ class Wallet:
                     value_or_dict,
                 )
                 self[key] += value_or_dict
-                if 0 > self[key] > -elfpy.PRECISION_THRESHOLD:
-                    logging.debug(
-                        "agent #%g %s is negative, but within precision threshold, setting it to 0", self.address, key
-                    )
-                    self[key] = 0
-                elif self[key] <= -elfpy.PRECISION_THRESHOLD:
-                    raise ValueError(f"{key} value less than {-elfpy.PRECISION_THRESHOLD:.1E}")
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(
@@ -174,6 +168,7 @@ class Wallet:
                 self._update_shorts(value_or_dict.items())
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
+            elfpy.check_non_zero(self)
 
     def _update_borrows(self, borrows: Iterable[tuple[float, Borrow]]) -> None:
         for mint_time, borrow_summary in borrows:
