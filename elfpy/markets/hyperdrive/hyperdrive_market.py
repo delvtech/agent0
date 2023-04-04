@@ -73,11 +73,11 @@ class MarketState(base_market.BaseMarketState):
         i.e. share_price = base_value / share_value
     init_share_price: float
         share price at pool initialization
-    curve_fee_mult: float
+    curve_fee_multiple: float
         The multiple applied to the price discount (1-p) to calculate the trade fee.
-    flat_fee_mult: float
+    flat_fee_multiple: float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    governance_fee_mult: float
+    governance_fee_multiple: float
         The multiple applied to the trade and flat fee to calculate the share paid to governance.
     longs_outstanding: float
         The amount of longs that are still open.
