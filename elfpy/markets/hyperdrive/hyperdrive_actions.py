@@ -638,7 +638,7 @@ def calc_checkpoint_deltas(
     checkpoint_amount = market.market_state[total_supply][checkpoint_time]
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == 0:
-        return (0, defaultdict(float, {checkpoint_time: 0}))
+        return 0, defaultdict(float, {checkpoint_time: 0})
     # If all of the positions in the checkpoint are being closed, delete the base volume in the
     # checkpoint and reduce the aggregates by the checkpoint amount. Otherwise, decrease the
     # both the checkpoints and aggregates by a proportional amount.
@@ -649,4 +649,4 @@ def calc_checkpoint_deltas(
             market.market_state.checkpoints[checkpoint_time][base_volume] * (bond_amount / checkpoint_amount)
         )
     d_checkpoints = defaultdict(float, {checkpoint_time: d_base_volume})
-    return (d_base_volume, d_checkpoints)
+    return d_base_volume, d_checkpoints

@@ -73,17 +73,12 @@ class MarketState(base_market.BaseMarketState):
         i.e. share_price = base_value / share_value
     init_share_price: float
         share price at pool initialization
-    trade_fee_percent: float
+    curve_fee_multiple: float
         The multiple applied to the price discount (1-p) to calculate the trade fee.
-    redemption_fee_percent: float
+    flat_fee_multiple: float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
-    governance_fee_percent: float
-        The multiple applied to the trade and redemption fee to calculate the share paid to governance.
-    trade_fee_percent: float
-        The percentage of the difference between the amount paid without slippage and the amount received
-        that will be added to the input as a fee.
-    redemption_fee_percent: float
-        A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    governance_fee_multiple: float
+        The multiple applied to the trade and flat fee to calculate the share paid to governance.
     longs_outstanding: float
         The amount of longs that are still open.
     shorts_outstanding: float
@@ -136,10 +131,10 @@ class MarketState(base_market.BaseMarketState):
     share_price: float = 1.0
     init_share_price: float = 1.0
 
-    # fee percents
-    trade_fee_percent: float = 0.0
-    redemption_fee_percent: float = 0.0
-    governance_fee_percent: float = 0.0
+    # fee multiples
+    curve_fee_multiple: float = 0.0
+    flat_fee_multiple: float = 0.0
+    governance_fee_multiple: float = 0.0
 
     # governance fees that haven't been collected yet denominated in shares
     gov_fees_accrued: float = 0.0
@@ -448,7 +443,7 @@ class Market(
             agent_deltas,
             self.market_state,
         )
-        return (agent_id, agent_deltas, market_deltas)
+        return agent_id, agent_deltas, market_deltas
 
     def initialize(
         self,

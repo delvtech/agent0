@@ -235,8 +235,8 @@ class YieldspacePricingModel(PricingModel):
             time_remaining,
         )
         out_amount = Decimal(out.amount)
-        trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        governance_fee_percent = Decimal(market_state.governance_fee_percent)
+        curve_fee_multiple = Decimal(market_state.curve_fee_multiple)
+        governance_fee_multiple = Decimal(market_state.governance_fee_multiple)
         if out.unit == types.TokenType.BASE:
             d_shares = out_amount / share_price
             # The amount the agent pays without fees or slippage is simply the
@@ -267,8 +267,8 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            curve_fee = abs(out_amount - without_fee_or_slippage) * trade_fee_percent
-            gov_curve_fee = curve_fee * governance_fee_percent
+            curve_fee = abs(out_amount - without_fee_or_slippage) * curve_fee_multiple
+            gov_curve_fee = curve_fee * governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
@@ -316,8 +316,8 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert to base
             )
-            curve_fee = abs(d_bonds - without_fee_or_slippage) * trade_fee_percent
-            gov_curve_fee = curve_fee * governance_fee_percent
+            curve_fee = abs(d_bonds - without_fee_or_slippage) * curve_fee_multiple
+            gov_curve_fee = curve_fee * governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
             # excluded fees. Adding the fees results in more tokens paid, which
             # indicates that the fees are working correctly.
@@ -447,8 +447,8 @@ class YieldspacePricingModel(PricingModel):
             time_remaining,
         )
         in_amount = Decimal(in_.amount)
-        trade_fee_percent = Decimal(market_state.trade_fee_percent)
-        governance_fee_percent = Decimal(market_state.governance_fee_percent)
+        curve_fee_multiple = Decimal(market_state.curve_fee_multiple)
+        governance_fee_multiple = Decimal(market_state.governance_fee_multiple)
         if in_.unit == types.TokenType.BASE:
             d_shares = in_amount / share_price  # convert from base_asset to z (x=cz)
             # The amount the agent would receive without fees or slippage is
@@ -477,8 +477,8 @@ class YieldspacePricingModel(PricingModel):
                 share_price=share_price,
                 init_share_price=init_share_price,
             )
-            curve_fee = (without_fee_or_slippage - in_amount) * trade_fee_percent
-            gov_curve_fee = curve_fee * governance_fee_percent
+            curve_fee = (without_fee_or_slippage - in_amount) * curve_fee_multiple
+            gov_curve_fee = curve_fee * governance_fee_multiple
 
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
@@ -527,8 +527,8 @@ class YieldspacePricingModel(PricingModel):
                 )
                 * share_price  # convert back to base
             )
-            curve_fee = (d_bonds - without_fee_or_slippage) * trade_fee_percent
-            gov_curve_fee = curve_fee * governance_fee_percent
+            curve_fee = (d_bonds - without_fee_or_slippage) * curve_fee_multiple
+            gov_curve_fee = curve_fee * governance_fee_multiple
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.

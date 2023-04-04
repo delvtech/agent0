@@ -50,8 +50,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1,
                     share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -65,8 +65,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=100_000,
                     init_share_price=1,
                     share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -80,8 +80,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1,
                     share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -95,8 +95,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1,
                     share_price=1,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.27), normalizing_constant=365
@@ -110,8 +110,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1.5,
                     share_price=2,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -125,8 +125,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1.5,
                     share_price=2,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -140,8 +140,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1.5,
                     share_price=2,
-                    trade_fee_percent=0.5,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.5,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -155,8 +155,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1.5,
                     share_price=2,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
@@ -170,8 +170,8 @@ class TestGetMax(unittest.TestCase):
                     bond_buffer=0,
                     init_share_price=1.5,
                     share_price=2,
-                    trade_fee_percent=0.1,
-                    redemption_fee_percent=0.1,
+                    curve_fee_multiple=0.1,
+                    flat_fee_multiple=0.1,
                 ),
                 time_remaining=time.StretchedTime(
                     days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365

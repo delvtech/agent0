@@ -260,8 +260,6 @@ class PricingModel(ABC):
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
-        fee_percent : float
-            The fee percent charged by the market
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch)
 
@@ -282,7 +280,7 @@ class PricingModel(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return base, bonds
 
     def get_max_short(
         self,
@@ -300,8 +298,6 @@ class PricingModel(ABC):
         ----------
         market_state : MarketState
             The reserves and share prices of the pool.
-        fee_percent : float
-            The fee percent charged by the market.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
 
@@ -325,7 +321,7 @@ class PricingModel(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        return (base, bonds)
+        return base, bonds
 
     def calc_time_stretch(self, apr) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
@@ -367,13 +363,13 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected reserves_difference < {MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
         )
-        assert 1 >= market_state.trade_fee_percent >= 0, (
+        assert 1 >= market_state.curve_fee_multiple >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= trade_fee_percent >= 0, not {market_state.trade_fee_percent}!"
+            f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
         )
-        assert 1 >= market_state.redemption_fee_percent >= 0, (
+        assert 1 >= market_state.flat_fee_multiple >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= redemption_fee_percent >= 0, not {market_state.redemption_fee_percent}!"
+            f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
         )
         assert 1 >= time_remaining.stretched_time >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
