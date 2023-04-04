@@ -422,7 +422,7 @@ class Market(
 
         # arbitrarily set the number of LP tokens to start off with
         # we set this to 2y + x to match the virtual reserves logic
-        lp_tokens = self.market_state.share_price * share_reserves + 2 * bond_reserves
+        lp_tokens = self.market_state.share_price * share_reserves + bond_reserves
         print(f"{self.market_state.share_price * share_reserves + bond_reserves=}")
         print(f"{bond_reserves=}")
         print(f"{share_reserves=}")
