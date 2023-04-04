@@ -30,8 +30,8 @@ class SimUtilsTest(unittest.TestCase):
                         config = simulators.Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
-                        config.curve_fee_mult = 0.1
-                        config.flat_fee_percent = 0.0
+                        config.curve_fee_multiple = 0.1
+                        config.flat_fee_multiple = 0.0
                         config.target_fixed_apr = target_fixed_apr
                         config.num_trading_days = 3
                         config.num_blocks_per_day = 3
@@ -50,8 +50,8 @@ class SimUtilsTest(unittest.TestCase):
                                 variable_apr=market.market_state.variable_apr,
                                 share_price=market.market_state.share_price,
                                 init_share_price=market.market_state.init_share_price,
-                                curve_fee_mult=market.market_state.curve_fee_mult,
-                                flat_fee_percent=market.market_state.flat_fee_percent,
+                                curve_fee_multiple=market.market_state.curve_fee_multiple,
+                                flat_fee_multiple=market.market_state.flat_fee_multiple,
                             ),
                             block_time=time.BlockTime(),
                             position_duration=market.position_duration,

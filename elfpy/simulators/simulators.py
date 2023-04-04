@@ -91,10 +91,7 @@ class SimulationState:
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
 class Config:
-    """Data object for storing user simulation config parameters
-
-    .. todo:: Rename the {trade/flat}_fee_percent variables so that they doesn't use "percent"
-    """
+    """Data object for storing user simulation config parameters"""
 
     # lots of configs!
     # pylint: disable=too-many-instance-attributes
@@ -104,11 +101,11 @@ class Config:
 
     # Market
     # total size of the market pool (shares)
-    target_liquidity: float = field(default=1e6)
+    target_liquidity: float = 1e6
     # fraction of pool liquidity
-    target_volume: float = field(default=0.01)
+    target_volume: float = 0.01
     # years since the vault was opened
-    init_vault_age: float = field(default=0)
+    init_vault_age: float = 0.0
 
     # TODO: Move this out of config, it should be computed in simulator init based on config values
     # the underlying variable (e.g. from a vault) APR at each time step; the default is overridden in __post_init__
@@ -116,58 +113,56 @@ class Config:
 
     # TODO: Move this out of config, it should be computed in simulator init based on config values
     # initial market share price for the vault asset; default is overridden in __post_init__
-    init_share_price: float = field(default=-1)
+    init_share_price: float = -1.0
 
     # AMM
     # Must be "Hyperdrive", or "YieldSpace"
-    pricing_model_name: str = field(default="Hyperdrive")
+    pricing_model_name: str = "Hyperdrive"
     # LP fee factor (float) to charge for trades
-    curve_fee_mult: float = field(default=0.05)
+    curve_fee_multiple: float = 0.05
     # LP fee factor (float) to charge for flat
-    flat_fee_percent: float = field(default=0.05)
+    flat_fee_multiple: float = 0.05
     # minimum fee for governance
-    governance_fee_mult: float = field(default=0)
+    governance_fee_multiple: float = 0.0
     # desired fixed apr for as a decimal
-    target_fixed_apr: float = field(default=0.1)
-    # minimum fee percentage (bps)
-    floor_fee: float = field(default=0)
+    target_fixed_apr: float = 0.1
 
     # Simulation
     # durations
     # Text description of the simulation
-    title: str = field(default="elfpy simulation")
+    title: str = "elfpy simulation"
     # in days; should be <= pool_duration
-    num_trading_days: int = field(default=3)
+    num_trading_days: int = 3
     # agents execute trades each block
-    num_blocks_per_day: int = field(default=3)
+    num_blocks_per_day: int = 3
     # time lapse between token mint and expiry as days
-    num_position_days: int = field(default=90)
+    num_position_days: int = 90
 
     # users
     # shuffle order of action (as if random gas paid)
-    shuffle_users: bool = field(default=True)
+    shuffle_users: bool = True
     # list of strings naming user policies
     agent_policies: list = field(default_factory=list)
     # if True, use an initial LP agent to seed pool
-    init_lp: bool = field(default=True)
+    init_lp: bool = True
 
     # vault
     # whether or not to use compounding revenue for the underlying yield source
-    compound_variable_apr: bool = field(default=True)
+    compound_variable_apr: bool = True
 
     # logging
     # logging level, as defined by stdlib logging
-    log_level: int = field(default=logging.INFO)
+    log_level: int = logging.INFO
     # filename for output logs
-    log_filename: str = field(default="simulation")
+    log_filename: str = "simulation"
 
     # numerical
     # precision of calculations; max is 64
-    precision: int = field(default=64)
+    precision: int = 64
 
     # random
     # int to be used for the random seed
-    random_seed: int = field(default=1)
+    random_seed: int = 1
     # random number generator used in the simulation
     rng: NumpyGenerator = field(init=False, compare=False)
 

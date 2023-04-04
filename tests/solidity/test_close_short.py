@@ -39,8 +39,8 @@ class TestCloseShort(unittest.TestCase):
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
-            curve_fee_mult=0.0,
-            flat_fee_percent=0.0,
+            curve_fee_multiple=0.0,
+            flat_fee_multiple=0.0,
         )
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,

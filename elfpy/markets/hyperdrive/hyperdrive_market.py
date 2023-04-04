@@ -75,7 +75,7 @@ class MarketState(base_market.BaseMarketState):
         share price at pool initialization
     curve_fee_mult: float
         The multiple applied to the price discount (1-p) to calculate the trade fee.
-    flat_fee_percent: float
+    flat_fee_mult: float
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
     governance_fee_mult: float
         The multiple applied to the trade and flat fee to calculate the share paid to governance.
@@ -131,10 +131,10 @@ class MarketState(base_market.BaseMarketState):
     share_price: float = 1.0
     init_share_price: float = 1.0
 
-    # fee percents
-    curve_fee_mult: float = 0.0
-    flat_fee_percent: float = 0.0
-    governance_fee_mult: float = 0.0
+    # fee multiples
+    curve_fee_multiple: float = 0.0
+    flat_fee_multiple: float = 0.0
+    governance_fee_multiple: float = 0.0
 
     # governance fees that haven't been collected yet denominated in shares
     gov_fees_accrued: float = 0.0
@@ -443,7 +443,7 @@ class Market(
             agent_deltas,
             self.market_state,
         )
-        return (agent_id, agent_deltas, market_deltas)
+        return agent_id, agent_deltas, market_deltas
 
     def initialize(
         self,

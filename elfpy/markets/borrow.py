@@ -199,7 +199,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
             start_time=0,
         )
         agent_deltas = wallet.Wallet(address=wallet_address, borrows={0: borrow_summary})
-        return (market_deltas, agent_deltas)
+        return market_deltas, agent_deltas
 
     def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
