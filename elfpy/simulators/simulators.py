@@ -118,11 +118,11 @@ class Config:
     # AMM
     # Must be "Hyperdrive", or "YieldSpace"
     pricing_model_name: str = "Hyperdrive"
-    # LP fee factor (float) to charge for trades
+    # fee multiple applied to the price slippage (1-p), paid to LPs
     curve_fee_multiple: float = 0.05
-    # LP fee factor (float) to charge for flat
+    # fee multiple applied to the matured amount, paid to LPs
     flat_fee_multiple: float = 0.05
-    # minimum fee for governance
+    # fee multiple applied to the curve and flat fees, paid to the governance contract
     governance_fee_multiple: float = 0.0
     # desired fixed apr for as a decimal
     target_fixed_apr: float = 0.1
