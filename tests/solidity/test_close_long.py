@@ -74,10 +74,6 @@ class TestCloseLong(unittest.TestCase):
             agent_base_paid,
             msg="agent gets more than what they put in: agent_bond_proceeds > agent_base_paid",
         )
-        # print(f"{market_state_before.share_reserves=}")
-        # print(f"{self.hyperdrive.market_state.share_reserves=}")
-        # print(f"{agent_base_proceeds=}")
-        # print(f"{market_state_before.share_price=}")
         self.assertAlmostEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
             market_state_before.share_reserves - agent_base_proceeds / market_state_before.share_price,
