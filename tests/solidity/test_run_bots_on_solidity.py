@@ -84,9 +84,7 @@ def idfn(val):
 
 
 @pytest.mark.parametrize("term_length", range(8, 366, 50), ids=idfn)
-def test_run_bots_on_solidity(
-    term_length: int, num_agents: int = 4, agent_budget: int = 1_000_000, trade_chance: int = 1
-):
+def test_run_bots_on_solidity(term_length: int, num_agents: int = 4, agent_budget: int = 1_000_000, trade_chance=None):
     config = simulators.Config()
 
     config.title = "random bot demo"
@@ -101,7 +99,9 @@ def test_run_bots_on_solidity(
 
     num_agents = num_agents  # int specifying how many agents you want to simulate
     agent_budget = agent_budget  # max money an agent can spend
-    trade_chance = trade_chance  # on a given block, an agent will trade with probability `trade_chance`
+
+    # on a given block, an agent will trade with probability `trade_chance`
+    trade_chance = 5 / (config.num_trading_days * config.num_blocks_per_day) if trade_chance is None else trade_chance
 
     config.target_fixed_apr = 0.05  # target fixed APR of the initial market after the LP
     config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
