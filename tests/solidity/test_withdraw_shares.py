@@ -35,10 +35,7 @@ class TestWithdrawShares(unittest.TestCase):
         self.celine = agent.Agent(wallet_address=2, budget=self.budget)
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState(
-            trade_fee_percent=0.0,
-            redemption_fee_percent=0.0,
-        )
+        market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
