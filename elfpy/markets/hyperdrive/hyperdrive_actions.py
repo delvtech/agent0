@@ -252,7 +252,7 @@ def update_weighted_average(
 
 
 def calc_lp_out_given_tokens_in(
-    d_base: float,
+    base_in: float,
     rate: float,
     market_state: hyperdrive_market.MarketState,
     market_time: float,
@@ -266,22 +266,41 @@ def calc_lp_out_given_tokens_in(
     where a_s and a_l are the short and long adjustments. In order to calculate these we need to
     keep track of the long and short base volumes, amounts outstanding and average maturity
     times.
+
+    Parameters
+    ----------
+    base_in: float
+        The amount of base provided to exchange for lp tokens.
+    rate: float
+        The fixed rate value of the bonds.
+    market_state: hyperdrive_market.MarketState
+        Hyperdrive's market state.
+    market_time: float
+        The current time in years.
+    position_duration: time.StretchedTime
+        Position duration information of the bonds.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        Returns the lp_out, delta_base and delta_bonds.  The delta_base and delta_bonds values are
+        used to update the reserves of the pool.
     """
-    d_shares = d_base / market_state.share_price
+    delta_shares = base_in / market_state.share_price
     annualized_time = time.norm_days(position_duration.days, 365)
-    d_bonds = (market_state.share_reserves + d_shares) / 2 * (
+    delta_bond_reserves = (market_state.share_reserves + delta_shares) / 2 * (
         market_state.init_share_price * (1 + rate * annualized_time) ** (1 / position_duration.stretched_time)
         - market_state.share_price
     ) - market_state.bond_reserves
     if market_state.share_reserves > 0:  # normal case where we have some share reserves
         short_adjustment = calculate_short_adjustment(market_state, position_duration, market_time)
         long_adjustment = calculate_long_adjustment(market_state, position_duration, market_time)
-        lp_out = (d_shares * market_state.lp_total_supply) / (
+        lp_out = (delta_shares * market_state.lp_total_supply) / (
             market_state.share_reserves + short_adjustment - long_adjustment
         )
     else:  # initial case where we have 0 share reserves or final case where it has been removed
-        lp_out = d_shares
-    return lp_out, d_base, d_bonds
+        lp_out = delta_shares
+    return lp_out, base_in, delta_bond_reserves
 
 
 def calculate_base_volume(base_amount: float, bond_amount: float, normalized_time_remaining: float) -> float:
@@ -294,6 +313,20 @@ def calculate_base_volume(base_amount: float, bond_amount: float, normalized_tim
         base_amount = t * base_volume + (1 - t) * bond_amount
                             =>
         base_volume = (base_amount - (1 - t) * bond_amount) / t
+
+    Parameters
+    ----------
+    base_amount: float
+        The amount of base provided for the trade.
+    bond_amount: float
+        The amount of bonds used to close the position.
+    normalized_time_remaining: str
+        The normailzed time remaining of the trade from 1 -> 0.
+
+    Returns
+    -------
+    float
+        The base volume.
     """
     # If the time remaining is 0, the position has already matured and doesn't have an impact on
     # LP's ability to withdraw. This is a pathological case that should never arise.
@@ -370,6 +403,20 @@ def calc_open_short(
     This gives us the following identity:
         total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
     This guarantees that bonds in the system are always fully backed by an equal amount of base.
+
+    Parameters
+    ---------
+    wallet_address: int
+        The address of the agent's wallet.
+    bond_amount: float
+        The amount of bonds the agent is shorting.
+    market: hyperdrive_market.Market
+        The market the agent is opening a short on.
+
+    Returns
+    -------
+    tuple[MarketDeltas, wallet.Wallet]
+        Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # perform the trade
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
@@ -442,6 +489,24 @@ def calc_close_short(
     so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
     that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
     for more on short accounting, see the open short method
+
+    Parameters
+    ---------
+    wallet_address: int
+        The address of the agent's wallet.
+    bond_amount: float
+        The amount of bonds the agent is shorting.
+    market: hyperdrive_market.Market
+        The market the agent is opening a short on.
+    mint_time: float
+        The time in years when the short was opened.
+    open_share_price: float
+        The share price when the short was opened.
+
+    Returns
+    -------
+    tuple[MarketDeltas, wallet.Wallet]
+        Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     if bond_amount > market.market_state.bond_reserves - market.market_state.bond_buffer:
         raise AssertionError("not enough reserves to close short")
@@ -600,6 +665,26 @@ def calc_close_long(
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
+
+    Parameters
+    ---------
+    wallet_address: int
+        The address of the agent's wallet.
+    bond_amount: float
+        The amount of bonds the agent is shorting.
+    market: hyperdrive_market.Market
+        The market the agent is opening a short on.
+    mint_time: float
+        The time in years when the short was opened.
+    is_trade: bool
+        If an agent is performing a trade.  If false, this means a checkpoint is applied in which
+        case we do not want to update the pool reserves yet since the agent hasn't actually closed
+        their position yet.
+
+    Returns
+    -------
+    tuple[MarketDeltas, wallet.Wallet]
+        Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # Compute the time remaining given the mint time.
     years_remaining = time.get_years_remaining(
@@ -838,10 +923,25 @@ def calc_short_proceeds(
 
 def calc_add_liquidity(
     wallet_address: int,
-    bond_amount: float,
+    base_in: float,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """Computes new deltas for bond & share reserves after liquidity is added"""
+    """Computes new deltas for bond & share reserves after liquidity is added.
+
+    Parameters
+    ----------
+    wallet_address : int
+        The wallet address for the agent.
+    base_in: float
+        The amount of base the agent is providing.
+    market : hyperdrive_market.Market
+        The market the agent is providing liquidity for.
+
+    Returns
+    -------
+    tuple[MarketDeltas, wallet.Wallet]
+        Returns the deltas to update the market and the agent's wallet after providing liquidity.
+    """
     # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
     if (
         market.market_state.share_reserves == 0 and market.market_state.bond_reserves == 0
@@ -852,14 +952,14 @@ def calc_add_liquidity(
     # sanity check inputs
     market.pricing_model.check_input_assertions(
         quantity=types.Quantity(
-            amount=bond_amount, unit=types.TokenType.PT
+            amount=base_in, unit=types.TokenType.PT
         ),  # temporary Quantity object just for this check
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
     # perform the trade
     lp_out, d_base_reserves, d_bond_reserves = calc_lp_out_given_tokens_in(
-        d_base=bond_amount,
+        base_in=base_in,
         rate=rate,
         market_state=market.market_state,
         market_time=market.block_time.time,
@@ -883,7 +983,22 @@ def calc_remove_liquidity(
     lp_shares: float,
     market: hyperdrive_market.Market,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
-    """Computes new deltas for bond & share reserves after liquidity is removed"""
+    """Computes new deltas for bond & share reserves after liquidity is removed.
+
+    Parameters
+    ----------
+    wallet_address : int
+        The wallet address for the agent.
+    lp_shares: float
+        The amount of lp_shares the agent is redeeming.
+    market : hyperdrive_market.Market
+        The market the agent is removing liquidity from.
+
+    Returns
+    -------
+    tuple[MarketDeltas, wallet.Wallet]
+        Returns the deltas to update the market and the agent's wallet after removing liquidity.
+    """
     # sanity check inputs
     market.pricing_model.check_input_assertions(
         quantity=types.Quantity(

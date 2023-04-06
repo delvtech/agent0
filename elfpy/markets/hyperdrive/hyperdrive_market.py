@@ -519,7 +519,7 @@ class Market(
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
-            bond_amount=bond_amount,
+            base_in=bond_amount,
             market=self,
         )
         self.market_state.apply_delta(market_deltas)
