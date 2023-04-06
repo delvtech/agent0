@@ -1,22 +1,22 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
 
 import logging
+from typing import TYPE_CHECKING, Any
 
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
 # pylint: disable=import-error
 import ape  # type: ignore[reportMissingImports]
 
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.assets as hyperdrive_assets
 
 if TYPE_CHECKING:
-    from ape.types import ContractLog  # type: ignore[reportMissingImports]
     from ape.api.accounts import AccountAPI  # type: ignore[reportMissingImports]
-    from ape_ethereum.transactions import Receipt  # type: ignore[reportMissingImports]
     from ape.contracts.base import ContractInstance  # type: ignore[reportMissingImports]
+    from ape.types import ContractLog  # type: ignore[reportMissingImports]
+    from ape_ethereum.transactions import Receipt  # type: ignore[reportMissingImports]
 
 
 def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
@@ -45,7 +45,7 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
 
 
 def ape_open_position(
-    trade_prefix: hyperdrive_market.AssetIdPrefix,
+    trade_prefix: hyperdrive_assets.AssetIdPrefix,
     hyperdrive_contract: ContractInstance,
     agent_address: AccountAPI,
     trade_amount: int,
@@ -54,7 +54,7 @@ def ape_open_position(
 
     Arguments
     ---------
-    trade_prefix: hyperdrive_market.AssetIdPrefix
+    trade_prefix: hyperdrive_assets.AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
@@ -75,7 +75,7 @@ def ape_open_position(
         <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_.
     """
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        if trade_prefix == hyperdrive_market.AssetIdPrefix.LONG:  # open a long
+        if trade_prefix == hyperdrive_assets.AssetIdPrefix.LONG:  # open a long
             min_output = 0  # python sims does not support alternative min_output
             as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
             tx_receipt = hyperdrive_contract.openLong(  # type: ignore
@@ -84,7 +84,7 @@ def ape_open_position(
                 agent_address,
                 as_underlying,
             )
-        elif trade_prefix == hyperdrive_market.AssetIdPrefix.SHORT:  # open a short
+        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.SHORT:  # open a short
             max_deposit = trade_amount  # python sims does not support alternative max_deposit
             as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
             tx_receipt = hyperdrive_contract.openShort(  # type: ignore
@@ -99,7 +99,7 @@ def ape_open_position(
         transfer_single_event = get_transfer_single_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
         token_id = int(transfer_single_event["id"])
-        prefix, maturity_timestamp = hyperdrive_market.decode_asset_id(token_id)
+        prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
         pool_state["token_id_"] = token_id
@@ -110,7 +110,7 @@ def ape_open_position(
 
 
 def ape_close_position(
-    trade_prefix: hyperdrive_market.AssetIdPrefix,
+    trade_prefix: hyperdrive_assets.AssetIdPrefix,
     hyperdrive_contract: ContractInstance,
     agent_address: AccountAPI,
     bond_amount: int,
@@ -120,7 +120,7 @@ def ape_close_position(
 
     Arguments
     ---------
-    trade_prefix: hyperdrive_market.AssetIdPrefix
+    trade_prefix: hyperdrive_assets.AssetIdPrefix
         IntEnum specifying whether the trade is a long (0) or a short (1).
     hyperdrive_contract: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
@@ -147,7 +147,7 @@ def ape_close_position(
     # pylint: disable=too-many-locals
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         # Ensure requested close amount is not greater than what is available in the pool
-        trade_asset_id = hyperdrive_market.encode_asset_id(trade_prefix, maturity_time)
+        trade_asset_id = hyperdrive_assets.encode_asset_id(trade_prefix, maturity_time)
         agent_balance = hyperdrive_contract.balanceOf(trade_asset_id, agent_address)  # type: ignore
         if bond_amount < agent_balance:
             trade_bond_amount = bond_amount
@@ -161,7 +161,7 @@ def ape_close_position(
         # Close the position
         min_output = 0
         as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
-        if trade_prefix == hyperdrive_market.AssetIdPrefix.LONG:
+        if trade_prefix == hyperdrive_assets.AssetIdPrefix.LONG:
             tx_receipt = hyperdrive_contract.closeLong(  # type: ignore
                 maturity_time,
                 trade_bond_amount,
@@ -169,7 +169,7 @@ def ape_close_position(
                 agent_address,
                 as_underlying,
             )
-        elif trade_prefix == hyperdrive_market.AssetIdPrefix.SHORT:
+        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.SHORT:
             tx_receipt = hyperdrive_contract.closeShort(  # type: ignore
                 maturity_time,
                 trade_bond_amount,
@@ -183,7 +183,7 @@ def ape_close_position(
         transfer_single_event = get_transfer_single_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
         token_id = int(transfer_single_event["id"])
-        prefix, maturity_timestamp = hyperdrive_market.decode_asset_id(token_id)
+        prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
         pool_state["token_id_"] = token_id

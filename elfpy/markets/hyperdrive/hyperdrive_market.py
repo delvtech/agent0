@@ -6,7 +6,6 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
-from enum import IntEnum
 
 import numpy as np
 
@@ -23,13 +22,6 @@ import elfpy.utils.price as price_utils
 # pylint: disable=too-many-instance-attributes
 
 
-class AssetIdPrefix(IntEnum):
-    r"""The asset ID is used to encode the trade type in a transaction receipt"""
-    LONG = 0
-    SHORT = 1
-    WITHDRAWAL_SHARE = 2
-
-
 @dataclass
 class Checkpoint:
     """
@@ -44,9 +36,10 @@ class Checkpoint:
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
-    share_price: float = field(default=0.0)
-    long_base_volume: float = field(default=0.0)
-    short_base_volume: float = field(default=0.0)
+    share_price: float = 0.0
+    long_share_price: float = 0.0
+    long_base_volume: float = 0.0
+    short_base_volume: float = 0.0
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -201,57 +194,6 @@ class MarketState(base_market.BaseMarketState):
     def copy(self) -> MarketState:
         """Returns a new copy of self"""
         return MarketState(**copy.deepcopy(self.__dict__))
-
-
-def encode_asset_id(prefix: int, timestamp: int) -> int:
-    r"""Encodes a prefix and a timestamp into an asset ID.
-
-    Asset IDs are used so that LP, long, and short tokens can all be represented
-    in a single MultiToken instance. The zero asset ID indicates the LP token.
-
-    Encode the asset ID by left-shifting the prefix by 248 bits,
-    then bitwise-or-ing the result with the timestamp.
-
-    Argments
-    --------
-    prefix: int
-        A one byte prefix that specifies the asset type.
-    timestamp: int
-        A timestamp associated with the asset.
-
-    Returns
-    -------
-    int
-        The asset ID.
-    """
-    timestamp_mask = (1 << 248) - 1
-    if timestamp > timestamp_mask:
-        raise ValueError("Invalid timestamp")
-    return (prefix << 248) | timestamp
-
-
-def decode_asset_id(asset_id: int) -> tuple[int, int]:
-    r"""Decodes a transaction asset ID into its constituent parts of an identifier, data, and a timestamp.
-
-    First calculate the prefix mask by left-shifting 1 by 248 bits and subtracting 1 from the result.
-    This gives us a bit-mask with 248 bits set to 1 and the rest set to 0.
-    Then apply this mask to the input ID using the bitwise-and operator `&` to extract
-    the lower 248 bits as the timestamp.
-
-    Arguments
-    ---------
-    asset_id: int
-        Encoded ID from a transaction. It is a concatenation, [identifier: 8 bits][timestamp: 248 bits]
-
-    Returns
-    -------
-    tuple[int, int]
-        identifier, timestamp
-    """
-    prefix_mask = (1 << 248) - 1
-    prefix = asset_id >> 248  # shr 248 bits
-    timestamp = asset_id & prefix_mask  # apply the prefix mask
-    return prefix, timestamp
 
 
 class Market(
@@ -534,16 +476,24 @@ class Market(
             base_amount=base_amount,
             market=self,
         )
+        # update long_share_price
+        self.update_long_share_price(abs(market_deltas.d_bond_asset))
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)
         return market_deltas, agent_deltas
 
+    def update_long_share_price(self, bond_proceeds: float) -> None:
+        """Upates the weighted average share price for longs at the latest checkpoint."""
+        long_share_price = self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price
+        total_supply = self.market_state.total_supply_longs[self.latest_checkpoint_time]
+        updated_long_share_price = hyperdrive_actions.update_weighted_average(
+            long_share_price, total_supply, self.market_state.share_price, bond_proceeds, True
+        )
+        self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price = updated_long_share_price
+
     def close_long(
-        self,
-        agent_wallet: wallet.Wallet,
-        bond_amount: float,
-        mint_time: float,
+        self, agent_wallet: wallet.Wallet, bond_amount: float, mint_time: float
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
@@ -569,7 +519,7 @@ class Market(
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
-            bond_amount=bond_amount,
+            base_in=bond_amount,
             market=self,
         )
         self.market_state.apply_delta(market_deltas)
@@ -583,6 +533,7 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=agent_wallet.address,
             lp_shares=lp_shares,
@@ -654,16 +605,16 @@ class Market(
         # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
         mint_time = checkpoint_time - self.annualized_position_duration
-        # TODO: pay out the long withdrawal pool for longs that have matured.
-        # Close out any matured long positions.
+        # Close out any matured long positions and pay out the long withdrawal pool for longs that
+        # have matured.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
-                wallet.Wallet(0).address, matured_longs_amount, self, mint_time
+                wallet.Wallet(0).address, matured_longs_amount, self, mint_time, False
             )
             self.market_state.apply_delta(market_deltas)
-        # TODO: pay out the short withdrawal pool for shorts that have matured.
-        # Close out any matured short positions.
+        # Close out any matured short positions and pay out the short withdrawal pool for shorts
+        # that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
@@ -802,7 +753,7 @@ class Market(
         amount_withdrawn = shares * self.market_state.share_price
         return amount_withdrawn
 
-    def _free_margin(
+    def calc_free_margin(
         self, freed_capital: float, max_capital: float, interest: float
     ) -> hyperdrive_actions.MarketDeltas:
         r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
@@ -835,9 +786,12 @@ class Market(
             # so adjustment = (withdraw_share_supply - withdraw_shares_ready_to_withdraw) / max_capital
             # we adjust max_capital and do corresponding reduction in freed_capital and interest
             adjustment = withdraw_share_supply - withdraw_shares_ready_to_withdraw / max_capital
-            withdraw_pool_deltas.withdraw_shares_ready_to_withdraw = max_capital * adjustment
-            withdraw_pool_deltas.withdraw_capital = freed_capital * adjustment
-            withdraw_pool_deltas.withdraw_interest = interest * adjustment
+            freed_capital *= adjustment
+            max_capital *= adjustment
+            interest *= adjustment
+            withdraw_pool_deltas.withdraw_shares_ready_to_withdraw = max_capital
+            withdraw_pool_deltas.withdraw_capital = freed_capital
+            withdraw_pool_deltas.withdraw_interest = interest
 
         # Finally return the amount used by this action and the caller can update reserves.
         return withdraw_pool_deltas

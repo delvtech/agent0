@@ -61,6 +61,11 @@ class StretchedTime:
             self.normalizing_constant,
         )
 
+    @property
+    def years(self):
+        r"""Format time as normalized days"""
+        return self.days / 365
+
 
 def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
     r"""Get the time remaining in years on a token

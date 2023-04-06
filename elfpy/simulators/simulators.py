@@ -15,6 +15,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
+from elfpy.agents.get_wallet_state import get_wallet_state
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -682,7 +683,7 @@ class Simulator:
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
-            self.simulation_state.add_dict_entries(agent.wallet.get_state(self.market))
+            self.simulation_state.add_dict_entries(get_wallet_state(agent.wallet, self.market))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > 0:  # there is money in the market

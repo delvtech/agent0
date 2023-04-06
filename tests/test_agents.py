@@ -8,13 +8,14 @@ from os import path, walk
 
 import numpy as np
 
+import elfpy.agents.agent as agent
+import elfpy.agents.policies as policies
+import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
-import elfpy.agents.agent as agent
-import elfpy.agents.wallet as wallet
-import elfpy.agents.policies as policies
+from elfpy.agents.get_wallet_state import get_wallet_state
 
 
 class TestPolicy(agent.Agent):
@@ -79,7 +80,7 @@ class TestAgent(unittest.TestCase):
     def test_wallet_state_matches_state_keys(self):
         """Tests that an agent wallet has the right keys"""
         for get_state_key, state_key in zip(
-            self.test_agent.wallet.get_state_keys(), self.test_agent.wallet.get_state(self.market).keys()
+            self.test_agent.wallet.get_state_keys(), get_wallet_state(self.test_agent.wallet, self.market).keys()
         ):
             assert get_state_key == state_key, f"ERROR: {get_state_key=} did not equal {state_key=}"
 
