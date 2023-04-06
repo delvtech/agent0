@@ -1,5 +1,5 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
-from __future__ import annotations  # types will be strings by default in 3.11
+from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -10,7 +10,6 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.hyperdrive.assets import AssetIdPrefix, encode_asset_id
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -407,7 +406,7 @@ def calc_close_short(
     )
     d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # Return the market and wallet deltas.
-    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
+    d_base_volume, d_checkpoints, _ = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
@@ -519,6 +518,7 @@ def calc_close_long(
     bond_amount: float,
     market: hyperdrive_market.Market,
     mint_time: float,
+    is_trade: bool = True,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
@@ -541,14 +541,29 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-    trade_result = market.pricing_model.calc_out_given_in(
-        in_=trade_quantity,
-        market_state=market.market_state,
-        time_remaining=time_remaining,
-    )
-    market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
+
+    # if we are applying a checkpoint, we don't update the reserves
+    bond_reserves_delta = 0
+    share_reserves_delta = 0
+    base_proceeds = 0
+    fee = 0
+    gov_fee = 0
+    if is_trade:
+        trade_result = market.pricing_model.calc_out_given_in(
+            in_=trade_quantity,
+            market_state=market.market_state,
+            time_remaining=time_remaining,
+        )
+        market.pricing_model.check_output_assertions(trade_result=trade_result)
+        bond_reserves_delta = trade_result.market_result.d_bonds
+        share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
+        base_proceeds = trade_result.user_result.d_base
+        fee = trade_result.breakdown.fee
+        gov_fee = trade_result.breakdown.gov_fee
+
+    market.market_state.gov_fees_accrued += gov_fee
+
     # Make sure the trade is valid
-    market.pricing_model.check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     long_average_maturity_time = update_weighted_average(
         average=market.market_state.long_average_maturity_time,
@@ -560,8 +575,6 @@ def calc_close_long(
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market, mint_time, bond_amount, "long")
     # get the share adjustment amount
-    share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
-    bond_reserves_delta = trade_result.market_result.d_bonds
     normalized_time_elapsed = (market.block_time.time - mint_time) / market.position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market.market_state.share_price
     maturity_time = mint_time + market.position_duration.years
@@ -641,9 +654,9 @@ def calc_close_long(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        longs={mint_time: wallet.Long(trade_result.user_result.d_bonds)},
-        fees_paid=trade_result.breakdown.fee,
+        balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
+        longs={mint_time: wallet.Long(-bond_amount)},
+        fees_paid=fee,
     )
     return market_deltas, agent_deltas
 
@@ -810,6 +823,9 @@ def calc_remove_liquidity(
     # calculate withdraw shares for the user
     user_margin = market.market_state.longs_outstanding - market.market_state.long_base_volume
     user_margin += market.market_state.short_base_volume
+    user_margin -= (
+        market.market_state.total_supply_withdraw_shares - market.market_state.withdraw_shares_ready_to_withdraw
+    )
     user_margin = user_margin * lp_shares / market.market_state.lp_total_supply
     withdraw_shares = user_margin / market.market_state.share_price
     # create and return the deltas

@@ -493,10 +493,7 @@ class Market(
         self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price = updated_long_share_price
 
     def close_long(
-        self,
-        agent_wallet: wallet.Wallet,
-        bond_amount: float,
-        mint_time: float,
+        self, agent_wallet: wallet.Wallet, bond_amount: float, mint_time: float
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
@@ -536,6 +533,7 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
             wallet_address=agent_wallet.address,
             lp_shares=lp_shares,
@@ -607,16 +605,16 @@ class Market(
         # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
         mint_time = checkpoint_time - self.annualized_position_duration
-        # TODO: pay out the long withdrawal pool for longs that have matured.
-        # Close out any matured long positions.
+        # Close out any matured long positions and pay out the long withdrawal pool for longs that
+        # have matured.
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > 0:
             market_deltas, _ = hyperdrive_actions.calc_close_long(
-                wallet.Wallet(0).address, matured_longs_amount, self, mint_time
+                wallet.Wallet(0).address, matured_longs_amount, self, mint_time, False
             )
             self.market_state.apply_delta(market_deltas)
-        # TODO: pay out the short withdrawal pool for shorts that have matured.
-        # Close out any matured short positions.
+        # Close out any matured short positions and pay out the short withdrawal pool for shorts
+        # that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > 0:
             open_share_price = self.market_state.checkpoints[mint_time].share_price
