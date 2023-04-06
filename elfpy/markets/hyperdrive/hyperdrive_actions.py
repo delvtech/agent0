@@ -6,12 +6,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional
 
-import numpy
+import numpy as np
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.utils.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -218,41 +219,6 @@ def calculate_long_adjustment(
     )
 
 
-def update_weighted_average(
-    average: float,
-    total_weight: float,
-    delta: float,
-    delta_weight: float,
-    is_adding: bool,
-) -> float:
-    """Updates a weighted average by adding or removing a weighted delta.
-
-    Parameters
-    ----------
-    average: float
-        The current weighted average.
-    total_weight: float
-        The total aggregate weight of the average.
-    delta: float
-        New value to add.
-    delta_weight: float
-        The weight of the new value.
-    is_adding: bool
-        If the weight is added or removed to the total.
-
-    Returns
-    -------
-    float
-        The new weighted average.
-    """
-
-    if is_adding:
-        return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
-    if total_weight == delta_weight:
-        return 0
-    return (total_weight * average - delta_weight * delta) / (total_weight - delta_weight)
-
-
 def calc_lp_out_given_tokens_in(
     base_in: float,
     rate: float,
@@ -290,6 +256,7 @@ def calc_lp_out_given_tokens_in(
     """
     delta_shares = base_in / market_state.share_price
     annualized_time = time.norm_days(position_duration.days, 365)
+    # bonds computed as y = z/2 * (mu * (1 + rt)**(1/tau) - c)
     delta_bond_reserves = (market_state.share_reserves + delta_shares) / 2 * (
         market_state.init_share_price * (1 + rate * annualized_time) ** (1 / position_duration.stretched_time)
         - market_state.share_price
@@ -312,6 +279,7 @@ def calculate_base_volume(base_amount: float, bond_amount: float, normalized_tim
     Since we linearly interpolate between the base volume and the bond amount as the time
     remaining goes from 1 to 0, the base volume can be determined as follows:
 
+    .. math::
         base_amount = t * base_volume + (1 - t) * bond_amount
                             =>
         base_volume = (base_amount - (1 - t) * bond_amount) / t
@@ -350,7 +318,7 @@ def calc_checkpoint_deltas(
         The checkpoint (mint) time to be used for updating.
     bond_amount: float
         The amount of bonds used to close the position.
-    position: str
+    position: Literal["short", "long"]
         Either "short" or "long", indicating what type of position is being closed.
 
     Returns
@@ -363,7 +331,6 @@ def calc_checkpoint_deltas(
         The amount of margin that LPs provided on the long position.
     """
     total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
-    # base_volume = "short_base_volume" if position == "short" else "long_base_volume"
     # Calculate the amount of margin that LPs provided on the long position and update the base
     # volume aggregates.
     lp_margin = 0.0
@@ -371,11 +338,9 @@ def calc_checkpoint_deltas(
     # closed before maturity, we add the amount of longs being closed since the total supply is
     # decreased when burning the long tokens.
     checkpoint_amount = market.market_state[total_supply][checkpoint_time]
-    # maturity_timestamp = checkpoint_time + market.position_duration.days / 365
-
-    # TODO: remove this?  I think it wasn't in here because we aren't burning yet
-    # if market.block_time.time < maturity_timestamp:
-    #     checkpoint_amount += bond_amount
+    # If the checkpoint has nothing stored, then do not update
+    if checkpoint_amount == 0:
+        return (0, defaultdict(float, {checkpoint_time: 0}), 0)
 
     proportional_base_volume = (
         market.market_state.checkpoints[checkpoint_time].long_base_volume * bond_amount / checkpoint_amount
@@ -383,10 +348,6 @@ def calc_checkpoint_deltas(
     d_base_volume = -proportional_base_volume
     d_checkpoints = defaultdict(float, {checkpoint_time: d_base_volume})
     lp_margin = bond_amount - proportional_base_volume
-
-    # If the checkpoint has nothing stored, then do not update
-    if checkpoint_amount == 0:
-        return (0, defaultdict(float, {checkpoint_time: 0}), 0)
 
     return (d_base_volume, d_checkpoints, lp_margin)
 
@@ -551,7 +512,7 @@ def calc_close_short(
     d_base_volume, d_checkpoints, _ = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
     # TODO: remove this clamp when short withdrawal shares calculated
     # don't let short base volume go negative
-    d_base_volume = numpy.amax([d_base_volume, -market.market_state.short_base_volume])
+    d_base_volume = np.amax([d_base_volume, -market.market_state.short_base_volume])
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
@@ -637,7 +598,6 @@ def calc_open_long(
     d_long_average_maturity_time = long_average_maturity_time - market.market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, 1)
-    # TODO: add accounting for withdrawal shares
     # Get the market and wallet deltas to return.
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -853,12 +813,13 @@ def calc_short_interest(
     """Calculates the interest in shares earned by a short position.
     The math for the short's interest in shares is given by:
 
+    .. math::
          interest = ((c1 / c0 - 1) * dy) / c
                   = (((c1 - c0) / c0) * dy) / c
                   = ((c1 - c0) / (c0 * c)) * dy
 
-         In the event that the interest is negative, we mark the interest
-         to zero.
+    In the event that the interest is negative, we mark the interest
+    to zero.
 
     Parameters
     ----------
@@ -891,8 +852,9 @@ def calc_short_proceeds(
     amount of margin that was released by closing the short. The math for the short's proceeds in
     base is given by:
 
-    proceeds = dy - c * dz + (c1 - c0) * (dy / c0) = dy - c * dz + (c1 / c0) * dy - dy = (c1 / c0) *
-    dy - c * dz
+    .. math::
+        proceeds = dy - c * dz + (c1 - c0) * (dy / c0) = dy - c * dz + (c1 / c0) * dy - dy = (c1 / c0) *
+        dy - c * dz
 
     We convert the proceeds to shares by dividing by the current share price. In the event that the
     interest is negative and outweighs the trading profits and margin released, the short's proceeds
@@ -904,11 +866,11 @@ def calc_short_proceeds(
         The amount of bonds underlying the closed short.
     share_amount:
         The amount of shares that it costs to close the short.
-    open_share_price:
+    open_share_price: float
         the share price at the short's open.
-    close_share_price:
+    close_share_price: float
         the share price at the short's close.
-    share_price:
+    share_price: float
         The current share price.
 
     Returns
