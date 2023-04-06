@@ -39,9 +39,19 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
         <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
         ) event, excluding peripheral events.
     """
-    if single_events := [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]:
-        return single_events[-1]  # return last item
-    raise ValueError(f'The transaction receipt should have one "TransferSingle" event, not {len(single_events)}.')
+    single_events = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]
+    if len(single_events) > 1:
+        single_events = [tx_event for tx_event in single_events if tx_event.id != 0]  # exclude token id 0
+    if len(single_events) > 1:
+        logging.debug("Multiple TransferSingle events even after excluding token id 0:")
+        for tx_event in single_events:
+            logging.debug(tx_event)
+    try:
+        return single_events[0]
+    except Exception as exc:
+        raise ValueError(
+            f'The transaction receipt should have one "TransferSingle" event, not {len(single_events)}.'
+        ) from exc
 
 
 def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
