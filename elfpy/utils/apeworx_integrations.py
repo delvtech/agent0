@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any
 import ape
 
 import elfpy.markets.hyperdrive.assets as hyperdrive_assets
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI  # type: ignore[reportMissingImports]
@@ -100,7 +99,7 @@ def ape_open_position(
         transfer_single_event = get_transfer_single_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
         token_id = int(transfer_single_event["id"])
-        prefix, maturity_timestamp = hyperdrive_market.decode_asset_id(token_id)
+        prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
         pool_state["token_id_"] = token_id
@@ -184,7 +183,7 @@ def ape_close_position(
         transfer_single_event = get_transfer_single_event(tx_receipt)
         # The ID is a concatenation of the current share price and the maturity time of the trade
         token_id = int(transfer_single_event["id"])
-        prefix, maturity_timestamp = hyperdrive_market.decode_asset_id(token_id)
+        prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
         pool_state = hyperdrive_contract.getPoolInfo().__dict__  # type: ignore
         pool_state["block_number_"] = tx_receipt.block_number  # type: ignore
         pool_state["token_id_"] = token_id
