@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
 # pylint: disable=import-error
-import ape
+import ape  # type: ignore[reportMissingImports]
 
 import elfpy.markets.hyperdrive.assets as hyperdrive_assets
 

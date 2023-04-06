@@ -149,7 +149,7 @@ class Wallet:
                 )
                 self[key] += value_or_dict
                 if self[key] < 0:
-                    raise ValueError(f"{key} value less than zero")
+                    raise ValueError(f"{key} value less than zero, ({value_or_dict})")
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(

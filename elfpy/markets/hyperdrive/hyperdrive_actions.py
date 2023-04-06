@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional
 
+import numpy
+
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
@@ -407,6 +409,9 @@ def calc_close_short(
     d_short_average_maturity_time = short_average_maturity_time - market.market_state.short_average_maturity_time
     # Return the market and wallet deltas.
     d_base_volume, d_checkpoints, _ = calc_checkpoint_deltas(market, mint_time, bond_amount, "short")
+    # TODO: remove this clamp when short withdrawal shares calculated
+    # don't let short base volume go negative
+    d_base_volume = numpy.amax([d_base_volume, -market.market_state.short_base_volume])
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
@@ -828,6 +833,7 @@ def calc_remove_liquidity(
     )
     user_margin = user_margin * lp_shares / market.market_state.lp_total_supply
     withdraw_shares = user_margin / market.market_state.share_price
+
     # create and return the deltas
     market_deltas = MarketDeltas(
         d_base_asset=-delta_base,
