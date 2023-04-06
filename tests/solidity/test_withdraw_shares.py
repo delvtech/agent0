@@ -1,7 +1,7 @@
 """Withdraw shares tests that match those being executed in the solidity repo."""
 import unittest
 
-import numpy
+import numpy as np
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -51,16 +51,18 @@ class TestWithdrawShares(unittest.TestCase):
         )
         self.alice.wallet.update(wallet_deltas)
 
+    # TODO: complete this
     def test_redeem_withdraw_shares_fail_insufficient_shares(self):
         """Should fail to redeem withdraw shares."""
         market_state = self.hyperdrive.market_state
         # advance time and let interest accrue
-        self.block_time.set_time(1)
+        self.block_time.set_time(0.5)
         # compund interest = p * e ^(rate * time)
         # we advance by one half year, and the rate is .05 / year
-        accrued = self.budget * float(numpy.exp(self.target_apr * 0.5))
+        accrued = self.budget * float(np.exp(self.target_apr * 0.5))
         market_state.share_price = accrued / self.budget
 
+    # TODO: complete this
     def test_redeem_withdraw_shares_short(self):
         """Should fail to redeem withdraw shares."""
         market_state = self.hyperdrive.market_state
@@ -70,7 +72,7 @@ class TestWithdrawShares(unittest.TestCase):
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
-        accrued = self.budget * numpy.exp(self.target_apr * 1)
+        accrued = self.budget * float(np.exp(self.target_apr * 1))
         market_state.share_price = accrued / self.budget
 
         # bob opens a short
@@ -140,7 +142,7 @@ class TestWithdrawShares(unittest.TestCase):
         self.block_time.set_time(self.block_time.time + half_year)
         # compund interest = p * e ^(rate * time), the rate is .05 / year, time is .5 year
         base_in_pool = self.initial_liquidity + base_spent
-        pool_value = base_in_pool * float(numpy.exp(variable_rate * half_year))
+        pool_value = base_in_pool * float(np.exp(variable_rate * half_year))
         total_shares = base_in_pool
         market_state.share_price = pool_value / total_shares
 
@@ -158,7 +160,7 @@ class TestWithdrawShares(unittest.TestCase):
         self.block_time.set_time(self.block_time.time + half_year)
         # compund interest = p * e ^(rate * time), the rate is .05 / year
         base_in_pool2 = pool_value + contribution + base_spent2
-        pool_value2 = base_in_pool2 * float(numpy.exp(variable_rate * half_year))
+        pool_value2 = base_in_pool2 * float(np.exp(variable_rate * half_year))
         total_shares2 = total_shares + contribution / market_state.share_price + base_spent2 / market_state.share_price
         market_state.share_price = pool_value2 / total_shares2
 

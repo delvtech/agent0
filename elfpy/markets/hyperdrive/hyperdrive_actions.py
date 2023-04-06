@@ -116,7 +116,28 @@ def calculate_lp_allocation_adjustment(
     average_time_remaining: float,
     share_price: float,
 ) -> float:
-    """Calculates an adjustment amount for lp shares"""
+    """Calculates an adjustment amount for lp shares.
+
+    Calculates an amount to adjust an lp allocation based off of either shorts or longs outstanding via:
+        base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
+
+    Parameters
+    ----------
+    positions_outstanding: float
+        Either shorts_outstanding or longs_outstanding
+    base_volume: float
+        Either the aggregrate short_base_volume or long_base_volume
+    average_time_remaining: float
+        The normalized time remaining for either shorts or longs
+    share_price: float
+        The current share price
+
+    Returns
+    -------
+    float
+        An amount to adjust the lp shares by.  This ensures that lp's don't get access to interest
+        already accrued by previous lps.
+    """
     # base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
     base_adjustment = (average_time_remaining * base_volume) + (1 - average_time_remaining) * positions_outstanding
     # adjustment = base_adjustment / c
@@ -128,7 +149,23 @@ def calculate_short_adjustment(
     position_duration: time.StretchedTime,
     market_time: float,
 ) -> float:
-    """Calculates an adjustment amount for lp shares"""
+    """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding
+
+    Parameters
+    ----------
+    market_state: hyperdrive_market.MarketState
+        The state of the hyperdrive market.
+    position_duration: time.StretechedTime
+        Used to get the average normalized time remaining for the shorts.
+    market_time: float
+        The current time in years.
+
+    Returns
+    -------
+    float
+        An amount to adjust the lp shares by.  This ensures that lp's don't get access to interest
+        already accrued by previous lps.
+    """
     if market_time > market_state.short_average_maturity_time:
         return 0
     # (year_end - year_start) / (normalizing_constant / 365)
@@ -148,7 +185,23 @@ def calculate_long_adjustment(
     position_duration: time.StretchedTime,
     market_time: float,
 ) -> float:
-    """Calculates an adjustment amount for lp shares"""
+    """Calculates an adjustment amount for lp shares based on the amount of longs outstanding
+
+    Parameters
+    ----------
+    market_state: hyperdrive_market.MarketState
+        The state of the hyperdrive market.
+    position_duration: time.StretechedTime
+        Used to get the average normalized time remaining for the longs.
+    market_time: float
+        The current time in years.
+
+    Returns
+    -------
+    float
+        An amount to adjust the lp shares by.  This ensures that lp's don't get access to interest
+        already accrued by previous lps.
+    """
     if market_time > market_state.long_average_maturity_time:
         return 0
     # (year_end - year_start) / (normalizing_constant / 365)
@@ -163,14 +216,34 @@ def calculate_long_adjustment(
     )
 
 
-def update_weighted_average(  # pylint: disable=too-many-arguments
+def update_weighted_average(
     average: float,
     total_weight: float,
     delta: float,
     delta_weight: float,
     is_adding: bool,
 ) -> float:
-    """Updates a weighted average by adding or removing a weighted delta."""
+    """Updates a weighted average by adding or removing a weighted delta.
+
+    Parameters
+    ----------
+    average: float
+        The current weighted average.
+    total_weight: float
+        The total aggregate weight of the average.
+    delta: float
+        New value to add.
+    delta_weight: float
+        The weight of the new value.
+    is_adding: bool
+        If the weight is added or removed to the total.
+
+    Returns
+    -------
+    float
+        The new weighted average.
+    """
+
     if is_adding:
         return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
     if total_weight == delta_weight:
@@ -188,7 +261,7 @@ def calc_lp_out_given_tokens_in(
     r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
     .. math::
-        \Delta l = \frac{(l \cdot \Delta z)(z + a_s - a_l)}
+        \Delta l = \frac{l \cdot \Delta z}{z + a_s - a_l}
 
     where a_s and a_l are the short and long adjustments. In order to calculate these we need to
     keep track of the long and short base volumes, amounts outstanding and average maturity
