@@ -340,8 +340,6 @@ class Market(
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
         self.check_action(agent_action)
-        print(f"day {self.block_time.time*365:3.1f}", end=" ")
-        print(f"performing action {agent_action} for agent {agent_id}")
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltas()
         agent_deltas = wallet.Wallet(address=0)
@@ -419,15 +417,7 @@ class Market(
                 share_price=self.market_state.share_price,
             ),
         )
-
-        # arbitrarily set the number of LP tokens to start off with
-        # we set this to 2y + x to match the virtual reserves logic
         lp_tokens = self.market_state.share_price * share_reserves + bond_reserves
-        print(f"{self.market_state.share_price * share_reserves + bond_reserves=}")
-        print(f"{bond_reserves=}")
-        print(f"{share_reserves=}")
-        print(f"{self.market_state.share_price=}")
-        print(f"{target_apr=}")
         # TODO: add lp_tokens to bond reserves per https://github.com/element-fi/hyperdrive/pull/140
         # bond_reserves += lp_tokens
         market_deltas = hyperdrive_actions.MarketDeltas(
@@ -439,17 +429,6 @@ class Market(
             lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)
-        actual_apr = self.pricing_model.calc_apr_from_reserves(
-            market_state=self.market_state,
-            time_remaining=self.position_duration,
-        )
-        print(f"{actual_apr=}")
-        spot_price = self.pricing_model.calc_spot_price_from_reserves(
-            market_state=self.market_state,
-            time_remaining=self.position_duration,
-        )
-        print(f"{spot_price=}")
-        print(f"{self.position_duration=}")
         return market_deltas, agent_deltas
 
     def open_short(

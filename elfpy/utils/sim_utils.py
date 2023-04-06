@@ -43,7 +43,6 @@ def get_simulator(
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
-    print(f"{market_deltas=}")
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:

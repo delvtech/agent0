@@ -18,7 +18,7 @@ class TestInitialize(unittest.TestCase):
     # issue #112
     APPROX_EQ: float = 1e-15
     contribution: float = 1_000
-    target_apr: float = 0.5  # 0.5
+    target_apr: float = 0.5
     position_duration: int = 180
     alice: agent.Agent
     bob: agent.Agent
@@ -71,17 +71,10 @@ class TestInitialize(unittest.TestCase):
             time_remaining=self.hyperdrive.position_duration,
         )
         self.assertAlmostEqual(init_apr, self.target_apr, delta=self.APPROX_EQ)
-        print("\n")
-        print(f"{self.position_duration=}")
-        print(f"{init_apr=}")
         self.assertEqual(self.alice.wallet.balance.amount, 0.0)
         self.assertEqual(
             self.hyperdrive.market_state.share_reserves, self.contribution * self.hyperdrive.market_state.share_price
         )
-        print(f"{self.hyperdrive.market_state.share_reserves=}")
-        print(f"{self.hyperdrive.market_state.share_price=}")
         self.assertEqual(
             self.hyperdrive.market_state.lp_total_supply, self.contribution + self.hyperdrive.market_state.bond_reserves
         )
-        print(f"{self.hyperdrive.market_state.bond_reserves=}")
-        print(f"{self.hyperdrive.market_state.lp_total_supply=}")
