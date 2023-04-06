@@ -108,7 +108,7 @@ class TestWithdrawShares(unittest.TestCase):
         one_year = 1
         self.block_time.set_time(one_year)
         base_in_pool = self.initial_liquidity + contribution + base_spent
-        pool_value = base_in_pool * float(numpy.exp(self.target_apr * one_year))
+        pool_value = base_in_pool * float(np.exp(self.target_apr * one_year))
         market_state.share_price = pool_value / base_in_pool
 
         # calculate the portion of the pool's value (after interest) that bob contributed.

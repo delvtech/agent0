@@ -256,6 +256,7 @@ class Wallet:
             if mint_time in self.shorts and self.shorts[mint_time].balance < 0:
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.shorts[mint_time]}.")
 
+    # TODO: has known cyclic import, should not be importing from hyperdrive_actions
     def get_state(self, market: hyperdrive_market.Market) -> dict[str, float]:
         r"""The wallet's current state of public variables
 
