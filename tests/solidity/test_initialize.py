@@ -17,9 +17,9 @@ class TestInitialize(unittest.TestCase):
     # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
     # issue #112
     APPROX_EQ: float = 1e-15
-    contribution: float = 1_000
-    target_apr: float = 0.5
-    position_duration: int = 180
+    contribution: float
+    target_apr: float
+    position_duration: int
     alice: agent.Agent
     bob: agent.Agent
     celine: agent.Agent
@@ -27,10 +27,13 @@ class TestInitialize(unittest.TestCase):
     block_time: BlockTime
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
-    def setUp(self):
-        """Set up agent, pricing model, & market for the subsequent tests.
-        This function is run before each test method.
+    def __init__(self, contribution: float = 1_000, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
         """
+        Set up agent, pricing model, & market for the subsequent tests.
+        """
+        self.contribution = contribution
+        self.target_apr = target_apr
+        self.position_duration = position_duration
         self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
@@ -53,28 +56,56 @@ class TestInitialize(unittest.TestCase):
             target_apr=self.target_apr,
         )
         self.alice.wallet.update(wallet_deltas)
+        super().__init__(**kwargs)
 
-    def test_initialize_failure(self):
-        """Markets should not be able to be initialized twice.
-        Since setUp initializes it, we can check the assert by trying again here."""
-        with self.assertRaises(AssertionError):
-            _ = self.hyperdrive.initialize(
-                wallet_address=self.bob.wallet.address,
-                contribution=self.contribution,
-                target_apr=self.target_apr,
-            )
 
-    def test_initialize_success(self):
-        """Verify that the initialized market has the correct APR & reserve levels"""
-        init_apr = self.pricing_model.calc_apr_from_reserves(
-            market_state=self.hyperdrive.market_state,
-            time_remaining=self.hyperdrive.position_duration,
+def test_initialize_failure():
+    """Markets should not be able to be initialized twice.
+    Since setUp initializes it, we can check the assert by trying again here."""
+    test = TestInitialize()
+    with test.assertRaises(AssertionError):
+        _ = test.hyperdrive.initialize(
+            wallet_address=test.bob.wallet.address,
+            contribution=test.contribution,
+            target_apr=test.target_apr,
         )
-        self.assertAlmostEqual(init_apr, self.target_apr, delta=self.APPROX_EQ)
-        self.assertEqual(self.alice.wallet.balance.amount, 0.0)
-        self.assertEqual(
-            self.hyperdrive.market_state.share_reserves, self.contribution * self.hyperdrive.market_state.share_price
-        )
-        self.assertEqual(
-            self.hyperdrive.market_state.lp_total_supply, self.contribution + self.hyperdrive.market_state.bond_reserves
-        )
+
+
+def test_initialize_success():
+    """Verify that the initialized market has the correct APR & reserve levels"""
+    test = TestInitialize()
+    init_apr = test.pricing_model.calc_apr_from_reserves(
+        market_state=test.hyperdrive.market_state,
+        time_remaining=test.hyperdrive.position_duration,
+    )
+    test.assertAlmostEqual(init_apr, test.target_apr, delta=test.APPROX_EQ)
+    test.assertEqual(test.alice.wallet.balance.amount, 0.0)
+    test.assertEqual(
+        test.hyperdrive.market_state.share_reserves, test.contribution * test.hyperdrive.market_state.share_price
+    )
+    test.assertEqual(
+        test.hyperdrive.market_state.lp_total_supply, test.contribution + test.hyperdrive.market_state.bond_reserves
+    )
+
+
+def test_initialize_bots_on_solidity_success():
+    """Numerical test to ensure exact same outcome as Solidity, using params from bots_on_solidity.ipynb"""
+    test = TestInitialize(contribution=500_000_000, target_apr=0.05, position_duration=365)
+    init_apr = test.pricing_model.calc_apr_from_reserves(
+        market_state=test.hyperdrive.market_state,
+        time_remaining=test.hyperdrive.position_duration,
+    )
+    test.assertAlmostEqual(init_apr, test.target_apr, delta=test.APPROX_EQ)
+    test.assertEqual(test.alice.wallet.balance.amount, 0.0)
+    test.assertEqual(test.hyperdrive.market_state.share_reserves, 500_000_000)
+    test.assertEqual(test.hyperdrive.market_state.share_price, 1.0)
+    virtual_liquidity = (
+        test.hyperdrive.market_state.share_reserves * test.hyperdrive.market_state.share_price
+        + 2 * test.hyperdrive.market_state.bond_reserves
+    )
+    test.assertAlmostEqual(virtual_liquidity, 1_476_027_255.06539, delta=1e-11 * virtual_liquidity)
+    test.assertAlmostEqual(
+        test.hyperdrive.market_state.lp_total_supply,
+        988_013_627.532698,
+        delta=1e-11 * test.hyperdrive.market_state.lp_total_supply,
+    )
