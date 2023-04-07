@@ -111,6 +111,8 @@ def get_initialized_hyperdrive_market(
     ----------
     pricing_model : PricingModel
         instantiated pricing model
+    block_time : BlockTime
+        instantiated global time object
     config: Config
         instantiated config object. The following attributes are used:
             init_share_price : float
@@ -130,6 +132,10 @@ def get_initialized_hyperdrive_market(
     -------
     Market
         instantiated market without any liquidity (i.e. no shares or bonds)
+    Wallet
+        wallet deltas for the initial LP
+    MarketDeltas
+        market deltas for the initial LP
     """
     position_duration = time.StretchedTime(
         days=config.num_position_days,

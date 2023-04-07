@@ -6,12 +6,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+import elfpy
 import elfpy.types as types
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
-
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 @dataclass
@@ -147,8 +146,13 @@ class Wallet:
                     value_or_dict,
                 )
                 self[key] += value_or_dict
-                if self[key] < 0:
-                    raise ValueError(f"{key} value less than zero, ({value_or_dict})")
+                if 0 > self[key] > -elfpy.PRECISION_THRESHOLD:
+                    logging.debug(
+                        "agent #%g %s is negative, but within precision threshold, setting it to 0", self.address, key
+                    )
+                    self[key] = 0
+                elif self[key] <= -elfpy.PRECISION_THRESHOLD:
+                    raise ValueError(f"{key} value less than {-elfpy.PRECISION_THRESHOLD:.1E}")
             # handle updating a Quantity
             elif key == "balance":
                 logging.debug(

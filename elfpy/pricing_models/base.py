@@ -6,6 +6,7 @@ from abc import ABC
 from decimal import Decimal, getcontext
 from typing import TYPE_CHECKING
 
+import elfpy
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
 import elfpy.types as types
@@ -342,11 +343,12 @@ class PricingModel(ABC):
         )
         assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= {WEI}, not {market_state.share_reserves}!"
+            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
         )
         assert market_state.bond_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= {WEI} or bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= 0"
+            f" bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         if market_state.share_price < market_state.init_share_price:
             logging.warning(
@@ -371,13 +373,15 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
         )
-        assert 1 >= time_remaining.stretched_time >= 0, (
+        assert 1 + elfpy.PRECISION_THRESHOLD >= time_remaining.stretched_time >= -elfpy.PRECISION_THRESHOLD, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining.stretched_time >= 0, not {time_remaining.stretched_time}!"
+            f"expected {1 + elfpy.PRECISION_THRESHOLD} > time_remaining.stretched_time >= {-elfpy.PRECISION_THRESHOLD}"
+            f", not {time_remaining.stretched_time}!"
         )
-        assert 1 >= time_remaining.normalized_time >= 0, (
+        assert 1 + elfpy.PRECISION_THRESHOLD >= time_remaining.normalized_time >= -elfpy.PRECISION_THRESHOLD, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 > time_remaining >= 0, not {time_remaining.normalized_time}!"
+            f"expected {1 + elfpy.PRECISION_THRESHOLD} > time_remaining >= {-elfpy.PRECISION_THRESHOLD}"
+            f", not {time_remaining.normalized_time}!"
         )
 
     # TODO: Add checks for TradeResult's other outputs.

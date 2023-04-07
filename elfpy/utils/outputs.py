@@ -421,6 +421,7 @@ def setup_logging(
     log_filename: Optional[str] = None,
     max_bytes: int = elfpy.DEFAULT_LOG_MAXBYTES,
     log_level: int = elfpy.DEFAULT_LOG_LEVEL,
+    delete_previous_logs: bool = False,
 ) -> None:
     r"""Setup logging and handlers with default settings"""
     if log_filename is None:
@@ -434,6 +435,9 @@ def setup_logging(
             log_dir = os.path.join(base_folder, ".logging")
         if not os.path.exists(log_dir):  # create log_dir if necessary
             os.makedirs(log_dir)
+        # delete the log file if it exists
+        if delete_previous_logs and os.path.exists(os.path.join(log_dir, log_name)):
+            os.remove(os.path.join(log_dir, log_name))
         handler = RotatingFileHandler(os.path.join(log_dir, log_name), mode="w", maxBytes=max_bytes)
 
     logging.getLogger().setLevel(log_level)  # events of this level and above will be tracked
