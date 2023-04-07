@@ -8,6 +8,7 @@ class AssetIdPrefix(IntEnum):
     LONG = 0
     SHORT = 1
     WITHDRAWAL_SHARE = 2
+    LP = 3
 
 
 def encode_asset_id(prefix: int, timestamp: int) -> int:

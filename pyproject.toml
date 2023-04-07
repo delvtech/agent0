@@ -42,3 +42,6 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
+exclude = [
+    "hyperdrive_solidity",
+]

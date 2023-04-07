@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from enum import IntEnum
 from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -22,17 +23,6 @@ import elfpy.utils.price as price_utils
 # pylint: disable=too-many-instance-attributes
 
 
-<<<<<<< HEAD
-=======
-class AssetIdPrefix(IntEnum):
-    r"""The asset ID is used to encode the trade type in a transaction receipt"""
-    LONG = 0
-    SHORT = 1
-    WITHDRAWAL_SHARE = 2
-    LP = 3
-
-
->>>>>>> 2c64d99 (run successfully for 5 days straight)
 @dataclass
 class Checkpoint:
     """
