@@ -191,8 +191,7 @@ def ape_close_position(
         # Ensure requested close amount is not greater than what is available in the pool
         if maturity_time is None:
             raise ValueError(f"{maturity_time=} must be provided for a long or short trade")
-        else:
-            trade_asset_id = hyperdrive_assets.encode_asset_id(trade_prefix, maturity_time)
+        trade_asset_id = hyperdrive_assets.encode_asset_id(trade_prefix, maturity_time)
         agent_balance = hyperdrive_contract.balanceOf(trade_asset_id, agent_address)  # type: ignore
         if bond_amount < agent_balance:
             trade_bond_amount = bond_amount

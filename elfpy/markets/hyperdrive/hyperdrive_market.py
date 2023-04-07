@@ -72,6 +72,8 @@ class MarketState(base_market.BaseMarketState):
         A flat fee applied to the output.  Not used in this equation for Yieldspace.
     governance_fee_multiple: float
         The multiple applied to the trade and flat fee to calculate the share paid to governance.
+    gov_fees_accrued: float
+        The amount of governance fees that haven't been collected yet, denominated in shares.
     longs_outstanding: float
         The amount of longs that are still open.
     shorts_outstanding: float
@@ -108,56 +110,31 @@ class MarketState(base_market.BaseMarketState):
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
-    # lp reserves
     lp_total_supply: float = 0.0
-
-    # trading reserves
     share_reserves: float = 0.0
     bond_reserves: float = 0.0
-
-    # trading buffers
     base_buffer: float = 0.0
     bond_buffer: float = 0.0
-
-    # share price
     variable_apr: float = 0.0
     share_price: float = 1.0
     init_share_price: float = 1.0
-
-    # fee multiples
     curve_fee_multiple: float = 0.0
     flat_fee_multiple: float = 0.0
     governance_fee_multiple: float = 0.0
-
-    # governance fees that haven't been collected yet denominated in shares
     gov_fees_accrued: float = 0.0
-    # the amount of longs that are still open.
     longs_outstanding: float = 0.0
-    # the amount of shorts that are still open.
     shorts_outstanding: float = 0.0
-    # the average maturity time of long positions.
     long_average_maturity_time: float = 0.0
-    # the average maturity time of short positions.
     short_average_maturity_time: float = 0.0
-    # the amount of base paid by outstanding longs.
     long_base_volume: float = 0.0
-    # the amount of base paid to outstanding shorts.
     short_base_volume: float = 0.0
-    # time delimited checkpoints
     checkpoints: defaultdict[float, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
-    # time between checkpoints, defaults to 1 day
     checkpoint_duration: float = field(default=1 / 365)
-    # checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
     total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-    # checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
     total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
-    # total amount of withdraw shares outstanding
     total_supply_withdraw_shares: float = 0.0
-    # shares that have been freed up to withdraw by withdraw_shares
     withdraw_shares_ready_to_withdraw: float = 0.0
-    # the margin capital reclaimed by the withdraw process
     withdraw_capital: float = 0.0
-    # the interest earned by the redemptions which put capital into the withdraw pool
     withdraw_interest: float = 0.0
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:

@@ -341,13 +341,13 @@ class PricingModel(ABC):
             "pricing_models.check_input_assertions: ERROR: "
             f"expected quantity.amount >= {WEI}, not {quantity.amount}!"
         )
-        assert market_state.share_reserves >= -elfpy.PRECISION_THRESHOLD, (
+        assert market_state.share_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= {-elfpy.PRECISION_THRESHOLD}, not {market_state.share_reserves}!"
+            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
         )
-        assert market_state.bond_reserves >= -elfpy.PRECISION_THRESHOLD, (
+        assert market_state.bond_reserves >= 0, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= {-elfpy.PRECISION_THRESHOLD} or"
+            f"expected bond_reserves >= 0"
             f" bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         if market_state.share_price < market_state.init_share_price:

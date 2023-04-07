@@ -84,10 +84,10 @@ class BaseMarketState:
                         elfpy.PRECISION_THRESHOLD,
                     )
                     setattr(self, key, 0)
-                else:
-                    assert (
-                        value > -elfpy.PRECISION_THRESHOLD
-                    ), f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
+                elif value <= -elfpy.PRECISION_THRESHOLD:
+                    raise AssertionError(
+                        f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
+                    )
 
 
 class Market(Generic[State, Deltas, PricingModel]):
