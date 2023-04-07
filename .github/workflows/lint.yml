@@ -10,24 +10,27 @@ jobs:
   build:
     name: lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.11"]
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+          python-version: 3.10.11
+
+      - name: Install python dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install black~=22.0 pylint
           python -m pip install stochastic --ignore-requires-python
-          python -m pip install -r requirements-${{ matrix.python-version }}.txt
-      - name: Analyzing code with black
+          python -m pip install -r requirements.txt
+          ape plugins install .
+          python -m pip install .
+          python -m pip install coverage
+
+      - name: Run black
         run: python -m black --check --diff .
-      - name: Analysing code with pylint
-        run: python -m pylint $(git ls-files '*.py' ':!:*apeworx*')
+
+      - name: Run pylint
+        run: python -m pylint $(git ls-files '*.py')
+
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1

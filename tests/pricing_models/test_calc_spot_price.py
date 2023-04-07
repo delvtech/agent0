@@ -228,7 +228,6 @@ class TestSpotPriceCalculations(unittest.TestCase):
         ]
         pricing_model = PricingModel()
         for test_number, test_case in enumerate(test_cases):
-
             # TODO: convert these tests to use total supply, not the approximation
             # approximation of total supply
             test_case["market_state"].lp_total_supply = (
