@@ -56,7 +56,7 @@ def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
     We return everything returned by getPoolInfo in the smart contracts, along with:
         token_id: the id of the TransferSingle event (that isn't mint or burn), returned by get_transfer_single_event
         block_number_: the block number of the transaction
-        prefix_: the prefix of the trade (long, short, or LP)
+        prefix_: the prefix of the trade (LP, long, or short)
         maturity_timestamp: the maturity time of the trade
 
     Arguments
@@ -98,7 +98,7 @@ def ape_open_position(
     Arguments
     ---------
     trade_prefix: hyperdrive_assets.AssetIdPrefix
-        IntEnum specifying whether the trade is a long (0), short (1), or LP (3).
+        IntEnum specifying whether the trade is a LP (0), long (1), or short (2).
     hyperdrive_contract: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
@@ -144,7 +144,7 @@ def ape_open_position(
                 as_underlying,
             )
         else:
-            raise ValueError(f"{trade_prefix=} must be 0 (long), 1 (short), or 3 (LP)")
+            raise ValueError(f"{trade_prefix=} must be LP (0), long (1), or short (2)")
         # Return the updated pool state & transaction result
         pool_state = get_pool_state(tx_receipt, hyperdrive_contract)
     return pool_state, tx_receipt
@@ -162,7 +162,7 @@ def ape_close_position(
     Arguments
     ---------
     trade_prefix: hyperdrive_assets.AssetIdPrefix
-        IntEnum specifying whether the trade is a long (0), short (1), or LP (3).
+        IntEnum specifying whether the trade is an LP (0), long (1), or short (2).
     hyperdrive_contract: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
@@ -229,7 +229,7 @@ def ape_close_position(
                 as_underlying,
             )
         else:
-            raise ValueError(f"{trade_prefix=} must be 0 (long), 1 (short), or 3 (LP)")
+            raise ValueError(f"{trade_prefix=} must be LP (0), long (1), or short (2)")
         # Return the updated pool state & transaction result
         pool_state = get_pool_state(tx_receipt, hyperdrive_contract)
     return pool_state, tx_receipt
