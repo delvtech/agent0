@@ -7,12 +7,10 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import elfpy
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 
 if TYPE_CHECKING:
     from typing import Any, Iterable
-    import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
 @dataclass

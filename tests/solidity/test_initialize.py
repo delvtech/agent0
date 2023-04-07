@@ -14,6 +14,8 @@ class TestInitialize(unittest.TestCase):
     .. todo: this is a mirror of the tests in test_markets.py; need to unify
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
     # issue #112
     APPROX_EQ: float = 1e-15

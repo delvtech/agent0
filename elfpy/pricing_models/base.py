@@ -347,7 +347,8 @@ class PricingModel(ABC):
         )
         assert market_state.bond_reserves >= -elfpy.PRECISION_THRESHOLD, (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= {-elfpy.PRECISION_THRESHOLD} or bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= {-elfpy.PRECISION_THRESHOLD} or"
+            f" bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         if market_state.share_price < market_state.init_share_price:
             logging.warning(
