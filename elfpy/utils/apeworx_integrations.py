@@ -189,9 +189,7 @@ def ape_close_position(
     as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         # Ensure requested close amount is not greater than what is available in the pool
-        if trade_prefix == 3:
-            trade_asset_id = 0
-        elif maturity_time is None:
+        if maturity_time is None:
             raise ValueError(f"{maturity_time=} must be provided for a long or short trade")
         else:
             trade_asset_id = hyperdrive_assets.encode_asset_id(trade_prefix, maturity_time)

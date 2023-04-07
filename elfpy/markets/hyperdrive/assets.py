@@ -5,10 +5,10 @@ from typing import Tuple
 
 class AssetIdPrefix(IntEnum):
     r"""The asset ID is used to encode the trade type in a transaction receipt"""
-    LONG = 0
-    SHORT = 1
-    WITHDRAWAL_SHARE = 2
-    LP = 3
+    LP = 0
+    LONG = 1
+    SHORT = 2
+    WITHDRAWAL_SHARE = 3
 
 
 def encode_asset_id(prefix: int, timestamp: int) -> int:
