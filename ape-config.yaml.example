@@ -4,6 +4,7 @@ plugins:
   - name: etherscan
   - name: solidity
   - name: foundry
+  - name: alchemy
 
 dependencies:
   - name: OpenZeppelin
