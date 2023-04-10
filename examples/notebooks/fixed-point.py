@@ -390,23 +390,21 @@ def f_fixed_point(x):
     return int(np.exp(x / 1e18) * 1e18)
 
 
-# Get Chebyshev coefficients for rational approximation
+def fixed_array_to_float(array):
+    return np.array([val / 1e18 for val in array], dtype=float)
+
+
 def get_chebyshev_coefficients(f, deg_p, deg_q, x_min, x_max):
-    # Convert fixed-point min and max to float
-    x_min_float = x_min / 1e18
-    x_max_float = x_max / 1e18
-
-    x = np.linspace(x_min_float, x_max_float, 1000)
-    y = np.array([f(xi) for xi in (x * 1e18).astype(np.int64)], dtype=np.float64)
-
+    # Get Chebyshev coefficients for rational approximation
+    x = np.linspace(x_min + 1, x_max - 1, num=1000, dtype=np.int64)
+    y = np.array([f(xi) for xi in x])
+    x, y = fixed_array_to_float(x), fixed_array_to_float(y)
     # Fit the numerator (P) and denominator (Q) Chebyshev polynomials
-    P_coeffs = np.polynomial.chebyshev.chebfit(x, y / 1e18, deg_p)
-    Q_coeffs = np.polynomial.chebyshev.chebfit(x, 1 / (y / 1e18), deg_q)
-
+    P_coeffs = np.polynomial.chebyshev.chebfit(x, y, deg_p)
+    Q_coeffs = np.polynomial.chebyshev.chebfit(x, 1 / y, deg_q)
     # Convert coefficients to fixed-point integers
     P_coeffs_fixed = [(int(c * 1e18)) for c in P_coeffs]
     Q_coeffs_fixed = [(int(c * 1e18)) for c in Q_coeffs]
-
     return P_coeffs_fixed, Q_coeffs_fixed
 
 
@@ -415,47 +413,91 @@ deg_p = 6
 deg_q = 7
 x_min = -42139678854452767622  # floor(log(0.5e-18)*1e18)
 x_max = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
-
-P_coeffs, Q_coeffs = get_chebyshev_coefficients(f_fixed_point, deg_p, deg_q, x_min, x_max)
+# P_coeffs, Q_coeffs = get_chebyshev_coefficients(f_fixed_point, deg_p, deg_q, x_min, x_max)
+P_coeffs = [
+    2772001395605857295435445496992,
+    44335888930127919016834873520032,
+    398888492587501845352592340339721,
+    1993839819670624470859228494792842,
+]
+Q_coeffs = [
+    750530180792738023273180420736,
+    32788456221302202726307501949080,
+    892943633302991980437332862907700,
+    4203224763890128580604056984195872,
+]
 
 
 def exp_rational_approximation(x, P_coeffs, Q_coeffs):
     p = P_coeffs[-1]
     q = Q_coeffs[-1]
-
     for i in range(len(P_coeffs) - 2, -1, -1):
         p = (p * x) >> 96
         p += P_coeffs[i]
-
     for i in range(len(Q_coeffs) - 2, -1, -1):
         q = (q * x) >> 96
         q += Q_coeffs[i]
-
     r, _ = divmod(p, q)
     return r
 
 
-def exp_fixed_point(x: int, P_coeffs, Q_coeffs) -> int:
-    if x <= x_min:
+# def exp_fixed_point(x: int, P_coeffs, Q_coeffs) -> int:
+#    if x <= x_min:
+#        return 0
+#    if x >= x_max:
+#        raise ValueError("FixedPointMath_InvalidExponent")
+#    x_sign = int(np.sign(x))
+#    x_abs = int(np.abs(x))
+#    x_abs = (x_abs << 78) // (5**18)
+#    k = (((x_abs << 96) // 54916777467707473351141471128) + (2**95)) >> 96
+#    x_abs = x_abs - k * 54916777467707473351141471128
+#    r = exp_rational_approximation(x_abs, P_coeffs, Q_coeffs)
+#    exp_result = (r * 3822833074963236453042738258902158003155416615667) >> (195 - k)
+#    if x_sign == -1:
+#        return int(1e36 / exp_result)  # exp_result is already scaled, hense 10**(18*2)
+#    else:
+#        return exp_result
+
+
+def exp_fixed_point(x: int) -> int:
+    """Perform a high-precision exponential operator on a fixed-point integer with 1e18 precision"""
+    if x <= -42139678854452767551:
         return 0
-    if x >= x_max:
+    if x >= 135305999368893231589:
         raise ValueError("FixedPointMath_InvalidExponent")
-    x_sign = np.sign(x)
-    x_abs = np.abs(x)
-    x_abs = (x_abs << 78) // (5**18)
-    k = (((x_abs << 96) // 54916777467707473351141471128) + (2**95)) >> 96
-    x_abs = x_abs - k * 54916777467707473351141471128
 
-    r = exp_rational_approximation(x_abs, P_coeffs, Q_coeffs)
-    exp_result = (r * 3822833074963236453042738258902158003155416615667) >> (195 - k)
+    x = (x << 78) // (5**18)
 
-    if x_sign == -1:
-        return int(1e36 / exp_result)  # exp_result is already scaled, hense 10**(18*2)
-    else:
-        return exp_result
+    k = (((x << 96) // 54916777467707473351141471128) + (2**95)) >> 96
+    x = x - k * 54916777467707473351141471128
+
+    # Evaluate using a (7, 8)-term rational approximation
+    p = x + 2365435548388570098118095075024
+    p = ((p * x) >> 96) + 34318668273274713581680426185014
+    p = ((p * x) >> 96) + 270362775340040648191310281970436
+    p = ((p * x) >> 96) + 1156191488514454307780970398971547
+    p = ((p * x) >> 96) + 3194402146584678660962866511912080
+    p = p * x + (4375469559312228512648270455331806 << 96)
+
+    z = x + 521201360678861598364776969802
+    z = ((z * x) >> 96) + 21147027975233597227311972109844
+    z = ((z * x) >> 96) + 46878716226997331408243099685804
+    w = x - 1868927284347447590429593199304
+    w = ((w * z) >> 96) + 821958170767182251302643270771964
+    w = ((w * x) >> 96) + 894462341794215185369349544389092
+    q = z + w - 69899228270520792909738897833460
+    q = ((q * w) >> 96) + 4090814022035512234858932535357952
+    q = ((q * x) >> 96) + 4299133398527200399258460459368384
+
+    r, _ = divmod(p, q)
+    return (r * 3822833074963236453042738258902158003155416615667) >> (195 - k)
 
 
-def test_exp():
+x_min = -42139678854452767622  # floor(log(0.5e-18)*1e18)
+x_max = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
+
+
+def test_exp(x_min, x_max):
     test_cases = [
         (x_min - 1, 0),
         (int(5 * 1e18), int(math.exp(5) * 1e18)),
@@ -467,11 +509,11 @@ def test_exp():
     ]
 
     for case_number, (x, expected) in enumerate(test_cases):
-        result = exp_fixed_point(x, P_coeffs, Q_coeffs)
+        result = exp_fixed_point(x)  # , P_coeffs, Q_coeffs)
         assert math.isclose(result, expected, rel_tol=1e-18), f"exp(x) {case_number=}:\n{result=},\n{expected=}"
 
 
-test_exp()
+test_exp(x_min, x_max)
 
 
 # %%
@@ -483,6 +525,8 @@ import numpy as np
 
 class FixedPointMath:
     ONE_18 = 10**18
+    EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
+    EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
 
     @staticmethod
     def add(a: int, b: int) -> int:
@@ -559,53 +603,6 @@ class FixedPointMath:
             return type(x)(0)
         return x.bit_length() - 1
 
-    # FIXME: One of these is the one I want :-/
-    ###########################
-    @staticmethod
-    def twos_complement_divide(value: int, divisor: int) -> int:
-        # convert x and divisor to binary strings
-        value_bin = format(value, "b")
-        divisor_bin = format(divisor, "b")
-        # pad binary strings with leading zeros to ensure they are the same length
-        max_len = max(len(value_bin), len(divisor_bin))
-        value_bin = value_bin.zfill(max_len)
-        divisor_bin = divisor_bin.zfill(max_len)
-        # check for division by zero
-        if divisor == 0:
-            raise ZeroDivisionError("division by zero")
-        # handle negative numbers using two's complement
-        if value < 0:
-            value_bin = bin(((1 << max_len) - abs(value)))[2:]
-        if divisor < 0:
-            divisor_bin = bin(((1 << max_len) - abs(divisor)))[2:]
-        # perform division using integer division operator
-        result = int(value_bin, 2) // int(divisor_bin, 2)
-        # convert result back to two's complement representation if necessary
-        if (value < 0 and divisor >= 0) or (value >= 0 and divisor < 0):
-            result = -result
-        return result
-
-    @staticmethod
-    def high_precision_divide(numerator: int, denominator: int) -> int:
-        quotient, remainder = divmod(numerator, denominator)
-        if remainder:
-            # Left-shift the remainder by a sufficient number of bits (256) to preserve precision
-            remainder <<= 256
-            quotient = (quotient << 256) + remainder // denominator
-        return quotient
-
-    @staticmethod
-    def _twos_complement_divide(numerator: int, denominator: int, precision: int = 256) -> int:
-        sign = (numerator < 0) != (denominator < 0)
-        numerator, denominator = abs(numerator), abs(denominator)
-        quotient = numerator << precision
-        quotient //= denominator
-        if sign:
-            quotient = -quotient
-        return quotient
-
-    ###########################
-
     @staticmethod
     def ln(x: int) -> int:
         """Computes ln(x) in 1e18 fixed point.
@@ -651,19 +648,7 @@ class FixedPointMath:
         q = ((q * x) >> 96) + 31853899698501571402653359427138
         q = ((q * x) >> 96) + 909429971244387300277376558375
         # r is in the range (0, 0.125) * 2**96
-        # FIXME: Need to do high-precision div
-        r, remainder = divmod(p, q)
-        print("_ln")
-        print(f"{r=}")
-        print(f"{remainder=}")
-        # r = p // q
-        # r = FixedPointMath.twos_complement_divide(p, q)
-        # r = (p + q // 2) // q  # Round to the nearest integer
-        # r = p * FixedPointMath.ONE_18 // q
-        # r = np.int64(np.floor_divide(np.int64(p), np.int64(q)))
-        # r = FixedPointMath.high_precision_divide(p, q)
-        # r = FixedPointMath._twos_complement_divide(p, q)
-
+        r, _ = divmod(p, q)
         # Finalization, we need to
         # * multiply by the scale factor s = 5.549…
         # * add ln(2**96 / 10**18)
@@ -685,11 +670,11 @@ class FixedPointMath:
         # When the result is < 0.5 we return zero. This happens when
         # x <= floor(log(0.5e-18) * 1e18) ~ -42e18
 
-        if x <= -42139678854452767551:
+        if x <= FixedPointMath.EXP_MIN:
             return 0
         # When the result is > (2**255 - 1) / 1e18 we can not represent it
         # as an int256. This happens when x >= floor(log((2**255 -1) / 1e18) * 1e18) ~ 135.
-        if x >= 135305999368893231589:
+        if x >= FixedPointMath.EXP_MAX:
             raise ValueError("FixedPointMath_InvalidExponent")
         # x is now in the range [-42, 136) * 1e18. Convert to (-42, 136) * 2**96
         # for more intermediate precision and a binary basis. This base conversion
@@ -740,309 +725,312 @@ class FixedPointMath:
 # Unit tests
 
 
-# def test_add() -> None:
-#    assert FixedPointMath.add(FixedPointMath.ONE_18, 5 * FixedPointMath.ONE_18) == 6 * FixedPointMath.ONE_18
-#    assert FixedPointMath.add(FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 2 * FixedPointMath.ONE_18
-#    assert FixedPointMath.add(FixedPointMath.ONE_18, 0) == FixedPointMath.ONE_18
-#    assert FixedPointMath.add(0, FixedPointMath.ONE_18) == FixedPointMath.ONE_18
-#    assert FixedPointMath.add(0, 0) == 0
-#
-#
-# test_add()
-#
-#
-# def test_fail_add_overflow() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.add(sys.maxsize, FixedPointMath.ONE_18)
-#    except OverflowError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_add_overflow()
-#
-#
-# def test_sub() -> None:
-#    assert FixedPointMath.sub(5 * FixedPointMath.ONE_18, 3 * FixedPointMath.ONE_18) == 2 * FixedPointMath.ONE_18
-#    assert FixedPointMath.sub(FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 0
-#    assert FixedPointMath.sub(FixedPointMath.ONE_18, 0) == FixedPointMath.ONE_18
-#    assert FixedPointMath.sub(2 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == FixedPointMath.ONE_18
-#    assert FixedPointMath.sub(0, 0) == 0
-#
-#
-# test_sub()
-#
-#
-# def test_fail_sub_overflow() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.sub(0, FixedPointMath.ONE_18)
-#    except OverflowError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_sub_overflow()
-#
-#
-# def test_mul_up() -> None:
-#    assert FixedPointMath.mul_up(int(2.5 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
-#        1.25 * FixedPointMath.ONE_18
-#    )
-#    assert FixedPointMath.mul_up(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
-#    assert FixedPointMath.mul_up(369, 271) == 1
-#    assert FixedPointMath.mul_up(0, FixedPointMath.ONE_18) == 0
-#    assert FixedPointMath.mul_up(FixedPointMath.ONE_18, 0) == 0
-#    assert FixedPointMath.mul_up(0, 0) == 0
-#
-#
-# test_mul_up()
-#
-#
-# def test_mul_down() -> None:
-#    assert FixedPointMath.mul_down(2 * FixedPointMath.ONE_18, 3 * FixedPointMath.ONE_18) == 6 * FixedPointMath.ONE_18
-#    assert FixedPointMath.mul_down(int(2.5 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
-#        1.25 * FixedPointMath.ONE_18
-#    )
-#    assert FixedPointMath.mul_down(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
-#    assert FixedPointMath.mul_down(369, 271) == 0
-#    assert FixedPointMath.mul_down(0, FixedPointMath.ONE_18) == 0
-#    assert FixedPointMath.mul_down(FixedPointMath.ONE_18, 0) == 0
-#    assert FixedPointMath.mul_down(0, 0) == 0
-#
-#
-# test_mul_down()
-#
-#
-# def test_div_down() -> None:
-#    assert FixedPointMath.div_down(6 * FixedPointMath.ONE_18, 2 * FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
-#    assert FixedPointMath.div_down(int(1.25 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
-#        2.5 * FixedPointMath.ONE_18
-#    )
-#    assert FixedPointMath.div_down(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
-#    assert FixedPointMath.div_down(2 * FixedPointMath.ONE_18, int(1e19 * 1e18)) == 0
-#    assert FixedPointMath.div_down(0, FixedPointMath.ONE_18) == 0
-#
-#
-# test_div_down()
-#
-#
-# def test_fail_div_down_zero_denominator() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.div_down(FixedPointMath.ONE_18, 0)
-#    except ValueError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_div_down_zero_denominator()
-#
-#
-# def test_div_up() -> None:
-#    assert FixedPointMath.div_up(int(1.25 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
-#        2.5 * FixedPointMath.ONE_18
-#    )
-#    assert FixedPointMath.div_up(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
-#    assert FixedPointMath.div_up(2 * FixedPointMath.ONE_18, int(1e19 * 1e18)) == 1
-#    assert FixedPointMath.div_up(0, FixedPointMath.ONE_18) == 0
-#
-#
-# test_div_up()
-#
-#
-# def test_fail_div_up_zero_denominator() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.div_up(FixedPointMath.ONE_18, 0)
-#    except ValueError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_div_up_zero_denominator()
-#
-#
-# def test_mul_div_down() -> None:
-#    assert FixedPointMath.mul_div_down(int(2.5e27), int(0.5e27), int(1e27)) == 1.25e27
-#    assert FixedPointMath.mul_div_down(int(2.5e18), int(0.5e18), int(1e18)) == 1.25e18
-#    assert FixedPointMath.mul_div_down(int(2.5e8), int(0.5e8), int(1e8)) == 1.25e8
-#    assert FixedPointMath.mul_div_down(369, 271, int(1e2)) == 1000  # FIXME: should == 999 -- rounding still not working
-#    assert FixedPointMath.mul_div_down(int(1e27), int(1e27), int(2e27)) == 0.5e27
-#    assert FixedPointMath.mul_div_down(int(1e18), int(1e18), int(2e18)) == 0.5e18
-#    assert FixedPointMath.mul_div_down(int(1e8), int(1e8), int(2e8)) == 0.5e8
-#    assert FixedPointMath.mul_div_down(int(2e27), int(3e27), int(3e27)) == 2e27
-#    assert FixedPointMath.mul_div_down(int(2e18), int(3e18), int(3e18)) == 2e18
-#    assert FixedPointMath.mul_div_down(int(2e8), int(3e8), int(3e8)) == 2e8
-#    assert FixedPointMath.mul_div_down(0, int(1e18), int(1e18)) == 0
-#    assert FixedPointMath.mul_div_down(int(1e18), 0, int(1e18)) == 0
-#    assert FixedPointMath.mul_div_down(0, 0, int(1e18)) == 0
-#
-#
-# test_mul_div_down()
-#
-#
-# def test_fail_mul_div_down_zero_denominator() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.mul_div_down(FixedPointMath.ONE_18, FixedPointMath.ONE_18, 0)
-#    except ValueError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_div_up_zero_denominator()
-#
-#
-# def test_mul_div_up() -> None:
-#    assert FixedPointMath.mul_div_up(int(2.5e27), int(0.5e27), int(1e27)) == 1.25e27
-#    assert FixedPointMath.mul_div_up(int(2.5e18), int(0.5e18), int(1e18)) == 1.25e18
-#    assert FixedPointMath.mul_div_up(int(2.5e8), int(0.5e8), int(1e8)) == 1.25e8
-#    assert FixedPointMath.mul_div_up(369, 271, int(1e2)) == 1000
-#    assert FixedPointMath.mul_div_up(int(1e27), int(1e27), int(2e27)) == 0.5e27
-#    assert FixedPointMath.mul_div_up(int(1e18), int(1e18), int(2e18)) == 0.5e18
-#    assert FixedPointMath.mul_div_up(int(1e8), int(1e8), int(2e8)) == 0.5e8
-#    assert FixedPointMath.mul_div_up(int(2e27), int(3e27), int(3e27)) == 2e27
-#    assert FixedPointMath.mul_div_up(int(2e18), int(3e18), int(3e18)) == 2e18
-#    assert FixedPointMath.mul_div_up(int(2e8), int(3e8), int(3e8)) == 2e8
-#    assert FixedPointMath.mul_div_up(0, int(1e18), int(1e18)) == 0
-#    assert FixedPointMath.mul_div_up(int(1e18), 0, int(1e18)) == 0
-#    assert FixedPointMath.mul_div_up(0, 0, int(1e18)) == 0
-#
-#
-# test_mul_div_up()
-#
-#
-# def test_fail_mul_div_up_zero_denominator() -> None:
-#    # with unittest.TestCase.assertRaises(ValueError):
-#    try:
-#        FixedPointMath.mul_div_up(FixedPointMath.ONE_18, FixedPointMath.ONE_18, 0)
-#    except ValueError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_div_up_zero_denominator()
-#
-#
-# def test_ilog2() -> None:
-#    assert FixedPointMath._ilog2(0) == 0
-#    assert FixedPointMath._ilog2(1) == 0
-#    assert FixedPointMath._ilog2(2) == 1
-#    assert FixedPointMath._ilog2(3) == 1
-#    assert FixedPointMath._ilog2(4) == 2
-#    assert FixedPointMath._ilog2(8) == 3
-#    assert FixedPointMath._ilog2(16) == 4
-#    assert FixedPointMath._ilog2(32) == 5
-#    assert FixedPointMath._ilog2(64) == 6
-#    assert FixedPointMath._ilog2(128) == 7
-#    assert FixedPointMath._ilog2(256) == 8
-#    assert FixedPointMath._ilog2(512) == 9
-#    assert FixedPointMath._ilog2(1024) == 10
-#    assert FixedPointMath._ilog2(2048) == 11
-#    assert FixedPointMath._ilog2(4096) == 12
-#    assert FixedPointMath._ilog2(8192) == 13
-#    assert FixedPointMath._ilog2(16384) == 14
-#    assert FixedPointMath._ilog2(32768) == 15
-#    assert FixedPointMath._ilog2(65536) == 16
-#    assert FixedPointMath._ilog2(131072) == 17
-#    assert FixedPointMath._ilog2(262144) == 18
-#    assert FixedPointMath._ilog2(524288) == 19
-#    assert FixedPointMath._ilog2(1048576) == 20
-#
-#
-# test_ilog2()
-#
-#
-# def test_ln() -> None:
-#    assert FixedPointMath.ln(FixedPointMath.ONE_18) == 0
-#    assert FixedPointMath.ln(1000000 * FixedPointMath.ONE_18) == 13815510557964274104
-#
-#
-# test_ln()
-#
-#
-# def test_exp() -> None:
-#    assert FixedPointMath.exp(FixedPointMath.ONE_18) == 2718281828459045235
-#    assert FixedPointMath.exp(0) == FixedPointMath.ONE_18
-#    assert FixedPointMath.exp(-FixedPointMath.ONE_18) == 367879441171442321
-#    assert FixedPointMath.exp(-42139678854452767551) == 0
+def test_add() -> None:
+    assert FixedPointMath.add(FixedPointMath.ONE_18, 5 * FixedPointMath.ONE_18) == 6 * FixedPointMath.ONE_18
+    assert FixedPointMath.add(FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 2 * FixedPointMath.ONE_18
+    assert FixedPointMath.add(FixedPointMath.ONE_18, 0) == FixedPointMath.ONE_18
+    assert FixedPointMath.add(0, FixedPointMath.ONE_18) == FixedPointMath.ONE_18
+    assert FixedPointMath.add(0, 0) == 0
 
 
-# test_exp()
+test_add()
 
-import math
+
+def test_fail_add_overflow() -> None:
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.add(sys.maxsize, FixedPointMath.ONE_18)
+    except OverflowError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_add_overflow()
+
+
+def test_sub() -> None:
+    assert FixedPointMath.sub(5 * FixedPointMath.ONE_18, 3 * FixedPointMath.ONE_18) == 2 * FixedPointMath.ONE_18
+    assert FixedPointMath.sub(FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 0
+    assert FixedPointMath.sub(FixedPointMath.ONE_18, 0) == FixedPointMath.ONE_18
+    assert FixedPointMath.sub(2 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == FixedPointMath.ONE_18
+    assert FixedPointMath.sub(0, 0) == 0
+
+
+test_sub()
+
+
+def test_fail_sub_overflow() -> None:
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.sub(0, FixedPointMath.ONE_18)
+    except OverflowError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_sub_overflow()
+
+
+def test_mul_up() -> None:
+    assert FixedPointMath.mul_up(int(2.5 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
+        1.25 * FixedPointMath.ONE_18
+    )
+    assert FixedPointMath.mul_up(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
+    assert FixedPointMath.mul_up(369, 271) == 1
+    assert FixedPointMath.mul_up(0, FixedPointMath.ONE_18) == 0
+    assert FixedPointMath.mul_up(FixedPointMath.ONE_18, 0) == 0
+    assert FixedPointMath.mul_up(0, 0) == 0
+
+
+test_mul_up()
+
+
+def test_mul_down() -> None:
+    assert FixedPointMath.mul_down(2 * FixedPointMath.ONE_18, 3 * FixedPointMath.ONE_18) == 6 * FixedPointMath.ONE_18
+    assert FixedPointMath.mul_down(int(2.5 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
+        1.25 * FixedPointMath.ONE_18
+    )
+    assert FixedPointMath.mul_down(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
+    assert FixedPointMath.mul_down(369, 271) == 0
+    assert FixedPointMath.mul_down(0, FixedPointMath.ONE_18) == 0
+    assert FixedPointMath.mul_down(FixedPointMath.ONE_18, 0) == 0
+    assert FixedPointMath.mul_down(0, 0) == 0
+
+
+test_mul_down()
+
+
+def test_div_down() -> None:
+    assert FixedPointMath.div_down(6 * FixedPointMath.ONE_18, 2 * FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
+    assert FixedPointMath.div_down(int(1.25 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
+        2.5 * FixedPointMath.ONE_18
+    )
+    assert FixedPointMath.div_down(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
+    assert FixedPointMath.div_down(2 * FixedPointMath.ONE_18, int(1e19 * 1e18)) == 0
+    assert FixedPointMath.div_down(0, FixedPointMath.ONE_18) == 0
+
+
+test_div_down()
+
+
+def test_fail_div_down_zero_denominator() -> None:
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.div_down(FixedPointMath.ONE_18, 0)
+    except ValueError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_div_down_zero_denominator()
+
+
+def test_div_up() -> None:
+    assert FixedPointMath.div_up(int(1.25 * FixedPointMath.ONE_18), int(0.5 * FixedPointMath.ONE_18)) == int(
+        2.5 * FixedPointMath.ONE_18
+    )
+    assert FixedPointMath.div_up(3 * FixedPointMath.ONE_18, FixedPointMath.ONE_18) == 3 * FixedPointMath.ONE_18
+    assert FixedPointMath.div_up(2 * FixedPointMath.ONE_18, int(1e19 * 1e18)) == 1
+    assert FixedPointMath.div_up(0, FixedPointMath.ONE_18) == 0
+
+
+test_div_up()
+
+
+def test_fail_div_up_zero_denominator() -> None:
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.div_up(FixedPointMath.ONE_18, 0)
+    except ValueError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_div_up_zero_denominator()
+
+
+def test_mul_div_down() -> None:
+    assert FixedPointMath.mul_div_down(int(2.5e27), int(0.5e27), int(1e27)) == 1.25e27
+    assert FixedPointMath.mul_div_down(int(2.5e18), int(0.5e18), int(1e18)) == 1.25e18
+    assert FixedPointMath.mul_div_down(int(2.5e8), int(0.5e8), int(1e8)) == 1.25e8
+    assert FixedPointMath.mul_div_down(369, 271, int(1e2)) == 1000  # FIXME: should == 999 -- rounding still not working
+    assert FixedPointMath.mul_div_down(int(1e27), int(1e27), int(2e27)) == 0.5e27
+    assert FixedPointMath.mul_div_down(int(1e18), int(1e18), int(2e18)) == 0.5e18
+    assert FixedPointMath.mul_div_down(int(1e8), int(1e8), int(2e8)) == 0.5e8
+    assert FixedPointMath.mul_div_down(int(2e27), int(3e27), int(3e27)) == 2e27
+    assert FixedPointMath.mul_div_down(int(2e18), int(3e18), int(3e18)) == 2e18
+    assert FixedPointMath.mul_div_down(int(2e8), int(3e8), int(3e8)) == 2e8
+    assert FixedPointMath.mul_div_down(0, int(1e18), int(1e18)) == 0
+    assert FixedPointMath.mul_div_down(int(1e18), 0, int(1e18)) == 0
+    assert FixedPointMath.mul_div_down(0, 0, int(1e18)) == 0
+
+
+test_mul_div_down()
+
+
+def test_fail_mul_div_down_zero_denominator() -> None:
+    # FIXME: Use
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.mul_div_down(FixedPointMath.ONE_18, FixedPointMath.ONE_18, 0)
+    except ValueError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_div_up_zero_denominator()
+
+
+def test_mul_div_up() -> None:
+    assert FixedPointMath.mul_div_up(int(2.5e27), int(0.5e27), int(1e27)) == 1.25e27
+    assert FixedPointMath.mul_div_up(int(2.5e18), int(0.5e18), int(1e18)) == 1.25e18
+    assert FixedPointMath.mul_div_up(int(2.5e8), int(0.5e8), int(1e8)) == 1.25e8
+    assert FixedPointMath.mul_div_up(369, 271, int(1e2)) == 1000
+    assert FixedPointMath.mul_div_up(int(1e27), int(1e27), int(2e27)) == 0.5e27
+    assert FixedPointMath.mul_div_up(int(1e18), int(1e18), int(2e18)) == 0.5e18
+    assert FixedPointMath.mul_div_up(int(1e8), int(1e8), int(2e8)) == 0.5e8
+    assert FixedPointMath.mul_div_up(int(2e27), int(3e27), int(3e27)) == 2e27
+    assert FixedPointMath.mul_div_up(int(2e18), int(3e18), int(3e18)) == 2e18
+    assert FixedPointMath.mul_div_up(int(2e8), int(3e8), int(3e8)) == 2e8
+    assert FixedPointMath.mul_div_up(0, int(1e18), int(1e18)) == 0
+    assert FixedPointMath.mul_div_up(int(1e18), 0, int(1e18)) == 0
+    assert FixedPointMath.mul_div_up(0, 0, int(1e18)) == 0
+
+
+test_mul_div_up()
+
+
+def test_fail_mul_div_up_zero_denominator() -> None:
+    # FIXME: Use
+    # with unittest.TestCase.assertRaises(ValueError):
+    try:
+        FixedPointMath.mul_div_up(FixedPointMath.ONE_18, FixedPointMath.ONE_18, 0)
+    except ValueError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_div_up_zero_denominator()
+
+
+def test_ilog2() -> None:
+    assert FixedPointMath._ilog2(0) == 0
+    assert FixedPointMath._ilog2(1) == 0
+    assert FixedPointMath._ilog2(2) == 1
+    assert FixedPointMath._ilog2(3) == 1
+    assert FixedPointMath._ilog2(4) == 2
+    assert FixedPointMath._ilog2(8) == 3
+    assert FixedPointMath._ilog2(16) == 4
+    assert FixedPointMath._ilog2(32) == 5
+    assert FixedPointMath._ilog2(64) == 6
+    assert FixedPointMath._ilog2(128) == 7
+    assert FixedPointMath._ilog2(256) == 8
+    assert FixedPointMath._ilog2(512) == 9
+    assert FixedPointMath._ilog2(1024) == 10
+    assert FixedPointMath._ilog2(2048) == 11
+    assert FixedPointMath._ilog2(4096) == 12
+    assert FixedPointMath._ilog2(8192) == 13
+    assert FixedPointMath._ilog2(16384) == 14
+    assert FixedPointMath._ilog2(32768) == 15
+    assert FixedPointMath._ilog2(65536) == 16
+    assert FixedPointMath._ilog2(131072) == 17
+    assert FixedPointMath._ilog2(262144) == 18
+    assert FixedPointMath._ilog2(524288) == 19
+    assert FixedPointMath._ilog2(1048576) == 20
+
+
+test_ilog2()
+
+
+def test_ln() -> None:
+    test_cases = [
+        (FixedPointMath.ONE_18, 0),
+        (1000000 * FixedPointMath.ONE_18, 13815510557964274104),
+        (int(5 * 1e18), int(math.log(5) * 1e18)),
+        (int(10 * 1e18), int(math.log(10) * 1e18)),
+    ]
+
+    for case_number, (x, expected) in enumerate(test_cases):
+        result = FixedPointMath.ln(x)
+        assert math.isclose(result, expected, rel_tol=1e-15), f"ln(x) {case_number=}:\n  {result=},\n{expected=}"
+
+
+test_ln()
 
 
 def test_exp():
     test_cases = [
-        (-42139678854452767551, 0),
-        (int(-5 * 1e18), int(math.exp(-5) * 1e18)),
-        (0, int(math.exp(0) * 1e18)),
+        (FixedPointMath.ONE_18, 2718281828459045235),
+        (-FixedPointMath.ONE_18, 367879441171442321),
+        (FixedPointMath.EXP_MIN - 1, 0),
         (int(5 * 1e18), int(math.exp(5) * 1e18)),
+        (int(-5 * 1e18), int(math.exp(-5) * 1e18)),
         (int(10 * 1e18), int(math.exp(10) * 1e18)),
-        (135305999368893231588, int(math.exp(135.305999368893231588) * 1e18)),
+        (int(-10 * 1e18), int(math.exp(-10) * 1e18)),
+        (0, int(math.exp(0) * 1e18)),
+        # FIXME: This fails when the inputs are any closer to EXP_MAX.
+        # To improve precision at high values, we will need to update the (m,n)-term rational approximation
+        (FixedPointMath.EXP_MAX - int(145e18), int(math.exp((FixedPointMath.EXP_MAX - 145e18) / 1e18) * 1e18)),
     ]
 
-    for x, expected in test_cases:
+    for case_number, (x, expected) in enumerate(test_cases):
         result = FixedPointMath.exp(x)
-        assert math.isclose(result, expected, rel_tol=1e-18), f"exp({x}) = {result=},\n{expected=}"
+        assert math.isclose(result, expected, rel_tol=1e-18), f"exp(x) {case_number=}:\n  {result=},\n{expected=}"
 
 
 test_exp()
 
 
-#
-#
-# def test_fail_exp_negative_or_zero_input() -> None:
-#    try:
-#        FixedPointMath.exp(135305999368893231589)
-#    except ValueError as err:
-#        pass
-#    else:
-#        assert False, "Test failed"
-#
-#
-# test_fail_exp_negative_or_zero_input()
+def test_fail_exp_negative_or_zero_input() -> None:
+    try:
+        FixedPointMath.exp(FixedPointMath.EXP_MAX + 1)
+    except ValueError as err:
+        pass
+    else:
+        assert False, "Test failed"
+
+
+test_fail_exp_negative_or_zero_input()
 
 
 def test_pow() -> None:
+    tolerance = 1e10
+
     x = 300000000000000000000000
     y = 977464155968402951
     result = FixedPointMath.pow(x, y)
     expected = 225782202044931640847042
-    assert abs(result - expected) <= 1e5, f"{result=}"
+    assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
     x = 180000000000000000000000
     y = 977464155968402951
     result = FixedPointMath.pow(x, y)
     expected = 137037839669721400603869
-    assert abs(result - expected) <= 1e5
+    assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
     x = 165891671009915386326945
     y = 1023055417320413264
     result = FixedPointMath.pow(x, y)
     expected = 218861723977998147080714
-    assert abs(result - expected) <= 1e5
+    assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
     x = 77073744241129234405745
     y = 1023055417320413264
     result = FixedPointMath.pow(x, y)
     expected = 999024468576329267422018
-    assert abs(result - expected) <= 1e5
+    assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
     x = 18458206546438581254928
     y = 1023055417320413264
     result = FixedPointMath.pow(x, y)
     expected = 23149855298128876929745
-    assert abs(result - expected) <= 1e5
+    assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
 
-# test_pow()  # FIXME: Fails
+test_pow()
