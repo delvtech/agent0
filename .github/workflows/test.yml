@@ -33,9 +33,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: 3.10.11 # install deps in 1m33s (231fa89628bd781756e2194eceea8192c8e62410)
-          # python-version: 3.10.10 # install deps in 1m46s (4f328ed1624fae3a15531c8c4b7394fb865b2d21)
-          # python-version: 3.10.9 # install deps in 1m32s (9fa485884eadae5f0ad025b649f9d0c8120c8f19)
+          python-version: 3.10.11
 
       - name: Install python dependencies
         run: |
