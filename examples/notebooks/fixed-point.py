@@ -567,7 +567,7 @@ class FixedPointMath:
     @staticmethod
     def div_down(a: int, b: int) -> int:
         """Divide two fixed-point numbers in 1e18 format and round down."""
-        return FixedPointMath.mul_div_down(a, FixedPointMath.ONE_18, b)  # Equivalent to (a * 1e18) // b rounded down.
+        return FixedPointMath.mul_div_down(a, FixedPointMath.ONE_18, b)
 
     @staticmethod
     def mul_div_up(x: int, y: int, d: int) -> int:
@@ -581,7 +581,7 @@ class FixedPointMath:
         # else, first, divide z - 1 by the d and add 1, which rounds up
         if z == 0:
             return 0
-        else:  # Divide z - 1 by d and add 1, allowing z - 1 to underflow if z is 0
+        else:  # divide z - 1 by d and add 1, allowing z - 1 to underflow if z is 0
             return ((z - 1) // d) + 1
 
     @staticmethod
@@ -669,7 +669,6 @@ class FixedPointMath:
         # Input x is in fixed point format, with scale factor 1/1e18.
         # When the result is < 0.5 we return zero. This happens when
         # x <= floor(log(0.5e-18) * 1e18) ~ -42e18
-
         if x <= FixedPointMath.EXP_MIN:
             return 0
         # When the result is > (2**255 - 1) / 1e18 we can not represent it
@@ -949,39 +948,68 @@ test_ilog2()
 
 
 def test_ln() -> None:
-    test_cases = [
-        (FixedPointMath.ONE_18, 0),
-        (1000000 * FixedPointMath.ONE_18, 13815510557964274104),
-        (int(5 * 1e18), int(math.log(5) * 1e18)),
-        (int(10 * 1e18), int(math.log(10) * 1e18)),
-    ]
+    tolerance = 1e-15  # FIXME: Should allow for error up to 1e-18
 
-    for case_number, (x, expected) in enumerate(test_cases):
-        result = FixedPointMath.ln(x)
-        assert math.isclose(result, expected, rel_tol=1e-15), f"ln(x) {case_number=}:\n  {result=},\n{expected=}"
+    result = FixedPointMath.ln(FixedPointMath.ONE_18)
+    expected = 0
+    assert math.isclose(result, expected, rel_tol=tolerance), f"ln(x)\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.ln(1000000 * FixedPointMath.ONE_18)
+    expected = 13815510557964274104
+    assert math.isclose(result, expected, rel_tol=tolerance), f"ln(x)\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.ln(int(5 * 1e18))
+    expected = int(math.log(5) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"ln(x)\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.ln(int(10 * 1e18))
+    expected = int(math.log(10) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"ln(x)\n  {result=},\n{expected=}"
 
 
 test_ln()
 
 
 def test_exp():
-    test_cases = [
-        (FixedPointMath.ONE_18, 2718281828459045235),
-        (-FixedPointMath.ONE_18, 367879441171442321),
-        (FixedPointMath.EXP_MIN - 1, 0),
-        (int(5 * 1e18), int(math.exp(5) * 1e18)),
-        (int(-5 * 1e18), int(math.exp(-5) * 1e18)),
-        (int(10 * 1e18), int(math.exp(10) * 1e18)),
-        (int(-10 * 1e18), int(math.exp(-10) * 1e18)),
-        (0, int(math.exp(0) * 1e18)),
-        # FIXME: This fails when the inputs are any closer to EXP_MAX.
-        # To improve precision at high values, we will need to update the (m,n)-term rational approximation
-        (FixedPointMath.EXP_MAX - int(145e18), int(math.exp((FixedPointMath.EXP_MAX - 145e18) / 1e18) * 1e18)),
-    ]
+    tolerance = 1e-18
 
-    for case_number, (x, expected) in enumerate(test_cases):
-        result = FixedPointMath.exp(x)
-        assert math.isclose(result, expected, rel_tol=1e-18), f"exp(x) {case_number=}:\n  {result=},\n{expected=}"
+    result = FixedPointMath.exp(FixedPointMath.ONE_18)
+    expected = 2718281828459045235
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(-FixedPointMath.ONE_18)
+    expected = 367879441171442321
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(FixedPointMath.EXP_MIN - 1)
+    expected = 0
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(int(5 * 1e18))
+    expected = int(math.exp(5) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(int(-5 * 1e18))
+    expected = int(math.exp(-5) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(int(10 * 1e18))
+    expected = int(math.exp(10) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(int(-10 * 1e18))
+    expected = int(math.exp(-10) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    result = FixedPointMath.exp(0)
+    expected = int(math.exp(0) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
+
+    # FIXME: This fails when the inputs are any closer to EXP_MAX.
+    # To improve precision at high values, we will need to update the (m,n)-term rational approximation
+    result = FixedPointMath.exp(FixedPointMath.EXP_MAX - int(145e18))
+    expected = int(math.exp((FixedPointMath.EXP_MAX - 145e18) / 1e18) * 1e18)
+    assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
 
 
 test_exp()
