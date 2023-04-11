@@ -11,6 +11,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
     def decorator(cls):
+        # this decorator should only be placed atop a dataclass
         if not is_dataclass(cls):
             raise TypeError("The class must be a data class.")
 
@@ -49,9 +50,10 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                 for attr_name, attr_value in asdict(self).items():
                     try:
                         new_data[attr_name] = new_type(attr_value)
-                    except ValueError:
-                        print(f"Unable to cast {attr_name} to {new_type}")
-
+                    except ValueError as err:
+                        raise ValueError(f"Unable to cast {attr_name} to {new_type}") from err
+                # create a new instance of the data class with the updated
+                # attributes, rather than modifying the current instance in-place
                 return replace(self, **new_data)
 
             @property

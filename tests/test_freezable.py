@@ -6,12 +6,15 @@ from dataclasses import dataclass
 
 from elfpy.types import freezable
 
+# dynamic member attribution breaks pylint
+# pylint: disable=no-member
+
 
 @dataclass
 class ClassWithOneAttribute:
     """Class with one attribute"""
 
-    existing_attrib = 1
+    existing_attrib: int = 1
 
 
 @freezable(frozen=False, no_new_attribs=False)
@@ -124,3 +127,50 @@ class TestFreezability(unittest.TestCase):
             freezable_object.existing_attrib = 2
         with self.assertRaises(AttributeError):
             freezable_object.new_attrib = 1  # pylint: disable=attribute-defined-outside-init # type: ignore
+
+    def test_dtypes(self):
+        """Test dtype casting & checking capability of classes that have the freezable decorator"""
+        freezable_object = FreezableClass(existing_attrib=4)
+        # cast to int, check that it is an int
+        assert isinstance(
+            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
+                int
+            ).existing_attrib,
+            int,
+        )
+        # cast to float, check that it is a float
+        assert isinstance(
+            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
+                float
+            ).existing_attrib,
+            float,
+        )
+        # cast to str, check that it is a str
+        assert isinstance(
+            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
+                str
+            ).existing_attrib,
+            str,
+        )
+        # get dtypes, confirm the key exists & that it is an int
+        assert (
+            "existing_attrib"
+            in freezable_object.dtypes.keys()  # pylint: disable=attribute-defined-outside-init # type: ignore
+        )
+        assert (
+            freezable_object.dtypes["existing_attrib"]  # pylint: disable=attribute-defined-outside-init # type: ignore
+            == int
+        )
+        # cast to float, make sure dtypes updates
+        assert (
+            freezable_object.astype(float).dtypes[  # pylint: disable=attribute-defined-outside-init # type: ignore
+                "existing_attrib"
+            ]
+            == float
+        )
+        # ERROR case: changing type to something that is not compatible
+        freezable_object = FreezableClass(
+            existing_attrib="bleh"  # pylint: disable=attribute-defined-outside-init # type: ignore
+        )
+        with self.assertRaises(ValueError):
+            freezable_object.astype(int)  # pylint: disable=attribute-defined-outside-init # type: ignore
