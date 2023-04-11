@@ -11,7 +11,8 @@ class TestFixedPointMath(unittest.TestCase):
 
     ..note::
         Note that `ln` and `pow` require lower precision.
-        Additionally, the approximations used for fixed-point arithmetic are less accurate the closer one gets to the maximum bounds.
+        Additionally, the approximations used for fixed-point arithmetic
+        are less accurate the closer one gets to the maximum bounds.
     """
 
     def test_add(self):
@@ -142,6 +143,7 @@ class TestFixedPointMath(unittest.TestCase):
 
     def test_ilog2(self):
         """Test integer log base 2"""
+        # pylint: disable=protected-access
         assert FixedPointMath._ilog2(0) == 0
         assert FixedPointMath._ilog2(1) == 0
         assert FixedPointMath._ilog2(2) == 1
@@ -237,32 +239,22 @@ class TestFixedPointMath(unittest.TestCase):
         """Test integer pow"""
         tolerance = 1e10
 
-        x = 300000000000000000000000
-        y = 977464155968402951
-        result = FixedPointMath.pow(x, y)
+        result = FixedPointMath.pow(300000000000000000000000, 977464155968402951)
         expected = 225782202044931640847042
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
-        x = 180000000000000000000000
-        y = 977464155968402951
-        result = FixedPointMath.pow(x, y)
+        result = FixedPointMath.pow(180000000000000000000000, 977464155968402951)
         expected = 137037839669721400603869
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
-        x = 165891671009915386326945
-        y = 1023055417320413264
-        result = FixedPointMath.pow(x, y)
+        result = FixedPointMath.pow(165891671009915386326945, 1023055417320413264)
         expected = 218861723977998147080714
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
-        x = 77073744241129234405745
-        y = 1023055417320413264
-        result = FixedPointMath.pow(x, y)
+        result = FixedPointMath.pow(77073744241129234405745, 1023055417320413264)
         expected = 999024468576329267422018
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
-        x = 18458206546438581254928
-        y = 1023055417320413264
-        result = FixedPointMath.pow(x, y)
+        result = FixedPointMath.pow(18458206546438581254928, 1023055417320413264)
         expected = 23149855298128876929745
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"

@@ -1,6 +1,9 @@
 # %% [markdown]
 # Fixed point math
 
+# pylint: disable=duplicate-code
+# pylint: disable=invalid-name
+
 # %%
 """
 SUGAR FUNCS

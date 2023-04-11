@@ -1,7 +1,12 @@
+"""Implements the FixedPointMath class that has a variety of safe fixed-point integer operations"""
 import sys
+
+# pylint: disable=invalid-name
 
 
 class FixedPointMath:
+    """Safe, high precision (1e18) fixed-point integer arethmetic"""
+
     ONE_18 = 10**18
     INT_MAX = int(sys.maxsize)  # TODO: This assumes unsigned integer.
     EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
@@ -35,8 +40,8 @@ class FixedPointMath:
             raise ValueError("FixedPointMath_mulDivDown_InvalidInput")
         if z // d == 0:
             return 0
-        else:  # add d-1 to ensure small entries round down
-            return (z + d - 1) // d
+        # add d-1 to ensure small entries round down
+        return (z + d - 1) // d
 
     @staticmethod
     def mul_down(a: int, b: int) -> int:
@@ -60,8 +65,8 @@ class FixedPointMath:
         # else, first, divide z - 1 by the d and add 1, which rounds up
         if z == 0:
             return 0
-        else:  # divide z - 1 by d and add 1, allowing z - 1 to underflow if z is 0
-            return ((z - 1) // d) + 1
+        # divide z - 1 by d and add 1, allowing z - 1 to underflow if z is 0
+        return ((z - 1) // d) + 1
 
     @staticmethod
     def mul_up(a: int, b: int) -> int:
