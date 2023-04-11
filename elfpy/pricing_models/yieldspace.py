@@ -113,31 +113,6 @@ class YieldspacePricingModel(PricingModel):
         )
         return lp_out, d_base, d_bonds
 
-    # TODO: Delete this function from here & base? It is not used or tested.
-    def calc_lp_in_given_tokens_out(
-        self,
-        d_base: float,
-        rate: float,
-        market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
-        r"""Computes the amount of LP tokens to be minted for a given amount of base asset
-
-        .. math::
-            y = \frac{(z - \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
-        """
-        d_shares = d_base / market_state.share_price
-        lp_in = (d_shares * market_state.lp_total_supply) / (
-            market_state.share_reserves - market_state.base_buffer / market_state.share_price
-        )
-        # TODO: Move this calculation to a helper function.
-        annualized_time = time.norm_days(time_remaining.days, 365)
-        d_bonds = (market_state.share_reserves - d_shares) / 2 * (
-            market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
-            - market_state.share_price
-        ) - market_state.bond_reserves
-        return lp_in, d_base, d_bonds
-
     def calc_in_given_out(
         self,
         out: types.Quantity,
@@ -189,8 +164,6 @@ class YieldspacePricingModel(PricingModel):
 
         .. note::
            The pool total supply is a function of the base and bond reserves, and is modified in
-           :func:`calc_lp_in_given_tokens_out
-           <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_in_given_tokens_out>`,
            :func:`calc_tokens_out_given_lp_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_tokens_out_given_lp_in>`,
            and :func:`calc_lp_out_given_tokens_in
@@ -401,10 +374,8 @@ class YieldspacePricingModel(PricingModel):
 
         .. note::
            The pool total supply is a function of the base and bond reserves, and is modified in
-           :func:`calc_lp_in_given_tokens_out
-           <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_in_given_tokens_out>`,
            :func:`calc_tokens_out_given_lp_in
-           <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_tokens_out_given_lp_in>`,
+           <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_tokens_out_given_lp_in>`
            and :func:`calc_lp_out_given_tokens_in
            <elfpy.pricing_models.yieldspace.YieldSpacePricingModel.calc_lp_out_given_tokens_in>`.
 
