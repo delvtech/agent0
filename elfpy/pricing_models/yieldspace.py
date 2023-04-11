@@ -3,9 +3,8 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
-from elfpy import FixedPoint
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
@@ -61,7 +60,7 @@ class YieldspacePricingModel(PricingModel):
         else:  # initial case where we have 0 share reserves or final case where it has been removed
             lp_out = d_shares
         # TODO: Move this calculation to a helper function.
-        annualized_time = time_remaining.days / 365
+        annualized_time = time.norm_days(time_remaining.days, 365)
         d_bonds = (market_state.share_reserves + d_shares) / 2 * (
             market_state.init_share_price * (1 + rate * annualized_time) ** (1 / time_remaining.stretched_time)
             - market_state.share_price
