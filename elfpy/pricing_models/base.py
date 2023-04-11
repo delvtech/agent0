@@ -57,16 +57,6 @@ class PricingModel(ABC):
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
 
-    def calc_lp_in_given_tokens_out(
-        self,
-        d_base: float,
-        rate: float,
-        market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
-        """Computes the amount of LP tokens to be minted for a given amount of base asset"""
-        raise NotImplementedError
-
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: float,
