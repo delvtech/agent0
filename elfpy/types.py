@@ -10,7 +10,7 @@ from typing import Any, Type
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
-    def decorator(cls):
+    def decorator(cls: Type) -> Type:
         # this decorator should only be placed atop a dataclass
         if not is_dataclass(cls):
             raise TypeError("The class must be a data class.")
