@@ -381,21 +381,27 @@ def calc_open_short(
     tuple[MarketDeltas, wallet.Wallet]
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
-    # perform the trade
+    # get the checkpointed time remaining
+    mint_time = market.latest_checkpoint_time
+    years_remaining = time.get_years_remaining(
+        market_time=market.block_time.time,
+        mint_time=mint_time,
+        position_duration_years=market.position_duration.days / 365,
+    )
+    time_remaining = time.StretchedTime(
+        days=years_remaining * 365,
+        time_stretch=market.position_duration.time_stretch,
+        normalizing_constant=market.position_duration.normalizing_constant,
+    )
     trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     market.pricing_model.check_input_assertions(
-        quantity=trade_quantity,
-        market_state=market.market_state,
-        time_remaining=market.position_duration,
+        quantity=trade_quantity, market_state=market.market_state, time_remaining=time_remaining
     )
-    # TODO: add calc_time_remaining
+    # perform the trade
     trade_result = market.pricing_model.calc_out_given_in(
-        in_=trade_quantity,
-        market_state=market.market_state,
-        time_remaining=market.position_duration,
+        in_=trade_quantity, market_state=market.market_state, time_remaining=time_remaining
     )
     # calculate the trader's deposit amount
-    mint_time = market.latest_checkpoint_time
     normalized_time_elapsed = (market.block_time.time - mint_time) / market.position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market.market_state.share_price
     share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
