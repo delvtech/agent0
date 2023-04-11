@@ -11,7 +11,7 @@ from elfpy.utils.math import FixedPointMath
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-# Fixed-point datatype
+
 class FixedPoint(int):
     """New fixed-point datatype"""
 
@@ -37,7 +37,7 @@ class FixedPoint(int):
             value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
 
     def __float__(self) -> float:
-        """Cast back to float"""
+        """Cast to float"""
         return float(self) / 10**self.decimal_places
 
     def __add__(self, other):
@@ -60,7 +60,7 @@ class FixedPoint(int):
 
     def __truediv__(self, other):
         """Enables '/' syntax.
-        Since most implementations times we want to divdown this mirrors '//' syntax
+        Since most implementations use divdown, this mirrors '//' syntax
         """
         return self.__floordiv__(other)
 

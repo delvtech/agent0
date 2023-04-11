@@ -8,7 +8,7 @@ class FixedPointMath:
     """Safe, high precision (1e18) fixed-point integer arethmetic"""
 
     ONE_18 = 10**18
-    INT_MAX = int(sys.maxsize)  # TODO: This assumes unsigned integer.
+    INT_MAX = int(sys.maxsize)  # TODO: This assumes unsigned integer; need to update for signed option
     EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
     EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
 

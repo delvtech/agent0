@@ -182,6 +182,13 @@ class TestFreezability(unittest.TestCase):
             ).existing_attrib
             == 4.0
         )
+        # check that attrib gets updated with new type
+        assert (
+            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
+                float
+            ).__annotations__["existing_attrib"]
+            == float
+        )
         # ERROR case: changing type to something that is not compatible
         freezable_object = FreezableClass(
             existing_attrib="bleh"  # pylint: disable=attribute-defined-outside-init # type: ignore
