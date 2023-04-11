@@ -18,8 +18,6 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-many-arguments
 
-Number = TypeVar("Number", float, Decimal, FixedPoint)
-
 
 class YieldspacePricingModel(PricingModel):
     """
@@ -43,22 +41,16 @@ class YieldspacePricingModel(PricingModel):
 
     def calc_lp_out_given_tokens_in(
         self,
-        d_base: Number,
-        rate: Number,
+        d_base: float,
+        rate: float,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[Number, Number, Number]:
+    ) -> tuple[float, float, float]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
             y = \frac{(z + \Delta z)(\mu \cdot (\frac{1}{1 + r \cdot t(d)})^{\frac{1}{\tau(d_b)}} - c)}{2}
         """
-        market_state = market_state.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-            type(d_base)
-        )
-        time_remaining = time_remaining.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-            type(d_base)
-        )
         d_shares = d_base / market_state.share_price
         if market_state.share_reserves > 0:  # normal case where we have some share reserves
             # TODO: We need to update these LP calculations to address the LP
