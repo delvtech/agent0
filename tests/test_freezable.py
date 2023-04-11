@@ -152,6 +152,13 @@ class TestFreezability(unittest.TestCase):
             ).existing_attrib,
             str,
         )
+        # cast to str, make sure value is correct
+        assert (
+            freezable_object.astype(
+                str
+            ).existing_attrib  # pylint: disable=attribute-defined-outside-init # type: ignore
+            == "4"
+        )
         # get dtypes, confirm the key exists & that it is an int
         assert (
             "existing_attrib"
@@ -167,6 +174,13 @@ class TestFreezability(unittest.TestCase):
                 "existing_attrib"
             ]
             == float
+        )
+        # cast to float, make sure value is correct
+        assert (
+            freezable_object.astype(
+                float
+            ).existing_attrib  # pylint: disable=attribute-defined-outside-init # type: ignore
+            == 4.0
         )
         # ERROR case: changing type to something that is not compatible
         freezable_object = FreezableClass(
