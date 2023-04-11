@@ -3,8 +3,9 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
+from elfpy import FixedPoint
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
@@ -16,6 +17,8 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 # pylint: disable=too-many-arguments
+
+Number = TypeVar("Number", float, Decimal, FixedPoint)
 
 
 class YieldspacePricingModel(PricingModel):
@@ -40,11 +43,11 @@ class YieldspacePricingModel(PricingModel):
 
     def calc_lp_out_given_tokens_in(
         self,
-        d_base: float,
-        rate: float,
+        d_base: Number,
+        rate: Number,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
-    ) -> tuple[float, float, float]:
+    ) -> tuple[Number, Number, Number]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
         .. math::
