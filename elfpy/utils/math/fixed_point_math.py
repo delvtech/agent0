@@ -3,7 +3,7 @@ import sys
 
 class FixedPointMath:
     ONE_18 = 10**18
-    INT_MAX = sys.maxsize
+    INT_MAX = int(sys.maxsize)  # TODO: This assumes unsigned integer.
     EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
     EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
 

@@ -8,6 +8,7 @@ from elfpy.utils.math import FixedPointMath
 class TestFixedPointMath(unittest.TestCase):
     """Unit tests to verify that the fixed-point integer implementations are correct.
     The tests assume everything is in 1e18 precision.
+
     ..note::
         Note that `ln` and `pow` require lower precision.
         Additionally, the approximations used for fixed-point arithmetic are less accurate the closer one gets to the maximum bounds.
