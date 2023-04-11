@@ -388,11 +388,22 @@ def calc_open_short(
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+    # TODO: add calc_time_remaining
     trade_result = market.pricing_model.calc_out_given_in(
         in_=trade_quantity,
         market_state=market.market_state,
         time_remaining=market.position_duration,
     )
+    # calculate the trader's deposit amount
+    mint_time = market.latest_checkpoint_time
+    normalized_time_elapsed = (market.block_time.time - mint_time) / market.position_duration.years
+    share_proceeds = bond_amount * normalized_time_elapsed / market.market_state.share_price
+    share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
+    share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
+    open_share_price = market.market_state.checkpoints[mint_time].share_price
+    share_price = market.market_state.share_price
+    trader_deposit = calc_short_proceeds(bond_amount, share_proceeds, open_share_price, share_price, share_price)
+    # get gov fees accrued
     market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # make sure the trade is valid
     market.pricing_model.check_output_assertions(trade_result=trade_result)
@@ -412,10 +423,16 @@ def calc_open_short(
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
+
+    _, updated_bond_reserves = calc_update_reserves(
+        market.market_state.share_reserves, market.market_state.bond_reserves, share_reserves_delta
+    )
+    bond_reserves_delta = updated_bond_reserves - market.market_state.bond_reserves
     # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
-        d_bond_asset=trade_result.market_result.d_bonds,
+        d_bond_asset=bond_reserves_delta,
+        # TODO: remove the bond buffer
         d_bond_buffer=bond_amount,
         short_base_volume=base_volume,
         shorts_outstanding=bond_amount,
@@ -423,11 +440,9 @@ def calc_open_short(
         short_checkpoints=defaultdict(float, {market.latest_checkpoint_time: base_volume}),
         total_supply_shorts=defaultdict(float, {market.latest_checkpoint_time: bond_amount}),
     )
-    # amount to cover the worst case scenario where p=1. this amount is 1-p. see logic above.
-    max_loss = bond_amount - trade_result.user_result.d_base
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=-types.Quantity(amount=max_loss, unit=types.TokenType.BASE),
+        balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
         shorts={
             market.latest_checkpoint_time: wallet.Short(
                 balance=bond_amount, open_share_price=market.market_state.share_price
@@ -797,6 +812,11 @@ def calc_update_reserves(share_reserves: float, bond_reserves: float, share_rese
         The current total bonds in reserve
     share_reserves_delta:
         The delta that should be applied to share reserves.
+
+    Returns
+    -------
+    tuple[float, float]
+        updated_share_reserves and updated_bond_reserves
     """
     if share_reserves_delta == 0:
         return 0, 0
