@@ -1,7 +1,7 @@
 """Core types used across the repo"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict, replace, is_dataclass
 from enum import Enum
 from functools import wraps
 from typing import Any, Type
@@ -10,7 +10,10 @@ from typing import Any, Type
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
-    def decorator(cls: Type) -> Type:
+    def decorator(cls):
+        if not is_dataclass(cls):
+            raise TypeError("The class must be a data class.")
+
         @wraps(wrapped=cls, updated=())
         class FrozenClass(cls):
             """Subclass cls to enable freezing of attributes
@@ -40,6 +43,27 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                 """disallows adding new members"""
                 super().__setattr__("no_new_attribs", True)
 
+            def astype(self, new_type):
+                """Cast all member attributes to a new type"""
+                new_data = {}
+                for attr_name, attr_value in asdict(self).items():
+                    try:
+                        new_data[attr_name] = new_type(attr_value)
+                    except ValueError:
+                        print(f"Unable to cast {attr_name} to {new_type}")
+
+                return replace(self, **new_data)
+
+            @property
+            def dtypes(self) -> dict[str, type]:
+                """Return a dict listing name & type of each member variable"""
+                dtypes_dict: dict[str, type] = {}
+                for attr_name, attr_value in asdict(self).items():
+                    dtypes_dict[attr_name] = type(attr_value)
+                return dtypes_dict
+
+        # Set the name of the wrapped class to the name of the input class to preserve metadata
+        FrozenClass.__name__ = cls.__name__
         return FrozenClass
 
     return decorator
