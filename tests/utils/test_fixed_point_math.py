@@ -102,9 +102,7 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.mul_div_down(int(2.5e27), int(0.5e27), int(1e27)) == 1.25e27
         assert FixedPointMath.mul_div_down(int(2.5e18), int(0.5e18), int(1e18)) == 1.25e18
         assert FixedPointMath.mul_div_down(int(2.5e8), int(0.5e8), int(1e8)) == 1.25e8
-        assert (
-            FixedPointMath.mul_div_down(369, 271, int(1e2)) == 1000
-        )  # FIXME: should == 999 -- rounding still not working
+        assert FixedPointMath.mul_div_down(369, 271, int(1e2)) == 999
         assert FixedPointMath.mul_div_down(int(1e27), int(1e27), int(2e27)) == 0.5e27
         assert FixedPointMath.mul_div_down(int(1e18), int(1e18), int(2e18)) == 0.5e18
         assert FixedPointMath.mul_div_down(int(1e8), int(1e8), int(2e8)) == 0.5e8
@@ -170,7 +168,7 @@ class TestFixedPointMath(unittest.TestCase):
 
     def test_ln(self):
         """Test integer natural log"""
-        tolerance = 1e-15  # FIXME: Should allow for error up to 1e-18
+        tolerance = 1e-15  # TODO: Should allow for error up to 1e-18
 
         result = FixedPointMath.ln(FixedPointMath.ONE_18)
         expected = 0
@@ -224,7 +222,7 @@ class TestFixedPointMath(unittest.TestCase):
         expected = int(math.exp(0) * 1e18)
         assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
 
-        # FIXME: This fails when the inputs are any closer to EXP_MAX.
+        # TODO: This fails when the inputs are any closer to EXP_MAX.
         # To improve precision at high values, we will need to update the (m,n)-term rational approximation
         result = FixedPointMath.exp(FixedPointMath.EXP_MAX - int(145e18))
         expected = int(math.exp((FixedPointMath.EXP_MAX - 145e18) / 1e18) * 1e18)

@@ -40,8 +40,8 @@ class FixedPointMath:
             raise ValueError("FixedPointMath_mulDivDown_InvalidInput")
         if z // d == 0:
             return 0
-        # add d-1 to ensure small entries round down
-        return (z + d - 1) // d
+        # floor div automatically rounds down
+        return z // d
 
     @staticmethod
     def mul_down(a: int, b: int) -> int:
