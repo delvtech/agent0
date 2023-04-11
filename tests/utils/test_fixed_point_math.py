@@ -25,7 +25,7 @@ class TestFixedPointMath(unittest.TestCase):
 
     def test_fail_add_overflow(self):
         """Test fixed-point add for invalid integer inputs"""
-        with self.assertRaises(ValueError):  # FIXME: use overflow/underflow errors instead of value errors
+        with self.assertRaises(OverflowError):
             FixedPointMath.add(FixedPointMath.INT_MAX, FixedPointMath.ONE_18)
 
     def test_sub(self):
@@ -38,7 +38,7 @@ class TestFixedPointMath(unittest.TestCase):
 
     def test_fail_sub_overflow(self):
         """Test fixed-point sub for invalid integer inputs"""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(OverflowError):
             FixedPointMath.sub(0, FixedPointMath.ONE_18)
 
     def test_mul_up(self):
