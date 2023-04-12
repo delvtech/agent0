@@ -431,14 +431,12 @@ def calc_open_short(
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
 
-    print(f"{bond_reserves_delta=}")
     _, updated_bond_reserves = calc_update_reserves(
         market.market_state.share_reserves + share_reserves_delta,
         market.market_state.bond_reserves + bond_reserves_delta,
         share_reserves_delta,
     )
     bond_reserves_delta += updated_bond_reserves - market.market_state.bond_reserves
-    print(f"{bond_reserves_delta=}")
     # return the market and wallet deltas
     market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
@@ -568,17 +566,13 @@ def calc_close_short(
 
     # Add the flat component of the trade to the pool's liquidity and remove any LP proceeds paid to
     # the withdrawal pool from the pool's liquidity.
-    print("close short")
     share_reserves = market.market_state.share_reserves + share_reserves_delta
-    print(f"  {share_reserves_delta=}")
     bond_reserves = market.market_state.bond_reserves + bond_reserves_delta
-    print(f"  {bond_reserves_delta=}")
     adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves(
         share_reserves, bond_reserves, share_adjustment
     )
     share_reserves_delta = adjusted_share_reserves - market.market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market.market_state.bond_reserves
-    print(f"{bond_reserves_delta=}")
 
     market_deltas = MarketDeltas(
         d_base_asset=share_reserves_delta * market.market_state.share_price,

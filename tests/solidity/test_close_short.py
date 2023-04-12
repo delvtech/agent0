@@ -7,9 +7,9 @@ import numpy as np
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.pricing_models import yieldspace
 from elfpy.time.time import StretchedTime
 
 # pylint: disable=too-many-arguments
@@ -86,7 +86,7 @@ class TestCloseShort(unittest.TestCase):
         stretch_time = StretchedTime(
             days=time_remaining * 365, time_stretch=self.hyperdrive.time_stretch_constant, normalizing_constant=365
         )
-        model = yieldspace.YieldspacePricingModel()
+        model = yieldspace_pm.YieldspacePricingModel()
         curve_shares = float(
             model.calc_shares_in_given_bonds_out(
                 Decimal(market_state_before.share_reserves),

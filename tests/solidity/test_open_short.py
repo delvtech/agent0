@@ -72,11 +72,6 @@ class TestOpenShort(unittest.TestCase):
         # Total amount of base tokens locked in Hyperdrive
         # hyperdrive_base_amount
         #     = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
-        # self.assertEqual(
-        #     hyperdrive_base_amount,
-        #     contribution + base_amount,
-        #     msg=f"{hyperdrive_base_amount=} is not correct",
-        # )
         # Bob received the short tokens
         user_wallet_shorts_amount = sum(short.balance for short in user.wallet.shorts.values())
         self.assertEqual(
