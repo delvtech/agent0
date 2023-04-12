@@ -64,7 +64,8 @@ class FixedFrida(agentlib.Agent):
         -------
         action_list : list[MarketAction]
         """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
+        # Any trading at all is based on a weighted coin flip
+        # they have a percent chance of executing a trade specified by `trade_chance`
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
@@ -140,7 +141,8 @@ class LongLouie(agentlib.Agent):
         -------
         action_list : list[MarketAction]
         """
-        # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
+        # Any trading at all is based on a weighted coin flip
+        # they have a percent chance of executing a trade specified by `trade_chance`
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
