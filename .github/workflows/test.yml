@@ -28,5 +28,3 @@ jobs:
           python -m pip install .
       - name: Running package tests
         run: python -m pytest .
-    paths-ignore:
-      - examples/everlasting_bots.py
