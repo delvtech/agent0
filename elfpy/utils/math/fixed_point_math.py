@@ -194,11 +194,11 @@ class FixedPointMath:
 
         .. math::
             \begin{align*}
-                ln(x^y) &= y * ln(x)\\
-                e^(y * ln(y)) &= x^y
+                &ln(x^y) = y * ln(x)\\
+                &e^{(y * ln(y))} = x^y
             \end{align*}
 
-        Any overflow for x will be caught in _ln() in the initial bounds check
+        Any overflow for x will be caught in ln() in the initial bounds check
         """
         ylnx = y * FixedPointMath.ln(x) // FixedPointMath.ONE_18
         return FixedPointMath.exp(ylnx)
