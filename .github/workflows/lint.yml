@@ -28,6 +28,6 @@ jobs:
       - name: Analyzing code with black
         run: python -m black --check --diff .
       - name: Analysing code with pylint
-        run: python -m pylint $(git ls-files '*.py')
+        run: python -m pylint $(git ls-files '*.py' ':!:*apeworx*')
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1

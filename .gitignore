@@ -1,3 +1,6 @@
+# APE temprorary until we get the GH actions & workflow set up
+ape-config.yaml
+
 # default logging directory
 .logging
 
