@@ -2,11 +2,80 @@
 
 import shutil
 import logging
+from typing import Union
 
 import matplotlib as mpl
 
+from elfpy.utils.math import FixedPointMath
+
 # Setup barebones logging without a handler for users to adapt to their needs.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+
+
+class FixedPoint(int):
+    """New fixed-point datatype"""
+
+    def __new__(
+        cls, value: Union[float, int], decimal_places: int = 18, signed: bool = True
+    ):  # pylint: disable=unused-argument
+        """Construct a new FixedPoint variable"""
+        if isinstance(value, float):
+            value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
+        return super().__new__(cls, value)
+
+    def __init__(self, value: Union[float, int], decimal_places: int = 18, signed: bool = False):
+        """Store fixed-point properties"""
+        # TODO: support unsigned option
+        if not signed:
+            raise NotImplementedError("Only signed FixedPoint ints are supported.")
+        self.signed = signed
+        # TODO: support non-default decimal values
+        if decimal_places != 18:
+            raise NotImplementedError("Only 18 decimal precision FixedPoint ints are supported.")
+        self.decimal_places = decimal_places
+        if isinstance(value, float):
+            value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
+
+    def __float__(self) -> float:
+        """Cast to float"""
+        return float(self) / 10**self.decimal_places
+
+    def __add__(self, other):
+        """Enables '+' syntax"""
+        if not isinstance(other, FixedPoint):
+            other = FixedPoint(other, self.decimal_places, self.signed)
+        return FixedPointMath.add(self, other)
+
+    def __sub__(self, other):
+        """Enables '-' syntax"""
+        if not isinstance(other, FixedPoint):
+            other = FixedPoint(other, self.decimal_places, self.signed)
+        return FixedPointMath.sub(self, other)
+
+    def __mul__(self, other):
+        """Enables '*' syntax"""
+        if not isinstance(other, FixedPoint):
+            other = FixedPoint(other, self.decimal_places, self.signed)
+        return FixedPointMath.mul_down(self, other)
+
+    def __truediv__(self, other):
+        """Enables '/' syntax.
+        Since most implementations use divdown, this mirrors '//' syntax
+        """
+        return self.__floordiv__(other)
+
+    def __floordiv__(self, other):
+        """Enables '//' syntax"""
+        if not isinstance(other, FixedPoint):
+            other = FixedPoint(other, self.decimal_places, self.signed)
+        return FixedPointMath.div_down(self, other)
+
+    def __pow__(self, other):
+        """Enables '**' syntax"""
+        if not isinstance(other, FixedPoint):
+            other = FixedPoint(other, self.decimal_places, self.signed)
+        return FixedPointMath.pow(self, other)
+
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
@@ -168,4 +237,5 @@ rc_params.update({"xtick.color": LIGHTGREY})
 rc_params.update({"ytick.color": LIGHTGREY})
 rc_params.update({"savefig.facecolor": GREY})
 
+# Set the params
 mpl.rcParams.update(rc_params)

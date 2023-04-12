@@ -50,6 +50,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                 for attr_name, attr_value in asdict(self).items():
                     try:
                         new_data[attr_name] = new_type(attr_value)
+                        self.__annotations__[attr_name] = new_type
                     except ValueError as err:
                         raise ValueError(f"Unable to cast {attr_name} to {new_type}") from err
                 # create a new instance of the data class with the updated
