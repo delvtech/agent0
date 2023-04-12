@@ -31,5 +31,3 @@ jobs:
         run: python -m pylint $(git ls-files '*.py' ':!:apeworx*')
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
-    paths-ignore:
-      - examples/everlasting_bots.py

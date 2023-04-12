@@ -31,7 +31,7 @@ import elfpy.utils.outputs as output_utils
 
 # Apeworx does not get along well with pyright
 # Also ignoring a handful of pylint errors
-# pylint: disable=too-many-arguments,redefined-outer-name,invalid-name,unnecessary-dunder-call
+# pylint: disable=too-many-arguments,redefined-outer-name,invalid-name,unnecessary-dunder-call,no-member,unexpected-keyword-arg
 
 
 class FixedFrida(agentlib.Agent):
