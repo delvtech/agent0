@@ -9,10 +9,11 @@ def fmt(value, precision=3, min_digits=0, debug=False):
     """
     if debug:
         print(f"value: {value}, type: {type(value)}, precision: {precision}, min_digits: {min_digits}")
-    if np.isinf(value):
-        return "inf"
-    if np.isnan(value):
-        return "nan"
+    if isinstance(value, float):  # only floats can be inf or nan
+        if np.isinf(value):
+            return "inf"
+        if np.isnan(value):
+            return "nan"
     if value == 0:
         return "0"
     try:

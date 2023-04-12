@@ -1,14 +1,19 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import logging
+from dataclasses import dataclass
 
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
 # pylint: disable=import-error
-import ape  # type: ignore[reportMissingImports]
+import ape
+from ape.api import ReceiptAPI, TransactionAPI
+from ape.contracts.base import ContractTransaction, ContractTransactionHandler
+from typing import Tuple, Literal, Type
+import numpy as np
 
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
@@ -50,7 +55,14 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
         ) from exc
 
 
-def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
+def failblog(string: str, *args) -> None:
+    """log to both the generic logger as well as the failblog logger"""
+    logging.error(string, *args)
+    logging.getLogger("failblog").error(string, *args)
+    print(string.format(*args))
+
+
+def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
     """
     Aftering opening or closing a position, we query the smart contract for its updated pool info.
     We return everything returned by getPoolInfo in the smart contracts, along with:
@@ -74,7 +86,7 @@ def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
     dict[str, Any]
         An update dictionary for the Hyperdrive pool state
     """
-    transfer_single_event = get_transfer_single_event(tx_receipt)
+    transfer_single_event = get_transfer_single_event(tx_receipt)  # type: ignore
     # The ID is a concatenation of the current share price and the maturity time of the trade
     token_id = int(transfer_single_event["id"])
     prefix, maturity_timestamp = hyperdrive_assets.decode_asset_id(token_id)
@@ -87,96 +99,53 @@ def get_pool_state(tx_receipt: Receipt, hyperdrive_contract: ContractInstance):
     return pool_state
 
 
-def ape_open_position(
-    trade_prefix: hyperdrive_assets.AssetIdPrefix,
-    hyperdrive_contract: ContractInstance,
-    agent_address: AccountAPI,
-    trade_amount: int,
-) -> tuple[dict[str, Any], Receipt]:
-    r"""Open a long trade on the Hyperdrive Solidity contract using apeworx.
-
-    Arguments
-    ---------
-    trade_prefix: hyperdrive_assets.AssetIdPrefix
-        IntEnum specifying whether the trade is a LP (0), long (1), or short (2).
-    hyperdrive_contract: ape.contracts.base.ContractInstance
-        Ape project `ContractInstance
-        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
-        wrapped around the initialized MockHyperdriveTestnet smart contract.
-    agent_address: ape.api.accounts.AccountAPI
-        Ape address container, or `AccountAPI
-        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
-        representing the agent which is executing the action.
-    base_amount: int
-        Unsigned int-256 representation of the base amount that the agent wishes to provide.
-
-    Returns
-    -------
-    Tuple[dict[str, Any], ape_ethereum.transactions.Receipt]
-        A tuple containing an update dictionary for the Hyperdrive pool state
-        as well as the Ape-ethereum transaction `receipt
-        <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_.
-    """
-    as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
-    with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        if trade_prefix == hyperdrive_assets.AssetIdPrefix.LONG:  # open a long
-            min_output = 0  # python sims does not support alternative min_output
-            tx_receipt: Receipt = hyperdrive_contract.openLong(
-                trade_amount,  # base
-                min_output,
-                agent_address,
-                as_underlying,
-            )
-        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.SHORT:  # open a short
-            max_deposit = trade_amount  # python sims does not support alternative max_deposit
-            tx_receipt: Receipt = hyperdrive_contract.openShort(
-                trade_amount,  # bonds
-                max_deposit,
-                agent_address,
-                as_underlying,
-            )
-        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.LP:  # open a LP
-            tx_receipt: Receipt = hyperdrive_contract.addLiquidity(
-                trade_amount,  # bonds
-                0,  # min apr
-                int(100 * 1e18),  # max apr
-                agent_address,
-                as_underlying,
-            )
-        else:
-            raise ValueError(f"{trade_prefix=} must be LP (0), long (1), or short (2)")
-        # Return the updated pool state & transaction result
-        pool_state = get_pool_state(tx_receipt, hyperdrive_contract)
-    return pool_state, tx_receipt
+def select_abi(params: dict, method: Callable):
+    for abi in method.abis:
+        args, names = [], {}
+        for idx, inpt in enumerate(abi.inputs):
+            if inpt.name not in params:
+                raise ValueError(f"Missing required argument {inpt.name} for {method}")
+            args.insert(idx, params[inpt.name])
+            names[idx] = inpt.name
+        if len(args) == len(abi.inputs):
+            print(f"{method.abis[0].name}({', '.join(f'{v}={args[i]}' for i,v in enumerate(names.values()))})")
+            return abi, args  # type: ignore
+    raise ValueError(f"Could not find matching ABI for {method}")
 
 
-def ape_close_position(
-    trade_prefix: hyperdrive_assets.AssetIdPrefix,
-    hyperdrive_contract: ContractInstance,
-    agent_address: AccountAPI,
-    bond_amount: int,
+@dataclass
+class Info:
+    method: Callable
+    prefix: hyperdrive_assets.AssetIdPrefix
+
+
+def ape_trade(
+    trade_type: str,
+    hyperdrive: ContractInstance,
+    agent: AccountAPI,
+    amount: int,
     maturity_time: Optional[int] = None,
-) -> tuple[dict[str, Any], Receipt]:
-    r"""Close a long or short position on the Hyperdrive Solidity contract using apeworx.
+    **kwargs: Any,
+) -> tuple[Optional[dict[str, Any]], Optional[ReceiptAPI]]:
+    """
+    Accept a trade type and parameters and execute the trade on the Hyperdrive contract.
 
     Arguments
     ---------
-    trade_prefix: hyperdrive_assets.AssetIdPrefix
-        IntEnum specifying whether the trade is an LP (0), long (1), or short (2).
-    hyperdrive_contract: ape.contracts.base.ContractInstance
+    trade_type: str
+        The type of trade to execute. One of "ADD_LIQUIDITY", "REMOVE_LIQUIDITY", "OPEN_LONG", "CLOSE_LONG", "OPEN_SHORT", "CLOSE_SHORT"
+    hyperdrive: ape.contracts.base.ContractInstance
         Ape project `ContractInstance
         <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         wrapped around the initialized MockHyperdriveTestnet smart contract.
-    agent_address: ape.api.accounts.AccountAPI
-        Ape address container, or `AccountAPI
+    agent: ape.api.accounts.AccountAPI
+        Ape project `AccountAPI
         <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
-        representing the agent which is executing the action.
-    bond_amount: int
-        Unsigned int-256 representation of the bond amount that the agent wishes to sell.
-    maturity_time: int
-        Unsigned int-256 representation of the maturity time in seconds of the short being sold.
-        This is equal to the pool position duration plus the checkpoint time that is
-        closest to (but before) the corresponding open trade.
+        representing the account that will execute the trade.
+    amount: int
+        Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
+    maturity_time: Optional[int]
+        The maturity time of the trade. Only used for "CLOSE_LONG", and "CLOSE_SHORT".
 
     Returns
     -------
@@ -185,51 +154,80 @@ def ape_close_position(
         as well as the Ape-ethereum transaction `receipt
         <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_.
     """
-    # pylint: disable=too-many-locals
-    as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
-    with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        # Ensure requested close amount is not greater than what is available in the pool
-        if maturity_time is None:
-            raise ValueError(f"{maturity_time=} must be provided for a long or short trade")
-        trade_asset_id = hyperdrive_assets.encode_asset_id(trade_prefix, maturity_time)
-        agent_balance = hyperdrive_contract.balanceOf(trade_asset_id, agent_address)  # type: ignore
-        if bond_amount < agent_balance:
-            trade_bond_amount = bond_amount
-        else:
-            trade_bond_amount = agent_balance
-            logging.warning(
-                "bond_amount=%g is greater than or equal to the Hyperdrive pool balance=%g",
-                bond_amount,
-                trade_bond_amount,
-            )
-        # Close the position
-        min_output = 0
-        as_underlying = True  # mockHyperdriveTestNet does not support as_underlying=False
-        if trade_prefix == hyperdrive_assets.AssetIdPrefix.LONG:
-            tx_receipt = hyperdrive_contract.closeLong(  # type: ignore
-                maturity_time,
-                trade_bond_amount,
-                min_output,
-                agent_address,
-                as_underlying,
-            )
-        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.SHORT:
-            tx_receipt = hyperdrive_contract.closeShort(  # type: ignore
-                maturity_time,
-                trade_bond_amount,
-                min_output,
-                agent_address,
-                as_underlying,
-            )
-        elif trade_prefix == hyperdrive_assets.AssetIdPrefix.LP:
-            tx_receipt = hyperdrive_contract.removeLiquidity(  # type: ignore
-                trade_bond_amount,
-                min_output,
-                agent_address,
-                as_underlying,
-            )
-        else:
-            raise ValueError(f"{trade_prefix=} must be LP (0), long (1), or short (2)")
-        # Return the updated pool state & transaction result
-        pool_state = get_pool_state(tx_receipt, hyperdrive_contract)
-    return pool_state, tx_receipt
+
+    info = {
+        "OPEN_LONG": Info(method=hyperdrive.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive.closeLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive.openShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive.closeShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive.addLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(method=hyperdrive.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+    }
+    if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:
+        assert maturity_time, "Maturity time must be provided to close a long or short trade"
+        trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
+        amount = np.clip(amount, 0, hyperdrive.balanceOf(trade_asset_id, agent))
+    params = {
+        "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
+        "_destination": agent,
+        "_contribution": amount,
+        "_shares": amount,
+        "_baseAmount": amount,
+        "_bondAmount": amount,
+        "_minOutput": 0,
+        "_maxDeposit": amount,
+        "_minApr": 0,
+        "_maxApr": int(100 * 1e18),
+        "agent_contract": agent,
+        "trade_amount": amount,
+        "maturation_time": maturity_time,
+    }
+    selected_abi, args = select_abi(params=params, method=info[trade_type].method)
+    contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive.address)
+
+    try:
+        tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
+        return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive), tx_receipt  # type: ignore
+    except Exception as exc:
+        pool = hyperdrive.getPoolInfo().__dict__
+        string = "Failed to execute trade: %s\n => %s of %s\n => Agent: %s\n => Pool: %s\n"
+        var = trade_type, fmt(amount), exc, agent, pool
+        failblog(string, *var)
+        return None, None
+
+
+def attempt_txn(
+    agent: AccountAPI, contract_txn: ContractTransaction | ContractTransactionHandler, *args, **kwargs
+) -> Optional[ReceiptAPI]:
+    mult = kwargs.pop("mult") if hasattr(kwargs, "mult") else 2
+    if isinstance(contract_txn, ContractTransactionHandler):
+        abi = contract_txn.abis[0]
+        if len(args) != len(abi.inputs) and len(contract_txn.abis) > 1:
+            for abi in contract_txn.abis:
+                if len(args) == len(abi.inputs):
+                    break
+        contract_txn = ContractTransaction(abi=abi, address=contract_txn.contract.address)
+    priority_fee_multiple = 5
+    latest = agent.provider.get_block("latest")
+    base_fee = latest.base_fee  # type: ignore
+    for attempt in range(1, mult + 1):
+        kwargs["max_fee"] = int(base_fee * 2 * attempt + agent.provider.priority_fee * priority_fee_multiple)
+        kwargs["priority_fee"] = int(agent.provider.priority_fee * priority_fee_multiple + base_fee * (attempt - 1))
+        kwargs["sender"] = agent.address
+        kwargs["nonce"] = agent.provider.get_nonce(agent.address)
+        # kwargs["gas_limit"] = agent.provider.estimate_gas_cost(serial_txn) * 2  # 1_000_000
+        kwargs["gas_limit"] = 1_000_000
+        kwargs["gas_price"] = kwargs["max_fee"]
+        print(f"txn attempt {attempt} of {mult} with {kwargs=}")
+        serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
+        prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
+        signed_txn: TransactionAPI = agent.sign_transaction(prepped_txn)  # type: ignore
+        try:
+            tx_receipt: ReceiptAPI = agent.provider.send_transaction(signed_txn)
+            tx_receipt.await_confirmations()
+            return tx_receipt
+        except Exception as exc:
+            if "replacement transaction underpriced" not in str(exc):
+                raise exc
+            print(f"Failed to send transaction: {exc}")
+            continue

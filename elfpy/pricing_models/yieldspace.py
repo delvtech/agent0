@@ -576,7 +576,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         return (
             yieldspace_const
             - (share_price / init_share_price) * (init_share_price * (share_reserves - d_shares)) ** (time_elapsed)
-        ) ** (Decimal(1) / time_elapsed) - (bond_reserves + lp_total_supply)
+        ) ** (1 / time_elapsed) - (bond_reserves + lp_total_supply)
 
     def calc_bonds_out_given_shares_in(
         self,
@@ -620,7 +620,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         return (bond_reserves + lp_total_supply) - (
             yieldspace_const
             - (share_price / init_share_price) * (init_share_price * (share_reserves + d_shares)) ** time_elapsed
-        ) ** (Decimal(1) / time_elapsed)
+        ) ** (1 / time_elapsed)
 
     def calc_shares_in_given_bonds_out(
         self,
@@ -664,7 +664,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         return (1 / init_share_price) * (
             (yieldspace_const - (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed)
             / (share_price / init_share_price)
-        ) ** (Decimal(1) / time_elapsed) - share_reserves
+        ) ** (1 / time_elapsed) - share_reserves
 
     def calc_shares_out_given_bonds_in(
         self,
@@ -709,7 +709,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         return share_reserves - (1 / init_share_price) * (
             (yieldspace_const - (bond_reserves + lp_total_supply + d_bonds) ** time_elapsed)
             / (share_price / init_share_price)
-        ) ** (Decimal(1) / time_elapsed)
+        ) ** (1 / time_elapsed)
 
     def calc_yieldspace_const(
         self,
