@@ -142,29 +142,29 @@ class TestFixedPointMath(unittest.TestCase):
     def test_ilog2(self):
         """Test integer log base 2"""
         # pylint: disable=protected-access
-        assert FixedPointMath._ilog2(0) == 0
-        assert FixedPointMath._ilog2(1) == 0
-        assert FixedPointMath._ilog2(2) == 1
-        assert FixedPointMath._ilog2(3) == 1
-        assert FixedPointMath._ilog2(4) == 2
-        assert FixedPointMath._ilog2(8) == 3
-        assert FixedPointMath._ilog2(16) == 4
-        assert FixedPointMath._ilog2(32) == 5
-        assert FixedPointMath._ilog2(64) == 6
-        assert FixedPointMath._ilog2(128) == 7
-        assert FixedPointMath._ilog2(256) == 8
-        assert FixedPointMath._ilog2(512) == 9
-        assert FixedPointMath._ilog2(1024) == 10
-        assert FixedPointMath._ilog2(2048) == 11
-        assert FixedPointMath._ilog2(4096) == 12
-        assert FixedPointMath._ilog2(8192) == 13
-        assert FixedPointMath._ilog2(16384) == 14
-        assert FixedPointMath._ilog2(32768) == 15
-        assert FixedPointMath._ilog2(65536) == 16
-        assert FixedPointMath._ilog2(131072) == 17
-        assert FixedPointMath._ilog2(262144) == 18
-        assert FixedPointMath._ilog2(524288) == 19
-        assert FixedPointMath._ilog2(1048576) == 20
+        assert FixedPointMath.ilog2(0) == 0
+        assert FixedPointMath.ilog2(1) == 0
+        assert FixedPointMath.ilog2(2) == 1
+        assert FixedPointMath.ilog2(3) == 1
+        assert FixedPointMath.ilog2(4) == 2
+        assert FixedPointMath.ilog2(8) == 3
+        assert FixedPointMath.ilog2(16) == 4
+        assert FixedPointMath.ilog2(32) == 5
+        assert FixedPointMath.ilog2(64) == 6
+        assert FixedPointMath.ilog2(128) == 7
+        assert FixedPointMath.ilog2(256) == 8
+        assert FixedPointMath.ilog2(512) == 9
+        assert FixedPointMath.ilog2(1024) == 10
+        assert FixedPointMath.ilog2(2048) == 11
+        assert FixedPointMath.ilog2(4096) == 12
+        assert FixedPointMath.ilog2(8192) == 13
+        assert FixedPointMath.ilog2(16384) == 14
+        assert FixedPointMath.ilog2(32768) == 15
+        assert FixedPointMath.ilog2(65536) == 16
+        assert FixedPointMath.ilog2(131072) == 17
+        assert FixedPointMath.ilog2(262144) == 18
+        assert FixedPointMath.ilog2(524288) == 19
+        assert FixedPointMath.ilog2(1048576) == 20
 
     def test_ln(self):
         """Test integer natural log"""
