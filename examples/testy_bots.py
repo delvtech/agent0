@@ -4,16 +4,14 @@ smart bots that track the fixed/variable rates using longs & shorts. It is meant
 a temporary demonstration, and will be gradually replaced with utilities in elfpy src.
 As such, we are relaxing some of the lint rules.
 """
-from __future__ import annotations
+from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
 import os
 import json
 import logging
-from datetime import datetime
-from ape.contracts.base import ContractCallHandler
+from logging.handlers import RotatingFileHandler
 from eth_account import Account as EthAccount
-import requests
 import argparse
 from time import sleep
 from pathlib import Path
@@ -22,9 +20,9 @@ from collections import defaultdict
 # external lib
 import ape
 from ape import accounts, Contract
-from ape.contracts import ContractEvent, ContractInstance
+from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
-from ape.api import ReceiptAPI
+from ape.api import ProviderAPI, ReceiptAPI
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 from dotenv import load_dotenv
@@ -36,17 +34,13 @@ import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
 import elfpy.agents.policies.random_agent as random_agent
-import elfpy.markets.hyperdrive.assets as assets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.assets as assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-
-if not os.path.exists("fmt.py"):  # download fmt.py if it doesn't exist
-    with open("fmt.py", "wb") as f:
-        f.write(requests.get("https://raw.githubusercontent.com/wakamex/elf-simulations/main/fmt.py").content)
-from fmt import fmt
+from elfpy.utils.fmt import fmt
 
 # Apeworx does not get along well with pyright
 # Also ignoring a handful of pylint errors
@@ -260,6 +254,12 @@ def get_config() -> simulators.Config:
     config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     config.log_filename = "testnet_bots"
+    if os.path.exists("random_seed.txt"):
+        with open("random_seed.txt", "r") as f:  # read random seed from file
+            config.random_seed = int(f.read()) + 1
+    logging.info("Random seed=%s", config.random_seed)
+    with open("random_seed.txt", "w") as f:  # write new random seed to file
+        f.write(str(config.random_seed))
     config.title = "testnet bots"
     for key, value in args.__dict__.items():
         if hasattr(config, key):
@@ -289,12 +289,8 @@ def get_config() -> simulators.Config:
     return config
 
 
-def get_agents(config):  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
-    """Get python agents & corresponding solidity wallets"""
-    bot_types = config.scratch["bot_types"]
-    for bot, policy in bot_types.items():
-        print(f"{bot:6s}: n={config.scratch['num_'+bot]}", end="  ")
-        print(f"policy={(policy.__name__ if policy.__module__ == '__main__' else policy.__module__):20s}")
+def get_accounts(config, bot_types):
+    """Generate dev accounts and turn on auto-sign"""
     num = sum(config.scratch[f"num_{bot}"] for bot in bot_types)
     assert (mnemonic := os.environ["MNEMONIC"]), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
@@ -302,15 +298,21 @@ def get_agents(config):  # sourcery skip: merge-dict-assign, use-fstring-for-con
         path = accounts.containers["accounts"].data_folder.joinpath(f"agent_{num}.json")
         path.write_text(json.dumps(EthAccount.encrypt(private_key=key.private_key, password="based")))  # overwrites
     dev_accounts = [accounts.load(alias=f"agent_{num}") for num in range(len(keys))]
-    logging.disable(logging.WARNING)
+    logging.disable(logging.WARNING)  # disable logging warnings to do dangerous things below
     for account in dev_accounts:
         account.set_autosign(enabled=True, passphrase="based")  # type: ignore
-    logging.disable(logging.NOTSET)
+    logging.disable(logging.NOTSET)  # re-enable logging warnings
+    return dev_accounts
 
-    Dai = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
+
+def get_agents(config, Dai: ContractInstance):  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
+    """Get python agents & corresponding solidity wallets"""
+    bot_types = config.scratch["bot_types"]
+    for bot, policy in bot_types.items():
+        print(f"{bot:6s}: n={config.scratch['num_'+bot]}", end="  ")
+        print(f"policy={(policy.__name__ if policy.__module__ == '__main__' else policy.__module__):20s}")
+    dev_accounts = get_accounts(config, bot_types)
     faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
-    print(f"{dir(faucet)=}")
-    print(f"{faucet.mint.abis=}")
 
     sim_agents = {}
     for bot, policy in [item for item in bot_types.items() if config.scratch[f"num_{item[0]}"] > 0]:
@@ -332,31 +334,17 @@ def get_agents(config):  # sourcery skip: merge-dict-assign, use-fstring-for-con
                 )
             elif hasattr(config, f"{bot}_risk_threshold"):
                 params["risk_threshold"] = config.scratch[f"{bot}_risk_threshold"]
-            agent = policy(rng=config.rng, **params)
-            agent.contract = dev_accounts[agent_num]
-
-            dai_balance = Dai.balanceOf(agent.contract.address)
-            if (need_to_mint := params["budget"] - dai_balance / 1e18) > 0:
+            agent = policy(rng=config.rng, **params)  # instantiate the agent
+            agent.contract = dev_accounts[agent_num]  # assign its wallet
+            if (need_to_mint := params["budget"] - Dai.balanceOf(agent.contract.address) / 1e18) > 0:
                 print(f" agent_{agent.wallet.address[:7]} needs to mint {fmt(need_to_mint)} DAI")
                 with ape.accounts.use_sender(agent.contract):
-                    print(f"{fmt(provider.base_fee/1e9)=}")
-                    print(f"{fmt(provider.priority_fee/1e9)=}")
-                    print(f"{fmt(ape.chain.blocks[-1].base_fee/1e9)=}")
-                    txn_receipt: ReceiptAPI = faucet.mint(
-                        Dai.address,
-                        agent.wallet.address,
-                        to_fixed_point(50_000),  # to_fixed_point(need_to_mint),
-                        max_fee=ape.chain.blocks[-1].base_fee + provider.priority_fee * 10,
-                        priority_fee=provider.priority_fee,
-                        gas_limit=1000_000,
-                    )
+                    txn_receipt: ReceiptAPI = faucet.mint(Dai.address, agent.wallet.address, to_fixed_point(50_000))
                     txn_receipt.await_confirmations()
-
             print(f" agent_{agent.wallet.address[:7]} is a {bot} with budget={fmt(params['budget'])}", end=" ")
-            print(f"Eth={fmt(agent.contract.balance/1e18)}", end=", ")
+            print(f"Eth={fmt(agent.contract.balance/1e18)}", end=" ")
             print(f"Dai={fmt(Dai.balanceOf(agent.contract.address)/1e18)}")
-
-            sim_agents[f"agent_{agent_num}"] = agent
+            sim_agents[f"agent_{agent.wallet.address}"] = agent
     return sim_agents, dev_accounts
 
 
@@ -385,14 +373,14 @@ def get_market_state_from_contract(contract: ContractInstance):
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
         share_reserves=to_floating_point(pool_state["shareReserves"]),
         bond_reserves=to_floating_point(pool_state["bondReserves"]),
-        base_buffer=pool_state["longsOutstanding"],  # so do we not need any buffers now?
+        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
         # TODO: bond_buffer=0,
         variable_apr=0.01,  # TODO: insert real value
         share_price=to_floating_point(pool_state["sharePrice"]),
         init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
         curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
         flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
-        governance_fee_multiple=hyper_config["governanceFee"],
+        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
         longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
         shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
         long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
@@ -410,107 +398,74 @@ def get_market_state_from_contract(contract: ContractInstance):
     )
 
 
-def do_trade(trade):
+def do_trade(trade_obj: types.Trade, Dai: ContractInstance, hyperdrive: ContractInstance, sim_agents: dict):
     """Execute agent trades on hyperdrive solidity contract"""
-    agent_key = f"agent_{trade.wallet.address}"
-    contract = sim_agents[agent_key].contract
-    trade_amount = to_fixed_point(trade.trade_amount)
     # TODO: add market-state-dependent trading
     # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive, agent_address=contract)
-    if trade.action_type.name == "ADD_LIQUIDITY":
-        with ape.accounts.use_sender(contract):  # sender for contract calls
-            # Mint DAI & approve ERC20 usage by contract
-            base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
-        new_state, _ = ape_utils.ape_open_position(
-            trade_prefix=assets.AssetIdPrefix.LP,
-            hyperdrive_contract=hyperdrive,
-            agent_address=contract,
-            trade_amount=trade_amount,
-        )
-    elif trade.action_type.name == "REMOVE_LIQUIDITY":
-        new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.LP,
-            hyperdrive,
-            contract,
-            trade_amount,
-        )
-    elif trade.action_type.name == "OPEN_SHORT":
-        with ape.accounts.use_sender(contract):  # sender for contract calls
-            # Mint DAI & approve ERC20 usage by contract
-            base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
-        new_state, _ = ape_utils.ape_open_position(
-            assets.AssetIdPrefix.SHORT,
-            hyperdrive,
-            contract,
-            trade_amount,
-        )
+    # market_type = trade_obj.market  # constant denoting market type (placeholder)
+    trade: hyperdrive_actions.MarketAction = trade_obj.trade
+    agent = sim_agents[f"agent_{trade.wallet.address}"].contract
+    amount = to_fixed_point(trade.trade_amount)
+
+    if Dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
+        args = hyperdrive.address, to_fixed_point(50_000)
+        ape_utils.attempt_txn(agent, Dai.approve, *args)  # type: ignore
+    params = {"trade_type": trade.action_type.name, "hyperdrive": hyperdrive, "agent": agent, "amount": amount}
+    if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
+        params["maturity_time"] = int(sim_to_block_time[trade.mint_time])
+    new_state, _ = ape_utils.ape_trade(**params)
+    if trade.action_type.name in ["OPEN_LONG", "OPEN_SHORT"] and new_state is not None:
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-    elif trade.action_type.name == "CLOSE_SHORT":
-        maturity_time = int(sim_to_block_time[trade.mint_time])
-        new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.SHORT,
-            hyperdrive,
-            contract,
-            trade_amount,
-            maturity_time,
-        )
-    elif trade.action_type.name == "OPEN_LONG":
-        with ape.accounts.use_sender(contract):  # sender for contract calls
-            # Mint DAI & approve ERC20 usage by contract
-            base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
-        new_state, _ = ape_utils.ape_open_position(
-            assets.AssetIdPrefix.LONG,
-            hyperdrive,  # type:ignore
-            contract,
-            trade_amount,
-        )
-        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-    elif trade.action_type.name == "CLOSE_LONG":
-        maturity_time = int(sim_to_block_time[trade.mint_time])
-        new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.LONG,
-            hyperdrive,  # type:ignore
-            contract,
-            trade_amount,
-            maturity_time,
-        )
-    else:
-        raise ValueError(f"{trade.action_type=} must be add/remove liquidity, or open/close a long or short")
+
+
+def log_and_print(string: str, *args, end="\n") -> None:
+    """log to both the generic logger and to stdout"""
+    if args:
+        string = string.format(*args)
+    logging.info(string + end)
+    print(string, end=end)
 
 
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
+    output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
+    f = logging.getLogger().handlers[0].baseFilename.replace("testnet_bots", "testnet_bots_failblog")  # type: ignore
+    logging.getLogger("failblog").handlers = [RotatingFileHandler(f, mode="w", maxBytes=elfpy.DEFAULT_LOG_MAXBYTES)]
+    logging.getLogger("failblog").formatter = logging.getLogger().handlers[0].formatter  # type: ignore
 
     # Set up ape
-    provider = ape.networks.parse_network_choice("ethereum:goerli:alchemy").__enter__()
+    provider: ProviderAPI = ape.networks.parse_network_choice("ethereum:goerli:alchemy").__enter__()
+    provider.network.config.goerli.required_confirmations = 1
     project_root = Path.cwd()
     project = ape.Project(path=project_root)
 
-    sim_agents, dev_accounts = get_agents(config=config)  # Set up agents and their dev accounts
-    hyperdrive: ContractInstance = project.Hyperdrive.at("0xB311B825171AF5A60d69aAD590B857B1E5ed23a2")  # type:ignore
-    print(f"{dir(hyperdrive)=}")
+    Dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
+    sim_agents, dev_accounts = get_agents(config=config, Dai=Dai)  # Set up agents and their dev accounts
+    hyperdrive: ContractInstance = project.Hyperdrive.at("0xB311B825171AF5A60d69aAD590B857B1E5ed23a2")  # type: ignore
     hyper_config = hyperdrive.getPoolConfig().__dict__
+    hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
     print(f"Hyperdrive config deployed at {hyperdrive.address}:")
     for k, v in hyper_config.items():
         divisor = 1e18 if k not in ["positionDuration", "checkpointDuration"] else 1
         print(f" {k}: {fmt(v/divisor)}")
-    # txn_hash = "0x053cba5c12172654d894f66d5670bab6215517a94189a9ffc09bc40a589ec04d"
-    # receipt: ReceiptAPI = ape.networks.provider.get_receipt(txn_hash, show_pending=True)
-    # print(f"{dir(hyperdrive)=}")
-    # receipt.show_trace()
     hyper_config["term_length"] = 365  # days
 
     sim_to_block_time = {}
-    fist_time, last_executed_block = 0, 0
+    fist_time, last_executed_block, no_crash = 0, 0, 0
+    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = None, None, None, None
     while True:
-        block_number = ape.chain.blocks[-1].number or 0
-        block_time = ape.chain.blocks[-1].timestamp
+        latest_block = ape.chain.blocks[-1]
+        block_number = latest_block.number or 0
+        block_time = latest_block.timestamp
         fist_time = block_time if fist_time == 0 else fist_time
         if block_number > last_executed_block:
-            print(f"Block number: {block_number}, Block time: {datetime.fromtimestamp(block_time)}")
+            if type2 := [txn for txn in latest_block.transactions if txn.type == 2]:
+                max_fees, priority_fees = zip(*((txn.max_fee / 1e9, txn.max_priority_fee / 1e9) for txn in type2))  # type: ignore
+                max_max_fee, avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
+                max_priority_fee, avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
+            log_string = "Block number: {}, Block time: {}, Trades without crashing: {}, Gas: max={},avg={}, Priority max={},avg={}"
+            log_vars = block_number, block_time, no_crash, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
+            log_and_print(log_string, *log_vars)
             market_state = get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
@@ -525,7 +480,14 @@ if __name__ == "__main__":
             for bot, policy in sim_agents.items():
                 trades: list[types.Trade] = policy.get_trades(market=market)
                 for trade in trades:
-                    print(trade)
-                    do_trade(trade)
+                    try:
+                        print(trade)
+                        do_trade(trade_obj=trade, Dai=Dai, hyperdrive=hyperdrive, sim_agents=sim_agents)
+                        no_crash += 1
+                    except Exception as exc:
+                        log_string = "Crashed in Python simulation: {}"
+                        log_and_print(log_string, exc)
+                        logging.getLogger("failblog").error(log_string, exc)
+                        no_crash = 0
             last_executed_block = block_number
         sleep(1)
