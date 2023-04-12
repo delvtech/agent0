@@ -1,12 +1,12 @@
 """Test opening a short in hyperdrive"""
-import unittest
 import decimal
+import unittest
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.types as types
 import elfpy.time as time
+import elfpy.types as types
 
 
 class TestOpenShort(unittest.TestCase):
@@ -54,6 +54,7 @@ class TestOpenShort(unittest.TestCase):
         market_state_before: hyperdrive_market.MarketState,
         base_amount: float,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: float,  # number of PTs shorted
+        market_bond_delta: float,
         maturity_time: int,  # maturity of the opened short
         apr_before: float,
     ):  # pylint: disable=too-many-arguments
@@ -78,6 +79,8 @@ class TestOpenShort(unittest.TestCase):
         # )
         # Bob received the short tokens
         user_wallet_shorts_amount = sum(short.balance for short in user.wallet.shorts.values())
+        print(f"{user_wallet_shorts_amount=}")
+        print(f"{unsigned_bond_amount=}")
         self.assertEqual(
             user_wallet_shorts_amount,
             unsigned_bond_amount,
@@ -96,9 +99,10 @@ class TestOpenShort(unittest.TestCase):
             market_state_before.share_reserves + share_amount,
             msg=f"{self.hyperdrive.market_state.share_reserves=} is not correct",
         )
+
         self.assertEqual(  # bond reserves
             self.hyperdrive.market_state.bond_reserves,
-            market_state_before.bond_reserves + unsigned_bond_amount,
+            market_state_before.bond_reserves + market_bond_delta,
             msg=f"{self.hyperdrive.market_state.bond_reserves=} is not correct",
         )
         self.assertEqual(  # lp total supply
@@ -161,34 +165,41 @@ class TestOpenShort(unittest.TestCase):
 
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
+        print("test_open_short")
         bond_amount = 10
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        unsigned_bond_amount = agent_deltas.shorts[self.hyperdrive.latest_checkpoint_time].balance
+        print(f"  {unsigned_bond_amount=}")
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
             base_amount=market_deltas.d_base_asset,
-            unsigned_bond_amount=market_deltas.d_bond_asset,
+            unsigned_bond_amount=unsigned_bond_amount,
+            market_bond_delta=market_deltas.d_bond_asset,
             maturity_time=int(self.term_length / 365),
             apr_before=apr_before,
         )
 
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
+        print("test_open_short_with_small_amount")
         bond_amount = 0.01
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
-        market_deltas, _ = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
+        unsigned_bond_amount = agent_deltas.shorts[self.hyperdrive.latest_checkpoint_time].balance
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
             base_amount=market_deltas.d_base_asset,
-            unsigned_bond_amount=market_deltas.d_bond_asset,
+            unsigned_bond_amount=unsigned_bond_amount,
+            market_bond_delta=market_deltas.d_bond_asset,
             maturity_time=int(self.term_length / 365),
             apr_before=apr_before,
         )

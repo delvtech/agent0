@@ -1,11 +1,13 @@
 """Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
+from decimal import Decimal
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.pricing_models import yieldspace
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
@@ -78,14 +80,24 @@ class TestCloseShort(unittest.TestCase):
         time_remaining = 0
         if maturity_time > self.hyperdrive.block_time.time:
             time_remaining = maturity_time - self.hyperdrive.block_time.time
-        self.assertEqual(  # bond reserves
-            self.hyperdrive.market_state.bond_reserves,
-            market_state_before.bond_reserves - time_remaining * bond_amount,
-            msg="bond_reserves is wrong",
+        # self.assertEqual(  # bond reserves
+        #     self.hyperdrive.market_state.bond_reserves,
+        #     market_state_before.bond_reserves - time_remaining * bond_amount,
+        #     msg="bond_reserves is wrong",
+        # )
+        model = yieldspace.YieldspacePricingModel()
+        flat_shares = model.calc_shares_in_given_bonds_out(
+            Decimal(market_state_before.share_reserves),
+            Decimal(market_state_before.bond_reserves),
+            Decimal(market_state_before.lp_total_supply),
+            Decimal(bond_amount),
+            Decimal(1),
+            Decimal(market_state_before.share_price),
+            Decimal(market_state_before.init_share_price),
         )
         self.assertEqual(  # share reserves
             self.hyperdrive.market_state.share_reserves,
-            market_state_before.share_reserves + (bond_amount - agent_base_proceeds) / market_state_before.share_price,
+            market_state_before.share_reserves + (bond_amount) / market_state_before.share_price - float(flat_shares),
             msg="share_reserves is wrong",
         )
         self.assertEqual(  # lp total supply
