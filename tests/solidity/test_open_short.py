@@ -79,8 +79,6 @@ class TestOpenShort(unittest.TestCase):
         # )
         # Bob received the short tokens
         user_wallet_shorts_amount = sum(short.balance for short in user.wallet.shorts.values())
-        print(f"{user_wallet_shorts_amount=}")
-        print(f"{unsigned_bond_amount=}")
         self.assertEqual(
             user_wallet_shorts_amount,
             unsigned_bond_amount,
@@ -165,7 +163,6 @@ class TestOpenShort(unittest.TestCase):
 
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
-        print("test_open_short")
         bond_amount = 10
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
@@ -173,7 +170,6 @@ class TestOpenShort(unittest.TestCase):
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
         unsigned_bond_amount = agent_deltas.shorts[self.hyperdrive.latest_checkpoint_time].balance
-        print(f"  {unsigned_bond_amount=}")
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
@@ -186,7 +182,6 @@ class TestOpenShort(unittest.TestCase):
 
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
-        print("test_open_short_with_small_amount")
         bond_amount = 0.01
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
