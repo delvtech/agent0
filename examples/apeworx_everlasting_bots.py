@@ -73,7 +73,7 @@ class FixedFrida(agentlib.Agent):
             return []
 
         action_list = []
-        for short_time in self.wallet.shorts:  # loop over shorts
+        for short_time in self.wallet.shorts.keys():  # loop over shorts
             if (market.block_time.time - short_time) >= market.annualized_position_duration:  # if any short is mature
                 trade_amount = self.wallet.shorts[short_time].balance  # close the whole thing
                 action_list += [
@@ -149,7 +149,7 @@ class LongLouie(agentlib.Agent):
             return []
 
         action_list = []
-        for long_time in self.wallet.longs:  # loop over longs
+        for long_time in self.wallet.longs.keys():  # loop over longs
             if (market.block_time.time - long_time) >= market.annualized_position_duration:  # if any long is mature
                 trade_amount = self.wallet.longs[long_time].balance  # close the whole thing
                 action_list += [

@@ -25,6 +25,6 @@ jobs:
           python -m pip install -r requirements-${{ matrix.python-version }}.txt
           python -m pip install . # Install the elfpy module
       - name: Analysing code with pyright
-        run: python -m pyright $(git ls-files '*.py' ':!:apeworx*')
+        run: python -m pyright $(git ls-files '*.py' ':!:*apeworx*')
     paths-ignore:
       - examples/everlasting_bots.py
