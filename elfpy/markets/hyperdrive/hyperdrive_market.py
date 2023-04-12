@@ -398,9 +398,7 @@ class Market(
         return market_deltas, agent_deltas
 
     def open_short(
-        self,
-        agent_wallet: wallet.Wallet,
-        bond_amount: float,
+        self, agent_wallet: wallet.Wallet, bond_amount: float, max_deposit: float = 2 ^ 32
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
@@ -411,6 +409,9 @@ class Market(
             bond_amount,
             self,
         )
+        # slippage protection
+        if max_deposit < agent_deltas.balance.amount:
+            raise errors.OutputLimit()
         # apply deltas
         self.market_state.apply_delta(market_deltas)
         agent_wallet.update(agent_deltas)

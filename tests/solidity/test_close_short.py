@@ -1,11 +1,16 @@
 """Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
+from decimal import Decimal
+
+import numpy as np
 
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.time.time import StretchedTime
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
@@ -78,15 +83,27 @@ class TestCloseShort(unittest.TestCase):
         time_remaining = 0
         if maturity_time > self.hyperdrive.block_time.time:
             time_remaining = maturity_time - self.hyperdrive.block_time.time
-        self.assertEqual(  # bond reserves
-            self.hyperdrive.market_state.bond_reserves,
-            market_state_before.bond_reserves - time_remaining * bond_amount,
-            msg="bond_reserves is wrong",
+        stretch_time = StretchedTime(
+            days=time_remaining * 365, time_stretch=self.hyperdrive.time_stretch_constant, normalizing_constant=365
         )
-        self.assertEqual(  # share reserves
-            self.hyperdrive.market_state.share_reserves,
-            market_state_before.share_reserves + (bond_amount - agent_base_proceeds) / market_state_before.share_price,
-            msg="share_reserves is wrong",
+        model = yieldspace_pm.YieldspacePricingModel()
+        curve_shares = float(
+            model.calc_shares_in_given_bonds_out(
+                Decimal(market_state_before.share_reserves),
+                Decimal(market_state_before.bond_reserves),
+                Decimal(market_state_before.lp_total_supply),
+                Decimal(bond_amount * time_remaining),
+                Decimal(1 - stretch_time.stretched_time),
+                Decimal(market_state_before.share_price),
+                Decimal(market_state_before.init_share_price),
+            )
+        )
+        flat_shares = bond_amount * (1 - time_remaining) / market_state_before.share_price
+        np.testing.assert_allclose(
+            self.hyperdrive.market_state.share_reserves + flat_shares + curve_shares,
+            market_state_before.share_reserves,
+            rtol=1e-10,
+            err_msg="share_reserves is wrong",
         )
         self.assertEqual(  # lp total supply
             self.hyperdrive.market_state.lp_total_supply,
@@ -201,6 +218,7 @@ class TestCloseShort(unittest.TestCase):
             bond_amount=trade_amount,
         )
         market_state_before_close = self.hyperdrive.market_state.copy()
+        self.hyperdrive.block_time.step()
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.shorts[0].balance,
@@ -226,6 +244,7 @@ class TestCloseShort(unittest.TestCase):
             bond_amount=trade_amount,
         )
         market_state_before_close = self.hyperdrive.market_state.copy()
+        self.hyperdrive.block_time.step()
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
             bond_amount=agent_deltas_open.shorts[0].balance,

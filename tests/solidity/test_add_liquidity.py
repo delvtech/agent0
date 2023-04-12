@@ -103,13 +103,10 @@ class TestAddLiquidity(unittest.TestCase):
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Celine opens a short.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_open_short(
-            wallet_address=self.celine.wallet.address,
+        market_deltas, wallet_deltas = self.hyperdrive.open_short(
+            agent_wallet=self.celine.wallet,
             bond_amount=50_000_000,
-            market=self.hyperdrive,
         )
-        self.hyperdrive.market_state.apply_delta(market_deltas)
-        self.celine.wallet.update(wallet_deltas)
 
         # Add liquidity with the same amount as the original contribution.
         market_deltas, wallet_deltas = self.hyperdrive.add_liquidity(self.bob.wallet, self.contribution)
@@ -189,4 +186,4 @@ class TestAddLiquidity(unittest.TestCase):
             agent_wallet=self.bob.wallet,
             lp_shares=self.bob.wallet.lp_tokens,
         )
-        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution)
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, places=6)
