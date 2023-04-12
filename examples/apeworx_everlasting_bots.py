@@ -22,16 +22,13 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
+import elfpy.markets.hyperdrive.assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.sim_utils as sim_utils
 import elfpy.utils.outputs as output_utils
-
-# Apeworx does not get along well with pyright
-# Also ignoring a handful of pylint errors
-# pylint: disable=too-many-arguments,redefined-outer-name,invalid-name,unnecessary-dunder-call,no-member,unexpected-keyword-arg
 
 
 class FixedFrida(agentlib.Agent):
@@ -375,8 +372,8 @@ def get_simulation_market_state_from_contract(
     """
     pool_state = hyperdrive_contract.getPoolInfo().__dict__
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        asset_id = hyperdrive_market.encode_asset_id(
-            hyperdrive_market.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
+        asset_id = hyperdrive_assets.encode_asset_id(
+            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
         )
         total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
     return hyperdrive_market.MarketState(
@@ -388,8 +385,8 @@ def get_simulation_market_state_from_contract(
         variable_apr=variable_apr,
         share_price=to_floating_point(pool_state["sharePrice"]),
         init_share_price=config.init_share_price,
-        trade_fee_percent=config.trade_fee_percent,
-        redemption_fee_percent=config.redemption_fee_percent,
+        curve_fee_multiple=config.curve_fee_multiple,
+        flat_fee_multiple=config.flat_fee_multiple,
         longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
         shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
         long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
@@ -419,7 +416,7 @@ def do_trade(trade):
             base_ERC20.mint(trade_amount)
             base_ERC20.approve(hyperdrive.address, trade_amount)
         new_state, _ = ape_utils.ape_open_position(
-            hyperdrive_market.AssetIdPrefix.SHORT,
+            hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
@@ -428,7 +425,7 @@ def do_trade(trade):
     elif trade.action_type.name == "CLOSE_SHORT":
         maturity_time = int(sim_to_block_time[trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
-            hyperdrive_market.AssetIdPrefix.SHORT,
+            hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
@@ -440,7 +437,7 @@ def do_trade(trade):
             base_ERC20.mint(trade_amount)
             base_ERC20.approve(hyperdrive.address, trade_amount)
         new_state, _ = ape_utils.ape_open_position(
-            hyperdrive_market.AssetIdPrefix.LONG,
+            hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
@@ -449,7 +446,7 @@ def do_trade(trade):
     elif trade.action_type.name == "CLOSE_LONG":
         maturity_time = int(sim_to_block_time[trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
-            hyperdrive_market.AssetIdPrefix.LONG,
+            hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
@@ -493,8 +490,8 @@ if __name__ == "__main__":
     checkpoints_per_term = 365
     position_duration_seconds = checkpoint_duration * checkpoints_per_term
     time_stretch = to_fixed_point(1 / simulator.market.time_stretch_constant)
-    curve_fee = to_fixed_point(config.trade_fee_percent)
-    flat_fee = to_fixed_point(config.redemption_fee_percent)
+    curve_fee = to_fixed_point(config.curve_fee_multiple)
+    flat_fee = to_fixed_point(config.flat_fee_multiple)
     gov_fee = 0
     # Deploy hyperdrive on the chain
     hyperdrive_address = sol_agents["agent_0"].deploy(
