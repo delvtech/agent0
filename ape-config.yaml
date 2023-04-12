@@ -1,7 +1,6 @@
 contracts_folder: hyperdrive_solidity/contracts
 
 plugins:
-  - name: notebook
   - name: etherscan
   - name: solidity
   - name: foundry
