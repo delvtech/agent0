@@ -380,16 +380,6 @@ def get_simulation_market_state_from_contract(
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         asset_id = assets.encode_asset_id(assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds)
         total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
-    # params = {}
-    # for k, v in pool_state.items():
-    #     if isinstance(v, int):
-    #         # remove the trailing underscore from the key
-    #         if k.endswith("_"):
-    #             k = k[:-1]
-    #         # convert from camel case to snake case
-    #         k = "".join([k[0].lower()] + [c if c.islower() else f"_{c.lower()}" for c in k[1:]])
-    #         print(f"key: {k}, value: {v}")
-    #         params[k] = to_floating_point(v)
 
     return hyperdrive_market.MarketState(
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
@@ -423,9 +413,25 @@ def do_trade(trade):
     """Execute agent trades on hyperdrive solidity contract"""
     agent_key = f"agent_{trade.wallet.address}"
     trade_amount = to_fixed_point(trade.trade_amount)
-    # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
-    #    continue  # todo
-    if trade.action_type.name == "OPEN_SHORT":
+    if trade.action_type.name == "ADD_LIQUIDITY":
+        with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+            # Mint DAI & approve ERC20 usage by contract
+            base_ERC20.mint(trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
+        new_state, _ = ape_utils.ape_open_position(
+            assets.AssetIdPrefix.LP,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+    elif trade.action_type.name == "REMOVE_LIQUIDITY":
+        new_state, _ = ape_utils.ape_close_position(
+            assets.AssetIdPrefix.LP,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+    elif trade.action_type.name == "OPEN_SHORT":
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)  # type: ignore
@@ -468,7 +474,7 @@ def do_trade(trade):
             maturity_time,
         )
     else:
-        raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
+        raise ValueError(f"{trade.action_type=} must be add/remove liquidity, or open/close a long or short")
     simulator.market.market_state = get_simulation_market_state_from_contract(
         hyperdrive,
         sol_agents[agent_key],
@@ -483,7 +489,7 @@ if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
     # Set up ape
-    provider = ape.networks.parse_network_choice("ethereum:local:foundry").__enter__()
+    provider = ape.networks.parse_network_choice("ethereum:local:foundry", provider_settings={"port": 8546}).__enter__()
     project_root = Path.cwd()
     project = ape.Project(path=project_root)
     # Set up agents
@@ -537,12 +543,11 @@ if __name__ == "__main__":
         config,
     )
     sim_to_block_time = {}
-    for _ in range(100):
+    for _ in range(1000):
         # convert simulator bot outputs into just the tarde details
         trades = [
             trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
         ]
         for trade in trades:
-            if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
-                continue  # todo
+            print(trade)
             do_trade(trade)

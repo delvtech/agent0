@@ -24,13 +24,12 @@ jobs:
           python -m pip install -r requirements.txt
           ape plugins install .
           python -m pip install .
-          python -m pip install coverage
+
+      - name: Ensure clear Jupyter Notebooks
+        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
 
       - name: Run black
         run: python -m black --check --diff .
 
       - name: Run pylint
         run: python -m pylint $(git ls-files '*.py')
-
-      - name: Ensure clear Jupyter Notebooks
-        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
