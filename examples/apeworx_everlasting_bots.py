@@ -23,7 +23,7 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
-import elfpy.markets.hyperdrive.assets as assets
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -338,7 +338,7 @@ def get_agents(config):
     sol_agents = {"governance": governance}
     for agent_address, sim_agent in enumerate(sim_agents):
         sol_agent = ape.accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
-        sol_agent._set_balance_(to_fixed_point(sim_agent.budget))  # pylint: disable=protected-access
+        sol_agent.provider.set_balance(sol_agent.address, to_fixed_point(sim_agent.budget))
         sol_agents[f"agent_{agent_address}"] = sol_agent
     return sol_agents, sim_agents
 
@@ -376,7 +376,9 @@ def get_simulation_market_state_from_contract(
     """
     pool_state = hyperdrive_contract.getPoolInfo().__dict__
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
-        asset_id = assets.encode_asset_id(assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds)
+        asset_id = hyperdrive_assets.encode_asset_id(
+            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
+        )
         total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
 
     return hyperdrive_market.MarketState(
@@ -417,14 +419,14 @@ def do_trade(trade):
             base_ERC20.mint(trade_amount)  # type: ignore
             base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
-            assets.AssetIdPrefix.LP,
+            hyperdrive_assets.AssetIdPrefix.LP,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
         )
     elif trade.action_type.name == "REMOVE_LIQUIDITY":
         new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.LP,
+            hyperdrive_assets.AssetIdPrefix.LP,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
@@ -435,7 +437,7 @@ def do_trade(trade):
             base_ERC20.mint(trade_amount)  # type: ignore
             base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
-            assets.AssetIdPrefix.SHORT,
+            hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
@@ -444,7 +446,7 @@ def do_trade(trade):
     elif trade.action_type.name == "CLOSE_SHORT":
         maturity_time = int(sim_to_block_time[trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.SHORT,
+            hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
@@ -456,7 +458,7 @@ def do_trade(trade):
             base_ERC20.mint(trade_amount)  # type: ignore
             base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
-            assets.AssetIdPrefix.LONG,
+            hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
@@ -465,7 +467,7 @@ def do_trade(trade):
     elif trade.action_type.name == "CLOSE_LONG":
         maturity_time = int(sim_to_block_time[trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
-            assets.AssetIdPrefix.LONG,
+            hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
