@@ -494,65 +494,65 @@ if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
     # Set up ape
-    with ape.networks.parse_network_choice("ethereum:local:foundry", provider_settings={"port": 8546}) as provider:
-        project_root = Path.cwd()
-        project = ape.Project(path=project_root)
-        # Set up agents
-        sol_agents, sim_agents = get_agents(config)
-        # Instantiate the sim market
-        simulator = get_simulator(config)
-        simulator.add_agents(sim_agents)
-        # Use agent 0 to initialize the chain market
-        base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)  # type: ignore
-        base_ERC20 = project.ERC20Mintable.at(base_address)  # type: ignore
-        fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)  # type: ignore
-        fixed_math = project.MockFixedPointMath.at(fixed_math_address)  # type: ignore
-        base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])  # type: ignore
-        # Convert sim config to solidity format (fixed-point)
-        INITIAL_SUPPLY = to_fixed_point(config.target_liquidity)
-        INITIAL_APR = to_fixed_point(config.target_fixed_apr)
-        INITIAL_SHARE_PRICE = to_fixed_point(config.init_share_price)
-        CHECKPOINT_DURATION = 86400  # seconds = 1 day
-        CHECKPOINTS_PER_TERM = 365
-        POSITION_DURATION_SECONDS = CHECKPOINT_DURATION * CHECKPOINTS_PER_TERM
-        TIME_STRETCH = to_fixed_point(1 / simulator.market.time_stretch_constant)
-        CURVE_FEE = to_fixed_point(config.curve_fee_multiple)
-        FLAT_FEE = to_fixed_point(config.flat_fee_multiple)
-        GOV_FEE = 0
-        # Deploy hyperdrive on the chain
-        hyperdrive_address = sol_agents["agent_0"].deploy(
-            project.MockHyperdriveTestnet,  # type:ignore
-            base_ERC20,
-            INITIAL_APR,
-            INITIAL_SHARE_PRICE,
-            CHECKPOINTS_PER_TERM,
-            CHECKPOINT_DURATION,
-            TIME_STRETCH,
-            (CURVE_FEE, FLAT_FEE, GOV_FEE),
-            sol_agents["governance"],
-        )
-        hyperdrive: ContractInstance = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
-        with ape.accounts.use_sender(sol_agents["agent_0"]):
-            base_ERC20.approve(hyperdrive, INITIAL_SUPPLY)  # type:ignore
-            hyperdrive.initialize(INITIAL_SUPPLY, INITIAL_APR, sol_agents["agent_0"], True)  # type:ignore
-        # Execute trades
-        genesis_block_number = ape.chain.blocks[-1].number
-        genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
+    provider = ape.networks.parse_network_choice("ethereum:local:foundry", provider_settings={"port": 8546})
+    project_root = Path.cwd()
+    project = ape.Project(path=project_root)
+    # Set up agents
+    sol_agents, sim_agents = get_agents(config)
+    # Instantiate the sim market
+    simulator = get_simulator(config)
+    simulator.add_agents(sim_agents)
+    # Use agent 0 to initialize the chain market
+    base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)  # type: ignore
+    base_ERC20 = project.ERC20Mintable.at(base_address)  # type: ignore
+    fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)  # type: ignore
+    fixed_math = project.MockFixedPointMath.at(fixed_math_address)  # type: ignore
+    base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])  # type: ignore
+    # Convert sim config to solidity format (fixed-point)
+    INITIAL_SUPPLY = to_fixed_point(config.target_liquidity)
+    INITIAL_APR = to_fixed_point(config.target_fixed_apr)
+    INITIAL_SHARE_PRICE = to_fixed_point(config.init_share_price)
+    CHECKPOINT_DURATION = 86400  # seconds = 1 day
+    CHECKPOINTS_PER_TERM = 365
+    POSITION_DURATION_SECONDS = CHECKPOINT_DURATION * CHECKPOINTS_PER_TERM
+    TIME_STRETCH = to_fixed_point(1 / simulator.market.time_stretch_constant)
+    CURVE_FEE = to_fixed_point(config.curve_fee_multiple)
+    FLAT_FEE = to_fixed_point(config.flat_fee_multiple)
+    GOV_FEE = 0
+    # Deploy hyperdrive on the chain
+    hyperdrive_address = sol_agents["agent_0"].deploy(
+        project.MockHyperdriveTestnet,  # type:ignore
+        base_ERC20,
+        INITIAL_APR,
+        INITIAL_SHARE_PRICE,
+        CHECKPOINTS_PER_TERM,
+        CHECKPOINT_DURATION,
+        TIME_STRETCH,
+        (CURVE_FEE, FLAT_FEE, GOV_FEE),
+        sol_agents["governance"],
+    )
+    hyperdrive: ContractInstance = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
+    with ape.accounts.use_sender(sol_agents["agent_0"]):
+        base_ERC20.approve(hyperdrive, INITIAL_SUPPLY)  # type:ignore
+        hyperdrive.initialize(INITIAL_SUPPLY, INITIAL_APR, sol_agents["agent_0"], True)  # type:ignore
+    # Execute trades
+    genesis_block_number = ape.chain.blocks[-1].number
+    genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
 
-        simulator.market.market_state = get_simulation_market_state_from_contract(
-            hyperdrive,
-            sol_agents["agent_0"],
-            POSITION_DURATION_SECONDS,
-            CHECKPOINT_DURATION,
-            simulator.market.market_state.variable_apr,
-            config,
-        )
-        sim_to_block_time = {}
-        for _ in range(1000):
-            # convert simulator bot outputs into just the tarde details
-            trades = [
-                trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
-            ]
-            for trade in trades:
-                print(trade)
-                do_trade(trade)
+    simulator.market.market_state = get_simulation_market_state_from_contract(
+        hyperdrive,
+        sol_agents["agent_0"],
+        POSITION_DURATION_SECONDS,
+        CHECKPOINT_DURATION,
+        simulator.market.market_state.variable_apr,
+        config,
+    )
+    sim_to_block_time = {}
+    for _ in range(1000):
+        # convert simulator bot outputs into just the tarde details
+        trades = [
+            trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
+        ]
+        for trade in trades:
+            print(trade)
+            do_trade(trade)
