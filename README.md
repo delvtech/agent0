@@ -21,34 +21,28 @@ Documentation can be found [here](https://elfpy.element.fi).
 
 ## Install
 
-Set up your favorite python virutal environment with python == 3.8 (we recommend [pyenv](https://github.com/pyenv/pyenv#how-it-works) and [virtualenv](https://github.com/pyenv/pyenv-virtualenv)). While we don't explicitly support python > 3.8, we haven't had trouble running on later versions (with one exception noted below). For example:
+Set up your favorite python virutal environment with python 3.9 or 3.10 (we recommend [pyenv](https://github.com/pyenv/pyenv#how-it-works) and [virtualenv](https://github.com/pyenv/pyenv-virtualenv)). For example:
 
 ```bash
-pyenv install 3.8.16
-pyenv local 3.8.16
-python -m venv .venv
-source .venv/bin/activate
+pyenv install 3.10
+pyenv local 3.10
+pyenv virtualenv elf-env
+pyenv local elf-env
+pyenv activate elf-env
 ```
 
-Once this is done, check that your version is correct when you run `python --version`. Within the virtualenv, upgrade pip with `python -m pip install --upgrade pip` and then install the required packages.
-
-For Python 3.8.16:
+Once you're in your favored virtual environment, install the project dependencies:
 
 ```bash
-python -m pip install -r requirements-3.8.txt
-python -m pip install -e .
-```
-
-for Python 3.11:
-
-```bash
-python -m pip install -r requirements-3.11.txt
-python -m pip install -e .
+pip install -r requirements.txt
+pip install -e .
 ```
 
 If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
 
 ### Docker
+
+Using Docker is mostly untested, as the core team doesn't use it. But feel free to try out the below.
 
 To install a docker development environment which may be more reliable to install project dependencies:
 
@@ -70,28 +64,10 @@ Testing is achieved with [py.test](https://docs.pytest.org/en/latest/contents.ht
 
 To run coverage locally you can follow these steps:
 
-install coverage.py:
-
-```
+```bash
 pip install coverage
-```
-
-parse the repo:
-
-```
-coverage run --source=elfpy --omit=tests/test_notebooks.py -m unittest discover tests
-```
-
-generate the report:
-
-```
-coverage xml -i report -m
-```
-
-generate html report:
-
-```
-coverage xml -i html
+coverage run -m pytest
+coverage html
 ```
 
 then just open `htmlcov/index.html` to view the report!

@@ -49,11 +49,11 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          coverage xml -i report -m
-          coverage xml -i html
+          coverage xml -i
+          coverage html -i
 
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v2.1.0
+        uses: codecov/codecov-action@v3
         with:
           flags: unittests
           fail_ci_if_error: true
