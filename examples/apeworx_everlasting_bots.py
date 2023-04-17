@@ -494,7 +494,7 @@ if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
     # Set up ape
-    provider = ape.networks.parse_network_choice("ethereum:local:foundry", provider_settings={"port": 8546})
+    provider = ape.networks.parse_network_choice("ethereum:local:foundry").__enter__()
     project_root = Path.cwd()
     project = ape.Project(path=project_root)
     # Set up agents

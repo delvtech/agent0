@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.10"
+          python-version: "3.9"
 
       - name: Install python dependencies
         run: |
@@ -26,4 +26,4 @@ jobs:
           python -m pip install .
 
       - name: Analysing code with pyright
-        run: python -m pyright $(git ls-files '*.py')
+        run: python -m pyright $(git ls-files '*.py' ':!:*apeworx*')

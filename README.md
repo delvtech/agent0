@@ -21,14 +21,20 @@ Documentation can be found [here](https://elfpy.element.fi).
 
 ## Install
 
-Set up your favorite python virutal environment with python 3.9 or 3.10 (we recommend [pyenv](https://github.com/pyenv/pyenv#how-it-works) and [virtualenv](https://github.com/pyenv/pyenv-virtualenv)). For example:
+Python 3.9 is required currently, to maintain compatibility with Google Colaboratory.
+
+Set up your favorite python virtual environment. We use:
+
+- [pyenv](https://github.com/pyenv/pyenv#how-it-works) to manage python versions
+- [venv](https://docs.python.org/3/library/venv.html) standard library to manage virtual environments
+
+Then run:
 
 ```bash
-pyenv install 3.10
-pyenv local 3.10
-pyenv virtualenv elf-env
-pyenv local elf-env
-pyenv activate elf-env
+pyenv install 3.9
+pyenv local 3.9
+python -m venv .venv
+source .venv/bin/activate
 ```
 
 Once you're in your favored virtual environment, install the project dependencies:
@@ -42,7 +48,7 @@ If you intend to improve the documentation, then you must also install the packa
 
 ### Docker
 
-Using Docker is mostly untested, as the core team doesn't use it. But feel free to try out the below.
+Using Docker is mostly untested, as the core team doesn't use it. However, the following steps should get you started.
 
 To install a docker development environment which may be more reliable to install project dependencies:
 
