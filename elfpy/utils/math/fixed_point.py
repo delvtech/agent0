@@ -1,4 +1,4 @@
-"""Fixed point datatype"""
+"""Fixed point datatype & arithmetic"""
 from __future__ import annotations
 
 import copy
