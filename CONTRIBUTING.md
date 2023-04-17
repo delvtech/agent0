@@ -4,7 +4,7 @@ We strive for verbose and readable comments and docstrings.
 Our documentation follows the [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
 The hosted docs are automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
 
-## Contributor git workflow:
+# Contributor git workflow:
 
 We follow a standard [feature branch rebase workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) that prioritizes short PRs with isolated improvements.
 Commits to `main` should **only** be made in the form of squash-merges from pull requests.

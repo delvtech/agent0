@@ -1,4 +1,4 @@
-## Install
+# Install
 
 Python 3.9 is required currently, to maintain compatibility with Google Colaboratory.
 
@@ -25,7 +25,7 @@ python -m pip install -e .
 
 If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
 
-### Docker
+## Docker
 
 Using Docker is mostly untested, as the core team doesn't use it. However, the following steps should get you started.
 

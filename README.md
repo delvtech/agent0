@@ -47,7 +47,7 @@ Python files in the `examples/` folder should be executable from the repository 
 
 Please refer to [CONTRIBUTING.md](https://github.com/element-fi/elf-simulations/blob/main/INSTALL.md).
 
-# Number format
+## Number format
 
 Internally Elfpy conducts all operations using 18-decimal fixed-point precision integers and arithmetic.
 Briefly, this means our representation for unity, "one", is `1 * 10 ** 18`.
