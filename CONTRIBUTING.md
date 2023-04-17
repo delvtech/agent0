@@ -2,7 +2,7 @@
 
 We strive for verbose and readable comments and docstrings.
 Our documentation follows the [Numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
-The hosted docs are automatically generated using [sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
+The hosted docs are automatically generated using [Sphinx](https://www.sphinx-doc.org/en/master/tutorial/automatic-doc-generation.html).
 
 ## Contributor git workflow:
 
