@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from elfpy.utils.math import FixedPoint
+from elfpy.utils.math import FixedPoint, FixedPointMath
 
 
 class TestFixedPoint(unittest.TestCase):
@@ -59,6 +59,8 @@ class TestFixedPoint(unittest.TestCase):
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
+        with self.assertRaises(OverflowError):
+            _ = FixedPoint(2**256) + FixedPoint(1)
         fixed_point_value = FixedPoint(1)
         float_value = 1.0
         int_value = 1
@@ -89,7 +91,6 @@ class TestFixedPoint(unittest.TestCase):
         """
         with self.assertRaises(OverflowError):
             _ = FixedPoint(4) - FixedPoint(5)
-        # should fail float + fixed_point
         fixed_point_value = FixedPoint(1)
         float_value = 1.0
         int_value = 1
