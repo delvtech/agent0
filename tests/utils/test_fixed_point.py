@@ -55,7 +55,7 @@ class TestFixedPoint(unittest.TestCase):
         assert int(FixedPoint(5) + FixedPoint(5.0)) == 5 + 5 * 10**18
 
     def test_add_fail(self):
-        r"""Test failure of `+` sugar for float & fp combo
+        r"""Test failure of `+` sugar
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
