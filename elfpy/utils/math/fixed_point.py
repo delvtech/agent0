@@ -1,15 +1,156 @@
-"""Implements the FixedPointMath class that has a variety of safe fixed-point integer operations"""
-import sys
+"""Fixed point datatype"""
+from __future__ import annotations
+
+import copy
+from typing import Union
 
 # we will use single letter names for this class since all functions do basic arithmetic
 # pylint: disable=invalid-name
 
 
+class FixedPoint:
+    """New fixed-point datatype"""
+
+    _value: int  # integer representation of self
+
+    def __init__(self, value: Union[float, int, str], decimal_places: int = 18, signed: bool = True):
+        """Store fixed-point properties"""
+        # TODO: support unsigned option
+        if not signed:
+            raise NotImplementedError("Only signed FixedPoint ints are supported.")
+        self.signed = signed
+        # TODO: support non-default decimal values
+        if decimal_places != 18:
+            raise NotImplementedError("Only 18 decimal precision FixedPoint ints are supported.")
+        self.decimal_places = decimal_places
+        if isinstance(value, float):
+            value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
+        if isinstance(value, str):
+            lhs, rhs = value.split(".")
+            leading_zeros = len(rhs) - len(rhs.lstrip("0"))
+            value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - 1 - leading_zeros)
+        self._value = copy.copy(int(value))
+
+    def __int__(self) -> int:
+        """Cast to int"""
+        return self._value
+
+    def __float__(self) -> float:
+        """Cast to float"""
+        return float(self._value) / 10**self.decimal_places
+
+    def _coerce_other(self, other):
+        """Cast inputs to the FixedPoint type if they come in as something else.
+
+        .. note::
+            Right now we do not support operating against int and float because those are logically confusing
+        """
+        if isinstance(other, FixedPoint):
+            return other
+        if isinstance(other, (int, float)):  # currently don't allow floats & ints
+            raise TypeError(f"unsupported operant type(s): {type(other)}")
+        return NotImplemented
+
+    def __eq__(self, other: int | FixedPoint) -> bool:
+        """Uses int eq function to check for equality"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self._value == other._value
+
+    def __add__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '+' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.add(self._value, other._value))
+
+    def __radd__(self, other: int | FixedPoint) -> FixedPoint:
+        return self.__add__(other)
+
+    def __sub__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '-' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.sub(self._value, other._value))
+
+    def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables recprical subtraction to support int - FixedPoint"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.sub(other._value, self._value))
+
+    def __mul__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '*' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.mul_down(self._value, other._value))
+
+    def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables recriprocal multiplication to allow int * FixedPoint"""
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        """Enables '/' syntax.
+
+        Since most implementations use divdown, this mirrors '//' syntax
+        """
+        return self.__floordiv__(other)
+
+    def __rtruediv__(self, other):
+        """Enables '/' syntax.
+
+        Since most implementations use divdown, this mirrors '//' syntax
+        """
+        return self.__truediv__(other)
+
+    def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '//' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.div_down(self._value, other._value))
+
+    def __pow__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '**' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.pow(self._value, other._value))
+
+    def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '**' syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return FixedPoint(FixedPointMath.pow(self._value, other._value))
+
+    def __neg__(self) -> FixedPoint:
+        """Enables flipping value sign"""
+        return -self
+
+    def __abs__(self) -> FixedPoint:
+        """Enables 'abs()' function"""
+        return FixedPoint(abs(int(self)), self.decimal_places, self.signed)
+
+    def __str__(self) -> str:
+        return f"{float(self):.18f}"
+
+    def __repr__(self) -> str:
+        # e.g. FixedPoint('1234')
+        return f"{self.__class__.__name__}('{self._value}')"
+
+
 class FixedPointMath:
     """Safe, high precision (1e18) fixed-point integer arethmetic"""
 
-    ONE_18 = 10**18
-    INT_MAX = int(sys.maxsize)  # TODO: This assumes unsigned integer; need to update for signed option
+    ONE_18 = 1 * 10**18
+    # int has not max size in python 3.  use 256 since that is max for solidity
+    INT_MAX = 2**256 - 1
+    UINT_MAX = 2**256
     EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
     EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
 
@@ -63,7 +204,7 @@ class FixedPointMath:
         # if product is zero, just return zero; this avoids z-1 underflow
         # else, first, divide z - 1 by the d and add 1, which rounds up
         if z == 0:
-            return 0
+            return int(0)
         # divide z - 1 by d and add 1, allowing z - 1 to underflow if z is 0
         return ((z - 1) // d) + 1
 
