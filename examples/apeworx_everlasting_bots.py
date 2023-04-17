@@ -13,6 +13,7 @@ from collections import defaultdict
 
 # external lib
 import ape
+from ape.contracts import ContractInstance
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
@@ -22,7 +23,7 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
-import elfpy.markets.hyperdrive.assets as hyperdrive_assets
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -33,6 +34,8 @@ import elfpy.utils.outputs as output_utils
 
 class FixedFrida(agentlib.Agent):
     """Agent that paints & opens fixed rate borrow positions"""
+
+    # pylint: disable=too-many-arguments
 
     def __init__(
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
@@ -71,9 +74,9 @@ class FixedFrida(agentlib.Agent):
             return []
 
         action_list = []
-        for short_time in self.wallet.shorts.keys():  # fungible shorts are grouped by trade time, which is the dict key
+        for short_time, short in self.wallet.shorts.items():  # loop over shorts
             if (market.block_time.time - short_time) >= market.annualized_position_duration:  # if any short is mature
-                trade_amount = self.wallet.shorts[short_time].balance  # close the whole thing
+                trade_amount = short.balance  # close the whole thing
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -87,7 +90,7 @@ class FixedFrida(agentlib.Agent):
                 ]
 
         short_balances = [short.balance for short in self.wallet.shorts.values()]
-        has_opened_short = bool(any(short_balance > 0 for short_balance in short_balances))
+        has_opened_short = any((short_balance > 0 for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
         if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short:
             trade_amount = self.get_max_short(
@@ -113,6 +116,8 @@ class LongLouie(agentlib.Agent):
     """
     Long-nosed agent that opens longs
     """
+
+    # pylint: disable=too-many-arguments
 
     def __init__(
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
@@ -148,9 +153,9 @@ class LongLouie(agentlib.Agent):
             return []
 
         action_list = []
-        for long_time in self.wallet.longs.keys():  # fungible shorts are grouped by trade time, which is the dict key
+        for long_time, long in self.wallet.longs.items():  # loop over longs
             if (market.block_time.time - long_time) >= market.annualized_position_duration:  # if any long is mature
-                trade_amount = self.wallet.longs[long_time].balance  # close the whole thing
+                trade_amount = long.balance  # close the whole thing
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -164,7 +169,7 @@ class LongLouie(agentlib.Agent):
                 ]
 
         long_balances = [long.balance for long in self.wallet.longs.values()]
-        has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
+        has_opened_long = any((long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
         if (
             market.fixed_apr - market.market_state.variable_apr
@@ -262,91 +267,92 @@ def get_argparser() -> argparse.ArgumentParser:
 def get_config() -> simulators.Config:
     """Set config values for the experiment"""
     args = get_argparser().parse_args()
-    config = simulators.Config()
-    config.log_level = output_utils.text_to_log_level(args.log_level)
-    config.log_filename = "everlasting_bots"
-    config.title = "everlasting bot demo"
+    _config = simulators.Config()
+    _config.log_level = output_utils.text_to_log_level(args.log_level)
+    _config.log_filename = "everlasting_bots"
+    _config.title = "everlasting bot demo"
     for key, value in args.__dict__.items():
-        if hasattr(config, key):
-            config[key] = value
+        if hasattr(_config, key):
+            _config[key] = value
         else:
-            config.scratch[key] = value
-    config.scratch["louie_risk_threshold"] = 0.0
-    config.scratch["louie_budget_mean"] = 375_000
-    config.scratch["louie_budget_std"] = 25_000
-    config.scratch["louie_budget_max"] = 1_00_000
-    config.scratch["louie_budget_min"] = 1_000
-    config.scratch["frida_budget_mean"] = 500_000
-    config.scratch["frida_budget_std"] = 10_000
-    config.scratch["frida_budget_max"] = 1_000_000
-    config.scratch["frida_budget_min"] = 1_000
-    config.scratch["frida_risk_min"] = 0.0
-    config.scratch["frida_risk_max"] = 0.06
-    config.scratch["frida_risk_mean"] = 0.02
-    config.scratch["frida_risk_std"] = 0.01
-    return config
+            _config.scratch[key] = value
+    _config.scratch["louie_risk_threshold"] = 0.0
+    _config.scratch["louie_budget_mean"] = 375_000
+    _config.scratch["louie_budget_std"] = 25_000
+    _config.scratch["louie_budget_max"] = 1_00_000
+    _config.scratch["louie_budget_min"] = 1_000
+    _config.scratch["frida_budget_mean"] = 500_000
+    _config.scratch["frida_budget_std"] = 10_000
+    _config.scratch["frida_budget_max"] = 1_000_000
+    _config.scratch["frida_budget_min"] = 1_000
+    _config.scratch["frida_risk_min"] = 0.0
+    _config.scratch["frida_risk_max"] = 0.06
+    _config.scratch["frida_risk_mean"] = 0.02
+    _config.scratch["frida_risk_std"] = 0.01
+    return _config
 
 
-def get_agents(config):
+def get_agents(_config):
     """Get python agents & corresponding solidity wallets"""
-    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=config.target_liquidity)  # type: ignore
-    sim_agents = [init_agent]
-    for address in range(1, 1 + config.scratch["num_fridas"]):
+    init_agent = sim_utils.get_policy("init_lp")(wallet_address=0, budget=_config.target_liquidity)  # type: ignore
+    _sim_agents = [init_agent]
+    budget = np.nan
+    for address in range(1, 1 + _config.scratch["num_fridas"]):
         risk_threshold = np.maximum(
-            config.scratch["frida_risk_min"],
+            _config.scratch["frida_risk_min"],
             np.minimum(
-                config.scratch["frida_risk_max"],
-                config.rng.normal(loc=config.scratch["frida_risk_mean"], scale=config.scratch["frida_risk_std"]),
+                _config.scratch["frida_risk_max"],
+                _config.rng.normal(loc=_config.scratch["frida_risk_mean"], scale=_config.scratch["frida_risk_std"]),
             ),
         )
         budget = np.maximum(
-            config.scratch["frida_budget_min"],
+            _config.scratch["frida_budget_min"],
             np.minimum(
-                config.scratch["frida_budget_max"],
-                config.rng.normal(loc=config.scratch["frida_budget_mean"], scale=config.scratch["frida_budget_std"]),
+                _config.scratch["frida_budget_max"],
+                _config.rng.normal(loc=_config.scratch["frida_budget_mean"], scale=_config.scratch["frida_budget_std"]),
             ),
         )
         agent = FixedFrida(
-            rng=config.rng,
-            trade_chance=config.scratch["trade_chance"],
+            rng=_config.rng,
+            trade_chance=_config.scratch["trade_chance"],
             risk_threshold=risk_threshold,
             wallet_address=address,
             budget=budget,
         )
-        sim_agents += [agent]
-    for address in range(len(sim_agents), len(sim_agents) + config.scratch["num_louies"]):
-        risk_threshold = config.scratch["louie_risk_threshold"]
+        _sim_agents += [agent]
+    for address in range(len(_sim_agents), len(_sim_agents) + _config.scratch["num_louies"]):
+        risk_threshold = _config.scratch["louie_risk_threshold"]
         budget = np.maximum(
-            config.scratch["louie_budget_min"],
+            _config.scratch["louie_budget_min"],
             np.minimum(
-                config.scratch["louie_budget_max"],
-                config.rng.normal(loc=config.scratch["louie_budget_mean"], scale=config.scratch["louie_budget_std"]),
+                _config.scratch["louie_budget_max"],
+                _config.rng.normal(loc=_config.scratch["louie_budget_mean"], scale=_config.scratch["louie_budget_std"]),
             ),
         )
         agent = LongLouie(
-            rng=config.rng,
-            trade_chance=config.scratch["trade_chance"],
+            rng=_config.rng,
+            trade_chance=_config.scratch["trade_chance"],
             risk_threshold=risk_threshold,
             wallet_address=address,
             budget=budget,
         )
-        sim_agents += [agent]
+        _sim_agents += [agent]
 
     governance = ape.accounts.test_accounts.generate_test_account()
-    sol_agents = {"governance": governance}
-    for agent_address, sim_agent in enumerate(sim_agents):
+    _sol_agents = {"governance": governance}
+    for agent_address, sim_agent in enumerate(_sim_agents):
         sol_agent = ape.accounts.test_accounts.generate_test_account()  # make a fake agent with its own wallet
-        sol_agent.balance = to_fixed_point(sim_agent.budget)
-        sol_agents[f"agent_{agent_address}"] = sol_agent
-    return sol_agents, sim_agents
+        sol_agent.provider.set_balance(sol_agent.address, to_fixed_point(sim_agent.budget))
+        _sol_agents[f"agent_{agent_address}"] = sol_agent
+    return _sol_agents, _sim_agents
 
 
-def get_simulator(config):
+def get_simulator(_config):
     """Get a python simulator"""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
-    return simulators.Simulator(config, market, block_time)
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, _config)
+    return simulators.Simulator(_config, market, block_time)
 
 
 def to_fixed_point(float_var, decimal_places=18):
@@ -360,7 +366,7 @@ def to_floating_point(float_var, decimal_places=18):
 
 
 def get_simulation_market_state_from_contract(
-    hyperdrive_contract, agent_address, position_duration_seconds, checkpoint_duration, variable_apr, config
+    hyperdrive_contract, agent_address, _position_duration_seconds, _checkpoint_duration, variable_apr, _config
 ):
     """
     hyperdrive_contract: ape.contracts.base.ContractInstance
@@ -372,12 +378,14 @@ def get_simulation_market_state_from_contract(
         <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
         representing the agent which is executing the action.
     """
+    # pylint: disable=too-many-arguments
     pool_state = hyperdrive_contract.getPoolInfo().__dict__
     with ape.accounts.use_sender(agent_address):  # sender for contract calls
         asset_id = hyperdrive_assets.encode_asset_id(
-            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, position_duration_seconds
+            hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, _position_duration_seconds
         )
         total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
+
     return hyperdrive_market.MarketState(
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
         share_reserves=to_floating_point(pool_state["shareReserves"]),
@@ -386,9 +394,9 @@ def get_simulation_market_state_from_contract(
         # TODO: bond_buffer=0,
         variable_apr=variable_apr,
         share_price=to_floating_point(pool_state["sharePrice"]),
-        init_share_price=config.init_share_price,
-        curve_fee_multiple=config.curve_fee_multiple,
-        flat_fee_multiple=config.flat_fee_multiple,
+        init_share_price=_config.init_share_price,
+        curve_fee_multiple=_config.curve_fee_multiple,
+        flat_fee_multiple=_config.flat_fee_multiple,
         longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
         shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
         long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
@@ -396,7 +404,7 @@ def get_simulation_market_state_from_contract(
         long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
         short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
         # TODO: checkpoints=defaultdict
-        checkpoint_duration=checkpoint_duration,
+        checkpoint_duration=_checkpoint_duration,
         total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
         total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
         total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
@@ -406,26 +414,42 @@ def get_simulation_market_state_from_contract(
     )
 
 
-def do_trade(trade):
+def do_trade(_trade):
     """Execute agent trades on hyperdrive solidity contract"""
-    agent_key = f"agent_{trade.wallet.address}"
-    trade_amount = to_fixed_point(trade.trade_amount)
-    # if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
-    #    continue  # todo
-    if trade.action_type.name == "OPEN_SHORT":
+    agent_key = f"agent_{_trade.wallet.address}"
+    trade_amount = to_fixed_point(_trade.trade_amount)
+    if _trade.action_type.name == "ADD_LIQUIDITY":
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
-            base_ERC20.mint(trade_amount)
-            base_ERC20.approve(hyperdrive.address, trade_amount)
+            base_ERC20.mint(trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
+        new_state, _ = ape_utils.ape_open_position(
+            hyperdrive_assets.AssetIdPrefix.LP,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+    elif _trade.action_type.name == "REMOVE_LIQUIDITY":
+        new_state, _ = ape_utils.ape_close_position(
+            hyperdrive_assets.AssetIdPrefix.LP,
+            hyperdrive,
+            sol_agents[agent_key],
+            trade_amount,
+        )
+    elif _trade.action_type.name == "OPEN_SHORT":
+        with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
+            # Mint DAI & approve ERC20 usage by contract
+            base_ERC20.mint(trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
             hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
             sol_agents[agent_key],
             trade_amount,
         )
-        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-    elif trade.action_type.name == "CLOSE_SHORT":
-        maturity_time = int(sim_to_block_time[trade.mint_time])
+        sim_to_block_time[_trade.mint_time] = new_state["maturity_timestamp_"]
+    elif _trade.action_type.name == "CLOSE_SHORT":
+        maturity_time = int(sim_to_block_time[_trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
             hyperdrive_assets.AssetIdPrefix.SHORT,
             hyperdrive,
@@ -433,20 +457,20 @@ def do_trade(trade):
             trade_amount,
             maturity_time,
         )
-    elif trade.action_type.name == "OPEN_LONG":
+    elif _trade.action_type.name == "OPEN_LONG":
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
-            base_ERC20.mint(trade_amount)
-            base_ERC20.approve(hyperdrive.address, trade_amount)
+            base_ERC20.mint(trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
             hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
         )
-        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
-    elif trade.action_type.name == "CLOSE_LONG":
-        maturity_time = int(sim_to_block_time[trade.mint_time])
+        sim_to_block_time[_trade.mint_time] = new_state["maturity_timestamp_"]
+    elif _trade.action_type.name == "CLOSE_LONG":
+        maturity_time = int(sim_to_block_time[_trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
             hyperdrive_assets.AssetIdPrefix.LONG,
             hyperdrive,  # type:ignore
@@ -455,12 +479,12 @@ def do_trade(trade):
             maturity_time,
         )
     else:
-        raise ValueError(f"{trade.action_type=} must be opening or closing a long or short")
+        raise ValueError(f"{_trade.action_type=} must be add/remove liquidity, or open/close a long or short")
     simulator.market.market_state = get_simulation_market_state_from_contract(
         hyperdrive,
         sol_agents[agent_key],
-        position_duration_seconds,
-        checkpoint_duration,
+        POSITION_DURATION_SECONDS,
+        CHECKPOINT_DURATION,
         simulator.market.market_state.variable_apr,
         config,
     )
@@ -479,38 +503,38 @@ if __name__ == "__main__":
     simulator = get_simulator(config)
     simulator.add_agents(sim_agents)
     # Use agent 0 to initialize the chain market
-    base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)
-    base_ERC20 = project.ERC20Mintable.at(base_address)
-    fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)
-    fixed_math = project.MockFixedPointMath.at(fixed_math_address)
-    base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])
+    base_address = sol_agents["agent_0"].deploy(project.ERC20Mintable)  # type: ignore
+    base_ERC20 = project.ERC20Mintable.at(base_address)  # type: ignore
+    fixed_math_address = sol_agents["agent_0"].deploy(project.MockFixedPointMath)  # type: ignore
+    fixed_math = project.MockFixedPointMath.at(fixed_math_address)  # type: ignore
+    base_ERC20.mint(to_fixed_point(config.target_liquidity), sender=sol_agents["agent_0"])  # type: ignore
     # Convert sim config to solidity format (fixed-point)
-    initial_supply = to_fixed_point(config.target_liquidity)
-    initial_apr = to_fixed_point(config.target_fixed_apr)
-    initial_share_price = to_fixed_point(config.init_share_price)
-    checkpoint_duration = 86400  # seconds = 1 day
-    checkpoints_per_term = 365
-    position_duration_seconds = checkpoint_duration * checkpoints_per_term
-    time_stretch = to_fixed_point(1 / simulator.market.time_stretch_constant)
-    curve_fee = to_fixed_point(config.curve_fee_multiple)
-    flat_fee = to_fixed_point(config.flat_fee_multiple)
-    gov_fee = 0
+    INITIAL_SUPPLY = to_fixed_point(config.target_liquidity)
+    INITIAL_APR = to_fixed_point(config.target_fixed_apr)
+    INITIAL_SHARE_PRICE = to_fixed_point(config.init_share_price)
+    CHECKPOINT_DURATION = 86400  # seconds = 1 day
+    CHECKPOINTS_PER_TERM = 365
+    POSITION_DURATION_SECONDS = CHECKPOINT_DURATION * CHECKPOINTS_PER_TERM
+    TIME_STRETCH = to_fixed_point(1 / simulator.market.time_stretch_constant)
+    CURVE_FEE = to_fixed_point(config.curve_fee_multiple)
+    FLAT_FEE = to_fixed_point(config.flat_fee_multiple)
+    GOV_FEE = 0
     # Deploy hyperdrive on the chain
     hyperdrive_address = sol_agents["agent_0"].deploy(
         project.MockHyperdriveTestnet,  # type:ignore
         base_ERC20,
-        initial_apr,
-        initial_share_price,
-        checkpoints_per_term,
-        checkpoint_duration,
-        time_stretch,
-        (curve_fee, flat_fee, gov_fee),
+        INITIAL_APR,
+        INITIAL_SHARE_PRICE,
+        CHECKPOINTS_PER_TERM,
+        CHECKPOINT_DURATION,
+        TIME_STRETCH,
+        (CURVE_FEE, FLAT_FEE, GOV_FEE),
         sol_agents["governance"],
     )
-    hyperdrive = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
+    hyperdrive: ContractInstance = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
     with ape.accounts.use_sender(sol_agents["agent_0"]):
-        base_ERC20.approve(hyperdrive, initial_supply)  # type:ignore
-        hyperdrive.initialize(initial_supply, initial_apr, sol_agents["agent_0"], True)  # type:ignore
+        base_ERC20.approve(hyperdrive, INITIAL_SUPPLY)  # type:ignore
+        hyperdrive.initialize(INITIAL_SUPPLY, INITIAL_APR, sol_agents["agent_0"], True)  # type:ignore
     # Execute trades
     genesis_block_number = ape.chain.blocks[-1].number
     genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
@@ -518,18 +542,17 @@ if __name__ == "__main__":
     simulator.market.market_state = get_simulation_market_state_from_contract(
         hyperdrive,
         sol_agents["agent_0"],
-        position_duration_seconds,
-        checkpoint_duration,
+        POSITION_DURATION_SECONDS,
+        CHECKPOINT_DURATION,
         simulator.market.market_state.variable_apr,
         config,
     )
     sim_to_block_time = {}
-    for trade_number in range(100):
+    for _ in range(1000):
         # convert simulator bot outputs into just the tarde details
         trades = [
             trade[1].trade for trade in simulator.collect_trades(list(range(1, len(sim_agents))), liquidate=False)
         ]
         for trade in trades:
-            if trade.action_type.name in ["ADD_LIQUIDITY", "REMOVE_LIQUIDITY"]:
-                continue  # todo
+            print(trade)
             do_trade(trade)

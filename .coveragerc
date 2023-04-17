@@ -2,10 +2,16 @@
 omit =
     tests/test_max_short.py
     tests/test_notebooks.py
+    */examples/*.*
+    hyperdrive_solidity/*
 
 [report]
 omit =
-        *test*
-        */__init__.py
+    *test*
+    */__init__.py
+    hyperdrive_solidity/*
+exclude_lines =
+    if typing:
+    if TYPE_CHECKING:
 
 ignore_errors = True
