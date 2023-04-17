@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from elfpy.utils.math import FixedPoint, FixedPointMath
+from elfpy.utils.math import FixedPoint
 
 
 class TestFixedPoint(unittest.TestCase):
@@ -85,7 +85,7 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint(5.0) - FixedPoint(4.0)) == 1.0
 
     def test_sub_fail(self):
-        r"""Test failure of `-` sugar for float & fp combo
+        r"""Test failure of `-` sugar
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -129,7 +129,7 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint(5.0)) * 5 == 25.0
 
     def test_multiply_fail(self):
-        r"""Test failure of `*` sugar for float & fp combo
+        r"""Test failure of `*` sugar
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
@@ -163,7 +163,7 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint(5)) / 5 == 1 * 10**-18
 
     def test_divide_fail(self):
-        r"""Test failure of `/` sugar for float & fp combo
+        r"""Test failure of `/` sugar
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
