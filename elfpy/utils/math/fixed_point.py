@@ -147,12 +147,12 @@ class FixedPoint:
 class FixedPointMath:
     """Safe, high precision (1e18) fixed-point integer arethmetic"""
 
-    ONE_18 = 1 * 10**18
-    # int has not max size in python 3.  use 256 since that is max for solidity
+    # int has no max size in python 3. Use 256 since that is max for solidity.
     INT_MAX = 2**256 - 1
     UINT_MAX = 2**256
     EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
     EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
+    ONE_18 = 1 * 10**18
 
     @staticmethod
     def add(a: int, b: int) -> int:
