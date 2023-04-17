@@ -1,6 +1,6 @@
 """Fixed point math tests inspired from solidity hyperdrive implementation"""
-import unittest
 import math
+import unittest
 
 from elfpy.utils.math import FixedPointMath
 
