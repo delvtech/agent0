@@ -40,8 +40,8 @@ source .venv/bin/activate
 Once you're in your favored virtual environment, install the project dependencies:
 
 ```bash
-pip install -r requirements.txt
-pip install -e .
+python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
 If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
