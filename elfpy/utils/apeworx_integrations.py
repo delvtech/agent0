@@ -9,12 +9,11 @@ from dataclasses import dataclass
 # TODO: apeworx is not worxing with github actions when it is listed in requirements
 # and pyright doesn't like imports that aren't also in requirements.
 # pylint: disable=import-error
-import ape
 from ape.api import ReceiptAPI, TransactionAPI
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
-from typing import Tuple, Literal, Type
 import numpy as np
 
+from elfpy.utils import fmt
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 if TYPE_CHECKING:
