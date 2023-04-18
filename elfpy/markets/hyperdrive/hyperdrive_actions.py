@@ -12,6 +12,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
+from elfpy import FixedPoint
 from elfpy.utils.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
@@ -64,6 +65,41 @@ class MarketDeltas(base_market.MarketDeltas):
     short_checkpoints: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     total_supply_longs: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
     total_supply_shorts: defaultdict[float, float] = field(default_factory=lambda: defaultdict(float))
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketDeltasFP(base_market.MarketDeltas):
+    r"""Specifies changes to values in the market"""
+    # pylint: disable=too-many-instance-attributes
+    d_base_asset: FixedPoint = FixedPoint(0)
+    d_bond_asset: FixedPoint = FixedPoint(0)
+    d_base_buffer: FixedPoint = FixedPoint(0)
+    d_bond_buffer: FixedPoint = FixedPoint(0)
+    d_lp_total_supply: FixedPoint = FixedPoint(0)
+    d_share_price: FixedPoint = FixedPoint(0)
+    longs_outstanding: FixedPoint = FixedPoint(0)
+    shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_average_maturity_time: FixedPoint = FixedPoint(0)
+    short_average_maturity_time: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
+    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
+    withdraw_capital: FixedPoint = FixedPoint(0)
+    withdraw_interest: FixedPoint = FixedPoint(0)
+    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
