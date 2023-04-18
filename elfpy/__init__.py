@@ -1,7 +1,8 @@
 """Elfpy package"""
 
-import logging
+from __future__ import annotations
 import shutil
+import logging
 
 import matplotlib as mpl
 
@@ -187,7 +188,7 @@ def check_non_zero(data) -> None:
     # TODO: issue #146
     # this is an imperfect solution to rounding errors, but it works for now
     try:
-        if not isinstance(data, Dict):
+        if not isinstance(data, dict):
             data = data.__dict__
     except AttributeError as exception:
         raise TypeError("dct must be a dict or a class with __dict__") from exception
@@ -205,5 +206,5 @@ def check_non_zero(data) -> None:
                 assert (
                     value > -PRECISION_THRESHOLD
                 ), f"values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
-        elif isinstance(value, (list, tuple, Dict)):
+        elif isinstance(value, (list, tuple, dict)):
             check_non_zero(value)
