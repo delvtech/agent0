@@ -183,6 +183,7 @@ def check_non_zero(data) -> None:
     Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
     If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
     If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.
+
     Parameters
     ----------
     data : dict or class
