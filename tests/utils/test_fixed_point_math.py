@@ -39,7 +39,7 @@ class TestFixedPointMath(unittest.TestCase):
     def test_fail_sub_overflow(self):
         """Test fixed-point sub for invalid integer inputs"""
         with self.assertRaises(OverflowError):
-            FixedPointMath.sub(0, FixedPointMath.ONE_18)
+            FixedPointMath.sub(FixedPointMath.INT_MIN, FixedPointMath.ONE_18)
 
     def test_mul_up(self):
         """Test multiplying two values and rounding up"""
