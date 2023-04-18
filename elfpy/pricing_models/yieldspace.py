@@ -1000,8 +1000,6 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             )
-            if without_fee < FixedPoint(0):  # FIXME: Investigate why this is happening above
-                without_fee = FixedPoint(0)
 
             curve_fee = abs(out.amount - without_fee_or_slippage) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
