@@ -77,8 +77,8 @@ class TradeBreakdownFP:
     without_fee: FixedPoint
     curve_fee: FixedPoint
     gov_curve_fee: FixedPoint
-    flat_fee: FixedPoint = FixedPoint(0.0)
-    gov_flat_fee: FixedPoint = FixedPoint(0.0)
+    flat_fee: FixedPoint = FixedPoint(0)
+    gov_flat_fee: FixedPoint = FixedPoint(0)
 
     @property
     def fee(self) -> FixedPoint:

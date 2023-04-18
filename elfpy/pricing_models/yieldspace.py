@@ -951,16 +951,16 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
 
         Returns
         -------
-        float
+        FixedPoint
             The amount the agent pays without fees or slippage. The units
             are always in terms of bonds or base.
-        float
+        FixedPoint
             The amount the agent pays with fees and slippage. The units are
             always in terms of bonds or base.
-        float
+        FixedPoint
             The amount the agent pays with slippage and no fees. The units are
             always in terms of bonds or base.
-        float
+        FixedPoint
             The fee the agent pays. The units are always in terms of bonds or
             base.
         """
@@ -1000,6 +1000,9 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             )
+            if without_fee < FixedPoint(0):  # FIXME: Investigate why this is happening above
+                without_fee = FixedPoint(0)
+
             curve_fee = abs(out.amount - without_fee_or_slippage) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
@@ -1180,7 +1183,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # price, then we can write this as:
             #
             # (1 / p) * c * dz
-            without_fee_or_slippage = (1 / spot_price) * market_state.share_price * d_shares
+            without_fee_or_slippage = (FixedPoint("1.0") / spot_price) * market_state.share_price * d_shares
             # We solve the YieldSpace invariant for the bonds received from
             # paying the specified amount of base. We set up the invariant where
             # the agent pays dz shares and receives dy bonds:

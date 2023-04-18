@@ -215,38 +215,6 @@ class PricingModel(ABC):
         # p = ((mu * z) / (y + s))^(tau)
         return ((init_share_price * share_reserves) / (bond_reserves + lp_total_supply)) ** tau
 
-    def calc_spot_price_from_reserves_fp(
-        self,
-        market_state: hyperdrive_market.MarketStateFP,
-        time_remaining: time.StretchedTimeFP,
-    ) -> FixedPoint:
-        r"""Calculates the spot price of base in terms of bonds.
-        The spot price is defined as:
-
-        .. math::
-            \begin{align}
-                p &= (\frac{y + s}{\mu z})^{-\tau} \\
-                  &= (\frac{\mu z}{y + s})^{\tau}
-            \end{align}
-
-        Parameters
-        ----------
-        market_state: MarketState
-            The reserves and prices in the pool.
-        time_remaining : StretchedTime
-            The time remaining for the asset (uses time stretch).
-
-        Returns
-        -------
-        FixedPoint
-            The spot price of principal tokens.
-        """
-        # p = ((mu * z) / (y + s))^(tau)
-        return (
-            (market_state.init_share_price * market_state.share_reserves)
-            / (market_state.bond_reserves + market_state.lp_total_supply)
-        ) ** time_remaining.stretched_time
-
     def calc_apr_from_reserves(
         self,
         market_state: hyperdrive_market.MarketState,
@@ -349,8 +317,7 @@ class PricingModel(ABC):
     def calc_time_stretch(self, apr: float) -> float:
         """Returns fixed time-stretch value based on current apr (as a decimal)"""
         apr_percent = apr * 100  # bounded between 0 and 100
-        result = 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
-        return result
+        return 3.09396 / (0.02789 * apr_percent)  # bounded between ~1.109 (apr=1) and inf (apr=0)
 
     def check_input_assertions(
         self,
@@ -700,13 +667,11 @@ class PricingModelFP(ABC):
         return base, bonds
 
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
-        """Returns fixed time-stretch value based on current apr (as a decimal)"""
+        """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""
         apr_percent = apr * FixedPoint(100.0)  # bounded between 0 and 100
-        denom = FixedPoint(0.02789) * apr_percent
-        result = FixedPoint(3.09396) / (
+        return FixedPoint(3.09396) / (
             FixedPoint(0.02789) * apr_percent
         )  # bounded between ~1.109 (apr=1) and inf (apr=0)
-        return result
 
     def check_input_assertions(
         self,
@@ -715,7 +680,6 @@ class PricingModelFP(ABC):
         time_remaining: time.StretchedTimeFP,
     ):
         """Applies a set of assertions to the input of a trading function."""
-
         assert quantity.amount >= elfpy.WEI_FP, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected quantity.amount >= {elfpy.WEI_FP}, not {quantity.amount}!"
@@ -767,7 +731,7 @@ class PricingModelFP(ABC):
             >= -elfpy.PRECISION_THRESHOLD_FP
         ), (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > time_remaining >= {-elfpy.PRECISION_THRESHOLD_FP}"
+            f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > time_remaining >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
             f", not {time_remaining.normalized_time}!"
         )
 
@@ -778,7 +742,6 @@ class PricingModelFP(ABC):
         trade_result: trades.TradeResultFP,
     ):
         """Applies a set of assertions to a trade result."""
-
         assert isinstance(trade_result.breakdown.fee, FixedPoint), (
             "pricing_models.check_output_assertions: ERROR: "
             f"fee should be a FixedPoint, not {type(trade_result.breakdown.fee)}!"
