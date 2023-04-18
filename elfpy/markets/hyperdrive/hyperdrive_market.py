@@ -17,7 +17,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
-from elfpy import FixedPoint
+from elfpy.utils.math import FixedPoint
 
 # dataclasses can have many attributes
 # pylint: disable=too-many-instance-attributes

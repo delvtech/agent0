@@ -18,3 +18,9 @@ class UnsupportedOption(Exception):
     """
     If the output requirement is not met.  Often this is a minimum amount out as slippage protection.
     """
+
+
+class DivisionByZero(Exception):
+    """
+    For FixedPoint type; thrown if trying to divide any FixedPoint number by zero.
+    """
