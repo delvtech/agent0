@@ -57,10 +57,10 @@ class CheckpointFP:
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
-    share_price: FixedPoint = FixedPoint(0.0)
-    long_share_price: FixedPoint = FixedPoint(0.0)
-    long_base_volume: FixedPoint = FixedPoint(0.0)
-    short_base_volume: FixedPoint = FixedPoint(0.0)
+    share_price: FixedPoint = FixedPoint(0)
+    long_share_price: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -268,18 +268,18 @@ class MarketStateFP(base_market.BaseMarketState):
     base_buffer: FixedPoint = FixedPoint(0)
     bond_buffer: FixedPoint = FixedPoint(0)
     variable_apr: FixedPoint = FixedPoint(0)
-    share_price: FixedPoint = FixedPoint(1.0)
-    init_share_price: FixedPoint = FixedPoint(1.0)
+    share_price: FixedPoint = FixedPoint(1.0)  # == 1e18
+    init_share_price: FixedPoint = FixedPoint(1.0)  # == 1e18
     curve_fee_multiple: FixedPoint = FixedPoint(0)
     flat_fee_multiple: FixedPoint = FixedPoint(0)
-    governance_fee_multiple: FixedPoint = FixedPoint(0.0)
-    gov_fees_accrued: FixedPoint = FixedPoint(0.0)
-    longs_outstanding: FixedPoint = FixedPoint(0.0)
-    shorts_outstanding: FixedPoint = FixedPoint(0.0)
-    long_average_maturity_time: FixedPoint = FixedPoint(0.0)
-    short_average_maturity_time: FixedPoint = FixedPoint(0.0)
-    long_base_volume: FixedPoint = FixedPoint(0.0)
-    short_base_volume: FixedPoint = FixedPoint(0.0)
+    governance_fee_multiple: FixedPoint = FixedPoint(0)
+    gov_fees_accrued: FixedPoint = FixedPoint(0)
+    longs_outstanding: FixedPoint = FixedPoint(0)
+    shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_average_maturity_time: FixedPoint = FixedPoint(0)
+    short_average_maturity_time: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
     checkpoints: defaultdict[FixedPoint, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
     checkpoint_duration: FixedPoint = FixedPoint(1 / 365)
     total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
