@@ -160,30 +160,30 @@ class MarketState(base_market.BaseMarketState):
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
+        # assets & prices
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_bond_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
-
+        # tracking open positions
         self.longs_outstanding += delta.longs_outstanding
         self.shorts_outstanding += delta.shorts_outstanding
         self.long_average_maturity_time += delta.long_average_maturity_time
         self.short_average_maturity_time += delta.short_average_maturity_time
         self.long_base_volume += delta.long_base_volume
         self.short_base_volume += delta.short_base_volume
-
+        # tracking shares after closing positions
         self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
-
+        # checkpointing
         for mint_time, delta_checkpoint in delta.long_checkpoints.items():
             self.checkpoints[mint_time].long_base_volume += delta_checkpoint
         for mint_time, delta_checkpoint in delta.short_checkpoints.items():
             self.checkpoints[mint_time].short_base_volume += delta_checkpoint
-
         for mint_time, delta_supply in delta.total_supply_longs.items():
             self.total_supply_longs[mint_time] += delta_supply
         for mint_time, delta_supply in delta.total_supply_shorts.items():
@@ -295,30 +295,30 @@ class MarketStateFP(base_market.BaseMarketState):
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltasFP) -> None:
         r"""Applies a delta to the market state."""
+        # assets & prices
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_bond_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
-
+        # tracking open positions
         self.longs_outstanding += delta.longs_outstanding
         self.shorts_outstanding += delta.shorts_outstanding
         self.long_average_maturity_time += delta.long_average_maturity_time
         self.short_average_maturity_time += delta.short_average_maturity_time
         self.long_base_volume += delta.long_base_volume
         self.short_base_volume += delta.short_base_volume
-
+        # tracking shares after closing positions
         self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
-
+        # checkpointing
         for mint_time, delta_checkpoint in delta.long_checkpoints.items():
             self.checkpoints[mint_time].long_base_volume += delta_checkpoint
         for mint_time, delta_checkpoint in delta.short_checkpoints.items():
             self.checkpoints[mint_time].short_base_volume += delta_checkpoint
-
         for mint_time, delta_supply in delta.total_supply_longs.items():
             self.total_supply_longs[mint_time] += delta_supply
         for mint_time, delta_supply in delta.total_supply_shorts.items():
@@ -510,7 +510,6 @@ class Market(
                 raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
         except AssertionError as err:
             logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
-
         logging.debug(
             "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
@@ -791,7 +790,6 @@ class Market(
         market_deltas, wallet_deltas = self.calc_redeem_withdraw_shares(shares, min_output, as_underlying)
         self.update_market(market_deltas)
         agent_wallet.update(wallet_deltas)
-
         return wallet_deltas.balance.amount
 
     def calc_redeem_withdraw_shares(
@@ -820,10 +818,8 @@ class Market(
         market_deltas = hyperdrive_actions.MarketDeltas()
         # TODO don't use a wallet. issue #315
         wallet_deltas = wallet.Wallet(address=0)
-
         # We burn the shares from the user
         wallet_deltas.withdraw_shares -= _shares
-
         # The user gets a refund on their margin equal to the face value of their withdraw shares
         # times the percent of the withdraw pool which has been lost.
         recovered_margin = (
@@ -831,7 +827,6 @@ class Market(
             * Decimal(self.market_state.withdraw_capital)
             / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
-
         # The user gets interest equal to their percent of the withdraw pool times the withdraw pool
         # interest
         recovered_interest = (
@@ -839,25 +834,21 @@ class Market(
             * Decimal(self.market_state.withdraw_interest)
             / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
-
         # Update the pool state
         # Note - Will revert here if not enough margin has been reclaimed by checkpoints or by
         #  position closes
         market_deltas.withdraw_shares_ready_to_withdraw -= float(shares)
         market_deltas.withdraw_capital -= float(recovered_margin)
         market_deltas.withdraw_interest -= float(recovered_interest)
-
         # Withdraw for the user
         base_proceeds = self._withdraw(float(recovered_margin + recovered_interest), as_underlying)
         # TODO: figure out how to keep track of hyperdrive's base asset amount.  market_deltas has
         # a d_base_asset, but that is used to update the share_reserves :/.
         # market_deltas.d_base_asset -= base_proceeds
         wallet_deltas.balance.amount += base_proceeds
-
         # Enforce min user outputs
         if min_output > Decimal(base_proceeds):
             raise errors.OutputLimit
-
         return market_deltas, wallet_deltas
 
     def _withdraw(self, shares: float, as_underlying: bool) -> float:
@@ -876,13 +867,10 @@ class Market(
         float
           The withdraw_value and share_price as a tuple.
         """
-
         # This yield source doesn't accept the underlying since it's just base.
         if not as_underlying:
             raise errors.UnsupportedOption
-
         # TODO: add step to accrue interest
-
         # Get the amount of base to transfer.
         amount_withdrawn = shares * self.market_state.share_price
         return amount_withdrawn
@@ -906,14 +894,12 @@ class Market(
         hyperdrive_actions.MarketDeltas
             Market deltas that include the capital, interest and shares added to the withdraw pool.
         """
-
         # If we don't have capital to free then simply return zero
         withdraw_share_supply = self.market_state.total_supply_withdraw_shares
         withdraw_shares_ready_to_withdraw = self.market_state.withdraw_shares_ready_to_withdraw
         withdraw_pool_deltas = hyperdrive_actions.MarketDeltas()
         if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
             return withdraw_pool_deltas
-
         # If we have more capital freed than needed we adjust down all values
         if max_capital + withdraw_shares_ready_to_withdraw > withdraw_share_supply:
             # in this case we want max_capital * adjustment + withdraw_shares_ready_to_withdraw = withdraw_share_supply
@@ -926,6 +912,5 @@ class Market(
             withdraw_pool_deltas.withdraw_shares_ready_to_withdraw = max_capital
             withdraw_pool_deltas.withdraw_capital = freed_capital
             withdraw_pool_deltas.withdraw_interest = interest
-
         # Finally return the amount used by this action and the caller can update reserves.
         return withdraw_pool_deltas

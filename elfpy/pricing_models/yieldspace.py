@@ -780,7 +780,6 @@ class YieldspacePricingModel(base_pm.PricingModel):
             market_state.bond_reserves
             - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
         )
-
         # these are both positive values
         return shares_delta, bonds_delta
 
@@ -1000,7 +999,6 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 share_price=market_state.share_price,
                 init_share_price=market_state.init_share_price,
             )
-
             curve_fee = abs(out.amount - without_fee_or_slippage) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
@@ -1203,7 +1201,6 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             )
             curve_fee = (without_fee_or_slippage - in_.amount) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
-
             # To get the amount paid with fees, subtract the fee from the
             # calculation that excluded fees. Subtracting the fees results in less
             # tokens received, which indicates that the fees are working correctly.
@@ -1532,6 +1529,5 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             market_state.bond_reserves
             - market_state.bond_reserves * (market_state.share_reserves - shares_delta) / market_state.share_reserves
         )
-
         # these are both positive values
         return shares_delta, bonds_delta

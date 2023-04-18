@@ -326,7 +326,6 @@ class PricingModel(ABC):
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
-
         assert quantity.amount >= elfpy.WEI, (
             "pricing_models.check_input_assertions: ERROR: "
             f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
@@ -381,7 +380,6 @@ class PricingModel(ABC):
         trade_result: trades.TradeResult,
     ):
         """Applies a set of assertions to a trade result."""
-
         assert isinstance(trade_result.breakdown.fee, float), (
             "pricing_models.check_output_assertions: ERROR: "
             f"fee should be a float, not {type(trade_result.breakdown.fee)}!"
