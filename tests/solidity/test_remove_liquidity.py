@@ -57,7 +57,7 @@ class TestRemoveLiquidity(unittest.TestCase):
 
     def test_remove_liquidity_fail_insufficient_shares(self):
         """Should fail to remove more liquidity than the agent has"""
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AssertionError):
             self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens + 1)
 
     def test_remove_liquidity_no_trades(self):

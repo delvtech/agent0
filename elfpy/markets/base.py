@@ -1,7 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
@@ -70,25 +69,6 @@ class BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
 
-    def check_market_non_zero(self):
-        r"""Checks that all market variables are non-zero within a precision threshold"""
-        # TODO: issue #146
-        # this is an imperfect solution to rounding errors, but it works for now
-        for key, value in self.__dict__.items():
-            if isinstance(value, (int, float)):
-                if 0 > value > -elfpy.PRECISION_THRESHOLD:
-                    logging.debug(
-                        ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                        key,
-                        value,
-                        elfpy.PRECISION_THRESHOLD,
-                    )
-                    setattr(self, key, 0)
-                elif value <= -elfpy.PRECISION_THRESHOLD:
-                    raise AssertionError(
-                        f"MarketState values must be > {-elfpy.PRECISION_THRESHOLD}. Error on {key} = {value}"
-                    )
-
 
 class Market(Generic[State, Deltas, PricingModel]):
     r"""Market state simulator
@@ -128,4 +108,4 @@ class Market(Generic[State, Deltas, PricingModel]):
         """Increments member variables to reflect current market conditions"""
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
-        self.market_state.check_market_non_zero()  # check reserves are non-zero within precision threshold
+        elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold

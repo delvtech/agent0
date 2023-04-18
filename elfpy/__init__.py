@@ -1,7 +1,8 @@
 """Elfpy package"""
 
-import logging
+from __future__ import annotations
 import shutil
+import logging
 
 import matplotlib as mpl
 
@@ -170,3 +171,40 @@ rc_params.update({"savefig.facecolor": GREY})
 
 # Set the params
 mpl.rcParams.update(rc_params)
+
+
+def check_non_zero(data) -> None:
+    r"""
+    Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+    Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
+    If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
+    If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.
+
+    Parameters
+    ----------
+    data : dict or class
+        The data to check for non-zero values.
+    """
+    # TODO: issue #146
+    # this is an imperfect solution to rounding errors, but it works for now
+    try:
+        if not isinstance(data, dict):
+            data = data.__dict__
+    except AttributeError as exception:
+        raise TypeError("dct must be a dict or a class with __dict__") from exception
+    for key, value in data.items():
+        if isinstance(value, (int, float)):
+            if 0 > value > -PRECISION_THRESHOLD:
+                logging.debug(
+                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
+                    key,
+                    value,
+                    PRECISION_THRESHOLD,
+                )
+                setattr(data, key, 0)
+            else:
+                assert (
+                    value > -PRECISION_THRESHOLD
+                ), f"values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
+        elif isinstance(value, (list, tuple, dict)):
+            check_non_zero(value)
