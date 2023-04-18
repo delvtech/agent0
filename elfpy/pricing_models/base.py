@@ -668,9 +668,9 @@ class PricingModelFP(ABC):
 
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
         """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""
-        apr_percent = apr * FixedPoint(100.0)  # bounded between 0 and 100
-        return FixedPoint(3.09396) / (
-            FixedPoint(0.02789) * apr_percent
+        apr_percent = apr * FixedPoint("100.0")  # bounded between 0 and 100
+        return FixedPoint("3.09396") / (
+            FixedPoint("0.02789") * apr_percent
         )  # bounded between ~1.109 (apr=1) and inf (apr=0)
 
     def check_input_assertions(
