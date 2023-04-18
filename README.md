@@ -45,7 +45,7 @@ Python files in the `examples/` folder should be executable from the repository 
 
 ## Contributions
 
-Please refer to [CONTRIBUTING.md](https://github.com/element-fi/elf-simulations/blob/main/INSTALL.md).
+Please refer to [CONTRIBUTING.md](https://github.com/element-fi/elf-simulations/blob/main/CONTRIBUTING.md).
 
 ## Number format
 
