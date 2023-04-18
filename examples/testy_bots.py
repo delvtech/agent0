@@ -35,7 +35,7 @@ import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
 import elfpy.agents.policies.random_agent as random_agent
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.markets.hyperdrive.assets as assets
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.apeworx_integrations as ape_utils
@@ -366,7 +366,9 @@ def get_market_state_from_contract(contract: ContractInstance):
         wrapped around the initialized MockHyperdriveTestnet smart contract.
     """
     pool_state = contract.getPoolInfo().__dict__
-    asset_id = assets.encode_asset_id(assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"])
+    asset_id = hyperdrive_assets.encode_asset_id(
+        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
+    )
     total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, dev_accounts[0].address)
 
     return hyperdrive_market.MarketState(
