@@ -288,10 +288,10 @@ class MarketStateFP(base_market.BaseMarketState):
     total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
         default_factory=lambda: defaultdict(lambda: FixedPoint(0))
     )
-    total_supply_withdraw_shares: FixedPoint = FixedPoint(0.0)
-    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0.0)
-    withdraw_capital: FixedPoint = FixedPoint(0.0)
-    withdraw_interest: FixedPoint = FixedPoint(0.0)
+    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
+    withdraw_capital: FixedPoint = FixedPoint(0)
+    withdraw_interest: FixedPoint = FixedPoint(0)
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltasFP) -> None:
         r"""Applies a delta to the market state."""
