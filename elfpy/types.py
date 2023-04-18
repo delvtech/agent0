@@ -1,10 +1,12 @@
 """Core types used across the repo"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from dataclasses import dataclass, asdict, replace, is_dataclass
+from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import wraps
 from typing import Any, Type
+
+from elfpy.utils.math import FixedPoint
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
@@ -96,6 +98,17 @@ class Quantity:
 
     def __neg__(self):
         return Quantity(amount=-self.amount, unit=self.unit)
+
+
+@dataclass
+class QuantityFP:
+    r"""An amount with a unit"""
+
+    amount: FixedPoint
+    unit: TokenType
+
+    def __neg__(self):
+        return QuantityFP(amount=-self.amount, unit=self.unit)
 
 
 @dataclass

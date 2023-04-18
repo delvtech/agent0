@@ -12,7 +12,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
-from elfpy import FixedPoint
+from elfpy.utils.math import FixedPoint
 from elfpy.utils.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
@@ -108,6 +108,14 @@ class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
     d_base: float
     d_bonds: float
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketActionResultFP(base_market.MarketActionResultFP):
+    r"""The result to a market of performing a trade"""
+    d_base: FixedPoint
+    d_bonds: FixedPoint
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
