@@ -23,6 +23,9 @@ from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 # pylint: disable=too-many-lines
 
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
+
 
 class TestCalcInGivenOut(unittest.TestCase):
     """Unit tests for the calc_in_given_out function"""

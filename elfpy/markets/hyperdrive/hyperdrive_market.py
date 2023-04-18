@@ -22,6 +22,9 @@ from elfpy.utils.math import FixedPoint
 # dataclasses can have many attributes
 # pylint: disable=too-many-instance-attributes
 
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
+
 
 @dataclass
 class Checkpoint:

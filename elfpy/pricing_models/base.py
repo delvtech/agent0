@@ -720,7 +720,8 @@ class PricingModelFP(ABC):
             >= -elfpy.PRECISION_THRESHOLD_FP
         ), (
             "pricing_models.check_input_assertions: ERROR: "
-            f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > time_remaining.stretched_time >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
+            f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > "
+            f"time_remaining.stretched_time >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
             f", not {time_remaining.stretched_time}!"
         )
         assert (

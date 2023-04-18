@@ -18,6 +18,9 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-many-arguments
 
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=too-many-lines
+
 
 class YieldspacePricingModel(base_pm.PricingModel):
     """
