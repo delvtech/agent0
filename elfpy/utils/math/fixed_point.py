@@ -176,8 +176,8 @@ class FixedPoint:
         return f"{float(self):.18f}"
 
     def __repr__(self) -> str:
-        # e.g. FixedPoint('1234')
-        return f"{self.__class__.__name__}('{self._value}')"
+        # e.g. FixedPoint(1234)
+        return f"{self.__class__.__name__}({self._value})"
 
 
 class FixedPointMath:
