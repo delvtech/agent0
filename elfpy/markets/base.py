@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
 
@@ -140,7 +140,7 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
@@ -148,7 +148,7 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
-                value_to_check = value.amount if isinstance(value, types.Quantity) else value
+                value_to_check: Any = value.amount if isinstance(value, types.QuantityFP) else value
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
     def update_market(self, market_deltas: Deltas) -> None:
