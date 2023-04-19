@@ -259,7 +259,7 @@ def get_config() -> simulators.Config:
         with open("random_seed.txt", "r", encoding="utf-8") as f:
             config.random_seed = int(f.read()) + 1
     logging.info("Random seed=%s", config.random_seed)
-    with open("random_seed.txt", "w", encoding="urf-8") as f:
+    with open("random_seed.txt", "w", encoding="utf-8") as f:
         f.write(str(config.random_seed))
     config.title = "testnet bots"
     for key, value in args.__dict__.items():
@@ -429,7 +429,7 @@ def log_and_print(string: str, *args, end="\n") -> None:
     print(string, end=end)
 
 
-def get_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
+def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
     """Get the max and avg max and priority fees from a block"""
     if type2 := [txn for txn in block.transactions if txn.type == 2]:
         max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
@@ -473,7 +473,7 @@ if __name__ == "__main__":
         block_time = latest_block.timestamp
         fist_time = block_time if fist_time == 0 else fist_time
         if block_number > last_executed_block:
-            max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = get_fees(latest_block)
+            max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = get_gas_fees(latest_block)
             log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
             log_string += ", Gas: max={},avg={}, Priority max={},avg={}"
             log_vars = block_number, block_time, no_crash, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
@@ -493,7 +493,7 @@ if __name__ == "__main__":
                 trades: list[types.Trade] = policy.get_trades(market=market)
                 for trade in trades:
                     try:
-                        print(trade)
+                        logging.debug(trade)
                         do_trade(trade_obj=trade, Dai=Dai, hyperdrive=hyperdrive, sim_agents=sim_agents)
                         no_crash += 1
                     except Exception as exc:  # pylint: disable=broad-exception-caught
