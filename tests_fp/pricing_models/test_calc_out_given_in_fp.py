@@ -2,28 +2,30 @@
 from __future__ import annotations
 
 import decimal
-import unittest
 import logging
+import unittest
 
 import numpy as np
-
 from calc_test_dataclasses import (
+    CalcOutGivenInFailureTestCase,
+    CalcOutGivenInSuccessByModelTestResult,
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,
-    CalcOutGivenInSuccessByModelTestResult,
-    CalcOutGivenInFailureTestCase,
 )
 
-import elfpy.types as types
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.pricing_models.base as base_pm
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
+import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
-from elfpy.pricing_models.yieldspace import YieldspacePricingModel
-from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
+from elfpy.utils.math import FixedPoint
 
-# pylint: disable=duplicate-code
 # pylint: disable=too-many-lines
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
 
 
 class TestCalcOutGivenIn(unittest.TestCase):
@@ -32,7 +34,10 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModelFP] = [
+            yieldspace_pm.YieldspacePricingModelFP(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
+        ]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
         # purchased for base.
@@ -65,17 +70,17 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000"),
+                        bond_reserves=FixedPoint("100_000"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -100,7 +105,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 100
                         #                         = 102.50671833648673
-                        without_fee_or_slippage=102.50671833648673,
+                        without_fee_or_slippage=FixedPoint("102.50671833648673"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -113,18 +118,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 102.50516899477225
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=102.50516899477225,
+                        without_fee=FixedPoint("102.50516899477225"),
                         # fee = 0.01 * (p - 1) * 100 = 0.02506718336486724
-                        fee=0.02506718336486724,
+                        fee=FixedPoint("0.02506718336486724"),
                         # with_fee = d_y' - fee
                         #          = 102.50516899477225 - 0.02506718336486724
                         #          = 102.48010181140738
-                        with_fee=102.48010181140738,
+                        with_fee=FixedPoint("102.48010181140738"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9517182274304707) * 1 * 100.0 * 0.5 + 1 * 100.0 * 0.5
-                        without_fee_or_slippage=102.53655815229496,
+                        without_fee_or_slippage=FixedPoint("102.53655815229496"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -137,47 +142,47 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 199900.0 + 100050.0 - (229443.78725685307
                         #       - 1.0 * (1 * (100050.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 100.0 * 0.5
-                        without_fee=102.5357591957436,
+                        without_fee=FixedPoint("102.5357591957436"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.050731163045899 - 1) * 0.01 * 1 * 100.0
-                        fee=0.025365581522949543,
-                        with_fee=102.51039361422065,
+                        fee=FixedPoint("0.025365581522949543"),
+                        with_fee=FixedPoint("102.51039361422065"),
                     ),
                 ),
             ),
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.2,
-                        flat_fee_multiple=0.0,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.2"),
+                        flat_fee_multiple=FixedPoint("0.0"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
                 # `with_fee` since the fee percentage changed.
                 CalcOutGivenInSuccessByModelTestResult(
                     yieldspace=CalcOutGivenInSuccessTestResult(
-                        without_fee_or_slippage=102.50671833648673,
-                        without_fee=102.50516899477225,
+                        without_fee_or_slippage=FixedPoint("102.50671833648673"),
+                        without_fee=FixedPoint("102.50516899477225"),
                         # fee = 0.2 * (p - 1) * 100 = 0.5013436672973448
-                        fee=0.5013436672973448,
+                        fee=FixedPoint("0.5013436672973448"),
                         # with_fee = d_y' - fee
                         #          = 102.50516899477225 - 0.5013436672973448
                         #          = 102.0038253274749
-                        with_fee=102.0038253274749,
+                        with_fee=FixedPoint("102.0038253274749"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9517182274304707) * 1 * 100.0 * 0.5 + 1 * 100.0 * 0.5
-                        without_fee_or_slippage=102.53655815229496,
+                        without_fee_or_slippage=FixedPoint("102.53655815229496"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -190,28 +195,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 199900.0 + 100050.0 - (229443.78725685307 - 1.0
                         #       * (1 * (100050.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 100.0 * 0.5
-                        without_fee=102.5357591957436,
+                        without_fee=FixedPoint("102.5357591957436"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.050731163045899 - 1) * 0.2 * 1 * 100.0
-                        fee=0.5073116304589909,
-                        with_fee=102.02844756528461,
+                        fee=FixedPoint("0.5073116304589909"),
+                        with_fee=FixedPoint("102.02844756528461"),
                     ),
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=10_000, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("10_000.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
@@ -220,7 +225,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 10_000
                         #                         = 10250.671833648672
-                        without_fee_or_slippage=10250.671833648672,
+                        without_fee_or_slippage=FixedPoint("10250.671833648672"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -233,18 +238,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 10235.514826394327
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=10235.514826394327,
+                        without_fee=FixedPoint("10235.514826394327"),
                         # fee = 0.01 * (p - 1) * 10_000 = 2.506718336486724
-                        fee=2.506718336486724,
+                        fee=FixedPoint("2.506718336486724"),
                         # with_fee = d_y' - fee
                         #          = 10235.514826394327 - 2.506718336486724
                         #          = 10233.00810805784
-                        with_fee=10233.00810805784,
+                        with_fee=FixedPoint("10233.00810805784"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9545075460138804) * 1 * 10000.0 * 0.5 + 1 * 10000.0 * 0.5
-                        without_fee_or_slippage=10238.303270498493,
+                        without_fee_or_slippage=FixedPoint("10238.303270498493"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -257,28 +262,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 190000.0 + 105000.0 - (229575.5303140286 - 1.0
                         #       * (1 * (105000.0 + 10000.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 10000.0 * 0.5
-                        without_fee=10230.669780368684,
+                        without_fee=FixedPoint("10230.669780368684"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0476606540996984 - 1) * 0.01 * 1 * 10000.0
-                        fee=2.383032704984922,
-                        with_fee=10228.286747663698,
+                        fee=FixedPoint("2.383032704984922"),
+                        with_fee=FixedPoint("10228.286747663698"),
                     ),
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=80_000, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("80_000.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
@@ -288,7 +293,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0250671833648672 * 80_000
                         #                         = 82005.37466918938
-                        without_fee_or_slippage=82005.37466918938,
+                        without_fee_or_slippage=FixedPoint("82005.37466918938"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -301,18 +306,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 81138.27602200207
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=81138.27602200207,
+                        without_fee=FixedPoint("81138.27602200207"),
                         # fee = 0.01 * (p - 1) * 80_000 = 20.053746691893792
-                        fee=20.053746691893792,
+                        fee=FixedPoint("20.053746691893792"),
                         # with_fee = d_y' - fee
                         #          = 81138.27602200207 - 20.053746691893792
                         #          = 81118.22227531018
-                        with_fee=81118.22227531018,
+                        with_fee=FixedPoint("81118.22227531018"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9724844998246822) * 1 * 80000.0 * 0.5 + 1 * 80000.0 * 0.5
-                        without_fee_or_slippage=81131.76097635605,
+                        without_fee_or_slippage=FixedPoint("81131.76097635605"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -325,11 +330,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 120000.0 + 140000.0 - (230291.34947619453 - 1.0
                         #       * (1 * (140000.0 + 80000.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 80000.0 * 0.5
-                        without_fee=80737.60201076139,
+                        without_fee=FixedPoint("80737.60201076139"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0282940244089014 - 1) * 0.01 * 1 * 80000.0
-                        fee=11.317609763560556,
-                        with_fee=80726.28440099783,
+                        fee=FixedPoint("11.317609763560556"),
+                        with_fee=FixedPoint("80726.28440099783"),
                     ),
                 ),
             ),
@@ -337,17 +342,17 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     # Base in of 200 is 100 shares at the current share price.
-                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -372,7 +377,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0223499142867662 * 200
                         #                         = 204.46998285735324
-                        without_fee_or_slippage=204.46998285735324,
+                        without_fee_or_slippage=FixedPoint("204.46998285735324"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -385,18 +390,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 204.46650180319557
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=204.46650180319557,
+                        without_fee=FixedPoint("204.46650180319557"),
                         # fee = 0.01 * (p - 1) * 200 = 0.044699828573532496
-                        fee=0.044699828573532496,
+                        fee=FixedPoint("0.044699828573532496"),
                         # with_fee = d_y' - fee
                         #          = 204.46650180319557 - 0.044699828573532496
                         #          = 204.42180197462204
-                        with_fee=204.42180197462204,
+                        with_fee=FixedPoint("204.42180197462204"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.9567876240571412) * 2 * 100.0 * 0.5 + 2 * 100.0 * 0.5
-                        without_fee_or_slippage=204.51640205792188,
+                        without_fee_or_slippage=FixedPoint("204.51640205792188"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -409,28 +414,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 199800.0 + 200100.0 - (340529.31114464573 - 1.3333333333333333
                         #       * (1.5 * (100050.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 100.0 * 0.5
-                        without_fee=204.51460954395588,
+                        without_fee=FixedPoint("204.51460954395588"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.045164020579219 - 1) * 0.01 * 2 * 100.0
-                        fee=0.04516402057921898,
-                        with_fee=204.46944552337666,
+                        fee=FixedPoint("0.04516402057921898"),
+                        with_fee=FixedPoint("204.46944552337666"),
                     ),
                 ),
             ),
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("1_000_000.0"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -455,7 +460,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0623907066406753 * 200
                         #                         = 212.47814132813505
-                        without_fee_or_slippage=212.47814132813505,
+                        without_fee_or_slippage=FixedPoint("212.47814132813505"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -468,18 +473,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 212.47551672440022
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=212.47551672440022,
+                        without_fee=FixedPoint("212.47551672440022"),
                         # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                        fee=0.1247814132813505,
+                        fee=FixedPoint("0.1247814132813505"),
                         # with_fee = d_y' - fee
                         #          = 212.47551672440022 - 0.1247814132813505
                         #          = 212.35073531111888
-                        with_fee=212.35073531111888,
+                        with_fee=FixedPoint("212.35073531111888"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.8860171912017127) * 2 * 100.0 * 0.5 + 2 * 100.0 * 0.5
-                        without_fee_or_slippage=212.86462722508705,
+                        without_fee_or_slippage=FixedPoint("212.86462722508705"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -492,28 +497,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 1999800.0 + 200100.0 - (1255977.392544668 - 1.3333333333333333
                         #       * (1.5 * (100050.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 100.0 * 0.5
-                        without_fee=212.86322583956644,
+                        without_fee=FixedPoint("212.86322583956644"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.1286462722508706 - 1) * 0.01 * 2 * 100.0
-                        fee=0.12864627225087055,
-                        with_fee=212.73457956731556,
+                        fee=FixedPoint("0.12864627225087055"),
+                        with_fee=FixedPoint("212.73457956731556"),
                     ),
                 ),
             ),
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("1_000_000.0"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=91.25,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("91.25"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -538,7 +543,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0307233899745727 * 200
                         #                         = 206.14467799491453
-                        without_fee_or_slippage=206.14467799491453,
+                        without_fee_or_slippage=FixedPoint("206.14467799491453"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -551,18 +556,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 206.14340814948082
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=206.14340814948082,
+                        without_fee=FixedPoint("206.14340814948082"),
                         # fee = 0.01 * (p - 1) * 200 = 0.06144677994914538
-                        fee=0.06144677994914538,
+                        fee=FixedPoint("0.06144677994914538"),
                         # with_fee = d_y' - fee
                         #          = 206.14340814948082 - 0.06144677994914538
                         #          = 206.08196136953168
-                        with_fee=206.08196136953168,
+                        with_fee=FixedPoint("206.08196136953168"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.8860280762544887) * 2 * 100.0 * 0.25 + 2 * 100.0 * 0.75
-                        without_fee_or_slippage=206.4316203289689,
+                        without_fee_or_slippage=FixedPoint("206.4316203289689"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -575,28 +580,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 1999700.0 + 200150.0 - (1255980.5727267754 - 1.3333333333333333
                         #       * (1.5 * (100075.0 + 100.0*0.25))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 100.0 * 0.75
-                        without_fee=206.43127003777772,
+                        without_fee=FixedPoint("206.43127003777772"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.1286324065793778 - 1) * 0.01 * 2 * 100.0
-                        fee=0.0643162032896889,
-                        with_fee=206.36695383448804,
+                        fee=FixedPoint("0.0643162032896889"),
+                        with_fee=FixedPoint("206.36695383448804"),
                     ),
                 ),
             ),
             # A time stretch targeting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=200, unit=types.TokenType.BASE),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("1_000_000.0"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=91.25,
-                    time_stretch_apy=0.10,
+                    days_remaining=FixedPoint("91.25"),
+                    time_stretch_apy=FixedPoint("0.10"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -621,7 +626,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = p * in_
                         #                         = 1.0623907066406753 * 200
                         #                         = 212.47814132813505
-                        without_fee_or_slippage=212.47814132813505,
+                        without_fee_or_slippage=FixedPoint("212.47814132813505"),
                         # We want to solve for the amount of bonds out given the
                         # amount of shares coming in, so we set up the problem as:
                         #
@@ -634,18 +639,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         #       = 212.47551672440022
                         #
                         # Note that this is slightly smaller than the without slippage value
-                        without_fee=212.47551672440022,
+                        without_fee=FixedPoint("212.47551672440022"),
                         # fee = 0.01 * (p - 1) * 200 = 0.1247814132813505
-                        fee=0.1247814132813505,
+                        fee=FixedPoint("0.1247814132813505"),
                         # with_fee = d_y' - fee
                         #          = 212.47551672440022 - 0.1247814132813505
                         #          = 212.35073531111888
-                        with_fee=212.35073531111888,
+                        with_fee=FixedPoint("212.35073531111888"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = (1 / p) * c * delta_z * t + c * delta_z * (1 - t)
                         # spot_price = (1 / 0.7850457519112299) * 2 * 100.0 * 0.25 + 2 * 100.0 * 0.75
-                        without_fee_or_slippage=213.6905554590579,
+                        without_fee_or_slippage=FixedPoint("213.6905554590579"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -658,11 +663,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 1999700.0 + 200150.0 - (658100.1250781124 - 1.3333333333333333
                         #       * (1.5 * (100075.0 + 100.0*0.25))**(0.9098566238736118))**(1.0990742648469305)
                         #       + 2 * 100.0 * 0.75
-                        without_fee=213.68975529121235,
+                        without_fee=FixedPoint("213.68975529121235"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.273811109181158 - 1) * 0.01 * 2 * 100.0
-                        fee=0.13690555459057896,
-                        with_fee=213.55284973662177,
+                        fee=FixedPoint("0.13690555459057896"),
+                        with_fee=FixedPoint("213.55284973662177"),
                     ),
                 ),
             ),
@@ -699,17 +704,17 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -734,7 +739,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 100
                         #                         = 97.55458141947516
-                        without_fee_or_slippage=97.55458141947516,
+                        without_fee_or_slippage=FixedPoint("97.55458141947516"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -749,18 +754,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                         # that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=97.55314236719278,
+                        without_fee=FixedPoint("97.55314236719278"),
                         # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                        fee=0.024454185805248493,
+                        fee=FixedPoint("0.024454185805248493"),
                         # with_fee = d_x' - fee
                         #          = 97.55314236719278 - 0.024454185805248493
                         #          = 97.52868818138752
-                        with_fee=97.52868818138752,
+                        with_fee=FixedPoint("97.52868818138752"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9516610350825238 * 100 * 0.5 + 100 * 0.5
-                        without_fee_or_slippage=97.58305175412619,
+                        without_fee_or_slippage=FixedPoint("97.58305175412619"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -773,47 +778,47 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 200100.0 + 99950.0 - (229441.04155954163 - 1.0
                         #       * (1 * (99950.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 100.0 * 0.5
-                        without_fee=97.58236250383197,
+                        without_fee=FixedPoint("97.58236250383197"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0507943092503356 - 1) * 0.01 * 1 * 100.0
-                        fee=0.02416948245873818,
-                        with_fee=97.55819302137324,
+                        fee=FixedPoint("0.02416948245873818"),
+                        with_fee=FixedPoint("97.55819302137324"),
                     ),
                 ),
             ),
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.2,
-                        flat_fee_multiple=0.0,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.2"),
+                        flat_fee_multiple=FixedPoint("0.0"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case. The only values that should change are `fee` and
                 # `with_fee` since the fee percentage changed.
                 CalcOutGivenInSuccessByModelTestResult(
                     yieldspace=CalcOutGivenInSuccessTestResult(
-                        without_fee_or_slippage=97.55458141947516,
-                        without_fee=97.55314236719278,
+                        without_fee_or_slippage=FixedPoint("97.55458141947516"),
+                        without_fee=FixedPoint("97.55314236719278"),
                         # fee = 0.2 * (1 - (1 / p)) * 100 = 0.48908371610497
-                        fee=0.48908371610497,
+                        fee=FixedPoint("0.48908371610497"),
                         # with_fee = d_x' - fee
                         #          = 97.55314236719278 - 0.48908371610497
                         #          = 97.0640586510878
-                        with_fee=97.0640586510878,
+                        with_fee=FixedPoint("97.0640586510878"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9516610350825238 * 100 * 0.5 + 100 * 0.5
-                        without_fee_or_slippage=97.58305175412619,
+                        without_fee_or_slippage=FixedPoint("97.58305175412619"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -826,28 +831,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 200100.0 + 99950.0 - (229441.04155954163 - 1.0
                         #       * (1 * (99950.0 + 100.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 100.0 * 0.5
-                        without_fee=97.58236250383197,
+                        without_fee=FixedPoint("97.58236250383197"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0507943092503356 - 1) * 0.2 * 1 * 100.0
-                        fee=0.4833896491747636,
-                        with_fee=97.0989728546572,
+                        fee=FixedPoint("0.4833896491747636"),
+                        with_fee=FixedPoint("97.0989728546572"),
                     ),
                 ),
             ),
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=10_000, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("10_000.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
@@ -856,7 +861,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 10_000
                         #                         = 9755.458141947514
-                        without_fee_or_slippage=9755.458141947514,
+                        without_fee_or_slippage=FixedPoint("9755.458141947514"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -871,18 +876,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                         # that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=9740.77011591768,
+                        without_fee=FixedPoint("9740.77011591768"),
                         # fee = 0.01 * (1 - (1 / p)) * 10_000 = 2.4454185805248496
-                        fee=2.4454185805248496,
+                        fee=FixedPoint("2.4454185805248496"),
                         # with_fee = d_x' - fee
                         #          = 9740.77011591768 - 2.4454185805248496
                         #          = 9738.324697337155
-                        with_fee=9738.324697337155,
+                        with_fee=FixedPoint("9738.324697337155"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9487848776296056 * 10000 * 0.5 + 10000 * 0.5
-                        without_fee_or_slippage=9743.924388148029,
+                        without_fee_or_slippage=FixedPoint("9743.924388148029"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -895,28 +900,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 210000.0 + 95000.0 - (229300.86075687787 - 1.0
                         #       * (1 * (95000.0 + 10000.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 10000.0 * 0.5
-                        without_fee=9736.764362542177,
+                        without_fee=FixedPoint("9736.764362542177"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0539796992742418 - 1) * 0.01 * 1 * 10000.0
-                        fee=2.5607561185197247,
-                        with_fee=9734.203606423658,
+                        fee=FixedPoint("2.5607561185197247"),
+                        with_fee=FixedPoint("9734.203606423658"),
                     ),
                 ),
             ),
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=80_000, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=1,
-                        init_share_price=1,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("80_000.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("1.0"),
+                        init_share_price=FixedPoint("1.0"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants are the same as the "Low slippage trade"
                 # case.
@@ -925,7 +930,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0250671833648672) * 80_000
                         #                         = 78043.66513558012
-                        without_fee_or_slippage=78043.66513558012,
+                        without_fee_or_slippage=FixedPoint("78043.66513558012"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -940,18 +945,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z'. Since c = 1, d_x' = d_z'. Note
                         # that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=76850.14470187116,
+                        without_fee=FixedPoint("76850.14470187116"),
                         # fee = 0.01 * (1 - (1 / p)) * 80_000 = 19.563348644198797
-                        fee=19.563348644198797,
+                        fee=FixedPoint("19.563348644198797"),
                         # with_fee = d_x' - fee
                         #          = 76850.14470187116 - 19.563348644198797
                         #          = 76830.58135322697
-                        with_fee=76830.58135322697,
+                        with_fee=FixedPoint("76830.58135322697"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9247966553572445 * 80000 * 0.5 + 80000 * 0.5
-                        without_fee_or_slippage=76991.86621428978,
+                        without_fee_or_slippage=FixedPoint("76991.86621428978"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -964,28 +969,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 280000.0 + 60000.0 - (228040.6635311023 - 1.0
                         #       * (1 * (60000.0 + 80000.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 1 * 80000.0 * 0.5
-                        without_fee=76247.60327471803,
+                        without_fee=FixedPoint("76247.60327471803"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.081318789603218 - 1) * 0.01 * 1 * 80000.0
-                        fee=30.081337857102145,
-                        with_fee=76217.52193686093,
+                        fee=FixedPoint("30.081337857102145"),
+                        with_fee=FixedPoint("76217.52193686093"),
                     ),
                 ),
             ),
             # Non-trivial initial share price and share price.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=100_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("100_000.0"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants for time are the same as the "Low
                 # slippage trade" case.
@@ -1004,7 +1009,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0223499142867662) * 100
                         #                         = 97.813868424652
-                        without_fee_or_slippage=97.813868424652,
+                        without_fee_or_slippage=FixedPoint("97.813868424652"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -1019,18 +1024,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z' = 2 * 48.906526897713775 = 97.81305379542755.
                         # Note that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=97.81305379542755,
+                        without_fee=FixedPoint("97.81305379542755"),
                         # fee = 0.01 * (1 - (1 / p)) * 100 = 0.024454185805248493
-                        fee=0.02186131575348005,
+                        fee=FixedPoint("0.02186131575348005"),
                         # with_fee = d_x' - fee
                         #          = 97.81305379542755 - 0.02186131575348005
                         #          = 97.79119247967407
-                        with_fee=97.79119247967407,
+                        with_fee=FixedPoint("97.79119247967407"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.9567391137793314 * 100 * 0.5 + 100 * 0.5
-                        without_fee_or_slippage=97.83695568896657,
+                        without_fee_or_slippage=FixedPoint("97.83695568896657"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -1043,28 +1048,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 200100.0 + 199950.0 - (340525.6919141115 - 1.3333333333333333
                         #       * (1.5 * (99975.0 + 50.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 50.0 * 0.5
-                        without_fee=97.83656302187592,
+                        without_fee=FixedPoint("97.83656302187592"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.0452170143329653 - 1) * 0.01 * 2 * 50.0
-                        fee=0.021630443110334296,
-                        with_fee=97.81493257876558,
+                        fee=FixedPoint("0.021630443110334296"),
+                        with_fee=FixedPoint("97.81493257876558"),
                     ),
                 ),
             ),
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000.0"),
+                        bond_reserves=FixedPoint("1_000_000."),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=182.5,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("182.5"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # The trading constants for time are the same as the "Low
                 # slippage trade" case.
@@ -1084,7 +1089,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0623907066406753) * 100
                         #                         = 94.1273294042681
-                        without_fee_or_slippage=94.1273294042681,
+                        without_fee_or_slippage=FixedPoint("94.1273294042681"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -1099,18 +1104,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
                         # Note that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=94.12678195475019,
+                        without_fee=FixedPoint("94.12678195475019"),
                         # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731877
-                        fee=0.05872670595731899,
+                        fee=FixedPoint("0.05872670595731899"),
                         # with_fee = d_x' - fee
                         #          = 94.12678195475019 - 0.05872670595731899
                         #          = 94.06805524879287
-                        with_fee=94.06805524879287,
+                        with_fee=FixedPoint("94.06805524879287"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.8859845220046657 * 100 * 0.5 + 100 * 0.5
-                        without_fee_or_slippage=94.29922610023328,
+                        without_fee_or_slippage=FixedPoint("94.29922610023328"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -1123,28 +1128,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 2000100.0 + 199950.0 - (1255967.849960625 - 1.3333333333333333
                         #       * (1.5 * (99975.0 + 50.0*0.5))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 50.0 * 0.5
-                        without_fee=94.29898221750045,
+                        without_fee=FixedPoint("94.29898221750045"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.1286878891939987 - 1) * 0.01 * 2 * 50.0
-                        fee=0.05700773899766715,
-                        with_fee=94.24197447850278,
+                        fee=FixedPoint("0.05700773899766715"),
+                        with_fee=FixedPoint("94.24197447850278"),
                     ),
                 ),
             ),
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000"),
+                        bond_reserves=FixedPoint("1_000_000"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=91.25,
-                    time_stretch_apy=0.05,
+                    days_remaining=FixedPoint("91.25"),
+                    time_stretch_apy=FixedPoint("0.05"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -1169,7 +1174,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0307233899745727) * 100
                         #                         = 97.0192400528205
-                        without_fee_or_slippage=97.0192400528205,
+                        without_fee_or_slippage=FixedPoint("97.0192400528205"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -1184,18 +1189,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z' = 2 * 48.50947500564507 = 97.01895001129014.
                         # Note that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=97.01895001129014,
+                        without_fee=FixedPoint("97.01895001129014"),
                         # fee = 0.01 * (1 - (1 / p)) * 100 = 0.0298075994717949
-                        fee=0.0298075994717949,
+                        fee=FixedPoint("0.0298075994717949"),
                         # with_fee = d_x' - fee
                         #          = 97.01895001129014 - 0.0298075994717949
                         #          = 96.98914241181835
-                        with_fee=96.98914241181835,
+                        with_fee=FixedPoint("96.98914241181835"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.8859790750896572 * 100 * 0.25 + 100 * 0.75
-                        without_fee_or_slippage=97.14947687724143,
+                        without_fee_or_slippage=FixedPoint("97.14947687724143"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -1208,28 +1213,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 2000150.0 + 199925.0 - (1255966.2592326764 - 1.3333333333333333
                         #       * (1.5 * (99962.5 + 50.0*0.25))**(0.9549283119368059))**(1.0471990279267966)
                         #       + 2 * 50.0 * 0.75
-                        without_fee=97.14941590232775,
+                        without_fee=FixedPoint("97.14941590232775"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.1286948282596905 - 1) * 0.01 * 2 * 50.0
-                        fee=0.028505231227585665,
-                        with_fee=97.12091067110016,
+                        fee=FixedPoint("0.028505231227585665"),
+                        with_fee=FixedPoint("97.12091067110016"),
                     ),
                 ),
             ),
             # A time stretch targetting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                    market_state=MarketState(
-                        share_reserves=100_000,
-                        bond_reserves=1_000_000,
-                        share_price=2,
-                        init_share_price=1.5,
-                        curve_fee_multiple=0.01,
-                        flat_fee_multiple=0.00,
+                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    market_state=hyperdrive_market.MarketStateFP(
+                        share_reserves=FixedPoint("100_000"),
+                        bond_reserves=FixedPoint("1_000_000"),
+                        share_price=FixedPoint("2.0"),
+                        init_share_price=FixedPoint("1.5"),
+                        curve_fee_multiple=FixedPoint("0.01"),
+                        flat_fee_multiple=FixedPoint("0.00"),
                     ),
-                    days_remaining=91.25,
-                    time_stretch_apy=0.10,
+                    days_remaining=FixedPoint("91.25"),
+                    time_stretch_apy=FixedPoint("0.10"),
                 ),
                 # From the input, we have the following values:
                 #
@@ -1254,7 +1259,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # without_fee_or_slippage = (1 / p) * in_
                         #                         = (1 / 1.0623907066406753) * 100
                         #                         = 94.1273294042681
-                        without_fee_or_slippage=94.1273294042681,
+                        without_fee_or_slippage=FixedPoint("94.1273294042681"),
                         # We want to solve for the amount of shares out given the
                         # amount of bonds coming in, so we set up the problem as:
                         #
@@ -1269,18 +1274,18 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # The output is d_x' = c * d_z' = 2 * 47.06339097737509 = 94.12678195475019.
                         # Note that this is slightly smaller than the without slippage
                         # value.
-                        without_fee=94.12678195475019,
+                        without_fee=FixedPoint("94.12678195475019"),
                         # fee = 0.01 * (1 - (1 / p)) * 100 = 0.05872670595731899
-                        fee=0.05872670595731899,
+                        fee=FixedPoint("0.05872670595731899"),
                         # with_fee = d_x' - fee
                         #          = 94.12678195475019 - 0.05872670595731899
                         #          = 94.06805524879287
-                        with_fee=94.06805524879287,
+                        with_fee=FixedPoint("94.06805524879287"),
                     ),
                     hyperdrive=CalcOutGivenInSuccessTestResult(
                         # spot_price = p * delta_y * t + delta_y * (1 - t)
                         # spot_price = 0.7849589214967245 * 100 * 0.25 + 100 * 0.75
-                        without_fee_or_slippage=94.62397303741811,
+                        without_fee_or_slippage=FixedPoint("94.62397303741811"),
                         # yield space equation (for hyperdrive multiply d_z by t):
                         # k = (c / mu) * (mu * (z + d_z))**(1 - tau) + (2y + cz - d_y')**(1 - tau)
                         # dy' = 2y + c*z - (k - (c / mu) * (mu * (z + d_z))**(1 - tau))**(1 / (1 - tau))
@@ -1293,11 +1298,11 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         # dy' = 2000150.0 + 199925.0 - (658085.0939516554 - 1.3333333333333333
                         #       * (1.5 * (99962.5 + 50.0*0.25))**(0.9098566238736118))**(1.0990742648469305)
                         #       + 2 * 50.0 * 0.75
-                        without_fee=94.62387616650085,
+                        without_fee=FixedPoint("94.62387616650085"),
                         # fee = ((1 / p) - 1) * phi * c * d_z
                         # fee = (1.273952015340172 - 1) * 0.01 * 2 * 50.0
-                        fee=0.05376026962581887,
-                        with_fee=94.57011589687504,
+                        fee=FixedPoint("0.05376026962581887"),
+                        with_fee=FixedPoint("94.57011589687504"),
                     ),
                 ),
             ),
@@ -1329,8 +1334,10 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 trade_result = pricing_model.calc_out_given_in(
                     in_=test_case.in_,
                     market_state=test_case.market_state,
-                    time_remaining=time.StretchedTime(
-                        days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
+                    time_remaining=time.StretchedTimeFP(
+                        days=test_case.days_remaining,
+                        time_stretch=time_stretch,
+                        normalizing_constant=FixedPoint("365.0"),
                     ),
                 )
                 np.testing.assert_almost_equal(
@@ -1363,269 +1370,309 @@ class TestCalcOutGivenIn(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModelFP] = [
+            yieldspace_pm.YieldspacePricingModelFP(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
+        ]
 
         for pricing_model in pricing_models:
             for trade_amount in [1 / 10**x for x in range(0, 19)]:
                 # in is in base, out is in bonds
-                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
-                market_state = MarketState(
-                    share_reserves=1,
-                    bond_reserves=20_000_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.BASE)
+                market_state = hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("1.0"),
+                    bond_reserves=FixedPoint("20_000_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 )
                 # TODO: convert these tests to use total supply, not the approximation
                 # approximation of total supply
                 market_state.lp_total_supply = (
                     market_state.bond_reserves + market_state.share_price * market_state.share_reserves
                 )
-                time_remaining = time.StretchedTime(
-                    days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining = time.StretchedTimeFP(
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 )
                 trade_result = pricing_model.calc_out_given_in(
                     in_=trade_quantity,
                     market_state=market_state,
                     time_remaining=time_remaining,
                 )
-                self.assertGreater(trade_result.breakdown.with_fee, 0.0)
+                self.assertGreater(trade_result.breakdown.with_fee, FixedPoint(0))
 
                 # in is in bonds, out is in base
-                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
-                market_state = MarketState(
-                    share_reserves=10_000_000_000,
-                    bond_reserves=1,
-                    share_price=2,
-                    init_share_price=1.2,
+                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.PT)
+                market_state = hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("10_000_000_000"),
+                    bond_reserves=FixedPoint("1.0"),
+                    share_price=FixedPoint("2.0"),
+                    init_share_price=FixedPoint("1.2"),
                 )
-                time_remaining = time.StretchedTime(
-                    days=365, time_stretch=pricing_model.calc_time_stretch(0.05), normalizing_constant=365
+                time_remaining = time.StretchedTimeFP(
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 )
                 trade_result = pricing_model.calc_out_given_in(
                     in_=trade_quantity,
                     market_state=market_state,
                     time_remaining=time_remaining,
                 )
-                self.assertGreater(trade_result.breakdown.with_fee, 0.0)
+                self.assertGreater(trade_result.breakdown.with_fee, FixedPoint(0))
 
     # TODO: This should be refactored to be a test for check_input_assertions and check_output_assertions
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
         output_utils.setup_logging("test_calc_out_given_in")
-        pricing_models: list[PricingModel] = [YieldspacePricingModel(), HyperdrivePricingModel()]
+        pricing_models: list[base_pm.PricingModelFP] = [
+            yieldspace_pm.YieldspacePricingModelFP(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
+        ]
 
         # Failure test cases.
         failure_test_cases = [
             CalcOutGivenInFailureTestCase(  # test 0
                 # amount negative
-                in_=types.Quantity(amount=-1, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("-1.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 1
                 # amount 0
-                in_=types.Quantity(amount=0, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("0.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 2
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
                     # share reserves negative
-                    share_reserves=-1,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                    share_reserves=FixedPoint("-1.0"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 3
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
                     # bond reserves negative
-                    bond_reserves=-1,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                    bond_reserves=FixedPoint("-1.0"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 4
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=-1,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("-1.0"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # trade fee negative
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 5
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=-1,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("-1.0"),
                 ),
                 # flat fee negative
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 6
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=1.1,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("1.1"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # trade fee above 1
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 7
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=1.1,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("1.1"),
                 ),
                 # flat fee above 1
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 8
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining negative
-                time_remaining=time.StretchedTime(days=-91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("-91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 9
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining == 365, will get divide by zero error
-                time_remaining=time.StretchedTime(days=365, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("365.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=(AssertionError, decimal.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 10
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining > 365
-                time_remaining=time.StretchedTime(days=500, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("500.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 11
                 # amount very high, can't make trade
-                in_=types.Quantity(amount=10_000_000, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint("10_000_000"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=(decimal.InvalidOperation, decimal.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 12
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=2,
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("2.0"),
                     # init_share_price 0
-                    init_share_price=0,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                    init_share_price=FixedPoint("0.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 13
                 # amount < 1 wei
-                in_=types.Quantity(amount=0.5e-18, unit=types.TokenType.PT),
-                market_state=MarketState(
-                    share_reserves=100_000,
-                    bond_reserves=1_000_000,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                in_=types.QuantityFP(amount=FixedPoint(0.5e-18), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
+                    share_reserves=FixedPoint("100_000"),
+                    bond_reserves=FixedPoint("1_000_000"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 14
-                in_=types.Quantity(amount=100, unit=types.TokenType.PT),
-                market_state=MarketState(
+                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                market_state=hyperdrive_market.MarketStateFP(
                     # reserves waaaay unbalanced
-                    share_reserves=30_000_000_000,
-                    bond_reserves=1,
-                    share_price=1,
-                    init_share_price=1,
-                    curve_fee_multiple=0.01,
-                    flat_fee_multiple=0.01,
+                    share_reserves=FixedPoint("30_000_000_000"),
+                    bond_reserves=FixedPoint("1.0"),
+                    share_price=FixedPoint("1.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.01"),
+                    flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTime(days=91.25, time_stretch=1, normalizing_constant=365),
+                time_remaining=time.StretchedTimeFP(
+                    days=FixedPoint("91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
+                ),
                 exception_type=AssertionError,
             ),
         ]
