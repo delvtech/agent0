@@ -37,10 +37,11 @@ DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
 # Plotting defaults
-BLACK = "black"
 WHITE = "white"
-GREY = "#303030"
-LIGHTGREY = "#737373"
+LIGHTGREY = "#D3D3D3"
+GREY = "#737373"
+DARKGREY = "#303030"
+BLACK = "black"
 CYCLE = "colorblind"
 CMAPCYC = "twilight"
 CMAPDIV = "BuRd"
@@ -163,15 +164,17 @@ rc_params = {
 
 # Dark mode
 rc_params.update({"axes.edgecolor": LIGHTGREY})
-rc_params.update({"axes.facecolor": GREY})
+rc_params.update({"axes.facecolor": DARKGREY})
 rc_params.update({"axes.labelcolor": WHITE})
-rc_params.update({"figure.facecolor": GREY})
-rc_params.update({"patch.edgecolor": GREY})
+rc_params.update({"grid.alpha": 0.5})
+rc_params.update({"grid.color": GREY})
+rc_params.update({"figure.facecolor": DARKGREY})
+rc_params.update({"patch.edgecolor": DARKGREY})
 rc_params.update({"patch.force_edgecolor": True})
 rc_params.update({"text.color": WHITE})
 rc_params.update({"xtick.color": LIGHTGREY})
 rc_params.update({"ytick.color": LIGHTGREY})
-rc_params.update({"savefig.facecolor": GREY})
+rc_params.update({"savefig.facecolor": DARKGREY})
 
 # Set the params
 mpl.rcParams.update(rc_params)
