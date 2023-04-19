@@ -449,7 +449,9 @@ if __name__ == "__main__":
     logging.getLogger("failblog").formatter = logging.getLogger().handlers[0].formatter  # type: ignore
 
     # Set up ape
-    provider: ProviderAPI = ape.networks.parse_network_choice("ethereum:goerli:alchemy").__enter__()
+    provider: ProviderAPI = ape.networks.parse_network_choice(
+        f"ethereum:goerli:https://goerli.infura.io/v3/{os.getenv('INFURA_API_KEY')}", provider_settings={"port": 8548}
+    ).__enter__()
     provider.network.config.goerli.required_confirmations = 1
     project_root = Path.cwd()
     project = ape.Project(path=project_root)
