@@ -1051,7 +1051,6 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 )
                 * market_state.share_price  # convert to base
             )
-            print(f"{float(without_fee)=}")
             curve_fee = abs(d_bonds - without_fee_or_slippage) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
@@ -1410,11 +1409,16 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         yieldspace_const = self.calc_yieldspace_const(
             share_reserves, bond_reserves, lp_total_supply, time_elapsed, share_price, init_share_price
         )
-        # dz = (1 / mu) * ((k - (y + s - dy)**(1 - tau)) / (c / mu))**(1 / (1 - tau)) - z
-        return (FixedPoint("1.0") / init_share_price) * (
-            (yieldspace_const - (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed)
-            / (share_price / init_share_price)
-        ) ** (FixedPoint("1.0").div_up(time_elapsed)) - share_reserves
+        return (
+            (
+                (
+                    (yieldspace_const - (bond_reserves + lp_total_supply - d_bonds) ** time_elapsed)
+                    / (share_price / init_share_price)
+                )
+                ** (FixedPoint("1.0").div_up(time_elapsed))
+                # div up here to prevent negative values when trade amount is very small (100-ish wei hor less)
+            ).div_up(init_share_price)
+        ) - share_reserves
 
     def calc_shares_out_given_bonds_in(
         self,

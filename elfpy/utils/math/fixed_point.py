@@ -26,7 +26,8 @@ class FixedPoint:
             raise NotImplementedError("Only 18 decimal precision FixedPoint ints are supported.")
         self.decimal_places = decimal_places
         if isinstance(value, float):
-            value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
+            # round with one extra precision then int truncates
+            value = int(value * 10**decimal_places)
         if isinstance(value, str):
             if "." not in value:
                 raise ValueError("String arguments must be float strings, e.g. '1.0', for the FixedPoint constructor.")
