@@ -179,6 +179,15 @@ class FixedPoint:
         # e.g. FixedPoint(1234)
         return f"{self.__class__.__name__}({self._value})"
 
+    def div_up(self, other: int | FixedPoint) -> FixedPoint:
+        """Divide self by other, rounding up"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        if other <= FixedPoint("0.0"):
+            raise errors.DivisionByZero
+        return FixedPoint(FixedPointMath.div_up(self._value, other._value))
+
 
 class FixedPointMath:
     """Safe, high precision (1e18) fixed-point integer arethmetic"""

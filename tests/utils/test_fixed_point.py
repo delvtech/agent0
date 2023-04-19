@@ -169,6 +169,9 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint("6.0") / FixedPoint("2.5")) == 2.4
         assert float(FixedPoint("6.0") / FixedPoint("100.0")) == 0.06
         assert float(FixedPoint("0.006") / FixedPoint("0.001")) == 6
+        # div rounding
+        assert FixedPoint(2.0) / FixedPoint(1 * 10**37) == FixedPoint(0)
+        assert FixedPoint(2.0).div_up(FixedPoint(1 * 10**37)) == FixedPoint(1)
 
     def test_divide_fail(self):
         r"""Test failure of `/` sugar
