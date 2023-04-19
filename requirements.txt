@@ -12,3 +12,4 @@ scipy
 stochastic
 tomli
 eth-ape
+python-dotenv

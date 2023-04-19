@@ -7,37 +7,38 @@ As such, we are relaxing some of the lint rules.
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
-import os
+import argparse
 import json
 import logging
-from logging.handlers import RotatingFileHandler
-from eth_account import Account as EthAccount
-import argparse
-from time import sleep
-from pathlib import Path
+import os
 from collections import defaultdict
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from time import sleep
+from typing import Optional
 
 # external lib
 import ape
-from ape import accounts, Contract
+from ape import Contract, accounts
+from ape.api import BlockAPI, ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
-from ape.api import ProviderAPI, ReceiptAPI
 import numpy as np
-from numpy.random._generator import Generator as NumpyGenerator
 from dotenv import load_dotenv
+from eth_account import Account as EthAccount
+from numpy.random._generator import Generator as NumpyGenerator
 
 # elfpy core repo
 import elfpy
-import elfpy.time as time
-import elfpy.types as types
-import elfpy.simulators as simulators
 import elfpy.agents.agent as agentlib
 import elfpy.agents.policies.random_agent as random_agent
-import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.simulators as simulators
+import elfpy.time as time
+import elfpy.types as types
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
 from elfpy.utils.fmt import fmt
@@ -255,10 +256,10 @@ def get_config() -> simulators.Config:
     config.log_level = output_utils.text_to_log_level(args.log_level)
     config.log_filename = "testnet_bots"
     if os.path.exists("random_seed.txt"):
-        with open("random_seed.txt", "r") as f:  # read random seed from file
+        with open("random_seed.txt", "r", encoding="utf-8") as f:
             config.random_seed = int(f.read()) + 1
     logging.info("Random seed=%s", config.random_seed)
-    with open("random_seed.txt", "w") as f:  # write new random seed to file
+    with open("random_seed.txt", "w", encoding="urf-8") as f:
         f.write(str(config.random_seed))
     config.title = "testnet bots"
     for key, value in args.__dict__.items():
@@ -285,7 +286,7 @@ def get_config() -> simulators.Config:
     config.scratch["random_budget_min"] = 1_000
     config.scratch["bot_types"] = {"louie": LongLouie, "frida": FixedFrida, "random": random_agent.Policy}
     config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
-    config.freeze()  # type: ignore
+    config.freeze()  # type: ignore # pylint: disable=no-member
     return config
 
 
@@ -428,6 +429,18 @@ def log_and_print(string: str, *args, end="\n") -> None:
     print(string, end=end)
 
 
+def get_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
+    """Get the max and avg max and priority fees from a block"""
+    if type2 := [txn for txn in block.transactions if txn.type == 2]:
+        max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
+        max_fees = [f / 1e9 for f in max_fees if f is not None]
+        priority_fees = [f / 1e9 for f in priority_fees if f is not None]
+        max_max_fee, avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
+        max_priority_fee, avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
+        return max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
+    return None, None, None, None
+
+
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
@@ -454,18 +467,15 @@ if __name__ == "__main__":
 
     sim_to_block_time = {}
     fist_time, last_executed_block, no_crash = 0, 0, 0
-    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = None, None, None, None
     while True:
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number or 0
         block_time = latest_block.timestamp
         fist_time = block_time if fist_time == 0 else fist_time
         if block_number > last_executed_block:
-            if type2 := [txn for txn in latest_block.transactions if txn.type == 2]:
-                max_fees, priority_fees = zip(*((txn.max_fee / 1e9, txn.max_priority_fee / 1e9) for txn in type2))  # type: ignore
-                max_max_fee, avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
-                max_priority_fee, avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
-            log_string = "Block number: {}, Block time: {}, Trades without crashing: {}, Gas: max={},avg={}, Priority max={},avg={}"
+            max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = get_fees(latest_block)
+            log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
+            log_string += ", Gas: max={},avg={}, Priority max={},avg={}"
             log_vars = block_number, block_time, no_crash, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
             log_and_print(log_string, *log_vars)
             market_state = get_market_state_from_contract(contract=hyperdrive)
@@ -486,7 +496,7 @@ if __name__ == "__main__":
                         print(trade)
                         do_trade(trade_obj=trade, Dai=Dai, hyperdrive=hyperdrive, sim_agents=sim_agents)
                         no_crash += 1
-                    except Exception as exc:
+                    except Exception as exc:  # pylint: disable=broad-exception-caught
                         log_string = "Crashed in Python simulation: {}"
                         log_and_print(log_string, exc)
                         logging.getLogger("failblog").error(log_string, exc)
