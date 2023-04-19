@@ -162,7 +162,6 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
             raise AssertionError(
                 f"ERROR: Expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
-
         return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
@@ -242,7 +241,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         in_ : Quantity
             The quantity of tokens that the user wants to pay (the amount
             and the unit of the tokens).
-        market_state : MarketStateFP
+        market_state : MarketState
             The state of the AMM's reserves and share prices.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
@@ -504,7 +503,6 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
             raise AssertionError(
                 f"ERROR: Expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
-
         return trades.TradeResultFP(
             user_result=user_result,
             market_result=market_result,
