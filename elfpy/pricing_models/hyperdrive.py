@@ -10,10 +10,13 @@ import elfpy.pricing_models.trades as trades
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint, FixedPointMath
+from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=too-many-lines
 
 
 class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
