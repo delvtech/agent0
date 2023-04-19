@@ -19,6 +19,7 @@ source .venv/bin/activate
 Once you're in your favored virtual environment, install the project dependencies:
 
 ```bash
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
@@ -44,7 +45,7 @@ docker run -it --name elf-simulations-dev --rm --volume $(pwd):/app/ --net=host 
 ## Apeworks and Contract Integration
 
 NOTE: The Hyperdrive solidity implementation is currently under security review, and thus is not available publicly.
-The following instructions will not work for anyone who is not a member of Element Finance.
+The following instructions will not work for anyone who is not a member of Delv.
 
 [Install Forge](https://github.com/foundry-rs/foundry#installatio://github.com/foundry-rs/foundry#installation)
 

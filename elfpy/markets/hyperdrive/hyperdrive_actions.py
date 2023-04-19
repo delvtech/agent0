@@ -12,6 +12,7 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.utils.math import FixedPoint
 from elfpy.utils.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
@@ -68,10 +69,53 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
+class MarketDeltasFP(base_market.MarketDeltas):
+    r"""Specifies changes to values in the market"""
+    # pylint: disable=too-many-instance-attributes
+    d_base_asset: FixedPoint = FixedPoint(0)
+    d_bond_asset: FixedPoint = FixedPoint(0)
+    d_base_buffer: FixedPoint = FixedPoint(0)
+    d_bond_buffer: FixedPoint = FixedPoint(0)
+    d_lp_total_supply: FixedPoint = FixedPoint(0)
+    d_share_price: FixedPoint = FixedPoint(0)
+    longs_outstanding: FixedPoint = FixedPoint(0)
+    shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_average_maturity_time: FixedPoint = FixedPoint(0)
+    short_average_maturity_time: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
+    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
+    withdraw_capital: FixedPoint = FixedPoint(0)
+    withdraw_interest: FixedPoint = FixedPoint(0)
+    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
 class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
     d_base: float
     d_bonds: float
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketActionResultFP(base_market.MarketActionResultFP):
+    r"""The result to a market of performing a trade"""
+    d_base: FixedPoint
+    d_bonds: FixedPoint
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -341,7 +385,6 @@ def calc_checkpoint_deltas(
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == 0:
         return (0, defaultdict(float, {checkpoint_time: 0}), 0)
-
     proportional_base_volume = (
         market.market_state.checkpoints[checkpoint_time].long_base_volume * bond_amount / checkpoint_amount
     )
@@ -430,7 +473,7 @@ def calc_open_short(
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, 1)
-
+    # Calculate what the updated bond reserves would be with constant apr
     _, updated_bond_reserves = calc_update_reserves(
         market.market_state.share_reserves + share_reserves_delta,
         market.market_state.bond_reserves + bond_reserves_delta,
@@ -523,7 +566,6 @@ def calc_close_short(
     share_reserves_delta = trade_result.market_result.d_base / market.market_state.share_price
     bond_reserves_delta = trade_result.market_result.d_bonds
     share_payment = trade_result.user_result.d_base / market.market_state.share_price
-
     # update governance fees
     market.market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # Make sure the trade is valid
@@ -545,7 +587,6 @@ def calc_close_short(
     # The flat component of the trade is added to the pool's liquidity since it represents the fixed
     # interest that the short pays to the pool.
     share_adjustment = share_payment - abs(share_reserves_delta)
-
     # If there is a withdraw processing, we pay out as much of the withdrawal pool as possible with
     # the margin released and interest accrued on the position to the withdrawal pool.
     margin_needs_to_be_freed = (
@@ -563,7 +604,6 @@ def calc_close_short(
         )
         withdrawal_proceeds = withdraw_pool_deltas.withdraw_capital + withdraw_pool_deltas.withdraw_interest
         share_adjustment -= withdrawal_proceeds
-
     # Add the flat component of the trade to the pool's liquidity and remove any LP proceeds paid to
     # the withdrawal pool from the pool's liquidity.
     share_reserves = market.market_state.share_reserves + share_reserves_delta
@@ -573,7 +613,6 @@ def calc_close_short(
     )
     share_reserves_delta = adjusted_share_reserves - market.market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market.market_state.bond_reserves
-
     market_deltas = MarketDeltas(
         d_base_asset=share_reserves_delta * market.market_state.share_price,
         d_bond_asset=bond_reserves_delta,
@@ -730,7 +769,6 @@ def calc_close_long(
         market_state=market.market_state,
         time_remaining=time_remaining,
     )
-
     # if we are applying a checkpoint, we don't update the reserves
     bond_reserves_delta = 0
     share_reserves_delta = 0
@@ -751,7 +789,6 @@ def calc_close_long(
         gov_fee = trade_result.breakdown.gov_fee
 
     market.market_state.gov_fees_accrued += gov_fee
-
     # Make sure the trade is valid
     # Update accouting for average maturity time, base volume and longs outstanding
     long_average_maturity_time = update_weighted_average(
@@ -776,7 +813,6 @@ def calc_close_long(
         share_proceeds *= close_share_price / market.market_state.init_share_price
     # The amount of liquidity that needs to be removed.
     share_adjustment = -(share_proceeds - share_reserves_delta)
-
     margin_needs_to_be_freed = (
         market.market_state.total_supply_withdraw_shares > market.market_state.withdraw_shares_ready_to_withdraw
     )
@@ -816,7 +852,6 @@ def calc_close_long(
         )
         withdrawal_proceeds = withdraw_pool_deltas.withdraw_capital + withdraw_pool_deltas.withdraw_interest
         share_adjustment -= withdrawal_proceeds
-
     # Remove the flat component of the trade as well as any LP proceeds paid to the withdrawal pool
     # from the pool's liquidity.
     share_reserves = market.market_state.share_reserves + share_reserves_delta
@@ -826,7 +861,6 @@ def calc_close_long(
     )
     share_reserves_delta = adjusted_share_reserves - market.market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market.market_state.bond_reserves
-
     # Return the market and wallet deltas.
     market_deltas = MarketDeltas(
         d_base_asset=share_reserves_delta * market.market_state.share_price,
@@ -869,10 +903,8 @@ def calc_update_reserves(share_reserves: float, bond_reserves: float, share_rese
     """
     if share_reserves_delta == 0:
         return 0, 0
-
     updated_share_reserves = share_reserves + share_reserves_delta
     updated_bond_reserves = bond_reserves * updated_share_reserves / share_reserves
-
     return updated_share_reserves, updated_bond_reserves
 
 
@@ -1054,7 +1086,6 @@ def calc_remove_liquidity(
     )
     user_margin = user_margin * lp_shares / market.market_state.lp_total_supply
     withdraw_shares = user_margin / market.market_state.share_price
-
     # create and return the deltas
     market_deltas = MarketDeltas(
         d_base_asset=-delta_base,

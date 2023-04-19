@@ -11,8 +11,8 @@ import elfpy
 import elfpy.types as types
 
 if TYPE_CHECKING:
-    import elfpy.pricing_models.base as base_pm
     import elfpy.agents.wallet as wallet
+    import elfpy.pricing_models.base as base_pm
     import elfpy.time as time
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
@@ -47,6 +47,12 @@ class MarketDeltas:
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResult:
+    r"""The result to a market of performing a trade"""
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketActionResultFP:
     r"""The result to a market of performing a trade"""
 
 

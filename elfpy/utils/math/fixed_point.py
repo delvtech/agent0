@@ -4,6 +4,8 @@ from __future__ import annotations
 import copy
 from typing import Union
 
+import elfpy.errors.errors as errors
+
 # we will use single letter names for this class since all functions do basic arithmetic
 # pylint: disable=invalid-name
 
@@ -11,9 +13,9 @@ from typing import Union
 class FixedPoint:
     """New fixed-point datatype"""
 
-    _value: int  # integer representation of self
+    int_value: int  # integer representation of self
 
-    def __init__(self, value: Union[float, int, str], decimal_places: int = 18, signed: bool = True):
+    def __init__(self, value: Union[FixedPoint, float, int, str], decimal_places: int = 18, signed: bool = True):
         """Store fixed-point properties"""
         # TODO: support unsigned option
         if not signed:
@@ -24,20 +26,23 @@ class FixedPoint:
             raise NotImplementedError("Only 18 decimal precision FixedPoint ints are supported.")
         self.decimal_places = decimal_places
         if isinstance(value, float):
-            value = int(round(value, ndigits=decimal_places) * 10**decimal_places)
+            # round with one extra precision then int truncates
+            value = int(value * 10**decimal_places)
         if isinstance(value, str):
+            if "." not in value:
+                raise ValueError("String arguments must be float strings, e.g. '1.0', for the FixedPoint constructor.")
             lhs, rhs = value.split(".")
-            leading_zeros = len(rhs) - len(rhs.lstrip("0"))
-            value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - 1 - leading_zeros)
-        self._value = copy.copy(int(value))
+            rhs = rhs.replace("_", "")  # removes underscores -- they won't affect `int` cast and will affect `len`
+            value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - len(rhs))
+        self.int_value = copy.copy(int(value))
 
     def __int__(self) -> int:
         """Cast to int"""
-        return self._value
+        return self.int_value
 
     def __float__(self) -> float:
         """Cast to float"""
-        return float(self._value) / 10**self.decimal_places
+        return float(self.int_value) / 10**self.decimal_places
 
     def _coerce_other(self, other):
         """Cast inputs to the FixedPoint type if they come in as something else.
@@ -48,22 +53,15 @@ class FixedPoint:
         if isinstance(other, FixedPoint):
             return other
         if isinstance(other, (int, float)):  # currently don't allow floats & ints
-            raise TypeError(f"unsupported operant type(s): {type(other)}")
+            raise TypeError(f"unsupported operand type(s): {type(other)}")
         return NotImplemented
-
-    def __eq__(self, other: int | FixedPoint) -> bool:
-        """Uses int eq function to check for equality"""
-        other = self._coerce_other(other)
-        if other is NotImplemented:
-            return NotImplemented
-        return self._value == other._value
 
     def __add__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '+' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.add(self._value, other._value))
+        return FixedPoint(FixedPointMath.add(self.int_value, other.int_value))
 
     def __radd__(self, other: int | FixedPoint) -> FixedPoint:
         return self.__add__(other)
@@ -73,21 +71,21 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.sub(self._value, other._value))
+        return FixedPoint(FixedPointMath.sub(self.int_value, other.int_value))
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables recprical subtraction to support int - FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.sub(other._value, self._value))
+        return FixedPoint(FixedPointMath.sub(other.int_value, self.int_value))
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '*' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.mul_down(self._value, other._value))
+        return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value))
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables recriprocal multiplication to allow int * FixedPoint"""
@@ -112,62 +110,117 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.div_down(self._value, other._value))
+        if other <= FixedPoint("0.0"):
+            raise errors.DivisionByZero
+        return FixedPoint(FixedPointMath.div_down(self.int_value, other.int_value))
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.pow(self._value, other._value))
+        return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value))
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.pow(self._value, other._value))
+        return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value))
 
     def __neg__(self) -> FixedPoint:
         """Enables flipping value sign"""
-        return -self
+        return FixedPoint("-1.0") * self
 
     def __abs__(self) -> FixedPoint:
         """Enables 'abs()' function"""
         return FixedPoint(abs(int(self)), self.decimal_places, self.signed)
 
+    def __eq__(self, other: FixedPoint) -> bool:
+        """Uses int eq function to check for equality"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value == other.int_value
+
+    def __ne__(self, other: FixedPoint) -> bool:
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value != other.int_value
+
+    def __lt__(self, other: FixedPoint) -> bool:
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value < other.int_value
+
+    def __le__(self, other: FixedPoint) -> bool:
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value <= other.int_value
+
+    def __gt__(self, other: FixedPoint) -> bool:
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value > other.int_value
+
+    def __ge__(self, other: FixedPoint) -> bool:
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return self.int_value >= other.int_value
+
     def __str__(self) -> str:
         return f"{float(self):.18f}"
 
     def __repr__(self) -> str:
-        # e.g. FixedPoint('1234')
-        return f"{self.__class__.__name__}('{self._value}')"
+        # e.g. FixedPoint(1234)
+        return f"{self.__class__.__name__}({self.int_value})"
+
+    def div_up(self, other: int | FixedPoint) -> FixedPoint:
+        """Divide self by other, rounding up"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        if other <= FixedPoint("0.0"):
+            raise errors.DivisionByZero
+        return FixedPoint(FixedPointMath.div_up(self.int_value, other.int_value))
 
 
 class FixedPointMath:
     """Safe, high precision (1e18) fixed-point integer arethmetic"""
 
     # int has no max size in python 3. Use 256 since that is max for solidity.
-    INT_MAX = 2**256 - 1
-    UINT_MAX = 2**256
-    EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
+    INT_MAX = 2**255 - 1
+    INT_MIN = -(2**255)
+    UINT_MAX = 2**256 - 1
+    UINT_MIN = 0
     EXP_MAX = 135305999368893231589  # floor(log((2**255 -1) / 1e18) * 1e18)
+    EXP_MIN = -42139678854452767622  # floor(log(0.5e-18)*1e18)
     ONE_18 = 1 * 10**18
 
     @staticmethod
     def add(a: int, b: int) -> int:
         """Add two fixed-point numbers in 1e18 format."""
         c = a + b
-        if c < a or a > FixedPointMath.INT_MAX - b:
+        # Solidity has this: `if c < a or a > FixedPointMath.INT_MAX - b`
+        # However, we allow negative values sometimes, which trips up that check.
+        # Python 3 also won't actually overflow if we go over INT_MAX, so we can just check:
+        if c > FixedPointMath.INT_MAX:
             raise OverflowError("FixedPointMath_AddOverflow")
         return c
 
     @staticmethod
     def sub(a: int, b: int) -> int:
         """Subtract two fixed-point numbers in 1e18 format."""
-        if b > a:
-            raise OverflowError("FixedPointMath_SubOverflow")
         c = a - b
+        # solidity has this: `if b > a`
+        # However, we are encoding our own INT_MIN, since python 3 `int` has no min/max
+        if c < FixedPointMath.INT_MIN:
+            raise OverflowError("FixedPointMath_SubOverflow")
         return c
 
     @staticmethod

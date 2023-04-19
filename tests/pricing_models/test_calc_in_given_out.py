@@ -6,7 +6,6 @@ import logging
 import unittest
 
 import numpy as np
-
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessByModelTestResult,
@@ -23,6 +22,9 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 # pylint: disable=too-many-lines
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
 
 
 class TestCalcInGivenOut(unittest.TestCase):
@@ -369,7 +371,6 @@ class TestCalcInGivenOut(unittest.TestCase):
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
             logging.info("test_number=%s\ntest_case=%s", test_number, test_case)
-            print("\ntest_number=%s", test_number, "test_case=", test_case)
             for pricing_model in pricing_models:
                 # TODO: convert these tests to use total supply, not the approximation
                 # approximation of total supply

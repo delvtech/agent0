@@ -17,9 +17,13 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
+from elfpy.utils.math import FixedPoint
 
 # dataclasses can have many attributes
 # pylint: disable=too-many-instance-attributes
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
 
 
 @dataclass
@@ -40,6 +44,26 @@ class Checkpoint:
     long_share_price: float = 0.0
     long_base_volume: float = 0.0
     short_base_volume: float = 0.0
+
+
+@dataclass
+class CheckpointFP:
+    """
+    Hyperdrive positions are bucketed into checkpoints, which allows us to avoid poking in any
+    period that has LP or trading activity. The checkpoints contain the starting share price from
+    the checkpoint as well as aggregate volume values.
+    """
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+
+    share_price: FixedPoint = FixedPoint(0)
+    long_share_price: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -139,30 +163,165 @@ class MarketState(base_market.BaseMarketState):
 
     def apply_delta(self, delta: hyperdrive_actions.MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
+        # assets & prices
         self.share_reserves += delta.d_base_asset / self.share_price
         self.bond_reserves += delta.d_bond_asset
         self.base_buffer += delta.d_base_buffer
         self.bond_buffer += delta.d_bond_buffer
         self.lp_total_supply += delta.d_lp_total_supply
         self.share_price += delta.d_share_price
-
+        # tracking open positions
         self.longs_outstanding += delta.longs_outstanding
         self.shorts_outstanding += delta.shorts_outstanding
         self.long_average_maturity_time += delta.long_average_maturity_time
         self.short_average_maturity_time += delta.short_average_maturity_time
         self.long_base_volume += delta.long_base_volume
         self.short_base_volume += delta.short_base_volume
-
+        # tracking shares after closing positions
         self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
         self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
         self.withdraw_capital += delta.withdraw_capital
         self.withdraw_interest += delta.withdraw_interest
-
+        # checkpointing
         for mint_time, delta_checkpoint in delta.long_checkpoints.items():
             self.checkpoints[mint_time].long_base_volume += delta_checkpoint
         for mint_time, delta_checkpoint in delta.short_checkpoints.items():
             self.checkpoints[mint_time].short_base_volume += delta_checkpoint
+        for mint_time, delta_supply in delta.total_supply_longs.items():
+            self.total_supply_longs[mint_time] += delta_supply
+        for mint_time, delta_supply in delta.total_supply_shorts.items():
+            self.total_supply_shorts[mint_time] += delta_supply
 
+    def copy(self) -> MarketState:
+        """Returns a new copy of self"""
+        return MarketState(**copy.deepcopy(self.__dict__))
+
+
+@types.freezable(frozen=False, no_new_attribs=False)
+@dataclass
+class MarketStateFP(base_market.BaseMarketState):
+    r"""The state of an AMM
+
+    Attributes
+    ----------
+    lp_total_supply: FixedPoint
+        Amount of lp tokens
+    share_reserves: FixedPoint
+        Quantity of shares stored in the market
+    bond_reserves: FixedPoint
+        Quantity of bonds stored in the market
+    base_buffer: FixedPoint
+        Base amount set aside to account for open longs
+    bond_buffer: FixedPoint
+        Bond amount set aside to account for open shorts
+    variable_apr: FixedPoint
+        apr of underlying yield-bearing source
+    share_price: FixedPoint
+        ratio of value of base & shares that are stored in the underlying vault,
+        i.e. share_price = base_value / share_value
+    init_share_price: FixedPoint
+        share price at pool initialization
+    curve_fee_multiple: FixedPoint
+        The multiple applied to the price discount (1-p) to calculate the trade fee.
+    flat_fee_multiple: FixedPoint
+        A flat fee applied to the output.  Not used in this equation for Yieldspace.
+    governance_fee_multiple: FixedPoint
+        The multiple applied to the trade and flat fee to calculate the share paid to governance.
+    gov_fees_accrued: FixedPoint
+        The amount of governance fees that haven't been collected yet, denominated in shares.
+    longs_outstanding: FixedPoint
+        The amount of longs that are still open.
+    shorts_outstanding: FixedPoint
+        The amount of shorts that are still open.
+    long_average_maturity_time: FixedPoint
+        The average maturity time of long positions.
+    short_average_maturity_time: FixedPoint
+        The average maturity time of short positions.
+    long_base_volume: FixedPoint
+        The amount of base paid by outstanding longs.
+    short_base_volume: FixedPoint
+        The amount of base paid to outstanding shorts.
+    checkpoints: defaultdict[FixedPoint, Checkpoint]
+        Time delimited checkpoints
+    checkpoint_duration: FixedPoint
+        Time between checkpoints, defaults to 1 day
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint]
+        Checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint]
+        Checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
+    total_supply_withdraw_shares: FixedPoint
+        Total amount of withdraw shares outstanding
+    withdraw_shares_ready_to_withdraw: FixedPoint
+        Shares that have been freed up to withdraw by withdraw_shares
+    withdraw_capital: FixedPoint
+        The margin capital reclaimed by the withdraw process
+    withdraw_interest: FixedPoint
+        The interest earned by the redemptions which put capital into the withdraw pool
+    """
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+
+    lp_total_supply: FixedPoint = FixedPoint(0)
+    share_reserves: FixedPoint = FixedPoint(0)
+    bond_reserves: FixedPoint = FixedPoint(0)
+    base_buffer: FixedPoint = FixedPoint(0)
+    bond_buffer: FixedPoint = FixedPoint(0)
+    variable_apr: FixedPoint = FixedPoint(0)
+    share_price: FixedPoint = FixedPoint(1.0)  # == 1e18
+    init_share_price: FixedPoint = FixedPoint(1.0)  # == 1e18
+    curve_fee_multiple: FixedPoint = FixedPoint(0)
+    flat_fee_multiple: FixedPoint = FixedPoint(0)
+    governance_fee_multiple: FixedPoint = FixedPoint(0)
+    gov_fees_accrued: FixedPoint = FixedPoint(0)
+    longs_outstanding: FixedPoint = FixedPoint(0)
+    shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_average_maturity_time: FixedPoint = FixedPoint(0)
+    short_average_maturity_time: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
+    checkpoints: defaultdict[FixedPoint, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
+    checkpoint_duration: FixedPoint = FixedPoint(1 / 365)
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
+    withdraw_capital: FixedPoint = FixedPoint(0)
+    withdraw_interest: FixedPoint = FixedPoint(0)
+
+    def apply_delta(self, delta: hyperdrive_actions.MarketDeltasFP) -> None:
+        r"""Applies a delta to the market state."""
+        # assets & prices
+        self.share_reserves += delta.d_base_asset / self.share_price
+        self.bond_reserves += delta.d_bond_asset
+        self.base_buffer += delta.d_base_buffer
+        self.bond_buffer += delta.d_bond_buffer
+        self.lp_total_supply += delta.d_lp_total_supply
+        self.share_price += delta.d_share_price
+        # tracking open positions
+        self.longs_outstanding += delta.longs_outstanding
+        self.shorts_outstanding += delta.shorts_outstanding
+        self.long_average_maturity_time += delta.long_average_maturity_time
+        self.short_average_maturity_time += delta.short_average_maturity_time
+        self.long_base_volume += delta.long_base_volume
+        self.short_base_volume += delta.short_base_volume
+        # tracking shares after closing positions
+        self.total_supply_withdraw_shares += delta.total_supply_withdraw_shares
+        self.withdraw_shares_ready_to_withdraw += delta.withdraw_shares_ready_to_withdraw
+        self.withdraw_capital += delta.withdraw_capital
+        self.withdraw_interest += delta.withdraw_interest
+        # checkpointing
+        for mint_time, delta_checkpoint in delta.long_checkpoints.items():
+            self.checkpoints[mint_time].long_base_volume += delta_checkpoint
+        for mint_time, delta_checkpoint in delta.short_checkpoints.items():
+            self.checkpoints[mint_time].short_base_volume += delta_checkpoint
         for mint_time, delta_supply in delta.total_supply_longs.items():
             self.total_supply_longs[mint_time] += delta_supply
         for mint_time, delta_supply in delta.total_supply_shorts.items():
@@ -354,7 +513,6 @@ class Market(
                 raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
         except AssertionError as err:
             logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
-
         logging.debug(
             "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
@@ -635,7 +793,6 @@ class Market(
         market_deltas, wallet_deltas = self.calc_redeem_withdraw_shares(shares, min_output, as_underlying)
         self.update_market(market_deltas)
         agent_wallet.update(wallet_deltas)
-
         return wallet_deltas.balance.amount
 
     def calc_redeem_withdraw_shares(
@@ -664,10 +821,8 @@ class Market(
         market_deltas = hyperdrive_actions.MarketDeltas()
         # TODO don't use a wallet. issue #315
         wallet_deltas = wallet.Wallet(address=0)
-
         # We burn the shares from the user
         wallet_deltas.withdraw_shares -= _shares
-
         # The user gets a refund on their margin equal to the face value of their withdraw shares
         # times the percent of the withdraw pool which has been lost.
         recovered_margin = (
@@ -675,7 +830,6 @@ class Market(
             * Decimal(self.market_state.withdraw_capital)
             / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
-
         # The user gets interest equal to their percent of the withdraw pool times the withdraw pool
         # interest
         recovered_interest = (
@@ -683,25 +837,21 @@ class Market(
             * Decimal(self.market_state.withdraw_interest)
             / Decimal(self.market_state.withdraw_shares_ready_to_withdraw)
         )
-
         # Update the pool state
         # Note - Will revert here if not enough margin has been reclaimed by checkpoints or by
         #  position closes
         market_deltas.withdraw_shares_ready_to_withdraw -= float(shares)
         market_deltas.withdraw_capital -= float(recovered_margin)
         market_deltas.withdraw_interest -= float(recovered_interest)
-
         # Withdraw for the user
         base_proceeds = self._withdraw(float(recovered_margin + recovered_interest), as_underlying)
         # TODO: figure out how to keep track of hyperdrive's base asset amount.  market_deltas has
         # a d_base_asset, but that is used to update the share_reserves :/.
         # market_deltas.d_base_asset -= base_proceeds
         wallet_deltas.balance.amount += base_proceeds
-
         # Enforce min user outputs
         if min_output > Decimal(base_proceeds):
             raise errors.OutputLimit
-
         return market_deltas, wallet_deltas
 
     def _withdraw(self, shares: float, as_underlying: bool) -> float:
@@ -720,13 +870,10 @@ class Market(
         float
           The withdraw_value and share_price as a tuple.
         """
-
         # This yield source doesn't accept the underlying since it's just base.
         if not as_underlying:
             raise errors.UnsupportedOption
-
         # TODO: add step to accrue interest
-
         # Get the amount of base to transfer.
         amount_withdrawn = shares * self.market_state.share_price
         return amount_withdrawn
@@ -750,14 +897,12 @@ class Market(
         hyperdrive_actions.MarketDeltas
             Market deltas that include the capital, interest and shares added to the withdraw pool.
         """
-
         # If we don't have capital to free then simply return zero
         withdraw_share_supply = self.market_state.total_supply_withdraw_shares
         withdraw_shares_ready_to_withdraw = self.market_state.withdraw_shares_ready_to_withdraw
         withdraw_pool_deltas = hyperdrive_actions.MarketDeltas()
         if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
             return withdraw_pool_deltas
-
         # If we have more capital freed than needed we adjust down all values
         if max_capital + withdraw_shares_ready_to_withdraw > withdraw_share_supply:
             # in this case we want max_capital * adjustment + withdraw_shares_ready_to_withdraw = withdraw_share_supply
@@ -770,6 +915,5 @@ class Market(
             withdraw_pool_deltas.withdraw_shares_ready_to_withdraw = max_capital
             withdraw_pool_deltas.withdraw_capital = freed_capital
             withdraw_pool_deltas.withdraw_interest = interest
-
         # Finally return the amount used by this action and the caller can update reserves.
         return withdraw_pool_deltas
