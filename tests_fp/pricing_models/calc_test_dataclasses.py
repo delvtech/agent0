@@ -10,6 +10,9 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.utils.math import FixedPoint
 
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
+
 
 @dataclass
 class CalcInGivenOutSuccessTestCase:
