@@ -327,9 +327,9 @@ class MarketStateFP(base_market.BaseMarketState):
         for mint_time, delta_supply in delta.total_supply_shorts.items():
             self.total_supply_shorts[mint_time] += delta_supply
 
-    def copy(self) -> MarketState:
+    def copy(self) -> MarketStateFP:
         """Returns a new copy of self"""
-        return MarketState(**copy.deepcopy(self.__dict__))
+        return MarketStateFP(**copy.deepcopy(self.__dict__))
 
 
 class Market(
