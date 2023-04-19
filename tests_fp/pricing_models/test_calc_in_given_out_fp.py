@@ -16,8 +16,7 @@ from calc_test_dataclasses import (
 
 import elfpy.errors.errors as errors
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-
-# import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
@@ -42,7 +41,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         output_utils.setup_logging("test_calc_in_given_out_failure")
         pricing_models: list[base_pm.PricingModelFP] = [
             yieldspace_pm.YieldspacePricingModelFP(),
-            # hyperdrive_pm.HyperdrivePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
         ]
         success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
@@ -110,7 +109,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[base_pm.PricingModelFP] = [
             yieldspace_pm.YieldspacePricingModelFP(),
-            # hyperdrive_pm.HyperdrivePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
         ]
         for pricing_model in pricing_models:
             # TODO: Works from 0 to 15, after that with[out]_fee goes 0 and then negative.
@@ -178,7 +177,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         output_utils.setup_logging("test_calc_in_given_out_success")
         pricing_models: list[base_pm.PricingModelFP] = [
             yieldspace_pm.YieldspacePricingModelFP(),
-            # hyperdrive_pm.HyperdrivePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModelFP(),
         ]
         # Failure test cases.
         failure_test_cases = [
