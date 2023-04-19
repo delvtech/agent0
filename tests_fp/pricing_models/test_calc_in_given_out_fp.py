@@ -104,6 +104,8 @@ class TestCalcInGivenOut(unittest.TestCase):
         """
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
+
+        .. todo:: This should be multiple tests for base & pt trade type
         """
         output_utils.setup_logging("test_calc_in_given_out")
         pricing_models: list[base_pm.PricingModelFP] = [
@@ -144,7 +146,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     market_state=market_state,
                     time_remaining=time_remaining,
                 )
-                self.assertGreaterEqual(trade_result.breakdown.with_fee, FixedPoint("0.0"))
+                self.assertGreater(trade_result.breakdown.with_fee, FixedPoint("0.0"))
                 # out is in bonds, in is in base
                 trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.PT)
                 market_state = hyperdrive_market.MarketStateFP(
@@ -166,6 +168,10 @@ class TestCalcInGivenOut(unittest.TestCase):
                     market_state=market_state,
                     time_remaining=time_remaining,
                 )
+                print(f"{trade_result=}")
+                print(f"{float(trade_result.breakdown.with_fee)=}")
+                print(f"{float(trade_result.breakdown.without_fee)=}")
+                print(f"{float(trade_result.breakdown.without_fee_or_slippage)=}")
                 self.assertGreater(trade_result.breakdown.with_fee, FixedPoint("0.0"))
         output_utils.close_logging()
 

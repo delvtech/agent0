@@ -832,7 +832,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         annualized_time = time_remaining.days / FixedPoint("365.0")
         d_bonds = (market_state.share_reserves + d_shares) / FixedPoint("2.0") * (
             market_state.init_share_price
-            * (FixedPoint("1.0") + rate * annualized_time) ** (FixedPoint("1.0") / time_remaining.stretched_time)
+            * (FixedPoint("1.0") + rate * annualized_time) ** (FixedPoint("1.0").div_up(time_remaining.stretched_time))
             - market_state.share_price
         ) - market_state.bond_reserves
         logging.debug(
@@ -1051,6 +1051,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 )
                 * market_state.share_price  # convert to base
             )
+            print(f"{float(without_fee)=}")
             curve_fee = abs(d_bonds - without_fee_or_slippage) * market_state.curve_fee_multiple
             gov_curve_fee = curve_fee * market_state.governance_fee_multiple
             # To get the amount paid with fees, add the fee to the calculation that
