@@ -40,6 +40,7 @@ class TestFixedPoint(unittest.TestCase):
         assert FixedPoint("5.1") == FixedPoint(5.1)
         assert FixedPoint("5.01") == FixedPoint(5.01)
         assert FixedPoint("5.000001") == FixedPoint(5.000001)
+        assert FixedPoint("5.000001000") == FixedPoint(5.000001)
 
     def test_add(self):
         r"""Test `+` sugar for various type combos"""

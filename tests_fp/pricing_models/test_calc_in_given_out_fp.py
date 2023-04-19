@@ -111,10 +111,13 @@ class TestCalcInGivenOut(unittest.TestCase):
             # hyperdrive_pm.HyperdrivePricingModel(),
         ]
         for pricing_model in pricing_models:
-            for trade_amount in [
-                FixedPoint(1 / 10**x) for x in range(0, 7)
-            ]:  # FIXME: Works from 0 to 7, after that with[out]_fee goes negative
-                logging.info("pricing_model=%s\ntrade_amount=%s", pricing_model, trade_amount)
+            for range_val, trade_amount in enumerate(
+                [FixedPoint("{:.19f}".format(1 * 10 ** (-x))) for x in range(0, 19)]
+            ):  # FIXME: Works from 0 to 7, after that with[out]_fee goes negative
+                logging.info(
+                    "pricing_model=%s\nrange_val=%s; trade_amount=%s", pricing_model, range_val, float(trade_amount)
+                )
+                print(f"\n{range_val=}; {float(trade_amount)=}")
                 # out is in base, in is in bonds
                 trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.BASE)
                 market_state = hyperdrive_market.MarketStateFP(
@@ -158,7 +161,6 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
                 )
-                print("")
                 trade_result = pricing_model.calc_in_given_out(
                     out=trade_quantity,
                     market_state=market_state,
