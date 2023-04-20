@@ -9,6 +9,7 @@ import numpy as np
 
 import elfpy
 import elfpy.types as types
+from elfpy.utils.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
@@ -38,15 +39,6 @@ class MarketAction(Generic[Action]):
     wallet: wallet.Wallet  # the agent's wallet
 
 
-@types.freezable(frozen=False, no_new_attribs=True)
-@dataclass
-class MarketActionFP(Generic[Action]):
-    r"""Market action specification"""
-
-    action_type: Enum  # these two variables are required to be set by the strategy
-    wallet: wallet.WalletFP  # the agent's wallet
-
-
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltas:
@@ -56,12 +48,6 @@ class MarketDeltas:
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketActionResult:
-    r"""The result to a market of performing a trade"""
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketActionResultFP:
     r"""The result to a market of performing a trade"""
 
 
@@ -126,6 +112,47 @@ class Market(Generic[State, Deltas, PricingModel]):
         elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold
 
 
+@types.freezable(frozen=False, no_new_attribs=True)
+@dataclass
+class MarketActionFP(Generic[Action]):
+    r"""Market action specification"""
+
+    action_type: Enum  # these two variables are required to be set by the strategy
+    wallet: wallet.WalletFP  # the agent's wallet
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketDeltasFP:
+    r"""Specifies changes to values in the market"""
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketActionResultFP:
+    r"""The result to a market of performing a trade"""
+
+
+@types.freezable(frozen=False, no_new_attribs=False)
+@dataclass
+class BaseMarketStateFP:
+    r"""The state of an AMM
+
+    Implements a class for all that that an AMM smart contract would hold or would have access to
+    For example, reserve numbers are local state variables of the AMM.
+    """
+
+    # TODO: have this be generic enough that any subclass can apply deltas?
+    def apply_delta(self, delta: MarketDeltasFP) -> None:
+        r"""Applies a delta to the market state."""
+        raise NotImplementedError
+
+    # TODO: have this be generic enough that any subclass can copy?
+    def copy(self) -> BaseMarketStateFP:
+        """Returns a new copy of self"""
+        raise NotImplementedError
+
+
 class MarketFP(Generic[State, Deltas, PricingModel]):
     r"""Market state simulator
 
@@ -138,14 +165,14 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
         self,
         pricing_model: PricingModel,
         market_state: State,
-        block_time: time.BlockTime,
+        block_time: time.BlockTimeFP,
     ):
         self.pricing_model = pricing_model
         self.market_state = market_state
         self.block_time = block_time
 
     @property
-    def latest_checkpoint_time(self) -> float:
+    def latest_checkpoint_time(self) -> FixedPoint:
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
@@ -157,11 +184,11 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
         """Check market update values to make sure they are valid"""
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
-                value_to_check: Any = value.amount if isinstance(value, types.QuantityFP) else value
+                value_to_check = float(value.amount) if isinstance(value, types.QuantityFP) else float(value)
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
     def update_market(self, market_deltas: Deltas) -> None:
         """Increments member variables to reflect current market conditions"""
         self.check_market_updates(market_deltas)  # check that market deltas are valid
         self.market_state.apply_delta(market_deltas)
-        elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold
+        elfpy.check_non_zero_fp(self.market_state)  # check reserves are non-zero within precision threshold
