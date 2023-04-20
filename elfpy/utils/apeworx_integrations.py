@@ -28,13 +28,13 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
     Arguments
     ---------
-    tx_receipt : `ape_ethereum.transactions.ReceiptAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ape_ethereum.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
 
 
     Returns
     -------
-    single_event : `ape.types.ContractLog<https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
+    single_event : `ape.types.ContractLog <https://docs.apeworx.io/ape/stable/methoddocs/types.html#ape.types.ContractLog>`_
         The primary emitted trade (a "TransferSingle") event, excluding peripheral events.
     """
     single_events = [tx_event for tx_event in tx_receipt.events if tx_event.event_name == "TransferSingle"]
@@ -64,9 +64,9 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 
     Arguments
     ---------
-    tx_receipt : `ape_ethereum.transactions.ReceiptAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ape_ethereum.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
-    hyperdrive_contract : `ape.contracts.base.ContractInstance<https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
 
     Returns
@@ -162,9 +162,9 @@ def ape_trade(
     trade_type: str
         The type of trade to execute. One of `ADD_LIQUIDITY,
         REMOVE_LIQUIDITY, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT`
-    hyperdrive : `ape.contracts.base.ContractInstance<https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
-    agent : `ape.api.accounts.AccountAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+    agent : `ape.api.accounts.AccountAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
         The account that will execute the trade.
     amount : int
         Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
@@ -173,9 +173,9 @@ def ape_trade(
 
     Returns
     -------
-    pool_state : [dict[str, Any]
+    pool_state : dict[str, Any, optional
         The Hyperdrive pool state after the trade.
-    tx_receipt : `ReceiptAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
 
@@ -238,10 +238,10 @@ def attempt_txn(
 
     Arguments
     ---------
-    agent : `ape.api.accounts.AccountAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
+    agent : `ape.api.accounts.AccountAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
         Account that will execute the trade.
-    contract_txn : `ape.contracts.base.ContractTransaction<https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractTransaction>`_
-    | `ape.contracts.base.ContractTransactionHandler<https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractTransactionHandler>`_
+    contract_txn : `ape.contracts.base.ContractTransaction <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractTransaction>`_
+    | `ape.contracts.base.ContractTransactionHandler <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractTransactionHandler>`_
         Contract to execute.
     *args : Any
         Positional arguments to pass to the contract transaction.
@@ -250,7 +250,7 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt : Optional[Ape project `ReceiptAPI<https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_]
+    tx_receipt : `ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_], optional
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
