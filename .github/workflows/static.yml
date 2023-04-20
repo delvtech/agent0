@@ -26,4 +26,4 @@ jobs:
           python -m pip install .
 
       - name: Analysing code with pyright
-        run: python -m pyright $(git ls-files '*.py' ':!:*apeworx*')
+        run: python -m pyright $(git ls-files '*.py')
