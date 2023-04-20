@@ -92,8 +92,8 @@ def select_abi(
 ) -> tuple[MethodABI, Tuple]:
     """
     Select the correct ABI for a method based on the provided parameters:
-    - If `params` is provided, the ABI will be matched by keyword arguments (how *pythonic*! 🐍)
-    - If `args` is provided, the ABI will be matched by the number of arguments.
+    * If `params` is provided, the ABI will be matched by keyword arguments (how *pythonic*! 🐍)
+    * If `args` is provided, the ABI will be matched by the number of arguments.
 
     Arguments
     ---------
