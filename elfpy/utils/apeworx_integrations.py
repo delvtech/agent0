@@ -57,10 +57,11 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     Return everything returned by `getPoolInfo()` in the smart contracts, along with:
 
     Additional information includes:
-    token_id : the id of the TransferSingle event (that isn't mint or burn), returned by `get_transfer_single_event`
-    block_number_ : the block number of the transaction
-    prefix_ : the prefix of the trade (LP, long, or short)
-    maturity_timestamp : the maturity time of the trade
+
+    * `token_id` : the id of the TransferSingle event (that isn't mint or burn), returned by `get_transfer_single_event`
+    * `block_number_` : the block number of the transaction
+    * `prefix_` : the prefix of the trade (LP, long, or short)
+    * `maturity_timestamp` : the maturity time of the trade
 
     Arguments
     ---------
@@ -92,6 +93,7 @@ def select_abi(
 ) -> tuple[MethodABI, Tuple]:
     """
     Select the correct ABI for a method based on the provided parameters:
+
     * If `params` is provided, the ABI will be matched by keyword arguments (how *pythonic*! 🐍)
     * If `args` is provided, the ABI will be matched by the number of arguments.
 
