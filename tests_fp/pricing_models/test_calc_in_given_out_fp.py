@@ -6,7 +6,8 @@ import logging
 import unittest
 from typing import TYPE_CHECKING
 
-from calc_test_dataclasses import (
+import numpy as np
+from calc_test_dataclasses_fp import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessByModelTestResult,
     CalcInGivenOutSuccessTestCase,
