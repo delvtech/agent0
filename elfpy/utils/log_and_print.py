@@ -7,4 +7,4 @@ def log_and_print(string: str, *args, end="\n") -> None:
     if args:
         string = string.format(*args)
     logging.info(string + end)
-    print(string, end=end)
+    logging.getLogger("stdout").info(string + end)
