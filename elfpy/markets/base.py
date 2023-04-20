@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
 
@@ -36,6 +36,15 @@ class MarketAction(Generic[Action]):
 
     action_type: Enum  # these two variables are required to be set by the strategy
     wallet: wallet.Wallet  # the agent's wallet
+
+
+@types.freezable(frozen=False, no_new_attribs=True)
+@dataclass
+class MarketActionFP(Generic[Action]):
+    r"""Market action specification"""
+
+    action_type: Enum  # these two variables are required to be set by the strategy
+    wallet: wallet.WalletFP  # the agent's wallet
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -108,6 +117,47 @@ class Market(Generic[State, Deltas, PricingModel]):
         for key, value in market_deltas.__dict__.items():
             if value:  # check that it's instantiated and non-empty
                 value_to_check = value.amount if isinstance(value, types.Quantity) else value
+                assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
+
+    def update_market(self, market_deltas: Deltas) -> None:
+        """Increments member variables to reflect current market conditions"""
+        self.check_market_updates(market_deltas)  # check that market deltas are valid
+        self.market_state.apply_delta(market_deltas)
+        elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold
+
+
+class MarketFP(Generic[State, Deltas, PricingModel]):
+    r"""Market state simulator
+
+    Holds state variables for market simulation and executes trades.
+    The Market class executes trades by updating market variables according to the given pricing model.
+    It also has some helper variables for assessing pricing model values given market conditions.
+    """
+
+    def __init__(
+        self,
+        pricing_model: PricingModel,
+        market_state: State,
+        block_time: time.BlockTime,
+    ):
+        self.pricing_model = pricing_model
+        self.market_state = market_state
+        self.block_time = block_time
+
+    @property
+    def latest_checkpoint_time(self) -> float:
+        """Gets the most recent checkpoint time."""
+        raise NotImplementedError
+
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, Deltas]:
+        """Performs an action in the market without updating it."""
+        raise NotImplementedError
+
+    def check_market_updates(self, market_deltas: Deltas) -> None:
+        """Check market update values to make sure they are valid"""
+        for key, value in market_deltas.__dict__.items():
+            if value:  # check that it's instantiated and non-empty
+                value_to_check: Any = value.amount if isinstance(value, types.QuantityFP) else value
                 assert np.isfinite(value_to_check), f"ERROR: market delta key {key} is not finite."
 
     def update_market(self, market_deltas: Deltas) -> None:
