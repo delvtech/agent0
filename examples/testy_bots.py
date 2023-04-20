@@ -1,6 +1,4 @@
-"""
-A demo for executing an arbitrary number of trades bots on testnet.
-"""
+"""A demo for executing an arbitrary number of trades bots on testnet."""
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
@@ -15,14 +13,14 @@ from typing import Optional, cast
 
 # external lib
 import ape
+import numpy as np
 from ape import Contract, accounts
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI
-from ape.contracts import ContractInstance, ContractContainer
+from ape.contracts import ContractContainer, ContractInstance
 from ape.managers.project import ProjectManager
-from ape.utils import generate_dev_accounts
 from ape.types import AddressType
+from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
-import numpy as np
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
@@ -30,16 +28,12 @@ from numpy.random._generator import Generator as NumpyGenerator
 # elfpy core repo
 import elfpy
 import elfpy.agents.agent as agentlib
-import elfpy.agents.policies.random_agent as random_agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
-import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
-import elfpy.simulators as simulators
-import elfpy.time as time
-import elfpy.types as types
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
+from elfpy import simulators, time, types
+from elfpy.agents.policies import random_agent
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_assets, hyperdrive_market
 from elfpy.utils.format_number import format_string as fmt
 
 load_dotenv()
@@ -48,19 +42,19 @@ NO_CRASH = 0
 
 
 class FixedFrida(agentlib.Agent):
-    """Agent that paints & opens fixed rate borrow positions"""
+    """Agent that paints & opens fixed rate borrow positions."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
-        """Add custom stuff then call basic policy init"""
+        """Add custom stuff then call basic policy init."""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
     def action(self, _market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Fixed Frida user strategy
+        """Implement a Fixed Frida user strategy.
 
         I'm an actor with a high risk threshold
         I'm willing to open up a fixed-rate borrow (aka a short) if the fixed rate is ~2% higher than the variable rate
@@ -125,19 +119,19 @@ class FixedFrida(agentlib.Agent):
 
 
 class LongLouie(agentlib.Agent):
-    """Long-nosed agent that opens longs"""
+    """Long-nosed agent that opens longs."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
-        """Add custom stuff then call basic policy init"""
+        """Add custom stuff then call basic policy init."""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
     def action(self, _market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Implement a Long Louie user strategy
+        """Implement a Long Louie user strategy.
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
             I simulate the outcome of my trade, and only execute on this condition
@@ -213,7 +207,7 @@ class LongLouie(agentlib.Agent):
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin"""
+    """Define & parse arguments from stdin."""
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
         description="Execute bots on testnet",
@@ -247,7 +241,7 @@ def get_argparser() -> argparse.ArgumentParser:
 
 
 def get_config() -> simulators.Config:
-    """Set _config values for the experiment"""
+    """Set _config values for the experiment."""
     args = get_argparser().parse_args()
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
@@ -288,7 +282,7 @@ def get_config() -> simulators.Config:
 
 
 def get_accounts(bot_types) -> list[KeyfileAccount]:
-    """Generate dev accounts and turn on auto-sign"""
+    """Generate dev accounts and turn on auto-sign."""
     num = sum(config.scratch[f"num_{bot}"] for bot in bot_types)
     assert (mnemonic := os.environ["MNEMONIC"]), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
@@ -306,7 +300,7 @@ def get_accounts(bot_types) -> list[KeyfileAccount]:
 
 
 def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
-    """Get python agents & corresponding solidity wallets"""
+    """Get python agents & corresponding solidity wallets."""
     bot_types = config.scratch["bot_types"]
     for _bot, _policy in bot_types.items():
         log_string = f"{_bot:6s}: n={config.scratch['num_'+_bot]}  "
@@ -355,12 +349,12 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
 
 
 def to_fixed_point(float_var, decimal_places=18):
-    """Convert floating point argument to fixed point with specified number of decimals"""
+    """Convert floating point argument to fixed point with specified number of decimals."""
     return int(float_var * 10**decimal_places)
 
 
 def to_floating_point(float_var, decimal_places=18):
-    """Convert fixed point argument to floating point with specified number of decimals"""
+    """Convert fixed point argument to floating point with specified number of decimals."""
     return float(float_var / 10**decimal_places)
 
 
@@ -412,7 +406,7 @@ def get_market_state_from_contract(contract: ContractInstance):
 
 
 def do_trade():
-    """Execute agent trades on hyperdrive solidity contract"""
+    """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
     # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive, agent_address=contract)
     # market_type = trade_obj.market
@@ -432,7 +426,7 @@ def do_trade():
 
 
 def log_and_print(string: str, *args, end="\n") -> None:
-    """log to both the generic logger and to stdout"""
+    """Log to both the generic logger and to stdout."""
     if args:
         string = string.format(*args)
     logging.info(string + end)
@@ -440,14 +434,14 @@ def log_and_print(string: str, *args, end="\n") -> None:
 
 
 def set_days_without_crashing(no_crash: int):
-    """Calculate the number of days without crashing"""
+    """Calculate the number of days without crashing."""
     with open("no_crash.txt", "w", encoding="utf-8") as file:
         file.write(f"{no_crash}")
     return no_crash
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
-    """Get the max and avg max and priority fees from a block"""
+    """Get the max and avg max and priority fees from a block."""
     if type2 := [txn for txn in block.transactions if txn.type == 2]:  # noqa: PLR2004
         max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
         max_fees = [f / 1e9 for f in max_fees if f is not None]
@@ -459,13 +453,13 @@ def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Opt
 
 
 class HyperdriveProject(ProjectManager):
-    """Hyperdrive project class, to provide static typing for the Hyperdrive contract"""
+    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
     hyperdrive: ContractContainer
     address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
 
     def __init__(self, path: Path) -> None:
-        """Initialize the project, loading the Hyperdrive contract"""
+        """Initialize the project, loading the Hyperdrive contract."""
         super().__init__(path)
         self.load_contracts()
         try:
@@ -474,13 +468,11 @@ class HyperdriveProject(ProjectManager):
             raise AttributeError("Hyperdrive contract not found") from err
 
     def get_hyperdrive_contract(self) -> ContractInstance:
-        """Get the Hyperdrive contract instance"""
-
+        """Get the Hyperdrive contract instance."""
         return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
 
     def get_any_contract_type_safe(self, contract) -> ContractContainer:
-        """Get any contract instance"""
-
+        """Get any contract instance."""
         try:
             return self.get_contract(contract)
         except ValueError as err:
