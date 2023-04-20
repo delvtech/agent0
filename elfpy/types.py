@@ -12,22 +12,22 @@ from elfpy.utils.math import FixedPoint
 class FrozenClass:
     """Config object with frozen attributes"""
 
-    def freeze(self) -> None:
+    def freeze(self):
         """Disallows changing existing members"""
-        raise NotImplementedError("Subclasses must override the freeze() method")
+        return NotImplemented
 
-    def disable_new_attribs(self) -> None:
+    def disable_new_attribs(self):
         """Disallows adding new members"""
-        raise NotImplementedError("Subclasses must override the disable_new_attribs() method")
+        return NotImplemented
 
-    def astype(self, new_type):
+    def astype(self, _new_type):
         """Cast all member attributes to a new type"""
-        raise NotImplementedError("Subclasses must override the astype() method")
+        return NotImplemented
 
     @property
-    def dtypes(self) -> dict[str, Type]:
+    def dtypes(self):
         """Return a dict listing name & type of each member variable"""
-        raise NotImplementedError("Subclasses must override the dtypes() property")
+        return NotImplemented
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
@@ -39,7 +39,7 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
             raise TypeError("The class must be a data class.")
 
         @wraps(wrapped=cls, updated=())
-        class FrozenClass(cls):
+        class DecoratedFrozenClass(cls, FrozenClass):
             """Subclass cls to enable freezing of attributes
 
             .. todo:: resolve why pyright cannot access member "freeze" when instantiated_class.freeze() is called
@@ -89,8 +89,8 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                 return dtypes_dict
 
         # Set the name of the wrapped class to the name of the input class to preserve metadata
-        FrozenClass.__name__ = cls.__name__
-        return FrozenClass
+        DecoratedFrozenClass.__name__ = cls.__name__
+        return DecoratedFrozenClass
 
     return decorator
 
