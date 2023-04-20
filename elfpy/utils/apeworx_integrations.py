@@ -28,7 +28,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
     Arguments
     ---------
-    tx_receipt : `ape_ethereum.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
 
 
@@ -65,7 +65,7 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 
     Arguments
     ---------
-    tx_receipt : `ape_ethereum.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         Ape transaction abstract class to represent a transaction receipt.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
@@ -177,7 +177,7 @@ def ape_trade(
     -------
     pool_state : dict[str, Any, optional
         The Hyperdrive pool state after the trade.
-    tx_receipt : `ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
+    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
 
@@ -251,7 +251,7 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt : `ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_, optional
+    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_, optional
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
