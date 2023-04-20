@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.utils.math import FixedPoint, FixedPointMath
 
 
 @dataclass
@@ -209,6 +209,34 @@ class StretchedTimeFP:
     def years(self) -> FixedPoint:
         r"""Format time as normalized days"""
         return self.days / FixedPoint("365.0")
+
+
+def get_years_remaining_fp(
+    market_time: FixedPoint, mint_time: FixedPoint, position_duration_years: FixedPoint
+) -> FixedPoint:
+    r"""Get the time remaining in years on a token
+
+    Parameters
+    ----------
+    market_time : FixedPoint
+        Time that has elapsed in the given market, in years
+    mint_time : FixedPoint
+        Time at which the token in question was minted, relative to market_time,
+        in yearss. Should be less than market_time.
+    position_duration_years: FixedPoint
+        Total duration of the token's term, in years
+
+    Returns
+    -------
+    FixedPoint
+        Time left until token maturity, in years
+    """
+    if mint_time > market_time:
+        raise ValueError(f"ERROR: {mint_time=} must be less than {market_time=}.")
+    years_elapsed = market_time - mint_time
+    # if we are closing after the position duration has completed, then just set time_remaining to zero
+    time_remaining = FixedPointMath.maximum(position_duration_years - years_elapsed, FixedPoint(0))
+    return time_remaining
 
 
 def days_to_time_remaining_fp(
