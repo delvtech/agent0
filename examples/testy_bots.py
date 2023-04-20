@@ -1,8 +1,5 @@
 """
-This function is a demo for executing an arbitrary number of trades from a pair of
-smart bots that track the fixed/variable rates using longs & shorts. It is meant to be
-a temporary demonstration, and will be gradually replaced with utilities in elfpy src.
-As such, we are relaxing some of the lint rules.
+A demo for executing an arbitrary number of trades bots on testnet.
 """
 from __future__ import annotations  # types will be strings by default in 3.11
 
@@ -53,7 +50,7 @@ NO_CRASH = 0
 class FixedFrida(agentlib.Agent):
     """Agent that paints & opens fixed rate borrow positions"""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
         """Add custom stuff then call basic policy init"""
@@ -130,7 +127,7 @@ class FixedFrida(agentlib.Agent):
 class LongLouie(agentlib.Agent):
     """Long-nosed agent that opens longs"""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
         self, rng: NumpyGenerator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000
     ) -> None:
         """Add custom stuff then call basic policy init"""
@@ -368,11 +365,16 @@ def to_floating_point(float_var, decimal_places=18):
 
 
 def get_market_state_from_contract(contract: ContractInstance):
-    """
-    contract: ape.contracts.base.ContractInstance
-        Ape project `ContractInstance
-        <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
-        wrapped around the initialized MockHyperdriveTestnet smart contract.
+    """Return the current market state from the smart contract.
+
+    Parameters
+    ----------
+    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+
+    Returns
+    -------
+    hyperdrive_market.MarketState
     """
     pool_state = contract.getPoolInfo().__dict__
     asset_id = hyperdrive_assets.encode_asset_id(
@@ -413,7 +415,7 @@ def do_trade():
     """Execute agent trades on hyperdrive solidity contract"""
     # TODO: add market-state-dependent trading for smart bots
     # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive, agent_address=contract)
-    # market_type = trade_obj.market  # constant denoting market type (placeholder)
+    # market_type = trade_obj.market
     trade = trade_object.trade
     agent = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = to_fixed_point(trade.trade_amount)
@@ -446,7 +448,7 @@ def set_days_without_crashing(no_crash: int):
 
 def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
     """Get the max and avg max and priority fees from a block"""
-    if type2 := [txn for txn in block.transactions if txn.type == 2]:
+    if type2 := [txn for txn in block.transactions if txn.type == 2]:  # noqa: PLR2004
         max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
         max_fees = [f / 1e9 for f in max_fees if f is not None]
         priority_fees = [f / 1e9 for f in priority_fees if f is not None]
@@ -463,6 +465,7 @@ class HyperdriveProject(ProjectManager):
     address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
 
     def __init__(self, path: Path) -> None:
+        """Initialize the project, loading the Hyperdrive contract"""
         super().__init__(path)
         self.load_contracts()
         try:
