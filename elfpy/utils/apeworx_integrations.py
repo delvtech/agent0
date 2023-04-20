@@ -54,13 +54,6 @@ def get_transfer_single_event(tx_receipt: Receipt) -> ContractLog:
         ) from exc
 
 
-def failblog(string: str, *args) -> None:
-    """log to both the generic logger as well as the failblog logger"""
-    logging.error(string, *args)
-    logging.getLogger("failblog").error(string, *args)
-    print(string.format(*args))
-
-
 def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
     """
     Aftering opening or closing a position, we query the smart contract for its updated pool info.
@@ -191,7 +184,7 @@ def ape_trade(
         pool = hyperdrive.getPoolInfo().__dict__
         string = "Failed to execute trade: %s\n => %s of %s\n => Agent: %s\n => Pool: %s\n"
         var = trade_type, fmt(amount), exc, agent, pool
-        failblog(string, *var)
+        logging.error(string, *var)
         return None, None
 
 

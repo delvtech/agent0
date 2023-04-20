@@ -12,7 +12,6 @@ import json
 import logging
 import os
 from collections import defaultdict
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import sleep
 from typing import Optional
@@ -41,7 +40,7 @@ import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.fmt import fmt
+from elfpy.utils.format_number import format_string as fmt
 
 # Apeworx does not get along well with pyright
 # Also ignoring a handful of pylint errors
@@ -403,7 +402,7 @@ def get_market_state_from_contract(contract: ContractInstance):
 
 def do_trade(trade_obj: types.Trade, Dai: ContractInstance, hyperdrive: ContractInstance, sim_agents: dict):
     """Execute agent trades on hyperdrive solidity contract"""
-    # TODO: add market-state-dependent trading
+    # TODO: add market-state-dependent trading for smart bots
     # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive, agent_address=contract)
     # market_type = trade_obj.market  # constant denoting market type (placeholder)
     trade: hyperdrive_actions.MarketAction = trade_obj.trade
@@ -444,12 +443,11 @@ def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Opt
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
-    f = logging.getLogger().handlers[0].baseFilename.replace("testnet_bots", "testnet_bots_failblog")  # type: ignore
-    logging.getLogger("failblog").handlers = [RotatingFileHandler(f, mode="w", maxBytes=elfpy.DEFAULT_LOG_MAXBYTES)]
-    logging.getLogger("failblog").formatter = logging.getLogger().handlers[0].formatter  # type: ignore
 
     # Set up ape
-    provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:goerli:alchemy", provider_settings={"port": 8548}).__enter__()
+    provider: ProviderAPI = ape.networks.parse_network_choice(
+        f"ethereum:goerli:alchemy", provider_settings={"port": 8548}
+    ).__enter__()
     provider.network.config.goerli.required_confirmations = 1
     project_root = Path.cwd()
     project = ape.Project(path=project_root)
@@ -499,7 +497,6 @@ if __name__ == "__main__":
                     except Exception as exc:  # pylint: disable=broad-exception-caught
                         log_string = "Crashed in Python simulation: {}"
                         log_and_print(log_string, exc)
-                        logging.getLogger("failblog").error(log_string, exc)
                         no_crash = 0
             last_executed_block = block_number
         sleep(1)
