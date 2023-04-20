@@ -31,7 +31,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
     """Unit tests for the calc_out_given_in function"""
 
     # How many places after decimal must be the same for "AlmostEqual" to be True
-    ALMOST_PLACES = 8  # FIXME: We need to get this up
+    ALMOST_PLACES = 8  # TODO: We need to get this to a higher precision
 
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
@@ -1382,7 +1382,9 @@ class TestCalcOutGivenIn(unittest.TestCase):
         ]
 
         for pricing_model in pricing_models:
-            # FIXME: Should try to get this up to 16
+            # TODO: Works from 0 to 7, after that with[out]_fee goes 0 and then negative.
+            # Need to fix after negative interest is supported (which removes lp_total_supply from in_given_out calcs)
+            # Final range should be range(0, 19)
             for range_val, trade_amount in enumerate([FixedPoint(f"{(1 * 10 ** (-x)):.19f}") for x in range(0, 8)]):
                 logging.info(
                     "pricing_model=%s\nrange_val=%s; trade_amount=%s", pricing_model, range_val, float(trade_amount)

@@ -1333,27 +1333,32 @@ class TestCalcOutGivenIn(unittest.TestCase):
                         days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=365
                     ),
                 )
-                np.testing.assert_almost_equal(
+                # TODO: This should be able to support higher precision
+                self.assertAlmostEqual(
                     trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
-                    err_msg=f"{model_type} test {test_number + 1} unexpected without_fee_or_slippage",
+                    places=8,
+                    msg=f"{model_type} test {test_number + 1} unexpected without_fee_or_slippage",
                 )
-                np.testing.assert_almost_equal(
+                self.assertAlmostEqual(
                     trade_result.breakdown.without_fee,
                     expected_result.without_fee,
-                    err_msg=f"{model_type} test {test_number + 1} unexpected without_fee",
+                    places=8,
+                    msg=f"{model_type} test {test_number + 1} unexpected without_fee",
                 )
                 model_name = pricing_model.model_name()
                 if model_type in {"yieldspace", "hyperdrive"}:
-                    np.testing.assert_almost_equal(
+                    self.assertAlmostEqual(
                         trade_result.breakdown.fee,
                         expected_result.fee,
-                        err_msg=f"{model_type} test {test_number + 1} unexpected fee",
+                        places=8,
+                        msg=f"{model_type} test {test_number + 1} unexpected fee",
                     )
-                    np.testing.assert_almost_equal(
+                    self.assertAlmostEqual(
                         trade_result.breakdown.with_fee,
                         expected_result.with_fee,
-                        err_msg=f"{model_type} test {test_number + 1} unexpected with_fee",
+                        places=8,
+                        msg=f"{model_type} test {test_number + 1} unexpected with_fee",
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be "YieldSpace", not {model_name}')
