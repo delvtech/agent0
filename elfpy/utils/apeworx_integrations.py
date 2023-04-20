@@ -54,7 +54,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
 def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
     """
-    Return everything returned by `getPoolInfo()` in the smart contracts, along with:
+    Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Additional information includes:
 
