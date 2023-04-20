@@ -91,7 +91,7 @@ class SimulationState:
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class Config:
+class Config(types.FrozenClass):
     """Data object for storing user simulation config parameters"""
 
     # lots of configs!
