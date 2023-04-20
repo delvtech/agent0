@@ -69,53 +69,10 @@ class MarketDeltas(base_market.MarketDeltas):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltasFP(base_market.MarketDeltas):
-    r"""Specifies changes to values in the market"""
-    # pylint: disable=too-many-instance-attributes
-    d_base_asset: FixedPoint = FixedPoint(0)
-    d_bond_asset: FixedPoint = FixedPoint(0)
-    d_base_buffer: FixedPoint = FixedPoint(0)
-    d_bond_buffer: FixedPoint = FixedPoint(0)
-    d_lp_total_supply: FixedPoint = FixedPoint(0)
-    d_share_price: FixedPoint = FixedPoint(0)
-    longs_outstanding: FixedPoint = FixedPoint(0)
-    shorts_outstanding: FixedPoint = FixedPoint(0)
-    long_average_maturity_time: FixedPoint = FixedPoint(0)
-    short_average_maturity_time: FixedPoint = FixedPoint(0)
-    long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
-    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
-    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
-    withdraw_capital: FixedPoint = FixedPoint(0)
-    withdraw_interest: FixedPoint = FixedPoint(0)
-    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
 class MarketActionResult(base_market.MarketActionResult):
     r"""The result to a market of performing a trade"""
     d_base: float
     d_bonds: float
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketActionResultFP(base_market.MarketActionResultFP):
-    r"""The result to a market of performing a trade"""
-    d_base: FixedPoint
-    d_bonds: FixedPoint
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -1100,3 +1057,62 @@ def calc_remove_liquidity(
         withdraw_shares=withdraw_shares,
     )
     return market_deltas, agent_deltas
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketDeltasFP(base_market.MarketDeltas):
+    r"""Specifies changes to values in the market"""
+    # pylint: disable=too-many-instance-attributes
+    d_base_asset: FixedPoint = FixedPoint(0)
+    d_bond_asset: FixedPoint = FixedPoint(0)
+    d_base_buffer: FixedPoint = FixedPoint(0)
+    d_bond_buffer: FixedPoint = FixedPoint(0)
+    d_lp_total_supply: FixedPoint = FixedPoint(0)
+    d_share_price: FixedPoint = FixedPoint(0)
+    longs_outstanding: FixedPoint = FixedPoint(0)
+    shorts_outstanding: FixedPoint = FixedPoint(0)
+    long_average_maturity_time: FixedPoint = FixedPoint(0)
+    short_average_maturity_time: FixedPoint = FixedPoint(0)
+    long_base_volume: FixedPoint = FixedPoint(0)
+    short_base_volume: FixedPoint = FixedPoint(0)
+    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
+    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
+    withdraw_capital: FixedPoint = FixedPoint(0)
+    withdraw_interest: FixedPoint = FixedPoint(0)
+    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
+        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
+    )
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class MarketActionResultFP(base_market.MarketActionResultFP):
+    r"""The result to a market of performing a trade"""
+    d_base: FixedPoint
+    d_bonds: FixedPoint
+
+
+@types.freezable(frozen=False, no_new_attribs=True)
+@dataclass
+class MarketActionFP(base_market.MarketAction):
+    r"""Market action specification"""
+    # these two variables are required to be set by the strategy
+    action_type: MarketActionType
+    # amount to supply for the action
+    trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
+    # the agent's wallet
+    wallet: wallet.WalletFP
+    # min amount to receive for the action
+    min_amount_out: FixedPoint = FixedPoint(0)
+    # mint time is set only for trades that act on existing positions (close long or close short)
+    mint_time: Optional[FixedPoint] = None
