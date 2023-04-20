@@ -14,7 +14,8 @@ class FixedPoint:
     """New fixed-point datatype
 
     .. todo::
-        * add __round__, __ceil__, __floor__, __trunc__
+        * add __round__, __ceil__, __floor__, __trunc__ so that it will be a proper numbers.Real type
+        https://docs.python.org/3/library/numbers.html#numbers.Real
     """
 
     int_value: int  # integer representation of self
@@ -68,6 +69,7 @@ class FixedPoint:
         return FixedPoint(FixedPointMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __radd__(self, other: int | FixedPoint) -> FixedPoint:
+        """Reflected add"""
         return self.__add__(other)
 
     def __sub__(self, other: int | FixedPoint) -> FixedPoint:
