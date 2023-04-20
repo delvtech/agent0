@@ -65,33 +65,6 @@ class StretchedTime:
         return self.days / 365
 
 
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class StretchedTimeFP:
-    r"""Stores time in units of days, as well as normalized & stretched variants
-
-    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
-    """
-    days: FixedPoint
-    time_stretch: FixedPoint
-    normalizing_constant: FixedPoint
-
-    @property
-    def stretched_time(self) -> FixedPoint:
-        r"""Returns days / normalizing_constant / time_stretch"""
-        return days_to_time_remaining_fp(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
-
-    @property
-    def normalized_time(self) -> FixedPoint:
-        r"""Format time as normalized days"""
-        return self.days / self.normalizing_constant
-
-    @property
-    def years(self) -> FixedPoint:
-        r"""Format time as normalized days"""
-        return self.days / FixedPoint("365.0")
-
-
 def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
     r"""Get the time remaining in years on a token
 
@@ -159,6 +132,85 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
     return normed_days_remaining / time_stretch
 
 
+def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
+    r"""Converts normalized and stretched time remaining in pool to days
+
+    Parameters
+    ----------
+    time_remaining : float
+        Time left until term maturity, in normalized and stretched time
+    time_stretch : float
+        Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
+        Defaults to 1
+    normalizing_constant : float
+        Amount of days to use as a normalization factor. Defaults to 365
+
+    Returns
+    -------
+    float
+        Time remaining until term maturity, in days
+    """
+    normed_days_remaining = time_remaining * time_stretch
+    return normed_days_remaining * normalizing_constant
+
+
+@dataclass
+class BlockTimeFP:
+    r"""Global time."""
+
+    time: FixedPoint = FixedPoint(0)  # time in years
+    block_number: FixedPoint = FixedPoint(0)
+    step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
+
+    @property
+    def time_in_seconds(self) -> FixedPoint:
+        """1 year = 31,556,952 seconds"""
+        return self.time * FixedPoint("31_556_952.0")
+
+    def tick(self, delta_years: FixedPoint) -> None:
+        """ticks the time by delta_time amount"""
+        self.time += delta_years
+
+    def step(self) -> None:
+        """ticks the time by step_size"""
+        self.time += self.step_size
+
+    def set_time(self, time: FixedPoint) -> None:
+        """Sets the time"""
+        self.time = time
+
+    def set_step_size(self, step_size: FixedPoint) -> None:
+        """Sets the step_size for tick"""
+        self.step_size = step_size
+
+
+@types.freezable(frozen=True, no_new_attribs=True)
+@dataclass
+class StretchedTimeFP:
+    r"""Stores time in units of days, as well as normalized & stretched variants
+
+    .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
+    """
+    days: FixedPoint
+    time_stretch: FixedPoint
+    normalizing_constant: FixedPoint
+
+    @property
+    def stretched_time(self) -> FixedPoint:
+        r"""Returns days / normalizing_constant / time_stretch"""
+        return days_to_time_remaining_fp(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
+
+    @property
+    def normalized_time(self) -> FixedPoint:
+        r"""Format time as normalized days"""
+        return self.days / self.normalizing_constant
+
+    @property
+    def years(self) -> FixedPoint:
+        r"""Format time as normalized days"""
+        return self.days / FixedPoint("365.0")
+
+
 def days_to_time_remaining_fp(
     days_remaining: FixedPoint,
     time_stretch: FixedPoint = FixedPoint("1.0"),
@@ -184,25 +236,3 @@ def days_to_time_remaining_fp(
     """
     normed_days_remaining = days_remaining / normalizing_constant
     return normed_days_remaining / time_stretch
-
-
-def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
-    r"""Converts normalized and stretched time remaining in pool to days
-
-    Parameters
-    ----------
-    time_remaining : float
-        Time left until term maturity, in normalized and stretched time
-    time_stretch : float
-        Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
-        Defaults to 1
-    normalizing_constant : float
-        Amount of days to use as a normalization factor. Defaults to 365
-
-    Returns
-    -------
-    float
-        Time remaining until term maturity, in days
-    """
-    normed_days_remaining = time_remaining * time_stretch
-    return normed_days_remaining * normalizing_constant
