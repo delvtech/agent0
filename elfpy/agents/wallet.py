@@ -313,7 +313,7 @@ class BorrowFP:
     .. todo: add explanation
     collateral_amount: FixedPoint
     .. todo: add explanation
-    start_time : float
+    start_time : FixedPoint
     .. todo: add explanation
     """
     borrow_token: types.TokenType
@@ -321,7 +321,7 @@ class BorrowFP:
     borrow_shares: FixedPoint
     collateral_token: types.TokenType
     collateral_amount: FixedPoint
-    start_time: float
+    start_time: FixedPoint
 
 
 @dataclass()
@@ -336,9 +336,9 @@ class WalletFP:
         The base assets that held by the trader.
     lp_tokens : FixedPoint
         The LP tokens held by the trader.
-    longs : Dict[float, Long]
+    longs : Dict[FixedPoint, Long]
         The long positions held by the trader.
-    shorts : Dict[float, Short]
+    shorts : Dict[FixedPoint, Short]
         The short positions held by the trader.
     fees_paid : FixedPoint
         The fees paid by the wallet.
@@ -359,12 +359,12 @@ class WalletFP:
     lp_tokens: FixedPoint = FixedPoint(0)
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: dict[float, LongFP] = field(default_factory=dict)
-    shorts: dict[float, ShortFP] = field(default_factory=dict)
+    longs: dict[FixedPoint, LongFP] = field(default_factory=dict)
+    shorts: dict[FixedPoint, ShortFP] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
-    borrows: dict[float, BorrowFP] = field(default_factory=dict)
+    borrows: dict[FixedPoint, BorrowFP] = field(default_factory=dict)
     fees_paid: FixedPoint = FixedPoint(0)
 
     def __getitem__(self, key: str) -> Any:
@@ -426,7 +426,7 @@ class WalletFP:
                 raise ValueError(f"wallet_key={key} is not allowed.")
             elfpy.check_non_zero(self)
 
-    def _update_borrows(self, borrows: Iterable[tuple[float, BorrowFP]]) -> None:
+    def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, BorrowFP]]) -> None:
         for mint_time, borrow_summary in borrows:
             if mint_time != borrow_summary.start_time:
                 raise ValueError(
@@ -441,12 +441,12 @@ class WalletFP:
                 # of open borrows using `if self.borrows`
                 del self.borrows[borrow_summary.start_time]
 
-    def _update_longs(self, longs: Iterable[tuple[float, LongFP]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[FixedPoint, LongFP]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
         Parameters
         ----------
-        shorts : Iterable[tuple[float, Short]]
+        shorts : Iterable[tuple[FixedPoint, Short]]
             A list (or other Iterable type) of tuples that contain a Long object
             and its market-relative mint time
         """
@@ -470,12 +470,12 @@ class WalletFP:
             if mint_time in self.longs and self.longs[mint_time].balance < FixedPoint(0):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
-    def _update_shorts(self, shorts: Iterable[tuple[float, ShortFP]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, ShortFP]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
         Parameters
         ----------
-        shorts : Iterable[tuple[float, Short]]
+        shorts : Iterable[tuple[FixedPoint, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
             and its market-relative mint time
         """
