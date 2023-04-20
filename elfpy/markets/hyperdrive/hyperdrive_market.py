@@ -173,7 +173,13 @@ class MarketState(base_market.BaseMarketState):
         return MarketState(**copy.deepcopy(self.__dict__))
 
 
-class Market(base_market.Market):
+class Market(
+    base_market.Market[
+        MarketState,
+        hyperdrive_actions.MarketDeltas,
+        hyperdrive_pm.HyperdrivePricingModel,
+    ]
+):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.

@@ -4,7 +4,7 @@ This module contains a function to format a float to a string with a given preci
 import numpy as np
 
 
-def fmt(value, precision=3, min_digits=0, debug=False):
+def format_string(value, precision=3, min_digits=0, debug=False):
     """
     Format a float to a string with a given precision
     this follows the significant figure behavior, irrepective of number size
