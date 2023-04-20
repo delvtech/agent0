@@ -33,22 +33,22 @@ class FrozenClass:
 class FrozenClass:
     """Config object with frozen attributes"""
 
-    def freeze(self) -> None:
+    def freeze(self):
         """Disallows changing existing members"""
-        raise NotImplementedError("Subclasses must override the freeze() method")
+        return NotImplemented
 
-    def disable_new_attribs(self) -> None:
+    def disable_new_attribs(self):
         """Disallows adding new members"""
-        raise NotImplementedError("Subclasses must override the disable_new_attribs() method")
+        return NotImplemented
 
-    def astype(self, new_type):
+    def astype(self, _new_type):
         """Cast all member attributes to a new type"""
-        raise NotImplementedError("Subclasses must override the astype() method")
+        return NotImplemented
 
     @property
-    def dtypes(self) -> dict[str, Type]:
+    def dtypes(self):
         """Return a dict listing name & type of each member variable"""
-        raise NotImplementedError("Subclasses must override the dtypes() property")
+        return NotImplemented
 
 
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
