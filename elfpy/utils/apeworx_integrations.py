@@ -96,7 +96,7 @@ def select_abi(
     """
     Select the correct ABI for a method based on the provided parameters:
 
-    * If `params` is provided, the ABI will be matched by keyword arguments (how *pythonic*! 🐍)
+    * If `params` is provided, the ABI will be matched by keyword arguments
     * If `args` is provided, the ABI will be matched by the number of arguments.
 
     Arguments
