@@ -499,7 +499,7 @@ class AgentFP:
         action_list = []
         for mint_time, long in self.wallet.longs.items():
             logging.debug("evaluating closing long: mint_time=%g, position=%s", float(mint_time), long)
-            if long.balance > 0:
+            if long.balance > FixedPoint(0):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
