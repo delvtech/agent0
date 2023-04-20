@@ -30,27 +30,6 @@ class FrozenClass:
         return NotImplemented
 
 
-class FrozenClass:
-    """Config object with frozen attributes"""
-
-    def freeze(self):
-        """Disallows changing existing members"""
-        return NotImplemented
-
-    def disable_new_attribs(self):
-        """Disallows adding new members"""
-        return NotImplemented
-
-    def astype(self, _new_type):
-        """Cast all member attributes to a new type"""
-        return NotImplemented
-
-    @property
-    def dtypes(self):
-        """Return a dict listing name & type of each member variable"""
-        return NotImplemented
-
-
 def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
     r"""A wrapper that allows classes to be frozen, such that existing member attributes cannot be changed"""
 
