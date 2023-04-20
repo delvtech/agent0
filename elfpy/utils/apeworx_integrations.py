@@ -56,13 +56,6 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     """
     Return everything returned by `getPoolInfo()` in the smart contracts.
 
-    Additional information includes:
-
-    * `token_id` : the id of the TransferSingle event (that isn't mint or burn), returned by `get_transfer_single_event`
-    * `block_number_` : the block number of the transaction
-    * `prefix_` : the prefix of the trade (LP, long, or short)
-    * `maturity_timestamp` : the maturity time of the trade
-
     Arguments
     ---------
     tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
@@ -72,8 +65,17 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 
     Returns
     -------
-    pool_state : dict[str, Any]
+    pool_state : dict
         An update dictionary for the Hyperdrive pool state.
+
+    Notes
+    -----
+    Additional information includes:
+
+    * `token_id` : the id of the TransferSingle event (that isn't mint or burn), returned by `get_transfer_single_event`
+    * `block_number_` : the block number of the transaction
+    * `prefix_` : the prefix of the trade (LP, long, or short)
+    * `maturity_timestamp` : the maturity time of the trade
     """
     transfer_single_event = get_transfer_single_event(tx_receipt)
     # The ID is a concatenation of the current share price and the maturity time of the trade
@@ -175,7 +177,7 @@ def ape_trade(
 
     Returns
     -------
-    pool_state : dict[str, Any, optional
+    pool_state : dict, optional
         The Hyperdrive pool state after the trade.
     tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
