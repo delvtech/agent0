@@ -1,8 +1,8 @@
 """Trade related classes and functions"""
 from dataclasses import dataclass
 
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.agents.agent_trade_result as agent_trade_result
+import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.types as types
 from elfpy.utils.math import FixedPoint
 
@@ -102,8 +102,8 @@ class TradeResult:
     to the user and the market are computed.
     """
 
-    user_result: agent.AgentTradeResult
-    market_result: hyperdrive_actions.MarketActionResult
+    user_result: agent_trade_result.AgentTradeResult
+    market_result: market_action_result.MarketActionResult
     breakdown: TradeBreakdown
 
 
@@ -118,6 +118,6 @@ class TradeResultFP:
     to the user and the market are computed.
     """
 
-    user_result: agent.AgentTradeResultFP
-    market_result: hyperdrive_actions.MarketActionResultFP
+    user_result: agent_trade_result.AgentTradeResultFP
+    market_result: market_action_result.MarketActionResultFP
     breakdown: TradeBreakdownFP
