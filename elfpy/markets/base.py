@@ -38,6 +38,15 @@ class MarketAction(Generic[Action]):
     wallet: wallet.Wallet  # the agent's wallet
 
 
+@types.freezable(frozen=False, no_new_attribs=True)
+@dataclass
+class MarketActionFP(Generic[Action]):
+    r"""Market action specification"""
+
+    action_type: Enum  # these two variables are required to be set by the strategy
+    wallet: wallet.WalletFP  # the agent's wallet
+
+
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
 class MarketDeltas:
