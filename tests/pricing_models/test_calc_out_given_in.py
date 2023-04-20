@@ -5,8 +5,6 @@ import decimal
 import unittest
 import logging
 
-import numpy as np
-
 from calc_test_dataclasses import (
     CalcOutGivenInSuccessTestCase,
     CalcOutGivenInSuccessTestResult,

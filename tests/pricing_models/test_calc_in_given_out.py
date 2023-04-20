@@ -5,7 +5,6 @@ import decimal
 import logging
 import unittest
 
-import numpy as np
 from calc_test_dataclasses import (
     CalcInGivenOutFailureTestCase,
     CalcInGivenOutSuccessByModelTestResult,
@@ -66,26 +65,30 @@ class TestCalcInGivenOut(unittest.TestCase):
                     market_state=test_case.market_state,
                     time_remaining=time_remaining,
                 )
-                np.testing.assert_almost_equal(
+                self.assertAlmostEqual(
                     trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
-                    err_msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
+                    places=8,
+                    msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
                 )
-                np.testing.assert_almost_equal(
+                self.assertAlmostEqual(
                     trade_result.breakdown.without_fee,
                     expected_result.without_fee,
-                    err_msg=f"test {test_number + 1} unexpected without_fee",
+                    places=8,
+                    msg=f"test {test_number + 1} unexpected without_fee",
                 )
                 if model_type in {"yieldspace", "hyperdrive"}:
-                    np.testing.assert_almost_equal(
+                    self.assertAlmostEqual(
                         trade_result.breakdown.fee,
                         expected_result.fee,
-                        err_msg=f"test {test_number + 1} unexpected yieldspace fee",
+                        places=8,
+                        msg=f"test {test_number + 1} unexpected yieldspace fee",
                     )
-                    np.testing.assert_almost_equal(
+                    self.assertAlmostEqual(
                         trade_result.breakdown.with_fee,
                         expected_result.with_fee,
-                        err_msg=f"test {test_number + 1} unexpected yieldspace with_fee",
+                        places=8,
+                        msg=f"test {test_number + 1} unexpected yieldspace with_fee",
                     )
                 else:
                     raise AssertionError(f'Expected model_name to be or "YieldSpace", not {model_name}')
