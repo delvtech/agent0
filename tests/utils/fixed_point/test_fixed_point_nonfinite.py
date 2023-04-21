@@ -215,6 +215,7 @@ class TestFixedPointNonFinite(unittest.TestCase):
         assert self.INF * self.ONE == self.INF
         assert self.INF * self.EVEN_FINITE == self.INF
         assert self.INF * self.INF == self.INF
+        assert self.INF * self.NEG_INF == self.NEG_INF
         # anything (besides -inf, zero) * -inf = -inf
         assert self.ONE * self.NEG_INF == self.NEG_INF
         assert self.EVEN_FINITE * self.NEG_INF == self.NEG_INF

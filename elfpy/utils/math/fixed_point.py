@@ -67,13 +67,13 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():
+        if self.is_nan() or other.is_nan():  # anything + nan is nan
             return FixedPoint("nan")
-        if self.is_inf():
-            if other.is_inf() and self.sign() != other.sign():
+        if self.is_inf():  # self is inf
+            if other.is_inf() and self.sign() != other.sign():  # both are inf, signs don't match
                 return FixedPoint("nan")
-            return self
-        if other.is_inf():
+            return self  # doesn't matter if other is inf or not because if other is inf, then signs match
+        if other.is_inf():  # self is not inf
             return other
         return FixedPoint(FixedPointMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
 
@@ -86,13 +86,15 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():
+        if self.is_nan() or other.is_nan():  # anything - nan is nan
             return FixedPoint("nan")
-        if self.is_inf():
-            if other.is_inf() and self.sign() == other.sign():
+        if self.is_inf():  # self is  inf
+            if other.is_inf() and self.sign() == other.sign():  # both are inf, sign is equal
                 return FixedPoint("nan")
+            # it doesn't matter if other is inf because the signs are different & finite gets overruled
+            # e.g. inf - (-inf) = inf; -inf - (inf) = -inf; and inf - (+/-)finite = inf
             return self
-        if other.is_inf():
+        if other.is_inf():  # self is not inf, so return sign flipped other
             return FixedPoint("-inf") if other.sign() == FixedPoint("1.0") else FixedPoint("inf")
         return FixedPoint(FixedPointMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
 
@@ -121,8 +123,8 @@ class FixedPoint:
         if self.is_zero() or other.is_zero():
             if self.is_inf() or other.is_inf():
                 return FixedPoint("nan")  # zero * inf is nan
-            return FixedPoint(0)
-        if self.is_inf() or other.is_inf():
+            return FixedPoint(0)  # zero * finite is zero
+        if self.is_inf() or other.is_inf():  # anything * inf is inf, follow normal mul rules for sign
             return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
         return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
@@ -151,14 +153,14 @@ class FixedPoint:
             return NotImplemented
         if other == FixedPoint("0.0"):
             raise errors.DivisionByZero
-        if self.is_nan() or other.is_nan():
+        if self.is_nan() or other.is_nan():  # nan / anything is nan
             return FixedPoint("nan")
-        if self.is_inf():
-            if other.is_inf():  # inf / inf is zero
+        if self.is_inf():  # self is inf
+            if other.is_inf():  # inf / inf is nan
                 return FixedPoint("nan")
-            return self
-        if other.is_inf():  # finite / inf is zero
-            return FixedPoint(0)
+            return self  # (+/-) inf / finite is (+/-) inf
+        if other.is_inf():  # self is finite
+            return FixedPoint(0)  # finite / (+/-) inf is zero
         return FixedPoint(FixedPointMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
