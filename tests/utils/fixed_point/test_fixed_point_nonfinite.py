@@ -296,3 +296,30 @@ class TestFixedPointNonFinite(unittest.TestCase):
         # small base, -inf exp
         assert self.SMALL_FINITE**self.NEG_INF == self.INF
         assert self.SMALL_FINITE**self.INF == self.ZERO
+
+    def test_modulo(self):
+        """Test rules for non-finite modulo operation"""
+        # nan % anything is nan
+        assert (self.NAN % self.ONE).is_nan() is True
+        assert (self.NAN % self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN % self.NAN).is_nan() is True
+        assert (self.NAN % self.INF).is_nan() is True
+        assert (self.NAN % self.NEG_INF).is_nan() is True
+        # anything % nan is nan
+        assert (self.ZERO % self.NAN).is_nan() is True
+        assert (self.ONE % self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE % self.NAN).is_nan() is True
+        assert (self.NAN % self.NAN).is_nan() is True
+        assert (self.INF % self.NAN).is_nan() is True
+        assert (self.NEG_INF % self.NAN).is_nan() is True
+        # finite % (+/-) inf is finite
+        assert self.EVEN_FINITE % self.INF == self.EVEN_FINITE
+        assert self.EVEN_FINITE % self.NEG_INF == self.EVEN_FINITE
+        # (+/-) inf % anything is nan
+        assert (self.INF % self.EVEN_FINITE).is_nan() is True
+        assert (self.INF % self.INF).is_nan() is True
+        assert (self.INF % self.SMALL_FINITE).is_nan() is True
+        assert (self.INF % self.NEG_INF).is_nan() is True
+        assert (self.NEG_INF % self.EVEN_FINITE).is_nan() is True
+        assert (self.NEG_INF % self.INF).is_nan() is True
+        assert (self.NEG_INF % self.NEG_INF).is_nan() is True

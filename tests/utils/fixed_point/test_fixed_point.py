@@ -2,6 +2,7 @@
 import math
 import unittest
 
+import elfpy.errors.errors as errors
 from elfpy.utils.math import FixedPoint
 
 
@@ -180,6 +181,7 @@ class TestFixedPoint(unittest.TestCase):
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
         fixed_point_value = FixedPoint(1)
+        fixed_point_zero = FixedPoint(0)
         float_value = 1.0
         int_value = 1
         with self.assertRaises(TypeError):
@@ -190,6 +192,8 @@ class TestFixedPoint(unittest.TestCase):
             _ = fixed_point_value / int_value  # type: ignore
         with self.assertRaises(TypeError):
             _ = int_value / fixed_point_value  # type: ignore
+        with self.assertRaises(errors.DivisionByZero):
+            _ = fixed_point_value / fixed_point_zero
 
     def test_power(self):
         r"""Test `**` sugar for various type combos"""
@@ -208,3 +212,45 @@ class TestFixedPoint(unittest.TestCase):
         self.assertAlmostEqual(
             int(FixedPoint(5 * 10**18) ** FixedPoint(2 * 10**18)), int(FixedPoint(25.0)), delta=30
         )
+
+    def test_modulo(self):
+        r"""Test '%' syntax for various type combos"""
+        # int % int
+        assert int(FixedPoint(5) % FixedPoint(2)) == 1
+        assert int(FixedPoint(9) % FixedPoint(3)) == 0
+        assert FixedPoint(10) % FixedPoint(3) == FixedPoint(1)
+        # int % float
+        assert float(FixedPoint(5) % FixedPoint(2.0)) == 5e-18
+        assert float(FixedPoint(9) % FixedPoint(3.5)) == 9e-18
+        # float % float
+        assert float(FixedPoint(5.0) % FixedPoint(2.0)) == 1.0
+        assert float(FixedPoint(9.0) % FixedPoint(3.5)) == 2.0
+        # float % int
+        assert float(FixedPoint(5.0) % FixedPoint(2)) == 0.0
+        assert float(FixedPoint(9.0) % FixedPoint(3)) == 0.0
+        # str % str
+        assert float(FixedPoint("5.0") % FixedPoint("2.0")) == 1.0
+        assert float(FixedPoint("9.0") % FixedPoint("3.5")) == 2.0
+        assert float(FixedPoint("6.0") % FixedPoint("2.5")) == 1.0
+        assert float(FixedPoint("6.0") % FixedPoint("100.0")) == 6.0
+        assert float(FixedPoint("0.006") % FixedPoint("0.001")) == 0.0
+
+    def test_modulo_fail(self):
+        r"""Test failure of `%` sugar
+
+        We are ignoring type errors -- we know they're bad, but we're looking for failure
+        """
+        fixed_point_value = FixedPoint(1)
+        fixed_point_zero = FixedPoint(0)
+        float_value = 1.0
+        int_value = 1
+        with self.assertRaises(TypeError):
+            _ = fixed_point_value % float_value  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = float_value % fixed_point_value  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = fixed_point_value % int_value  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = int_value % fixed_point_value  # type: ignore
+        with self.assertRaises(errors.DivisionByZero):
+            _ = fixed_point_value % fixed_point_zero

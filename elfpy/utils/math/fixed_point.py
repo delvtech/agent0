@@ -172,11 +172,33 @@ class FixedPoint:
         return FixedPoint(str(float(self) ** float(other)))
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '**' syntax"""
+        """Enables reciprocal pow to allow int ** FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
         return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
+
+    def __mod__(self, other: FixedPoint) -> FixedPoint:
+        """Enables `%` syntax"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        if other == FixedPoint("0.0"):
+            raise errors.DivisionByZero
+        if self.is_nan() or other.is_nan():
+            return FixedPoint("nan")
+        if self.is_inf():
+            return FixedPoint("nan")
+        if other.is_inf():
+            return self
+        return FixedPoint(self.int_value % other.int_value, self.decimal_places, self.signed)
+
+    def __rmod__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables reciprocal modulo to allow int % FixedPoint"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return other % self
 
     def __neg__(self) -> FixedPoint:
         """Enables flipping value sign"""
