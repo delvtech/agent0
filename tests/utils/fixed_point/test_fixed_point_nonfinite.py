@@ -20,6 +20,47 @@ class TestFixedPointNonFinite(unittest.TestCase):
     INF = FixedPoint("inf")
     NEG_INF = FixedPoint("-inf")
 
+    def test_is_nan(self):
+        """Test that FixedPoint can detect if it is nan"""
+        assert self.NAN.is_nan() is True
+        assert self.INF.is_nan() is False
+        assert self.NEG_INF.is_nan() is False
+        assert self.EVEN_FINITE.is_nan() is False
+        assert self.ONE.is_nan() is False
+
+    def test_is_inf(self):
+        """Test that FixedPoint can detect if it is + or - inf"""
+        assert self.INF.is_inf() is True
+        assert self.NEG_INF.is_inf() is True
+        assert self.NAN.is_inf() is False
+        assert self.EVEN_FINITE.is_inf() is False
+        assert self.ONE.is_inf() is False
+
+    def test_is_zero(self):
+        """Test that FixedPoint can detect if it is 0"""
+        assert self.ZERO.is_zero() is True
+        assert self.ONE.is_zero() is False
+        assert self.NAN.is_zero() is False
+        assert self.INF.is_zero() is False
+        assert self.NEG_INF.is_zero() is False
+
+    def test_is_finite(self):
+        """Test that FixedPoint can detect if it is not inf or nan"""
+        assert self.ZERO.is_finite() is True
+        assert self.SMALL_FINITE.is_finite() is True
+        assert self.NAN.is_finite() is False
+        assert self.INF.is_finite() is False
+        assert self.NEG_INF.is_finite() is False
+
+    def test_sign(self):
+        """Test that FixedPoint knows its sign"""
+        assert self.ONE.sign() == FixedPoint("1.0")
+        assert self.NEG_ONE.sign() == FixedPoint("-1.0")
+        assert self.INF.sign() == FixedPoint("1.0")
+        assert self.NEG_INF.sign() == FixedPoint("-1.0")
+        assert self.NAN.sign() == self.NAN
+        assert self.ZERO.sign() == self.ZERO
+
     def test_add(self):
         """Test rules for non-finite addition"""
         # nan + anything is nan

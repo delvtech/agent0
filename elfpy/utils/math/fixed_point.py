@@ -93,7 +93,7 @@ class FixedPoint:
                 return FixedPoint("nan")
             return self
         if other.is_inf():
-            return FixedPoint("-inf") if int(other.sign()) == 1 else FixedPoint("inf")
+            return FixedPoint("-inf") if other.sign() == FixedPoint("1.0") else FixedPoint("inf")
         return FixedPoint(FixedPointMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
@@ -123,6 +123,8 @@ class FixedPoint:
                 return FixedPoint("nan")  # zero * inf is nan
             return FixedPoint(0)
         if self.is_inf() or other.is_inf():
+            print(self.sign())
+            print(other.sign())
             return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
         return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
@@ -329,15 +331,13 @@ class FixedPoint:
 
     def sign(self) -> FixedPoint:
         """Return the sign of self if self is finite, inf, or -inf; otherwise return nan"""
-        if self.special_value is not None:
-            if self.special_value == "nan":
-                return FixedPoint("nan")
-            if "-" in self.special_value:
-                return FixedPoint(-1)
-            return FixedPoint(1)
-        if self.int_value == 0:
-            return FixedPoint(0)
-        return FixedPoint(int(self.int_value > 0))
+        if self.special_value == "nan":
+            return FixedPoint("nan")
+        if self == FixedPoint("0.0"):
+            return self
+        if "-" in str(self):
+            return FixedPoint("-1.0")
+        return FixedPoint("1.0")
 
 
 NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
