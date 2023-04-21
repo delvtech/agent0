@@ -14,7 +14,7 @@ class FixedPoint:
     """New fixed-point datatype
 
     Arithmetic follows the Delv Hyperdrive Solidity smart contract standards.
-    However, we have expanded some operations due to the flexible application space of the python simulations,
+    However, we have expanded some operations due to the flexible application space of the Python simulations,
     for example by including non-finite representations.
     Whenever expanding beyond what is in the Solidity contracts, we follow the IEEE 754 floating point standard.
 
