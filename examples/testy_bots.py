@@ -464,13 +464,6 @@ class HyperdriveProject(ProjectManager):
         """Get the Hyperdrive contract instance."""
         return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
 
-    def get_any_contract_type_safe(self, contract) -> ContractContainer:
-        """Get any contract instance."""
-        try:
-            return self.get_contract(contract)
-        except ValueError as err:
-            raise ValueError(f"{contract} contract not found") from err
-
 
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
@@ -483,11 +476,6 @@ if __name__ == "__main__":
     project = HyperdriveProject(Path.cwd())
     dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
-    try:
-        hyperpoop: ContractContainer = project.get_any_contract_type_safe("Hyperpoop")
-        log_and_show("oh no, we have hyperpooop 🤮")
-    except ValueError:
-        log_and_show("we found no hyperpooop 🙌")
     hyperdrive: ContractInstance = project.get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
