@@ -58,28 +58,71 @@ class TestFixedPointNonFinite(unittest.TestCase):
         assert self.NEG_ONE.sign() == FixedPoint("-1.0")
         assert self.INF.sign() == FixedPoint("1.0")
         assert self.NEG_INF.sign() == FixedPoint("-1.0")
-        assert self.NAN.sign() == self.NAN
+        assert self.NAN.sign().is_nan() is True
         assert self.ZERO.sign() == self.ZERO
+
+    def test_eq(self):
+        """Test that FixedPoint non-finite values can be equal"""
+        assert not (self.NAN == self.NAN)
+        assert self.INF == self.INF
+        assert self.NEG_INF == self.NEG_INF
+
+    def test_ne(self):
+        """Test that FixedPoint non-finite values can be non-equal"""
+        assert self.NAN != self.NAN
+        assert not self.INF != self.INF
+        assert not self.NEG_INF != self.NEG_INF
+        assert self.NEG_INF != self.INF
+
+    def test_lt(self):
+        """Test that FixedPoint non-finite values handle less than"""
+        assert not self.NAN < self.NAN
+        assert not self.NAN < self.ODD_FINITE
+        assert not self.ODD_FINITE < self.NAN
+        assert not self.INF < self.NAN
+        assert not self.NAN < self.INF
+        assert not self.INF < self.ODD_FINITE
+        assert not self.INF < self.INF
+        assert not self.INF < self.NEG_INF
+        assert not self.NEG_INF < self.NEG_INF
+        assert self.NEG_INF < self.INF
+        assert self.NEG_INF < self.ODD_FINITE
+        assert self.ODD_FINITE < self.INF
+
+    def test_le(self):
+        """Test that FixedPoint non-finite values handle less than"""
+        assert not self.NAN <= self.NAN
+        assert not self.NAN <= self.ODD_FINITE
+        assert not self.ODD_FINITE <= self.NAN
+        assert not self.INF <= self.NAN
+        assert not self.NAN <= self.INF
+        assert not self.INF <= self.ODD_FINITE
+        assert not self.INF <= self.NEG_INF
+        assert self.INF <= self.INF
+        assert self.NEG_INF <= self.NEG_INF
+        assert self.NEG_INF <= self.INF
+        assert self.NEG_INF <= self.ODD_FINITE
+        assert self.ODD_FINITE <= self.INF
 
     def test_add(self):
         """Test rules for non-finite addition"""
         # nan + anything is nan
-        assert self.NAN + self.ZERO == self.NAN
-        assert self.NAN + self.ONE == self.NAN
-        assert self.NAN + self.EVEN_FINITE == self.NAN
-        assert self.NAN + self.NAN == self.NAN
-        assert self.NAN + self.INF == self.NAN
-        assert self.NAN + self.NEG_INF == self.NAN
+        assert (self.NAN + self.ZERO).is_nan() is True
+        assert (self.NAN + self.ONE).is_nan() is True
+        assert (self.NAN + self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN + self.NAN).is_nan() is True
+        assert (self.NAN + self.INF).is_nan() is True
+        assert (self.NAN + self.NEG_INF).is_nan() is True
         # anything + nan is nan
-        assert self.ZERO + self.NAN == self.NAN
-        assert self.ONE + self.NAN == self.NAN
-        assert self.EVEN_FINITE + self.NAN == self.NAN
-        assert self.NAN + self.NAN == self.NAN
-        assert self.INF + self.NAN == self.NAN
-        assert self.NEG_INF + self.NAN == self.NAN
+        assert (self.ZERO + self.NAN).is_nan() is True
+        assert (self.ONE + self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE + self.NAN).is_nan() is True
+        assert (self.NAN + self.NAN).is_nan() is True
+        assert (self.INF + self.NAN).is_nan() is True
+        assert (self.NEG_INF + self.NAN).is_nan() is True
         # inf + -inf is nan
-        assert self.INF + self.NEG_INF == self.NAN
-        assert self.NEG_INF + self.INF == self.NAN
+        assert (self.INF + self.NEG_INF).is_nan() is True
+        assert (self.NEG_INF + self.INF).is_nan() is True
         # inf + finite is inf
         assert self.INF + self.EVEN_FINITE == self.INF
         assert self.EVEN_FINITE + self.INF == self.INF
@@ -93,22 +136,22 @@ class TestFixedPointNonFinite(unittest.TestCase):
     def test_sub(self):
         """Test rules for non-finite subtraction"""
         # nan - anything is nan
-        assert self.NAN - self.ZERO == self.NAN
-        assert self.NAN - self.ONE == self.NAN
-        assert self.NAN - self.EVEN_FINITE == self.NAN
-        assert self.NAN - self.NAN == self.NAN
-        assert self.NAN - self.INF == self.NAN
-        assert self.NAN - self.NEG_INF == self.NAN
+        assert (self.NAN - self.ZERO).is_nan() is True
+        assert (self.NAN - self.ONE).is_nan() is True
+        assert (self.NAN - self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN - self.NAN).is_nan() is True
+        assert (self.NAN - self.INF).is_nan() is True
+        assert (self.NAN - self.NEG_INF).is_nan() is True
         # anything - nan is nan
-        assert self.ZERO - self.NAN == self.NAN
-        assert self.ONE - self.NAN == self.NAN
-        assert self.EVEN_FINITE - self.NAN == self.NAN
-        assert self.NAN - self.NAN == self.NAN
-        assert self.INF - self.NAN == self.NAN
-        assert self.NEG_INF - self.NAN == self.NAN
+        assert (self.ZERO - self.NAN).is_nan() is True
+        assert (self.ONE - self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE - self.NAN).is_nan() is True
+        assert (self.NAN - self.NAN).is_nan() is True
+        assert (self.INF - self.NAN).is_nan() is True
+        assert (self.NEG_INF - self.NAN).is_nan() is True
         # same sign is nan
-        assert self.INF - self.INF == self.NAN
-        assert self.NEG_INF - self.NEG_INF == self.NAN
+        assert (self.INF - self.INF).is_nan() is True
+        assert (self.NEG_INF - self.NEG_INF).is_nan() is True
         # opposite sign take the sign of the minuend
         assert self.INF - self.NEG_INF == self.INF
         assert self.NEG_INF - self.INF == self.NEG_INF
@@ -121,19 +164,19 @@ class TestFixedPointNonFinite(unittest.TestCase):
     def test_mul(self):
         """Test rules for non-finite multiplication"""
         # nan * anything is nan
-        assert self.NAN * self.ZERO == self.NAN
-        assert self.NAN * self.ONE == self.NAN
-        assert self.NAN * self.EVEN_FINITE == self.NAN
-        assert self.NAN * self.NAN == self.NAN
-        assert self.NAN * self.INF == self.NAN
-        assert self.NAN * self.NEG_INF == self.NAN
+        assert (self.NAN * self.ZERO).is_nan() is True
+        assert (self.NAN * self.ONE).is_nan() is True
+        assert (self.NAN * self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN * self.NAN).is_nan() is True
+        assert (self.NAN * self.INF).is_nan() is True
+        assert (self.NAN * self.NEG_INF).is_nan() is True
         # anything * nan is nan
-        assert self.ZERO * self.NAN == self.NAN
-        assert self.ONE * self.NAN == self.NAN
-        assert self.EVEN_FINITE * self.NAN == self.NAN
-        assert self.NAN * self.NAN == self.NAN
-        assert self.INF * self.NAN == self.NAN
-        assert self.NEG_INF * self.NAN == self.NAN
+        assert (self.ZERO * self.NAN).is_nan() is True
+        assert (self.ONE * self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE * self.NAN).is_nan() is True
+        assert (self.NAN * self.NAN).is_nan() is True
+        assert (self.INF * self.NAN).is_nan() is True
+        assert (self.NEG_INF * self.NAN).is_nan() is True
         # anything (besides -inf, zero) * inf = inf
         assert self.ONE * self.INF == self.INF
         assert self.EVEN_FINITE * self.INF == self.INF
@@ -150,29 +193,29 @@ class TestFixedPointNonFinite(unittest.TestCase):
         # -inf * -inf = inf
         assert self.NEG_INF * self.NEG_INF == self.INF
         # inf * 0 is nan; -inf * 0 is nan
-        assert self.INF * self.ZERO == self.NAN
-        assert self.NEG_INF * self.ZERO == self.NAN
+        assert (self.INF * self.ZERO).is_nan() is True
+        assert (self.NEG_INF * self.ZERO).is_nan() is True
 
     def test_div(self):
         """Test rules for non-finite division"""
         # nan / anything is nan
-        assert self.NAN / self.ONE == self.NAN
-        assert self.NAN / self.EVEN_FINITE == self.NAN
-        assert self.NAN / self.NAN == self.NAN
-        assert self.NAN / self.INF == self.NAN
-        assert self.NAN / self.NEG_INF == self.NAN
+        assert (self.NAN / self.ONE).is_nan() is True
+        assert (self.NAN / self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN / self.NAN).is_nan() is True
+        assert (self.NAN / self.INF).is_nan() is True
+        assert (self.NAN / self.NEG_INF).is_nan() is True
         # anything / nan is nan
-        assert self.ZERO / self.NAN == self.NAN
-        assert self.ONE / self.NAN == self.NAN
-        assert self.EVEN_FINITE / self.NAN == self.NAN
-        assert self.NAN / self.NAN == self.NAN
-        assert self.INF / self.NAN == self.NAN
-        assert self.NEG_INF / self.NAN == self.NAN
+        assert (self.ZERO / self.NAN).is_nan() is True
+        assert (self.ONE / self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE / self.NAN).is_nan() is True
+        assert (self.NAN / self.NAN).is_nan() is True
+        assert (self.INF / self.NAN).is_nan() is True
+        assert (self.NEG_INF / self.NAN).is_nan() is True
         # inf / inf is nan, regardless of sign
-        assert self.INF / self.INF == self.NAN
-        assert self.NEG_INF / self.NEG_INF == self.NAN
-        assert self.NEG_INF / self.INF == self.NAN
-        assert self.INF / self.NEG_INF == self.NAN
+        assert (self.INF / self.INF).is_nan() is True
+        assert (self.NEG_INF / self.NEG_INF).is_nan() is True
+        assert (self.NEG_INF / self.INF).is_nan() is True
+        assert (self.INF / self.NEG_INF).is_nan() is True
         # inf wins over finite
         assert self.INF / self.EVEN_FINITE == self.INF
         assert self.NEG_INF / self.EVEN_FINITE == self.NEG_INF
@@ -183,17 +226,17 @@ class TestFixedPointNonFinite(unittest.TestCase):
     def test_pow(self):
         """Test rules for non-finite division"""
         # nan ** anything (besides zero) is nan
-        assert self.NAN**self.ONE == self.NAN
-        assert self.NAN**self.EVEN_FINITE == self.NAN
-        assert self.NAN**self.NAN == self.NAN
-        assert self.NAN**self.INF == self.NAN
-        assert self.NAN**self.NEG_INF == self.NAN
+        assert (self.NAN**self.ONE).is_nan() is True
+        assert (self.NAN**self.EVEN_FINITE).is_nan() is True
+        assert (self.NAN**self.NAN).is_nan() is True
+        assert (self.NAN**self.INF).is_nan() is True
+        assert (self.NAN**self.NEG_INF).is_nan() is True
         # anything ** nan is nan
-        assert self.ZERO**self.NAN == self.NAN
-        assert self.EVEN_FINITE**self.NAN == self.NAN
-        assert self.NAN**self.NAN == self.NAN
-        assert self.INF**self.NAN == self.NAN
-        assert self.NEG_INF**self.NAN == self.NAN
+        assert (self.ZERO**self.NAN).is_nan() is True
+        assert (self.EVEN_FINITE**self.NAN).is_nan() is True
+        assert (self.NAN**self.NAN).is_nan() is True
+        assert (self.INF**self.NAN).is_nan() is True
+        assert (self.NEG_INF**self.NAN).is_nan() is True
         # 1 ** anything is 1
         assert self.ONE**self.INF == self.ONE
         assert self.ONE**self.NEG_INF == self.ONE

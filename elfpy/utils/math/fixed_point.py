@@ -18,7 +18,7 @@ class FixedPoint:
         https://docs.python.org/3/library/numbers.html#numbers.Real
     """
 
-    int_value: int  # internal representation of self
+    int_value: int  # integer representation of self
 
     def __init__(self, value: Union[FixedPoint, float, int, str] = 0, decimal_places: int = 18, signed: bool = True):
         """Store fixed-point properties"""
@@ -44,7 +44,7 @@ class FixedPoint:
                         "String arguments must be float strings, e.g. '1.0', for the FixedPoint constructor."
                     )
                 lhs, rhs = value.split(".")
-                rhs = rhs.replace("_", "")  # removes underscores -- they won't affect `int` cast and will affect `len`
+                rhs = rhs.replace("_", "")  # removes underscores; they won't affect `int` cast and will affect `len`
                 value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - len(rhs))
         self.int_value = copy.copy(int(value))
 
@@ -123,8 +123,6 @@ class FixedPoint:
                 return FixedPoint("nan")  # zero * inf is nan
             return FixedPoint(0)
         if self.is_inf() or other.is_inf():
-            print(self.sign())
-            print(other.sign())
             return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
         return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
@@ -199,6 +197,8 @@ class FixedPoint:
         if other is NotImplemented:
             return NotImplemented
         if not self.is_finite() or not other.is_finite():
+            if self.is_nan() or other.is_nan():
+                return False
             return self.special_value == other.special_value
         return self.int_value == other.int_value
 
@@ -207,6 +207,8 @@ class FixedPoint:
         if other is NotImplemented:
             return NotImplemented
         if not self.is_finite() or not other.is_finite():
+            if self.is_nan() or other.is_nan():
+                return True
             return self.special_value != other.special_value
         return self.int_value != other.int_value
 
@@ -214,7 +216,7 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():  # nan in -> nan out
+        if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
         if self.is_inf():
             if other.is_inf() and self.sign() == other.sign():
@@ -222,13 +224,15 @@ class FixedPoint:
             if other.is_inf():
                 return self.sign() < other.sign()
             return self.sign() < FixedPoint(0)  # -inf would be True (other is finite)
+        if other.is_inf():
+            return other.sign() > FixedPoint(0)
         return self.int_value < other.int_value
 
     def __le__(self, other: FixedPoint) -> bool:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():  # nan in -> nan out
+        if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
         if self.is_inf():
             if other.is_inf() and self.sign() == other.sign():
@@ -236,13 +240,15 @@ class FixedPoint:
             if other.is_inf():
                 return self.sign() < other.sign()
             return self.sign() < FixedPoint(0)  # -inf would result in True (other is finite)
+        if other.is_inf():
+            return other.sign() > FixedPoint(0)
         return self.int_value <= other.int_value
 
     def __gt__(self, other: FixedPoint) -> bool:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():  # nan in -> nan out
+        if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
         if self.is_inf():
             if other.is_inf() and self.sign() == other.sign():
@@ -250,13 +256,15 @@ class FixedPoint:
             if other.is_inf():
                 return self.sign() > other.sign()
             return self.sign() > FixedPoint(0)  # inf would result in True (other is finite)
+        if other.is_inf():
+            return other.sign() < FixedPoint(0)
         return self.int_value > other.int_value
 
     def __ge__(self, other: FixedPoint) -> bool:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if self.is_nan() or other.is_nan():  # nan in -> nan out
+        if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
         if self.is_inf():
             if other.is_inf() and self.sign() == other.sign():
@@ -264,6 +272,8 @@ class FixedPoint:
             if other.is_inf():
                 return self.sign() > other.sign()
             return self.sign() > FixedPoint(0)  # inf would result in True (other is finite)
+        if other.is_inf():
+            return other.sign() < FixedPoint(0)
         return self.int_value >= other.int_value
 
     # type casting
