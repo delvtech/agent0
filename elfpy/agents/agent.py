@@ -112,7 +112,7 @@ class Agent:
             Amount of base that the agent can short in the current market
         """
         # Get the market level max short.
-        (max_short_max_loss, max_short) = market.pricing_model.get_max_short(
+        max_short_max_loss, max_short = market.pricing_model.get_max_short(
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )

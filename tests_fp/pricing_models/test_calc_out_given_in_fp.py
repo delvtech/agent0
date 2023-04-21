@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import unittest
 
-from calc_test_dataclasses import (
+from calc_test_dataclasses_fp import (
     CalcOutGivenInFailureTestCase,
     CalcOutGivenInSuccessByModelTestResult,
     CalcOutGivenInSuccessTestCase,

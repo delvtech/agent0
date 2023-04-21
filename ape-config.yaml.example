@@ -4,6 +4,7 @@ plugins:
   - name: etherscan
   - name: solidity
   - name: foundry
+  - name: alchemy
 
 dependencies:
   - name: OpenZeppelin
@@ -22,6 +23,8 @@ ethereum:
   default_network: local
   local:
     default_provider: foundry
+  goerli:
+    required_confirmations: 1
 
 foundry:
   port: 8555
