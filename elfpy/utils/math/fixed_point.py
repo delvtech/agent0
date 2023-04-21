@@ -13,6 +13,11 @@ import elfpy.errors.errors as errors
 class FixedPoint:
     """New fixed-point datatype
 
+    Arithmetic follows the Delv Hyperdrive Solidity smart contract standards.
+    However, we have expanded some operations due to the flexible application space of the python simulations,
+    for example by including non-finite representations.
+    Whenever expanding beyond what is in the Solidity contracts, we follow the IEEE 754 floating point standard.
+
     .. todo::
         * add __round__, __ceil__, __floor__, __trunc__ so that it will be a proper numbers.Real type
         https://docs.python.org/3/library/numbers.html#numbers.Real
