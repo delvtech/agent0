@@ -964,22 +964,29 @@ class MarketFP(
     def fixed_apr(self) -> FixedPoint:
         """Returns the current market apr"""
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
-        if self.market_state.share_reserves < FixedPoint("0.0"):
+        if self.market_state.share_reserves < FixedPoint(0):
             raise OverflowError(f"Share reserves should be >=0, not {self.market_state.share_reserves}")
-        elif self.market_state.share_price == FixedPoint("0.0"):
-            return np.nan
+        elif self.market_state.share_price == FixedPoint(0):
+            return FixedPoint("nan")
         return price_utils.calc_apr_from_spot_price_fp(price=self.spot_price, time_remaining=self.position_duration)
 
     @property
-    def spot_price(self) -> float:
+    def spot_price(self) -> FixedPoint:
         """Returns the current market price of the share reserves"""
         # calc_spot_price_from_reserves will throw an error if share_reserves is zero
         if self.market_state.share_reserves == 0:  # market is empty
-            return np.nan
+            return FixedPoint("nan")
         return self.pricing_model.calc_spot_price_from_reserves(
             market_state=self.market_state,
             time_remaining=self.position_duration,
         )
+
+    @property
+    def latest_checkpoint_time(self) -> FixedPoint:
+        """Gets the most recent checkpoint time."""
+        block_time_days = self.block_time.time * FixedPoint("365.0")
+        checkpoint_duration_days = self.market_state.checkpoint_duration * FixedPoint("365.0")
+        return (block_time_days - (block_time_days % checkpoint_duration_days)) / FixedPoint("365.0")
 
     def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -1292,18 +1299,6 @@ class MarketFP(
                     self.apply_checkpoint(checkpoint_time, closest_share_price)
                     break
                 _time += self.market_state.checkpoint_duration
-
-    @property
-    def latest_checkpoint_time(self) -> float:
-        """Gets the most recent checkpoint time."""
-        # NOTE: modulus doesn't work well with floats, checkpoints are days right now so multiply by
-        # 365 so we can get integer values.
-        latest_checkpoint = int(
-            int(self.block_time.time * 365)
-            - (int(self.block_time.time * 365) % int(self.market_state.checkpoint_duration * 365))
-        )
-        # divide the result by 365 again to get years
-        return latest_checkpoint / 365
 
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
         r"""Creates a new checkpoint if necessary and closes matured positions.
