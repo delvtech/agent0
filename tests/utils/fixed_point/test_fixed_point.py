@@ -1,4 +1,4 @@
-"""Fixed point math tests inspired from solidity hyperdrive implementation"""
+"""Tests for the FixedPoint data type"""
 import math
 import unittest
 

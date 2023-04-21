@@ -19,7 +19,7 @@ class FixedPoint:
         https://docs.python.org/3/library/numbers.html#numbers.Real
     """
 
-    _value: int | None  # internal representation of self
+    int_value: int  # internal representation of self
 
     def __init__(self, value: Union[FixedPoint, float, int, str] = 0, decimal_places: int = 18, signed: bool = True):
         """Store fixed-point properties"""
@@ -38,6 +38,7 @@ class FixedPoint:
         if isinstance(value, str):
             if value.lower() in ("nan", "inf", "-inf"):
                 self.special_value = value.lower()
+                value = 0
             else:
                 if "." not in value:
                     raise ValueError(
@@ -46,24 +47,7 @@ class FixedPoint:
                 lhs, rhs = value.split(".")
                 rhs = rhs.replace("_", "")  # removes underscores -- they won't affect `int` cast and will affect `len`
                 value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - len(rhs))
-        if self.special_value is None:
-            self._value = copy.copy(int(value))
-        else:
-            self._value = None
-
-    @property
-    def int_value(self) -> int:
-        """Return an integer representation of self if it is finite"""
-        if self._value is None:
-            raise ValueError(f"{self} has no integer representation")
-        return self._value
-
-    @int_value.setter
-    def int_value_setter(self, value: int):
-        """Set the internal integer representation"""
-        # If the fixedpoint value is overwritten, remove any possible special value
-        self.special_value = None
-        self._value = value
+        self.int_value = copy.copy(int(value))
 
     def _coerce_other(self, other):
         """Cast inputs to the FixedPoint type if they come in as something else.
@@ -110,7 +94,7 @@ class FixedPoint:
                 return FixedPoint("nan")
             return self
         if other.is_inf():
-            return other
+            return FixedPoint("-inf") if int(other.sign()) == 1 else FixedPoint("inf")
         return FixedPoint(FixedPointMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
@@ -135,11 +119,18 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():
             return FixedPoint("nan")
-        if self.is_zero() or other.is_zero():  # zero * inf is zero
+        if self.is_inf():
+            if other.is_inf():  # both are inf
+                return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
+            if other.is_zero():  # inf * zero == nan
+                return FixedPoint("nan")
+            return self
+        if other.is_inf():  # self is not inf or nan
+            if self.is_zero():  # inf * zero == nan
+                return FixedPoint("nan")
+            return other
+        if self.is_zero() or other.is_zero():  # zero * inf is nan
             return FixedPoint(0)
-        if self.is_inf() or other.is_inf():
-            result_sign = 1 if self.sign() == other.sign() else -1
-            return FixedPoint("inf" if result_sign == 1 else "-inf")
         return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
@@ -170,11 +161,11 @@ class FixedPoint:
         if self.is_nan() or other.is_nan():
             return FixedPoint("nan")
         if self.is_inf():
-            if other.is_inf():
+            if other.is_inf():  # inf / inf is zero
                 return FixedPoint("nan")
             return self
-        if other.is_inf():
-            return other
+        if other.is_inf():  # finite / inf is zero
+            return FixedPoint(0)
         return FixedPoint(FixedPointMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
@@ -182,10 +173,9 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        # pow is tricky -- leaning on float operations under the hood because precision is not relevant when dealing with inf
         if self.is_finite() and other.is_finite():
             return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
-        else:
+        else:  # pow is tricky -- leaning on float operations under the hood
             return FixedPoint(str(float(self) ** float(other)))
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
@@ -199,12 +189,12 @@ class FixedPoint:
         """Enables flipping value sign"""
         if self.is_nan():
             return self
-        if self.is_inf()
         return FixedPoint("-1.0") * self
-        
 
     def __abs__(self) -> FixedPoint:
         """Enables 'abs()' function"""
+        if self.is_nan():
+            return self
         return FixedPoint(abs(self.int_value), self.decimal_places, self.signed)
 
     # comparison methods
@@ -333,9 +323,9 @@ class FixedPoint:
         return False
 
     def is_zero(self) -> bool:
-        if self.special_value is None:
+        if not self.is_finite():
             return False
-        return self.int_value == FixedPoint(0)
+        return self.int_value == 0
 
     def is_finite(self) -> bool:
         return not (self.is_nan() or self.is_inf())
@@ -559,6 +549,10 @@ class FixedPointMath:
 
         Any overflow for x will be caught in ln() in the initial bounds check
         """
+        if x == 0:
+            if y == 0:
+                return FixedPointMath.ONE_18
+            return 0
         ylnx = y * FixedPointMath.ln(x) // FixedPointMath.ONE_18
         return FixedPointMath.exp(ylnx)
 
