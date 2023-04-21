@@ -12,8 +12,8 @@ from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 from elfpy.types import freezable
 
-from elfpy.utils.format_number import format_string as fmt
-from elfpy.utils.log_and_print import log_and_print
+from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.utils.outputs import log_and_show
 import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 if TYPE_CHECKING:
@@ -137,7 +137,7 @@ def select_abi(
     if selected_abi is None:
         raise ValueError(f"Could not find matching ABI for {method}")
     lstr = f"{selected_abi.name}({', '.join(f'{inpt}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
-    log_and_print(lstr)
+    log_and_show(lstr)
     return selected_abi, args
 
 
@@ -290,11 +290,11 @@ def attempt_txn(
         kwargs["gas_limit"] = 1_000_000
         # if you want a "STATIC" transaction type, uncomment the following line
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
-        log_and_print(f"txn attempt {attempt} of {mult} with {kwargs=}")
+        log_and_show(f"txn attempt {attempt} of {mult} with {kwargs=}")
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
-        log_and_print(f" => sending {signed_txn=}")
+        log_and_show(f" => sending {signed_txn=}")
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
@@ -304,6 +304,6 @@ def attempt_txn(
         except TransactionError as exc:
             if "replacement transaction underpriced" not in str(exc):
                 raise exc
-            log_and_print(f"Failed to send transaction: {exc}")
+            log_and_show(f"Failed to send transaction: {exc}")
             continue
     return None

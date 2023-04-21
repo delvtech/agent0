@@ -31,10 +31,11 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
+from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.utils.outputs import log_and_show
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_assets, hyperdrive_market
-from elfpy.utils.format_number import format_string as fmt
 
 load_dotenv()
 
@@ -305,7 +306,7 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
     for _bot, _policy in bot_types.items():
         log_string = f"{_bot:6s}: n={config.scratch['num_'+_bot]}  "
         log_string += f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
-        log_and_print(log_string)
+        log_and_show(log_string)
     _dev_accounts = get_accounts(bot_types)
     faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
 
@@ -336,14 +337,14 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
             agent = _policy(rng=config.rng, **params)  # instantiate the agent
             agent.contract = _dev_accounts[agent_num]  # assign its wallet
             if (need_to_mint := params["budget"] - dai.balanceOf(agent.contract.address) / 1e18) > 0:
-                log_and_print(f" agent_{agent.wallet.address[:7]} needs to mint {fmt(need_to_mint)} Dai")
+                log_and_show(f" agent_{agent.wallet.address[:7]} needs to mint {fmt(need_to_mint)} Dai")
                 with ape.accounts.use_sender(agent.contract):
                     txn_receipt: ReceiptAPI = faucet.mint(dai.address, agent.wallet.address, to_fixed_point(50_000))
                     txn_receipt.await_confirmations()
             log_string = f" agent_{agent.wallet.address[:7]} is a {_bot} with budget={fmt(params['budget'])}"
             log_string += f" Eth={fmt(agent.contract.balance/1e18)}"
             log_string += f" Dai={fmt(dai.balanceOf(agent.contract.address)/1e18)}"
-            log_and_print(log_string)
+            log_and_show(log_string)
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
     return _sim_agents, _dev_accounts
 
@@ -425,14 +426,6 @@ def do_trade():
         sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
 
 
-def log_and_print(string: str, *args, end="\n") -> None:
-    """Log to both the generic logger and to stdout."""
-    if args:
-        string = string.format(*args)
-    logging.info(string + end)
-    print(string, end=end)
-
-
 def set_days_without_crashing(no_crash: int):
     """Calculate the number of days without crashing."""
     with open("no_crash.txt", "w", encoding="utf-8") as file:
@@ -492,18 +485,18 @@ if __name__ == "__main__":
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
     try:
         hyperpoop: ContractContainer = project.get_any_contract_type_safe("Hyperpoop")
-        log_and_print("oh no, we have hyperpooop 🤮")
+        log_and_show("oh no, we have hyperpooop 🤮")
     except ValueError:
-        log_and_print("we found no hyperpooop 🙌")
+        log_and_show("we found no hyperpooop 🙌")
     hyperdrive: ContractInstance = project.get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
     hyper_config = hyperdrive.getPoolConfig().__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
-    log_and_print(f"Hyperdrive config deployed at {hyperdrive.address}:")
+    log_and_show(f"Hyperdrive config deployed at {hyperdrive.address}:")
     for k, v in hyper_config.items():
         divisor = 1 if k in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        log_and_print(f" {k}: {fmt(v/divisor)}")
+        log_and_show(f" {k}: {fmt(v/divisor)}")
     hyper_config["term_length"] = 365  # days
 
     while True:  # hyper drive forever into the sunset
@@ -516,7 +509,7 @@ if __name__ == "__main__":
             LOG_STRING = "Block number: {}, Block time: {}, Trades without crashing: {}"
             LOG_STRING += ", Gas: max={},avg={}, Priority max={},avg={}"
             log_vars = block_number, block_time, NO_CRASH, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
-            log_and_print(LOG_STRING, *log_vars)
+            log_and_show(LOG_STRING, *log_vars)
             market_state = get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
@@ -537,7 +530,7 @@ if __name__ == "__main__":
                         NO_CRASH = set_days_without_crashing(NO_CRASH + 1)  # set and save to file
                     except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
                         LOG_STRING = "Crashed in Python simulation: {}"
-                        log_and_print(LOG_STRING, exc)
+                        log_and_show(LOG_STRING, exc)
                         NO_CRASH = set_days_without_crashing(0)  # set and save to file
             last_executed_block = block_number
         sleep(1)
