@@ -1183,7 +1183,8 @@ def calculate_short_adjustment_fp(
     Returns
     -------
     FixedPoint
-        An amount to adjust the lp shares by.  This ensures that lp's don't get access to interest
+        An amount to adjust the lp shares by.
+        This ensures that lp's don't get access to interest
         already accrued by previous lps.
     """
     if market_time > market_state.short_average_maturity_time:
@@ -1219,7 +1220,8 @@ def calculate_long_adjustment_fp(
     Returns
     -------
     FixedPoint
-        An amount to adjust the lp shares by.  This ensures that lp's don't get access to interest
+        An amount to adjust the lp shares by.
+        This ensures that lp's don't get access to interest
         already accrued by previous lps.
     """
     if market_time > market_state.long_average_maturity_time:
@@ -1370,7 +1372,6 @@ def calc_checkpoint_deltas_fp(
     d_base_volume = -proportional_base_volume
     d_checkpoints = defaultdict(FixedPoint, {checkpoint_time: d_base_volume})
     lp_margin = bond_amount - proportional_base_volume
-
     return (d_base_volume, d_checkpoints, lp_margin)
 
 
@@ -1385,12 +1386,14 @@ def calc_open_short_fp(
 ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
     """Calculate the agent & market deltas for opening a short position.
     Shorts need their margin account to cover the worst case scenario (p=1).
+
     The margin comes from 2 sources:
         - the proceeds from your short sale (p)
         - the max value you cover with base deposted from your wallet (1-p)
+
     These two components are both priced in base, yet happily add up to 1.0 units of bonds.
     This gives us the following identity:
-        total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
+        - total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
     This guarantees that bonds in the system are always fully backed by an equal amount of base.
 
     Parameters
@@ -1399,7 +1402,7 @@ def calc_open_short_fp(
         The address of the agent's wallet.
     bond_amount: FixedPoint
         The amount of bonds the agent is shorting.
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
         Deltas are computed for this market.
     position_duration: time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -1501,12 +1504,12 @@ def calc_close_short_fp(
     open_share_price: FixedPoint,
 ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
     """
-    when closing a short, the number of bonds being closed out, at face value, give us the total margin returned
-    the worst case scenario of the short is reduced by that amount, so they no longer need margin for it
-    at the same time, margin in their account is drained to pay for the bonds being bought back
-    so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds
-    that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
-    for more on short accounting, see the open short method
+    When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
+    The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
+    At the same time, margin in their account is drained to pay for the bonds being bought back,
+    so the amount returned to their wallet is trade_amount minus the cost of buying back the bonds.
+    That is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base).
+    For more on short accounting, see the open short method.
 
     Parameters
     ---------
@@ -1660,7 +1663,7 @@ def calc_open_long_fp(
         Integer address for the agent's wallet.
     base_amount: FixedPoint
         Amount in base that the agent wishes to trade.
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
         The current values for the market's state variables.
     position_duration: time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
@@ -1828,7 +1831,7 @@ def calc_close_long_fp(
     )
     if market_state.init_share_price > close_share_price:
         share_proceeds *= close_share_price / market_state.init_share_price
-    # The amount of liquidity that needs to be removed.
+    # the amount of liquidity that needs to be removed
     share_adjustment = -(share_proceeds - share_reserves_delta)
     margin_needs_to_be_freed = (
         market_state.total_supply_withdraw_shares > market_state.withdraw_shares_ready_to_withdraw
@@ -1902,7 +1905,7 @@ def calc_close_long_fp(
 
 
 def calc_update_reserves_fp(
-    share_reserves: FixedPoint, bond_reserves: FixedPoint, share_reserves_delta
+    share_reserves: FixedPoint, bond_reserves: FixedPoint, share_reserves_delta: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculates updates to the pool's liquidity and holds the pool's APR constant.
 
@@ -1912,7 +1915,7 @@ def calc_update_reserves_fp(
         The current total shares in reserve
     bond_reserves: FixedPoint
         The current total bonds in reserve
-    share_reserves_delta:
+    share_reserves_delta: FixedPoint
         The delta that should be applied to share reserves.
 
     Returns
@@ -1988,7 +1991,7 @@ def calc_short_proceeds_fp(
     ----------
     bond_amount: FixedPoint
         The amount of bonds underlying the closed short.
-    share_amount:
+    share_amount: FixedPoint
         The amount of shares that it costs to close the short.
     open_share_price: FixedPoint
         the share price at the short's open.
@@ -2042,7 +2045,8 @@ def calc_add_liquidity_fp(
     tuple[MarketDeltas, wallet.Wallet]
         Returns the deltas to update the market and the agent's wallet after providing liquidity.
     """
-    # get_rate assumes that there is some amount of reserves, and will throw an error if share_reserves is zero
+    # get_rate assumes that there is some amount of reserves,
+    # and will throw an error if share_reserves is zero
     if market_state.share_reserves == FixedPoint(0) and market_state.bond_reserves == FixedPoint(
         0
     ):  # pool has not been initialized
@@ -2151,7 +2155,7 @@ def calc_free_margin_fp(
 
     Parameters
     ----------
-    market_state : hyperdrive_market.MarketState
+    market_state: hyperdrive_market.MarketState
         The market's current state.
     freed_capital: FixedPoint
         The amount of capital to add to the withdraw pool, must not be more than the max capital.
