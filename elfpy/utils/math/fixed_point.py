@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import copy
-import math
 from typing import TypeVar, Union
 
 import elfpy.errors.errors as errors
@@ -119,18 +118,12 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():
             return FixedPoint("nan")
-        if self.is_inf():
-            if other.is_inf():  # both are inf
-                return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
-            if other.is_zero():  # inf * zero == nan
-                return FixedPoint("nan")
-            return self
-        if other.is_inf():  # self is not inf or nan
-            if self.is_zero():  # inf * zero == nan
-                return FixedPoint("nan")
-            return other
-        if self.is_zero() or other.is_zero():  # zero * inf is nan
+        if self.is_zero() or other.is_zero():
+            if self.is_inf() or other.is_inf():
+                return FixedPoint("nan")  # zero * inf is nan
             return FixedPoint(0)
+        if self.is_inf() or other.is_inf():
+            return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
         return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
@@ -175,8 +168,8 @@ class FixedPoint:
             return NotImplemented
         if self.is_finite() and other.is_finite():
             return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
-        else:  # pow is tricky -- leaning on float operations under the hood
-            return FixedPoint(str(float(self) ** float(other)))
+        # pow is tricky -- leaning on float operations under the hood for non-finite
+        return FixedPoint(str(float(self) ** float(other)))
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
@@ -313,24 +306,29 @@ class FixedPoint:
         return FixedPoint(FixedPointMath.div_up(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def is_nan(self) -> bool:
+        """Return True if self is not a number (NaN)."""
         if self.special_value is not None and self.special_value == "nan":
             return True
         return False
 
     def is_inf(self) -> bool:
+        """Return True if self is inf or -inf."""
         if self.special_value is not None and "inf" in self.special_value:
             return True
         return False
 
     def is_zero(self) -> bool:
+        """Return True if self is zero, and False is self is non-zero or non-finite"""
         if not self.is_finite():
             return False
         return self.int_value == 0
 
     def is_finite(self) -> bool:
+        """Return True if self is finite, that is not inf, -inf, or nan"""
         return not (self.is_nan() or self.is_inf())
 
     def sign(self) -> FixedPoint:
+        """Return the sign of self if self is finite, inf, or -inf; otherwise return nan"""
         if self.special_value is not None:
             if self.special_value == "nan":
                 return FixedPoint("nan")
