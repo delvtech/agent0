@@ -6,12 +6,20 @@ from typing import TypeVar, Union
 
 import elfpy.errors.errors as errors
 
-# we will use single letter names for this class since all functions do basic arithmetic
+# we will use single letter names for the FixedPointMath class since all functions do basic arithmetic
 # pylint: disable=invalid-name
 
 
 class FixedPoint:
-    """New fixed-point datatype
+    """Fixed-point number datatype
+
+    Values are stored internally as intergers, however they are generally treated like floats.
+    The first (right-most) `decimal_places` digits represent what would be to the right of
+    the decimal in a float representation, while the remaining (left-most) digits represent
+    the whole-number part of a float representation.
+
+    The type supports most math sugar, including `+`, `-`, `*`, `/`, `//`, `%`, and `**`.
+    It also supports non-finite values and corresponding behavior.
 
     Arithmetic follows the Delv Hyperdrive Solidity smart contract standards.
     However, we have expanded some operations due to the flexible application space of the Python simulations,
