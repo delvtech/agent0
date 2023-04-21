@@ -513,7 +513,7 @@ class AgentFP:
                 )
         for mint_time, short in self.wallet.shorts.items():
             logging.debug("evaluating closing short: mint_time=%g, position=%s", float(mint_time), short)
-            if short.balance > 0:
+            if short.balance > FixedPoint(0):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
