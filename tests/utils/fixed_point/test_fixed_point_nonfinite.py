@@ -4,6 +4,8 @@ import unittest
 
 from elfpy.utils.math import FixedPoint
 
+# pylint: disable=unneeded-not
+
 
 class TestFixedPointNonFinite(unittest.TestCase):
     r"""Unit tests to verify that the fixed-point non-finite implementations are correct.
@@ -63,7 +65,7 @@ class TestFixedPointNonFinite(unittest.TestCase):
 
     def test_eq(self):
         """Test that FixedPoint non-finite values can be equal"""
-        assert not (self.NAN == self.NAN)
+        assert not self.NAN == self.NAN
         assert self.INF == self.INF
         assert self.NEG_INF == self.NEG_INF
 
@@ -103,6 +105,36 @@ class TestFixedPointNonFinite(unittest.TestCase):
         assert self.NEG_INF <= self.INF
         assert self.NEG_INF <= self.ODD_FINITE
         assert self.ODD_FINITE <= self.INF
+
+    def test_gt(self):
+        """Test that FixedPoint non-finite values handle less than"""
+        assert not self.NAN > self.NAN
+        assert not self.ODD_FINITE > self.NAN
+        assert not self.NAN > self.ODD_FINITE
+        assert not self.NAN > self.INF
+        assert not self.INF > self.NAN
+        assert not self.ODD_FINITE > self.INF
+        assert not self.NEG_INF > self.INF
+        assert not self.INF > self.INF
+        assert not self.NEG_INF > self.NEG_INF
+        assert self.INF > self.NEG_INF
+        assert self.ODD_FINITE > self.NEG_INF
+        assert self.INF > self.ODD_FINITE
+
+    def test_ge(self):
+        """Test that FixedPoint non-finite values handle less than"""
+        assert not self.NAN >= self.NAN
+        assert not self.ODD_FINITE >= self.NAN
+        assert not self.NAN >= self.ODD_FINITE
+        assert not self.NAN >= self.INF
+        assert not self.INF >= self.NAN
+        assert not self.ODD_FINITE >= self.INF
+        assert not self.NEG_INF >= self.INF
+        assert self.INF >= self.INF
+        assert self.NEG_INF >= self.NEG_INF
+        assert self.INF >= self.NEG_INF
+        assert self.ODD_FINITE >= self.NEG_INF
+        assert self.INF >= self.ODD_FINITE
 
     def test_add(self):
         """Test rules for non-finite addition"""

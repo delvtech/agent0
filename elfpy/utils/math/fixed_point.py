@@ -218,14 +218,13 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
-        if self.is_inf():
-            if other.is_inf() and self.sign() == other.sign():
-                return False  # equal
-            if other.is_inf():
-                return self.sign() < other.sign()
-            return self.sign() < FixedPoint(0)  # -inf would be True (other is finite)
-        if other.is_inf():
+        if self.is_inf() and other.is_inf():
+            return self.sign() < other.sign()
+        if self.is_inf():  # other is finite
+            return self.sign() < FixedPoint(0)
+        if other.is_inf():  # self is finite
             return other.sign() > FixedPoint(0)
+        # both are finite
         return self.int_value < other.int_value
 
     def __le__(self, other: FixedPoint) -> bool:
@@ -234,14 +233,13 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
-        if self.is_inf():
-            if other.is_inf() and self.sign() == other.sign():
-                return True  # equal
-            if other.is_inf():
-                return self.sign() < other.sign()
-            return self.sign() < FixedPoint(0)  # -inf would result in True (other is finite)
-        if other.is_inf():
+        if self.is_inf() and other.is_inf():
+            return self.sign() <= other.sign()
+        if self.is_inf():  # other is finite
+            return self.sign() < FixedPoint(0)
+        if other.is_inf():  # self is finite
             return other.sign() > FixedPoint(0)
+        # both are finite
         return self.int_value <= other.int_value
 
     def __gt__(self, other: FixedPoint) -> bool:
@@ -250,14 +248,13 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
-        if self.is_inf():
-            if other.is_inf() and self.sign() == other.sign():
-                return False  # equal
-            if other.is_inf():
-                return self.sign() > other.sign()
-            return self.sign() > FixedPoint(0)  # inf would result in True (other is finite)
-        if other.is_inf():
+        if self.is_inf() and other.is_inf():
+            return self.sign() > other.sign()
+        if self.is_inf():  # other is finite
+            return self.sign() > FixedPoint(0)
+        if other.is_inf():  # self is finite
             return other.sign() < FixedPoint(0)
+        # both are finite
         return self.int_value > other.int_value
 
     def __ge__(self, other: FixedPoint) -> bool:
@@ -266,18 +263,16 @@ class FixedPoint:
             return NotImplemented
         if self.is_nan() or other.is_nan():  # nan can't be compared
             return False
-        if self.is_inf():
-            if other.is_inf() and self.sign() == other.sign():
-                return False  # equal
-            if other.is_inf():
-                return self.sign() > other.sign()
-            return self.sign() > FixedPoint(0)  # inf would result in True (other is finite)
-        if other.is_inf():
+        if self.is_inf() and other.is_inf():
+            return self.sign() >= other.sign()
+        if self.is_inf():  # other is finite
+            return self.sign() > FixedPoint(0)
+        if other.is_inf():  # self is finite
             return other.sign() < FixedPoint(0)
+        # both are finite
         return self.int_value >= other.int_value
 
     # type casting
-
     def __int__(self) -> int:
         """Cast to int"""
         if self.special_value is not None:
