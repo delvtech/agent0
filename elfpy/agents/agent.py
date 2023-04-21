@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import elfpy.agents.wallet as wallet
@@ -12,25 +11,6 @@ import elfpy.types as types
 if TYPE_CHECKING:
     import elfpy.markets.base as base_market
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-    from elfpy.utils.math import FixedPoint
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class AgentTradeResult:
-    r"""The result to a user of performing a trade"""
-
-    d_base: float
-    d_bonds: float
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class AgentTradeResultFP:
-    r"""The result to a user of performing a trade"""
-
-    d_base: FixedPoint
-    d_bonds: FixedPoint
 
 
 class Agent:

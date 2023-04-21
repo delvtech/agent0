@@ -5,8 +5,8 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-import elfpy.agents.agent as agent
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
+import elfpy.agents.agent_trade_result as agent_trade_result
+import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.pricing_models.base as base_pm
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
@@ -251,11 +251,11 @@ class YieldspacePricingModel(base_pm.PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResult(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=float(-with_fee),
             )
-            market_result = hyperdrive_actions.MarketActionResult(
+            market_result = market_action_result.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=float(with_fee),
             )
@@ -300,11 +300,11 @@ class YieldspacePricingModel(base_pm.PricingModel):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResult(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=float(-with_fee),
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive_actions.MarketActionResult(
+            market_result = market_action_result.MarketActionResult(
                 d_base=float(with_fee),
                 d_bonds=-out.amount,
             )
@@ -460,11 +460,11 @@ class YieldspacePricingModel(base_pm.PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResult(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=float(with_fee),
             )
-            market_result = hyperdrive_actions.MarketActionResult(
+            market_result = market_action_result.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=float(-with_fee),
             )
@@ -509,11 +509,11 @@ class YieldspacePricingModel(base_pm.PricingModel):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResult(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=float(with_fee),
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive_actions.MarketActionResult(
+            market_result = market_action_result.MarketActionResult(
                 d_base=float(-with_fee),
                 d_bonds=in_.amount,
             )
@@ -1009,11 +1009,11 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResultFP(
                 d_base=out.amount,
                 d_bonds=-with_fee,
             )
-            market_result = hyperdrive_actions.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResultFP(
                 d_base=-out.amount,
                 d_bonds=with_fee,
             )
@@ -1058,11 +1058,11 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResultFP(
                 d_base=-with_fee,
                 d_bonds=out.amount,
             )
-            market_result = hyperdrive_actions.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResultFP(
                 d_base=with_fee,
                 d_bonds=-out.amount,
             )
@@ -1209,11 +1209,11 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResultFP(
                 d_base=-in_.amount,
                 d_bonds=with_fee,
             )
-            market_result = hyperdrive_actions.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResultFP(
                 d_base=in_.amount,
                 d_bonds=-with_fee,
             )
@@ -1258,11 +1258,11 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResultFP(
                 d_base=with_fee,
                 d_bonds=-in_.amount,
             )
-            market_result = hyperdrive_actions.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResultFP(
                 d_base=-with_fee,
                 d_bonds=in_.amount,
             )

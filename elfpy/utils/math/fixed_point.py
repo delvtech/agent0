@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Union
+from typing import TypeVar, Union
 
 import elfpy.errors.errors as errors
 
@@ -20,7 +20,7 @@ class FixedPoint:
 
     int_value: int  # integer representation of self
 
-    def __init__(self, value: Union[FixedPoint, float, int, str], decimal_places: int = 18, signed: bool = True):
+    def __init__(self, value: Union[FixedPoint, float, int, str] = 0, decimal_places: int = 18, signed: bool = True):
         """Store fixed-point properties"""
         # TODO: support unsigned option
         if not signed:
@@ -194,6 +194,10 @@ class FixedPoint:
         if other <= FixedPoint("0.0"):
             raise errors.DivisionByZero
         return FixedPoint(FixedPointMath.div_up(self.int_value, other.int_value), self.decimal_places, self.signed)
+
+
+# NUMERIC = TypeVar("NUMERIC", bound=Union[FixedPoint, int, float])
+NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
 
 
 class FixedPointMath:
@@ -402,3 +406,13 @@ class FixedPointMath:
         """
         ylnx = y * FixedPointMath.ln(x) // FixedPointMath.ONE_18
         return FixedPointMath.exp(ylnx)
+
+    @staticmethod
+    def maximum(x: NUMERIC, y: NUMERIC) -> NUMERIC:
+        """Compare the two inputs and return the greater value.
+
+        If the first argument equals the second, return the first.
+        """
+        if x >= y:
+            return x
+        return y
