@@ -565,7 +565,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
             collateral_amount=FixedPoint(0),
             start_time=FixedPoint(0),
         )
-        agent_deltas = wallet.WalletFP(address=wallet_address, borrows={FixedPoint(0): borrow_summary})
+        agent_deltas = wallet.WalletFP(address=wallet_address, borrows={0: borrow_summary})
         return market_deltas, agent_deltas
 
     def check_action(self, agent_action: MarketActionFP) -> None:
@@ -659,7 +659,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
         agent_deltas = wallet.WalletFP(
             address=wallet_address,
-            borrows={self.block_time.time: borrow_summary},
+            borrows={int(self.block_time.time): borrow_summary},
         )
         return market_deltas, agent_deltas
 
@@ -710,7 +710,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
         agent_deltas = wallet.WalletFP(
             address=wallet_address,
-            borrows={self.block_time.time: borrow_summary},
+            borrows={int(self.block_time.time): borrow_summary},
         )
         return market_deltas, agent_deltas
 
