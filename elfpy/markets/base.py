@@ -113,6 +113,7 @@ class Market(Generic[State, Deltas, PricingModel]):
 
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
+# TODO: Pylint disables will go away when we finalize FP refactor
 ActionFP = TypeVar("ActionFP", bound="MarketActionFP")  # pylint: disable=invalid-name
 DeltasFP = TypeVar("DeltasFP", bound="MarketDeltasFP")  # pylint: disable=invalid-name
 StateFP = TypeVar("StateFP", bound="BaseMarketStateFP")  # pylint: disable=invalid-name
