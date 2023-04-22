@@ -1365,9 +1365,9 @@ class MarketFP(
             self.market_state.apply_delta(market_deltas)
         # Close out any matured short positions and pay out the short withdrawal pool for shorts
         # that have matured.
-        matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
+        matured_shorts_amount = self.market_state.total_supply_shorts[int(mint_time)]
         if matured_shorts_amount > FixedPoint(0):
-            open_share_price = self.market_state.checkpoints[mint_time].share_price
+            open_share_price = self.market_state.checkpoints[int(mint_time)].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short_fp(
                 wallet.Wallet(0).address,
                 matured_shorts_amount,
@@ -1379,7 +1379,7 @@ class MarketFP(
                 open_share_price,
             )
             self.market_state.apply_delta(market_deltas)
-        return self.market_state.checkpoints[mint_time].share_price
+        return self.market_state.checkpoints[int(mint_time)].share_price
 
     def redeem_withdraw_shares(
         self,

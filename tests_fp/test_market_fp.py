@@ -11,6 +11,9 @@ import elfpy.markets.borrow as borrow
 import elfpy.time as time
 from elfpy.utils.math import FixedPoint
 
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
+
 
 class BaseMarketTest(unittest.TestCase):
     """Generic Parameter Test class"""
