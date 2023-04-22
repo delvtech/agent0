@@ -24,6 +24,7 @@ from elfpy.utils.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-lines
 
 
 @dataclass
@@ -964,7 +965,7 @@ class MarketFP(
         # calc_apr_from_spot_price will throw an error if share_reserves <= zero
         if self.market_state.share_reserves < FixedPoint(0):
             raise OverflowError(f"Share reserves should be >= 0, not {self.market_state.share_reserves}")
-        elif self.market_state.share_price == FixedPoint(0):
+        if self.market_state.share_price == FixedPoint(0):
             return FixedPoint("nan")
         return price_utils.calc_apr_from_spot_price_fp(price=self.spot_price, time_remaining=self.position_duration)
 
@@ -1151,7 +1152,7 @@ class MarketFP(
         self,
         agent_wallet: wallet.WalletFP,
         bond_amount: FixedPoint,
-        max_deposit: FixedPoint = FixedPoint(2**32 * 10**18),  # FIXME: This isn't over the max right?
+        max_deposit: FixedPoint = FixedPoint(2**32 * 10**18),
     ) -> tuple[hyperdrive_actions.MarketDeltasFP, wallet.WalletFP]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
