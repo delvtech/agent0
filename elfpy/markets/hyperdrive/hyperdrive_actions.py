@@ -1096,7 +1096,7 @@ class MarketActionFP(base_market.MarketAction):
     # min amount to receive for the action
     min_amount_out: FixedPoint = FixedPoint(0)
     # mint time is set only for trades that act on existing positions (close long or close short)
-    mint_time: Optional[FixedPoint] = None
+    mint_time: FixedPoint | None = None
 
 
 def check_action_fp(agent_action: MarketActionFP) -> None:

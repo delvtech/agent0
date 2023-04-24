@@ -500,6 +500,7 @@ class AgentFP:
         for mint_time, long in self.wallet.longs.items():
             logging.debug("evaluating closing long: mint_time=%g, position=%s", float(mint_time), long)
             if long.balance > FixedPoint(0):
+                # TODO: Find a way to avoid converting type back and forth for dict keys
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -507,7 +508,7 @@ class AgentFP:
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
-                            mint_time=mint_time,
+                            mint_time=FixedPoint(mint_time),
                         ),
                     )
                 )
@@ -521,11 +522,11 @@ class AgentFP:
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
-                            mint_time=mint_time,
+                            mint_time=FixedPoint(mint_time),
                         ),
                     )
                 )
-        if self.wallet.lp_tokens > 0:
+        if self.wallet.lp_tokens > FixedPoint(0):
             logging.debug(
                 "evaluating closing lp: mint_time=%g, position=%s", float(market.block_time.time), self.wallet.lp_tokens
             )
