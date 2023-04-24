@@ -983,10 +983,6 @@ class MarketFP(
     @property
     def latest_checkpoint_time(self) -> FixedPoint:
         """Gets the most recent checkpoint time."""
-        # FIXME: Delete below once I verify that we don't need to convert to days anymore
-        # block_time_days = self.block_time.time * FixedPoint("365.0")
-        # checkpoint_duration_days = self.market_state.checkpoint_duration * FixedPoint("365.0")
-        # return (block_time_days - (block_time_days % checkpoint_duration_days)) / FixedPoint("365.0")
         return self.block_time.time - (self.block_time.time % self.market_state.checkpoint_duration)
 
     def check_action(self, agent_action: hyperdrive_actions.MarketActionFP) -> None:

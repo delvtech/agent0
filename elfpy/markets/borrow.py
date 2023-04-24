@@ -41,7 +41,7 @@ class MarketDeltas(base_market.MarketDeltas):
 class MarketState(base_market.BaseMarketState):
     r"""The state of an AMM
 
-    Implements a class for all that that an AMM smart contract would hold or would have access to
+    Implements a class for all that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.  The borrow_rate will most
     likely be accessible through the AMM as well.
 
@@ -406,7 +406,7 @@ class MarketDeltasFP(base_market.MarketDeltasFP):
 class MarketStateFP(base_market.BaseMarketStateFP):
     r"""The state of an AMM
 
-    Implements a class for all that that an AMM smart contract would hold or would have access to
+    Implements a class for all that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.  The borrow_rate will most
     likely be accessible through the AMM as well.
 

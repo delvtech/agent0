@@ -1,5 +1,5 @@
 """Testing for the ElfPy package market module methods"""
-from __future__ import annotations  # types are strings by default in 3.11
+from __future__ import annotations
 
 import unittest
 
@@ -18,7 +18,7 @@ from elfpy.utils.math import FixedPoint
 class BaseMarketTest(unittest.TestCase):
     """Generic Parameter Test class"""
 
-    # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
+    # TODO: This approx should be much lower
     # issue #112
     APPROX_EQ: float = 1e-6
 
