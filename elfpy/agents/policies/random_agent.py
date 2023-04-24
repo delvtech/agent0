@@ -9,6 +9,7 @@ import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
+from elfpy.utils.math.fixed_point import FixedPoint
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
@@ -201,7 +202,9 @@ class Policy(agent.Agent):
 class RandomAgent(agent.AgentFP):
     """Random agent"""
 
-    def __init__(self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: FixedPoint = FixedPoint("10_000.0")
+    ) -> None:
         """Adds custom attributes"""
         self.trade_chance = trade_chance
         self.rng = rng
@@ -230,43 +233,43 @@ class RandomAgent(agent.AgentFP):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market) -> list[types.Trade]:
+    def open_short_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         max_short = self.get_max_short(market)
-        if max_short < elfpy.WEI:  # no short is possible
+        if max_short < elfpy.WEI_FP:  # no short is possible
             return []
         trade_amount = np.maximum(
-            elfpy.WEI, np.minimum(max_short, initial_trade_amount)
+            elfpy.WEI, np.minimum(float(max_short), initial_trade_amount)
         )  # WEI <= trade_amount <= max_short
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
-                    trade_amount=trade_amount,
+                    trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
                 ),
             )
         ]
 
-    def open_long_with_random_amount(self, market) -> list[types.Trade]:
+    def open_long_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         # get the maximum amount that can be traded, based on the budget & market reserve levels
         max_long = self.get_max_long(market)
-        if max_long < elfpy.WEI:  # no trade is possible
+        if max_long < elfpy.WEI_FP:  # no trade is possible
             return []
         # WEI <= trade_amount <= max_short
-        trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        trade_amount: float = np.maximum(elfpy.WEI, np.minimum(float(max_long), initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
-                    trade_amount=trade_amount,
+                    trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
                 ),
             )
@@ -275,16 +278,16 @@ class RandomAgent(agent.AgentFP):
     def add_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Add liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         # WEI <= trade_amount
-        trade_amount = np.maximum(elfpy.WEI, initial_trade_amount)
+        trade_amount: float = np.maximum(elfpy.WEI, initial_trade_amount)
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
-                    trade_amount=trade_amount,
+                    trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
                 ),
             )
@@ -293,16 +296,16 @@ class RandomAgent(agent.AgentFP):
     def remove_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Remove liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
+        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         # WEI <= trade_amount <= lp_tokens
-        trade_amount = np.maximum(elfpy.WEI, np.minimum(self.wallet.lp_tokens, initial_trade_amount))
+        trade_amount = np.maximum(elfpy.WEI, np.minimum(float(self.wallet.lp_tokens), initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=trade_amount,
+                    trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
                 ),
             )
@@ -315,7 +318,7 @@ class RandomAgent(agent.AgentFP):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -331,7 +334,7 @@ class RandomAgent(agent.AgentFP):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketAction(
+                trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -340,7 +343,7 @@ class RandomAgent(agent.AgentFP):
             )
         ]
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
