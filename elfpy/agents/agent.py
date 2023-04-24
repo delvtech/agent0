@@ -589,7 +589,7 @@ class AgentFP:
             float(market.block_time.time),
             float(total_value),
             float(balance),
-            sum([float(long.balance) for long in longs]),
-            sum([float(short.balance) for short in shorts]),
+            sum((float(long.balance) for long in longs)),
+            sum((float(short.balance) for short in shorts)),
             float(price),
         )
