@@ -1,4 +1,6 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
+from __future__ import annotations
+
 from typing import List
 
 import elfpy.agents.agent as agent
@@ -71,7 +73,7 @@ class LpAndWithdrawAgent(agent.AgentFP):
         self.amount_to_lp = FixedPoint("100.0")
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> List[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """
         implement user strategy
         LP if you can, but only do it once
