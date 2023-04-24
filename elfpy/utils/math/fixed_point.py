@@ -200,9 +200,7 @@ class FixedPoint:
             return NotImplemented
         if other == FixedPoint("0.0"):
             raise errors.DivisionByZero
-        if self.is_nan() or other.is_nan():
-            return FixedPoint("nan")
-        if self.is_inf():
+        if not self.is_finite() or other.is_nan():
             return FixedPoint("nan")
         if other.is_inf():
             return self

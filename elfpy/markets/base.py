@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 # all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 Action = TypeVar("Action", bound="MarketAction")
-State = TypeVar("State", bound="BaseMarketState")
 Deltas = TypeVar("Deltas", bound="MarketDeltas")
+State = TypeVar("State", bound="BaseMarketState")
 PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
 
 
@@ -56,7 +56,7 @@ class MarketActionResult:
 class BaseMarketState:
     r"""The state of an AMM
 
-    Implements a class for all that that an AMM smart contract would hold or would have access to
+    Implements a class for all that an AMM smart contract would hold or would have access to
     For example, reserve numbers are local state variables of the AMM.
     """
 
@@ -112,9 +112,17 @@ class Market(Generic[State, Deltas, PricingModel]):
         elfpy.check_non_zero(self.market_state)  # check reserves are non-zero within precision threshold
 
 
+# all 1subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
+# TODO: Pylint disables will go away when we finalize FP refactor
+ActionFP = TypeVar("ActionFP", bound="MarketActionFP")  # pylint: disable=invalid-name
+DeltasFP = TypeVar("DeltasFP", bound="MarketDeltasFP")  # pylint: disable=invalid-name
+StateFP = TypeVar("StateFP", bound="BaseMarketStateFP")  # pylint: disable=invalid-name
+PricingModelFP = TypeVar("PricingModelFP", bound="base_pm.PricingModelFP")  # pylint: disable=invalid-name
+
+
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketActionFP(Generic[Action]):
+class MarketActionFP(Generic[ActionFP]):
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
@@ -138,7 +146,7 @@ class MarketActionResultFP:
 class BaseMarketStateFP:
     r"""The state of an AMM
 
-    Implements a class for all that that an AMM smart contract would hold or would have access to
+    Implements a class for all that that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
     """
 
@@ -153,7 +161,7 @@ class BaseMarketStateFP:
         raise NotImplementedError
 
 
-class MarketFP(Generic[State, Deltas, PricingModel]):
+class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -163,8 +171,8 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
 
     def __init__(
         self,
-        pricing_model: PricingModel,
-        market_state: State,
+        pricing_model: PricingModelFP,
+        market_state: StateFP,
         block_time: time.BlockTimeFP,
     ):
         self.pricing_model = pricing_model
@@ -176,11 +184,11 @@ class MarketFP(Generic[State, Deltas, PricingModel]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, Deltas]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, DeltasFP]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
-    def update_market(self, market_deltas: Deltas) -> None:
-        """Increments member variables to reflect current market conditions"""
+    def update_market(self, market_deltas: DeltasFP) -> None:
+        """Increments member variables to reflect current market conditions."""
         self.market_state.apply_delta(market_deltas)
         elfpy.check_non_zero_fp(self.market_state)  # check reserves are non-zero within precision threshold

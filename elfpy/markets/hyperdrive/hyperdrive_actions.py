@@ -1056,7 +1056,7 @@ def calc_remove_liquidity(
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltasFP(base_market.MarketDeltas):
+class MarketDeltasFP(base_market.MarketDeltasFP):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
     d_base_asset: FixedPoint = FixedPoint(0)
@@ -1075,16 +1075,10 @@ class MarketDeltasFP(base_market.MarketDeltas):
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
     withdraw_interest: FixedPoint = FixedPoint(0)
-    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
-    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(
+    long_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
+    short_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
+    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
+    total_supply_shorts: defaultdict[int, FixedPoint] = field(
         default_factory=lambda: defaultdict(lambda: FixedPoint(0))
     )
 
@@ -1332,7 +1326,7 @@ def calc_checkpoint_deltas_fp(
     checkpoint_time: FixedPoint,
     bond_amount: FixedPoint,
     position: Literal["short", "long"],
-) -> tuple[FixedPoint, defaultdict[FixedPoint, FixedPoint], FixedPoint]:
+) -> tuple[FixedPoint, defaultdict[int, FixedPoint], FixedPoint]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
 
     Parameters
@@ -1350,7 +1344,7 @@ def calc_checkpoint_deltas_fp(
     -------
     d_base_volume: FixedPoint
         The change in base volume for the given position.
-    d_checkpoints: defaultdict[FixedPoint, FixedPoint]
+    d_checkpoints: defaultdict[int, FixedPoint]
         The change in checkpoint volume for the given checkpoint_time (key) and position (value).
     lp_margin: FixedPoint
         The amount of margin that LPs provided on the long position.
@@ -1365,12 +1359,12 @@ def calc_checkpoint_deltas_fp(
     checkpoint_amount = market_state[total_supply][checkpoint_time]
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == FixedPoint(0):
-        return (FixedPoint(0), defaultdict(FixedPoint, {checkpoint_time: FixedPoint(0)}), FixedPoint(0))
+        return (FixedPoint(0), defaultdict(FixedPoint, {int(checkpoint_time): FixedPoint(0)}), FixedPoint(0))
     proportional_base_volume = (
-        market_state.checkpoints[checkpoint_time].long_base_volume * bond_amount / checkpoint_amount
+        market_state.checkpoints[int(checkpoint_time)].long_base_volume * bond_amount / checkpoint_amount
     )
     d_base_volume = -proportional_base_volume
-    d_checkpoints = defaultdict(FixedPoint, {checkpoint_time: d_base_volume})
+    d_checkpoints = defaultdict(FixedPoint, {int(checkpoint_time): d_base_volume})
     lp_margin = bond_amount - proportional_base_volume
     return (d_base_volume, d_checkpoints, lp_margin)
 
@@ -1441,7 +1435,7 @@ def calc_open_short_fp(
     share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
     bond_reserves_delta = trade_result.market_result.d_bonds
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
-    open_share_price = market_state.checkpoints[mint_time].share_price
+    open_share_price = market_state.checkpoints[int(mint_time)].share_price
     share_price = market_state.share_price
     trader_deposit = calc_short_proceeds_fp(bond_amount, share_proceeds, open_share_price, share_price, share_price)
     # get gov fees accrued
@@ -1481,13 +1475,15 @@ def calc_open_short_fp(
         short_base_volume=base_volume,
         shorts_outstanding=bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
-        short_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
-        total_supply_shorts=defaultdict(FixedPoint, {latest_checkpoint_time: bond_amount}),
+        short_checkpoints=defaultdict(FixedPoint, {int(latest_checkpoint_time): base_volume}),
+        total_supply_shorts=defaultdict(FixedPoint, {int(latest_checkpoint_time): bond_amount}),
     )
     agent_deltas = wallet.WalletFP(
         address=wallet_address,
         balance=-types.QuantityFP(amount=trader_deposit, unit=types.TokenType.BASE),
-        shorts={latest_checkpoint_time: wallet.ShortFP(balance=bond_amount, open_share_price=market_state.share_price)},
+        shorts={
+            int(latest_checkpoint_time): wallet.ShortFP(balance=bond_amount, open_share_price=market_state.share_price)
+        },
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
@@ -1619,7 +1615,7 @@ def calc_close_short_fp(
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
         short_checkpoints=d_checkpoints,
-        total_supply_shorts=defaultdict(FixedPoint, {mint_time: -bond_amount}),
+        total_supply_shorts=defaultdict(FixedPoint, {int(mint_time): -bond_amount}),
         withdraw_capital=withdraw_pool_deltas.withdraw_capital,
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
@@ -1631,7 +1627,7 @@ def calc_close_short_fp(
             unit=types.TokenType.BASE,
         ),  # see CLOSING SHORT LOGIC above
         shorts={
-            mint_time: wallet.ShortFP(
+            int(mint_time): wallet.ShortFP(
                 balance=-bond_amount,
                 open_share_price=FixedPoint(0),
             )
@@ -1722,13 +1718,13 @@ def calc_open_long_fp(
         long_base_volume=base_volume,
         longs_outstanding=trade_result.user_result.d_bonds,
         long_average_maturity_time=d_long_average_maturity_time,
-        long_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
-        total_supply_longs=defaultdict(FixedPoint, {latest_checkpoint_time: trade_result.user_result.d_bonds}),
+        long_checkpoints=defaultdict(FixedPoint, {int(latest_checkpoint_time): base_volume}),
+        total_supply_longs=defaultdict(FixedPoint, {int(latest_checkpoint_time): trade_result.user_result.d_bonds}),
     )
     agent_deltas = wallet.WalletFP(
         address=wallet_address,
         balance=types.QuantityFP(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        longs={latest_checkpoint_time: wallet.LongFP(trade_result.user_result.d_bonds)},
+        longs={int(latest_checkpoint_time): wallet.LongFP(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
@@ -1827,7 +1823,7 @@ def calc_close_long_fp(
     share_proceeds = bond_amount * normalized_time_elapsed / market_state.share_price
     maturity_time = mint_time + position_duration.years
     close_share_price = (
-        market_state.share_price if block_time < maturity_time else market_state.checkpoints[mint_time].share_price
+        market_state.share_price if block_time < maturity_time else market_state.checkpoints[int(mint_time)].share_price
     )
     if market_state.init_share_price > close_share_price:
         share_proceeds *= close_share_price / market_state.init_share_price
@@ -1838,7 +1834,7 @@ def calc_close_long_fp(
     )
     withdraw_pool_deltas = MarketDeltasFP()
     if margin_needs_to_be_freed:
-        open_share_price = market_state.checkpoints[mint_time].long_share_price
+        open_share_price = market_state.checkpoints[int(mint_time)].long_share_price
         # The withdrawal pool has preferential access to the proceeds generated from closing longs.
         # The LP proceeds when longs are closed are equivalent to the proceeds of short positions.
         withdrawal_proceeds = calc_short_proceeds_fp(
@@ -1890,7 +1886,7 @@ def calc_close_long_fp(
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
         long_checkpoints=d_checkpoints,
-        total_supply_longs=defaultdict(FixedPoint, {mint_time: -bond_amount}),
+        total_supply_longs=defaultdict(FixedPoint, {int(mint_time): -bond_amount}),
         withdraw_capital=withdraw_pool_deltas.withdraw_capital,
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
@@ -1898,7 +1894,7 @@ def calc_close_long_fp(
     agent_deltas = wallet.WalletFP(
         address=wallet_address,
         balance=types.QuantityFP(amount=base_proceeds, unit=types.TokenType.BASE),
-        longs={mint_time: wallet.LongFP(-bond_amount)},
+        longs={int(mint_time): wallet.LongFP(-bond_amount)},
         fees_paid=fee,
     )
     return market_deltas, agent_deltas

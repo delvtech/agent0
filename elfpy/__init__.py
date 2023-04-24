@@ -1,5 +1,6 @@
 """Elfpy package"""
 
+import collections
 import logging
 import shutil
 
@@ -232,7 +233,7 @@ def check_non_zero_fp(data) -> None:
     # TODO: issue #146
     # this is an imperfect solution to rounding errors, but it works for now
     try:
-        if not isinstance(data, dict):
+        if not isinstance(data, (dict, collections.defaultdict)):
             data = data.__dict__
     except AttributeError as exception:
         raise TypeError("dct must be a dict or a class with __dict__") from exception
@@ -250,7 +251,5 @@ def check_non_zero_fp(data) -> None:
                 assert (
                     value > -PRECISION_THRESHOLD_FP
                 ), f"values must be > {-PRECISION_THRESHOLD_FP}. Error on {key} = {value}"
-        elif hasattr(value, "__dict__"):
+        elif hasattr(value, "__dict__") or isinstance(value, (dict, collections.defaultdict)):
             check_non_zero_fp(value)
-        else:
-            raise TypeError(f"value must be of type FixedPoint or have __dict__ attribute, not {type(value)}")
