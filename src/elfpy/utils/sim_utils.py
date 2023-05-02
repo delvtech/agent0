@@ -105,7 +105,7 @@ def get_init_lp_agent(
     then a larger LP. Each iteration estimates the slippage due to the short and adjusts the first LP amount
     to account for it. The difference in slippage from one iteration to the next monotonically decreases,
     since it is accounting for diminishing additions to the market share reserves. A more detailed description
-    is here: https://github.com/element-fi/elf-simulations/pull/136#issuecomment-1405922764
+    is here: https://github.com/delv-tech/elf-simulations/pull/136#issuecomment-1405922764
 
     Parameters
     ----------
@@ -173,7 +173,7 @@ def get_init_lp_agent(
     )  # add back delta_base=delta_shares*share_price to immunize effect of short
     # TODO: investigate why max_loss_in_base is not accounted for here, as it increases the protocol liquidity,
     # even though it doesn't go into the pool.
-    # see discussion: https://github.com/element-fi/elf-simulations/pull/136#discussion_r1089404750
+    # see discussion: https://github.com/delv-tech/elf-simulations/pull/136#discussion_r1089404750
     second_base_to_lp = (
         target_liquidity - init_share_reserves * market.market_state.share_price
     )  # fill pools to hit target liquidity

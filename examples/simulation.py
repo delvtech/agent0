@@ -94,7 +94,7 @@ def get_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ElfMain",
         description="Example execution script for running simulations using Elfpy",
-        epilog="See the README on https://github.com/element-fi/elf-simulations/ for more implementation details",
+        epilog="See the README on https://github.com/delv-tech/elf-simulations/ for more implementation details",
     )
     parser.add_argument("--output", help="Optional output filename for logging", default=None, type=str)
     parser.add_argument(
