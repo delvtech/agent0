@@ -74,8 +74,8 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                     try:
                         new_data[attr_name] = new_type(attr_value)
                         self.__annotations__[attr_name] = new_type
-                    except ValueError as err:
-                        raise ValueError(f"Unable to cast {attr_name} to {new_type}") from err
+                    except (ValueError, TypeError) as err:
+                        raise TypeError(f"unable to cast {attr_name} of type {type(attr_value)} to {new_type}") from err
                 # create a new instance of the data class with the updated
                 # attributes, rather than modifying the current instance in-place
                 return replace(self, **new_data)
