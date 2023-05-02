@@ -1075,12 +1075,10 @@ class MarketDeltasFP(base_market.MarketDeltasFP):
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
     withdraw_interest: FixedPoint = FixedPoint(0)
-    long_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
-    short_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
-    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
-    total_supply_shorts: defaultdict[int, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
+    long_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    short_checkpoints: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_shorts: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -1289,16 +1287,17 @@ def calc_lp_out_given_tokens_in_fp(
 def calculate_base_volume_fp(
     base_amount: FixedPoint, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint
 ) -> FixedPoint:
-    """Calculates the base volume of an open trade.
+    r"""Calculates the base volume of an open trade.
+
     Output is given the base amount, the bond amount, and the time remaining.
     Since the base amount takes into account backdating, we can't use this as our base volume.
     Since we linearly interpolate between the base volume and the bond amount as the time
     remaining goes from 1 to 0, the base volume can be determined as follows:
 
     .. math::
-        base_amount = t * base_volume + (1 - t) * bond_amount
-                            =>
-        base_volume = (base_amount - (1 - t) * bond_amount) / t
+        base_amount = t * base_volume + (1 - t) * bond_amount\\
+                            =>\\
+        base_volume = \frac{base_amount - (1 - t) * bond_amount}{t}
 
     Parameters
     ----------
@@ -1356,7 +1355,7 @@ def calc_checkpoint_deltas_fp(
     # Get the total supply of longs in the checkpoint of the longs being closed. If the longs are
     # closed before maturity, we add the amount of longs being closed since the total supply is
     # decreased when burning the long tokens.
-    checkpoint_amount = market_state[total_supply][checkpoint_time]
+    checkpoint_amount = market_state[total_supply][int(checkpoint_time)]
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == FixedPoint(0):
         return (FixedPoint(0), defaultdict(FixedPoint, {int(checkpoint_time): FixedPoint(0)}), FixedPoint(0))
@@ -1378,7 +1377,8 @@ def calc_open_short_fp(
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
 ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
-    """Calculate the agent & market deltas for opening a short position.
+    r"""Calculate the agent & market deltas for opening a short position.
+
     Shorts need their margin account to cover the worst case scenario (p=1).
 
     The margin comes from 2 sources:
@@ -1403,7 +1403,7 @@ def calc_open_short_fp(
     pricing_model: Hyperdrive PricingModel
         Instantiated pricing model for the hyperdrive market
     block_time: FixedPoint
-        Global time.
+        Global time (usually `market.BlockTime.time`).
     latest_checkpoint_time: FixedPoint
         The most recent checkpoint time.
 
@@ -1413,10 +1413,14 @@ def calc_open_short_fp(
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # get the checkpointed time remaining
-    mint_time = latest_checkpoint_time
-    days_remaining = position_duration.days - (block_time - latest_checkpoint_time) * FixedPoint("365.0")
+    annualized_position_duration = position_duration.days / FixedPoint("365.0")
+    years_remaining = time.get_years_remaining_fp(
+        market_time=block_time,
+        mint_time=latest_checkpoint_time,
+        position_duration_years=annualized_position_duration,
+    )
     time_remaining = time.StretchedTimeFP(
-        days=days_remaining,
+        days=years_remaining * FixedPoint("365.0"),
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
     )
@@ -1428,22 +1432,21 @@ def calc_open_short_fp(
     trade_result = pricing_model.calc_out_given_in(
         in_=trade_quantity, market_state=market_state, time_remaining=time_remaining
     )
-
+    # make sure the trade is valid
+    pricing_model.check_output_assertions(trade_result=trade_result)
     # calculate the trader's deposit amount
-    normalized_time_elapsed = (block_time - mint_time) / position_duration.years
+    normalized_time_elapsed = (block_time - latest_checkpoint_time) / position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market_state.share_price
     share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
     bond_reserves_delta = trade_result.market_result.d_bonds
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
-    open_share_price = market_state.checkpoints[int(mint_time)].share_price
-    share_price = market_state.share_price
-    trader_deposit = calc_short_proceeds_fp(bond_amount, share_proceeds, open_share_price, share_price, share_price)
+    open_share_price = market_state.checkpoints[int(latest_checkpoint_time)].share_price
+    trader_deposit = calc_short_proceeds_fp(
+        bond_amount, share_proceeds, open_share_price, market_state.share_price, market_state.share_price
+    )
     # get gov fees accrued
     market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
-    # make sure the trade is valid
-    pricing_model.check_output_assertions(trade_result=trade_result)
     # update accouting for average maturity time, base volume and longs outstanding
-    annualized_position_duration = position_duration.days / FixedPoint("365.0")
     short_average_maturity_time = update_weighted_average_fp(
         average=market_state.short_average_maturity_time,
         total_weight=market_state.shorts_outstanding,
@@ -1969,15 +1972,18 @@ def calc_short_proceeds_fp(
     close_share_price: FixedPoint,
     share_price: FixedPoint,
 ) -> FixedPoint:
-    """Calculates the proceeds in shares of closing a short position.
+    r"""Calculates the proceeds in shares of closing a short position.
 
     This takes into account the trading profits, the interest that was earned by the short, and the
     amount of margin that was released by closing the short. The math for the short's proceeds in
     base is given by:
 
     .. math::
-        proceeds = dy - c * dz + (c1 - c0) * (dy / c0) = dy - c * dz + (c1 / c0) * dy - dy = (c1 / c0) *
-        dy - c * dz
+        \begin{align*}
+        proceeds &= dy - c * dz + (c1 - c0) * \frac{dy}{c0} \\
+        &= dy - c * dz + \frac{c1}{c0} * dy - dy \\
+        &= \frac{c1}{c0} * dy - c * dz
+        \end{align*}
 
     We convert the proceeds to shares by dividing by the current share price. In the event that the
     interest is negative and outweighs the trading profits and margin released, the short's proceeds
