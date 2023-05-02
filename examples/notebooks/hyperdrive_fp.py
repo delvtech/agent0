@@ -1,5 +1,21 @@
-"""simulation for the Hyperdrive market"""
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: .venv
+#     language: python
+#     name: python3
+# ---
+
 # %%
+"""simulation for the Hyperdrive market"""
 from __future__ import annotations
 from matplotlib.axes import Axes
 
