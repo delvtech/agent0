@@ -209,7 +209,10 @@ def check_non_zero(data) -> None:
                     value,
                     PRECISION_THRESHOLD,
                 )
-                setattr(data, key, 0)
+                if isinstance(key, str):
+                    setattr(data, key, 0)
+                else:
+                    data[key] = 0
             else:
                 assert (
                     value > -PRECISION_THRESHOLD
