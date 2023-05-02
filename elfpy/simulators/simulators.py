@@ -876,7 +876,7 @@ class ConfigFP(types.FrozenClass):
         # cls arg tells json how to handle numpy objects and nested dataclasses
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
-    def copy(self) -> Config:
+    def copy(self) -> ConfigFP:
         """Returns a new copy of self"""
         if hasattr(self, "__dataclass_fields__"):
             # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member

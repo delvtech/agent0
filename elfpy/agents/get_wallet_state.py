@@ -123,7 +123,7 @@ def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market
                 open_share_price=short.open_share_price,
             )[1].balance.amount
         shorts_value += balance
-        base_no_mock = short.balance * (1 - market.spot_price)
+        base_no_mock = short.balance * (FixedPoint("1.0") - market.spot_price)
         shorts_value_no_mock += base_no_mock
     return {
         f"agent_{agent_wallet.address}_base": agent_wallet.balance.amount,
