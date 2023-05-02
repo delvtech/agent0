@@ -104,7 +104,7 @@ class TestAddLiquidity(unittest.TestCase):
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=1)
+        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=2)
 
     def test_add_liquidity_with_short_immediately(self):
         """Test adding liquidity when there is a long short.  LP should still get the same number of
@@ -131,7 +131,7 @@ class TestAddLiquidity(unittest.TestCase):
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=1)
+        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=2)
 
     def test_add_liquidity_with_long_at_maturity(self):
         """Test adding liquidity with a long at maturity."""
@@ -154,7 +154,7 @@ class TestAddLiquidity(unittest.TestCase):
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=1)
+        self.assertAlmostEqual(float(pool_apr), float(self.target_apr), places=2)
 
         # Ensure that if the new LP withdraws, they get their money back.
         market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
