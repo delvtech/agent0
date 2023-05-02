@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from elfpy.utils.math import FixedPointMath
+from elfpy.utils.math import FixedPointMath, FixedPoint
 
 
 class TestFixedPointMath(unittest.TestCase):
@@ -256,3 +256,13 @@ class TestFixedPointMath(unittest.TestCase):
         result = FixedPointMath.pow(18458206546438581254928, 1023055417320413264)
         expected = 23149855298128876929745
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
+
+    def test_maximum(self):
+        """Test maximum function"""
+        assert FixedPointMath.maximum(0, 1) == 1
+        assert FixedPointMath.maximum(-1, 1) == 1
+        assert FixedPointMath.maximum(-1, -3) == -1
+        assert FixedPointMath.maximum(-1.0, -3.0) == -1.0
+        assert FixedPointMath.maximum(1.0, 3.0) == 3.0
+        assert FixedPointMath.maximum(FixedPoint(1.0), FixedPoint(3.0)) == FixedPoint(3.0)
+        assert FixedPointMath.maximum(FixedPoint("3.0"), FixedPoint(int(3e18 - 1e-17))) == FixedPoint(3.0)
