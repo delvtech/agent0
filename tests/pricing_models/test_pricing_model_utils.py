@@ -3,12 +3,13 @@ import unittest
 import logging
 from typing import Union
 
-import numpy as np
-
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.utils.outputs as output_utils
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):
@@ -27,8 +28,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   1 share price; 1 init_share_price; 3mo elapsed
             {
                 "market_state": MarketState(
-                    share_reserves=500000,  # z = 500000
-                    bond_reserves=500000,  # y = 500000
+                    share_reserves=500_000,  # z = 500000
+                    bond_reserves=500_000,  # y = 500000
                     share_price=1,  # c = 1
                     init_share_price=1,  # u = 1
                 ),
@@ -42,8 +43,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   1 share price; 1 init_share_price; 12mo elapsed
             {
                 "market_state": MarketState(
-                    share_reserves=500000,  # z = 500000
-                    bond_reserves=500000,  # y = 500000
+                    share_reserves=500_000,  # z = 500000
+                    bond_reserves=500_000,  # y = 500000
                     share_price=1,  # c = 1
                     init_share_price=1,  # u = 1
                 ),
@@ -51,14 +52,14 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 # k = c/u * (u*z)**t + (2y+c*z)**t
                 #     = 1/1 * (1*500000)**1 + (2*500000+1*500000)**1
                 #     = 2000000
-                "expected_result": 2000000,
+                "expected_result": 2_000_000,
             },
             # test 2: 5M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
                 "market_state": MarketState(
-                    share_reserves=5000000,  # z = 5000000
-                    bond_reserves=5000000,  # y = 5000000
+                    share_reserves=5_000_000,  # z = 5000000
+                    bond_reserves=5_000_000,  # y = 5000000
                     share_price=2,  # c = 2
                     init_share_price=1.5,  # u = 1.5
                 ),
@@ -66,14 +67,14 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                 # k = c/u * (u*z)**t + (2y+c*z)**t
                 #     = 2/1.5 * (1.5*5000000)**0.50 + (2*5000000+2*5000000)**0.50
                 #     = 8123.619671700687
-                "expected_result": 8123.619671700687,
+                "expected_result": 8_123.619671700687,
             },
             # test 3: 0M share_reserves; 5M bond_reserves
             #   2 share price; 1.5 init_share_price; 3mo elapsed
             {
                 "market_state": MarketState(
                     share_reserves=0,  # z = 0
-                    bond_reserves=5000000,  # y = 5000000
+                    bond_reserves=5_000_000,  # y = 5000000
                     share_price=2,  # c = 2
                     init_share_price=1.5,  # u = 1.5
                 ),
@@ -103,8 +104,8 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             #   2 share price; 1.5 init_share_price; 6mo elapsed
             {
                 "market_state": MarketState(
-                    share_reserves=5000000,  # z = 5000000
-                    bond_reserves=5000000,  # y = 5000000
+                    share_reserves=5_000_000,  # z = 5000000
+                    bond_reserves=5_000_000,  # y = 5000000
                     share_price=2,  # c = 2
                     init_share_price=0,  # ERROR CASE; u = 0
                 ),
@@ -148,7 +149,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         init_share_price=test_case["market_state"].init_share_price,
                     )
                 )
-                np.testing.assert_almost_equal(k, test_case["expected_result"], err_msg="unexpected k")
+                self.assertAlmostEqual(k, test_case["expected_result"], places=18, msg="unexpected k")
 
         output_utils.close_logging()
 
@@ -158,5 +159,5 @@ class TestPricingModelUtils(BasePricingModelUtilsTest):
 
     def test_calc_k_const(self):
         """Execute the test"""
-        self.run_calc_k_const_test(hyperdrive_pm.HyperdrivePricingModel())
         self.run_calc_k_const_test(yieldspace_pm.YieldspacePricingModel())
+        self.run_calc_k_const_test(hyperdrive_pm.HyperdrivePricingModel())

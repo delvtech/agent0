@@ -161,6 +161,7 @@ class TestAddLiquidity(unittest.TestCase):
             bond_amount=50_000_000,
         )
 
+        # Advance 1 year
         self.block_time.tick(1)
 
         # Add liquidity with the same amount as the original contribution.
