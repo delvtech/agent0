@@ -193,5 +193,5 @@ class TestFreezability(unittest.TestCase):
         freezable_object = FreezableClass(
             existing_attrib="bleh"  # pylint: disable=attribute-defined-outside-init # type: ignore
         )
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             freezable_object.astype(int)  # pylint: disable=attribute-defined-outside-init # type: ignore
