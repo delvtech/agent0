@@ -324,6 +324,7 @@ class BorrowFP:
     start_time: FixedPoint
 
 
+@types.freezable()
 @dataclass()
 class WalletFP:
     r"""Stores what is in the agent's wallet
