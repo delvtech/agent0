@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from elfpy.agents.agent import Agent, AgentFP
 
 
+# TODO: remove this when FP conversion finished
+# pylint: disable=too-many-lines
 @dataclass
 class SimulationState:
     r"""Simulator state, updated after each trade
@@ -882,7 +884,7 @@ class ConfigFP(types.FrozenClass):
             # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member
             # when we're in the conditional
             # pylint: disable=no-member
-            return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
+            return ConfigFP(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
         raise AttributeError("Config was not instantiated & cannot be copied")
 
     def check_variable_apr(self) -> None:

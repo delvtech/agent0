@@ -220,7 +220,9 @@ def compute_derived_variables_fp(simulator: SimulatorFP) -> pd.DataFrame:
     bond_liquidity_usd = trades_df.bond_reserves * trades_df.share_price * trades_df.spot_price
     trades_df["total_liquidity_usd"] = share_liquidity_usd + bond_liquidity_usd
     # calculate percent change in spot price since the first spot price (after first trade)
-    trades_df["price_total_return"] = trades_df.loc[:, "spot_price"] / trades_df.loc[0, "spot_price"] - 1
+    trades_df["price_total_return"] = (
+        trades_df.loc[:, "spot_price"] / trades_df.loc[0, "spot_price"] - 1  # type: ignore
+    )
     trades_df["price_total_return_percent"] = trades_df.price_total_return * 100
     # rescale price_total_return to equal init_share_price for the first value, for comparison
     trades_df["price_total_return_scaled_to_share_price"] = (
