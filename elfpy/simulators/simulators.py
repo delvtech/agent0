@@ -14,12 +14,13 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.utils.math.fixed_point import FixedPoint
 import elfpy.utils.outputs as output_utils
-from elfpy.agents.get_wallet_state import get_wallet_state
+from elfpy.agents.get_wallet_state import get_wallet_state, get_wallet_state_fp
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-    from elfpy.agents.agent import Agent
+    from elfpy.agents.agent import Agent, AgentFP
 
 
 @dataclass
@@ -699,7 +700,7 @@ class Simulator:
 # FIXED POINT
 #######################################
 @dataclass
-class SimulationState:
+class SimulationStateFP:
     r"""Simulator state, updated after each trade
 
     MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
@@ -726,7 +727,7 @@ class SimulationState:
     # minimum time discretization for a time step
     time_step_size: list[float] = field(default_factory=list)
     # time lapse between token mint and expiry in years
-    position_duration: list[time.StretchedTime] = field(default_factory=list)
+    position_duration: list[time.StretchedTimeFP] = field(default_factory=list)
     # variable apr on a given day
     current_variable_apr: list[float] = field(default_factory=list)
     # apr of the AMM pool
@@ -767,7 +768,7 @@ class SimulationState:
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class Config(types.FrozenClass):
+class ConfigFP(types.FrozenClass):
     """Data object for storing user simulation config parameters"""
 
     # lots of configs!
@@ -900,7 +901,7 @@ class Config(types.FrozenClass):
 
 
 @dataclass
-class RunSimVariables:
+class RunSimVariablesFP:
     """Simulation state variables that change by run"""
 
     # incremented each time run_simulation is called
@@ -908,17 +909,17 @@ class RunSimVariables:
     # the simulation config
     config: Config
     # initial wallets for the agents
-    agent_init: list[wallet.Wallet]
+    agent_init: list[wallet.WalletFP]
     # initial market state for this simulation run
-    market_init: hyperdrive_market.MarketState
+    market_init: hyperdrive_market.MarketStateFP
     # minimum time discretization for time step in years
     time_step: float
     # time lapse between token mint and expiry in years
-    position_duration: time.StretchedTime
+    position_duration: time.StretchedTimeFP
 
 
 @dataclass
-class DaySimVariables:
+class DaySimVariablesFP:
     """Simulation state variables that change by day"""
 
     # incremented each time run_simulation is called
@@ -932,7 +933,7 @@ class DaySimVariables:
 
 
 @dataclass
-class BlockSimVariables:
+class BlockSimVariablesFP:
     """Simulation state variables that change by block"""
 
     # incremented each time run_simulation is called
@@ -946,7 +947,7 @@ class BlockSimVariables:
 
 
 @dataclass
-class TradeSimVariables:
+class TradeSimVariablesFP:
     """Simulation state variables that change by trade"""
 
     # pylint: disable=too-many-instance-attributes
@@ -966,40 +967,15 @@ class TradeSimVariables:
     # trade being executed
     trade_action: types.Trade
     # deltas used to update the market state
-    market_deltas: hyperdrive_actions.MarketDeltas
+    market_deltas: hyperdrive_actions.MarketDeltasFP
     # address of the agent that is executing the trade
     agent_address: int
     # deltas used to update the market state
-    agent_deltas: wallet.Wallet
-
-
-def simulation_state_aggreagator(constructor):
-    """Returns a dataclass that aggregates simulation state attributes"""
-    # Wrap the type from the constructor in a list, but keep the name
-    attribs = [
-        (key, "list[" + val + "]", field(default_factory=list)) for key, val in constructor.__annotations__.items()
-    ]
-
-    # Make a new dataclass that has helper functions for appending to the list
-    def update(obj, dictionary):
-        for key, value in dictionary.items():
-            obj.update_item(key, value)
-
-    # The lambda is used because of the self variable -- TODO: can possibly remove?
-    # pylint: disable=unnecessary-lambda
-    aggregator = make_dataclass(
-        constructor.__name__ + "Aggregator",
-        attribs,
-        namespace={
-            "update_item": lambda self, key, value: getattr(self, key).append(value),
-            "update": lambda self, dict_like: update(self, dict_like),
-        },
-    )()
-    return aggregator
+    agent_deltas: wallet.WalletFP
 
 
 @dataclass
-class NewSimulationState:
+class NewSimulationStateFP:
     r"""Simulator state that stores Market, Agent, and Config attributes
     The SimulationState has the following external attributes:
         run_updates: pd.DataFrame composed of RunSimVariables
@@ -1010,17 +986,17 @@ class NewSimulationState:
 
     def __post_init__(self) -> None:
         r"""Construct empty dataclasses with appropriate attributes for each state variable type"""
-        self._run_updates = simulation_state_aggreagator(RunSimVariables)
-        self._day_updates = simulation_state_aggreagator(DaySimVariables)
-        self._block_updates = simulation_state_aggreagator(BlockSimVariables)
-        self._trade_updates = simulation_state_aggreagator(TradeSimVariables)
+        self._run_updates = simulation_state_aggreagator(RunSimVariablesFP)
+        self._day_updates = simulation_state_aggreagator(DaySimVariablesFP)
+        self._block_updates = simulation_state_aggreagator(BlockSimVariablesFP)
+        self._trade_updates = simulation_state_aggreagator(TradeSimVariablesFP)
 
     def update(
         self,
-        run_vars: Optional[RunSimVariables] = None,
-        day_vars: Optional[DaySimVariables] = None,
-        block_vars: Optional[BlockSimVariables] = None,
-        trade_vars: Optional[TradeSimVariables] = None,
+        run_vars: Optional[RunSimVariablesFP] = None,
+        day_vars: Optional[DaySimVariablesFP] = None,
+        block_vars: Optional[BlockSimVariablesFP] = None,
+        trade_vars: Optional[TradeSimVariablesFP] = None,
     ) -> None:
         r"""Add a row to the state dataframes that contains the latest variables"""
         if run_vars is not None:
@@ -1061,7 +1037,7 @@ class NewSimulationState:
         return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
 
 
-class Simulator:
+class SimulatorFP:
     r"""Stores environment variables & market simulation outputs for AMM experimentation
 
     Member variables include input settings, random variable ranges, and simulation outputs.
@@ -1074,8 +1050,8 @@ class Simulator:
     def __init__(
         self,
         config: Config,
-        market: hyperdrive_market.Market,
-        block_time: time.BlockTime,
+        market: hyperdrive_market.MarketFP,
+        block_time: time.BlockTimeFP,
     ):
         # User specified variables
         self.config = config.copy()
@@ -1087,7 +1063,7 @@ class Simulator:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
-        self.agents: dict[int, Agent] = {}
+        self.agents: dict[int, AgentFP] = {}
 
         # Simulation variables
         self.run_number = 0
@@ -1098,8 +1074,8 @@ class Simulator:
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.trade_number = 0
         if self.config.do_dataframe_states:
-            self.new_simulation_state = NewSimulationState()
-        self.simulation_state = SimulationState()
+            self.new_simulation_state = NewSimulationStateFP()
+        self.simulation_state = SimulationStateFP()
 
     def set_rng(self, rng: NumpyGenerator) -> None:
         r"""Assign the internal random number generator to a new instantiation
@@ -1143,7 +1119,7 @@ class Simulator:
         blocks_per_year = 365 * self.config.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def add_agents(self, agent_list: list[Agent]) -> None:
+    def add_agents(self, agent_list: list[AgentFP]) -> None:
         r"""Append the agents and simulation_state member variables
 
         If trades have already happened (as indicated by self.trade_number), then empty wallet states are
@@ -1242,13 +1218,13 @@ class Simulator:
             self.update_simulation_state()
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
-                    trade_vars=TradeSimVariables(
+                    trade_vars=TradeSimVariablesFP(
                         self.run_number,
                         self.day,
                         self.block_number,
                         self.trade_number,
-                        self.market.fixed_apr,
-                        self.market.spot_price,
+                        float(self.market.fixed_apr),
+                        float(self.market.spot_price),
                         trade[1].trade,
                         market_deltas,
                         agent_id,
@@ -1281,7 +1257,7 @@ class Simulator:
         last_block_in_sim = False
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
-                run_vars=RunSimVariables(
+                run_vars=RunSimVariablesFP(
                     run_number=self.run_number,
                     config=self.config,
                     agent_init=[agent.wallet for agent in self.agents.values()],
@@ -1292,28 +1268,28 @@ class Simulator:
             )
         for day in range(self.config.num_trading_days):
             self.day = day
-            self.market.market_state.variable_apr = self.config.variable_apr[self.day]
+            self.market.market_state.variable_apr = FixedPoint(self.config.variable_apr[self.day])
             # Vault return can vary per day, which sets the current price per share
             if self.day > 0:  # Update only after first day (first day set to init_share_price)
                 if self.config.compound_variable_apr:  # Apply return to latest price (full compounding)
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive_actions.MarketDeltas(
+                delta = hyperdrive_actions.MarketDeltasFP(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
-                        / 365  # convert annual yield to daily
+                        / FixedPoint("365.0")  # convert annual yield to daily
                         * price_multiplier
                     )
                 )
                 self.market.update_market(delta)
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
-                    day_vars=DaySimVariables(
+                    day_vars=DaySimVariablesFP(
                         self.run_number,
                         self.day,
-                        self.market.market_state.variable_apr,
-                        self.market.market_state.share_price,
+                        float(self.market.market_state.variable_apr),
+                        float(self.market.market_state.share_price),
                     )
                 )
             for daily_block_number in range(self.config.num_blocks_per_day):
@@ -1324,7 +1300,9 @@ class Simulator:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariables(self.run_number, self.day, self.block_number, self.block_time.time)
+                        block_vars=BlockSimVariablesFP(
+                            self.run_number, self.day, self.block_number, float(self.block_time.time)
+                        )
                     )
                 self.collect_and_execute_trades(liquidate)
                 logging.debug(
@@ -1334,7 +1312,7 @@ class Simulator:
                     self.block_time.time,
                 )
                 if not last_block_in_sim:
-                    self.block_time.tick(self.time_step)
+                    self.block_time.tick(FixedPoint(self.time_step))
                     self.block_number += 1
         # simulation has ended
         for agent in self.agents.values():
@@ -1353,19 +1331,19 @@ class Simulator:
         self.simulation_state.day.append(self.day)
         self.simulation_state.block_number.append(self.block_number)
         self.simulation_state.daily_block_number.append(self.daily_block_number)
-        self.simulation_state.current_time.append(self.block_time.time)
+        self.simulation_state.current_time.append(float(self.block_time.time))
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.time_step_size.append(self.time_step)
         self.simulation_state.position_duration.append(self.market.position_duration)
-        self.simulation_state.fixed_apr.append(self.market.fixed_apr)
+        self.simulation_state.fixed_apr.append(float(self.market.fixed_apr))
         self.simulation_state.current_variable_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
-            self.simulation_state.add_dict_entries(get_wallet_state(agent.wallet, self.market))
+            self.simulation_state.add_dict_entries(get_wallet_state_fp(agent.wallet, self.market))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
-        if self.market.market_state.share_reserves > 0:  # there is money in the market
-            self.simulation_state.spot_price.append(self.market.spot_price)
+        if self.market.market_state.share_reserves > FixedPoint(0):  # there is money in the market
+            self.simulation_state.spot_price.append(float(self.market.spot_price))
         else:
             self.simulation_state.spot_price.append(np.nan)
