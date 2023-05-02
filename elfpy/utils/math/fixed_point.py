@@ -434,7 +434,7 @@ class FixedPoint:
             return self
         lhs, rhs = str(self).split(".")
         # if the number is negative & there is a remainder
-        if self.int_value < 0 and len(rhs.rstrip("0")) > 0:
+        if self.int_value < 0 < len(rhs.rstrip("0")):
             return FixedPoint(str(int(lhs) - 1) + ".0")  # round down to -inf
         return FixedPoint(lhs + ".0")
 

@@ -258,6 +258,7 @@ class TestFixedPointMath(unittest.TestCase):
         assert math.isclose(result, expected, rel_tol=tolerance), f"\n  {result=}\n{expected=}"
 
     def test_maximum(self):
+        """Test maximum function"""
         assert FixedPointMath.maximum(0, 1) == 1
         assert FixedPointMath.maximum(-1, 1) == 1
         assert FixedPointMath.maximum(-1, -3) == -1
