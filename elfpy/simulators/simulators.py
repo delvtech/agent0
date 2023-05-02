@@ -907,7 +907,7 @@ class RunSimVariablesFP:
     # incremented each time run_simulation is called
     run_number: int
     # the simulation config
-    config: Config
+    config: ConfigFP
     # initial wallets for the agents
     agent_init: list[wallet.WalletFP]
     # initial market state for this simulation run
@@ -1049,7 +1049,7 @@ class SimulatorFP:
 
     def __init__(
         self,
-        config: Config,
+        config: ConfigFP,
         market: hyperdrive_market.MarketFP,
         block_time: time.BlockTimeFP,
     ):
