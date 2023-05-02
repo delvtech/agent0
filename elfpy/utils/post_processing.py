@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 if TYPE_CHECKING:
-    from elfpy.simulators import Simulator
+    from elfpy.simulators import Simulator, SimulatorFP
 
 
 def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.DataFrame:
@@ -167,7 +167,10 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     return trades_agg
 
 
-def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+#######################################
+# FIXED POINT
+#######################################
+def get_simulation_state_df_fp(simulator: SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Parameters
@@ -188,7 +191,7 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
     return pd.DataFrame.from_dict(simulator.simulation_state.__dict__)
 
 
-def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
+def compute_derived_variables_fp(simulator: SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Parameters
@@ -201,7 +204,7 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     """
-    trades_df = get_simulation_state_df(simulator)
+    trades_df = get_simulation_state_df_fp(simulator)
     # calculate changes in reserves, corresponding to latest trade
     trades_df["delta_shares"] = trades_df.share_reserves.diff()
     trades_df["delta_base"] = trades_df.share_reserves.diff() * trades_df.share_price
@@ -240,56 +243,3 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     add_pnl_columns(trades_df)
     trades_df = trades_df.reset_index()
     return trades_df
-
-
-def add_pnl_columns(trades_df: pd.DataFrame) -> None:
-    """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
-    num_agents = len([col for col in trades_df if str(col).startswith("agent") and str(col).endswith("base")])
-    for agent_id in range(num_agents):
-        wallet_values_in_base = [
-            f"agent_{agent_id}_base",
-            f"agent_{agent_id}_lp_tokens",
-            f"agent_{agent_id}_total_longs",
-            f"agent_{agent_id}_total_shorts",
-        ]
-        wallet_values_in_base_no_mock = [
-            f"agent_{agent_id}_base",
-            f"agent_{agent_id}_lp_tokens",
-            f"agent_{agent_id}_total_longs_no_mock",
-            f"agent_{agent_id}_total_shorts_no_mock",
-        ]
-        trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].sum(axis=1)
-        trades_df[f"agent_{agent_id}_pnl_no_mock"] = trades_df[wallet_values_in_base_no_mock].sum(axis=1)
-
-
-def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
-    r"""Aggregate trades dataframe by computing means
-
-    Parameters
-    ----------
-    trades : DataFrame
-        Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
-
-    Returns
-    -------
-    trades_agg : DataFrame
-        aggregated dataframe that keeps the model_name and day columns
-        and computes the mean over spot price
-    """
-    ### STATS AGGREGATED BY SIM AND DAY ###
-    # aggregates by two dimensions:
-    # 1. model_name (directly output from pricing_model class)
-    # 2. day
-    keep_columns = [
-        "model_name",
-        "day",
-    ]
-    trades_agg = trades.groupby(keep_columns).agg(
-        {
-            "spot_price": ["mean"],
-            "delta_base_abs": ["sum"],
-        }
-    )
-    trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
-    trades_agg = trades_agg.reset_index()
-    return trades_agg
