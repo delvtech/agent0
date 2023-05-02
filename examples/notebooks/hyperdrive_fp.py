@@ -31,10 +31,11 @@ from numpy.random._generator import Generator
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from elfpy.agents.agent import Agent
+from elfpy.agents.agent import AgentFP
 from elfpy.utils import sim_utils
-from elfpy.simulators import Config
+from elfpy.simulators import ConfigFP
 from elfpy.utils.outputs import get_gridspec_subplots
+from elfpy.utils.math.fixed_point import FixedPoint
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
@@ -45,7 +46,7 @@ import elfpy.agents.policies.random_agent as random_agent
 # ### Setup experiment parameters
 
 # %%
-config = Config()
+config = ConfigFP()
 
 config.title = "Hyperdrive demo"
 config.pricing_model_name = "Hyperdrive" # can be yieldspace or hyperdrive
@@ -70,7 +71,7 @@ config.log_filename = "hyperdrive" # Output filename for logging
 # ### Setup agents
 
 # %%
-class RandomAgent(random_agent.Policy):
+class RandomAgent(random_agent.RandomAgent):
     """Agent that randomly opens or closes longs or shorts
 
     Customized from the policy in that one can force the agent to only open longs or shorts
@@ -80,7 +81,7 @@ class RandomAgent(random_agent.Policy):
         """Add custom stuff then call basic policy init"""
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
-        super().__init__(rng, trade_chance, wallet_address, budget)
+        super().__init__(rng, trade_chance, wallet_address, FixedPoint(budget*10*18))
 
 
     def get_available_actions(
@@ -163,7 +164,7 @@ config.freeze() # type: ignore
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # get an instantiated simulator object
-simulator = sim_utils.get_simulator(config)
+simulator = sim_utils.get_simulator_fp(config)
 
 # %% [markdown]
 # ### Run the simulation
@@ -192,7 +193,7 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables(simulator)
+trades = post_processing.compute_derived_variables_fp(simulator)
 for col in trades:
     if col.startswith("agent"):
         divisor = 1e6 # 1 million divisor for everyone
