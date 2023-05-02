@@ -1338,7 +1338,7 @@ class MarketFP(
         """
         # Return early if the checkpoint has already been updated.
         if (
-            self.market_state.checkpoints[int(checkpoint_time)].share_price != 0
+            self.market_state.checkpoints[int(checkpoint_time)].share_price != FixedPoint(0)
             or checkpoint_time > self.block_time.time
         ):
             return self.market_state.checkpoints[int(checkpoint_time)].share_price
