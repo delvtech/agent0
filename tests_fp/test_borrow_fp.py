@@ -10,6 +10,10 @@ import elfpy.markets.borrow as borrow_market
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
+from elfpy.utils.math import FixedPoint
+
+# TODO: remove this after FixedPoint PRs are finished
+# pylint: disable=duplicate-code
 
 
 class TestBorrow(unittest.TestCase):
@@ -25,33 +29,35 @@ class TestBorrow(unittest.TestCase):
             if collateral_token == types.TokenType.PT:
                 spot_price_range = np.arange(0.01, 1.01, 0.05)
             for spot_price in spot_price_range:
-                collateral_amount = 10**collateral_exponent
-                collateral = types.Quantity(unit=collateral_token, amount=collateral_amount)
+                collateral_amount = FixedPoint(10**collateral_exponent)
+                collateral = types.QuantityFP(unit=collateral_token, amount=collateral_amount)
                 loan_to_value_ratios = {
-                    types.TokenType.BASE: loan_to_value / 100,
-                    types.TokenType.PT: loan_to_value / 100,
+                    types.TokenType.BASE: FixedPoint(loan_to_value / 100),
+                    types.TokenType.PT: FixedPoint(loan_to_value / 100),
                 }
-                borrow = borrow_market.Market(
-                    pricing_model=borrow_market.PricingModel(),
-                    block_time=time.BlockTime(),
-                    market_state=borrow_market.MarketState(loan_to_value_ratio=loan_to_value_ratios),
+                borrow = borrow_market.MarketFP(
+                    pricing_model=borrow_market.PricingModelFP(),
+                    block_time=time.BlockTimeFP(),
+                    market_state=borrow_market.MarketStateFP(loan_to_value_ratio=loan_to_value_ratios),
                 )
                 market_deltas, agent_deltas = borrow.calc_open_borrow(
                     wallet_address=1,
                     collateral=collateral,
-                    spot_price=spot_price,
+                    spot_price=FixedPoint(spot_price),
                 )
-                expected_borrow_amount = collateral_amount * loan_to_value / 100 * spot_price
+                expected_borrow_amount = collateral_amount * FixedPoint(loan_to_value / 100) * FixedPoint(spot_price)
                 logging.debug(
-                    "LTV=%g, collateral=%g -> expect=%g\n\tactual = (mkt=%g, borrowed_amount_into_agent=%g)",
+                    "LTV=%s, collateral=%s -> expect=%s\n\tactual = (mkt=%s, borrowed_amount_into_agent=%s)",
                     loan_to_value,
                     collateral_amount,
                     expected_borrow_amount,
                     market_deltas.d_borrow_shares,
                     agent_deltas.borrows[0].borrow_amount,
                 )
-                np.testing.assert_almost_equal(market_deltas.d_borrow_shares, expected_borrow_amount)
-                np.testing.assert_almost_equal(agent_deltas.borrows[0].borrow_amount, expected_borrow_amount)
+                np.testing.assert_almost_equal(float(market_deltas.d_borrow_shares), float(expected_borrow_amount))
+                np.testing.assert_almost_equal(
+                    float(agent_deltas.borrows[0].borrow_amount), float(expected_borrow_amount)
+                )
                 if delete_logs:
                     output_utils.close_logging()
 
@@ -59,32 +65,32 @@ class TestBorrow(unittest.TestCase):
         """Borrow 100 BASE"""
 
         # TODO: add more test cases
-        collateral_amount = 100
-        collateral = types.Quantity(unit=types.TokenType.BASE, amount=collateral_amount)
-        loan_to_value = 1
+        collateral_amount = FixedPoint(100.0)
+        collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=collateral_amount)
+        loan_to_value = FixedPoint(1.0)
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
-        borrow = borrow_market.Market(
-            pricing_model=borrow_market.PricingModel(),
-            block_time=time.BlockTime(),
-            market_state=borrow_market.MarketState(
+        borrow = borrow_market.MarketFP(
+            pricing_model=borrow_market.PricingModelFP(),
+            block_time=time.BlockTimeFP(),
+            market_state=borrow_market.MarketStateFP(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
-                borrow_shares=100,
+                borrow_shares=FixedPoint(100.0),
                 collateral={},
-                borrow_outstanding=100,  # sum of Dai that went out the door
-                borrow_closed_interest=0.0,  # interested collected from closed borrows
+                borrow_outstanding=FixedPoint(100.0),  # sum of Dai that went out the door
+                borrow_closed_interest=FixedPoint(0),  # interested collected from closed borrows
             ),
         )
 
         market_deltas = borrow.calc_close_borrow(
             wallet_address=1,
             collateral=collateral,
-            spot_price=0.9,
+            spot_price=FixedPoint(0.9),
         )[0]
 
-        expected_d_borrow_shares: float = -100  # borrow is always in DAI
-        expected_d_collateral = types.Quantity(amount=-100, unit=types.TokenType.BASE)
-        expected_d_borrow_closed_interest: float = 0  # realized interest from closed borrows
+        expected_d_borrow_shares: FixedPoint = FixedPoint(-100.0)  # borrow is always in DAI
+        expected_d_collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=FixedPoint("-100.0"))
+        expected_d_borrow_closed_interest: FixedPoint = FixedPoint(0)  # realized interest from closed borrows
 
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)
         self.assertEqual(expected_d_collateral, market_deltas.d_collateral)
