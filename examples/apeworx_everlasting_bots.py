@@ -494,6 +494,8 @@ if __name__ == "__main__":
     # Instantiate the config using the command line arguments as overrides.
     config = get_config()
     # Set up ape
+    # This is the prescribed pattern, ignore the pylint warning about using __enter__
+    # pylint: disable=unnecessary-dunder-call
     provider = ape.networks.parse_network_choice("ethereum:local:foundry").__enter__()
     project_root = Path.cwd()
     project = ape.Project(path=project_root)

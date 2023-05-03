@@ -89,7 +89,9 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     bond_liquidity_usd = trades_df.bond_reserves * trades_df.share_price * trades_df.spot_price
     trades_df["total_liquidity_usd"] = share_liquidity_usd + bond_liquidity_usd
     # calculate percent change in spot price since the first spot price (after first trade)
-    trades_df["price_total_return"] = trades_df.loc[:, "spot_price"] / trades_df.loc[0, "spot_price"] - 1
+    trades_df["price_total_return"] = (
+        trades_df.loc[:, "spot_price"].astype(float) / trades_df.loc[0, "spot_price"] - 1  # type: ignore
+    )
     trades_df["price_total_return_percent"] = trades_df.price_total_return * 100
     # rescale price_total_return to equal init_share_price for the first value, for comparison
     trades_df["price_total_return_scaled_to_share_price"] = (
@@ -100,7 +102,7 @@ def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
     for run in trades_df.run_number.unique():
         trades_df.loc[trades_df.run_number == run, "share_price_total_return"] = (
             trades_df.loc[trades_df.run_number == run, "share_price"]
-            / trades_df.loc[trades_df.run_number == run, "share_price"].iloc[0]
+            / trades_df.loc[trades_df.run_number == run, "share_price"].iloc[0]  # type: ignore
             - 1
         )
     trades_df["share_price_total_return_percent"] = trades_df.share_price_total_return * 100
@@ -233,7 +235,7 @@ def compute_derived_variables_fp(simulator: SimulatorFP) -> pd.DataFrame:
     for run in trades_df.run_number.unique():
         trades_df.loc[trades_df.run_number == run, "share_price_total_return"] = (
             trades_df.loc[trades_df.run_number == run, "share_price"]
-            / trades_df.loc[trades_df.run_number == run, "share_price"].iloc[0]
+            / trades_df.loc[trades_df.run_number == run, "share_price"].iloc[0]  # type: ignore
             - 1
         )
     trades_df["share_price_total_return_percent"] = trades_df.share_price_total_return * 100
