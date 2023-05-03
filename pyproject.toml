@@ -42,7 +42,6 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-reportGeneralTypeIssues = false
 exclude = [
     "hyperdrive_solidity",
     ".venv",

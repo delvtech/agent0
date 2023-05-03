@@ -8,6 +8,9 @@ import pandas as pd
 if TYPE_CHECKING:
     from elfpy.simulators import Simulator, SimulatorFP
 
+# pyright: reportGeneralTypeIssues=false
+# pyright: reportOptionalMemberAccess=false
+
 
 def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate the trade details from the simulation state into a representation of market & wallet states per trade
