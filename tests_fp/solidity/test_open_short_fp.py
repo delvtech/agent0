@@ -1,5 +1,4 @@
 """Test opening a short in hyperdrive"""
-import decimal
 import unittest
 
 import elfpy.agents.agent as agent
@@ -50,6 +49,7 @@ class TestOpenShort(unittest.TestCase):
         _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
         self.alice.wallet.update(agent_deltas)
 
+    # pylint: disable=too-many-arguments
     def verify_open_short(
         self,
         user: agent.AgentFP,
@@ -59,7 +59,7 @@ class TestOpenShort(unittest.TestCase):
         market_bond_delta: FixedPoint,
         maturity_time: FixedPoint,  # maturity of the opened short
         apr_before: FixedPoint,
-    ):  # pylint: disable=too-many-arguments
+    ):
         """
         Verify that the market state is updated correctly after opening a short.
         Contains the following checks:
