@@ -559,6 +559,9 @@ class PricingModelFP(ABC):
         FixedPoint
             The spot price of principal tokens.
         """
+        # avoid div by zero error
+        if market_state.bond_reserves + market_state.lp_total_supply == FixedPoint(0):
+            return FixedPoint("nan")
         # p = ((mu * z) / (y + s))^(tau)
         return (
             (market_state.init_share_price * market_state.share_reserves)

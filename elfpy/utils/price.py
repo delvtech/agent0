@@ -50,6 +50,8 @@ def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.Stretche
     FixedPoint
         APR (decimal) calculated from the provided parameters
     """
+    if not price.is_finite():
+        return price
     assert price > FixedPoint("0.0"), (
         "utils.price.calc_apr_from_spot_price: ERROR: "
         f"Price argument should be greater or equal to zero, not {price}"

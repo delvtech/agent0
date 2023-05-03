@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.utils.math import FixedPointMath, FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.base as base_market
@@ -330,6 +330,8 @@ class AgentFP:
 
     def __init__(self, wallet_address: int, budget: FixedPoint):
         """Set up initial conditions"""
+        if not isinstance(budget, FixedPoint):
+            raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
         self.wallet: wallet.WalletFP = wallet.WalletFP(
             address=wallet_address, balance=types.QuantityFP(amount=budget, unit=types.TokenType.BASE)
@@ -381,7 +383,7 @@ class AgentFP:
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )
-        return min(
+        return FixedPointMath.minimum(
             self.wallet.balance.amount,
             max_long,
         )
@@ -547,7 +549,7 @@ class AgentFP:
         """Logs the current user state"""
         logging.debug(
             "agent #%g balance = %1g and fees_paid = %1g",
-            float(self.wallet.address),
+            int(self.wallet.address),
             float(self.wallet.balance.amount),
             float(self.wallet.fees_paid) or 0,
         )
@@ -584,7 +586,7 @@ class AgentFP:
         logging.info(
             ("agent #%g %s %s (%s years), net worth = $%s from %s balance, %s longs, and %s shorts at p = %g\n"),
             float(self.wallet.address),
-            float(lost_or_made),
+            lost_or_made,
             float(profit_and_loss),
             float(market.block_time.time),
             float(total_value),
