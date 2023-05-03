@@ -960,7 +960,7 @@ class MarketFP(
     @property
     def fixed_apr(self) -> FixedPoint:
         """Returns the current market apr"""
-        # calc_apr_from_spot_price will throw an error if share_reserves <= zero
+        # calc_apr_from_spot_price will throw an error if share_reserves < zero
         if self.market_state.share_reserves < FixedPoint(0):
             raise OverflowError(f"Share reserves should be >= 0, not {self.market_state.share_reserves}")
         if self.market_state.share_price == FixedPoint(0):
@@ -970,9 +970,6 @@ class MarketFP(
     @property
     def spot_price(self) -> FixedPoint:
         """Returns the current market price of the share reserves"""
-        # calc_spot_price_from_reserves will throw an error if share_reserves is zero
-        if self.market_state.share_reserves == FixedPoint(0):  # market is empty
-            return FixedPoint("nan")
         return self.pricing_model.calc_spot_price_from_reserves(
             market_state=self.market_state,
             time_remaining=self.position_duration,

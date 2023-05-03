@@ -671,3 +671,13 @@ class FixedPointMath:
         if x >= y:
             return x
         return y
+
+    @staticmethod
+    def minimum(x: NUMERIC, y: NUMERIC) -> NUMERIC:
+        """Compare the two inputs and return the lesser value.
+
+        If the first argument equals the second, return the first.
+        """
+        if x <= y:
+            return x
+        return y

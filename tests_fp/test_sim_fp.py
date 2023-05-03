@@ -191,8 +191,7 @@ class TestSimulator(unittest.TestCase):
         simulator = sim_utils.get_simulator_fp(
             config=config,
             agents=[
-                single_long.SingleLongAgent(wallet_address=address, budget=1_000)  # type: ignore
-                for address in range(1, 3)
+                single_long.SingleLongAgent(wallet_address=address, budget=FixedPoint(1_000)) for address in range(1, 3)
             ],
         )
         simulator.run_simulation()
