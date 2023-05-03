@@ -62,9 +62,9 @@ class TestBorrow(unittest.TestCase):
         """Borrow 100 BASE"""
 
         # TODO: add more test cases
-        collateral_amount = FixedPoint(100.0)
+        collateral_amount = FixedPoint("100.0")
         collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=collateral_amount)
-        loan_to_value = FixedPoint(1.0)
+        loan_to_value = FixedPoint("1.0")
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
         borrow = borrow_market.MarketFP(
@@ -72,9 +72,9 @@ class TestBorrow(unittest.TestCase):
             block_time=time.BlockTimeFP(),
             market_state=borrow_market.MarketStateFP(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
-                borrow_shares=FixedPoint(100.0),
+                borrow_shares=FixedPoint("100.0"),
                 collateral={},
-                borrow_outstanding=FixedPoint(100.0),  # sum of Dai that went out the door
+                borrow_outstanding=FixedPoint("100.0"),  # sum of Dai that went out the door
                 borrow_closed_interest=FixedPoint(0),  # interested collected from closed borrows
             ),
         )
@@ -82,10 +82,10 @@ class TestBorrow(unittest.TestCase):
         market_deltas = borrow.calc_close_borrow(
             wallet_address=1,
             collateral=collateral,
-            spot_price=FixedPoint(0.9),
+            spot_price=FixedPoint("0.9"),
         )[0]
 
-        expected_d_borrow_shares: FixedPoint = FixedPoint(-100.0)  # borrow is always in DAI
+        expected_d_borrow_shares: FixedPoint = FixedPoint("-100.0")  # borrow is always in DAI
         expected_d_collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=FixedPoint("-100.0"))
         expected_d_borrow_closed_interest: FixedPoint = FixedPoint(0)  # realized interest from closed borrows
 
