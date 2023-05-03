@@ -29,7 +29,7 @@ def _get_project_meta():
 pkg_meta = _get_project_meta()
 project = str(pkg_meta["name"])
 author = ", ".join([person["name"] for person in pkg_meta["authors"]])
-organization = "Element Finance"
+organization = "Delv"
 copyright = f" {datetime.date.today().year}, {organization}"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -40,7 +40,7 @@ version = str(pkg_meta["version"])
 # The full version, including alpha/beta/rc tags.
 release = version
 github_url = "https://github.com"
-github_repo_org = "element-fi"
+github_repo_org = "delv-tech"
 github_repo_name = "elf-simulations"
 github_repo_slug = f"{github_repo_org}/{github_repo_name}"
 github_repo_url = f"{github_url}/{github_repo_slug}"
