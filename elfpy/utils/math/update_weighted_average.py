@@ -30,7 +30,6 @@ def update_weighted_average(
     float
         The new weighted average.
     """
-
     if is_adding:
         return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
     if total_weight == delta_weight:
@@ -65,7 +64,6 @@ def update_weighted_average_fp(
     FixedPoint
         The new weighted average.
     """
-
     if is_adding:
         return (total_weight * average + delta_weight * delta) / (total_weight + delta_weight)
     if total_weight == delta_weight:

@@ -406,7 +406,7 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_short(
             agent_wallet.address,
@@ -479,7 +479,7 @@ class Market(
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
-        self.apply_checkpoint(mint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_long(
             wallet_address=agent_wallet.address,
@@ -498,7 +498,7 @@ class Market(
         bond_amount: float,
     ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
             wallet_address=agent_wallet.address,
             base_in=bond_amount,
@@ -872,11 +872,9 @@ class MarketStateFP(base_market.BaseMarketStateFP):
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
     checkpoints: defaultdict[int, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
-    checkpoint_duration: FixedPoint = FixedPoint(1 / 365)
-    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(lambda: FixedPoint(0)))
-    total_supply_shorts: defaultdict[int, FixedPoint] = field(
-        default_factory=lambda: defaultdict(lambda: FixedPoint(0))
-    )
+    checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
+    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_shorts: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
     total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
@@ -982,8 +980,18 @@ class MarketFP(
 
     @property
     def latest_checkpoint_time(self) -> FixedPoint:
-        """Gets the most recent checkpoint time."""
-        return self.block_time.time - (self.block_time.time % self.market_state.checkpoint_duration)
+        """Gets the most recent checkpoint time.
+
+        .. todo:: This should work with the same math as in solidity, but for some reason does not.
+        The version below is set up to match the float version, but might be wrong?
+        """
+        # TODO: This should work:
+        # latest_checkpoint = self.block_time.time - (self.block_time.time % self.market_state.checkpoint_duration)
+        block_time = float(self.block_time.time)
+        checkpoint_duration = float(self.market_state.checkpoint_duration)
+        latest_checkpoint = int(int(block_time * 365) - (int(block_time * 365) % int(checkpoint_duration * 365)))
+        latest_checkpoint = latest_checkpoint / 365
+        return FixedPoint(latest_checkpoint)
 
     def check_action(self, agent_action: hyperdrive_actions.MarketActionFP) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -1152,7 +1160,7 @@ class MarketFP(
     ) -> tuple[hyperdrive_actions.MarketDeltasFP, wallet.WalletFP]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_open_short_fp(
             agent_wallet.address,
@@ -1236,7 +1244,7 @@ class MarketFP(
     ) -> tuple[hyperdrive_actions.MarketDeltasFP, wallet.WalletFP]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
-        self.apply_checkpoint(mint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(mint_time, self.market_state.share_price)
         # calc market and agent deltas
         market_deltas, agent_deltas = hyperdrive_actions.calc_close_long_fp(
             agent_wallet.address,
@@ -1259,7 +1267,7 @@ class MarketFP(
         bond_amount: FixedPoint,
     ) -> tuple[hyperdrive_actions.MarketDeltasFP, wallet.WalletFP]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
-        self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
+        _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity_fp(
             agent_wallet.address,
             bond_amount,
@@ -1280,7 +1288,6 @@ class MarketFP(
     ) -> tuple[hyperdrive_actions.MarketDeltasFP, wallet.WalletFP]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
-
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity_fp(
             agent_wallet.address,
             lp_shares,
@@ -1295,7 +1302,7 @@ class MarketFP(
     def checkpoint(self, checkpoint_time: FixedPoint) -> None:
         """allows anyone to mint a new checkpoint."""
         # if the checkpoint has already been set, return early.
-        if self.market_state.checkpoints[int(checkpoint_time)].share_price != 0:
+        if self.market_state.checkpoints[int(checkpoint_time)].share_price != FixedPoint(0):
             return
         # if the checkpoint time isn't divisible by the checkpoint duration
         # or is in the future, it's an invalid checkpoint and we should
@@ -1350,7 +1357,7 @@ class MarketFP(
         matured_longs_amount = self.market_state.total_supply_longs[int(mint_time)]
         if matured_longs_amount > FixedPoint(0):
             market_deltas, _ = hyperdrive_actions.calc_close_long_fp(
-                wallet.Wallet(0).address,
+                wallet.WalletFP(0).address,
                 matured_longs_amount,
                 self.market_state,
                 self.position_duration,
@@ -1366,7 +1373,7 @@ class MarketFP(
         if matured_shorts_amount > FixedPoint(0):
             open_share_price = self.market_state.checkpoints[int(mint_time)].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short_fp(
-                wallet.Wallet(0).address,
+                wallet.WalletFP(0).address,
                 matured_shorts_amount,
                 self.market_state,
                 self.position_duration,
