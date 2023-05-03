@@ -43,6 +43,7 @@ class FixedPoint:
         if decimal_places != 18:
             raise NotImplementedError("only 18 decimal precision FixedPoint ints are supported.")
         self.decimal_places = decimal_places
+        # parse input and set up class properties
         self.special_value = None
         if isinstance(value, float):
             value = int(value * 10**decimal_places)  # int truncates to `decimal_places` precision
@@ -63,6 +64,9 @@ class FixedPoint:
                     value = int(lhs) * 10**decimal_places - int(rhs) * 10 ** (decimal_places - len(rhs))
                 else:
                     value = int(lhs) * 10**decimal_places + int(rhs) * 10 ** (decimal_places - len(rhs))
+        if isinstance(value, FixedPoint):
+            self.special_value = value.special_value
+            value = value.int_value
         self.int_value = copy.copy(int(value))
 
     def _coerce_other(self, other):
