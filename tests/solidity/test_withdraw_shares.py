@@ -9,7 +9,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 
 # pylint: disable=too-many-arguments
-# pylint: disable=duplicate-code
+
 # pylint: disable=too-many-locals
 
 

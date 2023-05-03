@@ -18,7 +18,6 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 from elfpy.utils.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
-# pylint: disable=duplicate-code
 
 
 @dataclass

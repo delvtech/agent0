@@ -34,7 +34,6 @@ class YieldspacePricingModel(base_pm.PricingModel):
     #       functions.
     #
     # pylint: disable=too-many-locals
-    # pylint: disable=duplicate-code
 
     def model_name(self) -> str:
         return "YieldSpace"
@@ -799,7 +798,6 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     #       functions.
     #
     # pylint: disable=too-many-locals
-    # pylint: disable=duplicate-code
 
     def model_name(self) -> str:
         return "YieldSpace"

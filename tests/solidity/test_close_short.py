@@ -13,7 +13,6 @@ import elfpy.types as types
 from elfpy.time.time import StretchedTime
 
 # pylint: disable=too-many-arguments
-# pylint: disable=duplicate-code
 
 
 class TestCloseShort(unittest.TestCase):

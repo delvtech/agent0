@@ -9,8 +9,6 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 from elfpy.utils.math import FixedPoint
 
-# pylint: disable=duplicate-code
-
 
 class Policy(agent.Agent):
     """

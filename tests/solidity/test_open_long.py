@@ -8,7 +8,6 @@ import elfpy.types as types
 import elfpy.time as time
 
 # pylint: disable=too-many-arguments
-# pylint: disable=duplicate-code
 
 
 class TestOpenLong(unittest.TestCase):
