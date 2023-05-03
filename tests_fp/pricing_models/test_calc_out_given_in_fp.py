@@ -24,7 +24,6 @@ from elfpy.utils.math import FixedPoint
 # pylint: disable=too-many-lines
 
 # TODO: remove this after FixedPoint PRs are finished
-# pylint: disable=duplicate-code
 
 
 class TestCalcOutGivenIn(unittest.TestCase):

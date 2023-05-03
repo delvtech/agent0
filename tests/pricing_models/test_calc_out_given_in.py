@@ -20,7 +20,7 @@ from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
-# pylint: disable=duplicate-code
+
 # pylint: disable=too-many-lines
 
 

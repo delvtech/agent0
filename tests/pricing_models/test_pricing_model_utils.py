@@ -9,7 +9,6 @@ import elfpy.utils.outputs as output_utils
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 # TODO: remove this after FixedPoint PRs are finished
-# pylint: disable=duplicate-code
 
 
 class BasePricingModelUtilsTest(unittest.TestCase):

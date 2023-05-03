@@ -22,6 +22,7 @@ from matplotlib.axes import Axes
 # pylint: disable=line-too-long
 # pylint: disable=too-many-lines
 # pylint: disable=invalid-name
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # %% [markdown]
 # <a href="https://colab.research.google.com/github/element-fi/elf-simulations/blob/4536bb486b7ce857840996448dbb479adb1c5c14/examples/notebooks/hyperdrive.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>

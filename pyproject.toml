@@ -44,4 +44,5 @@ extend-exclude = "\\.ipynb"
 [tool.pyright]
 exclude = [
     "hyperdrive_solidity",
+    ".venv",
 ]

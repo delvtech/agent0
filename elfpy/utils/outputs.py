@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from matplotlib.pyplot import Axes
 
 # pylint: disable=too-many-locals
+# pyright: reportGeneralTypeIssues=false
 
 
 ## Plotting
@@ -326,8 +327,8 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
     if "wspace" not in kwargs:
         kwargs["wspace"] = 1.0
     grid_spec = gridspec.GridSpec(nrows, ncols, **kwargs)
-    fig = plt.figure()
-    axes = [fig.add_subplot(grid_spec[plot_id]) for plot_id in np.ndindex(nrows, ncols)]
+    fig: Figure = plt.figure()
+    axes: list[Axes] = [fig.add_subplot(grid_spec[plot_id]) for plot_id in np.ndindex(nrows, ncols)]
     return fig, axes, grid_spec
 
 

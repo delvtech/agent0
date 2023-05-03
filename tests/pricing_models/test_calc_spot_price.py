@@ -9,9 +9,6 @@ import elfpy.time as time
 from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
 
 
-# pylint: disable=duplicate-code
-
-
 class TestSpotPriceCalculations(unittest.TestCase):
     """Test spot price calculation in base pricing model & price utils"""
 

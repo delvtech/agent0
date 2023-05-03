@@ -17,8 +17,6 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
 
-# pylint: disable=duplicate-code
-
 
 class TestPolicy(agent.Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""

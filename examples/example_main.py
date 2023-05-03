@@ -21,9 +21,6 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-# pylint: disable=duplicate-code
-
-
 class CustomShorter(agent.Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts

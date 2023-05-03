@@ -10,7 +10,6 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 
-# pylint: disable=duplicate-code
 
 AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 

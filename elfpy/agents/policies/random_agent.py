@@ -12,7 +12,6 @@ import elfpy.types as types
 from elfpy.utils.math.fixed_point import FixedPoint
 
 # pylint: disable=too-many-arguments
-# pylint: disable=duplicate-code
 
 
 class Policy(agent.Agent):

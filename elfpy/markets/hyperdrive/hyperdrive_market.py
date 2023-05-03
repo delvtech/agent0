@@ -23,7 +23,7 @@ from elfpy.utils.math import FixedPoint
 # pylint: disable=too-many-instance-attributes
 
 # TODO: remove this after FixedPoint PRs are finished
-# pylint: disable=duplicate-code
+
 # pylint: disable=too-many-lines
 
 

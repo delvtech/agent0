@@ -16,8 +16,6 @@ import elfpy.utils.outputs as output_utils
 from elfpy.pricing_models.base import PricingModel
 from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
 
-# pylint: disable=duplicate-code
-
 
 @dataclass
 class TestCaseGetMax:
