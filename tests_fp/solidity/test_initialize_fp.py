@@ -6,6 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy.time.time import BlockTime
+from elfpy.utils.math import FixedPoint
 
 
 class TestInitialize(unittest.TestCase):
@@ -19,8 +20,8 @@ class TestInitialize(unittest.TestCase):
     # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
     # issue #112
     APPROX_EQ: float = 1e-15
-    contribution: float
-    target_apr: float
+    contribution: FixedPoint
+    target_apr: FixedPoint
     position_duration: int
     alice: agent.Agent
     bob: agent.Agent
@@ -92,7 +93,7 @@ def test_initialize_success():
 
 def test_initialize_bots_on_solidity_success():
     """Numerical test to ensure exact same outcome as Solidity, using params from bots_on_solidity.ipynb"""
-    test = TestInitialize(contribution=500_000_000, target_apr=0.05, position_duration=365)
+    test = TestInitialize(contribution=500_000_000, target_apr=0.05, position_duration=FixedPoint("365.0"))
     init_apr = test.pricing_model.calc_apr_from_reserves(
         market_state=test.hyperdrive.market_state,
         time_remaining=test.hyperdrive.position_duration,
