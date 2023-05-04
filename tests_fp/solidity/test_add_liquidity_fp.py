@@ -9,8 +9,6 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy.utils.math import FixedPoint
 
-# TODO: remove this after FixedPoint PRs are finished
-
 
 class TestAddLiquidity(unittest.TestCase):
     """Test adding liquidity to hyperdrive"""
