@@ -128,18 +128,24 @@ class TestTimeUtils(unittest.TestCase):
         assert test_time.time == FixedPoint("4.0")
         with self.assertRaises(AttributeError):
             test_time.time = FixedPoint("2.0")
+        with self.assertRaises(TypeError):
+            test_time.set_time(2)  # type: ignore
         # step_size
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
         test_time.set_step_size(FixedPoint("0.5"))
         assert test_time.step_size == FixedPoint("0.5")
         with self.assertRaises(AttributeError):
             test_time.step_size = FixedPoint("0.25")
+        with self.assertRaises(TypeError):
+            test_time.set_step_size(0.25)  # type: ignore
         # block_number
         assert test_time.block_number == FixedPoint(0)
         test_time.set_block_number(FixedPoint("5.0"))
         assert test_time.block_number == FixedPoint("5.0")
         with self.assertRaises(AttributeError):
             test_time.block_number = FixedPoint("3.0")
+        with self.assertRaises(TypeError):
+            test_time.set_step_size(3.0)  # type: ignore
 
     def test_time_tick(self):
         test_time = time.BlockTimeFP()
