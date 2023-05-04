@@ -158,14 +158,9 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
 class BlockTimeFP:
     r"""Global time."""
 
-    time: FixedPoint = FixedPoint(0)  # time in years
-    block_number: FixedPoint = FixedPoint(0)
-    step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
-
-    @property
-    def time_in_seconds(self) -> FixedPoint:
-        """1 year = 31,556,952 seconds"""
-        return self.time * FixedPoint("31_556_952.0")
+    _time: FixedPoint = FixedPoint(0)  # time in years
+    _block_number: FixedPoint = FixedPoint(0)
+    _step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
 
     def tick(self, delta_years: FixedPoint) -> None:
         """ticks the time by delta_time amount"""
@@ -175,12 +170,50 @@ class BlockTimeFP:
         """ticks the time by step_size"""
         self.time += self.step_size
 
+    def time_in_seconds(self) -> FixedPoint:
+        """1 year = 31,556,952 seconds"""
+        return self.time * FixedPoint("31_556_952.0")
+
+    @property
+    def time(self):
+        return self._time
+
+    @time.setter
+    def time(self, value):
+        raise AttributeError("time is a read-only attribute; use `set_time()` to adjust")
+
     def set_time(self, time: FixedPoint) -> None:
         """Sets the time"""
-        self.time = time
+        if not isinstance(time, FixedPoint):
+            raise TypeError(f"{time=} must be a FixedPoint variable")
+        self._time = time
+
+    @property
+    def block_number(self):
+        return self._block_number
+
+    @block_number.setter
+    def block_number(self, value):
+        raise AttributeError("block_number is a read-only attribute; use `set_block_number()` to adjust")
+
+    def set_block_number(self, block_number: FixedPoint) -> None:
+        """Sets the block_number"""
+        if not isinstance(block_number, FixedPoint):
+            raise TypeError(f"{block_number=} must be a FixedPoint variable")
+        self.block_number = block_number
+
+    @property
+    def step_size(self):
+        return self._step_size
+
+    @step_size.setter
+    def step_size(self, value):
+        raise AttributeError("step_size is a read-only attribute; use `set_step_size()` to adjust")
 
     def set_step_size(self, step_size: FixedPoint) -> None:
         """Sets the step_size for tick"""
+        if not isinstance(step_size, FixedPoint):
+            raise TypeError(f"{step_size=} must be a FixedPoint variable")
         self.step_size = step_size
 
 
