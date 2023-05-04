@@ -164,11 +164,11 @@ class BlockTimeFP:
 
     def tick(self, delta_years: FixedPoint) -> None:
         """ticks the time by delta_time amount"""
-        self.time += delta_years
+        self._time += delta_years
 
     def step(self) -> None:
         """ticks the time by step_size"""
-        self.time += self.step_size
+        self._time += self.step_size
 
     def time_in_seconds(self) -> FixedPoint:
         """1 year = 31,556,952 seconds"""
