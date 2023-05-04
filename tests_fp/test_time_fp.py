@@ -116,17 +116,58 @@ class TestTimeUtils(unittest.TestCase):
         assert test_time.time == FixedPoint(0)
         assert test_time.block_number == FixedPoint(0)
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
+        with self.assertRaises(ValueError):
+            test_time = time.BlockTimeFP(time_unit="seconds")
 
     def test_block_time_setters(self):
         """Test attribute setters for block time"""
         test_time = time.BlockTimeFP()
-        # default step_size
-        assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
-        # change it
-        test_time.set_step_size(FixedPoint("0.5"))
-        assert test_time.step_size == FixedPoint("0.5")
-        # default time
+        # time
         assert test_time.time == FixedPoint(0)
-        # change it
         test_time.set_time(FixedPoint("4.0"))
         assert test_time.time == FixedPoint("4.0")
+        with self.assertRaises(AttributeError):
+            test_time.time = FixedPoint("2.0")
+        # step_size
+        assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
+        test_time.set_step_size(FixedPoint("0.5"))
+        assert test_time.step_size == FixedPoint("0.5")
+        with self.assertRaises(AttributeError):
+            test_time.step_size = FixedPoint("0.25")
+        # block_number
+        assert test_time.block_number == FixedPoint(0)
+        test_time.set_block_number(FixedPoint("5.0"))
+        assert test_time.block_number == FixedPoint("5.0")
+        with self.assertRaises(AttributeError):
+            test_time.block_number = FixedPoint("3.0")
+
+    def test_time_tick(self):
+        test_time = time.BlockTimeFP()
+        assert test_time.time == FixedPoint(0)
+        test_time.tick(FixedPoint(5))
+        assert test_time.time == FixedPoint(5)
+        test_time.tick(FixedPoint(1))
+        assert test_time.time == FixedPoint(6)
+
+    def test_time_step(self):
+        test_time = time.BlockTimeFP()
+        assert test_time.time == FixedPoint(0)
+        test_time.step()
+        assert test_time.time == FixedPoint("1.0") / FixedPoint("365.0")
+        test_time.step()
+        assert test_time.time == FixedPoint("2.0") / FixedPoint("365.0")
+
+    def test_time_conversion(self):
+        test_time = time.BlockTimeFP()
+        test_time.set_time(FixedPoint("1.0"))
+        assert test_time.time_conversion("seconds") == FixedPoint("31_556_952.0")
+        assert test_time.time_conversion("minutes") == FixedPoint("525_600.0")
+        assert test_time.time_conversion("hours") == FixedPoint("8_760.0")
+        assert test_time.time_conversion("days") == FixedPoint("365.0")
+        assert test_time.time_conversion("years") == FixedPoint("1.0")
+        test_time.set_time(FixedPoint("2.0"))
+        assert test_time.time_conversion("seconds") == FixedPoint(2 * 31_556_952 * 10**18)
+        assert test_time.time_conversion("minutes") == FixedPoint(2 * 525_600 * 10**18)
+        assert test_time.time_conversion("hours") == FixedPoint(2 * 8_760 * 10**18)
+        assert test_time.time_conversion("days") == FixedPoint(2 * 365 * 10**18)
+        assert test_time.time_conversion("years") == FixedPoint(2 * 1 * 10**18)

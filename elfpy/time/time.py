@@ -156,11 +156,16 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
 
 @dataclass
 class BlockTimeFP:
-    r"""Global time."""
+    r"""State class for tracking block timestamps and global time"""
 
-    _time: FixedPoint = FixedPoint(0)  # time in years
+    _time: FixedPoint = FixedPoint(0)
     _block_number: FixedPoint = FixedPoint(0)
     _step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
+    time_unit: str = "years"
+
+    def __post_init__(self):
+        if self.time_unit != "years":
+            raise ValueError(f"Only `years` is supported for {self.time_unit}")
 
     def tick(self, delta_years: FixedPoint) -> None:
         """ticks the time by delta_time amount"""
@@ -170,9 +175,22 @@ class BlockTimeFP:
         """ticks the time by step_size"""
         self._time += self.step_size
 
-    def time_in_seconds(self) -> FixedPoint:
-        """1 year = 31,556,952 seconds"""
-        return self.time * FixedPoint("31_556_952.0")
+    def time_conversion(self, unit="seconds") -> FixedPoint:
+        """Convert time to different units
+
+        .. todo:: we will need to add conditions for self.time_unit in each conversion type
+        """
+        if unit == "seconds":  # 31,556,952 seconds in a year
+            return self.time * FixedPoint("31_556_952.0")
+        if unit == "minutes":  # 525,600 moments so dear
+            return self.time * FixedPoint("525_600.0")
+        if unit == "hours":  # 8,760 hours in a year
+            return self.time * FixedPoint("8_760.0")
+        if unit == "days":  # 365 days in a year
+            return self.time * FixedPoint("365.0")
+        if unit == "years":  # 1 years in a year
+            return self.time * FixedPoint("1.0")
+        raise NotImplementedError(f"time {unit=} is not yet supported.")
 
     @property
     def time(self):
@@ -200,7 +218,7 @@ class BlockTimeFP:
         """Sets the block_number"""
         if not isinstance(block_number, FixedPoint):
             raise TypeError(f"{block_number=} must be a FixedPoint variable")
-        self.block_number = block_number
+        self._block_number = block_number
 
     @property
     def step_size(self):
@@ -214,7 +232,7 @@ class BlockTimeFP:
         """Sets the step_size for tick"""
         if not isinstance(step_size, FixedPoint):
             raise TypeError(f"{step_size=} must be a FixedPoint variable")
-        self.step_size = step_size
+        self._step_size = step_size
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
