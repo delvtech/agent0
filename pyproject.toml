@@ -11,7 +11,7 @@ authors = [
     { name = "Patrick Morris", email = "patrick@element.fi" },
     { name = "Violet Vienhage", email = "violet@element.fi" },
 ]
-description = "Experiment management and market simulators by Element Finance"
+description = "Experiment management and market simulators by Delv"
 readme = "README.md"
 requires-python = ">=3.9, <3.10"
 classifiers = [
@@ -22,8 +22,8 @@ classifiers = [
 line-length = "120"
 
 [project.urls]
-"Homepage" = "https://github.com/element-fi/analysis"
-"Bug Tracker" = "https://github.com/element-fi/analysis/issues"
+"Homepage" = "https://github.com/delv-tech/analysis"
+"Bug Tracker" = "https://github.com/delv-tech/analysis/issues"
 
 [build-system]
 requires = ["flit_core>=3.2"]
