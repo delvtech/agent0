@@ -388,7 +388,7 @@ class Market(
             ),
         )
         lp_tokens = self.market_state.share_price * share_reserves + bond_reserves
-        # TODO: add lp_tokens to bond reserves per https://github.com/delv-tech/hyperdrive/pull/140
+        # TODO: add lp_tokens to bond reserves per https://github.com/delvtech/hyperdrive/pull/140
         # bond_reserves += lp_tokens
         market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=contribution, d_bond_asset=bond_reserves, d_lp_total_supply=lp_tokens
@@ -1136,7 +1136,7 @@ class MarketFP(
             ),
         )
         lp_tokens = self.market_state.share_price * share_reserves + bond_reserves
-        # TODO: add lp_tokens to bond reserves per https://github.com/delv-tech/hyperdrive/pull/140
+        # TODO: add lp_tokens to bond reserves per https://github.com/delvtech/hyperdrive/pull/140
         # bond_reserves += lp_tokens
         market_deltas = hyperdrive_actions.MarketDeltasFP(
             d_base_asset=contribution, d_bond_asset=bond_reserves, d_lp_total_supply=lp_tokens

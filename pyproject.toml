@@ -22,8 +22,8 @@ classifiers = [
 line-length = "120"
 
 [project.urls]
-"Homepage" = "https://github.com/delv-tech/analysis"
-"Bug Tracker" = "https://github.com/delv-tech/analysis/issues"
+"Homepage" = "https://github.com/delvtech/analysis"
+"Bug Tracker" = "https://github.com/delvtech/analysis/issues"
 
 [build-system]
 requires = ["flit_core>=3.2"]
