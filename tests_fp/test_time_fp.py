@@ -111,12 +111,14 @@ class TestTimeUtils(unittest.TestCase):
             )
 
     def test_block_time_init(self):
+        """Test default values for block time"""
         test_time = time.BlockTimeFP()
         assert test_time.time == FixedPoint(0)
         assert test_time.block_number == FixedPoint(0)
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
 
     def test_block_time_setters(self):
+        """Test attribute setters for block time"""
         test_time = time.BlockTimeFP()
         # default step_size
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
