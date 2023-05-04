@@ -1,5 +1,5 @@
 """Testing for logging in the ElfPy package modules"""
-from __future__ import annotations  # types are strings by default in 3.11
+from __future__ import annotations
 
 import unittest
 import logging
@@ -9,7 +9,7 @@ import sys
 
 from elfpy.simulators import simulators
 from elfpy.utils import sim_utils
-import elfpy.utils.outputs as output_utils  # utilities for setting up a simulation
+import elfpy.utils.outputs as output_utils
 
 
 class TestLogging(unittest.TestCase):
@@ -43,13 +43,12 @@ class TestLogging(unittest.TestCase):
             logging.getLogger().handlers = [
                 handler,
             ]
-
-            config = simulators.Config()
+            config = simulators.ConfigFP()
             config.pricing_model_name = "Yieldspace"
-            config.num_trading_days = 10
-            config.num_blocks_per_day = 3  # keep it fast for testing
+            config.num_trading_days = 3
+            config.num_blocks_per_day = 3
             config.variable_apr = [0.05] * config.num_trading_days
-            simulator = sim_utils.get_simulator(config)  # initialize
+            simulator = sim_utils.get_simulator_fp(config)  # initialize
             simulator.run_simulation()  # run
             self.assertLogs(level=level)
             if handler_type == "file":
@@ -59,7 +58,7 @@ class TestLogging(unittest.TestCase):
         """Verfies that the config variables are successfully logged"""
         log_filename = ".logging/test_sim.log"
         output_utils.setup_logging(log_filename, log_level=logging.INFO)
-        config = simulators.Config()
+        config = simulators.ConfigFP()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         output_utils.close_logging()
