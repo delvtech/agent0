@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: install node
         uses: actions/setup-node@v3
@@ -58,3 +60,4 @@ jobs:
         with:
           flags: unittests
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
