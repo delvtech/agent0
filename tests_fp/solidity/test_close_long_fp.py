@@ -186,7 +186,7 @@ class TestCloseLong(unittest.TestCase):
         with self.assertRaises(AssertionError):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
-                bond_amount=market_deltas.d_bond_asset + 1,
+                bond_amount=market_deltas.d_bond_asset + FixedPoint(1),
                 mint_time=FixedPoint(list(self.bob.wallet.longs.keys())[0]),
             )
 
