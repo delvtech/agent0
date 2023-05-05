@@ -41,7 +41,7 @@ class TestFees(unittest.TestCase):
         for key, value in kwargs.items():
             setattr(self, key, value)
         if target_apr:
-            self.target_apr = FixedPoint(target_apr)
+            self.target_apr = FixedPoint(float(target_apr))
         self.alice = agent.AgentFP(wallet_address=0, budget=self.contribution)
         self.bob = agent.AgentFP(wallet_address=1, budget=self.contribution)
         self.bob.budget = FixedPoint(self.trade_amount)
@@ -84,7 +84,7 @@ def advance_time(test: TestFees, time_delta: FixedPoint):
     """Move time forward by time_delta and update the share price to simulate interest"""
     test.block_time.tick(delta_years=time_delta)
     test.hyperdrive.market_state.share_price = test.market_state_before_open.share_price * (
-        FixedPoint("1") + test.target_apr * time_delta
+        FixedPoint("1.0") + test.target_apr * time_delta
     )
 
 
@@ -155,9 +155,9 @@ def test_did_we_get_fees():
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
-def test_gov_fee_accrual(amount):
+def test_gov_fee_accrual(amount: int):
     """Collect fees and test that the fees received in the governance address have earned interest."""
-    test = TestFees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=FixedPoint(amount * 10**18))  # set up test object
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
@@ -166,28 +166,28 @@ def test_gov_fee_accrual(amount):
     gov_fees_after_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
 
     # hyperdrive into the future
-    advance_time(test, 0.5)
+    advance_time(test, FixedPoint("0.5"))
 
     # collect fees to Governance Gary
     test.gary.wallet.balance.amount += (
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     )
 
-    test.hyperdrive.market_state.gov_fees_accrued = FixedPoint("0")
+    test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
     gov_balance_after = test.gary.wallet.balance.amount
     test.assertGreater(gov_balance_after, gov_fees_after_open_long)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
-def test_collect_fees_long(amount):
+def test_collect_fees_long(amount: int):
     """Open a long and then close close to maturity; verify that gov fees are correct"""
-    test = TestFees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=FixedPoint(amount * 10**18))  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a long
     gov_fees_before_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
-    test.assertEqual(gov_fees_before_open_long, 0)
+    test.assertEqual(int(gov_fees_before_open_long), 0)
     gov_balance_before_open_long = test.gary.wallet.balance.amount
-    test.assertEqual(gov_balance_before_open_long, 0)
+    test.assertEqual(int(gov_balance_before_open_long), 0)
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
@@ -195,13 +195,13 @@ def test_collect_fees_long(amount):
     test.assertGreater(gov_fees_after_open_long, gov_fees_before_open_long)
 
     # hyperdrive into the future
-    advance_time(test, 0.5)
+    advance_time(test, FixedPoint("0.5"))
 
     # close long
     test.hyperdrive.close_long(
         agent_wallet=test.bob.wallet,
         bond_amount=test.bob.wallet.longs[0].balance,
-        mint_time=0,
+        mint_time=FixedPoint(0),
     )
 
     # ensure that gov fees have increased
@@ -212,8 +212,9 @@ def test_collect_fees_long(amount):
     test.gary.wallet.balance.amount += (
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     )
-    test.hyperdrive.market_state.gov_fees_accrued = FixedPoint("0")
-    test.assertEqual(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, 0)
+    # TODO: fix this check, don't set fees accrued to zero
+    test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
+    test.assertEqual(int(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price), 0)
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
@@ -227,15 +228,15 @@ def test_collect_fees_long(amount):
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_collect_fees_short(amount):
     """Open a short and then close close to maturity; verify that gov fees are correct"""
-    test = TestFees(trade_amount=amount)  # set up test object
+    test = TestFees(trade_amount=FixedPoint(amount * 10**18))  # set up test object
 
     # check that both gov fees and gov balance are 0 before opening a short
     gov_fees_before_open_short = (
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     )
-    test.assertEqual(gov_fees_before_open_short, 0)
+    test.assertEqual(int(gov_fees_before_open_short), 0)
     gov_balance_before_open_short = test.gary.wallet.balance.amount
-    test.assertEqual(gov_balance_before_open_short, 0)
+    test.assertEqual(int(gov_balance_before_open_short), 0)
 
     # open short
     test.hyperdrive.open_short(test.bob.wallet, test.trade_amount)
@@ -243,14 +244,14 @@ def test_collect_fees_short(amount):
     test.assertGreater(gov_fees_after_open_short, gov_fees_before_open_short)
 
     # hyperdrive into the future
-    advance_time(test, 0.5)
+    advance_time(test, FixedPoint("0.5"))
 
     # close short
     test.hyperdrive.close_short(
         agent_wallet=test.bob.wallet,
         bond_amount=test.bob.wallet.shorts[0].balance,
-        mint_time=0,
-        open_share_price=1,
+        mint_time=FixedPoint(0),
+        open_share_price=FixedPoint("1.0"),
     )
 
     # ensure that gov fees have increased
@@ -260,127 +261,148 @@ def test_collect_fees_short(amount):
     test.assertGreater(gov_fees_after_close_short, gov_fees_after_open_short)
 
     # collect fees to Governance Gary
-    test.gary.wallet.balance.amount += float(
+    test.gary.wallet.balance.amount += (
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     )
-    test.hyperdrive.market_state.gov_fees_accrued = 0
+    # TODO: fix this check, don't set fees accrued to zero
+    test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
     gov_fees_after_collection = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
-    test.assertEqual(gov_fees_after_collection, 0)
+    test.assertEqual(int(gov_fees_after_collection), 0)
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
     test.assertGreater(gov_balance_after, gov_balance_before_open_short)
     # ensure that Governance Gary got the exaxt fees expected
-    test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=1e-16 * test.trade_amount)
+    test.assertAlmostEqual(
+        float(gov_balance_after), float(gov_fees_after_close_short), delta=1e-16 * float(test.trade_amount)
+    )
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
     """Test that the fees are calculated correctly at initiation"""
     # set up test object
-    test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, trade_amount=FixedPoint(amount * 10**18))  # 100% APR gives spot_price = 0.5
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertAlmostEqual(curve_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_curve_fee, 0.05 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(flat_fee, 0, delta=1e-16)
-    test.assertAlmostEqual(gov_flat_fee, 0, delta=1e-16)
+    test.assertAlmostEqual(float(curve_fee), 0.1 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(
+        float(gov_curve_fee), 0.05 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount)
+    )
+    test.assertAlmostEqual(float(flat_fee), 0, delta=1e-16)
+    test.assertAlmostEqual(float(gov_flat_fee), 0, delta=1e-16)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
     """Test that the fees are calculated correctly at maturity"""
     # set up test object
-    test = TestFees(target_apr=1, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(target_apr=1, trade_amount=FixedPoint(amount * 10**18))  # 100% APR gives spot_price = 0.5
 
-    advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
+    advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertEqual(curve_fee, 0)
-    test.assertEqual(gov_curve_fee, 0)
-    test.assertAlmostEqual(flat_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_flat_fee, 0.05 * test.trade_amount, delta=1e-16 * test.trade_amount)
+    test.assertEqual(int(curve_fee), 0)
+    test.assertEqual(int(gov_curve_fee), 0)
+    test.assertAlmostEqual(float(flat_fee), 0.1 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(float(gov_flat_fee), 0.05 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
     """Test that the fees are calculated correctly at initiation"""
     # set up test object
-    test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(
+        target_apr=1, gov_fee=0.6, trade_amount=FixedPoint(amount * 10**18)
+    )  # 100% APR gives spot_price = 0.5
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertAlmostEqual(curve_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_curve_fee, 0.06 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(flat_fee, 0, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_flat_fee, 0, delta=1e-16 * test.trade_amount)
+    test.assertAlmostEqual(float(curve_fee), 0.1 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(
+        float(gov_curve_fee), 0.06 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount)
+    )
+    test.assertAlmostEqual(float(flat_fee), 0, delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(float(gov_flat_fee), 0, delta=1e-16 * float(test.trade_amount))
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
     """Test that the fees are calculated correctly at maturity"""
     # set up test object
-    test = TestFees(target_apr=1, gov_fee=0.6, trade_amount=amount)  # 100% APR gives spot_price = 0.5
+    test = TestFees(
+        target_apr=1, gov_fee=0.6, trade_amount=FixedPoint(amount * 10**18)
+    )  # 100% APR gives spot_price = 0.5
 
-    advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
+    advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertEqual(curve_fee, 0)
-    test.assertEqual(gov_curve_fee, 0)
-    test.assertAlmostEqual(flat_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_flat_fee, 0.06 * test.trade_amount, delta=1e-16 * test.trade_amount)
+    test.assertEqual(float(curve_fee), 0)
+    test.assertEqual(float(gov_curve_fee), 0)
+    test.assertAlmostEqual(float(flat_fee), 0.1 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(float(gov_flat_fee), 0.06 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_in_at_initiation(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=FixedPoint(amount * 10**18))  # gives spot_price = 0.9
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(curve_fee + flat_fee, 0.01 * test.trade_amount, delta=1e-17 * test.trade_amount)
-    test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, 0.005 * test.trade_amount, delta=1e-17 * test.trade_amount)
+    test.assertAlmostEqual(
+        float(curve_fee + flat_fee), 0.01 * float(test.trade_amount), delta=1e-17 * float(test.trade_amount)
+    )
+    test.assertAlmostEqual(
+        float(gov_curve_fee + gov_flat_fee), 0.005 * float(test.trade_amount), delta=1e-17 * float(test.trade_amount)
+    )
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_in_at_maturity(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=FixedPoint(amount * 10**18))  # gives spot_price = 0.9
 
-    advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
+    advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(curve_fee + flat_fee, 0.1 * test.trade_amount, delta=1e-17 * test.trade_amount)
-    test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, 0.05 * test.trade_amount, delta=1e-17 * test.trade_amount)
+    test.assertAlmostEqual(
+        int(curve_fee + flat_fee), int(test.trade_amount) / 10, delta=int(test.trade_amount) / 10**17
+    )
+    test.assertAlmostEqual(
+        float(gov_curve_fee + gov_flat_fee), 0.05 * float(test.trade_amount), delta=1e-17 * float(test.trade_amount)
+    )
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_out_at_initiation(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=FixedPoint(amount * 10**18))  # gives spot_price = 0.9
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(curve_fee, 0.01 * test.trade_amount, delta=1e-17 * test.trade_amount)
-    test.assertAlmostEqual(gov_curve_fee, 0.005 * test.trade_amount, delta=1e-17 * test.trade_amount)
-    test.assertAlmostEqual(flat_fee, 0, delta=1e-16)
-    test.assertAlmostEqual(gov_flat_fee, 0, delta=1e-16)
+    test.assertAlmostEqual(float(curve_fee), 0.01 * float(test.trade_amount), delta=1e-17 * float(test.trade_amount))
+    test.assertAlmostEqual(
+        float(gov_curve_fee), 0.005 * float(test.trade_amount), delta=1e-17 * float(test.trade_amount)
+    )
+    test.assertAlmostEqual(float(flat_fee), 0, delta=1e-16)
+    test.assertAlmostEqual(float(gov_flat_fee), 0, delta=1e-16)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
 def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     """Test the redeption & trade fee helper function"""
     # set up test object
-    test = TestFees(target_apr=1 / 9, trade_amount=amount)  # gives spot_price = 0.9
+    test = TestFees(target_apr=1 / 9, trade_amount=FixedPoint(amount * 10**18))  # gives spot_price = 0.9
 
-    advance_time(test, 1)  # hyperdrive into the future.. all the way to maturity
+    advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(curve_fee, 0, delta=1e-17)
-    test.assertAlmostEqual(gov_curve_fee, 0, delta=1e-17)
-    test.assertAlmostEqual(flat_fee, 0.1 * test.trade_amount, delta=1e-16 * test.trade_amount)
-    test.assertAlmostEqual(gov_flat_fee, 0.05 * test.trade_amount, delta=1e-16 * test.trade_amount)
+    test.assertAlmostEqual(float(curve_fee), 0, delta=1e-17)
+    test.assertAlmostEqual(float(gov_curve_fee), 0, delta=1e-17)
+    test.assertAlmostEqual(float(flat_fee), 0.1 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
+    test.assertAlmostEqual(float(gov_flat_fee), 0.05 * float(test.trade_amount), delta=1e-16 * float(test.trade_amount))
