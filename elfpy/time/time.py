@@ -1,6 +1,6 @@
 """Helper functions for converting time units"""
-
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 
@@ -154,6 +154,9 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     return normed_days_remaining * normalizing_constant
 
 
+TimeUnit = Literal["seconds", "minutes", "hours", "days", "years"]
+
+
 @dataclass
 class BlockTimeFP:
     r"""State class for tracking block timestamps and global time"""
@@ -175,7 +178,7 @@ class BlockTimeFP:
         """ticks the time by step_size"""
         self._time += self.step_size
 
-    def time_conversion(self, unit="seconds") -> FixedPoint:
+    def time_conversion(self, unit: TimeUnit = "seconds") -> FixedPoint:
         """Convert time to different units
 
         .. todo:: we will need to add conditions for self.time_unit in each conversion type
