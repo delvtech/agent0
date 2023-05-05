@@ -63,8 +63,8 @@ class TestCheckpoint(unittest.TestCase):
         """Test that checkpoints don't change amm values and capture values at time of creation"""
         share_price_before = self.hyperdrive.market_state.share_price
         # open a long and a short
-        long_amount = FixedPoint("10_000_000")
-        short_amount = FixedPoint("50_000")
+        long_amount = FixedPoint("10_000_000.0")
+        short_amount = FixedPoint("50_000.0")
         self.bob.budget = long_amount
         self.bob.wallet.balance = types.QuantityFP(amount=long_amount, unit=types.TokenType.BASE)
         _, long_wallet_deltas = self.hyperdrive.open_long(self.bob.wallet, long_amount)
@@ -123,17 +123,20 @@ class TestCheckpoint(unittest.TestCase):
     def test_checkpoint_in_the_past(self):
         """Test that checkpoints created in the past work as expected"""
         # Open a long and a short.
-        long_amount = FixedPoint("10_000_000")
+        print(f"{self.hyperdrive.latest_checkpoint_time=}")
+        long_amount = FixedPoint("10_000_000.0")
         self.hyperdrive.open_long(self.bob.wallet, long_amount)
-        short_amount = FixedPoint("50_000")
+        short_amount = FixedPoint("50_000.0")
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Advance a term by the position duration.
         self.block_time.time += self.hyperdrive.position_duration.days / FixedPoint("365.0")
-        # Create a FixedPointcheckpointFixedPoint.
+        # Create a checkpoint
         self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
+        # Create a checkpoint in the past
         previous_checkpoint_time = (
-            self.hyperdrive.latest_checkpoint_time - self.hyperdrive.market_state.checkpoint_duration
-        )
+            self.hyperdrive.latest_checkpoint_time * FixedPoint("365.0")
+            - self.hyperdrive.market_state.checkpoint_duration_days
+        ) / FixedPoint("365.0")
         self.hyperdrive.checkpoint(previous_checkpoint_time)
 
         # TODO: This should be either removed or uncommented when we decide
@@ -152,5 +155,5 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(previous_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the long and short balance has gone to zero (all of the
         # matured positions have been closed).
-        self.assertEqual(self.hyperdrive.market_state.longs_outstanding, 0)
-        self.assertEqual(self.hyperdrive.market_state.shorts_outstanding, 0)
+        self.assertEqual(int(self.hyperdrive.market_state.longs_outstanding), 0)
+        self.assertEqual(int(self.hyperdrive.market_state.shorts_outstanding), 0)
