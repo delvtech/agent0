@@ -148,6 +148,7 @@ class TestTimeUtils(unittest.TestCase):
             test_time.set_step_size(3.0)  # type: ignore
 
     def test_time_tick(self):
+        """Test the BlockTime tick function"""
         test_time = time.BlockTimeFP()
         assert test_time.time == FixedPoint(0)
         test_time.tick(FixedPoint(5))
@@ -156,6 +157,7 @@ class TestTimeUtils(unittest.TestCase):
         assert test_time.time == FixedPoint(6)
 
     def test_time_step(self):
+        """Test the BlockTime step function"""
         test_time = time.BlockTimeFP()
         assert test_time.time == FixedPoint(0)
         test_time.step()
@@ -164,6 +166,7 @@ class TestTimeUtils(unittest.TestCase):
         assert test_time.time == FixedPoint("2.0") / FixedPoint("365.0")
 
     def test_time_conversion(self):
+        """Test the BlockTime unit conversion function"""
         test_time = time.BlockTimeFP()
         test_time.set_time(FixedPoint("1.0"))
         assert test_time.time_conversion("seconds") == FixedPoint("31_556_952.0")

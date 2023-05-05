@@ -194,10 +194,13 @@ class BlockTimeFP:
 
     @property
     def time(self):
+        """Get the time"""
         return self._time
 
     @time.setter
     def time(self, value):
+        """Private time attribute and time property cannot be set directly,
+        since we want to check types using a setter."""
         raise AttributeError("time is a read-only attribute; use `set_time()` to adjust")
 
     def set_time(self, time: FixedPoint) -> None:
@@ -208,10 +211,13 @@ class BlockTimeFP:
 
     @property
     def block_number(self):
+        """Get the block_number"""
         return self._block_number
 
     @block_number.setter
     def block_number(self, value):
+        """Private block_number attribute and block_number property cannot be set directly,
+        since we want to check types using a setter."""
         raise AttributeError("block_number is a read-only attribute; use `set_block_number()` to adjust")
 
     def set_block_number(self, block_number: FixedPoint) -> None:
@@ -222,10 +228,13 @@ class BlockTimeFP:
 
     @property
     def step_size(self):
+        """Get the step_size"""
         return self._step_size
 
     @step_size.setter
     def step_size(self, value):
+        """Private block_number attribute and block_number property cannot be set directly,
+        since we want to check types using a setter."""
         raise AttributeError("step_size is a read-only attribute; use `set_step_size()` to adjust")
 
     def set_step_size(self, step_size: FixedPoint) -> None:
