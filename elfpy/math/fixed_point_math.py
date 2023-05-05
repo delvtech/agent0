@@ -1,8 +1,10 @@
 """Math library wrappers that support FixedPoint number format"""
 
+import math
 from typing import TypeVar
 
-from elfpy.math import FixedPoint
+from .fixed_point import FixedPoint
+from .fixed_point_integer_math import FixedPointIntegerMath
 
 NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
 
