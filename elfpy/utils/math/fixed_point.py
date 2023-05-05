@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import math
 from typing import TypeVar, Union
 
 import elfpy.errors.errors as errors
@@ -96,7 +97,7 @@ class FixedPoint:
             return self  # doesn't matter if other is inf or not because if other is inf, then signs match
         if other.is_inf():  # self is not inf
             return other
-        return FixedPoint(FixedPointMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(FixedPointIntegerMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __radd__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables reciprocal addition to support other + FixedPoint"""
@@ -117,7 +118,7 @@ class FixedPoint:
             return self
         if other.is_inf():  # self is not inf, so return sign flipped other
             return FixedPoint("-inf") if other.sign() == FixedPoint("1.0") else FixedPoint("inf")
-        return FixedPoint(FixedPointMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(FixedPointIntegerMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables reciprocal subtraction to support other - FixedPoint"""
@@ -132,7 +133,7 @@ class FixedPoint:
             return other
         if self.is_inf():
             return self
-        return FixedPoint(FixedPointMath.sub(other.int_value, self.int_value), self.decimal_places, self.signed)
+        return FixedPoint(FixedPointIntegerMath.sub(other.int_value, self.int_value), self.decimal_places, self.signed)
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '*' syntax"""
@@ -147,7 +148,9 @@ class FixedPoint:
             return FixedPoint(0)  # zero * finite is zero
         if self.is_inf() or other.is_inf():  # anything * inf is inf, follow normal mul rules for sign
             return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
-        return FixedPoint(FixedPointMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            FixedPointIntegerMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed
+        )
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables reciprocal multiplication to support other * FixedPoint"""
@@ -179,7 +182,9 @@ class FixedPoint:
             return self  # (+/-) inf / finite is (+/-) inf
         if other.is_inf():  # self is finite
             return FixedPoint(0)  # finite / (+/-) inf is zero
-        return FixedPoint(FixedPointMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            FixedPointIntegerMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed
+        )
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
@@ -187,7 +192,9 @@ class FixedPoint:
         if other is NotImplemented:
             return NotImplemented
         if self.is_finite() and other.is_finite():
-            return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
+            return FixedPoint(
+                FixedPointIntegerMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed
+            )
         # pow is tricky -- leaning on float operations under the hood for non-finite
         return FixedPoint(str(float(self) ** float(other)))
 
@@ -196,7 +203,7 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return FixedPoint(FixedPointMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(FixedPointIntegerMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __mod__(self, other: FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax
@@ -387,7 +394,9 @@ class FixedPoint:
             return NotImplemented
         if other <= FixedPoint("0.0"):
             raise errors.DivisionByZero
-        return FixedPoint(FixedPointMath.div_up(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            FixedPointIntegerMath.div_up(self.int_value, other.int_value), self.decimal_places, self.signed
+        )
 
     def mul_up(self, other: int | FixedPoint) -> FixedPoint:
         """Multiply self by other, rounding up"""
@@ -396,7 +405,9 @@ class FixedPoint:
             return NotImplemented
         if self == FixedPoint("0.0") or other == FixedPoint("0.0"):
             return FixedPoint("0.0")
-        return FixedPoint(FixedPointMath.mul_up(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            FixedPointIntegerMath.mul_up(self.int_value, other.int_value), self.decimal_places, self.signed
+        )
 
     def is_nan(self) -> bool:
         """Return True if self is not a number (NaN)."""
@@ -443,11 +454,8 @@ class FixedPoint:
         return FixedPoint(lhs + ".0")
 
 
-NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
-
-
-class FixedPointMath:
-    """Safe, high precision (1e18) fixed-point integer arethmetic"""
+class FixedPointIntegerMath:
+    """Safe integer arithmetic that assumes a 18-decimal fixed-point representation"""
 
     # int has no max size in python 3. Use 256 since that is max for solidity.
     INT_MAX = 2**255 - 1
@@ -465,8 +473,8 @@ class FixedPointMath:
         # Solidity has this: `if c < a or a > FixedPointMath.INT_MAX - b`
         # However, we allow negative values sometimes, which trips up that check.
         # Python 3 also won't actually overflow if we go over INT_MAX, so we can just check:
-        if c > FixedPointMath.INT_MAX:
-            raise OverflowError(f"add: sum cannot be greater than {FixedPointMath.INT_MAX=}")
+        if c > FixedPointIntegerMath.INT_MAX:
+            raise OverflowError(f"add: sum cannot be greater than {FixedPointIntegerMath.INT_MAX=}")
         return c
 
     @staticmethod
@@ -475,8 +483,8 @@ class FixedPointMath:
         c = a - b
         # solidity has this: `if b > a`
         # However, we are encoding our own INT_MIN, since python 3 `int` has no min/max
-        if c < FixedPointMath.INT_MIN:
-            raise OverflowError(f"sub: difference cannot be less than {FixedPointMath.INT_MIN=}")
+        if c < FixedPointIntegerMath.INT_MIN:
+            raise OverflowError(f"sub: difference cannot be less than {FixedPointIntegerMath.INT_MIN=}")
         return c
 
     @staticmethod
@@ -495,12 +503,12 @@ class FixedPointMath:
     @staticmethod
     def mul_down(a: int, b: int) -> int:
         """Multiply two fixed-point numbers in 1e18 format and round down."""
-        return FixedPointMath.mul_div_down(a, b, FixedPointMath.ONE_18)
+        return FixedPointIntegerMath.mul_div_down(a, b, FixedPointIntegerMath.ONE_18)
 
     @staticmethod
     def div_down(a: int, b: int) -> int:
         """Divide two fixed-point numbers in 1e18 format and round down."""
-        return FixedPointMath.mul_div_down(a, FixedPointMath.ONE_18, b)
+        return FixedPointIntegerMath.mul_div_down(a, FixedPointIntegerMath.ONE_18, b)
 
     @staticmethod
     def mul_div_up(x: int, y: int, d: int) -> int:
@@ -520,12 +528,12 @@ class FixedPointMath:
     @staticmethod
     def mul_up(a: int, b: int) -> int:
         """Multiply a and b, rounding up."""
-        return FixedPointMath.mul_div_up(a, b, FixedPointMath.ONE_18)
+        return FixedPointIntegerMath.mul_div_up(a, b, FixedPointIntegerMath.ONE_18)
 
     @staticmethod
     def div_up(a: int, b: int) -> int:
         r"""Divide a by b, rounding up."""
-        return FixedPointMath.mul_div_up(a, FixedPointMath.ONE_18, b)
+        return FixedPointIntegerMath.mul_div_up(a, FixedPointIntegerMath.ONE_18, b)
 
     @staticmethod
     def ilog2(x: int) -> int:
@@ -552,7 +560,7 @@ class FixedPointMath:
         #
         # Reduce range of x to (1, 2) * 2**96
         # ln(2^k * x) = k * ln(2) + ln(x)
-        k = FixedPointMath.ilog2(x) - 96
+        k = FixedPointIntegerMath.ilog2(x) - 96
         x <<= 159 - k
         x >>= 159
         # Evaluate using a (8, 8)-term rational approximation
@@ -598,12 +606,12 @@ class FixedPointMath:
         # Input x is in fixed point format, with scale factor 1/1e18.
         # When the result is < 0.5 we return zero. This happens when
         # x <= floor(log(0.5e-18) * 1e18) ~ -42e18
-        if x <= FixedPointMath.EXP_MIN:
+        if x <= FixedPointIntegerMath.EXP_MIN:
             return 0
         # When the result is > (2**255 - 1) / 1e18 we can not represent it
         # as an int256. This happens when x >= floor(log((2**255 -1) / 1e18) * 1e18) ~ 135.
-        if x >= FixedPointMath.EXP_MAX:
-            raise ValueError(f"exp: exponent={x} must be less than {FixedPointMath.EXP_MAX=}")
+        if x >= FixedPointIntegerMath.EXP_MAX:
+            raise ValueError(f"exp: exponent={x} must be less than {FixedPointIntegerMath.EXP_MAX=}")
         # x is now in the range (-42, 136) * 1e18, inclusive.
         # Convert to (-42, 136) * 2**96 for more intermediate
         # precision and a binary basis. This base conversion
@@ -657,10 +665,17 @@ class FixedPointMath:
         """
         if x == 0:
             if y == 0:
-                return FixedPointMath.ONE_18
+                return FixedPointIntegerMath.ONE_18
             return 0
-        ylnx = y * FixedPointMath.ln(x) // FixedPointMath.ONE_18
-        return FixedPointMath.exp(ylnx)
+        ylnx = y * FixedPointIntegerMath.ln(x) // FixedPointIntegerMath.ONE_18
+        return FixedPointIntegerMath.exp(ylnx)
+
+
+NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
+
+
+class FixedPointMath:
+    """Math library that supports FixedPoint arithmetic"""
 
     @staticmethod
     def maximum(x: NUMERIC, y: NUMERIC) -> NUMERIC:
@@ -668,6 +683,11 @@ class FixedPointMath:
 
         If the first argument equals the second, return the first.
         """
+        if isinstance(x, FixedPoint) and isinstance(y, FixedPoint):
+            if x.is_nan():
+                return x
+            if y.is_nan():
+                return y
         if x >= y:
             return x
         return y
@@ -678,6 +698,21 @@ class FixedPointMath:
 
         If the first argument equals the second, return the first.
         """
+        if isinstance(x, FixedPoint) and isinstance(y, FixedPoint):
+            if x.is_nan():
+                return x
+            if y.is_nan():
+                return y
         if x <= y:
             return x
         return y
+
+    @staticmethod
+    def exp(x: NUMERIC) -> NUMERIC:
+        """Performs e^x"""
+        if isinstance(x, FixedPoint):
+            if not x.is_finite():
+                return x
+            return type(x)(FixedPointIntegerMath.exp(x.int_value))
+        else:
+            return type(x)(math.exp(x))

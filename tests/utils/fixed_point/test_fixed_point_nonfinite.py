@@ -2,7 +2,7 @@
 
 import unittest
 
-from elfpy.utils.math import FixedPoint
+from elfpy.utils.math import FixedPoint, FixedPointMath
 
 # pylint: disable=unneeded-not
 
@@ -18,9 +18,9 @@ class TestFixedPointNonFinite(unittest.TestCase):
     EVEN_FINITE = FixedPoint("8.0")
     ODD_FINITE = FixedPoint("9.0")
     SMALL_FINITE = FixedPoint(999)
-    NAN = FixedPoint("nan")
     INF = FixedPoint("inf")
     NEG_INF = FixedPoint("-inf")
+    NAN = FixedPoint("nan")
 
     def test_is_nan(self):
         """Test that FixedPoint can detect if it is nan"""
@@ -324,3 +324,35 @@ class TestFixedPointNonFinite(unittest.TestCase):
         assert (self.NEG_INF % self.EVEN_FINITE).is_nan() is True
         assert (self.NEG_INF % self.INF).is_nan() is True
         assert (self.NEG_INF % self.NEG_INF).is_nan() is True
+
+
+class TestFixedPointMathNonFinite(unittest.TestCase):
+    """Unit tests to verify that the fixed-point math implementations are correct with non-finite inputs"""
+
+    ONE = FixedPoint("1.0")
+    NEG_ONE = FixedPoint("-1.0")
+    INF = FixedPoint("inf")
+    NEG_INF = FixedPoint("-inf")
+    NAN = FixedPoint("nan")
+
+    def test_minimum(self):
+        """Test minimum function"""
+        assert (FixedPointMath.minimum(self.NAN, self.NEG_ONE)).is_nan() == True
+        assert (FixedPointMath.minimum(self.NAN, self.INF)).is_nan() == True
+        assert FixedPointMath.minimum(self.ONE, self.INF) == self.ONE
+        assert FixedPointMath.minimum(self.NEG_ONE, self.NEG_INF) == self.NEG_INF
+        assert FixedPointMath.minimum(self.INF, self.NEG_INF) == self.NEG_INF
+
+    def test_maximum(self):
+        """Test maximum function"""
+        assert (FixedPointMath.maximum(self.NAN, self.NEG_ONE)).is_nan() == True
+        assert (FixedPointMath.maximum(self.NAN, self.INF)).is_nan() == True
+        assert FixedPointMath.maximum(self.ONE, self.INF) == self.INF
+        assert FixedPointMath.maximum(self.NEG_ONE, self.NEG_INF) == self.NEG_ONE
+        assert FixedPointMath.maximum(self.INF, self.NEG_INF) == self.INF
+
+    def test_exp(self):
+        """Test exp function"""
+        assert FixedPointMath.exp(self.NAN).is_nan() == True
+        assert FixedPointMath.exp(self.INF) == self.INF
+        assert FixedPointMath.exp(self.NEG_INF) == self.NEG_INF
