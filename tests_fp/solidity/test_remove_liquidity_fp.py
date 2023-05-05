@@ -7,6 +7,7 @@ import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
+from elfpy.utils.math import FixedPoint, FixedPointMath
 
 # pylint: disable=too-many-arguments
 
@@ -14,32 +15,32 @@ import elfpy.time as time
 class TestRemoveLiquidity(unittest.TestCase):
     """Test opening a long in hyperdrive"""
 
-    contribution: float = 500_000_000
-    target_apr: float = 0.05
-    term_length: int = 365
-    alice: agent.Agent
-    bob: agent.Agent
-    celine: agent.Agent
-    hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTime
+    contribution: FixedPoint = FixedPoint("500_000_000.0")
+    target_apr: FixedPoint = FixedPoint("0.05")
+    term_length: FixedPoint = FixedPoint("365.0")
+    alice: agent.AgentFP
+    bob: agent.AgentFP
+    celine: agent.AgentFP
+    hyperdrive: hyperdrive_market.MarketFP
+    block_time: time.BlockTimeFP
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
-        self.block_time = time.BlockTime()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-        market_state = hyperdrive_market.MarketState(
-            curve_fee_multiple=0.0,
-            flat_fee_multiple=0.0,
+        self.alice = agent.AgentFP(wallet_address=0, budget=self.contribution)
+        self.bob = agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.celine = agent.AgentFP(wallet_address=2, budget=self.contribution)
+        self.block_time = time.BlockTimeFP()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        market_state = hyperdrive_market.MarketStateFP(
+            curve_fee_multiple=FixedPoint("0.0"),
+            flat_fee_multiple=FixedPoint("0.0"),
         )
-        self.hyperdrive = hyperdrive_market.Market(
+        self.hyperdrive = hyperdrive_market.MarketFP(
             pricing_model=pricing_model,
             market_state=market_state,
-            position_duration=time.StretchedTime(
+            position_duration=time.StretchedTimeFP(
                 days=self.term_length,
                 time_stretch=pricing_model.calc_time_stretch(self.target_apr),
                 normalizing_constant=self.term_length,
@@ -52,22 +53,24 @@ class TestRemoveLiquidity(unittest.TestCase):
     def test_remove_liquidity_fail_zero_amount(self):
         """Should fail to remove zero liquidity"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.remove_liquidity(self.alice.wallet, 0)
+            self.hyperdrive.remove_liquidity(self.alice.wallet, FixedPoint(0))
 
     def test_remove_liquidity_fail_insufficient_shares(self):
         """Should fail to remove more liquidity than the agent has"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens + 1)
+            self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens + FixedPoint("1.0"))
 
     def test_remove_liquidity_no_trades(self):
         """Should remove liquidity if there are no open trades"""
 
         # advance time and let interest accrue
-        self.block_time.set_time(1)
+        time_delta = FixedPoint("1.0")
+        self.block_time.set_time(time_delta)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
-        accrued = self.contribution * np.exp(self.target_apr * 1)
+        # FIXME: This conversion sucks
+        accrued = self.contribution * FixedPoint(FixedPointMath.exp((self.target_apr * time_delta).int_value))
         self.hyperdrive.market_state.share_price = accrued / self.contribution
 
         # alice removes all liquidity
@@ -150,8 +153,8 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # make sure alice gets the correct amount of base
         base_expected = accrued + base_paid - short_amount_bonds
-        # TODO: improve this.  this is also pretty bad in the solidity.
-        np.testing.assert_allclose(base_proceeds, base_expected, rtol=1e7)
+        # TODO: improve this.  this is also pretty bad in the solidity code.
+        self.assertAlmostEqual(base_proceeds, base_expected, delta=1e7)
 
         # make sure pool balances went to zero
         self.assertEqual(market_state.share_reserves, 0)
