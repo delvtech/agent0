@@ -2,7 +2,7 @@
 import math
 import unittest
 
-from elfpy.utils.math import FixedPointIntegerMath, FixedPointMath, FixedPoint
+from elfpy.math import FixedPointIntegerMath, FixedPointMath, FixedPoint
 
 
 class TestFixedPointIntegerMath(unittest.TestCase):

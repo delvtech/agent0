@@ -3,7 +3,7 @@ import math
 import unittest
 
 import elfpy.errors.errors as errors
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 class TestFixedPoint(unittest.TestCase):

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import elfpy
 import elfpy.types as types
-from elfpy.utils.math.fixed_point import FixedPoint
+from elfpy.math.fixed_point import FixedPoint
 
 if TYPE_CHECKING:
     from typing import Any, Iterable

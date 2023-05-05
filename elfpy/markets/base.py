@@ -9,7 +9,7 @@ import numpy as np
 
 import elfpy
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet

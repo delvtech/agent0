@@ -10,7 +10,7 @@ import elfpy.markets.borrow as borrow_market
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 class TestBorrow(unittest.TestCase):

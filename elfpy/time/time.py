@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint, FixedPointMath
+from elfpy.math import FixedPoint, FixedPointMath
 
 
 @dataclass

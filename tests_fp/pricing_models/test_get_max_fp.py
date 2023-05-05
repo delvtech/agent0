@@ -15,7 +15,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.pricing_models.base as base_pm
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
 

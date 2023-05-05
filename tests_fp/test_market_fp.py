@@ -9,7 +9,7 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.borrow as borrow
 import elfpy.time as time
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # TODO: remove this after FixedPoint PRs are finished
 

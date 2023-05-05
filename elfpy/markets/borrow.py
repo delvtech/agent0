@@ -10,7 +10,7 @@ import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
 import elfpy.pricing_models.base as base_pm
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 # TODO: remove this after FixedPoint PRs are finished

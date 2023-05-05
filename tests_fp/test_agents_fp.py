@@ -22,7 +22,7 @@ from elfpy.agents.policies.random_agent import RandomAgent
 from elfpy.agents.policies.single_long import SingleLongAgent
 from elfpy.agents.policies.single_lp import SingleLpAgent
 from elfpy.agents.policies.single_short import SingleShortAgent
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 class TestPolicy(agent.AgentFP):

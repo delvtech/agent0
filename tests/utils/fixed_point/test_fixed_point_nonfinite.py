@@ -2,7 +2,7 @@
 
 import unittest
 
-from elfpy.utils.math import FixedPoint, FixedPointMath
+from elfpy.math import FixedPoint, FixedPointMath
 
 # pylint: disable=unneeded-not
 

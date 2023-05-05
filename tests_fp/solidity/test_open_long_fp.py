@@ -6,7 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.types as types
 import elfpy.time as time
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code

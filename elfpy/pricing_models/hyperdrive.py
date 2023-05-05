@@ -10,7 +10,7 @@ import elfpy.pricing_models.trades as trades
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market

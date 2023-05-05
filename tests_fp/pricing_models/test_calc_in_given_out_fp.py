@@ -20,7 +20,7 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.pricing_models.base as base_pm
