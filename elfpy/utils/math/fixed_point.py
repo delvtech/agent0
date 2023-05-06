@@ -360,7 +360,7 @@ class FixedPoint:
             if self.int_value < 0:
                 scale -= 1  # ignore negative sign
             num_left_zeros = self.decimal_places - scale
-            rhs = "0" * num_left_zeros + str(self.int_value)
+            rhs = "0" * num_left_zeros + str(abs(self.int_value))
         else:  # float(input) was >=0
             rhs = str(self.int_value)[len(lhs) :]  # should be 18 left
         # remove trailing zeros
