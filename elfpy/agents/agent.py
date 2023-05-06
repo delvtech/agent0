@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
-from elfpy.utils.math import FixedPointMath, FixedPoint
+from elfpy.math import FixedPoint, FixedPointMath
 
 if TYPE_CHECKING:
     import elfpy.markets.base as base_market

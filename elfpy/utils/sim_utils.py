@@ -9,7 +9,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
-from elfpy.utils.math.fixed_point import FixedPoint
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet

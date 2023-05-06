@@ -1,6 +1,6 @@
 """Updates a weighted average by adding or removing a weighted delta."""
 
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 def update_weighted_average(

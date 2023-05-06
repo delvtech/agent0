@@ -19,7 +19,7 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-lines
 

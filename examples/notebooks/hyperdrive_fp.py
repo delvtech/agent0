@@ -64,7 +64,7 @@ from elfpy.agents.agent import AgentFP
 from elfpy.utils import sim_utils
 from elfpy.simulators import ConfigFP
 from elfpy.utils.outputs import get_gridspec_subplots
-from elfpy.utils.math.fixed_point import FixedPoint
+from elfpy.math import FixedPoint
 
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils

@@ -3,7 +3,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 
 from elfpy.agents import wallet
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 def get_wallet_state(agent_wallet: wallet.Wallet, market: hyperdrive_market.Market) -> dict[str, float]:

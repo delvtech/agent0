@@ -14,8 +14,8 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.time.time import StretchedTimeFP
-from elfpy.utils.math import FixedPoint, FixedPointMath
-from elfpy.utils.math.update_weighted_average import update_weighted_average, update_weighted_average_fp
+from elfpy.math import FixedPoint, FixedPointMath
+from elfpy.math.update_weighted_average import update_weighted_average, update_weighted_average_fp
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market

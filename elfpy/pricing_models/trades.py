@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import elfpy.agents.agent_trade_result as agent_trade_result
 import elfpy.markets.hyperdrive.market_action_result as market_action_result
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 @types.freezable(frozen=True, no_new_attribs=True)

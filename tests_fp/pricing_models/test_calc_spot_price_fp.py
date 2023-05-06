@@ -5,7 +5,7 @@ import elfpy.utils.price as price_utils
 import elfpy.time as time
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.base as base_pm
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 # TODO: remove this after FixedPoint PRs are finished

@@ -14,9 +14,9 @@ import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.utils.math.fixed_point import FixedPoint
 import elfpy.utils.outputs as output_utils
 from elfpy.agents.get_wallet_state import get_wallet_state, get_wallet_state_fp
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market

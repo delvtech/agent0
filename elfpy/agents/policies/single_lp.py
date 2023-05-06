@@ -3,7 +3,7 @@ import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # TODO: the init calls are replicated across each strategy, which looks like duplicate code
 #     this should be resolved once we fix user inheritance

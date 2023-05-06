@@ -17,7 +17,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 import elfpy.types as types
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 class TestSimulator(unittest.TestCase):
