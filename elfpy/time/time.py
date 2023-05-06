@@ -1,7 +1,6 @@
 """Helper functions for converting time units"""
 from dataclasses import dataclass
-from typing import Literal
-from enum import IntEnum, Enum
+from enum import Enum
 
 import numpy as np
 
