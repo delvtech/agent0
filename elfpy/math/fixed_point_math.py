@@ -9,6 +9,10 @@ from .fixed_point_integer_math import FixedPointIntegerMath
 NUMERIC = TypeVar("NUMERIC", FixedPoint, int, float)
 
 
+# we will use single letter names for the FixedPointMath class since all functions do basic arithmetic
+# pylint: disable=invalid-name
+
+
 class FixedPointMath:
     """Math library that supports FixedPoint arithmetic"""
 
@@ -49,5 +53,4 @@ class FixedPointMath:
             if not x.is_finite():
                 return x
             return type(x)(FixedPointIntegerMath.exp(x.int_value))
-        else:
-            return type(x)(math.exp(x))
+        return type(x)(math.exp(x))

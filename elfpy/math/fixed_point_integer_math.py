@@ -1,5 +1,8 @@
 """Fixed Point Integer math library"""
 
+# we will use single letter names for the FixedPointIntegerMath class since all functions do basic arithmetic
+# pylint: disable=invalid-name
+
 
 class FixedPointIntegerMath:
     """Safe integer arithmetic that assumes a 18-decimal fixed-point representation"""

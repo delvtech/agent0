@@ -7,9 +7,6 @@ from typing import Union
 import elfpy.errors.errors as errors
 from .fixed_point_integer_math import FixedPointIntegerMath
 
-# we will use single letter names for the FixedPointMath class since all functions do basic arithmetic
-# pylint: disable=invalid-name
-
 
 class FixedPoint:
     """Fixed-point number datatype

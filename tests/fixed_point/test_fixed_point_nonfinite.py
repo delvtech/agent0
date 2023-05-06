@@ -337,22 +337,22 @@ class TestFixedPointMathNonFinite(unittest.TestCase):
 
     def test_minimum(self):
         """Test minimum function"""
-        assert (FixedPointMath.minimum(self.NAN, self.NEG_ONE)).is_nan() == True
-        assert (FixedPointMath.minimum(self.NAN, self.INF)).is_nan() == True
+        assert FixedPointMath.minimum(self.NAN, self.NEG_ONE).is_nan() is True
+        assert FixedPointMath.minimum(self.NAN, self.INF).is_nan() is True
         assert FixedPointMath.minimum(self.ONE, self.INF) == self.ONE
         assert FixedPointMath.minimum(self.NEG_ONE, self.NEG_INF) == self.NEG_INF
         assert FixedPointMath.minimum(self.INF, self.NEG_INF) == self.NEG_INF
 
     def test_maximum(self):
         """Test maximum function"""
-        assert (FixedPointMath.maximum(self.NAN, self.NEG_ONE)).is_nan() == True
-        assert (FixedPointMath.maximum(self.NAN, self.INF)).is_nan() == True
+        assert FixedPointMath.maximum(self.NAN, self.NEG_ONE).is_nan() is True
+        assert FixedPointMath.maximum(self.NAN, self.INF).is_nan() is True
         assert FixedPointMath.maximum(self.ONE, self.INF) == self.INF
         assert FixedPointMath.maximum(self.NEG_ONE, self.NEG_INF) == self.NEG_ONE
         assert FixedPointMath.maximum(self.INF, self.NEG_INF) == self.INF
 
     def test_exp(self):
         """Test exp function"""
-        assert FixedPointMath.exp(self.NAN).is_nan() == True
+        assert FixedPointMath.exp(self.NAN).is_nan() is True
         assert FixedPointMath.exp(self.INF) == self.INF
         assert FixedPointMath.exp(self.NEG_INF) == self.NEG_INF
