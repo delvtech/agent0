@@ -1,6 +1,7 @@
 """Helper functions for converting time units"""
 from dataclasses import dataclass
 from typing import Literal
+from enum import IntEnum, Enum
 
 import numpy as np
 
@@ -154,21 +155,39 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     return normed_days_remaining * normalizing_constant
 
 
-TimeUnit = Literal["seconds", "minutes", "hours", "days", "years"]
+class TimeUnit(Enum):
+    r"""Time units, with their parts in a year
+
+    FP values are stored as parts in a year as FixedPoint 18 decimal integers"""
+    SECONDS = FixedPoint(31_556_952 * 10**18)
+    MINUTES = FixedPoint(525_600 * 10**18)
+    HOURS = FixedPoint(8_760 * 10**18)
+    DAYS = FixedPoint(365 * 10**18)
+    YEARS = FixedPoint(1 * 10**18)
 
 
 @dataclass
 class BlockTimeFP:
-    r"""State class for tracking block timestamps and global time"""
+    r"""State class for tracking block timestamps and global time
+
+    .. todo::
+    When we do the time refactor we need to think about whether it is better to use the Python time stdlib.
+    This would make it easier to e.g. add/subtract times, but would require us to write converters that turn stdlib time
+    into a FixedPoint representation from 0 (the start of simulation).
+    Do the stdlib features make it worth the extra overhead?
+    """
 
     _time: FixedPoint = FixedPoint(0)
     _block_number: FixedPoint = FixedPoint(0)
     _step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
-    time_unit: str = "years"
+    unit: TimeUnit = TimeUnit.YEARS
 
     def __post_init__(self):
-        if self.time_unit != "years":
-            raise ValueError(f"Only `years` is supported for {self.time_unit}")
+        """.. todo::
+        This is temporary until we do the time refactor.
+        """
+        if self.unit != TimeUnit.YEARS:
+            raise ValueError(f"Only `years` is supported for {self.unit.name}")
 
     def tick(self, delta_years: FixedPoint) -> None:
         """ticks the time by delta_time amount"""
@@ -178,22 +197,13 @@ class BlockTimeFP:
         """ticks the time by step_size"""
         self._time += self.step_size
 
-    def time_conversion(self, unit: TimeUnit = "seconds") -> FixedPoint:
+    def time_conversion(self, unit: TimeUnit = TimeUnit.SECONDS) -> FixedPoint:
         """Convert time to different units
 
-        .. todo:: we will need to add conditions for self.time_unit in each conversion type
+        .. todo:: For now this only converts from years to `unit`.
+        We will need to add conditions for self.unit in each conversion type
         """
-        if unit == "seconds":  # 31,556,952 seconds in a year
-            return self.time * FixedPoint("31_556_952.0")
-        if unit == "minutes":  # 525,600 moments so dear
-            return self.time * FixedPoint("525_600.0")
-        if unit == "hours":  # 8,760 hours in a year
-            return self.time * FixedPoint("8_760.0")
-        if unit == "days":  # 365 days in a year
-            return self.time * FixedPoint("365.0")
-        if unit == "years":  # 1 years in a year
-            return self.time * FixedPoint("1.0")
-        raise NotImplementedError(f"time {unit=} is not yet supported.")
+        return self.time * unit.value  # FixedPoint(unit)
 
     @property
     def time(self):
@@ -206,11 +216,14 @@ class BlockTimeFP:
         since we want to check types using a setter."""
         raise AttributeError("time is a read-only attribute; use `set_time()` to adjust")
 
-    def set_time(self, time: FixedPoint) -> None:
+    def set_time(self, time: FixedPoint, unit: TimeUnit) -> None:
         """Sets the time"""
         if not isinstance(time, FixedPoint):
             raise TypeError(f"{time=} must be a FixedPoint variable")
         self._time = time
+        if unit != TimeUnit.YEARS:
+            raise NotImplementedError(f"unit must be TimeUnit.YEARS, not {unit=}.")
+        self.unit = unit
 
     @property
     def block_number(self):

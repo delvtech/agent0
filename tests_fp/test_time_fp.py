@@ -117,19 +117,19 @@ class TestTimeUtils(unittest.TestCase):
         assert test_time.block_number == FixedPoint(0)
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
         with self.assertRaises(ValueError):
-            test_time = time.BlockTimeFP(time_unit="seconds")
+            test_time = time.BlockTimeFP(unit=time.TimeUnit.SECONDS)
 
     def test_block_time_setters(self):
         """Test attribute setters for block time"""
         test_time = time.BlockTimeFP()
         # time
         assert test_time.time == FixedPoint(0)
-        test_time.set_time(FixedPoint("4.0"))
+        test_time.set_time(FixedPoint("4.0"), unit=time.TimeUnit.YEARS)
         assert test_time.time == FixedPoint("4.0")
         with self.assertRaises(AttributeError):
             test_time.time = FixedPoint("2.0")
         with self.assertRaises(TypeError):
-            test_time.set_time(2)  # type: ignore
+            test_time.set_time(2, unit=time.TimeUnit.YEARS)  # type: ignore
         # step_size
         assert test_time.step_size == FixedPoint("1.0") / FixedPoint("365.0")
         test_time.set_step_size(FixedPoint("0.5"))
@@ -168,15 +168,15 @@ class TestTimeUtils(unittest.TestCase):
     def test_time_conversion(self):
         """Test the BlockTime unit conversion function"""
         test_time = time.BlockTimeFP()
-        test_time.set_time(FixedPoint("1.0"))
-        assert test_time.time_conversion("seconds") == FixedPoint("31_556_952.0")
-        assert test_time.time_conversion("minutes") == FixedPoint("525_600.0")
-        assert test_time.time_conversion("hours") == FixedPoint("8_760.0")
-        assert test_time.time_conversion("days") == FixedPoint("365.0")
-        assert test_time.time_conversion("years") == FixedPoint("1.0")
-        test_time.set_time(FixedPoint("2.0"))
-        assert test_time.time_conversion("seconds") == FixedPoint(2 * 31_556_952 * 10**18)
-        assert test_time.time_conversion("minutes") == FixedPoint(2 * 525_600 * 10**18)
-        assert test_time.time_conversion("hours") == FixedPoint(2 * 8_760 * 10**18)
-        assert test_time.time_conversion("days") == FixedPoint(2 * 365 * 10**18)
-        assert test_time.time_conversion("years") == FixedPoint(2 * 1 * 10**18)
+        test_time.set_time(FixedPoint("1.0"), time.TimeUnit.YEARS)
+        assert test_time.time_conversion(time.TimeUnit.SECONDS) == FixedPoint("31_556_952.0")
+        assert test_time.time_conversion(time.TimeUnit.MINUTES) == FixedPoint("525_600.0")
+        assert test_time.time_conversion(time.TimeUnit.HOURS) == FixedPoint("8_760.0")
+        assert test_time.time_conversion(time.TimeUnit.DAYS) == FixedPoint("365.0")
+        assert test_time.time_conversion(time.TimeUnit.YEARS) == FixedPoint("1.0")
+        test_time.set_time(FixedPoint("2.0"), time.TimeUnit.YEARS)
+        assert test_time.time_conversion(time.TimeUnit.SECONDS) == FixedPoint(2 * 31_556_952 * 10**18)
+        assert test_time.time_conversion(time.TimeUnit.MINUTES) == FixedPoint(2 * 525_600 * 10**18)
+        assert test_time.time_conversion(time.TimeUnit.HOURS) == FixedPoint(2 * 8_760 * 10**18)
+        assert test_time.time_conversion(time.TimeUnit.DAYS) == FixedPoint(2 * 365 * 10**18)
+        assert test_time.time_conversion(time.TimeUnit.YEARS) == FixedPoint(2 * 1 * 10**18)
