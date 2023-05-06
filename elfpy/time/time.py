@@ -1,6 +1,6 @@
 """Helper functions for converting time units"""
-
 from dataclasses import dataclass
+from enum import Enum
 
 import numpy as np
 
@@ -154,34 +154,109 @@ def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, norma
     return normed_days_remaining * normalizing_constant
 
 
+class TimeUnit(Enum):
+    r"""Time units, with their parts in a year
+
+    FP values are stored as parts in a year as FixedPoint 18 decimal integers"""
+    SECONDS = FixedPoint(31_556_952 * 10**18)
+    MINUTES = FixedPoint(525_600 * 10**18)
+    HOURS = FixedPoint(8_760 * 10**18)
+    DAYS = FixedPoint(365 * 10**18)
+    YEARS = FixedPoint(1 * 10**18)
+
+
 @dataclass
 class BlockTimeFP:
-    r"""Global time."""
+    r"""State class for tracking block timestamps and global time
 
-    time: FixedPoint = FixedPoint(0)  # time in years
-    block_number: FixedPoint = FixedPoint(0)
-    step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
+    .. todo::
+    When we do the time refactor we need to think about whether it is better to use the Python time stdlib.
+    This would make it easier to e.g. add/subtract times, but would require us to write converters that turn stdlib time
+    into a FixedPoint representation from 0 (the start of simulation).
+    Do the stdlib features make it worth the extra overhead?
+    """
 
-    @property
-    def time_in_seconds(self) -> FixedPoint:
-        """1 year = 31,556,952 seconds"""
-        return self.time * FixedPoint("31_556_952.0")
+    _time: FixedPoint = FixedPoint(0)
+    _block_number: FixedPoint = FixedPoint(0)
+    _step_size: FixedPoint = FixedPoint("1.0") / FixedPoint("365.0")  # defaults to 1 day
+    unit: TimeUnit = TimeUnit.YEARS
+
+    def __post_init__(self):
+        """.. todo::
+        This is temporary until we do the time refactor.
+        """
+        if self.unit != TimeUnit.YEARS:
+            raise ValueError(f"Only `years` is supported for {self.unit.name}")
 
     def tick(self, delta_years: FixedPoint) -> None:
         """ticks the time by delta_time amount"""
-        self.time += delta_years
+        self._time += delta_years
 
     def step(self) -> None:
         """ticks the time by step_size"""
-        self.time += self.step_size
+        self._time += self.step_size
 
-    def set_time(self, time: FixedPoint) -> None:
+    def time_conversion(self, unit: TimeUnit = TimeUnit.SECONDS) -> FixedPoint:
+        """Convert time to different units
+
+        .. todo:: For now this only converts from years to `unit`.
+        We will need to add conditions for self.unit in each conversion type
+        """
+        return self.time * unit.value  # FixedPoint(unit)
+
+    @property
+    def time(self):
+        """Get the time"""
+        return self._time
+
+    @time.setter
+    def time(self, value):
+        """Private time attribute and time property cannot be set directly,
+        since we want to check types using a setter."""
+        raise AttributeError("time is a read-only attribute; use `set_time()` to adjust")
+
+    def set_time(self, time: FixedPoint, unit: TimeUnit) -> None:
         """Sets the time"""
-        self.time = time
+        if not isinstance(time, FixedPoint):
+            raise TypeError(f"{time=} must be a FixedPoint variable")
+        self._time = time
+        if unit != TimeUnit.YEARS:
+            raise NotImplementedError(f"unit must be TimeUnit.YEARS, not {unit=}.")
+        self.unit = unit
+
+    @property
+    def block_number(self):
+        """Get the block_number"""
+        return self._block_number
+
+    @block_number.setter
+    def block_number(self, value):
+        """Private block_number attribute and block_number property cannot be set directly,
+        since we want to check types using a setter."""
+        raise AttributeError("block_number is a read-only attribute; use `set_block_number()` to adjust")
+
+    def set_block_number(self, block_number: FixedPoint) -> None:
+        """Sets the block_number"""
+        if not isinstance(block_number, FixedPoint):
+            raise TypeError(f"{block_number=} must be a FixedPoint variable")
+        self._block_number = block_number
+
+    @property
+    def step_size(self):
+        """Get the step_size"""
+        return self._step_size
+
+    @step_size.setter
+    def step_size(self, value):
+        """Private block_number attribute and block_number property cannot be set directly,
+        since we want to check types using a setter."""
+        raise AttributeError("step_size is a read-only attribute; use `set_step_size()` to adjust")
 
     def set_step_size(self, step_size: FixedPoint) -> None:
         """Sets the step_size for tick"""
-        self.step_size = step_size
+        if not isinstance(step_size, FixedPoint):
+            raise TypeError(f"{step_size=} must be a FixedPoint variable")
+        self._step_size = step_size
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
