@@ -1,6 +1,7 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
@@ -148,15 +149,19 @@ class BaseMarketStateFP:
 
     Implements a class for all that that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
+
+    .. todo:: have member functions be generic enough that any subclass can apply deltas?
     """
 
-    # TODO: have this be generic enough that any subclass can apply deltas?
     def apply_delta(self, delta: MarketDeltasFP) -> None:
         r"""Applies a delta to the market state."""
         raise NotImplementedError
 
-    # TODO: have this be generic enough that any subclass can copy?
     def copy(self) -> BaseMarketStateFP:
+        """Returns a new copy of self"""
+        raise NotImplementedError
+
+    def check_non_zero(self, dictionary: dict | defaultdict) -> BaseMarketStateFP:
         """Returns a new copy of self"""
         raise NotImplementedError
 
@@ -191,4 +196,4 @@ class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
     def update_market(self, market_deltas: DeltasFP) -> None:
         """Increments member variables to reflect current market conditions."""
         self.market_state.apply_delta(market_deltas)
-        elfpy.check_non_zero_fp(self.market_state)  # check reserves are non-zero within precision threshold
+        self.market_state.check_non_zero(self.market_state.__dict__)

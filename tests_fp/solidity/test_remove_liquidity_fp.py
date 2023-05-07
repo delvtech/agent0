@@ -1,8 +1,6 @@
 """Remove liquidity market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import numpy as np
-
 import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -65,11 +63,10 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # advance time and let interest accrue
         time_delta = FixedPoint("1.0")
-        self.block_time.set_time(time_delta)
+        self.block_time.set_time(time_delta, unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
-        # FIXME: This conversion sucks
         accrued = self.contribution * FixedPointMath.exp(self.target_apr * time_delta)
         self.hyperdrive.market_state.share_price = accrued / self.contribution
 
@@ -92,7 +89,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
-        self.block_time.set_time(FixedPoint("1.0"))
+        self.block_time.set_time(FixedPoint("1.0"), unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
@@ -133,7 +130,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
-        self.block_time.set_time(FixedPoint("0.05"))
+        self.block_time.set_time(FixedPoint("0.05"), unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year

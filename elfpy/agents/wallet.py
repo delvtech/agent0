@@ -425,7 +425,7 @@ class WalletFP:
                 self._update_shorts(value_or_dict.items())
             else:
                 raise ValueError(f"wallet_key={key} is not allowed.")
-            elfpy.check_non_zero(self)
+            self.check_non_zero(self.__dict__)
 
     def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, BorrowFP]]) -> None:
         for mint_time, borrow_summary in borrows:
@@ -523,3 +523,15 @@ class WalletFP:
             f"agent_{self.address}_total_longs_no_mock",
             f"agent_{self.address}_total_shorts_no_mock",
         )
+
+    def check_non_zero(self, dictionary: dict) -> None:
+        """Test that all wallet state variables are greater than zero"""
+        for key, value in dictionary.items():
+            if isinstance(value, FixedPoint):
+                assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
+            elif isinstance(value, dict):
+                self.check_non_zero(value)
+            elif isinstance(value, types.QuantityFP):
+                assert value.amount >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
+            else:
+                pass  # noop; could be int, frozen, etc
