@@ -29,7 +29,7 @@ MAX_RESERVES_DIFFERENCE_FP = FixedPoint(2e10)
 # and sets them to 0 if so.
 # TODO: we shouldn't have to adjsut this -- we need to reesolve rounding errors
 PRECISION_THRESHOLD = 1e-8
-PRECISION_THRESHOLD_FP: FixedPoint = FixedPoint(PRECISION_THRESHOLD)  # FixedPoint(1 * 10**10)  # 1e-8 * 1e18 = 1e10
+PRECISION_THRESHOLD_FP: FixedPoint = FixedPoint(1 * 10**10)  # 1e-8 * 1e18 = 1e10
 
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
@@ -186,7 +186,7 @@ def check_non_zero(data) -> None:
     Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
     Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
     If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
-    If they are negative and less than -PRECISION_THRESHOLD, an AssertionError is raised.
+    If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.
 
     Parameters
     ----------

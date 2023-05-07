@@ -149,8 +149,6 @@ class BaseMarketStateFP:
 
     Implements a class for all that that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
-
-    .. todo:: have member functions be generic enough that any subclass can apply deltas?
     """
 
     def apply_delta(self, delta: MarketDeltasFP) -> None:
