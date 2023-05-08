@@ -129,7 +129,7 @@ class TestCheckpoint(unittest.TestCase):
         short_amount = FixedPoint("50_000.0")
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Advance a term by the position duration.
-        self.block_time.time += self.hyperdrive.position_duration.days / FixedPoint("365.0")
+        self.block_time.tick(self.hyperdrive.position_duration.days / FixedPoint("365.0"))
         # Create a checkpoint
         self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
         # Create a checkpoint in the past
