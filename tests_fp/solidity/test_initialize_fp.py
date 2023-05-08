@@ -6,7 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy.time.time import BlockTimeFP
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 
 class TestInitialize(unittest.TestCase):

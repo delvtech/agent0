@@ -8,7 +8,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy import types
 from elfpy.errors import errors
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
 # pylint:disable=duplicate-code
