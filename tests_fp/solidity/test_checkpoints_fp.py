@@ -111,7 +111,7 @@ class TestCheckpoint(unittest.TestCase):
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
         self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
-        # Ensure that the pool's APR wasn't changed by the FixedPointcFixedPointheckpoint.
+        # Ensure that the pool's APR wasn't changed by the checkpoint.
         apr_after = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
