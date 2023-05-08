@@ -5,6 +5,7 @@ import elfpy.agents.agent as agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
+from elfpy.time.time import TimeUnit
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
@@ -272,7 +273,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("0.5")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta, TimeUnit.YEARS)
         self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
             FixedPoint("1.0") + self.target_apr * time_delta
         )
@@ -326,7 +327,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("1.0")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         self.hyperdrive.market_state.share_price = market_state_before_open.share_price * (
             FixedPoint("1.0") + self.target_apr * time_delta
         )
@@ -370,7 +371,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("1.0")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * FixedPoint("0.8")
         # get the reserves before closing the long
         market_state_before_close = self.hyperdrive.market_state.copy()
@@ -415,7 +416,7 @@ class TestCloseLong(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("0.5")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * FixedPoint("0.8")
         # get the reserves before closing the long
         market_state_before_close = self.hyperdrive.market_state.copy()

@@ -275,7 +275,7 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("1.0")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
         # Bob closes his short at to maturity
@@ -310,7 +310,7 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("1.0")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * FixedPoint("0.8")
         # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
@@ -345,7 +345,7 @@ class TestCloseShort(unittest.TestCase):
         )
         # advance time (which also causes the share price to change)
         time_delta = FixedPoint("0.5")
-        self.hyperdrive.block_time.set_time(self.hyperdrive.block_time.time + time_delta)
+        self.hyperdrive.block_time.tick(time_delta)
         self.hyperdrive.market_state.share_price = self.hyperdrive.market_state.share_price * FixedPoint("0.8")
         # get the reserves before closing the short
         market_state_before_close = self.hyperdrive.market_state.copy()
