@@ -10,7 +10,7 @@ import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.time.time import StretchedTimeFP
-from elfpy.utils.math import FixedPoint
+from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
 # pylint: disable=duplicate-code
