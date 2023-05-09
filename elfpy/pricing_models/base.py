@@ -326,18 +326,10 @@ class PricingModel(ABC):
         time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
-        assert quantity.amount >= elfpy.WEI, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
-        )
-        assert market_state.share_reserves >= 0, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
-        )
+        assert quantity.amount >= elfpy.WEI, f"expected quantity.amount >= {elfpy.WEI}, not {quantity.amount}!"
+        assert market_state.share_reserves >= 0, f"expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert market_state.bond_reserves >= 0, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= 0"
-            f" bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= 0" f" bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         if market_state.share_price < market_state.init_share_price:
             logging.warning(
@@ -345,30 +337,24 @@ class PricingModel(ABC):
                 market_state.init_share_price,
                 market_state.share_price,
             )
-        assert market_state.init_share_price >= 1, (
-            f"pricing_models.check_input_assertions: ERROR: "
-            f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
-        )
+        assert (
+            market_state.init_share_price >= 1
+        ), f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
-        )
-        assert 1 >= market_state.curve_fee_multiple >= 0, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
-        )
-        assert 1 >= market_state.flat_fee_multiple >= 0, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
-        )
+        assert (
+            reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE
+        ), f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE}, not {reserves_difference}!"
+        assert (
+            1 >= market_state.curve_fee_multiple >= 0
+        ), f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
+        assert (
+            1 >= market_state.flat_fee_multiple >= 0
+        ), f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
         assert 1 + elfpy.PRECISION_THRESHOLD >= time_remaining.stretched_time >= -elfpy.PRECISION_THRESHOLD, (
-            "pricing_models.check_input_assertions: ERROR: "
             f"expected {1 + elfpy.PRECISION_THRESHOLD} > time_remaining.stretched_time >= {-elfpy.PRECISION_THRESHOLD}"
             f", not {time_remaining.stretched_time}!"
         )
         assert 1 + elfpy.PRECISION_THRESHOLD >= time_remaining.normalized_time >= -elfpy.PRECISION_THRESHOLD, (
-            "pricing_models.check_input_assertions: ERROR: "
             f"expected {1 + elfpy.PRECISION_THRESHOLD} > time_remaining >= {-elfpy.PRECISION_THRESHOLD}"
             f", not {time_remaining.normalized_time}!"
         )
@@ -681,18 +667,12 @@ class PricingModelFP(ABC):
         time_remaining: time.StretchedTimeFP,
     ):
         """Applies a set of assertions to the input of a trading function."""
-        assert quantity.amount >= elfpy.WEI_FP, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected quantity.amount >= {elfpy.WEI_FP}, not {quantity.amount}!"
-        )
-        assert market_state.share_reserves >= FixedPoint("0.0"), (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected share_reserves >= 0, not {market_state.share_reserves}!"
-        )
+        assert quantity.amount >= elfpy.WEI_FP, f"expected quantity.amount >= {elfpy.WEI_FP}, not {quantity.amount}!"
+        assert market_state.share_reserves >= FixedPoint(
+            "0.0"
+        ), f"expected share_reserves >= 0, not {market_state.share_reserves}!"
         assert market_state.bond_reserves >= FixedPoint("0.0"), (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected bond_reserves >= 0"
-            f" bond_reserves == 0, not {market_state.bond_reserves}!"
+            f"expected bond_reserves >= 0" f" bond_reserves == 0, not {market_state.bond_reserves}!"
         )
         if market_state.share_price < market_state.init_share_price:
             logging.warning(
@@ -700,29 +680,24 @@ class PricingModelFP(ABC):
                 market_state.init_share_price,
                 market_state.share_price,
             )
-        assert market_state.init_share_price >= FixedPoint("1.0"), (
-            f"pricing_models.check_input_assertions: ERROR: "
-            f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
-        )
+        assert market_state.init_share_price >= FixedPoint(
+            "1.0"
+        ), f"expected init_share_price >= 1, not share_price={market_state.init_share_price}"
         reserves_difference = abs(market_state.share_reserves * market_state.share_price - market_state.bond_reserves)
-        assert reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE_FP, (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE_FP}, not {reserves_difference}!"
-        )
-        assert FixedPoint("1.0") >= market_state.curve_fee_multiple >= FixedPoint("0.0"), (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
-        )
-        assert FixedPoint("1.0") >= market_state.flat_fee_multiple >= FixedPoint("0.0"), (
-            "pricing_models.check_input_assertions: ERROR: "
-            f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
-        )
+        assert (
+            reserves_difference < elfpy.MAX_RESERVES_DIFFERENCE_FP
+        ), f"expected reserves_difference < {elfpy.MAX_RESERVES_DIFFERENCE_FP}, not {reserves_difference}!"
+        assert (
+            FixedPoint("1.0") >= market_state.curve_fee_multiple >= FixedPoint("0.0")
+        ), f"expected 1 >= curve_fee_multiple >= 0, not {market_state.curve_fee_multiple}!"
+        assert (
+            FixedPoint("1.0") >= market_state.flat_fee_multiple >= FixedPoint("0.0")
+        ), f"expected 1 >= flat_fee_multiple >= 0, not {market_state.flat_fee_multiple}!"
         assert (
             FixedPoint("1.0") + elfpy.PRECISION_THRESHOLD_FP
             >= time_remaining.stretched_time
             >= -elfpy.PRECISION_THRESHOLD_FP
         ), (
-            "pricing_models.check_input_assertions: ERROR: "
             f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > "
             f"time_remaining.stretched_time >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
             f", not {time_remaining.stretched_time}!"
@@ -732,7 +707,6 @@ class PricingModelFP(ABC):
             >= time_remaining.normalized_time
             >= -elfpy.PRECISION_THRESHOLD_FP
         ), (
-            "pricing_models.check_input_assertions: ERROR: "
             f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > time_remaining >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
             f", not {time_remaining.normalized_time}!"
         )

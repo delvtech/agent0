@@ -15,7 +15,7 @@ import elfpy.utils.outputs as output_utils  # utilities for file outputs
 
 # TODO: rewrite these tests wthout the simulator, and actually verify values are correct or at least
 # sensical.
-skip(msg="These tests aren't actually testing anything.", allow_module_level=True)
+skip(reason="These tests aren't actually testing anything.", allow_module_level=True)
 
 
 class BaseParameterTest(unittest.TestCase):

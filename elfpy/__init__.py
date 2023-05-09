@@ -194,12 +194,13 @@ def check_non_zero(data) -> None:
         The data to check for non-zero values.
     """
     # TODO: issue #146
-    # this is an imperfect solution to rounding errors, but it works for now
+    # this is an imperfect solution to rounding errors
+    # and should be removed in favor of localized checks
     try:
         if not isinstance(data, dict):
             data = data.__dict__
     except AttributeError as exception:
-        raise TypeError("dct must be a dict or a class with __dict__") from exception
+        raise TypeError(f"{data=} must be a dict or a class with __dict__") from exception
     for key, value in data.items():
         if isinstance(value, (int, float)):
             if 0 > value > -PRECISION_THRESHOLD:
@@ -219,40 +220,3 @@ def check_non_zero(data) -> None:
                 ), f"values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
         elif isinstance(value, (list, tuple, dict)):
             check_non_zero(value)
-
-
-def check_non_zero_fp(data) -> None:
-    r"""
-    Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
-    Non-zero values are checked to be greater than -PRECISION_THRESHOLD.
-    If they are negative and within PRECISION_THRESHOLD of zero, they are set to zero.
-    If they are negative and greater than -PRECISION_THRESHOLD, an AssertionError is raised.
-
-    Parameters
-    ----------
-    data : dict or class
-        The data to check for non-zero values.
-    """
-    # TODO: issue #146
-    # this is an imperfect solution to rounding errors, but it works for now
-    try:
-        if not isinstance(data, (dict, collections.defaultdict)):
-            data = data.__dict__
-    except AttributeError as exception:
-        raise TypeError("dct must be a dict or a class with __dict__") from exception
-    for key, value in data.items():
-        if isinstance(value, FixedPoint):
-            if FixedPoint(0) > value > -PRECISION_THRESHOLD_FP:
-                logging.debug(
-                    ("%s=%s is negative within PRECISION_THRESHOLD=%f, setting it to 0"),
-                    key,
-                    float(value),
-                    PRECISION_THRESHOLD,
-                )
-                setattr(data, key, FixedPoint(0))
-            else:
-                assert (
-                    value > -PRECISION_THRESHOLD_FP
-                ), f"values must be > {-PRECISION_THRESHOLD_FP}. Error on {key} = {value}"
-        elif hasattr(value, "__dict__") or isinstance(value, (dict, collections.defaultdict)):
-            check_non_zero_fp(value)

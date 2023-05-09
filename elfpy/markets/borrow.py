@@ -4,7 +4,7 @@ from __future__ import annotations  # types will be strings by default in 3.11
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Dict
+from typing import Optional
 
 import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
@@ -72,23 +72,20 @@ class MarketState(base_market.BaseMarketState):
     # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
 
     # borrow ratios
-    loan_to_value_ratio: Dict[types.TokenType, float] = field(
+    loan_to_value_ratio: dict[types.TokenType, float] = field(
         default_factory=lambda: {token_type: 0.97 for token_type in types.TokenType}
     )
-
     # trading reserves
     borrow_shares: float = field(default=0.0)  # allows tracking the increasing value of loans over time
-    collateral: Dict[types.TokenType, float] = field(default_factory=dict)
+    collateral: dict[types.TokenType, float] = field(default_factory=dict)
 
     borrow_outstanding: float = field(default=0.0)  # sum of Dai that went out the door
     borrow_closed_interest: float = field(default=0.0)  # interested collected from closed borrows
-
     # share prices used to track amounts owed
     borrow_share_price: float = field(default=1.0)
     init_borrow_share_price: float = field(default=borrow_share_price)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
-    collateral_spot_price: Dict[types.TokenType, float] = field(default_factory=dict)
-
+    collateral_spot_price: dict[types.TokenType, float] = field(default_factory=dict)
     # borrow and lending rates
     lending_rate: float = field(default=0.01)  # 1% per year
     # borrow rate is lending_rate * spread_ratio
@@ -135,7 +132,7 @@ class PricingModel(base_pm.PricingModel):
 
     def value_collateral(
         self,
-        loan_to_value_ratio: Dict[types.TokenType, float],
+        loan_to_value_ratio: dict[types.TokenType, float],
         collateral: types.Quantity,
         spot_price: Optional[float] = None,
     ):
@@ -430,30 +427,24 @@ class MarketStateFP(base_market.BaseMarketStateFP):
     spread_ratio: FixedPoint
         The ratio of the borrow rate to the lending rate
     """
-
     # dataclasses can have many attributes
     # pylint: disable=too-many-instance-attributes
 
     # TODO: Should we be tracking the last time the dsr changed to evaluate the payout amount correctly?
-
     # borrow ratios
-    loan_to_value_ratio: Dict[types.TokenType, FixedPoint] = field(
+    loan_to_value_ratio: dict[types.TokenType, FixedPoint] = field(
         default_factory=lambda: {token_type: FixedPoint("0.97") for token_type in types.TokenType}
     )
-
     # trading reserves
     borrow_shares: FixedPoint = FixedPoint("0.0")  # allows tracking the increasing value of loans over time
-    collateral: Dict[types.TokenType, FixedPoint] = field(default_factory=dict)
-
+    collateral: dict[types.TokenType, FixedPoint] = field(default_factory=dict)
     borrow_outstanding: FixedPoint = FixedPoint("0.0")  # sum of Dai that went out the door
     borrow_closed_interest: FixedPoint = FixedPoint("0.0")  # interested collected from closed borrows
-
     # share prices used to track amounts owed
     borrow_share_price: FixedPoint = FixedPoint("1.0")
     init_borrow_share_price: FixedPoint = field(default=borrow_share_price)  # allow not setting init_share_price
     # number of TokenA you get for TokenB
-    collateral_spot_price: Dict[types.TokenType, FixedPoint] = field(default_factory=dict)
-
+    collateral_spot_price: dict[types.TokenType, FixedPoint] = field(default_factory=dict)
     # borrow and lending rates
     lending_rate: FixedPoint = FixedPoint("0.01")  # 1% per year
     # borrow rate is lending_rate * spread_ratio
@@ -482,6 +473,16 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         """Returns a new copy of self"""
         return MarketStateFP(**self.__dict__)
 
+    def check_non_zero(self, dictionary: dict) -> None:
+        """Test that all market state variables are greater than zero"""
+        for key, value in dictionary.items():
+            if isinstance(value, FixedPoint):
+                assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
+            elif isinstance(value, dict):
+                self.check_non_zero(value)
+            else:
+                pass  # noop; frozen, etc
+
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
@@ -500,7 +501,7 @@ class PricingModelFP(base_pm.PricingModelFP):
 
     def value_collateral(
         self,
-        loan_to_value_ratio: Dict[types.TokenType, FixedPoint],
+        loan_to_value_ratio: dict[types.TokenType, FixedPoint],
         collateral: types.QuantityFP,
         spot_price: Optional[FixedPoint] = None,
     ):
