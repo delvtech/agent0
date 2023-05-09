@@ -7,14 +7,15 @@ import argparse
 import json
 import logging
 import os
-from pathlib import Path
-from time import sleep
-from typing import cast, Optional, Type
 from collections import namedtuple
 from dataclasses import dataclass
+from pathlib import Path
+from time import sleep
+from typing import Optional, Type, cast
 
 # external lib
 import ape
+from ape.types import AddressType, ContractType
 import numpy as np
 from ape import Contract, accounts
 from ape.api import ProviderAPI, ReceiptAPI
@@ -31,20 +32,24 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.apeworx_integrations import to_fixed_point
-from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.utils.outputs import log_and_show
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.utils.apeworx_integrations import to_fixed_point
+from elfpy.utils.outputs import log_and_show
+from elfpy.utils.outputs import number_to_string as fmt
 
 load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
 
 NO_CRASH = 0
 USE_ALCHEMY = False
-
 DEVNET = True
+PROVIDER_STRING = "alchemy" if USE_ALCHEMY else "http://localhost:8547"
+
 CRASH_FILE = f"no_crash{'_devnet' if DEVNET else ''}.txt"
+RANDOM_SEED_FILE = f"random_seed{'_devnet' if DEVNET else ''}.txt"
+
+DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
 
@@ -271,7 +276,27 @@ def get_argparser() -> argparse.ArgumentParser:
 
 @dataclass
 class BotInfo:
-    """Information about a bot."""
+    """Information about a bot.
+
+    Attributes
+    ----------
+    policy : Type[agentlib.Agent]
+        The agent's policy.
+    trade_chance : float
+        Percent chance that a agent gets to trade on a given block.
+    risk_threshold : Optional[float]
+        The risk threshold for the agent.
+    budget : Budget[mean, std, min, max]
+        The budget for the agent.
+    risk : Risk[mean, std, min, max]
+        The risk for the agent.
+    index : Optional[int]
+        The index of the agent in the list of ALL agents.
+    index_internal : Optional[int]
+        The index of the agent in the list of THIS TYPE of agents.
+    name : str
+        The name of the agent.
+    """
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
@@ -281,6 +306,9 @@ class BotInfo:
     risk_threshold: Optional[float] = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
     risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
+    index: Optional[int] = None
+    index_internal: Optional[int] = None
+    name: str = "botty mcbotface"
 
 
 def get_config() -> simulators.Config:
@@ -289,11 +317,11 @@ def get_config() -> simulators.Config:
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
     _config.log_filename = "testnet_bots"
-    if os.path.exists("random_seed.txt"):
-        with open("random_seed.txt", "r", encoding="utf-8") as file:
+    if os.path.exists(RANDOM_SEED_FILE):
+        with open(RANDOM_SEED_FILE, "r", encoding="utf-8") as file:
             _config.random_seed = int(file.read()) + 1
     logging.info("Random seed=%s", _config.random_seed)
-    with open("random_seed.txt", "w", encoding="utf-8") as file:
+    with open(RANDOM_SEED_FILE, "w", encoding="utf-8") as file:
         file.write(str(_config.random_seed))
     _config.title = "testnet bots"
     for key, value in args.__dict__.items():
@@ -329,33 +357,36 @@ def get_accounts() -> list[KeyfileAccount]:
     return _dev_accounts
 
 
-def create_agent(agent_num, bot_info, bot_name, _dev_accounts, faucet, base, agent_index, on_chain_trade_info):
-    """Create an agent as defined in bot_info, assign its address, give it enough base"""
-    budget_mean, budget_std, budget_min, budget_max = bot_info.budget
-    _policy = bot_info.policy
+def create_agent(_bot: BotInfo, _dev_accounts, faucet, base, on_chain_trade_info: ape_utils.OnChainTradeInfo):
+    """Create an agent as defined in bot_info, assign its address, give it enough base."""
+    assert _bot.index is not None, "Bot must have a number."
+    assert _bot.index_internal is not None, "Bot must have an index."
+    assert isinstance(_bot.policy, agentlib.Agent), "Bot must have a policy of type Agent."
+    budget_mean, budget_std, budget_min, budget_max = bot.budget
+    _policy = _bot.policy
     params = {
         "trade_chance": config.scratch["trade_chance"],
         "budget": np.clip(config.rng.normal(loc=budget_mean, scale=budget_std), budget_min, budget_max),
     }
-    if bot_info.risk_threshold and bot_name != "random":  # random agent doesn't use risk threshold
-        params["risk_threshold"] = bot_info.risk_threshold  # if risk threshold is manually set, we use it
-    if bot_name != "random":  # if risk threshold isn't manually set, we get a random one
-        risk_mean, risk_std, risk_min, risk_max = bot_info.risk
+    if _bot.risk_threshold and _bot.name != "random":  # random agent doesn't use risk threshold
+        params["risk_threshold"] = _bot.risk_threshold  # if risk threshold is manually set, we use it
+    if _bot.name != "random":  # if risk threshold isn't manually set, we get a random one
+        risk_mean, risk_std, risk_min, risk_max = _bot.risk
         params["risk_threshold"] = np.clip(config.rng.normal(loc=risk_mean, scale=risk_std), risk_min, risk_max)
-    agent = _policy(rng=config.rng, wallet_address=_dev_accounts[agent_num].address, **params)
-    agent.contract = _dev_accounts[agent_num]  # assign its onchain address
+    agent = _policy(rng=config.rng, wallet_address=_dev_accounts[bot.num].address, **params)
+    agent.contract = _dev_accounts[_bot.index]  # assign its onchain address
     if (need_to_mint := params["budget"] - base.balanceOf(agent.contract.address) / 1e18) > 0:
         log_and_show(f" agent_{agent.wallet.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
             txn_receipt: ReceiptAPI = faucet.mint(base.address, agent.wallet.address, to_fixed_point(50_000))
             txn_receipt.await_confirmations()
-    log_string = f" agent_{agent.wallet.address[:8]} is a {bot_name} with budget={fmt(params['budget'])}"
+    log_string = f" agent_{agent.wallet.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
     log_string += f" Eth={fmt(agent.contract.balance/1e18)}"
     log_string += f" Base={fmt(base.balanceOf(agent.contract.address)/1e18)}"
     log_and_show(log_string)
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address_=agent.wallet.address,
-        index=agent_index,
+        index=_bot.index_internal,
         on_chain_trade_info=on_chain_trade_info,
         hyperdrive=hyperdrive,
         base=base,
@@ -376,15 +407,15 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
     _sim_agents = {}
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
         bot_info = config.scratch[bot_name]
-        for agent_index in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
+        bot_info.num = len(_sim_agents)
+        bot_info.name = bot_name
+        for index in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
+            bot_info.index = index
             agent = create_agent(
-                agent_num=len(_sim_agents),
-                bot_info=bot_info,
-                bot_name=bot_name,
+                _bot=bot_info,
                 _dev_accounts=_dev_accounts,
                 faucet=faucet,
                 base=dai,
-                agent_index=agent_index,
                 on_chain_trade_info=ape_utils.get_on_chain_trade_info(hyperdrive),
             )
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
@@ -426,14 +457,30 @@ def get_and_show_block_and_gas():
 
 
 if __name__ == "__main__":
+    # pylint: disable=protected-access
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
     # Set up ape
-    PROVIDER_STRING = "alchemy" if USE_ALCHEMY else "http://localhost:8547"
-    provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:goerli:{PROVIDER_STRING}").push_provider()
+    if DEVNET:
+        k, ps = "ethereum:local:foundry", {"fork_url": "http://localhost:8547", "port": 8549}
+        provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
+        print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
+        print(f"using contract_types_cache = {ape.chain.contracts._contract_types_cache}")
+    else:
+        provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
     project = ape_utils.HyperdriveProject(Path.cwd())
-    dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
+    address_key: AddressType = ape.chain.contracts.conversion_manager.convert(DAI_ADDRESS, AddressType)
+    contract_type = ape.chain.contracts._get_contract_type_from_disk(address_key)
+    if not contract_type:
+        # Also gets cached to disk for faster lookup next time.
+        contract_type = ape.chain.contracts._get_contract_type_from_explorer(address_key)
+
+    # Cache locally for faster in-session look-up.
+    if contract_type:
+        ape.chain.contracts._local_contract_types[address_key] = contract_type
+
+    dai: ContractInstance = Contract(address=DAI_ADDRESS, contract_type=contract_type)  # sDai
     hyperdrive: ContractInstance = project.get_hyperdrive_contract()
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
 
