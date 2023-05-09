@@ -1580,7 +1580,7 @@ def calc_close_short_fp(
     d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas_fp(market_state, mint_time, bond_amount, "short")
     # TODO: remove this clamp when short withdrawal shares calculated
     # don't let short base volume go negative
-    d_base_volume = FixedPointMath.maximum(d_base_volume, -market_state.short_base_volume)
+    d_base_volume = FixedPointMath.maximum(d_base_volume, market_state.short_base_volume)
     # The flat component of the trade is added to the pool's liquidity since it represents the fixed
     # interest that the short pays to the pool.
     share_adjustment = share_payment - abs(share_reserves_delta)
@@ -1614,7 +1614,7 @@ def calc_close_short_fp(
         d_base_asset=share_reserves_delta * market_state.share_price,
         d_bond_asset=bond_reserves_delta,
         d_bond_buffer=-bond_amount,
-        short_base_volume=d_base_volume,
+        short_base_volume=-d_base_volume,
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
         short_checkpoints=d_checkpoints,
@@ -1623,10 +1623,16 @@ def calc_close_short_fp(
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
     )
+
+    # TODO: double check this:
+    # we don't collect payment when closing a short, only pay out if necessary
+    amount = (market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base
+    amount = amount if amount > FixedPoint(0) else FixedPoint(0)
+
     agent_deltas = wallet.WalletFP(
         address=wallet_address,
         balance=types.QuantityFP(
-            amount=(market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base,
+            amount=amount,
             unit=types.TokenType.BASE,
         ),  # see CLOSING SHORT LOGIC above
         shorts={

@@ -873,6 +873,7 @@ class MarketStateFP(base_market.BaseMarketStateFP):
     short_base_volume: FixedPoint = FixedPoint(0)
     checkpoints: defaultdict[int, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
+    checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
     total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
     total_supply_shorts: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
     total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
@@ -992,13 +993,12 @@ class MarketFP(
         .. todo:: This should work with the same math as in solidity, but for some reason does not.
         The version below is set up to match the float version, but might be wrong?
         """
-        # TODO: This should work:
-        # latest_checkpoint = self.block_time.time - (self.block_time.time % self.market_state.checkpoint_duration)
-        block_time = float(self.block_time.time)
-        checkpoint_duration = float(self.market_state.checkpoint_duration)
-        latest_checkpoint = int(int(block_time * 365) - (int(block_time * 365) % int(checkpoint_duration * 365)))
-        latest_checkpoint = latest_checkpoint / 365
-        return FixedPoint(latest_checkpoint)
+        block_time_days = int(self.block_time.time) * 365
+        latest_checkpoint_days = FixedPoint(
+            block_time_days - block_time_days % int(self.market_state.checkpoint_duration_days)
+        )
+        latest_checkpoint = FixedPoint(latest_checkpoint_days) / FixedPoint("365.0")
+        return latest_checkpoint
 
     def check_action(self, agent_action: hyperdrive_actions.MarketActionFP) -> None:
         r"""Ensure that the agent action is an allowed action for this market
@@ -1315,9 +1315,11 @@ class MarketFP(
         # or is in the future, it's an invalid checkpoint and we should
         # revert.
         latest_checkpoint = self.latest_checkpoint_time
-        if (checkpoint_time * FixedPoint("365.0")) % (
-            FixedPoint("365.0") * self.market_state.checkpoint_duration
-        ) > FixedPoint(0) or latest_checkpoint < checkpoint_time:
+        checkpoint_time_days = checkpoint_time * FixedPoint("365.0")
+        not_evenly_divisible = bool(
+            (checkpoint_time_days) % (self.market_state.checkpoint_duration_days) > FixedPoint(0)
+        )
+        if not_evenly_divisible or latest_checkpoint < checkpoint_time:
             raise errors.InvalidCheckpointTime()
         # if the checkpoint time is the latest checkpoint, we use the current
         # share price. otherwise, we use a linear search to find the closest
@@ -1330,7 +1332,7 @@ class MarketFP(
                 closest_share_price = self.market_state.checkpoints[int(_time)].share_price
                 if _time == latest_checkpoint:
                     closest_share_price = self.market_state.share_price
-                if closest_share_price != 0:
+                if closest_share_price != FixedPoint(0):
                     self.apply_checkpoint(checkpoint_time, closest_share_price)
                     break
                 _time += self.market_state.checkpoint_duration
