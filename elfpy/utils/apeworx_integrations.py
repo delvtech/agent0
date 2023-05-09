@@ -329,6 +329,7 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
+# TODO: after validating the accuracy of this function, remove commented out code
 def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
     agent = tx_receipt["operator"]  # type: ignore
