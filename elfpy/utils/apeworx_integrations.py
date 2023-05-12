@@ -3,9 +3,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 from pathlib import Path
+from pathlib import Path
 
 import logging
-from dataclasses import dataclass
 from collections import defaultdict, namedtuple
 
 from ape import Contract
@@ -288,7 +288,7 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
-    r"""Parse the transaction receipt to get the "transfer single" trade event
+    """Parse the transaction receipt to get the "transfer single" trade event
 
     Arguments
     ---------
@@ -317,8 +317,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
 
 def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
-    """
-    Return everything returned by `getPoolInfo()` in the smart contracts.
+    """Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
     ---------
@@ -558,6 +557,7 @@ def select_abi(
         args = ()
     selected_abi: Optional[MethodABI] = None
     method_abis: list[MethodABI] = method.abis
+    missing_args = set()
     for abi in method_abis:  # loop through all the ABIs
         if params is not None:  # we try to match on keywords!
             found_args = [inpt.name for inpt in abi.inputs if inpt.name in params]
@@ -565,23 +565,22 @@ def select_abi(
                 selected_abi = abi  # we found all the arguments by name!
                 args = tuple(params[arg] for arg in found_args)  # get the values for the arguments
                 break
+            else:
+                missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
         elif len(args) == len(abi.inputs):  # check if the number of arguments matches the number of inputs
             selected_abi = abi  # pick this ABI because it has the right number of arguments, hope for the best
             break
     if selected_abi is None:
-        raise ValueError(f"Could not find matching ABI for {method}")
+        raise ValueError(
+            f"Could not find matching ABI for {method}"
+            + (f" with missing arguments: {missing_args}" if missing_args else "")
+        )
     lstr = f"{selected_abi.name}({', '.join(f'{inpt}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
     log_and_show(lstr)
     return selected_abi, args
 
 
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class Info:
-    """Fancy tuple that lets us return item.method and item.prefix instead of item[0] and item[1]"""
-
-    method: Callable
-    prefix: hyperdrive_assets.AssetIdPrefix
+Info = namedtuple("Info", ["method", "prefix"])
 
 
 def ape_trade(
@@ -627,7 +626,7 @@ def ape_trade(
         "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
-        assert maturity_time, "Maturity time must be provided to close a long or short trade"
+        assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
 
@@ -645,7 +644,7 @@ def ape_trade(
         "_maxApr": int(100 * 1e18),
         "agent_contract": agent,
         "trade_amount": amount,
-        "maturation_time": maturity_time,
+        "_maturityTime": maturity_time,
     }
     # check the specified method for an ABI that we have all the parameters for
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
@@ -707,24 +706,29 @@ def attempt_txn(
     each subsequent attempt multiples the max_fee by "mult"
     that is, the second attempt will have a max_fee of 2 * max_fee, the third will have a max_fee of 3 * max_fee, etc.
     """
+    # allow inconsistent return, since we throw an error if the transaction fails after all attempts
+    # pylint: disable=inconsistent-return-statements
+
     mult = kwargs.pop("mult") if hasattr(kwargs, "mult") else 2
     priority_fee_multiple = kwargs.pop("priority_fee_multiple") if hasattr(kwargs, "priority_fee_multiple") else 5
     if isinstance(contract_txn, ContractTransactionHandler):
         abi, args = select_abi(method=contract_txn, args=args)
         contract_txn = ContractTransaction(abi=abi, address=contract_txn.contract.address)
-    latest = agent.provider.get_block("latest")
-    if latest is None:
-        raise ValueError("latest block not found")
-    if not hasattr(latest, "base_fee"):
-        raise ValueError("latest block does not have base_fee")
-    base_fee = getattr(latest, "base_fee")
 
     # begin attempts, indexing attempt from 1 to mult (for the sake of easy calculation)
     for attempt in range(1, mult + 1):
-        kwargs["max_fee_per_gas"] = int(base_fee * attempt + agent.provider.priority_fee * priority_fee_multiple)
+        latest = agent.provider.get_block("latest")
+        if latest is None:
+            raise ValueError("latest block not found")
+        if not hasattr(latest, "base_fee"):
+            raise ValueError("latest block does not have base_fee")
+        base_fee = getattr(latest, "base_fee")
+        log_and_show(f"latest block ({getattr(latest, 'number')}) has base_fee of {base_fee}")
+
         kwargs["max_priority_fee_per_gas"] = int(
-            agent.provider.priority_fee * priority_fee_multiple + base_fee * (attempt - 1)
-        )
+            agent.provider.priority_fee * priority_fee_multiple * attempt
+        )  # agent.provider.priority_fee * priority_fee_multiple + base_fee * (attempt - 1)
+        kwargs["max_fee_per_gas"] = int(base_fee * (1 + attempt)) + kwargs["max_priority_fee_per_gas"]
         kwargs["sender"] = agent.address
         kwargs["nonce"] = agent.provider.get_nonce(agent.address)
         kwargs["gas_limit"] = 1_000_000
@@ -734,7 +738,7 @@ def attempt_txn(
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
-        log_and_show(f" => sending {signed_txn=}")
+        logging.debug(" => sending signed_txn %s", signed_txn)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
@@ -742,8 +746,12 @@ def attempt_txn(
             tx_receipt.await_confirmations()
             return tx_receipt
         except TransactionError as exc:
-            if "replacement transaction underpriced" not in str(exc):
+            if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
+                log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
                 raise exc
-            log_and_show(f"Failed to send transaction: {exc}")
+            log_and_show(f"Txn failed in expected way: {exc}")
+            if attempt == mult:
+                log_and_show(" => max attempts reached, raising exception")
+                raise exc
+            log_and_show(f" => retrying with higher gas price: {attempt + 1} of {mult}")
             continue
-    return None
