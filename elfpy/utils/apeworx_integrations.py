@@ -6,7 +6,7 @@ from pathlib import Path
 
 import logging
 from dataclasses import dataclass
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from ape.types import AddressType
 from ape.exceptions import TransactionError
@@ -15,6 +15,8 @@ from ape.contracts import ContractContainer
 from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
+import pandas as pd
+
 from elfpy.types import freezable
 
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
@@ -27,16 +29,6 @@ if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
-
-
-def to_fixed_point(float_var, decimal_places=18):
-    """Convert floating point argument to fixed point with specified number of decimals."""
-    return int(float_var * 10**decimal_places)
-
-
-def to_floating_point(float_var, decimal_places=18):
-    """Convert fixed point argument to floating point with specified number of decimals."""
-    return float(float_var / 10**decimal_places)
 
 
 def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
@@ -87,6 +79,67 @@ def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hype
         withdraw_capital=int(FixedPoint(pool_state["capital"])),
         withdraw_interest=int(FixedPoint(pool_state["interest"])),
     )
+
+
+OnChainTradeInfo = namedtuple(
+    "OnChainTradeInfo", ["hyper_trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
+)
+
+
+def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
+    """Get all trades from hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
+
+    Returns
+    -------
+    OnChainTradeInfo
+        Named tuple containing the following fields:
+        - hyper_trades: pd.DataFrame
+            DataFrame containing all trades from the Hyperdrive contract.
+        - unique_maturities: list
+            List of unique maturity timestamps across all assets.
+        - unique_ids: list
+            List of unique ids across all assets.
+        - unique_block_numbers_: list
+            List of unique block numbers across all trades.
+        - share_price_
+            Map of share price to block number.
+    """
+    # get all trades and process
+    hyper_trades_ = hyperdrive.TransferSingle.query("*")
+    hyper_trades_ = pd.concat(
+        [
+            # hyper_trades_.loc[:, ["block_number", "event_name"]], # keep only block_number and event_name
+            hyper_trades_.loc[:, [c for c in hyper_trades_.columns if c != "event_arguments"]],  # keep everything
+            pd.DataFrame((dict(i) for i in hyper_trades_["event_arguments"])),
+        ],
+        axis=1,
+    )
+    tuple_series = hyper_trades_.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
+    hyper_trades_["prefix"], hyper_trades_["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
+    hyper_trades_["trade_type"] = hyper_trades_["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
+    hyper_trades_["value"] = hyper_trades_["value"]
+
+    unique_maturities_ = hyper_trades_["maturity_timestamp"].unique()
+    unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
+
+    unique_ids_: np.ndarray = hyper_trades_["id"].unique()
+    unique_ids_ = unique_ids_[unique_ids_ != 0]
+
+    unique_block_numbers_ = hyper_trades_["block_number"].unique()
+
+    # map share price to block number
+    share_price_ = {}
+    for block_number_ in unique_block_numbers_:
+        share_price_ |= {block_number_: hyperdrive.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]}
+    for block_number_, price in share_price_.items():
+        logging.debug(("block_number_={}, price={}", block_number_, price))
+
+    return OnChainTradeInfo(hyper_trades_, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
