@@ -6,6 +6,7 @@ from pathlib import Path
 
 import logging
 from dataclasses import dataclass
+from collections import defaultdict
 
 from ape.types import AddressType
 from ape.exceptions import TransactionError
@@ -16,9 +17,9 @@ from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 from elfpy.types import freezable
 
+from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
-import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -27,26 +28,62 @@ if TYPE_CHECKING:
     from ethpm_types.abi import MethodABI
 
 
-class HyperdriveProject(ProjectManager):
-    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
+def to_fixed_point(float_var, decimal_places=18):
+    """Convert floating point argument to fixed point with specified number of decimals."""
+    return int(float_var * 10**decimal_places)
 
-    hyperdrive: ContractContainer
-    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
 
-    def __init__(self, path: Path) -> None:
-        """Initialize the project, loading the Hyperdrive contract."""
-        if path.name == "examples":  # if in examples folder, move up a level
-            path = path.parent
-        super().__init__(path)
-        self.load_contracts()
-        try:
-            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
-        except AttributeError as err:
-            raise AttributeError("Hyperdrive contract not found") from err
+def to_floating_point(float_var, decimal_places=18):
+    """Convert fixed point argument to floating point with specified number of decimals."""
+    return float(float_var / 10**decimal_places)
 
-    def get_hyperdrive_contract(self) -> ContractInstance:
-        """Get the Hyperdrive contract instance."""
-        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+
+def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
+    """Return the current market state from the smart contract.
+    Parameters
+    ----------
+    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+    Returns
+    -------
+    hyperdrive_market.MarketState
+    """
+    pool_state = contract.getPoolInfo(**kwargs).__dict__
+    hyper_config = contract.getPoolConfig(**kwargs).__dict__
+    hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
+    hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
+    asset_id = hyperdrive_assets.encode_asset_id(
+        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
+    )
+    total_supply_withdraw_shares = contract.balanceOf(asset_id, contract.address)
+
+    return hyperdrive_market.MarketState(
+        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
+        share_reserves=to_floating_point(pool_state["shareReserves"]),
+        bond_reserves=to_floating_point(pool_state["bondReserves"]),
+        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        # TODO: bond_buffer=0,
+        variable_apr=0.01,  # TODO: insert real value
+        share_price=to_floating_point(pool_state["sharePrice"]),
+        init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
+        curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
+        flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
+        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
+        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
+        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
+        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
+        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
+        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
+        # TODO: checkpoints=defaultdict
+        checkpoint_duration=hyper_config["checkpointDuration"],
+        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
+        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
+        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=to_floating_point(pool_state["capital"]),
+        withdraw_interest=to_floating_point(pool_state["interest"]),
+    )
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
