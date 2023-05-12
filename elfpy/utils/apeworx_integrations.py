@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
+from pathlib import Path
 
 import logging
 from dataclasses import dataclass
 
+from ape.types import AddressType
 from ape.exceptions import TransactionError
 from ape.api import ReceiptAPI, TransactionAPI
+from ape.contracts import ContractContainer
+from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 from elfpy.types import freezable
@@ -21,6 +25,28 @@ if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
+
+
+class HyperdriveProject(ProjectManager):
+    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
+
+    hyperdrive: ContractContainer
+    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
+
+    def __init__(self, path: Path) -> None:
+        """Initialize the project, loading the Hyperdrive contract."""
+        if path.name == "examples":  # if in examples folder, move up a level
+            path = path.parent
+        super().__init__(path)
+        self.load_contracts()
+        try:
+            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
+        except AttributeError as err:
+            raise AttributeError("Hyperdrive contract not found") from err
+
+    def get_hyperdrive_contract(self) -> ContractInstance:
+        """Get the Hyperdrive contract instance."""
+        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
