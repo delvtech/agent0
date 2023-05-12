@@ -20,6 +20,7 @@ from elfpy.types import freezable
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
+from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -40,10 +41,12 @@ def to_floating_point(float_var, decimal_places=18):
 
 def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
     """Return the current market state from the smart contract.
+
     Parameters
     ----------
     contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+
     Returns
     -------
     hyperdrive_market.MarketState
@@ -58,31 +61,31 @@ def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hype
     total_supply_withdraw_shares = contract.balanceOf(asset_id, contract.address)
 
     return hyperdrive_market.MarketState(
-        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
-        share_reserves=to_floating_point(pool_state["shareReserves"]),
-        bond_reserves=to_floating_point(pool_state["bondReserves"]),
-        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        lp_total_supply=int(FixedPoint(pool_state["lpTotalSupply"])),
+        share_reserves=int(FixedPoint(pool_state["shareReserves"])),
+        bond_reserves=int(FixedPoint(pool_state["bondReserves"])),
+        base_buffer=int(FixedPoint(pool_state["longsOutstanding"])),  # so do we not need any buffers now?
         # TODO: bond_buffer=0,
         variable_apr=0.01,  # TODO: insert real value
-        share_price=to_floating_point(pool_state["sharePrice"]),
-        init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
-        flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
-        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
-        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
-        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
-        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
-        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
-        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
+        share_price=int(FixedPoint(pool_state["sharePrice"])),
+        init_share_price=int(FixedPoint(hyper_config["initialSharePrice"])),
+        curve_fee_multiple=int(FixedPoint(hyper_config["curveFee"])),
+        flat_fee_multiple=int(FixedPoint(hyper_config["flatFee"])),
+        governance_fee_multiple=int(FixedPoint(hyper_config["governanceFee"])),
+        longs_outstanding=int(FixedPoint(pool_state["longsOutstanding"])),
+        shorts_outstanding=int(FixedPoint(pool_state["shortsOutstanding"])),
+        long_average_maturity_time=int(FixedPoint(pool_state["longAverageMaturityTime"])),
+        short_average_maturity_time=int(FixedPoint(pool_state["shortAverageMaturityTime"])),
+        long_base_volume=int(FixedPoint(pool_state["longBaseVolume"])),
+        short_base_volume=int(FixedPoint(pool_state["shortBaseVolume"])),
         # TODO: checkpoints=defaultdict
         checkpoint_duration=hyper_config["checkpointDuration"],
-        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
-        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
-        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=to_floating_point(pool_state["capital"]),
-        withdraw_interest=to_floating_point(pool_state["interest"]),
+        total_supply_longs=defaultdict(float, {0: int(FixedPoint(pool_state["longsOutstanding"]))}),
+        total_supply_shorts=defaultdict(float, {0: int(FixedPoint(pool_state["shortsOutstanding"]))}),
+        total_supply_withdraw_shares=int(FixedPoint(total_supply_withdraw_shares)),
+        withdraw_shares_ready_to_withdraw=int(FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"])),
+        withdraw_capital=int(FixedPoint(pool_state["capital"])),
+        withdraw_interest=int(FixedPoint(pool_state["interest"])),
     )
 
 
