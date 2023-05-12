@@ -77,3 +77,6 @@ dmypy.json
 # elfpy files for data used for testing
 random_seed.txt
 no_crash.txt
+*.gif
+examples/pics
+examples/abi/
