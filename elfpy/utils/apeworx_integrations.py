@@ -164,19 +164,6 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
     return OnChainTradeInfo(trades, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
 
 
-def log_subtotals(balance, query_balance, hyper_trades, idx, asset_type):
-    """Validate balance between the record of trades and the balanceOf query."""
-    if balance != query_balance:  # check that our calculated total matches the aggregate stored on-chain
-        running_total = 0
-        for i in hyper_trades.loc[idx, :].itertuples():  # show how each trades adds up to the total
-            running_total += i.value
-            log_and_show(f"  {asset_type} {i.value=} => {running_total=}")
-        log_and_show(
-            f" SUBTOTAL {running_total=} is off {query_balance} by {(balance - query_balance):.1E}"
-            f"({(balance - query_balance)*1e18} wei))"
-        )
-
-
 def get_wallet_from_onchain_trade_info(
     address_: str, index: int, info: OnChainTradeInfo, hyperdrive: ContractInstance, base: ContractInstance
 ):
@@ -196,7 +183,6 @@ def get_wallet_from_onchain_trade_info(
     Wallet
         Wallet with Short, Long, and LP positions.
     """
-
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
     wallet = Wallet(address=index, balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE))
     for position_id in info.unique_ids:
@@ -211,19 +197,6 @@ def get_wallet_from_onchain_trade_info(
 
         # check if there's an outstanding balance
         if balance != 0 or hyperdrive.balanceOf(position_id, address_) != 0:
-            # log the aggregate balances for the position
-            logging.debug(
-                "%s %s maturing %s, balance: from events %s, from balanceOf %s",
-                address_[:8],
-                asset_type,
-                maturity,
-                balance,
-                hyperdrive.balanceOf(position_id, address_),
-            )
-            log_subtotals(
-                balance, hyperdrive.balanceOf(position_id, address_), info.trades, trades_in_position, asset_type
-            )
-
             # loop across all the positions owned by this wallet
             for specific_trade in trades_in_position.index[trades_in_position]:
                 if asset_type == "SHORT":
