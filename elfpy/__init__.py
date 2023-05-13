@@ -37,6 +37,12 @@ DEFAULT_LOG_FORMATTER = "\n%(asctime)s: %(levelname)s: %(module)s.%(funcName)s:\
 DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
+# Constant for time conversion
+SECONDS_IN_YEAR = 365 * 24 * 60 * 60  # 31_536_000
+
+# Maximum balance mismatch between trade-level aggregation and balanceOf query in apeworx integration
+MAXIMUM_BALANCE_MISMATCH_IN_WEI = 2
+
 # Plotting defaults
 WHITE = "white"
 LIGHTGREY = "#D3D3D3"

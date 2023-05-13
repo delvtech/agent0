@@ -17,11 +17,13 @@ from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 import pandas as pd
 
+import elfpy
+from elfpy import types
 from elfpy.types import freezable
-
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
+from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
@@ -29,6 +31,28 @@ if TYPE_CHECKING:
     from ape.contracts.base import ContractInstance
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
+
+
+class HyperdriveProject(ProjectManager):
+    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
+
+    hyperdrive: ContractContainer
+    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
+
+    def __init__(self, path: Path) -> None:
+        """Initialize the project, loading the Hyperdrive contract."""
+        if path.name == "examples":  # if in examples folder, move up a level
+            path = path.parent
+        super().__init__(path)
+        self.load_contracts()
+        try:
+            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
+        except AttributeError as err:
+            raise AttributeError("Hyperdrive contract not found") from err
+
+    def get_hyperdrive_contract(self) -> ContractInstance:
+        """Get the Hyperdrive contract instance."""
+        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
 
 
 def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
@@ -82,7 +106,7 @@ def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hype
 
 
 OnChainTradeInfo = namedtuple(
-    "OnChainTradeInfo", ["hyper_trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
+    "OnChainTradeInfo", ["trades", "unique_maturities", "unique_ids", "unique_block_numbers", "share_price"]
 )
 
 
@@ -98,7 +122,7 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
     -------
     OnChainTradeInfo
         Named tuple containing the following fields:
-        - hyper_trades: pd.DataFrame
+        - trades: pd.DataFrame
             DataFrame containing all trades from the Hyperdrive contract.
         - unique_maturities: list
             List of unique maturity timestamps across all assets.
@@ -109,28 +133,26 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
         - share_price_
             Map of share price to block number.
     """
-    # get all trades and process
-    hyper_trades_ = hyperdrive.TransferSingle.query("*")
-    hyper_trades_ = pd.concat(
+    trades = hyperdrive.TransferSingle.query("*")  # get all trades
+    trades = pd.concat(  # flatten event_arguments
         [
-            # hyper_trades_.loc[:, ["block_number", "event_name"]], # keep only block_number and event_name
-            hyper_trades_.loc[:, [c for c in hyper_trades_.columns if c != "event_arguments"]],  # keep everything
-            pd.DataFrame((dict(i) for i in hyper_trades_["event_arguments"])),
+            trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
+            pd.DataFrame((dict(i) for i in trades["event_arguments"])),
         ],
         axis=1,
     )
-    tuple_series = hyper_trades_.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
-    hyper_trades_["prefix"], hyper_trades_["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
-    hyper_trades_["trade_type"] = hyper_trades_["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
-    hyper_trades_["value"] = hyper_trades_["value"]
+    tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
+    trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
+    trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
+    trades["value"] = trades["value"]
 
-    unique_maturities_ = hyper_trades_["maturity_timestamp"].unique()
+    unique_maturities_ = trades["maturity_timestamp"].unique()
     unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
 
-    unique_ids_: np.ndarray = hyper_trades_["id"].unique()
+    unique_ids_: np.ndarray = trades["id"].unique()
     unique_ids_ = unique_ids_[unique_ids_ != 0]
 
-    unique_block_numbers_ = hyper_trades_["block_number"].unique()
+    unique_block_numbers_ = trades["block_number"].unique()
 
     # map share price to block number
     share_price_ = {}
@@ -139,7 +161,54 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
     for block_number_, price in share_price_.items():
         logging.debug(("block_number_={}, price={}", block_number_, price))
 
-    return OnChainTradeInfo(hyper_trades_, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
+    return OnChainTradeInfo(trades, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
+
+
+def get_wallet_from_onchain_trade_info(
+    address_: str, index: int, info: OnChainTradeInfo, hyperdrive: ContractInstance, base: ContractInstance
+):
+    """Construct wallet balances from on-chain trade info.
+
+    Parameters
+    ----------
+    address_: str
+        Address of the wallet.
+    index: int
+        Index of the wallet.
+    on_chain_trade_info: OnChainTradeInfo
+        On-chain trade info.
+
+    Returns
+    -------
+    Wallet
+        Wallet with Short, Long, and LP positions.
+    """
+    # TODO: remove restriction forcing Wallet index to be an int (issue #415)
+    wallet = Wallet(address=index, balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE))
+    for position_id in info.unique_ids:
+        trades_in_position = (info.trades["operator"] == address_) & (info.trades["id"] == position_id)
+        balance = info.trades.loc[trades_in_position, "value"].sum()
+        asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
+        asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
+        assert abs(balance - hyperdrive.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI, (
+            f"events {balance=} and {hyperdrive.balanceOf(position_id, address_)=} disagree"
+            f"by more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
+        )
+
+        # check if there's an outstanding balance
+        if balance != 0 or hyperdrive.balanceOf(position_id, address_) != 0:
+            # loop across all the positions owned by this wallet
+            for specific_trade in trades_in_position.index[trades_in_position]:
+                if asset_type == "SHORT":
+                    open_share_price = info.share_price[info.trades.loc[specific_trade, "block_number"]]
+                    wallet.shorts |= {
+                        maturity - elfpy.SECONDS_IN_YEAR: Short(balance=balance, open_share_price=open_share_price)
+                    }
+                elif asset_type == "LONG":
+                    wallet.longs |= {maturity - elfpy.SECONDS_IN_YEAR: Long(balance=balance)}
+                elif asset_type == "LP":
+                    wallet.lp_tokens += balance
+    return wallet
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
