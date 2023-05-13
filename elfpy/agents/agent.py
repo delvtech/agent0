@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -38,7 +38,7 @@ class Agent:
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
-        self.contract = None  # assign on-chain address when deployed
+        self.contract: Any = None  # assign on-chain address when deployed
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
         name = str(self.__class__)

@@ -35,7 +35,6 @@ import elfpy.utils.outputs as output_utils
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
-from elfpy.utils.apeworx_integrations import to_fixed_point
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 
@@ -348,7 +347,13 @@ def get_accounts() -> list[KeyfileAccount]:
     return _dev_accounts
 
 
-def create_agent(_bot: BotInfo, _dev_accounts, faucet, base, on_chain_trade_info: ape_utils.OnChainTradeInfo):
+def create_agent(
+    _bot: BotInfo,
+    _dev_accounts: list[KeyfileAccount],
+    faucet: ContractInstance,
+    base: ContractInstance,
+    on_chain_trade_info: ape_utils.OnChainTradeInfo,
+):
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
     Parameters
@@ -391,7 +396,7 @@ def create_agent(_bot: BotInfo, _dev_accounts, faucet, base, on_chain_trade_info
     if (need_to_mint := params["budget"] - base.balanceOf(agent.contract.address) / 1e18) > 0:
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
-            txn_receipt: ReceiptAPI = faucet.mint(base.address, agent.wallet.address, to_fixed_point(50_000))
+            txn_receipt: ReceiptAPI = faucet.mint(base.address, agent.wallet.address, int(50_000 * 1e18))
             txn_receipt.await_confirmations()
     log_and_show(
         f" agent_{agent.contract.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
@@ -400,23 +405,31 @@ def create_agent(_bot: BotInfo, _dev_accounts, faucet, base, on_chain_trade_info
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address_=agent.contract.address,
         index=_bot.index,
-        on_chain_trade_info=on_chain_trade_info,
+        info=on_chain_trade_info,
         hyperdrive=hyperdrive,
         base=base,
     )
     return agent
 
 
-def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
-    """Get python agents & corresponding solidity wallets."""
+def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
+    """Get python agents & corresponding on-chain accounts.
+
+    Returns
+    -------
+    _sim_agents : dict[str, agentlib.Agent]
+        Dictionary of agents.
+    _dev_accounts : list[KeyfileAccount]
+        List of dev accounts.
+    """
     _dev_accounts: list[KeyfileAccount] = get_accounts()
     faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
 
     for bot_name in config.scratch["bot_names"]:
         _policy = config.scratch[bot_name].policy
         log_and_show(
-            f"{bot_name:6s}: n={config.scratch['num_'+bot_name]}  "
-            f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
+            f"{bot_name:6s}: n={config.scratch[f'num_{bot_name}']}  "
+            f"policy={_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__:20s}"
         )
     _sim_agents = {}
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
@@ -442,9 +455,9 @@ def do_trade():
     # market_type = trade_obj.market
     trade = trade_object.trade
     agent = sim_agents[f"agent_{trade.wallet.address}"].contract
-    amount = to_fixed_point(trade.trade_amount)
+    amount = int(trade.trade_amount * 1e18)
     if dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
-        args = hyperdrive.address, to_fixed_point(50_000)
+        args = hyperdrive.address, int(50_000 * 1e18)
         ape_utils.attempt_txn(agent, dai.approve, *args)
     params = {"trade_type": trade.action_type.name, "hyperdrive": hyperdrive, "agent": agent, "amount": amount}
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
@@ -461,7 +474,7 @@ def set_days_without_crashing(no_crash: int):
 
 def get_and_show_block_and_gas():
     """Get and show the latest block number and gas fees."""
-    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = ape_utils.get_gas_fees(latest_block)
+    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = ape_utils.get_gas_stats(latest_block)
     log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
     log_string += ", max_fee(max={},avg={}) priority_fee(max={},avg={})"
     log_vars = block_number, block_time, NO_CRASH
