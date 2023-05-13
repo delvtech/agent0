@@ -20,11 +20,15 @@ import pandas as pd
 import elfpy
 from elfpy import types
 from elfpy.types import freezable
+
+import elfpy
+from elfpy import types
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.utils.outputs import log_and_show
 from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.math import FixedPoint
+from elfpy.agents.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -331,6 +335,122 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
     pool_state["maturity_timestamp_"] = maturity_timestamp  # in seconds
     logging.debug("hyperdrive_pool_state=%s", pool_state)
     return pool_state
+
+
+PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
+
+
+# TODO: remove commenets after verifying the accuracy of this function through more testing (issue #423)
+def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
+    """Get the change in an agent's wallet from a transaction receipt."""
+    agent = tx_receipt.operator
+    event_args = tx_receipt.event_arguments
+    event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
+    # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
+    dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
+    dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
+    # dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
+    _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
+    mint_time = (
+        (maturity_timestamp - elfpy.SECONDS_IN_YEAR * pool_info.term_length) - pool_info.start_time
+    ) / elfpy.SECONDS_IN_YEAR
+    # token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
+    if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
+        #     lp_tokens=lp_out,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),
+            lp_tokens=trade["value"],  # trade output
+        )
+    elif trade_type == "removeLiquidity":
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=types.Quantity(amount=delta_base, unit=types.TokenType.BASE),
+        #     lp_tokens=-lp_shares,
+        #     withdraw_shares=withdraw_shares,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
+            lp_tokens=-trade["_shares"],  # negative, decreasing
+            withdraw_shares=trade["_shares"],  # positive, increasing
+        )
+    elif trade_type == "openLong":
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
+        #     longs={market.latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
+        #     fees_paid=trade_result.breakdown.fee,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=types.Quantity(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
+            longs={pool_info.block_time: Long(trade["value"])},  # trade output, increasing
+        )
+    elif trade_type == "closeLong":
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
+        #     longs={mint_time: wallet.Long(-bond_amount)},
+        #     fees_paid=fee,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
+            longs={mint_time: Long(-trade["_bondAmount"])},  # negative, decreasing
+        )
+    elif trade_type == "openShort":
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
+        #     shorts={
+        #         market.latest_checkpoint_time: wallet.Short(
+        #             balance=bond_amount, open_share_price=market.market_state.share_price
+        #         )
+        #     },
+        #     fees_paid=trade_result.breakdown.fee,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=types.Quantity(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
+            shorts={
+                pool_info.block_time: Short(
+                    balance=trade["value"],  # trade output
+                    open_share_price=pool_info.market_state.share_price,
+                )
+            },
+        )
+    else:
+        assert trade_type == "closeShort", f"Unknown trade type: {trade_type}"
+        # agent_deltas = wallet.Wallet(
+        #     address=wallet_address,
+        #     balance=types.Quantity(
+        #         amount=(market.market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base,
+        #         unit=types.TokenType.BASE,
+        #     ),  # see CLOSING SHORT LOGIC above
+        #     shorts={
+        #         mint_time: wallet.Short(
+        #             balance=-bond_amount,
+        #             open_share_price=0,
+        #         )
+        #     },
+        #     fees_paid=trade_result.breakdown.fee,
+        # )
+        agent_deltas = Wallet(
+            address=addresses.index(agent),
+            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
+            shorts={
+                mint_time: Short(
+                    balance=-trade["_bondAmount"],  # negative, decreasing
+                    open_share_price=0,
+                )
+            },
+        )
+    return agent_deltas
 
 
 def select_abi(
