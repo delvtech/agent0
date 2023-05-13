@@ -340,11 +340,11 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
-# TODO: remove commenets after verifying the accuracy of this function through more testing
+# TODO: remove commenets after verifying the accuracy of this function through more testing (issue #423)
 def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
-    agent = tx_receipt["operator"]  # type: ignore
-    event_args = tx_receipt["event_arguments"]  # type: ignore
+    agent = tx_receipt.operator
+    event_args = tx_receipt.event_arguments
     event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
     # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
