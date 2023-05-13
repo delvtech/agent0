@@ -10,7 +10,7 @@ from collections import defaultdict, namedtuple
 
 from ape.types import AddressType
 from ape.exceptions import TransactionError
-from ape.api import ReceiptAPI, TransactionAPI
+from ape.api import BlockAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
 from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
@@ -140,6 +140,61 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
         logging.debug(("block_number_={}, price={}", block_number_, price))
 
     return OnChainTradeInfo(hyper_trades_, unique_maturities_, unique_ids_, unique_block_numbers_, share_price_)
+
+
+def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
+    """Get the max and priority fees from a block (type 2 transactions only).
+
+    Parameters
+    ----------
+    block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
+        Block to get gas fees from.
+
+    Returns
+    -------
+    tuple[list[float], list[float]]
+        Tuple containing the max and priority fees.
+    """
+    # Pick out only type 2 transactions (EIP-1559). They have a max fee and priority fee.
+    type2_transactions = [txn for txn in block.transactions if txn.type == 2]
+    if len(type2_transactions) <= 0:
+        raise ValueError("No type 2 transactions in block")
+
+    # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
+    max_fees, priority_fees = zip(*[(txn.max_fee, txn.max_priority_fee) for txn in type2_transactions])
+
+    # Exclude None values solely for typechecking, then convert from wei to gwei (1 gwei = 1e9 wei)
+    max_fees = [max_fee / 1e9 for max_fee in max_fees if max_fee is not None]
+    priority_fees = [priority_fee / 1e9 for priority_fee in priority_fees if priority_fee is not None]
+
+    return max_fees, priority_fees
+
+
+def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
+    """Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
+
+    Parameters
+    ----------
+    block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
+        Block to get gas fees from.
+
+    Returns
+    -------
+    tuple[float, float, float, float]
+        Tuple containing the max and avg max and priority fees.
+    """
+    # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
+    max_fees, priority_fees = get_gas_fees(block)
+
+    # Calculate max and avg for max_fees
+    _max_max_fee = max(max_fees)
+    _avg_max_fee = sum(max_fees) / len(max_fees)
+
+    # Calculate max and avg for priority_fees
+    _max_priority_fee = max(priority_fees)
+    _avg_priority_fee = sum(priority_fees) / len(priority_fees)
+
+    return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
