@@ -10,7 +10,7 @@
       <img src="https://img.shields.io/badge/testing-pytest-blue.svg"/>
     </a>
   </div>
-  <img height="50px" src="https://codecov.io/gh/element-fi/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP">
+  <img height="50px" src="https://codecov.io/gh/delvtech/elf-simulations/branch/main/graphs/sunburst.svg?token=1S60MD42ZP">
 </div>
 
 # [DELV](https://delv.tech) market simulation and analysis
