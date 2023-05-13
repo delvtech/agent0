@@ -15,13 +15,13 @@ from typing import Optional, Type, cast
 
 # external lib
 import ape
-from ape.types import AddressType, ContractType
-import numpy as np
+from ape.types import AddressType
 from ape import Contract, accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
+import numpy as np
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
@@ -43,8 +43,8 @@ load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path
 
 NO_CRASH = 0
 USE_ALCHEMY = False
-DEVNET = True
-PROVIDER_STRING = "alchemy" if USE_ALCHEMY else "http://localhost:8547"
+DEVNET = False
+PROVIDER_STRING = "goerli:alchemy" if USE_ALCHEMY else "goerli:http://localhost:8547"
 
 CRASH_FILE = f"no_crash{'_devnet' if DEVNET else ''}.txt"
 RANDOM_SEED_FILE = f"random_seed{'_devnet' if DEVNET else ''}.txt"
@@ -52,12 +52,6 @@ RANDOM_SEED_FILE = f"random_seed{'_devnet' if DEVNET else ''}.txt"
 DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
-
-if USE_ALCHEMY:
-    from dotenv import load_dotenv
-
-    # load env from up one level
-    load_dotenv(dotenv_path=examples_dir.parent / ".env")
 
 
 class FixedFrida(agentlib.Agent):
@@ -292,8 +286,6 @@ class BotInfo:
         The risk for the agent.
     index : Optional[int]
         The index of the agent in the list of ALL agents.
-    index_internal : Optional[int]
-        The index of the agent in the list of THIS TYPE of agents.
     name : str
         The name of the agent.
     """
@@ -307,7 +299,6 @@ class BotInfo:
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
     risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
     index: Optional[int] = None
-    index_internal: Optional[int] = None
     name: str = "botty mcbotface"
 
 
@@ -358,35 +349,57 @@ def get_accounts() -> list[KeyfileAccount]:
 
 
 def create_agent(_bot: BotInfo, _dev_accounts, faucet, base, on_chain_trade_info: ape_utils.OnChainTradeInfo):
-    """Create an agent as defined in bot_info, assign its address, give it enough base."""
-    assert _bot.index is not None, "Bot must have a number."
-    assert _bot.index_internal is not None, "Bot must have an index."
-    assert isinstance(_bot.policy, agentlib.Agent), "Bot must have a policy of type Agent."
-    budget_mean, budget_std, budget_min, budget_max = bot.budget
-    _policy = _bot.policy
+    """Create an agent as defined in bot_info, assign its address, give it enough base.
+
+    Parameters
+    ----------
+    _bot : BotInfo
+        The bot to create.
+    _dev_accounts : list[KeyfileAccount]
+        The list of dev accounts.
+    faucet : ContractInstance
+        Contract for faucet that mints the testnet base token
+    base : ContractInstance
+        Contract for base token
+    on_chain_trade_info : ape_utils.OnChainTradeInfo
+        Information about on-chain trades.
+
+    Returns
+    -------
+    agentlib.Agent
+        The agent.
+    """
+    assert _bot.index is not None, "Bot must have an index."
+    assert isinstance(_bot.policy, type(agentlib.Agent)), "Bot must have a policy of type Agent."
     params = {
         "trade_chance": config.scratch["trade_chance"],
-        "budget": np.clip(config.rng.normal(loc=budget_mean, scale=budget_std), budget_min, budget_max),
+        "budget": np.clip(
+            config.rng.normal(loc=_bot.budget.mean, scale=_bot.budget.std), _bot.budget.min, _bot.budget.max
+        ),
+        "wallet_address": _dev_accounts[_bot.index].address,
     }
+    if _bot.name == "random":
+        params["rng"] = config.rng
     if _bot.risk_threshold and _bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = _bot.risk_threshold  # if risk threshold is manually set, we use it
     if _bot.name != "random":  # if risk threshold isn't manually set, we get a random one
-        risk_mean, risk_std, risk_min, risk_max = _bot.risk
-        params["risk_threshold"] = np.clip(config.rng.normal(loc=risk_mean, scale=risk_std), risk_min, risk_max)
-    agent = _policy(rng=config.rng, wallet_address=_dev_accounts[bot.num].address, **params)
-    agent.contract = _dev_accounts[_bot.index]  # assign its onchain address
+        params["risk_threshold"] = np.clip(
+            config.rng.normal(loc=_bot.risk.mean, scale=_bot.risk.std), _bot.risk.min, _bot.risk.max
+        )
+    agent = _bot.policy(**params)  # instantiate the agent with its policy and params
+    agent.contract = _dev_accounts[_bot.index]  # assign its onchain contract
     if (need_to_mint := params["budget"] - base.balanceOf(agent.contract.address) / 1e18) > 0:
-        log_and_show(f" agent_{agent.wallet.address[:8]} needs to mint {fmt(need_to_mint)} Base")
+        log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
             txn_receipt: ReceiptAPI = faucet.mint(base.address, agent.wallet.address, to_fixed_point(50_000))
             txn_receipt.await_confirmations()
-    log_string = f" agent_{agent.wallet.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
-    log_string += f" Eth={fmt(agent.contract.balance/1e18)}"
-    log_string += f" Base={fmt(base.balanceOf(agent.contract.address)/1e18)}"
-    log_and_show(log_string)
+    log_and_show(
+        f" agent_{agent.contract.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
+        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base.balanceOf(agent.contract.address)/1e18)}"
+    )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
-        address_=agent.wallet.address,
-        index=_bot.index_internal,
+        address_=agent.contract.address,
+        index=_bot.index,
         on_chain_trade_info=on_chain_trade_info,
         hyperdrive=hyperdrive,
         base=base,
@@ -401,16 +414,16 @@ def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatena
 
     for bot_name in config.scratch["bot_names"]:
         _policy = config.scratch[bot_name].policy
-        log_string = f"{bot_name:6s}: n={config.scratch['num_'+bot_name]}  "
-        log_string += f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
-        log_and_show(log_string)
+        log_and_show(
+            f"{bot_name:6s}: n={config.scratch['num_'+bot_name]}  "
+            f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
+        )
     _sim_agents = {}
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
         bot_info = config.scratch[bot_name]
-        bot_info.num = len(_sim_agents)
+        bot_info.index = len(_sim_agents)
         bot_info.name = bot_name
-        for index in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
-            bot_info.index = index
+        for _ in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
             agent = create_agent(
                 _bot=bot_info,
                 _dev_accounts=_dev_accounts,
