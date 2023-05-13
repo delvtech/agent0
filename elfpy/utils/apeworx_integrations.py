@@ -197,44 +197,45 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
 
-    shorts: dict[float, Short] = defaultdict(lambda: Short(0, 0))
-    longs: dict[float, Long] = defaultdict(lambda: Long(0))
-    lp_tokens = 0
-    for id_ in info.unique_ids:  # loop across all the positions
-        idx = (info.trades["operator"] == address_) & (info.trades["id"] == id_)
-        balance = info.trades.loc[idx, "value"].sum()
-        asset_prefix, maturity = hyperdrive_assets.decode_asset_id(id_)
+    # TODO: remove restriction forcing Wallet index to be an int (issue #415)
+    wallet = Wallet(address=index, balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE))
+    for position_id in info.unique_ids:
+        trades_in_position = (info.trades["operator"] == address_) & (info.trades["id"] == position_id)
+        balance = info.trades.loc[trades_in_position, "value"].sum()
+        asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        assert (
-            abs(balance - hyperdrive.balanceOf(id_, address_)) < 3
-        ), f"events {balance=} != {hyperdrive.balanceOf(id_, address_)=} for address {address_}"
-        if balance != 0 or hyperdrive.balanceOf(id_, address_) != 0:  # this agent has a position in this asset
+        assert abs(balance - hyperdrive.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI, (
+            f"events {balance=} and {hyperdrive.balanceOf(position_id, address_)=} disagree"
+            f"by more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
+        )
+
+        # check if there's an outstanding balance
+        if balance != 0 or hyperdrive.balanceOf(position_id, address_) != 0:
+            # log the aggregate balances for the position
             logging.debug(
                 "%s %s maturing %s, balance: from events %s, from balanceOf %s",
                 address_[:8],
                 asset_type,
                 maturity,
                 balance,
-                hyperdrive.balanceOf(id_, address_),
+                hyperdrive.balanceOf(position_id, address_),
             )
-            log_subtotals(balance, hyperdrive.balanceOf(id_, address_), info.trades, idx, asset_type)
-            for idx in idx.index[idx]:  # loop across all the positions owned by this wallet
+            log_subtotals(
+                balance, hyperdrive.balanceOf(position_id, address_), info.trades, trades_in_position, asset_type
+            )
+
+            # loop across all the positions owned by this wallet
+            for specific_trade in trades_in_position.index[trades_in_position]:
                 if asset_type == "SHORT":
-                    open_share_price = info.share_price[info.trades.loc[idx, "block_number"]]
-                    shorts |= {
+                    open_share_price = info.share_price[info.trades.loc[specific_trade, "block_number"]]
+                    wallet.shorts |= {
                         maturity - elfpy.SECONDS_IN_YEAR: Short(balance=balance, open_share_price=open_share_price)
                     }
                 elif asset_type == "LONG":
-                    longs |= {maturity - elfpy.SECONDS_IN_YEAR: Long(balance=balance)}
+                    wallet.longs |= {maturity - elfpy.SECONDS_IN_YEAR: Long(balance=balance)}
                 elif asset_type == "LP":
-                    lp_tokens += balance
-    return Wallet(
-        address=index,  # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-        balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE),
-        shorts=shorts,
-        longs=longs,
-        lp_tokens=lp_tokens,
-    )
+                    wallet.lp_tokens += balance
+    return wallet
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
