@@ -190,8 +190,14 @@ def get_wallet_from_onchain_trade_info(
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
     wallet = Wallet(address=index, balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE))
     for position_id in info.unique_ids:
-        trades_in_position = (info.trades["operator"] == address_) & (info.trades["id"] == position_id)
-        balance = info.trades.loc[trades_in_position, "value"].sum()
+        trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
+            info.trades["id"] == position_id
+        )
+        logging.debug("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
+        balance = (
+            info.trades.loc[(trades_in_position) & (info.trades["to"] == address_), "value"].sum()
+            - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
+        )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
         assert abs(balance - hyperdrive.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI, (
@@ -588,8 +594,14 @@ def ape_trade(
             return None, None
         return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive), tx_receipt
     except TransactionError as exc:
-        var = trade_type, exc, fmt(amount), agent, hyperdrive.getPoolInfo().__dict__
-        logging.error("Failed to execute %s: %s\n =>  Agent: %s\n => Pool: %s\n", *var)
+        logging.error(
+            "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
+            trade_type,
+            exc,
+            fmt(amount),
+            agent,
+            hyperdrive.getPoolInfo().__dict__,
+        )
         return None, None
 
 
