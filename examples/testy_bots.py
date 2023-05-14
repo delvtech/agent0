@@ -11,6 +11,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
+from time import time as now
 from typing import Optional, Type, cast
 
 # external lib
@@ -425,24 +426,30 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
     _dev_accounts: list[KeyfileAccount] = get_accounts()
     faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
 
+    bot_num = 0
     for bot_name in config.scratch["bot_names"]:
         _policy = config.scratch[bot_name].policy
         log_and_show(
             f"{bot_name:6s}: n={config.scratch[f'num_{bot_name}']}  "
             f"policy={_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__:20s}"
         )
+        bot_num += config.scratch[f"num_{bot_name}"]
     _sim_agents = {}
+    start_time_ = now()
+    on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive=hyperdrive)
+    log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
         bot_info = config.scratch[bot_name]
-        bot_info.index = len(_sim_agents)
         bot_info.name = bot_name
         for _ in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
+            bot_info.index = len(_sim_agents)
+            log_and_show(f"Creating {bot_name} agent {bot_info.index}/{bot_num}: {bot_info=}")
             agent = create_agent(
                 _bot=bot_info,
                 _dev_accounts=_dev_accounts,
                 faucet=faucet,
                 base=dai,
-                on_chain_trade_info=ape_utils.get_on_chain_trade_info(hyperdrive),
+                on_chain_trade_info=on_chain_trade_info,
             )
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
     return _sim_agents, _dev_accounts
