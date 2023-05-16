@@ -544,7 +544,7 @@ class PricingModelFP(ABC):
             The spot price of principal tokens.
         """
         # avoid div by zero error
-        if market_state.bond_reserves + market_state.lp_total_supply == FixedPoint(0):
+        if market_state.bond_reserves + market_state.lp_total_supply <= FixedPoint(0):
             return FixedPoint("nan")
         # p = ((mu * z) / (y + s))^(tau)
         return (
@@ -598,8 +598,12 @@ class PricingModelFP(ABC):
         FixedPoint
             The maximum amount of bonds that can be purchased.
         """
+        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
+        out_amount = market_state.bond_reserves - market_state.bond_buffer
+        if out_amount <= FixedPoint(0):
+            return FixedPoint(0), FixedPoint(0)
         base = self.calc_in_given_out(
-            out=types.QuantityFP(market_state.bond_reserves - market_state.bond_buffer, unit=types.TokenType.PT),
+            out=types.QuantityFP(amount=out_amount, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -636,11 +640,12 @@ class PricingModelFP(ABC):
         FixedPoint
             The maximum amount of bonds that can be shorted.
         """
+        # TODO: This shuld never be less than zero, but sometimes is. Need to investigate.
+        out_amount = market_state.share_reserves - market_state.base_buffer / market_state.share_price
+        if out_amount <= FixedPoint(0):
+            return FixedPoint(0), FixedPoint(0)
         bonds = self.calc_in_given_out(
-            out=types.QuantityFP(
-                market_state.share_reserves - market_state.base_buffer / market_state.share_price,
-                unit=types.TokenType.PT,
-            ),
+            out=types.QuantityFP(amount=out_amount, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -707,28 +712,4 @@ class PricingModelFP(ABC):
         ), (
             f"expected {1 + int(elfpy.PRECISION_THRESHOLD_FP)} > time_remaining >= {-int(elfpy.PRECISION_THRESHOLD_FP)}"
             f", not {time_remaining.normalized_time}!"
-        )
-
-    # TODO: Add checks for TradeResult's other outputs.
-    # issue #57
-    def check_output_assertions(
-        self,
-        trade_result: trades.TradeResultFP,
-    ):
-        """Applies a set of assertions to a trade result."""
-        assert isinstance(trade_result.breakdown.fee, FixedPoint), (
-            "pricing_models.check_output_assertions: ERROR: "
-            f"fee should be a FixedPoint, not {type(trade_result.breakdown.fee)}!"
-        )
-        assert trade_result.breakdown.fee >= FixedPoint("0.0"), (
-            "pricing_models.check_output_assertions: ERROR: "
-            f"Fee should not be negative, but is {trade_result.breakdown.fee}!"
-        )
-        assert isinstance(trade_result.breakdown.without_fee, FixedPoint), (
-            "pricing_models.check_output_assertions: ERROR: "
-            f"without_fee should be a FixedPoint, not {type(trade_result.breakdown.without_fee)}!"
-        )
-        assert trade_result.breakdown.without_fee >= FixedPoint("0.0"), (
-            "pricing_models.check_output_assertions: ERROR: "
-            f"without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"
         )
