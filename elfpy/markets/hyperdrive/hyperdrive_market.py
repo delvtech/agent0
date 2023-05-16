@@ -916,15 +916,17 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         """Returns a new copy of self"""
         return MarketStateFP(**copy.deepcopy(self.__dict__))
 
-    def check_non_zero(self, dictionary: dict | defaultdict) -> None:
+    def check_non_zero(self, dictionary: dict | defaultdict | None = None) -> None:
         """Test that all market state variables are greater than zero"""
+        if dictionary is None:
+            dictionary = self.__dict__
         for key, value in dictionary.items():
-            if isinstance(value, FixedPoint):
-                assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
-            elif isinstance(value, (dict, defaultdict)):
+            if isinstance(value, FixedPoint) and value < FixedPoint(0):
+                raise AssertionError(f"{key} attribute with {value=} must be >= 0.")
+            if isinstance(value, (dict, defaultdict)):
                 self.check_non_zero(value)
             else:
-                pass  # noop; frozen, etc
+                continue  # noop; frozen, etc
 
 
 class MarketFP(

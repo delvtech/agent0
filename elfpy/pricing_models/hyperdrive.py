@@ -450,6 +450,8 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         TradeResult
             The result of performing the trade
         """
+        if out.amount < FixedPoint(0):
+            raise ValueError(f"{out.amount=} must be greater than or equal to zero.")
         # Calculate some common values up front
         d_bonds = out.amount * (
             FixedPoint("1.0") - time_remaining.normalized_time
@@ -595,6 +597,8 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         TradeResult
             The result of performing the trade.
         """
+        if in_.amount < FixedPoint(0):
+            raise ValueError(f"{in_.amount=} must be greater than or equal to zero.")
         # Calculate some common values up front
         d_bonds = in_.amount * (
             FixedPoint("1.0") - time_remaining.normalized_time

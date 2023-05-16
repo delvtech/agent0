@@ -427,14 +427,14 @@ class WalletFP:
                 raise ValueError(f"wallet_key={key} is not allowed.")
             self.check_non_zero(self.__dict__)
 
-    def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, BorrowFP]]) -> None:
+    def _update_borrows(self, borrows: Iterable[tuple[int, BorrowFP]]) -> None:
         for mint_time, borrow_summary in borrows:
-            if mint_time != borrow_summary.start_time:
+            if FixedPoint(mint_time) != borrow_summary.start_time:
                 raise ValueError(
                     f"The borrow summary key, {mint_time=}, must equal the start time, {borrow_summary.start_time=}"
                 )
-            if borrow_summary.start_time in self.borrows:  #  entry already exists for this mint_time, so add to it
-                self.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
+            if int(borrow_summary.start_time) in self.borrows:  #  entry already exists for this mint_time, so add to it
+                self.borrows[int(borrow_summary.start_time)].borrow_amount += borrow_summary.borrow_amount
             else:
                 self.borrows.update({int(borrow_summary.start_time): borrow_summary})
             if self.borrows[int(borrow_summary.start_time)].borrow_amount == FixedPoint(0):
