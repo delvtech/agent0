@@ -922,7 +922,7 @@ class MarketStateFP(base_market.BaseMarketStateFP):
             dictionary = self.__dict__
         for key, value in dictionary.items():
             if isinstance(value, FixedPoint) and value < FixedPoint(0):
-                raise AssertionError(f"{key} attribute with {value=} must be >= 0.")
+                raise AssertionError(f"{key} attribute with {value=} must be >= 0")
             if isinstance(value, (dict, defaultdict)):
                 self.check_non_zero(value)
             else:
@@ -1057,7 +1057,7 @@ class MarketFP(
             ]
             and agent_action.mint_time is None
         ):
-            raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
+            raise ValueError(f"{agent_action.mint_time=} must be provided when closing a short or long")
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltasFP()
         agent_deltas = wallet.WalletFP(address=0)
@@ -1146,6 +1146,7 @@ class MarketFP(
             lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)
+        self.market_state.check_non_zero()
         return market_deltas, agent_deltas
 
     def open_short(
