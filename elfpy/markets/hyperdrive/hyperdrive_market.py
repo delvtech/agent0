@@ -1002,28 +1002,6 @@ class MarketFP(
         latest_checkpoint = FixedPoint(latest_checkpoint_days) / FixedPoint("365.0")
         return latest_checkpoint
 
-    def check_action(self, agent_action: hyperdrive_actions.MarketActionFP) -> None:
-        r"""Ensure that the agent action is an allowed action for this market
-
-        Parameters
-        ----------
-        action_type : MarketActionType
-            See MarketActionType for all acceptable actions that can be performed on this market
-
-        Returns
-        -------
-        None
-        """
-        if (
-            agent_action.action_type
-            in [
-                hyperdrive_actions.MarketActionType.CLOSE_LONG,
-                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
-            ]
-            and agent_action.mint_time is None
-        ):
-            raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
-
     def perform_action(
         self, action_details: tuple[int, hyperdrive_actions.MarketActionFP]
     ) -> tuple[int, wallet.WalletFP, hyperdrive_actions.MarketDeltasFP]:
@@ -1070,7 +1048,16 @@ class MarketFP(
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
-        self.check_action(agent_action)
+        # mint time is required if closing a position
+        if (
+            agent_action.action_type
+            in [
+                hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
+            ]
+            and agent_action.mint_time is None
+        ):
+            raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltasFP()
         agent_deltas = wallet.WalletFP(address=0)
@@ -1120,7 +1107,7 @@ class MarketFP(
         except AssertionError as err:
             logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
         logging.debug(
-            "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
+            "agent_action=%s\nmarket_deltas=%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
             market_deltas,
             agent_deltas,
