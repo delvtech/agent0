@@ -348,7 +348,7 @@ class FixedPoint:
 
     def __bool__(self) -> bool:
         """Cast to bool"""
-        if self.is_finite() and self == FixedPoint(0):
+        if self.is_finite() and self != FixedPoint(0):
             return True
         return False
 
