@@ -2155,9 +2155,7 @@ def calc_free_margin_fp(
     return withdraw_pool_deltas
 
 
-def check_output_assertions(
-    trade_result: trades.TradeResultFP,
-):
+def check_output_assertions(trade_result: trades.TradeResultFP):
     """Applies a set of assertions to a trade result."""
     assert isinstance(
         trade_result.breakdown.fee, FixedPoint
