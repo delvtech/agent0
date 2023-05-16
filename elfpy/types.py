@@ -74,7 +74,8 @@ def freezable(frozen: bool = False, no_new_attribs: bool = False) -> Type:
                     try:
                         if isinstance(attr_value, list):
                             new_data[attr_name] = [new_type(val) for val in attr_value]
-                        new_data[attr_name] = new_type(attr_value)
+                        else:
+                            new_data[attr_name] = new_type(attr_value)
                         self.__annotations__[attr_name] = new_type
                     except (ValueError, TypeError) as err:
                         raise TypeError(
