@@ -25,7 +25,7 @@ from matplotlib.axes import Axes
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # %% [markdown]
-# <a href="https://colab.research.google.com/github/element-fi/elf-simulations/blob/4536bb486b7ce857840996448dbb479adb1c5c14/examples/notebooks/hyperdrive.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# <a href="https://colab.research.google.com/github/delvtech/elf-simulations/blob/4536bb486b7ce857840996448dbb479adb1c5c14/examples/notebooks/hyperdrive.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 # %% [markdown]
 # ## Hyperdrive Simulation
@@ -36,7 +36,7 @@ from matplotlib.axes import Axes
 # - they trade at random intervals calibrated to be roughly twice per term (1 open 1 close)
 # - there is one Liquidity Provider which deposits 500 million of liquidity
 #
-# For details on the simulation framework, please see our <a href="https://elfpy.element.fi/">simulation documentation</a>
+# For details on the simulation framework, please see our <a href="https://elfpy.delv.tech/">simulation documentation</a>
 
 # %% [markdown]
 # ### Install repo requirements & import packages
@@ -49,14 +49,14 @@ try:  # install repo only if running on google colab
     import os
 
     os.system(
-        "!pip install git+https://github.com/element-fi/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
+        "!pip install git+https://github.com/delvtech/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
     )
 except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
 # %%
 import numpy as np
-from numpy.random._generator import Generator
+from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -109,7 +109,7 @@ class RandomAgent(random_agent.RandomAgent):
     Customized from the policy in that one can force the agent to only open longs or shorts
     """
 
-    def __init__(self, rng: Generator, trade_chance_pct: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(self, rng: NumpyGenerator, trade_chance_pct: float, wallet_address: int, budget: int = 10_000) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
@@ -146,7 +146,7 @@ class RandomAgent(random_agent.RandomAgent):
 
 
 def get_example_agents(
-    rng: Generator, budget: int, new_agents: int, existing_agents: int = 0, direction: str | None = None
+    rng: NumpyGenerator, budget: int, new_agents: int, existing_agents: int = 0, direction: str | None = None
 ) -> list[AgentFP]:
     """Instantiate a set of custom agents"""
     agents = []
