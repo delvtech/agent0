@@ -925,6 +925,8 @@ class MarketStateFP(base_market.BaseMarketStateFP):
                 raise AssertionError(f"{key} attribute with {value=} must be >= 0")
             if isinstance(value, (dict, defaultdict)):
                 self.check_non_zero(value)
+            elif isinstance(value, CheckpointFP):
+                self.check_non_zero(value.__dict__)
             else:
                 continue  # noop; frozen, etc
 

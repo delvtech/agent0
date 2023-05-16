@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import unittest
-
+from collections import defaultdict
 
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
@@ -14,7 +14,7 @@ from elfpy.math import FixedPoint
 # TODO: remove this after FixedPoint PRs are finished
 
 
-class BaseMarketTest(unittest.TestCase):
+class MarketTest(unittest.TestCase):
     """Generic Parameter Test class"""
 
     # TODO: This approx should be much lower
@@ -256,3 +256,122 @@ class BaseMarketTest(unittest.TestCase):
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected bond_reserves",
                 )
+
+    def test_market_state_check_non_zero(self):
+        """Test the MarkeState ability to verify none of the inputs are <=0"""
+        # pylint: disable=too-many-statements
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(lp_total_supply=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(share_reserves=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(bond_reserves=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(base_buffer=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(bond_buffer=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(variable_apr=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(share_price=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(init_share_price=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(curve_fee_multiple=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(flat_fee_multiple=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(governance_fee_multiple=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(gov_fees_accrued=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(longs_outstanding=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(shorts_outstanding=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(long_average_maturity_time=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(short_average_maturity_time=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(long_base_volume=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(short_base_volume=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                checkpoints=defaultdict(
+                    hyperdrive_market.CheckpointFP, {0: hyperdrive_market.CheckpointFP(share_price=FixedPoint(-1.0))}
+                )
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                checkpoints=defaultdict(
+                    hyperdrive_market.CheckpointFP,
+                    {0: hyperdrive_market.CheckpointFP(long_share_price=FixedPoint(-1.0))},
+                ),
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                checkpoints=defaultdict(
+                    hyperdrive_market.CheckpointFP,
+                    {0: hyperdrive_market.CheckpointFP(long_base_volume=FixedPoint(-1.0))},
+                ),
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                checkpoints=defaultdict(
+                    hyperdrive_market.CheckpointFP,
+                    {0: hyperdrive_market.CheckpointFP(short_base_volume=FixedPoint(-1.0))},
+                )
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(checkpoint_duration=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(checkpoint_duration_days=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                total_supply_longs=defaultdict(
+                    FixedPoint, {0: FixedPoint(0.0), 1: FixedPoint(10.0), 2: FixedPoint(-1.0)}
+                )
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(
+                total_supply_shorts=defaultdict(FixedPoint, {0: FixedPoint(-1.0)})
+            )
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(total_supply_withdraw_shares=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(withdraw_shares_ready_to_withdraw=FixedPoint(-1.0))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(withdraw_capital=FixedPoint(-1))
+            market_state.check_non_zero()
+        with self.assertRaises(AssertionError):
+            market_state = hyperdrive_market.MarketStateFP(withdraw_interest=FixedPoint(-1))
+            market_state.check_non_zero()
