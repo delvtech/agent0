@@ -5,7 +5,7 @@ import numpy as np
 from numpy.random._generator import Generator as numpyGenerator
 
 import elfpy
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
@@ -14,7 +14,7 @@ from elfpy.math import FixedPoint
 # pylint: disable=too-many-arguments
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """Random agent"""
 
     def __init__(self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: int = 10_000) -> None:
@@ -198,7 +198,7 @@ class Policy(agent.Agent):
         return []
 
 
-class RandomAgent(agent.AgentFP):
+class RandomAgent(elf_agent.AgentFP):
     """Random agent"""
 
     def __init__(

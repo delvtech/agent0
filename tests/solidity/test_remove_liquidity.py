@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -17,9 +17,9 @@ class TestRemoveLiquidity(unittest.TestCase):
     contribution: float = 500_000_000
     target_apr: float = 0.05
     term_length: int = 365
-    alice: agent.Agent
-    bob: agent.Agent
-    celine: agent.Agent
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTime
 
@@ -27,9 +27,9 @@ class TestRemoveLiquidity(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = agent.Agent(wallet_address=2, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(

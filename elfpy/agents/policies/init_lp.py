@@ -4,14 +4,14 @@ Special reserved user strategy that is used to initialize a market with a desire
 """
 from typing import List
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """Adds a large LP"""
 
     def action(self, market: hyperdrive_market.Market) -> "list[types.Trade]":
@@ -32,7 +32,7 @@ class Policy(agent.Agent):
         ]
 
 
-class InitializeLiquidityAgent(agent.AgentFP):
+class InitializeLiquidityAgent(elf_agent.AgentFP):
     """Adds a large LP"""
 
     def action(self, market: hyperdrive_market.MarketFP) -> List[types.Trade]:

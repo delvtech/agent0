@@ -1,7 +1,7 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
 from typing import List
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 # pylint: disable=too-many-arguments
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """
     simple long
     only has one long open at a time
@@ -51,7 +51,7 @@ class Policy(agent.Agent):
         return action_list
 
 
-class SingleLongAgent(agent.AgentFP):
+class SingleLongAgent(elf_agent.AgentFP):
     """
     simple long
     only has one long open at a time

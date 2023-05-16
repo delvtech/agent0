@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from typing import List
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """
     simple LP
     only has one LP open at a time
@@ -59,7 +59,7 @@ class Policy(agent.Agent):
         return action_list
 
 
-class LpAndWithdrawAgent(agent.AgentFP):
+class LpAndWithdrawAgent(elf_agent.AgentFP):
     """
     simple LP
     only has one LP open at a time

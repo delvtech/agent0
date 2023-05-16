@@ -14,14 +14,14 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.simulators as simulators
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.types as types
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class CustomShorter(agent.Agent):
+class CustomShorter(elf_agent.Agent):
     """
     Agent that is trying to optimize on a rising vault APR via shorts
     """
@@ -66,7 +66,7 @@ class CustomShorter(agent.Agent):
         return action_list
 
 
-def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[agent.Agent]:
+def get_example_agents(new_agents: int, existing_agents: int = 0) -> list[elf_agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
