@@ -2,7 +2,7 @@
 
 import unittest
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -19,16 +19,16 @@ class TestCheckpoint(unittest.TestCase):
 
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
-    alice: agent.AgentFP
-    bob: agent.AgentFP
-    celine: agent.AgentFP
+    alice: elf_agent.AgentFP
+    bob: elf_agent.AgentFP
+    celine: elf_agent.AgentFP
     hyperdrive: hyperdrive_markets.MarketFP
     block_time: time.BlockTimeFP
 
     def setUp(self):
-        self.alice = agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = agent.AgentFP(wallet_address=1, budget=self.contribution)
-        self.celine = agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()

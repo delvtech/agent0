@@ -1,7 +1,7 @@
 """Open long market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.types as types
@@ -18,9 +18,9 @@ class TestOpenLong(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: agent.AgentFP
-    bob: agent.AgentFP
-    celine: agent.AgentFP
+    alice: elf_agent.AgentFP
+    bob: elf_agent.AgentFP
+    celine: elf_agent.AgentFP
     hyperdrive: hyperdrive_market.MarketFP
     block_time: time.BlockTimeFP
 
@@ -28,9 +28,9 @@ class TestOpenLong(unittest.TestCase):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = agent.AgentFP(wallet_address=1, budget=self.contribution)
-        self.celine = agent.AgentFP(wallet_address=2, budget=self.contribution)
+        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.AgentFP(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
         market_state = hyperdrive_market.MarketStateFP()
@@ -49,7 +49,7 @@ class TestOpenLong(unittest.TestCase):
 
     def verify_open_long(
         self,
-        user: agent.AgentFP,
+        user: elf_agent.AgentFP,
         market_state_before: hyperdrive_market.MarketStateFP,
         contribution: FixedPoint,
         base_amount: FixedPoint,

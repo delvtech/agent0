@@ -1,14 +1,14 @@
 """User strategy that opens a single short and doesn't close until liquidation"""
 from typing import List
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """simple short thatonly has one long open at a time"""
 
     def __init__(self, wallet_address, budget=100):
@@ -36,7 +36,7 @@ class Policy(agent.Agent):
         return action_list
 
 
-class SingleShortAgent(agent.AgentFP):
+class SingleShortAgent(elf_agent.AgentFP):
     """simple short thatonly has one long open at a time"""
 
     def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("100.0")):

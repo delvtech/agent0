@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import pytest
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -23,9 +23,9 @@ class TestFees(unittest.TestCase):
     target_apr: float = 0.5
     term_length: int = 365
     trade_amount: float = 1
-    alice: agent.Agent
-    bob: agent.Agent
-    gary: agent.Agent  # governance gary
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    gary: elf_agent.Agent  # governance gary
     hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTime
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
@@ -39,11 +39,11 @@ class TestFees(unittest.TestCase):
             setattr(self, key, value)
         if target_apr:
             self.target_apr = target_apr
-        self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.bob.budget = self.trade_amount
         self.bob.wallet.balance = types.Quantity(amount=self.trade_amount, unit=types.TokenType.BASE)
-        self.gary = agent.Agent(wallet_address=2, budget=0)
+        self.gary = elf_agent.Agent(wallet_address=2, budget=0)
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(

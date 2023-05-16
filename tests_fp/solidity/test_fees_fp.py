@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import pytest
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -23,10 +23,10 @@ class TestFees(unittest.TestCase):
 
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
-    alice: agent.AgentFP
-    bob: agent.AgentFP
-    celine: agent.AgentFP
-    gary: agent.AgentFP  # governance gary
+    alice: elf_agent.AgentFP
+    bob: elf_agent.AgentFP
+    celine: elf_agent.AgentFP
+    gary: elf_agent.AgentFP  # governance gary
     hyperdrive: hyperdrive_market.MarketFP
     block_time: time.BlockTimeFP
     term_length: FixedPoint = FixedPoint("365.0")
@@ -42,11 +42,11 @@ class TestFees(unittest.TestCase):
             setattr(self, key, value)
         if target_apr:
             self.target_apr = FixedPoint(float(target_apr))
-        self.alice = agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
         self.bob.budget = FixedPoint(self.trade_amount)
         self.bob.wallet.balance = types.QuantityFP(amount=self.trade_amount, unit=types.TokenType.BASE)
-        self.gary = agent.AgentFP(wallet_address=2, budget=FixedPoint(0))
+        self.gary = elf_agent.AgentFP(wallet_address=2, budget=FixedPoint(0))
         self.block_time = time.BlockTimeFP()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
         market_state = hyperdrive_market.MarketStateFP(

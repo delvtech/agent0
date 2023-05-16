@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import numpy as np
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
@@ -28,17 +28,17 @@ class TestCloseShort(unittest.TestCase):
     contribution: float = 500_000_000
     target_apr: float = 0.05
     term_length: int = 365
-    alice: agent.Agent
-    bob: agent.Agent
-    celine: agent.Agent
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
         This function is run before each test method.
         """
-        self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
@@ -60,7 +60,7 @@ class TestCloseShort(unittest.TestCase):
 
     def verify_close_short(
         self,
-        example_agent: agent.Agent,
+        example_agent: elf_agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
         agent_base_paid: float,
         agent_base_proceeds: float,

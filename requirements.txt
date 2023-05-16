@@ -9,7 +9,6 @@ pylint
 pyright
 pytest
 scipy
-stochastic
 tomli
 eth-ape
 python-dotenv

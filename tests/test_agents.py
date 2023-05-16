@@ -8,7 +8,7 @@ from os import path, walk
 
 import numpy as np
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.agents.policies as policies
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -18,7 +18,7 @@ import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
 
 
-class TestPolicy(agent.Agent):
+class TestPolicy(elf_agent.Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
 
     def __init__(self, wallet_address, budget=1000):
@@ -52,7 +52,7 @@ class TestAgent(unittest.TestCase):
         filenames = next(walk(policies_path), (None, None, []))[2]
         agent_policies = [path.splitext(filename)[0] for filename in filenames if "__init__" not in filename]
         # Instantiate an agent for each policy
-        self.agent_list: list[agent.Agent] = []
+        self.agent_list: list[elf_agent.Agent] = []
         for agent_id, policy_name in enumerate(agent_policies):
             if policy_name == "random_agent":
                 example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
@@ -128,7 +128,7 @@ class TestAgent(unittest.TestCase):
     def test_no_action_failure(self):
         """Tests for Agent instantiation when no action function was defined"""
 
-        class TestErrorPolicy(agent.Agent):
+        class TestErrorPolicy(elf_agent.Agent):
             """This class was made for testing purposes. It does not implement the required self.action() method"""
 
             # Purposefully incorrectly implemented

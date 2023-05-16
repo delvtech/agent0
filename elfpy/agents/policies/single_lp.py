@@ -1,5 +1,5 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.types as types
@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 # issue #217
 
 
-class Policy(agent.Agent):
+class Policy(elf_agent.Agent):
     """simple LP that only has one LP open at a time"""
 
     def __init__(self, wallet_address, budget=1000):
@@ -40,7 +40,7 @@ class Policy(agent.Agent):
         return action_list
 
 
-class SingleLpAgent(agent.AgentFP):
+class SingleLpAgent(elf_agent.AgentFP):
     """simple LP that only has one LP open at a time"""
 
     def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):

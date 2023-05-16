@@ -2,7 +2,7 @@
 
 import unittest
 
-import elfpy.agents.agent as agent
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -14,16 +14,16 @@ class TestAddLiquidity(unittest.TestCase):
 
     contribution = 500_000_000
     target_apr = 0.05
-    alice: agent.Agent
-    bob: agent.Agent
-    celine: agent.Agent
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
     hyperdrive: hyperdrive_markets.Market
     block_time: time.BlockTime
 
     def setUp(self):
-        self.alice = agent.Agent(wallet_address=0, budget=self.contribution)
-        self.bob = agent.Agent(wallet_address=1, budget=self.contribution)
-        self.celine = agent.Agent(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.block_time = time.BlockTime()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
