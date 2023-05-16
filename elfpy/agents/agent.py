@@ -569,12 +569,17 @@ class AgentFP:
         longs = list(self.wallet.longs.values())
         shorts = list(self.wallet.shorts.values())
         # Calculate the total pnl of the trader.
-        longs_value = (sum(long.balance for long in longs) if longs else FixedPoint(0)) * price
+        longs_value = (FixedPoint(sum(float(long.balance) for long in longs)) if longs else FixedPoint(0)) * price
         shorts_value = (
-            sum(
-                # take the interest from the margin and subtract the bonds shorted at the current price
-                (market.market_state.share_price / short.open_share_price) * short.balance - price * short.balance
-                for short in shorts
+            FixedPoint(
+                sum(
+                    # take the interest from the margin and subtract the bonds shorted at the current price
+                    float(
+                        (market.market_state.share_price / short.open_share_price) * short.balance
+                        - price * short.balance
+                    )
+                    for short in shorts
+                )
             )
             if shorts
             else FixedPoint(0)
