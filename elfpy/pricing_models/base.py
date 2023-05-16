@@ -7,13 +7,13 @@ from decimal import Decimal, getcontext
 from typing import TYPE_CHECKING
 
 import elfpy
-import elfpy.pricing_models.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.price as price_utils
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
+    import elfpy.pricing_models.trades as trades
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
@@ -359,12 +359,10 @@ class PricingModel(ABC):
             f", not {time_remaining.normalized_time}!"
         )
 
-    # TODO: Add checks for TradeResult's other outputs.
-    # issue #57
     def check_output_assertions(
         self,
         trade_result: trades.TradeResult,
-    ):
+    ) -> None:
         """Applies a set of assertions to a trade result."""
         assert isinstance(trade_result.breakdown.fee, float), (
             "pricing_models.check_output_assertions: ERROR: "
