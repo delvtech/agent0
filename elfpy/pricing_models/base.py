@@ -302,12 +302,12 @@ class PricingModel(ABC):
         base_amount = market_state.share_reserves * market_state.share_price - market_state.base_buffer
         max_short_pt = self.calc_in_given_out(
             out=types.Quantity(
-                base_amount,
-                unit=types.TokenType.BASE,
+                market_state.share_reserves - market_state.base_buffer / market_state.share_price,
+                unit=types.TokenType.PT,
             ),
             market_state=market_state,
             time_remaining=time_remaining,
-        ).breakdown.without_fee
+        ).breakdown.with_fee
         max_short_max_loss = max_short_pt - base_amount
         return max_short_max_loss, max_short_pt
 
@@ -633,7 +633,8 @@ class PricingModelFP(ABC):
         FixedPoint
             The maximum amount of bonds that can be shorted.
         """
-        bonds = self.calc_in_given_out(
+        base_amount = market_state.share_reserves * market_state.share_price - market_state.base_buffer
+        max_short_pt = self.calc_in_given_out(
             out=types.QuantityFP(
                 market_state.share_reserves - market_state.base_buffer / market_state.share_price,
                 unit=types.TokenType.PT,
@@ -641,12 +642,8 @@ class PricingModelFP(ABC):
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
-        base = self.calc_out_given_in(
-            in_=types.QuantityFP(amount=bonds, unit=types.TokenType.PT),
-            market_state=market_state,
-            time_remaining=time_remaining,
-        ).breakdown.with_fee
-        return base, bonds
+        max_short_max_loss = max_short_pt - base_amount
+        return max_short_max_loss, max_short_pt
 
     def calc_time_stretch(self, apr: FixedPoint) -> FixedPoint:
         """Returns fixed time-stretch value based on current apr (as a FixedPoint)"""

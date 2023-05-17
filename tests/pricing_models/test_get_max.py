@@ -267,3 +267,7 @@ class TestGetMax(unittest.TestCase):
             market_state.bond_reserves,
             market_state.bond_buffer,
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
