@@ -3,6 +3,7 @@ black
 ipython
 matplotlib
 nbconvert
+jupytext
 numpy
 pandas
 pylint
