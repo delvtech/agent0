@@ -855,7 +855,7 @@ class ConfigFP(types.FrozenClass):
         if self.variable_apr == [-1]:  # defaults to [-1] so this should happen right after init
             self.variable_apr = [0.05] * self.num_trading_days
         if self.init_share_price < 0:  # defaults to -1 so this should happen right after init
-            self.init_share_price = (1 + self.variable_apr[0]) ** self.init_vault_age
+            self.init_share_price = float((1 + self.variable_apr[0]) ** self.init_vault_age)
         self.disable_new_attribs()  # disallow new attributes # pylint: disable=no-member # type: ignore
 
     def __getitem__(self, attrib) -> None:
