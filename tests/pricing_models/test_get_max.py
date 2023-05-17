@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import unittest
 from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
+import elfpy
 import elfpy.pricing_models.trades as trades
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -185,7 +186,7 @@ class TestGetMax(unittest.TestCase):
                     + test_case.market_state.bond_reserves
                 )
                 # Get the max long.
-                (max_long, _) = pricing_model.get_max_long(
+                max_long, _ = pricing_model.get_max_long(
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
@@ -205,7 +206,7 @@ class TestGetMax(unittest.TestCase):
                 )
 
                 # Get the max short.
-                (_, max_short) = pricing_model.get_max_short(
+                _, max_short = pricing_model.get_max_short(
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
@@ -251,6 +252,7 @@ class TestGetMax(unittest.TestCase):
                 d_bond_buffer=-trade_result.user_result.d_bonds,
             )
         market_state.apply_delta(delta=delta)
+        elfpy.check_non_zero(market_state)
 
         # Ensure that the pool is in a valid state after the trade.
         apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
