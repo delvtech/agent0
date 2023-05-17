@@ -619,10 +619,13 @@ def calc_open_long(
     tuple[MarketDeltas, wallet.Wallet]
         The deltas that should be applied to the market and agent
     """
+    print(
+        f"opening long with {base_amount=:,.0f} base versus {(market.market_state.bond_reserves * market.spot_price)=:,.0f} value of bond reserves"
+    )
     if base_amount > market.market_state.bond_reserves * market.spot_price:
         raise AssertionError(
             "ERROR: cannot open a long with more than the available bond resereves, "
-            f"but {base_amount=} > {market.market_state.bond_reserves=}."
+            f"but {base_amount=:,.0f} > {(market.market_state.bond_reserves * market.spot_price)=:,.0f}."
         )
     # Perform the trade.
     trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
