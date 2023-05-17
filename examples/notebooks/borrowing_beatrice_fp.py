@@ -1,15 +1,43 @@
-# %% [markdown]
-# <a href="https://colab.research.google.com/github/element-fi/elf-simulations/blob/dp_mart_agents/examples/notebooks/fred_louie_simulation.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: .venv
+#     language: python
+#     name: python3
+# ---
+
+# %%
+"""Simulation for the Hyperdrive Borrow market"""
+from __future__ import annotations
+
+# pylint: disable=line-too-long
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-arguments
+# pylint: disable=invalid-name
+# pylint: disable=redefined-outer-name
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
+
 
 # %% [markdown]
-# ## Hyperdrive [NAME] simulation
+# <a href="https://colab.research.google.com/github/delvtech/elf-simulations/blob/main/examples/notebooks/borrowing_beatrice.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
+# %% [markdown]
+# ## Hyperdrive Borrow market simulation
 # We use the following setup:
 # - TBD
 # * variable rate:
 #     * step function
 #     * rate changes every 3 months
-#     * 
-# 
+#     *
+#
 # For details on the simulation framework, please see our <a href="https://elfpy.element.fi/">simulation documentation</a>
 
 # %% [markdown]
@@ -17,45 +45,55 @@
 
 # %%
 # test: skip-cell
-try: # install dependencies only if running on google colab
-    import google.colab # check if running in colab
-    !pip install -r https://raw.githubusercontent.com/element-fi/elf-simulations/main/requirements-3.8.txt 
-    !pip install git+https://github.com/element-fi/elf-simulations.git
-except:
+try:  # install dependencies only if running on google colab
+    # check if running in Google Colaboratory
+    eval("import google.colab")  # pylint: disable=eval-used
+    import os
+
+    os.system(
+        "!pip install git+https://github.com/delvtech/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
+    )
+except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
 # %%
-from __future__ import annotations
 from dataclasses import dataclass, field
 
-import pandas as pd
 import numpy as np
-from numpy.random._generator import Generator
+from numpy.random._generator import Generator as NumpyGenerator
+import pandas as pd
 
-from elfpy.agents.agent import Agent
-from elfpy.simulators import Config
-
-import elfpy.utils.outputs as output_utils
-from elfpy.time import BlockTime
-import elfpy.types as types
-
-import elfpy.markets.borrow as borrow
+import elfpy.agents.agent as elf_agent
 import elfpy.agents.wallet as wallet
+import elfpy.markets.borrow as borrow
+import elfpy.simulators as simulators
+import elfpy.time as elf_time
+import elfpy.types as types
+import elfpy.utils.outputs as output_utils
+from elfpy.math.fixed_point import FixedPoint
+
 
 # %%
-class BorrowingBeatrice(Agent):
+class BorrowingBeatrice(elf_agent.AgentFP):
     """
     Agent that paints & opens fixed rate borrow positions
     """
 
-    def __init__(self, rng: Generator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self,
+        rng: NumpyGenerator,
+        trade_chance: float,
+        risk_threshold: float,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+    ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: borrow.Market) -> list[types.Trade]:
+    def action(self, market: borrow.MarketFP) -> list[types.Trade]:
         """Implement a Borrowing Beatrice user strategy
 
         I take out loans when the interest rate is below a threshold
@@ -73,72 +111,66 @@ class BorrowingBeatrice(Agent):
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
         action_list = []
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1-self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return action_list
-        
         has_borrow = self.wallet.borrows
-        want_to_borrow = market.borrow_rate <= self.risk_threshold
-        #print(f"{self.wallet.borrows=}")
-        #print(f"{has_borrow=}")
-        #print(f"{market.borrow_rate=}\t{self.risk_threshold}")
-        #print(f"{want_to_borrow=}")
+        want_to_borrow = market.borrow_rate <= FixedPoint(self.risk_threshold)
         if want_to_borrow and not has_borrow:
             action_list = [
                 types.Trade(
                     market=types.MarketType.BORROW,
-                    trade=borrow.MarketAction(
+                    trade=borrow.MarketActionFP(
                         action_type=borrow.MarketActionType.OPEN_BORROW,
                         wallet=self.wallet,
-                        collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
-                        spot_price=1, # usdc # FIXME: Doesn't look like this is uesd?
+                        collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
+                        spot_price=1,
                     ),
                 )
             ]
-        
         if has_borrow:
             action_list = [
                 types.Trade(
                     market=types.MarketType.BORROW,
-                    trade=borrow.MarketAction(
+                    trade=borrow.MarketActionFP(
                         action_type=borrow.MarketActionType.CLOSE_BORROW,
                         wallet=self.wallet,
-                        collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
-                        spot_price=1, # usdc
+                        collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
+                        spot_price=1,  # usdc
                     ),
                 )
             ]
-
         return action_list
+
 
 # %% [markdown]
 # ### Setup experiment parameters
 
 # %%
-config = Config()
+config = simulators.ConfigFP()
 
 # General config parameters
 config.title = "Spark smart agent demo"
 config.pricing_model_name = "Spark"
 
-config.num_trading_days = 20#1095 # Number of simulated trading days
-config.num_blocks_per_day = 5#7200 # Blocks in a given day (7200 means ~12 sec per block)
-config.num_position_days = 10#90 # How long a token reaches maturity
+config.num_trading_days = 20  # 1095 # Number of simulated trading days
+config.num_blocks_per_day = 5  # 7200 # Blocks in a given day (7200 means ~12 sec per block)
+config.num_position_days = 10  # 90 # How long a token reaches maturity
 
-config.curve_fee_multiple = 0.05 # fee multiple applied to price discount (1-p) collected on trades
-config.flat_fee_multiple = 0.05 # fee collected on the spread of the flat portion
+config.curve_fee_multiple = 0.05  # fee multiple applied to price discount (1-p) collected on trades
+config.flat_fee_multiple = 0.05  # fee collected on the spread of the flat portion
 
-config.target_fixed_apr = 0.01 # target fixed APR of the initial market after the LP
-config.target_liquidity = 500_000_000 # target total liquidity of the initial market, before any trades
+config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
+config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("INFO") # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
-config.log_filename = "borrowing_beatrice" # Output filename for logging
+config.log_level = output_utils.text_to_log_level("INFO")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_filename = "borrowing_beatrice"  # Output filename for logging
 
 config.shuffle_users = True
 
 # Notebook specific parameters
 num_bea = 15
-trade_chance = 0.1 # on a given block, an agent will trade with probability `trade_chance`
+trade_chance = 0.1  # on a given block, an agent will trade with probability `trade_chance`
 
 bea_budget_mean = 500_000
 bea_budget_std = 1_000
@@ -146,36 +178,32 @@ bea_budget_max = 1_00_000
 bea_budget_min = 1_000
 
 # Define the vault apr
-vault_apr = np.array([0.01]*config.num_trading_days)
-#vault_apr[config.num_trading_days//2:] = 0.05
+vault_apr = np.array([0.01] * config.num_trading_days)
+# vault_apr[config.num_trading_days//2:] = 0.05
 config.variable_apr = vault_apr.tolist()
 config.freeze()
 
 fig_size = (5, 5)
-
-# %% [markdown]
-# ### Setup agents
-
-# %% [markdown]
-# ### Setup simulation objects
 
 # %%
 # define root logging parameters
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # %%
-market_state = borrow.MarketState(
-    loan_to_value_ratio = {types.TokenType.BASE: 0.97},
-    borrow_shares=0,
-    collateral={types.TokenType.BASE: 0},
-    borrow_outstanding=0,
-    borrow_share_price=1,
-    borrow_closed_interest=0,
-    collateral_spot_price={types.TokenType.BASE: 1},
-    lending_rate=0.01,
-    spread_ratio=1.25
+market_state = borrow.MarketStateFP(
+    loan_to_value_ratio={types.TokenType.BASE: FixedPoint("0.97")},
+    borrow_shares=FixedPoint(0),
+    collateral={types.TokenType.BASE: FixedPoint(0)},
+    borrow_outstanding=FixedPoint(0),
+    borrow_share_price=FixedPoint("1.0"),
+    borrow_closed_interest=FixedPoint(0),
+    collateral_spot_price={types.TokenType.BASE: FixedPoint("1.0")},
+    lending_rate=FixedPoint("0.01"),
+    spread_ratio=FixedPoint("1.25"),
 )
-market = borrow.Market(pricing_model=borrow.PricingModel(), market_state=market_state, block_time=BlockTime())
+market = borrow.MarketFP(
+    pricing_model=borrow.PricingModelFP(), market_state=market_state, block_time=elf_time.BlockTimeFP()
+)
 
 agents = {
     0: BorrowingBeatrice(
@@ -183,17 +211,21 @@ agents = {
         trade_chance=0.1,
         risk_threshold=0.02,
         wallet_address=1,
-        budget=10_000,
+        budget=FixedPoint("10_000.0"),
     )
 }
 
+
 @dataclass
 class BorrowSimState:
+    """Sim state for borrow markets"""
+
     day: list[int] = field(default_factory=list)
     block: list[int] = field(default_factory=list)
-    borrows: list[dict[float, wallet.Borrow]] = field(default_factory=list)
+    borrows: list[dict[int, wallet.BorrowFP]] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
+        """Add dict entries to the sim state"""
         for key, val in dictionary.items():
             if key in ["frozen", "no_new_attribs"]:
                 continue
@@ -204,15 +236,14 @@ class BorrowSimState:
             else:
                 setattr(self, key, [val])
 
+
 simulation_state = BorrowSimState()
 
 # %%
 block_number = 0
 for day in range(config.num_trading_days):
-    #print(day)
     for _ in range(config.num_blocks_per_day):
-        #print(block_number)
-        agent_ids = [key for key in agents]
+        agent_ids = list(agents)
         agents_and_trades: "list[tuple[int, types.Trade]]" = []
         for agent_id in agent_ids:
             agent = agents[agent_id]
@@ -221,19 +252,18 @@ for day in range(config.num_trading_days):
         for trade in agents_and_trades:
             action_details = (trade[0], trade[1].trade)
             agent_id, agent_deltas, market_deltas = market.perform_action(action_details)
-            #print(f"{agent_deltas=}")
-            #market.update_market(market_deltas)
-            #agents[agent_id].wallet.update(agent_deltas)
+            market.update_market(market_deltas)
+            agents[agent_id].wallet.update(agent_deltas)
             simulation_state.day.append(day)
             simulation_state.block.append(block_number)
             agent_summary = agent_deltas.__dict__
             agent_summary["agent_id"] = agent_id
             simulation_state.add_dict_entries(agent_summary)
             simulation_state.add_dict_entries(market_deltas.__dict__)
-            simulation_state.add_dict_entries({"config."+key: val for key, val in config.__dict__.items()})
+            simulation_state.add_dict_entries({"config." + key: val for key, val in config.__dict__.items()})
             simulation_state.add_dict_entries(market.market_state.__dict__)
         block_number += 1
 
 # %%
 df = pd.DataFrame.from_dict(simulation_state.__dict__)
-display(df)
+print(df)
