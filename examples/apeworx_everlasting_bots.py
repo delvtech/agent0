@@ -384,7 +384,7 @@ def get_simulation_market_state_from_contract(
         asset_id = hyperdrive_assets.encode_asset_id(
             hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, _position_duration_seconds
         )
-        total_supply_withdraw_shares = hyperdrive_container.balanceOf(asset_id, agent_address)
+        total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, agent_address)
 
     return hyperdrive_market.MarketState(
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
@@ -422,17 +422,17 @@ def do_trade(_trade):
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive_container.address, trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
             hyperdrive_assets.AssetIdPrefix.LP,
-            hyperdrive_container,
+            hyperdrive,
             sol_agents[agent_key],
             trade_amount,
         )
     elif _trade.action_type.name == "REMOVE_LIQUIDITY":
         new_state, _ = ape_utils.ape_close_position(
             hyperdrive_assets.AssetIdPrefix.LP,
-            hyperdrive_container,
+            hyperdrive,
             sol_agents[agent_key],
             trade_amount,
         )
@@ -440,10 +440,10 @@ def do_trade(_trade):
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive_container.address, trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
             hyperdrive_assets.AssetIdPrefix.SHORT,
-            hyperdrive_container,
+            hyperdrive,
             sol_agents[agent_key],
             trade_amount,
         )
@@ -452,7 +452,7 @@ def do_trade(_trade):
         maturity_time = int(sim_to_block_time[_trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
             hyperdrive_assets.AssetIdPrefix.SHORT,
-            hyperdrive_container,
+            hyperdrive,
             sol_agents[agent_key],
             trade_amount,
             maturity_time,
@@ -461,10 +461,10 @@ def do_trade(_trade):
         with ape.accounts.use_sender(sol_agents[agent_key]):  # sender for contract calls
             # Mint DAI & approve ERC20 usage by contract
             base_ERC20.mint(trade_amount)  # type: ignore
-            base_ERC20.approve(hyperdrive_container.address, trade_amount)  # type: ignore
+            base_ERC20.approve(hyperdrive.address, trade_amount)  # type: ignore
         new_state, _ = ape_utils.ape_open_position(
             hyperdrive_assets.AssetIdPrefix.LONG,
-            hyperdrive_container,  # type:ignore
+            hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
         )
@@ -473,7 +473,7 @@ def do_trade(_trade):
         maturity_time = int(sim_to_block_time[_trade.mint_time])
         new_state, _ = ape_utils.ape_close_position(
             hyperdrive_assets.AssetIdPrefix.LONG,
-            hyperdrive_container,  # type:ignore
+            hyperdrive,  # type:ignore
             sol_agents[agent_key],
             trade_amount,
             maturity_time,
@@ -481,7 +481,7 @@ def do_trade(_trade):
     else:
         raise ValueError(f"{_trade.action_type=} must be add/remove liquidity, or open/close a long or short")
     simulator.market.market_state = get_simulation_market_state_from_contract(
-        hyperdrive_container,
+        hyperdrive,
         sol_agents[agent_key],
         POSITION_DURATION_SECONDS,
         CHECKPOINT_DURATION,
@@ -533,16 +533,16 @@ if __name__ == "__main__":
         (CURVE_FEE, FLAT_FEE, GOV_FEE),
         sol_agents["governance"],
     )
-    hyperdrive_container: ContractInstance = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
+    hyperdrive: ContractInstance = project.MockHyperdriveTestnet.at(hyperdrive_address)  # type:ignore
     with ape.accounts.use_sender(sol_agents["agent_0"]):
-        base_ERC20.approve(hyperdrive_container, INITIAL_SUPPLY)  # type:ignore
-        hyperdrive_container.initialize(INITIAL_SUPPLY, INITIAL_APR, sol_agents["agent_0"], True)  # type:ignore
+        base_ERC20.approve(hyperdrive, INITIAL_SUPPLY)  # type:ignore
+        hyperdrive.initialize(INITIAL_SUPPLY, INITIAL_APR, sol_agents["agent_0"], True)  # type:ignore
     # Execute trades
     genesis_block_number = ape.chain.blocks[-1].number
     genesis_timestamp = ape.chain.provider.get_block(genesis_block_number).timestamp  # type:ignore
 
     simulator.market.market_state = get_simulation_market_state_from_contract(
-        hyperdrive_container,
+        hyperdrive,
         sol_agents["agent_0"],
         POSITION_DURATION_SECONDS,
         CHECKPOINT_DURATION,

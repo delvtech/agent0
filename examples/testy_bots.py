@@ -375,7 +375,7 @@ def get_market_state_from_contract(contract: ContractInstance):
     asset_id = hyperdrive_assets.encode_asset_id(
         hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
     )
-    total_supply_withdraw_shares = hyperdrive_container.balanceOf(asset_id, dev_accounts[0].address)
+    total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, dev_accounts[0].address)
 
     return hyperdrive_market.MarketState(
         lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
@@ -415,17 +415,10 @@ def do_trade():
     agent = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = to_fixed_point(trade.trade_amount)
     sim_to_block_time = globals().get("sim_to_block_time", {})  # get if exists, else {}
-    if (
-        dai.allowance(agent.address, hyperdrive_container.address) < amount
-    ):  # allowance(address owner, address spender) → uint256
-        args = hyperdrive_container.address, to_fixed_point(50_000)
+    if dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
+        args = hyperdrive.address, to_fixed_point(50_000)
         ape_utils.attempt_txn(agent, dai.approve, *args)
-    params = {
-        "trade_type": trade.action_type.name,
-        "hyperdrive": hyperdrive_container,
-        "agent": agent,
-        "amount": amount,
-    }
+    params = {"trade_type": trade.action_type.name, "hyperdrive": hyperdrive, "agent": agent, "amount": amount}
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(sim_to_block_time[trade.mint_time])
     new_state, _ = ape_utils.ape_trade(**params)
@@ -483,12 +476,12 @@ if __name__ == "__main__":
     project = HyperdriveProject(Path.cwd())
     dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
-    hyperdrive_container: ContractInstance = project.get_hyperdrive_contract()
+    hyperdrive: ContractInstance = project.get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
-    hyper_config = hyperdrive_container.getPoolConfig().__dict__
+    hyper_config = hyperdrive.getPoolConfig().__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
-    log_and_show(f"Hyperdrive config deployed at {hyperdrive_container.address}:")
+    log_and_show(f"Hyperdrive config deployed at {hyperdrive.address}:")
     for k, v in hyper_config.items():
         divisor = 1 if k in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
         log_and_show(f" {k}: {fmt(v/divisor)}")
@@ -505,7 +498,7 @@ if __name__ == "__main__":
             LOG_STRING += ", Gas: max={},avg={}, Priority max={},avg={}"
             log_vars = block_number, block_time, NO_CRASH, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
             log_and_show(LOG_STRING, *log_vars)
-            market_state = get_market_state_from_contract(contract=hyperdrive_container)
+            market_state = get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
                 market_state=market_state,
