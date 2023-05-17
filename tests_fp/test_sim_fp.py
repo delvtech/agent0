@@ -82,7 +82,11 @@ class TestSimulator(unittest.TestCase):
         config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator_fp(config)
         simulator.run_simulation()
-        simulation_state_num_writes = np.array([len(value) for value in simulator.simulation_state.__dict__.values()])
+        simulation_state_num_writes = []
+        for key, value in simulator.simulation_state.__dict__.items():
+            if key not in ["frozen", "no_new_attribs"]:
+                simulation_state_num_writes.append(len(value))
+        simulation_state_num_writes = np.array(simulation_state_num_writes)
         goal_writes = simulation_state_num_writes[0]
         try:
             np.testing.assert_equal(simulation_state_num_writes, goal_writes)

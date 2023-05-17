@@ -9,6 +9,7 @@ from decimal import Decimal
 
 import numpy as np
 
+import elfpy
 import elfpy.agents.wallet as wallet
 import elfpy.errors.errors as errors
 import elfpy.markets.base as base_market
@@ -916,17 +917,11 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         """Returns a new copy of self"""
         return MarketStateFP(**copy.deepcopy(self.__dict__))
 
-    def check_non_zero(self, dictionary: dict | defaultdict | None = None) -> None:
+    def check_valid_market_state(self, dictionary: dict | defaultdict | None = None) -> None:
         """Test that all market state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        for key, value in dictionary.items():
-            if isinstance(value, FixedPoint) and value < FixedPoint(0):
-                raise AssertionError(f"{key} attribute with {value=} must be >= 0.")
-            if isinstance(value, (dict, defaultdict)):
-                self.check_non_zero(value)
-            else:
-                continue  # noop; frozen, etc
+        elfpy.check_non_zero_fp(dictionary)
 
 
 class MarketFP(
@@ -1002,28 +997,6 @@ class MarketFP(
         latest_checkpoint = FixedPoint(latest_checkpoint_days) / FixedPoint("365.0")
         return latest_checkpoint
 
-    def check_action(self, agent_action: hyperdrive_actions.MarketActionFP) -> None:
-        r"""Ensure that the agent action is an allowed action for this market
-
-        Parameters
-        ----------
-        action_type : MarketActionType
-            See MarketActionType for all acceptable actions that can be performed on this market
-
-        Returns
-        -------
-        None
-        """
-        if (
-            agent_action.action_type
-            in [
-                hyperdrive_actions.MarketActionType.CLOSE_LONG,
-                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
-            ]
-            and agent_action.mint_time is None
-        ):
-            raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
-
     def perform_action(
         self, action_details: tuple[int, hyperdrive_actions.MarketActionFP]
     ) -> tuple[int, wallet.WalletFP, hyperdrive_actions.MarketDeltasFP]:
@@ -1070,57 +1043,63 @@ class MarketFP(
         agent_id, agent_action = action_details
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
-        self.check_action(agent_action)
+        # mint time is required if closing a position
+        if (
+            agent_action.action_type
+            in [
+                hyperdrive_actions.MarketActionType.CLOSE_LONG,
+                hyperdrive_actions.MarketActionType.CLOSE_SHORT,
+            ]
+            and agent_action.mint_time is None
+        ):
+            raise ValueError(f"{agent_action.mint_time=} must be provided when closing a short or long")
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltasFP()
         agent_deltas = wallet.WalletFP(address=0)
-        # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
-        # should handle these in the simulator, not in the market.  The market should throw errors.
-        try:
-            if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
-                market_deltas, agent_deltas = self.open_long(
-                    agent_wallet=agent_action.wallet,
-                    base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
-                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = FixedPoint(agent_action.mint_time or 0)
-                market_deltas, agent_deltas = self.close_long(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
-                    mint_time=mint_time,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
-                market_deltas, agent_deltas = self.open_short(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
-                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = FixedPoint(agent_action.mint_time or 0)
-                open_share_price = agent_action.wallet.shorts[int(mint_time)].open_share_price
-                market_deltas, agent_deltas = self.close_short(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
-                    mint_time=mint_time,
-                    open_share_price=open_share_price,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
-                market_deltas, agent_deltas = self.add_liquidity(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
-                market_deltas, agent_deltas = self.remove_liquidity(
-                    agent_wallet=agent_action.wallet,
-                    lp_shares=agent_action.trade_amount,
-                )
-            else:
-                raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
-        except AssertionError as err:
-            logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
+        if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
+            market_deltas, agent_deltas = self.open_long(
+                agent_wallet=agent_action.wallet,
+                base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = FixedPoint(agent_action.mint_time or 0)
+            market_deltas, agent_deltas = self.close_long(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
+                mint_time=mint_time,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
+            market_deltas, agent_deltas = self.open_short(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = FixedPoint(agent_action.mint_time or 0)
+            open_share_price = agent_action.wallet.shorts[int(mint_time)].open_share_price
+            market_deltas, agent_deltas = self.close_short(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
+                mint_time=mint_time,
+                open_share_price=open_share_price,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
+            market_deltas, agent_deltas = self.add_liquidity(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
+            market_deltas, agent_deltas = self.remove_liquidity(
+                agent_wallet=agent_action.wallet,
+                lp_shares=agent_action.trade_amount,
+            )
+        else:
+            raise ValueError(f"unknown {agent_action.action_type=}")
+        # Make sure that the action did not cause negative market state values
+        self.market_state.check_valid_market_state()
         logging.debug(
-            "%s\n%s\nagent_deltas = %s\npre_trade_market = %s",
+            "agent_action=%s\nmarket_deltas=%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
             market_deltas,
             agent_deltas,
@@ -1159,6 +1138,7 @@ class MarketFP(
             lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)
+        self.market_state.check_valid_market_state()
         return market_deltas, agent_deltas
 
     def open_short(

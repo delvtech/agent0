@@ -2,6 +2,8 @@
 
 import logging
 import shutil
+from collections import defaultdict
+from typing import Any
 
 import matplotlib as mpl
 
@@ -225,3 +227,30 @@ def check_non_zero(data) -> None:
                 ), f"values must be > {-PRECISION_THRESHOLD}. Error on {key} = {value}"
         elif isinstance(value, (list, tuple, dict)):
             check_non_zero(value)
+
+
+def check_non_zero_fp(data: Any) -> None:
+    r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
+
+    Parameters
+    ----------
+    data : Any
+        The data to check for non-zero values.
+        If it is a FixedPoint then it will be checked.
+        If it is dict-like then each key/value in the dict will be checked.
+        Otherwise it will not be checked.
+    """
+    if isinstance(data, FixedPoint) and data < FixedPoint(0):
+        raise AssertionError(f"{data=} >= 0")
+    if hasattr(data, "__dict__"):  # can be converted to a dict
+        check_non_zero_fp(data.__dict__)
+    if isinstance(data, (dict, defaultdict)):
+        for key, value in data.items():
+            if isinstance(value, FixedPoint) and value < FixedPoint(0):
+                raise AssertionError(f"{key} attribute with {value=} must be >= 0")
+            if isinstance(value, dict):
+                check_non_zero_fp(value)
+            elif hasattr(value, "__dict__"):  # can be converted to a dict
+                check_non_zero_fp(value.__dict__)
+            else:
+                continue  # noop; frozen, etc

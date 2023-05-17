@@ -1167,7 +1167,8 @@ class SimulatorFP:
         #       get all of the block's trades without an extra loop.
         trades = self.collect_trades(agent_ids, liquidate)
         # Execute the trades
-        self.execute_trades(trades)
+        if len(trades) > 0:
+            self.execute_trades(trades)
 
     def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, types.Trade]]:
         r"""Collect trades from a set of provided agent IDs.
@@ -1210,10 +1211,24 @@ class SimulatorFP:
                 trade[1].trade is the action
         """
         for trade in agent_actions:
-            # TODO: In a follow-up PR we will decompose the trade into the
-            # agent ID, market, and market action before sending the info off to the correct market
+            # TODO: After we implement support for multiple markets,
+            # we will decompose the trade into the agent ID, market,
+            # and market action before sending the info off to the
+            # correct market. This way, for example, a trade can happen
+            # on the borrow market OR the hyperdrive market.
             action_details = (trade[0], trade[1].trade)
-            agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
+            market_state_before_trade = self.market.market_state.copy()
+            try:
+                agent_id, agent_deltas, market_deltas = self.market.perform_action(action_details)
+            except (ValueError, AssertionError) as err:
+                self.market.market_state = market_state_before_trade
+                logging.debug(
+                    "TRADE FAILED %s\npre_trade_market = %s\nerror = %s",
+                    action_details[1],
+                    self.market.market_state,
+                    err,
+                )
+                continue
             self.agents[agent_id].log_status_report()
             # TODO: need to log deaggregated trade informaiton, i.e. trade_deltas
             # issue #215
@@ -1336,7 +1351,7 @@ class SimulatorFP:
         self.simulation_state.current_time.append(float(self.block_time.time))
         self.simulation_state.trade_number.append(self.trade_number)
         self.simulation_state.time_step_size.append(self.time_step)
-        self.simulation_state.position_duration.append(self.market.position_duration)
+        self.simulation_state.position_duration.append(self.market.position_duration.astype(float))  # type: ignore
         self.simulation_state.fixed_apr.append(float(self.market.fixed_apr))
         self.simulation_state.current_variable_apr.append(self.config.variable_apr[self.day])
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})

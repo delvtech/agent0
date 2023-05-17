@@ -159,7 +159,7 @@ class BaseMarketStateFP:
         """Returns a new copy of self"""
         raise NotImplementedError
 
-    def check_non_zero(self, dictionary: dict | defaultdict) -> BaseMarketStateFP:
+    def check_valid_market_state(self, dictionary: dict | defaultdict) -> BaseMarketStateFP:
         """Returns a new copy of self"""
         raise NotImplementedError
 
@@ -194,4 +194,4 @@ class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
     def update_market(self, market_deltas: DeltasFP) -> None:
         """Increments member variables to reflect current market conditions."""
         self.market_state.apply_delta(market_deltas)
-        self.market_state.check_non_zero(self.market_state.__dict__)
+        self.market_state.check_valid_market_state(self.market_state.__dict__)

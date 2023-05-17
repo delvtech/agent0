@@ -11,6 +11,7 @@ import numpy as np
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.trades as trades
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.time.time import StretchedTimeFP
@@ -84,29 +85,6 @@ class MarketAction(base_market.MarketAction):
     min_amount_out: float = 0
     # mint time is set only for trades that act on existing positions (close long or close short)
     mint_time: Optional[float] = None
-
-
-def check_action(agent_action: MarketAction) -> None:
-    r"""Ensure that the agent action is an allowed action for this market
-
-    Parameters
-    ----------
-    action_type : MarketActionType
-        See MarketActionType for all acceptable actions that can be performed on this market
-
-    Returns
-    -------
-    None
-    """
-    if (
-        agent_action.action_type
-        in [
-            MarketActionType.CLOSE_LONG,
-            MarketActionType.CLOSE_SHORT,
-        ]
-        and agent_action.mint_time is None
-    ):
-        raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
 
 
 def calculate_lp_allocation_adjustment(
@@ -1097,29 +1075,6 @@ class MarketActionFP(base_market.MarketAction):
     mint_time: FixedPoint | None = None
 
 
-def check_action_fp(agent_action: MarketActionFP) -> None:
-    r"""Ensure that the agent action is an allowed action for this market
-
-    Parameters
-    ----------
-    agent_actioin: MarketAction
-        See MarketActionType for all acceptable actions that can be performed on this market
-
-    Returns
-    -------
-    None
-    """
-    if (
-        agent_action.action_type
-        in [
-            MarketActionType.CLOSE_LONG,
-            MarketActionType.CLOSE_SHORT,
-        ]
-        and agent_action.mint_time is None
-    ):
-        raise ValueError("ERROR: agent_action.mint_time must be provided when closing a short or long")
-
-
 def calculate_lp_allocation_adjustment_fp(
     positions_outstanding: FixedPoint,
     base_volume: FixedPoint,
@@ -1433,7 +1388,7 @@ def calc_open_short_fp(
         in_=trade_quantity, market_state=market_state, time_remaining=time_remaining
     )
     # make sure the trade is valid
-    pricing_model.check_output_assertions(trade_result=trade_result)
+    check_output_assertions(trade_result=trade_result)
     # calculate the trader's deposit amount
     normalized_time_elapsed = (block_time - latest_checkpoint_time) / position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market_state.share_price
@@ -1535,7 +1490,10 @@ def calc_close_short_fp(
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     if bond_amount > market_state.bond_reserves - market_state.bond_buffer:
-        raise AssertionError("not enough reserves to close short")
+        raise AssertionError(
+            "not enough reserves to close short; "
+            + f"{bond_amount=} must be < {(market_state.bond_reserves - market_state.bond_buffer)=}."
+        )
     # Compute the time remaining given the mint time.
     years_remaining = time.get_years_remaining_fp(
         market_time=block_time,
@@ -1565,7 +1523,7 @@ def calc_close_short_fp(
     # update governance fees
     market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # Make sure the trade is valid
-    pricing_model.check_output_assertions(trade_result=trade_result)
+    check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
     short_average_maturity_time = update_weighted_average_fp(
@@ -1703,10 +1661,8 @@ def calc_open_long_fp(
     )
     market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # TODO: add assert: if share_price * share_reserves < longs_outstanding then revert,
-    # this should be in hyperdrive.check_output_assertions which then calls
-    # super().check_output_assertions
     # Make sure the trade is valid
-    pricing_model.check_output_assertions(trade_result=trade_result)
+    check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
     long_average_maturity_time = update_weighted_average_fp(
@@ -1808,7 +1764,7 @@ def calc_close_long_fp(
             market_state=market_state,
             time_remaining=time_remaining,
         )
-        pricing_model.check_output_assertions(trade_result=trade_result)
+        check_output_assertions(trade_result=trade_result)
         bond_reserves_delta = trade_result.market_result.d_bonds
         share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
         base_proceeds = trade_result.user_result.d_base
@@ -2197,3 +2153,19 @@ def calc_free_margin_fp(
         withdraw_pool_deltas.withdraw_interest = interest
     # Finally return the amount used by this action and the caller can update reserves.
     return withdraw_pool_deltas
+
+
+def check_output_assertions(trade_result: trades.TradeResultFP):
+    """Applies a set of assertions to a trade result."""
+    assert isinstance(
+        trade_result.breakdown.fee, FixedPoint
+    ), f"ERROR: fee should be a FixedPoint, not {type(trade_result.breakdown.fee)}!"
+    assert trade_result.breakdown.fee >= FixedPoint(
+        0
+    ), f"ERROR: fee should not be negative, but is {trade_result.breakdown.fee}!"
+    assert isinstance(
+        trade_result.breakdown.without_fee, FixedPoint
+    ), f"ERROR: without_fee should be a FixedPoint, not {type(trade_result.breakdown.without_fee)}!"
+    assert trade_result.breakdown.without_fee >= FixedPoint(
+        0
+    ), f"ERROR: without_fee should be non-negative, not {trade_result.breakdown.without_fee}!"

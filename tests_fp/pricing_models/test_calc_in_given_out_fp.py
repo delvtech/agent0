@@ -14,6 +14,7 @@ from calc_test_dataclasses_fp import (
 )
 
 import elfpy.errors.errors as errors
+import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
@@ -447,7 +448,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                         market_state=test_case.market_state,
                         time_remaining=test_case.time_remaining,
                     )
-                    pricing_model.check_output_assertions(
+                    hyperdrive_actions.check_output_assertions(
                         trade_result=trade_result,
                     )
         output_utils.close_logging()
