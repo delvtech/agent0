@@ -482,11 +482,12 @@ def set_days_without_crashing(no_crash: int):
 def get_and_show_block_and_gas():
     """Get and show the latest block number and gas fees."""
     max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = ape_utils.get_gas_stats(latest_block)
-    log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
-    log_string += ", max_fee(max={},avg={}) priority_fee(max={},avg={})"
-    log_vars = block_number, block_time, NO_CRASH
-    log_vars += fmt(max_max_fee), fmt(avg_max_fee), fmt(max_priority_fee), fmt(avg_priority_fee)
-    log_and_show(log_string, *log_vars)
+    if not np.isnan(max_max_fee):
+        log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
+        log_variab = block_number, block_time, NO_CRASH
+        log_string += ", max_fee(max={},avg={}) priority_fee(max={},avg={})"
+        log_variab += fmt(max_max_fee), fmt(avg_max_fee), fmt(max_priority_fee), fmt(avg_priority_fee)
+        log_and_show(log_string, *log_variab)
 
 
 if __name__ == "__main__":

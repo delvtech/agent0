@@ -247,8 +247,8 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
     """
     # Pick out only type 2 transactions (EIP-1559). They have a max fee and priority fee.
     type2_transactions = [txn for txn in block.transactions if txn.type == 2]
-    if len(type2_transactions) <= 0:
-        raise ValueError("No type 2 transactions in block")
+    if len(type2_transactions) <= 0:  # No type 2 transactions in block
+        return [], []
 
     # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
     max_fees, priority_fees = zip(*[(txn.max_fee, txn.max_priority_fee) for txn in type2_transactions])
@@ -275,6 +275,8 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     """
     # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
     max_fees, priority_fees = get_gas_fees(block)
+    if len(max_fees) <= 0:  # No type 2 transactions in block
+        return np.nan, np.nan, np.nan, np.nan
 
     # Calculate max and avg for max_fees
     _max_max_fee = max(max_fees)
@@ -575,7 +577,7 @@ def select_abi(
             f"Could not find matching ABI for {method}"
             + (f" with missing arguments: {missing_args}" if missing_args else "")
         )
-    lstr = f"{selected_abi.name}({', '.join(f'{inpt}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
+    lstr = f"{selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
     log_and_show(lstr)
     return selected_abi, args
 
