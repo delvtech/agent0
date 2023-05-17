@@ -9,6 +9,7 @@ from decimal import Decimal
 
 import numpy as np
 
+import elfpy
 import elfpy.agents.wallet as wallet
 import elfpy.errors.errors as errors
 import elfpy.markets.base as base_market
@@ -916,19 +917,11 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         """Returns a new copy of self"""
         return MarketStateFP(**copy.deepcopy(self.__dict__))
 
-    def check_non_zero(self, dictionary: dict | defaultdict | None = None) -> None:
+    def check_valid_market_state(self, dictionary: dict | defaultdict | None = None) -> None:
         """Test that all market state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        for key, value in dictionary.items():
-            if isinstance(value, FixedPoint) and value < FixedPoint(0):
-                raise AssertionError(f"{key} attribute with {value=} must be >= 0")
-            if isinstance(value, (dict, defaultdict)):
-                self.check_non_zero(value)
-            elif isinstance(value, CheckpointFP):
-                self.check_non_zero(value.__dict__)
-            else:
-                continue  # noop; frozen, etc
+        elfpy.check_non_zero_fp(dictionary)
 
 
 class MarketFP(
@@ -1104,7 +1097,7 @@ class MarketFP(
         else:
             raise ValueError(f"unknown {agent_action.action_type=}")
         # Make sure that the action did not cause negative market state values
-        self.market_state.check_non_zero()
+        self.market_state.check_valid_market_state()
         logging.debug(
             "agent_action=%s\nmarket_deltas=%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
@@ -1145,7 +1138,7 @@ class MarketFP(
             lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)
-        self.market_state.check_non_zero()
+        self.market_state.check_valid_market_state()
         return market_deltas, agent_deltas
 
     def open_short(
