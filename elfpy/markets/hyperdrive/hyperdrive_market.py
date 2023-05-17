@@ -1063,51 +1063,48 @@ class MarketFP(
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltasFP()
         agent_deltas = wallet.WalletFP(address=0)
-        # TODO: Related to #57. When we handle failed transactions, remove this try-catch.  We
-        # should handle these in the simulator, not in the market.  The market should throw errors.
-        try:
-            if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
-                market_deltas, agent_deltas = self.open_long(
-                    agent_wallet=agent_action.wallet,
-                    base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
-                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = FixedPoint(agent_action.mint_time or 0)
-                market_deltas, agent_deltas = self.close_long(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
-                    mint_time=mint_time,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
-                market_deltas, agent_deltas = self.open_short(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
-                # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
-                mint_time = FixedPoint(agent_action.mint_time or 0)
-                open_share_price = agent_action.wallet.shorts[int(mint_time)].open_share_price
-                market_deltas, agent_deltas = self.close_short(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
-                    mint_time=mint_time,
-                    open_share_price=open_share_price,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
-                market_deltas, agent_deltas = self.add_liquidity(
-                    agent_wallet=agent_action.wallet,
-                    bond_amount=agent_action.trade_amount,
-                )
-            elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
-                market_deltas, agent_deltas = self.remove_liquidity(
-                    agent_wallet=agent_action.wallet,
-                    lp_shares=agent_action.trade_amount,
-                )
-            else:
-                raise ValueError(f'ERROR: Unknown trade type "{agent_action.action_type}".')
-        except AssertionError as err:
-            logging.debug("TRADE FAILED %s\npre_trade_market = %s\nerror = %s", agent_action, self.market_state, err)
+        if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
+            market_deltas, agent_deltas = self.open_long(
+                agent_wallet=agent_action.wallet,
+                base_amount=agent_action.trade_amount,  # in base: that's the thing in your wallet you want to sell
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:  # sell to close long
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = FixedPoint(agent_action.mint_time or 0)
+            market_deltas, agent_deltas = self.close_long(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing in your wallet you want to sell
+                mint_time=mint_time,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:  # sell PT to open short
+            market_deltas, agent_deltas = self.open_short(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you want to short
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
+            # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
+            mint_time = FixedPoint(agent_action.mint_time or 0)
+            open_share_price = agent_action.wallet.shorts[int(mint_time)].open_share_price
+            market_deltas, agent_deltas = self.close_short(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
+                mint_time=mint_time,
+                open_share_price=open_share_price,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.ADD_LIQUIDITY:
+            market_deltas, agent_deltas = self.add_liquidity(
+                agent_wallet=agent_action.wallet,
+                bond_amount=agent_action.trade_amount,
+            )
+        elif agent_action.action_type == hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY:
+            market_deltas, agent_deltas = self.remove_liquidity(
+                agent_wallet=agent_action.wallet,
+                lp_shares=agent_action.trade_amount,
+            )
+        else:
+            raise ValueError(f"unknown {agent_action.action_type=}")
+        # Make sure that the action did not cause negative market state values
+        self.market_state.check_non_zero()
         logging.debug(
             "agent_action=%s\nmarket_deltas=%s\nagent_deltas = %s\npre_trade_market = %s",
             agent_action,
