@@ -19,16 +19,12 @@ import pandas as pd
 
 import elfpy
 from elfpy import types
-from elfpy.types import freezable
-
-import elfpy
-from elfpy import types
+from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
-from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.utils.outputs import log_and_show
-from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.math import FixedPoint
-from elfpy.agents.wallet import Long, Short, Wallet
+from elfpy.utils.outputs import log_and_show
+from elfpy.utils.outputs import number_to_string as fmt
+from elfpy.types import freezable
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -40,7 +36,7 @@ if TYPE_CHECKING:
 class HyperdriveProject(ProjectManager):
     """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
-    hyperdrive: ContractContainer
+    hyperdrive_container: ContractContainer
     address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
 
     def __init__(self, path: Path) -> None:
@@ -50,35 +46,35 @@ class HyperdriveProject(ProjectManager):
         super().__init__(path)
         self.load_contracts()
         try:
-            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
+            self.hyperdrive_container: ContractContainer = self.get_contract("Hyperdrive")
         except AttributeError as err:
             raise AttributeError("Hyperdrive contract not found") from err
 
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
-        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+        return self.hyperdrive_container.at(self.conversion_manager.convert(self.address, AddressType))
 
 
-def get_market_state_from_contract(contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
     """Return the current market state from the smart contract.
 
     Parameters
     ----------
-    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
 
     Returns
     -------
     hyperdrive_market.MarketState
     """
-    pool_state = contract.getPoolInfo(**kwargs).__dict__
-    hyper_config = contract.getPoolConfig(**kwargs).__dict__
+    pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
+    hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
     asset_id = hyperdrive_assets.encode_asset_id(
         hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
     )
-    total_supply_withdraw_shares = contract.balanceOf(asset_id, contract.address)
+    total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
     return hyperdrive_market.MarketState(
         lp_total_supply=int(FixedPoint(pool_state["lpTotalSupply"])),
@@ -114,12 +110,12 @@ OnChainTradeInfo = namedtuple(
 )
 
 
-def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
+def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
     """Get all trades from hyperdrive contract.
 
     Parameters
     ----------
-    hyperdrive: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
 
     Returns
@@ -137,7 +133,7 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
         - share_price_
             Map of share price to block number.
     """
-    trades = hyperdrive.TransferSingle.query("*")  # get all trades
+    trades = hyperdrive_contract.TransferSingle.query("*")  # get all trades
     trades = pd.concat(  # flatten event_arguments
         [
             trades.loc[:, [c for c in trades.columns if c != "event_arguments"]],
@@ -145,7 +141,7 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
         ],
         axis=1,
     )
-    tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)
+    tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
     trades["value"] = trades["value"]
@@ -161,7 +157,9 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
     # map share price to block number
     share_price_ = {}
     for block_number_ in unique_block_numbers_:
-        share_price_ |= {block_number_: hyperdrive.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]}
+        share_price_ |= {
+            block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
+        }
     for block_number_, price in share_price_.items():
         logging.debug(("block_number_={}, price={}", block_number_, price))
 
@@ -169,8 +167,12 @@ def get_on_chain_trade_info(hyperdrive: ContractInstance) -> OnChainTradeInfo:
 
 
 def get_wallet_from_onchain_trade_info(
-    address_: str, index: int, info: OnChainTradeInfo, hyperdrive: ContractInstance, base: ContractInstance
-):
+    address_: str,
+    index: int,
+    info: OnChainTradeInfo,
+    hyperdrive_contract: ContractInstance,
+    base_contract: ContractInstance,
+) -> Wallet:
     """Construct wallet balances from on-chain trade info.
 
     Parameters
@@ -181,6 +183,10 @@ def get_wallet_from_onchain_trade_info(
         Index of the wallet.
     on_chain_trade_info: OnChainTradeInfo
         On-chain trade info.
+    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
+    base_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+        Contract pointing to the base currency (e.g. ERC20)
 
     Returns
     -------
@@ -188,7 +194,9 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = Wallet(address=index, balance=types.Quantity(amount=base.balanceOf(address_), unit=types.TokenType.BASE))
+    wallet = Wallet(
+        address=index, balance=types.Quantity(amount=base_contract.balanceOf(address_), unit=types.TokenType.BASE)
+    )
     for position_id in info.unique_ids:
         trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
             info.trades["id"] == position_id
@@ -200,13 +208,15 @@ def get_wallet_from_onchain_trade_info(
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        assert abs(balance - hyperdrive.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI, (
-            f"events {balance=} and {hyperdrive.balanceOf(position_id, address_)=} disagree"
+        assert (
+            abs(balance - hyperdrive_contract.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
+        ), (
+            f"events {balance=} and {hyperdrive_contract.balanceOf(position_id, address_)=} disagree"
             f"by more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
         )
 
         # check if there's an outstanding balance
-        if balance != 0 or hyperdrive.balanceOf(position_id, address_) != 0:
+        if balance != 0 or hyperdrive_contract.balanceOf(position_id, address_) != 0:
             # loop across all the positions owned by this wallet
             for specific_trade in trades_in_position.index[trades_in_position]:
                 if asset_type == "SHORT":
@@ -521,7 +531,7 @@ class Info:
 
 def ape_trade(
     trade_type: str,
-    hyperdrive: ContractInstance,
+    hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
     maturity_time: Optional[int] = None,
@@ -532,10 +542,10 @@ def ape_trade(
 
     Arguments
     ---------
-    trade_type: str
+    trade_type : str
         The type of trade to execute. One of `ADD_LIQUIDITY,
         REMOVE_LIQUIDITY, OPEN_LONG, CLOSE_LONG, OPEN_SHORT, CLOSE_SHORT`
-    hyperdrive : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Ape interactive instance of the initialized MockHyperdriveTestnet smart contract.
     agent : `ape.api.accounts.AccountAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.accounts.AccountAPI>`_
         The account that will execute the trade.
@@ -554,17 +564,17 @@ def ape_trade(
 
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
-        "OPEN_LONG": Info(method=hyperdrive.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "CLOSE_LONG": Info(method=hyperdrive.closeLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
-        "OPEN_SHORT": Info(method=hyperdrive.openShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "CLOSE_SHORT": Info(method=hyperdrive.closeShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
-        "ADD_LIQUIDITY": Info(method=hyperdrive.addLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
-        "REMOVE_LIQUIDITY": Info(method=hyperdrive.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+        "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
+        "CLOSE_LONG": Info(method=hyperdrive_contract.closeLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
+        "OPEN_SHORT": Info(method=hyperdrive_contract.openShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
+        "CLOSE_SHORT": Info(method=hyperdrive_contract.closeShort, prefix=hyperdrive_assets.AssetIdPrefix.SHORT),
+        "ADD_LIQUIDITY": Info(method=hyperdrive_contract.addLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
+        "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
         assert maturity_time, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
-        amount = np.clip(amount, 0, hyperdrive.balanceOf(trade_asset_id, agent))
+        amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
 
     # specify one big dict that holds the parameters for all six methods
     params = {
@@ -586,13 +596,13 @@ def ape_trade(
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
 
     # create a transaction with the selected ABI
-    contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive.address)
+    contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
 
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
         tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
         if tx_receipt is None:
             return None, None
-        return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive), tx_receipt
+        return get_pool_state(tx_receipt=tx_receipt, hyperdrive_contract=hyperdrive_contract), tx_receipt
     except TransactionError as exc:
         logging.error(
             "Failed to execute %s: %s\n =>  Amount: %s\n => Agent: %s\n => Pool: %s\n",
@@ -600,7 +610,7 @@ def ape_trade(
             exc,
             fmt(amount),
             agent,
-            hyperdrive.getPoolInfo().__dict__,
+            hyperdrive_contract.getPoolInfo().__dict__,
         )
         return None, None
 
