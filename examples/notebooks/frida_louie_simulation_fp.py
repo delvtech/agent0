@@ -1,98 +1,102 @@
-# %% [markdown]
-# <a href="https://colab.research.google.com/github/element-fi/elf-simulations/blob/dp_mart_agents/examples/notebooks/fred_louie_simulation.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# %%
+"""Simulation for the smart bots making rational trades"""
+from __future__ import annotations
 
-# %% [markdown]
-# ## Hyperdrive [NAME] simulation
-# We use the following setup:
-# - TBD
-# * variable rate:
-#     * step function
-#     * rate changes every 3 months
-#     * 
-# 
-# For details on the simulation framework, please see our <a href="https://elfpy.element.fi/">simulation documentation</a>
+
+# pylint: disable=line-too-long
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-arguments
+# pylint: disable=invalid-name
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # %% [markdown]
 # ### Install repo requirements & import packages
 
 # %%
 # test: skip-cell
-try: # install dependencies only if running on google colab
-    import google.colab # check if running in colab
-    !pip install -r https://raw.githubusercontent.com/element-fi/elf-simulations/main/requirements-3.8.txt 
-    !pip install git+https://github.com/element-fi/elf-simulations.git
-except:
+try:  # install dependencies only if running on google colab
+    # check if running in Google Colaboratory
+    eval("import google.colab")  # pylint: disable=eval-used
+    import os
+
+    os.system(
+        "!pip install git+https://github.com/delvtech/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
+    )
+except:  # pylint: disable=bare-except
     print("running locally & trusting that you have the dependencies installed")
 
 # %%
-from __future__ import annotations
-
 import numpy as np
-from numpy.random._generator import Generator
+from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
 
-from elfpy import WEI
-from elfpy.agents.agent import Agent
-from elfpy.utils import sim_utils
-from elfpy.simulators import Config
-
+import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
+import elfpy.utils.sim_utils as sim_utils
+import elfpy.simulators as simulators
 import elfpy.types as types
+
+from elfpy import WEI_FP
+from elfpy.math import FixedPoint, FixedPointMath
 
 # %% [markdown]
 # ### Setup experiment parameters
 
 # %%
-config = Config()
+config = simulators.ConfigFP()
 
 # General config parameters
 config.title = "Hyperdrive smart agent demo"
-config.pricing_model_name = "Hyperdrive" # can be yieldspace or hyperdrive
+config.pricing_model_name = "Hyperdrive"  # can be yieldspace or hyperdrive
 
-config.num_trading_days = 20#1095 # Number of simulated trading days
-config.num_blocks_per_day = 5#7200 # Blocks in a given day (7200 means ~12 sec per block)
-config.num_position_days = 10#90 # How long a token reaches maturity
+config.num_trading_days = 20  # 1095 # Number of simulated trading days
+config.num_blocks_per_day = 5  # 7200 # Blocks in a given day (7200 means ~12 sec per block)
+config.num_position_days = 10  # 90 # How long a token reaches maturity
 
-config.curve_fee_multiple = 0.05 # fee multiple applied to the price slippage (1-p) collected on trades
-config.flat_fee_multiple = 0.05 # fee collected on the spread of the flat portion
+config.curve_fee_multiple = 0.05  # fee multiple applied to the price slippage (1-p) collected on trades
+config.flat_fee_multiple = 0.05  # fee collected on the spread of the flat portion
 
-config.target_fixed_apr = 0.01 # target fixed APR of the initial market after the LP
-config.target_liquidity = 500_000_000 # target total liquidity of the initial market, before any trades
+config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
+config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("INFO") # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
-config.log_filename = "frida_n_louie" # Output filename for logging
+config.log_level = output_utils.text_to_log_level("INFO")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_filename = "frida_n_louie"  # Output filename for logging
 
 config.shuffle_users = True
 
 # Notebook specific parameters
-num_fridas = 15
-num_louies = 20 * num_fridas
-num_agents = num_fridas + num_louies # int specifying how many agents you want to simulate
-trade_chance = 0.1 # 1 / (config.num_trading_days * num_agents) # on a given block, an agent will trade with probability `trade_chance`
+config.scratch["num_fridas"] = 15
+config.scratch["num_louies"] = 20 * config.scratch["num_fridas"]
+config.scratch["num_agents"] = (
+    config.scratch["num_fridas"] + config.scratch["num_louies"]
+)  # int specifying how many agents you want to simulate
+config.scratch[
+    "trade_chance"
+] = 0.1  # 1 / (config.num_trading_days * num_agents) # on a given block, an agent will trade with probability `trade_chance`
 
-louie_budget_mean = 375_000
-louie_budget_std = 25_000
+config.scratch["louie_budget_mean"] = 375_000
+config.scratch["louie_budget_std"] = 25_000
 
-louie_budget_max = 1_00_000
-louie_budget_min = 1_000
+config.scratch["louie_budget_max"] = 1_00_000
+config.scratch["louie_budget_min"] = 1_000
 
-frida_budget_mean = 1_000
-frida_budget_std = 500
+config.scratch["frida_budget_mean"] = 1_000
+config.scratch["frida_budget_std"] = 500
 
-frida_budget_max = 1_00_000
-frida_budget_min = 1_000
+config.scratch["frida_budget_max"] = 1_00_000
+config.scratch["frida_budget_min"] = 1_000
 
-frida_risk_min = 0.0
-frida_risk_max = 0.06
-frida_risk_mean = 0.02
-frida_risk_std = 0.01
+config.scratch["frida_risk_min"] = 0.0
+config.scratch["frida_risk_max"] = 0.06
+config.scratch["frida_risk_mean"] = 0.02
+config.scratch["frida_risk_std"] = 0.01
 
 # Define the vault apr
-vault_apr = np.array([0.01]*config.num_trading_days)
-#vault_apr[config.num_trading_days//2:] = 0.05
+vault_apr = np.array([0.01] * config.num_trading_days)
+# vault_apr[config.num_trading_days//2:] = 0.05
 config.variable_apr = vault_apr.tolist()
 config.freeze()
 
@@ -101,20 +105,28 @@ fig_size = (5, 5)
 # %% [markdown]
 # ### Setup agents
 
+
 # %%
-class FixedFrida(Agent):
+class FixedFrida(elf_agent.AgentFP):
     """
     Agent that paints & opens fixed rate borrow positions
     """
 
-    def __init__(self, rng: Generator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self,
+        rng: NumpyGenerator,
+        trade_chance: float,
+        risk_threshold: float,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+    ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy
 
         I'm an actor with a high risk threshold
@@ -136,18 +148,19 @@ class FixedFrida(Agent):
         action_list : list[MarketAction]
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1-self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
-        
+
         action_list = []
-        for short_time in self.wallet.shorts: # loop over shorts
-            if (market.block_time.time - short_time) >= market.annualized_position_duration: # if any short is mature
-                trade_amount = self.wallet.shorts[short_time].balance # close the whole thing
+        for short_time in self.wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
+            # if any short is mature
+            if (market.block_time.time - FixedPoint(short_time)) >= market.annualized_position_duration:
+                trade_amount = self.wallet.shorts[short_time].balance  # close the whole thing
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.MarketActionFP(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -157,39 +170,51 @@ class FixedFrida(Agent):
                 ]
 
         short_balances = [short.balance for short in self.wallet.shorts.values()]
-        has_opened_short = bool(any(short_balance > 0 for short_balance in short_balances))
+        has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short: 
-            trade_amount = self.get_max_short(market) # maximum amount the agent can short given the market and the agent's wallet
-            if trade_amount > WEI:
+        if (market.fixed_apr - market.market_state.variable_apr) < FixedPoint(
+            self.risk_threshold
+        ) and not has_opened_short:
+            trade_amount = self.get_max_short(
+                market
+            )  # maximum amount the agent can short given the market and the agent's wallet
+            if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.MarketActionFP(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
                             mint_time=market.block_time.time,
-                        )
+                        ),
                     )
                 ]
 
         return action_list
 
+
 # %%
-class LongLouie(Agent):
+class LongLouie(elf_agent.AgentFP):
     """
     Long-nosed agent that opens longs
     """
 
-    def __init__(self, rng: Generator, trade_chance: float, risk_threshold: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self,
+        rng: NumpyGenerator,
+        trade_chance: float,
+        risk_threshold: float,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+    ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_chance = trade_chance
         self.risk_threshold = risk_threshold
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Implement a Long Louie user strategy
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -208,68 +233,78 @@ class LongLouie(Agent):
         action_list : list[MarketAction]
         """
         # Any trading at all is based on a weighted coin flip -- they have a trade_chance% chance of executing a trade
-        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1-self.trade_chance])
+        gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
-        
+
         action_list = []
-        for long_time in self.wallet.longs: # loop over longs
-            if (market.block_time.time - long_time) >= market.annualized_position_duration: # if any long is mature
-                trade_amount = self.wallet.longs[long_time].balance # close the whole thing
+        for long_time in self.wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
+            # if any long is mature
+            if (market.block_time.time - FixedPoint(long_time)) >= market.annualized_position_duration:
+                trade_amount = self.wallet.longs[long_time].balance  # close the whole thing
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.MarketActionFP(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
                             mint_time=long_time,
-                        )
+                        ),
                     )
                 ]
 
         long_balances = [long.balance for long in self.wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        if (market.fixed_apr - market.market_state.variable_apr) > self.risk_threshold and not has_opened_long: # risk_threshold = 0
+        # risk_threshold = 0
+        if (market.fixed_apr - market.market_state.variable_apr) > FixedPoint(
+            self.risk_threshold
+        ) and not has_opened_long:
             total_bonds_to_match_variable_apr = market.pricing_model.calc_bond_reserves(
-                target_apr=market.market_state.variable_apr, # fixed rate targets the variable rate
+                target_apr=market.market_state.variable_apr,  # fixed rate targets the variable rate
                 time_remaining=market.position_duration,
-                market_state=market.market_state
+                market_state=market.market_state,
             )
             # get the delta bond amount & convert units
-            new_bonds_to_match_variable_apr = (market.market_state.bond_reserves - total_bonds_to_match_variable_apr) * market.spot_price
+            new_bonds_to_match_variable_apr = (
+                market.market_state.bond_reserves - total_bonds_to_match_variable_apr
+            ) * market.spot_price
             # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / 2
+            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2)
             # get the maximum amount the agent can long given the market and the agent's wallet
-            max_trade_amount = self.get_max_long(market) 
-            trade_amount = np.minimum(max_trade_amount, adjusted_bonds) # don't want to trade more than the agent has or more than the market can handle
-            if trade_amount > WEI:
+            max_trade_amount = self.get_max_long(market)
+            trade_amount = FixedPointMath.minimum(
+                max_trade_amount, adjusted_bonds
+            )  # don't want to trade more than the agent has or more than the market can handle
+            if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketAction(
+                        trade=hyperdrive_actions.MarketActionFP(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
                             mint_time=market.block_time.time,
-                        )
+                        ),
                     )
                 ]
         return action_list
 
+
 # %%
-class LPAgent(Agent):
+class LPAgent(elf_agent.AgentFP):
     """Adds a large LP"""
-    def action(self, market: hyperdrive_market.Market):
+
+    def action(self, market: hyperdrive_market.MarketFP):
         """implement user strategy"""
-        if self.wallet.lp_tokens > 0: # has already opened the lp
+        if self.wallet.lp_tokens > 0:  # has already opened the lp
             action_list = []
         else:
             action_list = [
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketAction(
+                    trade=hyperdrive_actions.MarketActionFP(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
                         wallet=self.wallet,
@@ -278,17 +313,38 @@ class LPAgent(Agent):
             ]
         return action_list
 
-# %%
 
-def get_example_agents(rng: Generator, num_fridas: int, num_louies: int, existing_agents: int = 0) -> list[Agent]:
+# %%
+def get_example_agents(
+    rng: NumpyGenerator, experiment_config: simulators.ConfigFP, existing_agents: int = 0
+) -> list[elf_agent.AgentFP]:
     """Instantiate a set of custom agents"""
     agents = []
-    for address in range(existing_agents, existing_agents + num_fridas):
-        risk_threshold = np.maximum(frida_risk_min, np.minimum(frida_risk_max, rng.normal(loc=frida_risk_mean, scale=frida_risk_std)))
-        budget = np.maximum(frida_budget_min, np.minimum(250_000, rng.normal(loc=frida_budget_mean, scale=frida_budget_std)))
+    for address in range(existing_agents, existing_agents + experiment_config.scratch["num_fridas"]):
+        risk_threshold = np.maximum(
+            experiment_config.scratch["frida_risk_min"],
+            np.minimum(
+                experiment_config.scratch["frida_risk_max"],
+                rng.normal(
+                    loc=experiment_config.scratch["frida_risk_mean"], scale=experiment_config.scratch["frida_risk_std"]
+                ),
+            ),
+        )
+        budget = FixedPoint(
+            np.maximum(
+                experiment_config.scratch["frida_budget_min"],
+                np.minimum(
+                    250_000,
+                    rng.normal(
+                        loc=experiment_config.scratch["frida_budget_mean"],
+                        scale=experiment_config.scratch["frida_budget_std"],
+                    ),
+                ),
+            )
+        )
         agent = FixedFrida(
             rng=rng,
-            trade_chance=trade_chance,
+            trade_chance=experiment_config.scratch["trade_chance"],
             risk_threshold=risk_threshold,
             wallet_address=address,
             budget=budget,
@@ -296,12 +352,23 @@ def get_example_agents(rng: Generator, num_fridas: int, num_louies: int, existin
         agent.log_status_report()
         agents += [agent]
     existing_agents += len(agents)
-    for address in range(existing_agents, existing_agents + num_louies):
+    for address in range(existing_agents, existing_agents + experiment_config.scratch["num_louies"]):
         risk_threshold = 0.0
-        budget = np.maximum(louie_budget_min, np.minimum(250_000, rng.normal(loc=louie_budget_mean, scale=louie_budget_std)))
+        budget = FixedPoint(
+            np.maximum(
+                experiment_config.scratch["louie_budget_min"],
+                np.minimum(
+                    250_000,
+                    rng.normal(
+                        loc=experiment_config.scratch["louie_budget_mean"],
+                        scale=experiment_config.scratch["louie_budget_std"],
+                    ),
+                ),
+            )
+        )
         agent = LongLouie(
             rng=rng,
-            trade_chance=trade_chance,
+            trade_chance=experiment_config.scratch["trade_chance"],
             risk_threshold=risk_threshold,
             wallet_address=address,
             budget=budget,
@@ -309,6 +376,7 @@ def get_example_agents(rng: Generator, num_fridas: int, num_louies: int, existin
         agent.log_status_report()
         agents += [agent]
     return agents
+
 
 # %% [markdown]
 # ### Setup simulation objects
@@ -318,7 +386,7 @@ def get_example_agents(rng: Generator, num_fridas: int, num_louies: int, existin
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # get an instantiated simulator object
-simulator = sim_utils.get_simulator(config)
+simulator = sim_utils.get_simulator_fp(config)
 
 # %% [markdown]
 # ### Run the simulation
@@ -327,9 +395,8 @@ simulator = sim_utils.get_simulator(config)
 # add the random agents
 trading_agents = get_example_agents(
     rng=simulator.rng,
-    num_fridas=num_fridas,
-    num_louies=num_louies,
-    existing_agents=len(simulator.agents)
+    experiment_config=config,
+    existing_agents=len(simulator.agents),
 )
 simulator.add_agents(trading_agents)
 print(f"Simulator has {len(simulator.agents)} agents")
@@ -339,13 +406,13 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables(simulator)
+trades = post_processing.compute_derived_variables_fp(simulator)
 
 # %% [markdown]
 # ### Plot simulation results
 
 # %% [markdown]
-# 
+#
 # ### variable & fixed apr
 
 # %%
@@ -353,9 +420,21 @@ fig, axes, _ = output_utils.get_gridspec_subplots()
 ax = axes[0]
 start_index = 0
 end_index = -1
-spot_size = 2.
-ax.scatter(trades.iloc[start_index:end_index]["trade_number"], trades.iloc[start_index:end_index]["variable_apr"], label="variable", c="blue", s=spot_size)
-ax.scatter(trades.iloc[start_index:end_index]["trade_number"], trades.iloc[start_index:end_index]["fixed_apr"], label="fixed", c="orange", s=spot_size)
+spot_size = 2.0
+ax.scatter(
+    trades.iloc[start_index:end_index]["trade_number"],
+    trades.iloc[start_index:end_index]["variable_apr"],
+    label="variable",
+    c="blue",
+    s=spot_size,
+)
+ax.scatter(
+    trades.iloc[start_index:end_index]["trade_number"],
+    trades.iloc[start_index:end_index]["fixed_apr"],
+    label="fixed",
+    c="orange",
+    s=spot_size,
+)
 
 ax.set_title("Interest rates over time")
 ax.set_xlabel("trade number")
@@ -363,7 +442,7 @@ ax.set_ylabel("APR")
 ax.legend()
 
 ax.grid(axis="x", which="both", color="black", alpha=0)
-day_data=np.nonzero(np.array(trades.iloc[start_index:end_index]["day"].diff())==1)[0]
+day_data = np.nonzero(np.array(trades.iloc[start_index:end_index]["day"].diff()) == 1)[0]
 for x in day_data:
     ax.axvline(x, c="black", alpha=0.2)
 
@@ -376,16 +455,28 @@ fig, axes, _ = output_utils.get_gridspec_subplots()
 ax = axes[0]
 start_index = 0
 end_index = -1
-spot_size = 2.
-ax.scatter(trades.iloc[start_index:end_index]["trade_number"], trades.iloc[start_index:end_index]["variable_apr"], label="variable", c="blue", s=spot_size)
-ax.scatter(trades.iloc[start_index:end_index]["trade_number"], trades.iloc[start_index:end_index]["fixed_apr"], label="fixed", c="orange", s=spot_size)
+spot_size = 2.0
+ax.scatter(
+    trades.iloc[start_index:end_index]["trade_number"],
+    trades.iloc[start_index:end_index]["variable_apr"],
+    label="variable",
+    c="blue",
+    s=spot_size,
+)
+ax.scatter(
+    trades.iloc[start_index:end_index]["trade_number"],
+    trades.iloc[start_index:end_index]["fixed_apr"],
+    label="fixed",
+    c="orange",
+    s=spot_size,
+)
 ax.set_title("Interest rates over time")
 ax.set_xlabel("trade number")
 ax.set_ylabel("APR")
 ax.legend()
 
 ax.grid(axis="x", which="both", color="black", alpha=0)
-day_data=np.nonzero(np.array(trades.iloc[start_index:end_index]["day"].diff())==1)[0]
+day_data = np.nonzero(np.array(trades.iloc[start_index:end_index]["day"].diff()) == 1)[0]
 for x in day_data:
     ax.axvline(x, c="black", alpha=0.2)
 
@@ -394,15 +485,8 @@ ylim = ax.get_ylim()
 fig.set_size_inches(fig_size)
 
 # %%
-import pandas as pd
-num_longs_and_shorts = {
-    f"agent_{agent_id}_num_longs": ["sum"]
-    for agent_id in range(len(simulator.agents))
-}
-num_longs_and_shorts.update({
-    f"agent_{agent_id}_num_shorts": ["sum"]
-    for agent_id in range(len(simulator.agents))
-})
+num_longs_and_shorts = {f"agent_{agent_id}_num_longs": ["sum"] for agent_id in range(len(simulator.agents))}
+num_longs_and_shorts.update({f"agent_{agent_id}_num_shorts": ["sum"] for agent_id in range(len(simulator.agents))})
 trades_agg = trades.groupby("day").agg(num_longs_and_shorts)
 trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
 trades_agg = trades_agg.reset_index()
@@ -431,31 +515,25 @@ ax.set_title("Market reserves")
 fig.set_size_inches(fig_size)
 
 # %%
-lp_trades = trades.groupby("day").agg(
-    {
-        f"agent_{0}_pnl": ["sum"]
-    }
-)
+lp_trades = trades.groupby("day").agg({f"agent_{0}_pnl": ["sum"]})
 lp_trades.columns = ["_".join(col).strip() for col in lp_trades.columns.values]
 lp_trades = lp_trades.reset_index()
 
-fridas = [agent_id for agent_id in range(len(simulator.agents)) if simulator.agents[agent_id].__class__.__name__ == "FixedFrida"]
-frida_trades = trades.groupby("day").agg(
-    {
-        f"agent_{agent_id}_pnl": ["sum"]
-        for agent_id in fridas
-    }
-)
+fridas = [
+    agent_id
+    for agent_id in range(len(simulator.agents))
+    if simulator.agents[agent_id].__class__.__name__ == "FixedFrida"
+]
+frida_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in fridas})
 frida_trades.columns = ["_".join(col).strip() for col in frida_trades.columns.values]
 frida_trades = frida_trades.reset_index()
 
-louies = [agent_id for agent_id in range(len(simulator.agents)) if simulator.agents[agent_id].__class__.__name__ == "LongLouie"]
-louies_trades = trades.groupby("day").agg(
-    {
-        f"agent_{agent_id}_pnl": ["sum"]
-        for agent_id in louies
-    }
-)
+louies = [
+    agent_id
+    for agent_id in range(len(simulator.agents))
+    if simulator.agents[agent_id].__class__.__name__ == "LongLouie"
+]
+louies_trades = trades.groupby("day").agg({f"agent_{agent_id}_pnl": ["sum"] for agent_id in louies})
 louies_trades.columns = ["_".join(col).strip() for col in louies_trades.columns.values]
 louies_trades = louies_trades.reset_index()
 
@@ -473,15 +551,10 @@ for ax in axes:
     ax.set_xlabel("day")
     ax.legend()
 text_handle = fig.suptitle("Agent profitability")
-fig.set_size_inches((fig_size[0]*2, fig_size[1]))
+fig.set_size_inches((fig_size[0] * 2, fig_size[1]))
 
 # %%
-trades_agg = trades.groupby("day").agg(
-    {
-        "share_reserves": ["sum"],
-        "bond_reserves": ["sum"]
-    }
-)
+trades_agg = trades.groupby("day").agg({"share_reserves": ["sum"], "bond_reserves": ["sum"]})
 trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
 trades_agg = trades_agg.reset_index()
 
@@ -494,14 +567,16 @@ text_handle = ax.set_title("Reserve levels")
 fig.set_size_inches(fig_size)
 
 # %%
-total_longs_and_shorts = { 
-    f"agent_{agent_id}_total_longs": ["mean"] # total_longs is an aggregate value recomputed each trade
+total_longs_and_shorts = {
+    f"agent_{agent_id}_total_longs": ["mean"]  # total_longs is an aggregate value recomputed each trade
     for agent_id in range(len(simulator.agents))
 }
-total_longs_and_shorts.update({
-    f"agent_{agent_id}_total_shorts": ["mean"] # total_shorts is an aggregate value recomputed each trade
-    for agent_id in range(len(simulator.agents))
-})
+total_longs_and_shorts.update(
+    {
+        f"agent_{agent_id}_total_shorts": ["mean"]  # total_shorts is an aggregate value recomputed each trade
+        for agent_id in range(len(simulator.agents))
+    }
+)
 trades_agg = trades.groupby("day").agg(total_longs_and_shorts)
 trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
 trades_agg = trades_agg.reset_index()
@@ -539,11 +614,7 @@ ax.set_ylabel("buffer quantities (in base units)")
 fig.set_size_inches(fig_size)
 
 # %%
-trades_agg = trades.groupby("day").agg(
-    {
-        "spot_price": ["mean"]
-    }
-)
+trades_agg = trades.groupby("day").agg({"spot_price": ["mean"]})
 trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
 trades_agg = trades_agg.reset_index()
 trades_agg["leverage"] = 1 / (1 - trades_agg["spot_price_mean"])
@@ -557,6 +628,3 @@ ax.set_ylabel("1/(1-p)")
 fig.set_size_inches(fig_size)
 
 # %%
-
-
-
