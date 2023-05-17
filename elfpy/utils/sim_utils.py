@@ -185,10 +185,7 @@ def get_policy(agent_type: str) -> Policy:
 #######################################
 # FIXED POINT
 #######################################
-def get_simulator_fp(
-    config: simulators.ConfigFP,
-    agents: Optional[list[AgentFP]] = None,
-) -> simulators.SimulatorFP:
+def get_simulator_fp(config: simulators.ConfigFP, agents: Optional[list[AgentFP]] = None) -> simulators.SimulatorFP:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -295,7 +292,7 @@ def get_initialized_hyperdrive_market_fp(
                 target apr, used for calculating the time stretch
             curve_fee_multiple : float
                 portion of trades to be collected as fees for LPers, expressed as a decimal
-            variable_apr : list
+            variable_apr : list[float]
                 variable (often a valut) apr per day for the duration of the simulation
 
     Returns

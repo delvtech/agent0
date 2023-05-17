@@ -62,7 +62,7 @@ config.flat_fee_multiple = 0.05  # fee collected on the spread of the flat porti
 config.target_fixed_apr = 0.01  # target fixed APR of the initial market after the LP
 config.target_liquidity = 500_000_000  # target total liquidity of the initial market, before any trades
 
-config.log_level = output_utils.text_to_log_level("INFO")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
+config.log_level = output_utils.text_to_log_level("DEBUG")  # Logging level, should be in ["DEBUG", "INFO", "WARNING"]
 config.log_filename = "frida_n_louie"  # Output filename for logging
 
 config.shuffle_users = True
@@ -96,7 +96,7 @@ config.scratch["frida_risk_std"] = 0.01
 
 # Define the vault apr
 vault_apr = np.array([0.01] * config.num_trading_days)
-# vault_apr[config.num_trading_days//2:] = 0.05
+vault_apr[config.num_trading_days // 2 :] = 0.05
 config.variable_apr = vault_apr.tolist()
 config.freeze()
 
@@ -151,7 +151,6 @@ class FixedFrida(elf_agent.AgentFP):
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
-
         action_list = []
         for short_time in self.wallet.shorts:  # loop over shorts # pylint: disable=consider-using-dict-items
             # if any short is mature
@@ -168,16 +167,16 @@ class FixedFrida(elf_agent.AgentFP):
                         ),
                     )
                 ]
-
         short_balances = [short.balance for short in self.wallet.shorts.values()]
         has_opened_short = bool(any(short_balance > FixedPoint(0) for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
         if (market.fixed_apr - market.market_state.variable_apr) < FixedPoint(
             self.risk_threshold
         ) and not has_opened_short:
-            trade_amount = self.get_max_short(
-                market
-            )  # maximum amount the agent can short given the market and the agent's wallet
+            # maximum amount the agent can short given the market and the agent's wallet
+            trade_amount = self.get_max_short(market)
+            # TODO: This is a hack until we fix get_max
+            trade_amount = trade_amount / FixedPoint(100.0)
             if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(
@@ -190,7 +189,6 @@ class FixedFrida(elf_agent.AgentFP):
                         ),
                     )
                 ]
-
         return action_list
 
 
@@ -236,7 +234,6 @@ class LongLouie(elf_agent.AgentFP):
         gonna_trade = self.rng.choice([True, False], p=[self.trade_chance, 1 - self.trade_chance])
         if not gonna_trade:
             return []
-
         action_list = []
         for long_time in self.wallet.longs:  # loop over longs # pylint: disable=consider-using-dict-items
             # if any long is mature
@@ -253,11 +250,9 @@ class LongLouie(elf_agent.AgentFP):
                         ),
                     )
                 ]
-
         long_balances = [long.balance for long in self.wallet.longs.values()]
         has_opened_long = bool(any(long_balance > 0 for long_balance in long_balances))
         # only open a long if the fixed rate is higher than variable rate
-        # risk_threshold = 0
         if (market.fixed_apr - market.market_state.variable_apr) > FixedPoint(
             self.risk_threshold
         ) and not has_opened_long:
@@ -271,12 +266,13 @@ class LongLouie(elf_agent.AgentFP):
                 market.market_state.bond_reserves - total_bonds_to_match_variable_apr
             ) * market.spot_price
             # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2)
+            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint(2.0)
             # get the maximum amount the agent can long given the market and the agent's wallet
             max_trade_amount = self.get_max_long(market)
-            trade_amount = FixedPointMath.minimum(
-                max_trade_amount, adjusted_bonds
-            )  # don't want to trade more than the agent has or more than the market can handle
+            # don't want to trade more than the agent has or more than the market can handle
+            trade_amount = FixedPointMath.minimum(max_trade_amount, adjusted_bonds)
+            # TODO: This is a hack until we fix get_max
+            trade_amount = trade_amount / FixedPoint(100.0)
             if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(

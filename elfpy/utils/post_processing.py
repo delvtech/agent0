@@ -241,9 +241,12 @@ def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFram
         "withdraw_interest",
         "withdraw_shares_ready_to_withdraw",
     ]
-    trades_df[float_columns] = trades_df[float_columns].astype(float)
-    trades_df[int_columns] = trades_df[int_columns].astype(int)
-    trades_df[string_columns] = trades_df[string_columns].astype(str)
+    for column in float_columns:
+        trades_df[column] = trades_df[column].astype(float)
+    for column in int_columns:
+        trades_df[column] = trades_df[column].astype(int)
+    for column in string_columns:
+        trades_df[column] = trades_df[column].astype(str)
     for col in list(trades_df):
         if col.startswith("agent"):  # type: ignore
             trades_df[col] = trades_df[col].astype(float)
