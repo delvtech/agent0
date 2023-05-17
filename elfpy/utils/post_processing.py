@@ -1,12 +1,9 @@
 """Helper functions for post-processing simulation outputs"""
 from __future__ import annotations  # types will be strings by default in 3.11
 
-from typing import TYPE_CHECKING
-
 import pandas as pd
 
-if TYPE_CHECKING:
-    from elfpy.simulators import Simulator, SimulatorFP
+import elfpy.simulators as simulators
 
 # pyright: reportGeneralTypeIssues=false
 # pyright: reportOptionalMemberAccess=false
@@ -42,13 +39,13 @@ def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.Da
     raise NotImplementedError
 
 
-def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Parameters
     ----------
-    simulation_state : SimulationState
-        simulation_state, which is a member variable of the Simulator class
+    simulator : Simulator
+        Simulator object that holds the simulation_state
 
     Returns
     -------
@@ -63,7 +60,7 @@ def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
     return pd.DataFrame.from_dict(simulator.simulation_state.__dict__)
 
 
-def compute_derived_variables(simulator: Simulator) -> pd.DataFrame:
+def compute_derived_variables(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Parameters
@@ -175,34 +172,89 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
 #######################################
 # FIXED POINT
 #######################################
-def get_simulation_state_df_fp(simulator: SimulatorFP) -> pd.DataFrame:
+def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Parameters
     ----------
-    simulation_state : SimulationState
-        simulation_state, which is a member variable of the Simulator class
+    simulator : Simulator
+        Simulator object that holds the simulation_state
 
     Returns
     -------
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
 
-    # TODO: Using the new sim state:
-    # def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
-    #      return simulator.simulation_state.combined_dataframe
+    .. todo::
+        Using the new sim state:
+        # def get_simulation_state_df(simulator: Simulator) -> pd.DataFrame:
+        #      return simulator.simulation_state.combined_dataframe
+
+        Also, converting from FixedPoint (which gets cast to "object") to real types needs to be fixed
     """
     # construct dataframe from simulation dict
-    return pd.DataFrame.from_dict(simulator.simulation_state.__dict__)
+    sim_dict = simulator.simulation_state.__dict__
+    del sim_dict["frozen"]
+    del sim_dict["no_new_attribs"]
+    trades_df = pd.DataFrame.from_dict(sim_dict)
+    string_columns = [
+        "model_name",
+    ]
+    int_columns = [
+        "checkpoint_duration_days",
+        "run_number",
+        "day",
+        "block_number",
+        "daily_block_number",
+        "trade_number",
+    ]
+    float_columns = [
+        "base_buffer",
+        "bond_buffer",
+        "bond_reserves",
+        "checkpoint_duration",
+        "current_time",
+        "current_variable_apr",
+        "curve_fee_multiple",
+        "flat_fee_multiple",
+        "fixed_apr",
+        "gov_fees_accrued",
+        "governance_fee_multiple",
+        "init_share_price",
+        "long_average_maturity_time",
+        "long_base_volume",
+        "longs_outstanding",
+        "lp_total_supply",
+        "run_number",
+        "share_reserves",
+        "share_price",
+        "short_average_maturity_time",
+        "short_base_volume",
+        "shorts_outstanding",
+        "spot_price",
+        "time_step_size",
+        "total_supply_withdraw_shares",
+        "variable_apr",
+        "withdraw_capital",
+        "withdraw_interest",
+        "withdraw_shares_ready_to_withdraw",
+    ]
+    trades_df[float_columns] = trades_df[float_columns].astype(float)
+    trades_df[int_columns] = trades_df[int_columns].astype(int)
+    trades_df[string_columns] = trades_df[string_columns].astype(str)
+    for col in list(trades_df):
+        if col.startswith("agent"):  # type: ignore
+            trades_df[col] = trades_df[col].astype(float)
+    return trades_df
 
 
-def compute_derived_variables_fp(simulator: SimulatorFP) -> pd.DataFrame:
+def compute_derived_variables_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Parameters
     ----------
-    simulation_state : SimulationState
-        simulation_state, which is a member variable of the Simulator class
+    simulator : Simulator
+        Simulator object that holds the simulation_state
 
     Returns
     -------
@@ -247,6 +299,26 @@ def compute_derived_variables_fp(simulator: SimulatorFP) -> pd.DataFrame:
     trades_df["price_total_return_percent_annualized"] = scale * trades_df["price_total_return_percent"]
     trades_df["share_price_total_return_percent_annualized"] = scale * trades_df["share_price_total_return_percent"]
     # create explicit column that increments per trade
-    add_pnl_columns(trades_df)
+    add_pnl_columns_fp(trades_df)
     trades_df = trades_df.reset_index()
     return trades_df
+
+
+def add_pnl_columns_fp(trades_df: pd.DataFrame) -> None:
+    """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
+    num_agents = len([col for col in trades_df if str(col).startswith("agent") and str(col).endswith("base")])
+    for agent_id in range(num_agents):
+        wallet_values_in_base = [
+            f"agent_{agent_id}_base",
+            f"agent_{agent_id}_lp_tokens",
+            f"agent_{agent_id}_total_longs",
+            f"agent_{agent_id}_total_shorts",
+        ]
+        wallet_values_in_base_no_mock = [
+            f"agent_{agent_id}_base",
+            f"agent_{agent_id}_lp_tokens",
+            f"agent_{agent_id}_total_longs_no_mock",
+            f"agent_{agent_id}_total_shorts_no_mock",
+        ]
+        trades_df[f"agent_{agent_id}_pnl"] = trades_df[wallet_values_in_base].astype(float).sum(axis=1)
+        trades_df[f"agent_{agent_id}_pnl_no_mock"] = trades_df[wallet_values_in_base_no_mock].astype(float).sum(axis=1)
