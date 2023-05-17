@@ -194,8 +194,10 @@ def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFram
     """
     # construct dataframe from simulation dict
     sim_dict = simulator.simulation_state.__dict__
-    del sim_dict["frozen"]
-    del sim_dict["no_new_attribs"]
+    if "frozen" in sim_dict:
+        del sim_dict["frozen"]
+    if "no_new_attribs" in sim_dict:
+        del sim_dict["no_new_attribs"]
     trades_df = pd.DataFrame.from_dict(sim_dict)
     string_columns = [
         "model_name",
