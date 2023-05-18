@@ -8,9 +8,10 @@ import logging
 from dataclasses import dataclass
 from collections import defaultdict, namedtuple
 
-from ape.types import AddressType
+from ape import Contract
+from ape.types import AddressType, ContractType
 from ape.exceptions import TransactionError
-from ape.api import BlockAPI, ReceiptAPI, TransactionAPI
+from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
 from ape.managers.project import ProjectManager
 from ape.contracts.base import ContractTransaction, ContractTransactionHandler
@@ -19,12 +20,12 @@ import pandas as pd
 
 import elfpy
 from elfpy import types
-from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 from elfpy.types import freezable
+from elfpy.agents.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -467,6 +468,64 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
             },
         )
     return agent_deltas
+
+
+def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
+    """Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
+
+    Parameters
+    ----------
+    address : str
+        Address of the contract to instantiate.
+    provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
+        Ape Provider object represents a connection to a blockchain network.
+
+    Example
+    -------
+    >>> faucet = ape_utils.get_instance(FAUCET_ADDRESS, provider=provider)
+
+    Returns
+    -------
+    ContractInstance
+        Contract instance at the specified address.
+    """
+    contract_type = get_contract_type(address, provider=provider)
+    return Contract(address=address, contract_type=contract_type)
+
+
+def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
+    """Get contract type from cache. Used for devnet, where Ape refuses to check the cache
+
+    Parameters
+    ----------
+    address : str
+        Address of the contract to instantiate.
+    provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
+        Ape Provider object represents a connection to a blockchain network.
+
+    Example
+    -------
+    >>> faucet = Contract(FAUCET_ADDRESS, contract_type=ape_utils.get_contract_type(FAUCET_ADDRESS, provider=provider))
+
+    Returns
+    -------
+    ContractType
+        Contract type at the specified address.
+    """
+    # pylint: disable=protected-access
+    # sourcery skip: use-named-expression
+    address_key: AddressType = provider.chain_manager.contracts.conversion_manager.convert(address, AddressType)
+    contract_type = provider.chain_manager.contracts._get_contract_type_from_disk(address_key)
+    if not contract_type:
+        # Also gets cached to disk for faster lookup next time.
+        contract_type = provider.chain_manager.contracts._get_contract_type_from_explorer(address_key)
+
+    # Cache locally for faster in-session look-up.
+    if contract_type:
+        provider.chain_manager.contracts._local_contract_types[address_key] = contract_type
+    assert isinstance(contract_type, ContractType), f"Contract type not found for address: {address}"
+
+    return contract_type
 
 
 def select_abi(
