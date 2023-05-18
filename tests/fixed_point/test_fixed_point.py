@@ -322,10 +322,29 @@ class TestFixedPoint(unittest.TestCase):
 
     def test_floor(self):
         r"""Test floor operator"""
-        assert FixedPoint("3.6").floor() == FixedPoint("3.0")
-        assert FixedPoint("0.5").floor() == FixedPoint(0)
-        assert FixedPoint(3).floor() == FixedPoint(0)
-        assert FixedPoint(-6).floor() == FixedPoint("-1.0")
-        assert FixedPoint(-6.0).floor() == FixedPoint(-6.0)
-        assert FixedPoint(-6.8).floor() == FixedPoint(-7.0)
-        assert FixedPoint("-2.1").floor() == FixedPoint("-3.0")
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-2.1").floor()
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
+        assert math.floor(FixedPoint("3.6")) == FixedPoint("3.0")
+        assert math.floor(FixedPoint("0.5")) == FixedPoint(0)
+        assert math.floor(FixedPoint(3)) == FixedPoint(0)
+        assert math.floor(FixedPoint(-6)) == FixedPoint("-1.0")
+        assert math.floor(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.floor(FixedPoint(-6.8)) == FixedPoint(-7.0)
+
+    def test_ceil(self):
+        r"""Test floor operator"""
+        assert FixedPoint("3.0").ceil() == FixedPoint("3.0")
+        assert FixedPoint("3.000000000000001").ceil() == FixedPoint("4.0")
+        assert FixedPoint("3.1").ceil() == math.ceil(FixedPoint("3.7"))
+        assert math.ceil(FixedPoint("3.6")) == FixedPoint("4.0")
+        assert math.ceil(FixedPoint("0.5")) == FixedPoint("1.0")
+        assert math.ceil(FixedPoint("0.0000000003")) == FixedPoint("1.0")
+        assert math.ceil(FixedPoint("-0.0")) == FixedPoint(0)
+        assert math.ceil(FixedPoint("0.0")) == FixedPoint(0)
+        assert math.ceil(FixedPoint(3)) == FixedPoint(1.0)
+        assert math.ceil(FixedPoint(-6)) == FixedPoint(0)
+        assert math.ceil(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.ceil(FixedPoint(6.0)) == FixedPoint(6.0)
+        assert math.ceil(FixedPoint(-6.8)) == FixedPoint(-6.0)
+        assert math.ceil(FixedPoint(6.8)) == FixedPoint(7.0)

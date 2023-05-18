@@ -333,6 +333,35 @@ class FixedPoint:
         # both are finite
         return self.int_value >= other.int_value
 
+    def __floor__(self) -> FixedPoint:
+        """Returns an integer rounded following Python `math.floor` behavior
+
+        Given a real number x, return as output the greatest integer less than or equal to x.
+        """
+        if not self.is_finite():
+            return self
+        lhs, rhs = str(self).split(".")
+        # if the number is negative & there is a remainder
+        if self.int_value < 0 < len(rhs.rstrip("0")):
+            return FixedPoint(str(int(lhs) - 1) + ".0")  # round down to -inf
+        return FixedPoint(lhs + ".0")
+
+    def __ceil__(self) -> FixedPoint:
+        """Returns an integer rounded following Python `math.ceil` behavior
+
+        Given a real number x, return as output the smallest integer greater than or equal to x.
+        """
+        if not self.is_finite():
+            return self
+        lhs, rhs = str(self).split(".")
+        # if there is a remainder
+        if len(rhs.rstrip("0")) > 0:
+            if 0 > self.int_value:  # the number is negative
+                return FixedPoint(lhs + ".0")  # truncating decimal rounds towards zero
+            elif 0 < self.int_value:  # the number is positive
+                return FixedPoint(str(int(lhs) + 1) + ".0")  # increase integer component by one
+        return FixedPoint(lhs + ".0")  # the number has no remainder
+
     # type casting
     def __int__(self) -> int:
         """Cast to int"""
@@ -439,13 +468,9 @@ class FixedPoint:
         return FixedPoint("1.0")
 
     def floor(self) -> FixedPoint:
-        """Returns an integer rounded following Python `floor` behavior
-        Given a real number x, return as output the greatest integer less than or equal to x.
-        """
-        if not self.is_finite():
-            return self
-        lhs, rhs = str(self).split(".")
-        # if the number is negative & there is a remainder
-        if self.int_value < 0 < len(rhs.rstrip("0")):
-            return FixedPoint(str(int(lhs) - 1) + ".0")  # round down to -inf
-        return FixedPoint(lhs + ".0")
+        """Calls the `__floor__` function"""
+        return self.__floor__()
+
+    def ceil(self) -> FixedPoint:
+        """Calls the `__ceil__` function"""
+        return self.__ceil__()
