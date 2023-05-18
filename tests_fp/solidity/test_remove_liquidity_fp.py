@@ -74,15 +74,15 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens)
 
         # make sure all alice's lp tokens were burned
-        self.assertEqual(float(self.alice.wallet.lp_tokens), 0)
-        self.assertEqual(float(self.hyperdrive.market_state.lp_total_supply), 0)
+        self.assertEqual(self.alice.wallet.lp_tokens, FixedPoint(0))
+        self.assertEqual(self.hyperdrive.market_state.lp_total_supply, FixedPoint(0))
 
         # make sure pool balances went to zero
-        self.assertEqual(float(self.hyperdrive.market_state.share_reserves), 0)
-        self.assertEqual(float(self.hyperdrive.market_state.bond_reserves), 0)
+        self.assertEqual(self.hyperdrive.market_state.share_reserves, FixedPoint(0))
+        self.assertEqual(self.hyperdrive.market_state.bond_reserves, FixedPoint(0))
 
         # there should be no withdraw shares since no margin was locked up
-        self.assertEqual(float(self.alice.wallet.withdraw_shares), 0)
+        self.assertEqual(self.alice.wallet.withdraw_shares, FixedPoint(0))
 
     def test_remove_liquidity_long_trade(self):
         """Should remove liquidity if there are open longs"""
@@ -106,24 +106,22 @@ class TestRemoveLiquidity(unittest.TestCase):
         base_proceeds = remove_wallet_deltas.balance.amount
 
         # make sure all alice's lp tokens were burned
-        self.assertEqual(float(self.alice.wallet.lp_tokens), 0)
-        self.assertEqual(float(market_state.lp_total_supply), 0)
+        self.assertEqual(self.alice.wallet.lp_tokens, FixedPoint(0))
+        self.assertEqual(market_state.lp_total_supply, FixedPoint(0))
 
         # make sure alice gets the correct amount of base
         base_expected = accrued + base_amount - bond_amount
-        self.assertAlmostEqual(float(base_proceeds), float(base_expected), places=6)
+        self.assertAlmostEqual(base_proceeds, base_expected, places=6)
 
         # make sure pool balances are correct
-        self.assertAlmostEqual(
-            float(market_state.share_reserves), float(bond_amount / market_state.share_price), places=6
-        )
+        self.assertAlmostEqual(market_state.share_reserves, bond_amount / market_state.share_price, places=6)
         # self.assertEqual(market_state.bond_reserves, 0)
 
         # ensure correct amount of withdrawal shares
         withdraw_shares_expected = (
             market_state.longs_outstanding - market_state.long_base_volume
         ) / market_state.share_price
-        self.assertEqual(float(self.alice.wallet.withdraw_shares), float(withdraw_shares_expected))
+        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, places=17)
 
     def test_remove_liquidity_short_trade(self):
         """Should remove liquidity if there are open shorts"""
@@ -147,18 +145,18 @@ class TestRemoveLiquidity(unittest.TestCase):
         base_proceeds = remove_wallet_deltas.balance.amount
 
         # make sure all alice's lp tokens were burned
-        self.assertEqual(float(self.alice.wallet.lp_tokens), 0)
-        self.assertEqual(float(market_state.lp_total_supply), 0)
+        self.assertEqual(self.alice.wallet.lp_tokens, FixedPoint(0))
+        self.assertEqual(market_state.lp_total_supply, FixedPoint(0))
 
         # make sure alice gets the correct amount of base
         base_expected = accrued + base_paid - short_amount_bonds
         # TODO: improve this.  this is also pretty bad in the solidity code.
-        self.assertAlmostEqual(float(base_proceeds), float(base_expected), delta=1e7)
+        self.assertAlmostEqual(base_proceeds, base_expected, delta=FixedPoint(1e7))
 
         # make sure pool balances went to zero
-        self.assertEqual(float(market_state.share_reserves), 0)
-        self.assertEqual(float(market_state.bond_reserves), 0)
+        self.assertEqual(market_state.share_reserves, FixedPoint(0))
+        self.assertEqual(market_state.bond_reserves, FixedPoint(0))
 
         # ensure correct amount of withdrawal shares
         withdraw_shares_expected = market_state.short_base_volume / market_state.share_price
-        self.assertEqual(float(self.alice.wallet.withdraw_shares), float(withdraw_shares_expected))
+        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, places=17)
