@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+from datetime import datetime
 from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,8 +17,7 @@ from typing import Optional, Type, cast
 
 # external lib
 import ape
-from ape.types import AddressType
-from ape import Contract, accounts
+from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
@@ -43,12 +43,9 @@ load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path
 
 NO_CRASH = 0
 USE_ALCHEMY = False
-DEVNET = False
 PROVIDER_STRING = "goerli:alchemy" if USE_ALCHEMY else "goerli:http://localhost:8547"
 
-CRASH_FILE = f"no_crash{'_devnet' if DEVNET else ''}.txt"
-RANDOM_SEED_FILE = f"random_seed{'_devnet' if DEVNET else ''}.txt"
-
+FAUCET_ADDRESS = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
 DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
@@ -265,6 +262,8 @@ def get_argparser() -> argparse.ArgumentParser:
         default=0.1,
         type=float,
     )
+
+    parser.add_argument("--devnet", help="Run on devnet", action="store_true")
     return parser
 
 
@@ -301,6 +300,10 @@ class BotInfo:
     index: Optional[int] = None
     name: str = "botty mcbotface"
 
+    def __repr__(self) -> str:
+        """Return a string representation of the object."""
+        return f"{self.name} {','.join([f'{key}={value}' if value else '' for key, value in self.__dict__.items() if key not in ['name','policy']])})"
+
 
 def get_config() -> simulators.Config:
     """Set _config values for the experiment."""
@@ -308,11 +311,12 @@ def get_config() -> simulators.Config:
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
     _config.log_filename = "testnet_bots"
-    if os.path.exists(RANDOM_SEED_FILE):
-        with open(RANDOM_SEED_FILE, "r", encoding="utf-8") as file:
+    random_seed_file = f"random_seed{'_devnet' if args.devnet else ''}.txt"
+    if os.path.exists(random_seed_file):
+        with open(random_seed_file, "r", encoding="utf-8") as file:
             _config.random_seed = int(file.read()) + 1
     logging.info("Random seed=%s", _config.random_seed)
-    with open(RANDOM_SEED_FILE, "w", encoding="utf-8") as file:
+    with open(random_seed_file, "w", encoding="utf-8") as file:
         file.write(str(_config.random_seed))
     _config.title = "testnet bots"
     for key, value in args.__dict__.items():
@@ -326,6 +330,8 @@ def get_config() -> simulators.Config:
     _config.scratch["random"] = BotInfo(policy=random_agent.Policy, trade_chance=trade_chance)
     _config.scratch["bot_names"] = {"louie", "frida", "random"}
     _config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
+    _config.scratch["devnet"] = args.devnet
+    _config.scratch["crash_file"] = f"no_crash{'_devnet' if args.devnet else ''}.txt"
     _config.freeze()
     return _config
 
@@ -424,7 +430,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
         List of dev accounts.
     """
     _dev_accounts: list[KeyfileAccount] = get_accounts()
-    faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
+    faucet = ape_utils.get_instance(FAUCET_ADDRESS, provider=provider)
 
     bot_num = 0
     for bot_name in config.scratch["bot_names"]:
@@ -443,7 +449,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
         bot_info.name = bot_name
         for _ in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
             bot_info.index = len(_sim_agents)
-            log_and_show(f"Creating {bot_name} agent {bot_info.index}/{bot_num}: {bot_info=}")
+            logging.debug("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
             agent = create_agent(
                 _bot=bot_info,
                 _dev_accounts=_dev_accounts,
@@ -474,47 +480,34 @@ def do_trade():
 
 def set_days_without_crashing(no_crash: int):
     """Calculate the number of days without crashing."""
-    with open(CRASH_FILE, "w", encoding="utf-8") as file:
+    with open(config.scratch["crash_file"], "w", encoding="utf-8") as file:
         file.write(f"{no_crash}")
     return no_crash
 
 
-def get_and_show_block_and_gas():
+def log_and_show_block_info():
     """Get and show the latest block number and gas fees."""
-    max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = ape_utils.get_gas_stats(latest_block)
-    if not np.isnan(max_max_fee):
-        log_string = "Block number: {}, Block time: {}, Trades without crashing: {}"
-        log_variab = block_number, block_time, NO_CRASH
-        log_string += ", max_fee(max={},avg={}) priority_fee(max={},avg={})"
-        log_variab += fmt(max_max_fee), fmt(avg_max_fee), fmt(max_priority_fee), fmt(avg_priority_fee)
-        log_and_show(log_string, *log_variab)
+    if not hasattr(latest_block, "base_fee"):
+        raise ValueError("latest block does not have base_fee")
+    base_fee = getattr(latest_block, "base_fee") / 1e9
+    log_string = "Block number: {}, Block time: {}, Trades without crashing: {}, base_fee: {}"
+    log_variab = fmt(block_number), datetime.fromtimestamp(block_time), NO_CRASH, base_fee
+    log_and_show(log_string, *log_variab)
 
 
 if __name__ == "__main__":
-    # pylint: disable=protected-access
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
     # Set up ape
-    if DEVNET:
+    if config.scratch["devnet"]:  # if devnet setting is enabled
         k, ps = "ethereum:local:foundry", {"fork_url": "http://localhost:8547", "port": 8549}
         provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
         print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
-        print(f"using contract_types_cache = {ape.chain.contracts._contract_types_cache}")
     else:
         provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
     project = ape_utils.HyperdriveProject(Path.cwd())
-    address_key: AddressType = ape.chain.contracts.conversion_manager.convert(DAI_ADDRESS, AddressType)
-    contract_type = ape.chain.contracts._get_contract_type_from_disk(address_key)
-    if not contract_type:
-        # Also gets cached to disk for faster lookup next time.
-        contract_type = ape.chain.contracts._get_contract_type_from_explorer(address_key)
-
-    # Cache locally for faster in-session look-up.
-    if contract_type:
-        ape.chain.contracts._local_contract_types[address_key] = contract_type
-
-    dai: ContractInstance = Contract(address=DAI_ADDRESS, contract_type=contract_type)  # sDai
+    dai: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
     hyperdrive: ContractInstance = project.get_hyperdrive_contract()
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
 
@@ -533,7 +526,7 @@ if __name__ == "__main__":
         block_time = latest_block.timestamp
         start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
-            get_and_show_block_and_gas()
+            log_and_show_block_info()
             market_state = ape_utils.get_market_state_from_contract(contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
@@ -548,14 +541,12 @@ if __name__ == "__main__":
             for bot, policy in sim_agents.items():
                 trades: list[types.Trade] = policy.get_trades(market=market)
                 for trade_object in trades:
-                    # try:
-                    logging.debug(trade_object)
-                    do_trade()
-                    NO_CRASH = set_days_without_crashing(NO_CRASH + 1)  # set and save to file
-                    # except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-                    #     LOG_STRING = "Crashed in Python simulation: {}"
-                    #     log_and_show(LOG_STRING, exc)
-                    #     NO_CRASH = set_days_without_crashing(0)  # set and save to file
-                    #     print("break here")
+                    try:
+                        logging.debug(trade_object)
+                        do_trade()
+                        NO_CRASH = set_days_without_crashing(NO_CRASH + 1)  # set and save to file
+                    except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
+                        log_and_show("Crashed unexpectedly: {}", exc)
+                        NO_CRASH = set_days_without_crashing(0)  # set and save to file
             last_executed_block = block_number
         sleep(1)
