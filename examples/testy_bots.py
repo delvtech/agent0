@@ -310,7 +310,6 @@ def get_config() -> simulators.Config:
     args = get_argparser().parse_args()
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
-    _config.log_filename = "testnet_bots"
     random_seed_file = f"random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:
@@ -324,6 +323,7 @@ def get_config() -> simulators.Config:
             _config[key] = value
         else:
             _config.scratch[key] = value
+    _config.log_filename += "_devnet" if args.devnet else ""
     trade_chance = _config.scratch["trade_chance"]
     _config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=trade_chance)
     _config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=trade_chance)
