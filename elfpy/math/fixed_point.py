@@ -154,18 +154,10 @@ class FixedPoint:
         return self * other
 
     def __truediv__(self, other):
-        """Enables '/' syntax, which mirrors `//` syntax.
+        """Enables '/' syntax.
 
         We mirror floordiv because most solidity contract equations use divdown
         """
-        return self.__floordiv__(other)
-
-    def __rtruediv__(self, other):
-        """Enables reciprocal division to support other / FixedPoint"""
-        return self.__truediv__(other)
-
-    def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '//' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -182,6 +174,18 @@ class FixedPoint:
         return FixedPoint(
             FixedPointIntegerMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed
         )
+
+    def __rtruediv__(self, other):
+        """Enables reciprocal division to support other / FixedPoint"""
+        return self.__truediv__(other)
+
+    def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables '//' syntax
+
+        While FixedPoint numbers are represented as integers, they act like floats.
+        So floordiv should return only whole numbers.
+        """
+        return (self.__truediv__(other)).__floor__()
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
@@ -241,10 +245,14 @@ class FixedPoint:
         return FixedPoint("-1.0") * self
 
     def __abs__(self) -> FixedPoint:
-        """Enables 'abs()' function"""
+        r"""Enables 'abs()' function"""
         if self.is_nan():
             return self
         return FixedPoint(abs(self.int_value), self.decimal_places, self.signed)
+
+    def __divmod__(self, other: FixedPoint) -> tuple[FixedPoint, FixedPoint]:
+        r"""Enables `divmod()` function"""
+        return (self // other, self % other)
 
     # comparison methods
     def __eq__(self, other: FixedPoint) -> bool:

@@ -208,6 +208,10 @@ class TestFixedPoint(unittest.TestCase):
         assert int(FixedPoint(5)) / 5 == 1
         assert 5 / int(FixedPoint(5)) == 1
         assert float(FixedPoint(5)) / 5 == 1 * 10**-18
+        # scaling both numerator & denominator shouldn't change the outcome
+        assert FixedPoint(5) / FixedPoint(7) == FixedPoint(714285714285714285)
+        assert FixedPoint(50) / FixedPoint(70) == FixedPoint(714285714285714285)
+        assert FixedPoint(500) / FixedPoint(700) == FixedPoint(714285714285714285)
         # int / float
         assert int(FixedPoint(5) / FixedPoint(5.0)) == 1  # 5e-18 / 5e18 = (5/5) * 10 ** (-18+18) = 1
         # float / float
@@ -244,8 +248,15 @@ class TestFixedPoint(unittest.TestCase):
         with self.assertRaises(errors.DivisionByZero):
             _ = fixed_point_value / fixed_point_zero
 
+    def test_floor_divide(self):
+        r"""Test `//` sugar"""
+        assert FixedPoint("6.3") // FixedPoint("2.0") == FixedPoint("3.0")
+        assert FixedPoint("8.0") // FixedPoint("2.0") == FixedPoint("4.0")
+        assert FixedPoint("8.0") // FixedPoint("5.0") == FixedPoint("1.0")
+        assert FixedPoint("0.5") // FixedPoint("0.2") == FixedPoint("2.0")
+
     def test_power(self):
-        r"""Test `**` sugar for various type combos"""
+        r"""Test `**` sugar"""
         # power zero
         assert int(FixedPoint(5.0) ** FixedPoint(0)) == 1 * 10**18
         assert int(FixedPoint(5) ** FixedPoint(0)) == 1 * 10**18
@@ -319,6 +330,19 @@ class TestFixedPoint(unittest.TestCase):
             _ = int_value % fixed_point_value  # type: ignore
         with self.assertRaises(errors.DivisionByZero):
             _ = fixed_point_value % fixed_point_zero
+
+    def test_divmod(self):
+        r"""Test `divmod` support"""
+        assert divmod(FixedPoint(5), FixedPoint(7)) == (FixedPoint(5) // FixedPoint(7), FixedPoint(5) % FixedPoint(7))
+        assert divmod(FixedPoint(5), FixedPoint(7)) == (FixedPoint(0), FixedPoint(5))
+        assert divmod(FixedPoint("6.3"), FixedPoint("2.0")) == (FixedPoint("3.0"), FixedPoint("0.3"))
+        assert divmod(FixedPoint("5.5"), FixedPoint("2.2")) == (FixedPoint("2.0"), FixedPoint("1.1"))
+        assert divmod(FixedPoint("-5.5"), FixedPoint("-2.2")) == (FixedPoint("2.0"), FixedPoint("-1.1"))
+        assert divmod(FixedPoint("5.5"), FixedPoint("-2.2")) == (FixedPoint("-3.0"), FixedPoint("-1.1"))
+
+    def test_divmod_fail(self):
+        with self.assertRaises(errors.DivisionByZero):
+            _ = divmod(FixedPoint("1.0"), FixedPoint(0))
 
     def test_floor(self):
         r"""Test floor method"""
