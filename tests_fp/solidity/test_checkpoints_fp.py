@@ -85,8 +85,8 @@ class TestCheckpoint(unittest.TestCase):
         )
         # Ensure that the pool's APR wasn't changed by the checkpoint.
         self.assertAlmostEqual(
-            float(apr_before),
-            float(apr_after),
+            apr_before,
+            apr_after,
             places=8,
         )
         checkpoint = self.hyperdrive.market_state.checkpoints[int(checkpoint_time)]

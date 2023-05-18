@@ -1343,28 +1343,28 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     ),
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee_or_slippage),
-                    float(expected_result.without_fee_or_slippage),
+                    trade_result.breakdown.without_fee_or_slippage,
+                    expected_result.without_fee_or_slippage,
                     places=self.ALMOST_PLACES,
                     msg=f"{model_type} test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee),
-                    float(expected_result.without_fee),
+                    trade_result.breakdown.without_fee,
+                    expected_result.without_fee,
                     places=self.ALMOST_PLACES,
                     msg=f"{model_type} test {test_number + 1} unexpected without_fee",
                 )
                 model_name = pricing_model.model_name()
                 if model_type in {"yieldspace", "hyperdrive"}:
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.fee),
-                        float(expected_result.fee),
+                        trade_result.breakdown.fee,
+                        expected_result.fee,
                         places=self.ALMOST_PLACES,
                         msg=f"{model_type} test {test_number + 1} unexpected fee",
                     )
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.with_fee),
-                        float(expected_result.with_fee),
+                        trade_result.breakdown.with_fee,
+                        expected_result.with_fee,
                         places=self.ALMOST_PLACES,
                         msg=f"{model_type} test {test_number + 1} unexpected with_fee",
                     )

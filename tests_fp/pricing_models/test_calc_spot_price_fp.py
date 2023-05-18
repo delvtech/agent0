@@ -97,8 +97,8 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(spot_price),
-                float(test_case["expected_result"]),
+                spot_price,
+                test_case["expected_result"],
                 places=8,
                 msg=f"{test_number=} failed, {spot_price=}, {test_case['expected_result']}",
             )
@@ -165,8 +165,8 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(spot_price),
-                float(test_case["expected_result"]),
+                spot_price,
+                test_case["expected_result"],
                 places=8,
                 msg=f"{test_number=} failed, {spot_price=}, {test_case['expected_result']}",
             )
@@ -250,8 +250,8 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(pm_spot_price),
-                float(util_spot_price),
+                pm_spot_price,
+                util_spot_price,
                 places=8,
                 msg=f"{test_number=} failed, {pm_spot_price=}, {util_spot_price=}",
             )

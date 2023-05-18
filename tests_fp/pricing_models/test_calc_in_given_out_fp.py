@@ -74,27 +74,27 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_remaining=time_remaining,
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee_or_slippage),
-                    float(expected_result.without_fee_or_slippage),
+                    trade_result.breakdown.without_fee_or_slippage,
+                    expected_result.without_fee_or_slippage,
                     places=8,
                     msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee),
-                    float(expected_result.without_fee),
+                    trade_result.breakdown.without_fee,
+                    expected_result.without_fee,
                     places=8,
                     msg=f"test {test_number + 1} unexpected without_fee",
                 )
                 if model_type in {"yieldspace", "hyperdrive"}:
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.fee),
-                        float(expected_result.fee),
+                        trade_result.breakdown.fee,
+                        expected_result.fee,
                         places=8,
                         msg=f"test {test_number + 1} unexpected yieldspace fee",
                     )
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.with_fee),
-                        float(expected_result.with_fee),
+                        trade_result.breakdown.with_fee,
+                        expected_result.with_fee,
                         places=8,
                         msg=f"test {test_number + 1} unexpected yieldspace with_fee",
                     )
