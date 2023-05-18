@@ -23,7 +23,6 @@ from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.types import freezable
 from elfpy.agents.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:

@@ -7,9 +7,9 @@ import argparse
 import json
 import logging
 import os
-from datetime import datetime
 from collections import namedtuple
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 from time import time as now
@@ -17,12 +17,12 @@ from typing import Optional, Type, cast
 
 # external lib
 import ape
+import numpy as np
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
-import numpy as np
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
@@ -302,7 +302,9 @@ class BotInfo:
 
     def __repr__(self) -> str:
         """Return a string representation of the object."""
-        return f"{self.name} {','.join([f'{key}={value}' if value else '' for key, value in self.__dict__.items() if key not in ['name','policy']])})"
+        return f"{self.name} " + ",".join(
+            [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
+        )
 
 
 def get_config() -> simulators.Config:
@@ -413,8 +415,8 @@ def create_agent(
         address_=agent.contract.address,
         index=_bot.index,
         info=on_chain_trade_info,
-        hyperdrive=hyperdrive,
-        base=base,
+        hyperdrive_contract=hyperdrive,
+        base_contract=base,
     )
     return agent
 
@@ -442,7 +444,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
         bot_num += config.scratch[f"num_{bot_name}"]
     _sim_agents = {}
     start_time_ = now()
-    on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive=hyperdrive)
+    on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive_contract=hyperdrive)
     log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
         bot_info = config.scratch[bot_name]
@@ -527,7 +529,7 @@ if __name__ == "__main__":
         start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
             log_and_show_block_info()
-            market_state = ape_utils.get_market_state_from_contract(contract=hyperdrive)
+            market_state = ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
                 market_state=market_state,
