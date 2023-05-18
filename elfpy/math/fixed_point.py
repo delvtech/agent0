@@ -127,7 +127,10 @@ class FixedPoint:
         return other.__sub__(self)
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '*' syntax"""
+        """Enables '*' syntax
+
+        We use mul_down to match the majority of Hyperdrive solidity contract equations
+        """
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -150,7 +153,7 @@ class FixedPoint:
     def __truediv__(self, other):
         """Enables '/' syntax.
 
-        We mirror floordiv because most solidity contract equations use divdown
+        We use div_down to match the majority of Hyperdrive solidity contract equations
         """
         other = self._coerce_other(other)
         if other is NotImplemented:
