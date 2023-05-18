@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 
 from ape import Contract
 from ape.types import AddressType, ContractType
-from ape.exceptions import TransactionError
+from ape.exceptions import TransactionError, TransactionNotFoundError
 from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
 from ape.contracts import ContractContainer
 from ape.managers.project import ProjectManager
@@ -143,7 +143,6 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
-    trades["value"] = trades["value"]
 
     unique_maturities_ = trades["maturity_timestamp"].unique()
     unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
@@ -196,37 +195,55 @@ def get_wallet_from_onchain_trade_info(
     wallet = Wallet(
         address=index, balance=types.Quantity(amount=base_contract.balanceOf(address_), unit=types.TokenType.BASE)
     )
-    for position_id in info.unique_ids:
+    for position_id in info.unique_ids:  # loop across all unique positions
         trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
             info.trades["id"] == position_id
         )
-        logging.debug("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
+        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
         balance = (
             info.trades.loc[(trades_in_position) & (info.trades["to"] == address_), "value"].sum()
             - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        assert (
-            abs(balance - hyperdrive_contract.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
-        ), (
-            f"events {balance=} and {hyperdrive_contract.balanceOf(position_id, address_)=} disagree"
-            f"by more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
-        )
+        mint_time = maturity - elfpy.SECONDS_IN_YEAR
+        log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+
+        # verify our calculation against the onchain balance
+        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
+        if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+            raise ValueError(
+                f"events {balance=} and {on_chain_balance=} disagree by "
+                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
+            )
+        log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
 
         # check if there's an outstanding balance
-        if balance != 0 or hyperdrive_contract.balanceOf(position_id, address_) != 0:
-            # loop across all the positions owned by this wallet
-            for specific_trade in trades_in_position.index[trades_in_position]:
-                if asset_type == "SHORT":
-                    open_share_price = info.share_price[info.trades.loc[specific_trade, "block_number"]]
-                    wallet.shorts |= {
-                        maturity - elfpy.SECONDS_IN_YEAR: Short(balance=balance, open_share_price=open_share_price)
-                    }
-                elif asset_type == "LONG":
-                    wallet.longs |= {maturity - elfpy.SECONDS_IN_YEAR: Long(balance=balance)}
-                elif asset_type == "LP":
-                    wallet.lp_tokens += balance
+        if balance != 0 or on_chain_balance != 0:
+            if asset_type == "SHORT":
+                # loop across all the positions owned by this wallet
+                sum_product_of_open_share_price_and_value, sum_value = 0, 0
+                for specific_trade in trades_in_position.index[trades_in_position]:
+                    value = info.trades.loc[specific_trade, "value"]
+                    value *= -1 if info.trades.loc[specific_trade, "from"] == address_ else 1
+                    sum_value += value
+                    sum_product_of_open_share_price_and_value += (
+                        value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
+                    )
+                open_share_price = sum_product_of_open_share_price_and_value / sum_value
+                assert (
+                    abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
+                ), "weighted average open share price calculation is wrong"
+                print(f"calculated weighted average open share price of {open_share_price}")
+                new_record = {mint_time: Short(balance=balance, open_share_price=open_share_price)}
+                wallet.shorts |= new_record
+                print(f"storing in wallet as {new_record=}")
+            elif asset_type == "LONG":
+                new_record = {mint_time: Long(balance=balance)}
+                wallet.longs |= new_record
+                print(f"storing in wallet as {new_record=}")
+            elif asset_type == "LP":
+                wallet.lp_tokens += balance
     return wallet
 
 
@@ -723,7 +740,7 @@ def attempt_txn(
         if not hasattr(latest, "base_fee"):
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
-        log_and_show(f"latest block ({fmt(getattr(latest, 'number'))}) has base_fee of {base_fee/1e9:,.3f}")
+        log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
 
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * priority_fee_multiple * attempt

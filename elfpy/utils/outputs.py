@@ -565,7 +565,7 @@ def log_and_show(string: str, *args) -> None:
 
     # log to both default logger and stdout, depending on whether there are args
     if args:
-        formatted_string = string.format(*args)
+        formatted_string = string % args
         # logging.info(formatted_string)
         stdout_logger.info(formatted_string)
     else:

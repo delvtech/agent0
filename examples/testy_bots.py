@@ -444,7 +444,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
         bot_num += config.scratch[f"num_{bot_name}"]
     _sim_agents = {}
     start_time_ = now()
-    on_chain_trade_info = ape_utils.get_on_chain_trade_info(hyperdrive_contract=hyperdrive)
+    on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(hyperdrive_contract=hyperdrive)
     log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
     for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
         bot_info = config.scratch[bot_name]
@@ -463,6 +463,16 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
     return _sim_agents, _dev_accounts
 
 
+# for mint_time,long in agent.wallet.longs.items():
+#     print(mint_time, long)
+# for mint_time,short in agent.wallet.shorts.items():
+#     print(mint_time, short)
+
+# # find relevant trades
+# idx = on_chain_trade_info.trades.operator==agent.wallet.address
+# on_chain_trade_info.trades.loc[idx,:]
+
+
 def do_trade():
     """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
@@ -474,7 +484,7 @@ def do_trade():
     if dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
         args = hyperdrive.address, int(50_000 * 1e18)
         ape_utils.attempt_txn(agent, dai.approve, *args)
-    params = {"trade_type": trade.action_type.name, "hyperdrive": hyperdrive, "agent": agent, "amount": amount}
+    params = {"trade_type": trade.action_type.name, "hyperdrive_contract": hyperdrive, "agent": agent, "amount": amount}
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
     _, _ = ape_utils.ape_trade(**params)
