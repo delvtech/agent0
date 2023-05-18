@@ -126,20 +126,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
-                    k = float(
-                        pricing_model.calc_yieldspace_const(
-                            share_reserves=test_case["market_state"].share_reserves,
-                            bond_reserves=test_case["market_state"].bond_reserves,
-                            lp_total_supply=test_case["market_state"].lp_total_supply,
-                            time_elapsed=test_case["time_elapsed"],
-                            share_price=test_case["market_state"].share_price,
-                            init_share_price=test_case["market_state"].init_share_price,
-                        )
-                    )
-            # If test was not supposed to fail, continue normal execution
-            else:
-                k = float(
-                    pricing_model.calc_yieldspace_const(
+                    k = pricing_model.calc_yieldspace_const(
                         share_reserves=test_case["market_state"].share_reserves,
                         bond_reserves=test_case["market_state"].bond_reserves,
                         lp_total_supply=test_case["market_state"].lp_total_supply,
@@ -147,9 +134,18 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                         share_price=test_case["market_state"].share_price,
                         init_share_price=test_case["market_state"].init_share_price,
                     )
+            # If test was not supposed to fail, continue normal execution
+            else:
+                k = pricing_model.calc_yieldspace_const(
+                    share_reserves=test_case["market_state"].share_reserves,
+                    bond_reserves=test_case["market_state"].bond_reserves,
+                    lp_total_supply=test_case["market_state"].lp_total_supply,
+                    time_elapsed=test_case["time_elapsed"],
+                    share_price=test_case["market_state"].share_price,
+                    init_share_price=test_case["market_state"].init_share_price,
                 )
                 # TODO: This should be passing with places=18
-                self.assertAlmostEqual(float(k), float(test_case["expected_result"]), places=13)
+                self.assertAlmostEqual(k, test_case["expected_result"], places=12)
 
         output_utils.close_logging()
 
