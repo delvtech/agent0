@@ -321,7 +321,7 @@ class TestFixedPoint(unittest.TestCase):
             _ = fixed_point_value % fixed_point_zero
 
     def test_floor(self):
-        r"""Test floor operator"""
+        r"""Test floor method"""
         assert math.floor(FixedPoint("-2.1")) == FixedPoint("-2.1").floor()
         assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
         assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
@@ -333,7 +333,7 @@ class TestFixedPoint(unittest.TestCase):
         assert math.floor(FixedPoint(-6.8)) == FixedPoint(-7.0)
 
     def test_ceil(self):
-        r"""Test floor operator"""
+        r"""Test ceil method"""
         assert FixedPoint("3.0").ceil() == FixedPoint("3.0")
         assert FixedPoint("3.000000000000001").ceil() == FixedPoint("4.0")
         assert FixedPoint("3.1").ceil() == math.ceil(FixedPoint("3.7"))
@@ -348,3 +348,17 @@ class TestFixedPoint(unittest.TestCase):
         assert math.ceil(FixedPoint(6.0)) == FixedPoint(6.0)
         assert math.ceil(FixedPoint(-6.8)) == FixedPoint(-6.0)
         assert math.ceil(FixedPoint(6.8)) == FixedPoint(7.0)
+
+    def test_trunc(self):
+        r"""Test trunc method"""
+        assert math.trunc(FixedPoint("3.6")) == FixedPoint("3.0")
+        assert math.trunc(FixedPoint("0.5")) == FixedPoint("0.0")
+        assert math.trunc(FixedPoint("0.0000000003")) == FixedPoint("0.0")
+        assert math.trunc(FixedPoint("-0.0")) == FixedPoint(0)
+        assert math.trunc(FixedPoint("0.0")) == FixedPoint(0)
+        assert math.trunc(FixedPoint(3)) == FixedPoint(0.0)
+        assert math.trunc(FixedPoint(-6)) == FixedPoint(0)
+        assert math.trunc(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.trunc(FixedPoint(6.0)) == FixedPoint(6.0)
+        assert math.trunc(FixedPoint(-6.8)) == FixedPoint(-6.0)
+        assert math.trunc(FixedPoint(6.8)) == FixedPoint(6.0)

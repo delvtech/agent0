@@ -55,7 +55,7 @@ class FixedPoint:
                     raise ValueError(
                         "string argument must be a float string, e.g. '1.0', for the FixedPoint constructor"
                     )
-                lhs, rhs = value.split(".")
+                lhs, rhs = value.split(".")  # lhs = integer part, rhs = fractional part
                 rhs = rhs.replace("_", "")  # removes underscores; they won't affect `int` cast and will affect `len`
                 is_negative = "-" in lhs
                 if is_negative:
@@ -333,6 +333,16 @@ class FixedPoint:
         # both are finite
         return self.int_value >= other.int_value
 
+    def __trunc__(self) -> FixedPoint:
+        """Return x with the fractional part removed, leaving the integer part.
+
+        This rounds toward 0: trunc() is equivalent to floor() for positive x, and equivalent to ceil() for negative x.
+        """
+        if not self.is_finite():
+            return self
+        lhs, _ = str(self).split(".")  # extract the integer part
+        return FixedPoint(lhs + ".0")
+
     def __floor__(self) -> FixedPoint:
         """Returns an integer rounded following Python `math.floor` behavior
 
@@ -340,7 +350,7 @@ class FixedPoint:
         """
         if not self.is_finite():
             return self
-        lhs, rhs = str(self).split(".")
+        lhs, rhs = str(self).split(".")  # lhs = integer part, rhs = fractional part
         # if the number is negative & there is a remainder
         if self.int_value < 0 < len(rhs.rstrip("0")):
             return FixedPoint(str(int(lhs) - 1) + ".0")  # round down to -inf
@@ -353,7 +363,7 @@ class FixedPoint:
         """
         if not self.is_finite():
             return self
-        lhs, rhs = str(self).split(".")
+        lhs, rhs = str(self).split(".")  # lhs = integer part, rhs = fractional part
         # if there is a remainder
         if len(rhs.rstrip("0")) > 0:
             if 0 > self.int_value:  # the number is negative
