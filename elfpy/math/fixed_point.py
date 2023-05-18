@@ -383,15 +383,17 @@ class FixedPoint:
         if len(rhs.rstrip("0")) > 0:
             if 0 > self.int_value:  # the number is negative
                 return FixedPoint(lhs + ".0")  # truncating decimal rounds towards zero
-            elif 0 < self.int_value:  # the number is positive
+            if 0 < self.int_value:  # the number is positive
                 return FixedPoint(str(int(lhs) + 1) + ".0")  # increase integer component by one
         return FixedPoint(lhs + ".0")  # the number has no remainder
 
-    def __round__(self, n: int = 0) -> FixedPoint:
+    def __round__(self, n: int = 0) -> FixedPoint:  # pylint: disable=invalid-name
         """Returns a number rounded following Python `round` behavior.
 
-        Given a real number x and an optional integer n, return as output the number rounded to the closest multiple of 10 to the power -n.
-        If n is omitted, it defaults to 0 (round to nearest integer). Uses Python's "round half to even" strategy.
+        Given a real number x and an optional integer n, return as output the number
+        rounded to the closest multiple of 10 to the power -n. If n is omitted, it
+        defaults to 0 (round to nearest integer).
+        Uses Python's "round half to even" strategy.
         """
         if not self.is_finite():
             return self
@@ -423,8 +425,7 @@ class FixedPoint:
         # Append the decimal point and additional zeros, if necessary.
         if n > 0:
             return FixedPoint(rounded[: len(lhs)] + "." + rounded[len(lhs) :].ljust(n, "0"))
-        else:
-            return FixedPoint(rounded + ".0")
+        return FixedPoint(rounded + ".0")
 
     # type casting
     def __int__(self) -> int:
@@ -533,8 +534,8 @@ class FixedPoint:
 
     def floor(self) -> FixedPoint:
         """Calls the `__floor__` function"""
-        return self.__floor__()
+        return self.__floor__()  # pylint: disable=unnecessary-dunder-call
 
     def ceil(self) -> FixedPoint:
         """Calls the `__ceil__` function"""
-        return self.__ceil__()
+        return self.__ceil__()  # pylint: disable=unnecessary-dunder-call

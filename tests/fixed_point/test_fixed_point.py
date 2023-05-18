@@ -5,6 +5,8 @@ import unittest
 import elfpy.errors.errors as errors
 from elfpy.math import FixedPoint
 
+# pylint: disable=too-many-public-methods
+
 
 class TestFixedPoint(unittest.TestCase):
     r"""Unit tests to verify that the fixed-point integer implementations are correct.
@@ -341,6 +343,7 @@ class TestFixedPoint(unittest.TestCase):
         assert divmod(FixedPoint("5.5"), FixedPoint("-2.2")) == (FixedPoint("-3.0"), FixedPoint("-1.1"))
 
     def test_divmod_fail(self):
+        r"""Test `divmod` failure mode"""
         with self.assertRaises(errors.DivisionByZero):
             _ = divmod(FixedPoint("1.0"), FixedPoint(0))
 
