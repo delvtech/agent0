@@ -9,7 +9,7 @@ from .fixed_point_integer_math import FixedPointIntegerMath
 
 
 class FixedPoint:
-    """Fixed-point number datatype
+    r"""Fixed-point number datatype
 
     Values are stored internally as intergers, however they are generally treated like floats.
     The first (right-most) `decimal_places` digits represent what would be to the right of
@@ -32,7 +32,7 @@ class FixedPoint:
     int_value: int  # integer representation of self
 
     def __init__(self, value: Union[FixedPoint, float, int, str] = 0, decimal_places: int = 18, signed: bool = True):
-        """Store fixed-point properties"""
+        r"""Store fixed-point properties"""
         # TODO: support unsigned option
         if not signed:
             raise NotImplementedError("only signed FixedPoint ints are supported.")
@@ -68,7 +68,7 @@ class FixedPoint:
         self.int_value = copy.copy(int(value))
 
     def _coerce_other(self, other):
-        """Cast inputs to the FixedPoint type if they come in as something else.
+        r"""Cast inputs to the FixedPoint type if they come in as something else.
 
         .. note::
             Right now we do not support operating against int and float because those are logically confusing
@@ -84,7 +84,7 @@ class FixedPoint:
         return NotImplemented
 
     def __add__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '+' syntax"""
+        r"""Enables '+' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -99,11 +99,11 @@ class FixedPoint:
         return FixedPoint(FixedPointIntegerMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __radd__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal addition to support other + FixedPoint"""
+        r"""Enables reciprocal addition to support other + FixedPoint"""
         return self.__add__(other)
 
     def __sub__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '-' syntax"""
+        r"""Enables '-' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -120,14 +120,14 @@ class FixedPoint:
         return FixedPoint(FixedPointIntegerMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal subtraction to support other - FixedPoint"""
+        r"""Enables reciprocal subtraction to support other - FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
         return other.__sub__(self)
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '*' syntax
+        r"""Enables '*' syntax
 
         We use mul_down to match the majority of Hyperdrive solidity contract equations
         """
@@ -147,11 +147,11 @@ class FixedPoint:
         )
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal multiplication to support other * FixedPoint"""
+        r"""Enables reciprocal multiplication to support other * FixedPoint"""
         return self * other
 
     def __truediv__(self, other):
-        """Enables '/' syntax.
+        r"""Enables '/' syntax.
 
         We use div_down to match the majority of Hyperdrive solidity contract equations
         """
@@ -173,14 +173,14 @@ class FixedPoint:
         )
 
     def __rtruediv__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal division to support other / FixedPoint"""
+        r"""Enables reciprocal division to support other / FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
         return other.__truediv__(self)
 
     def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '//' syntax
+        r"""Enables '//' syntax
 
         While FixedPoint numbers are represented as integers, they act like floats.
         So floordiv should return only whole numbers.
@@ -188,14 +188,14 @@ class FixedPoint:
         return (self.__truediv__(other)).__floor__()
 
     def __rfloordiv__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal floor division to support other /// FixedPoint"""
+        r"""Enables reciprocal floor division to support other // FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
         return other.__truediv__(self)
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables '**' syntax"""
+        r"""Enables '**' syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -207,7 +207,7 @@ class FixedPoint:
         return FixedPoint(str(float(self) ** float(other)))
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal pow to support other ** FixedPoint"""
+        r"""Enables reciprocal pow to support other ** FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -239,14 +239,14 @@ class FixedPoint:
         return self - (other * (self / other).floor())
 
     def __rmod__(self, other: int | FixedPoint) -> FixedPoint:
-        """Enables reciprocal modulo to allow other % FixedPoint"""
+        r"""Enables reciprocal modulo to allow other % FixedPoint"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
         return other % self
 
     def __neg__(self) -> FixedPoint:
-        """Enables flipping value sign"""
+        r"""Enables flipping value sign"""
         if self.is_nan():
             return self
         return FixedPoint("-1.0") * self
@@ -263,7 +263,7 @@ class FixedPoint:
 
     # comparison methods
     def __eq__(self, other: FixedPoint) -> bool:
-        """Enables `==` syntax"""
+        r"""Enables `==` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -274,7 +274,7 @@ class FixedPoint:
         return self.int_value == other.int_value
 
     def __ne__(self, other: FixedPoint) -> bool:
-        """Enables `!=` syntax"""
+        r"""Enables `!=` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -285,7 +285,7 @@ class FixedPoint:
         return self.int_value != other.int_value
 
     def __lt__(self, other: FixedPoint) -> bool:
-        """Enables `<` syntax"""
+        r"""Enables `<` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -301,7 +301,7 @@ class FixedPoint:
         return self.int_value < other.int_value
 
     def __le__(self, other: FixedPoint) -> bool:
-        """Enables `<=` syntax"""
+        r"""Enables `<=` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -317,7 +317,7 @@ class FixedPoint:
         return self.int_value <= other.int_value
 
     def __gt__(self, other: FixedPoint) -> bool:
-        """Enables `>` syntax"""
+        r"""Enables `>` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -333,7 +333,7 @@ class FixedPoint:
         return self.int_value > other.int_value
 
     def __ge__(self, other: FixedPoint) -> bool:
-        """Enables `>=` syntax"""
+        r"""Enables `>=` syntax"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -349,7 +349,7 @@ class FixedPoint:
         return self.int_value >= other.int_value
 
     def __trunc__(self) -> FixedPoint:
-        """Return x with the fractional part removed, leaving the integer part.
+        r"""Return x with the fractional part removed, leaving the integer part.
 
         This rounds toward 0: trunc() is equivalent to floor() for positive x, and equivalent to ceil() for negative x.
         """
@@ -359,7 +359,7 @@ class FixedPoint:
         return FixedPoint(lhs + ".0")
 
     def __floor__(self) -> FixedPoint:
-        """Returns an integer rounded following Python `math.floor` behavior
+        r"""Returns an integer rounded following Python `math.floor` behavior
 
         Given a real number x, return as output the greatest integer less than or equal to x.
         """
@@ -372,7 +372,7 @@ class FixedPoint:
         return FixedPoint(lhs + ".0")
 
     def __ceil__(self) -> FixedPoint:
-        """Returns an integer rounded following Python `math.ceil` behavior
+        r"""Returns an integer rounded following Python `math.ceil` behavior
 
         Given a real number x, return as output the smallest integer greater than or equal to x.
         """
@@ -388,7 +388,7 @@ class FixedPoint:
         return FixedPoint(lhs + ".0")  # the number has no remainder
 
     def __round__(self, n: int = 0) -> FixedPoint:  # pylint: disable=invalid-name
-        """Returns a number rounded following Python `round` behavior.
+        r"""Returns a number rounded following Python `round` behavior.
 
         Given a real number x and an optional integer n, return as output the number
         rounded to the closest multiple of 10 to the power -n. If n is omitted, it
@@ -429,25 +429,25 @@ class FixedPoint:
 
     # type casting
     def __int__(self) -> int:
-        """Cast to int"""
+        r"""Cast to int"""
         if self.special_value is not None:
             raise ValueError(f"cannot convert FixedPoint {self.special_value} to integer")
         return self.int_value
 
     def __float__(self) -> float:
-        """Cast to float"""
+        r"""Cast to float"""
         if self.special_value is not None:
             return float(self.special_value)
         return float(self.int_value) / 10**self.decimal_places
 
     def __bool__(self) -> bool:
-        """Cast to bool"""
+        r"""Cast to bool"""
         if self.is_finite() and self != FixedPoint(0):
             return True
         return False
 
     def __str__(self) -> str:
-        """Cast to str"""
+        r"""Cast to str"""
         if self.special_value is not None:
             return self.special_value
         lhs = str(self.int_value)[:-18]  # remove right-most 18 digits for whole number
@@ -469,7 +469,7 @@ class FixedPoint:
         return lhs + "." + rhs
 
     def __repr__(self) -> str:
-        """Returns executable string representation
+        r"""Returns executable string representation
 
         For example: "FixedPoint(1234)"
         """
@@ -479,7 +479,7 @@ class FixedPoint:
 
     # additional arethmitic & helper functions
     def div_up(self, other: int | FixedPoint) -> FixedPoint:
-        """Divide self by other, rounding up"""
+        r"""Divide self by other, rounding up"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -490,7 +490,7 @@ class FixedPoint:
         )
 
     def mul_up(self, other: int | FixedPoint) -> FixedPoint:
-        """Multiply self by other, rounding up"""
+        r"""Multiply self by other, rounding up"""
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
@@ -501,29 +501,29 @@ class FixedPoint:
         )
 
     def is_nan(self) -> bool:
-        """Return True if self is not a number (NaN)."""
+        r"""Return True if self is not a number (NaN)."""
         if self.special_value is not None and self.special_value == "nan":
             return True
         return False
 
     def is_inf(self) -> bool:
-        """Return True if self is inf or -inf."""
+        r"""Return True if self is inf or -inf."""
         if self.special_value is not None and "inf" in self.special_value:
             return True
         return False
 
     def is_zero(self) -> bool:
-        """Return True if self is zero, and False is self is non-zero or non-finite"""
+        r"""Return True if self is zero, and False is self is non-zero or non-finite"""
         if not self.is_finite():
             return False
         return self.int_value == 0
 
     def is_finite(self) -> bool:
-        """Return True if self is finite, that is not inf, -inf, or nan"""
+        r"""Return True if self is finite, that is not inf, -inf, or nan"""
         return not (self.is_nan() or self.is_inf())
 
     def sign(self) -> FixedPoint:
-        """Return the sign of self if self is finite, inf, or -inf; otherwise return nan"""
+        r"""Return the sign of self if self is finite, inf, or -inf; otherwise return nan"""
         if self.special_value == "nan":
             return FixedPoint("nan")
         if self == FixedPoint("0.0"):
@@ -533,9 +533,9 @@ class FixedPoint:
         return FixedPoint("1.0")
 
     def floor(self) -> FixedPoint:
-        """Calls the `__floor__` function"""
+        r"""Calls the `__floor__` function"""
         return self.__floor__()  # pylint: disable=unnecessary-dunder-call
 
     def ceil(self) -> FixedPoint:
-        """Calls the `__ceil__` function"""
+        r"""Calls the `__ceil__` function"""
         return self.__ceil__()  # pylint: disable=unnecessary-dunder-call
