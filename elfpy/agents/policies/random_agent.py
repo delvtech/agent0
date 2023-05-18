@@ -49,18 +49,21 @@ class Policy(elf_agent.Agent):
     def open_short_with_random_amount(self, market) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
-        max_short = self.get_max_short(market)
-        if max_short < elfpy.WEI:  # no short is possible
-            return []
-        trade_amount = np.maximum(
-            elfpy.WEI, np.minimum(max_short, initial_trade_amount)
-        )  # WEI <= trade_amount <= max_short
+        # TODO: re-enable this after fixing get_max_short (issue #440)
+        # max_short = self.get_max_short(market) / 10
+        # if max_short < elfpy.WEI:  # no short is possible
+        #     return []
+        # trade_amount = np.maximum(
+        #     elfpy.WEI, np.minimum(max_short, initial_trade_amount)
+        # )  # WEI <= trade_amount <= max_short
+        maximum_trade_amount_in_bonds = market.market_state.share_reserves * market.market_state.share_price / 2
+        trade_amount = np.clip(initial_trade_amount, elfpy.WEI, maximum_trade_amount_in_bonds)
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
                 trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
-                    trade_amount=trade_amount,
+                    trade_amount=trade_amount,  # in bonds
                     wallet=self.wallet,
                 ),
             )
@@ -71,11 +74,14 @@ class Policy(elf_agent.Agent):
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         # get the maximum amount that can be traded, based on the budget & market reserve levels
-        max_long = self.get_max_long(market)
-        if max_long < elfpy.WEI:  # no trade is possible
-            return []
+        # TODO: re-enable this after fixing get_max_long (related issue #440)
+        # max_long = self.get_max_long(market) / 10
+        # if max_long < elfpy.WEI:  # no trade is possible
+        #     return []
         # WEI <= trade_amount <= max_short
-        trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        # trade_amount = np.maximum(elfpy.WEI, np.minimum(max_long, initial_trade_amount))
+        maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / 2
+        trade_amount = np.clip(initial_trade_amount, elfpy.WEI, maximum_trade_amount_in_base)
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
