@@ -513,18 +513,14 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
         Contract type at the specified address.
     """
     # pylint: disable=protected-access
-    # sourcery skip: use-named-expression
     address_key: AddressType = provider.chain_manager.contracts.conversion_manager.convert(address, AddressType)
+    # try to get contract from local cache on disk
     contract_type = provider.chain_manager.contracts._get_contract_type_from_disk(address_key)
-    if not contract_type:
-        # Also gets cached to disk for faster lookup next time.
+    if not contract_type:  # we don't have it locally, try to get it from the explorer
         contract_type = provider.chain_manager.contracts._get_contract_type_from_explorer(address_key)
-
-    # Cache locally for faster in-session look-up.
-    if contract_type:
+    if contract_type:  # Cache locally for faster in-session look-up
         provider.chain_manager.contracts._local_contract_types[address_key] = contract_type
     assert isinstance(contract_type, ContractType), f"Contract type not found for address: {address}"
-
     return contract_type
 
 
