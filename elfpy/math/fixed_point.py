@@ -372,6 +372,45 @@ class FixedPoint:
                 return FixedPoint(str(int(lhs) + 1) + ".0")  # increase integer component by one
         return FixedPoint(lhs + ".0")  # the number has no remainder
 
+    def __round__(self, n: int = 0) -> FixedPoint:
+        """Returns a number rounded following Python `round` behavior.
+
+        Given a real number x and an optional integer n, return as output the number rounded to the closest multiple of 10 to the power -n.
+        If n is omitted, it defaults to 0 (round to nearest integer). Uses Python's "round half to even" strategy.
+        """
+        if not self.is_finite():
+            return self
+        lhs, rhs = str(self).split(".")  # lhs = integer part, rhs = fractional part
+        if n >= len(rhs):
+            # If n is larger than the number of decimal places, return the number itself.
+            return self
+        # Check the digit at the nth decimal place
+        digit = int(rhs[n])
+        if n == 0 or len(rhs) < n:
+            left_digit = int(lhs[-1])
+        else:
+            left_digit = int(rhs[n - 1])
+        # If these conditions are met, we should round down
+        if digit < 5 or (  # digit less than 5 OR
+            digit == 5  # digit is exactly 5 AND
+            and all(d == "0" for d in rhs[n + 1 :])  # all of the following digits are zero AND
+            and (left_digit % 2 == 0)  # the digit to the left is even
+        ):
+            # Take the integer part and the decimals up to (but not including) the nth place as is
+            rounded = lhs + rhs[:n]
+        else:
+            # Round up by adding one to the integer obtained by truncating at the nth place
+            # Take care to handle negative numbers correctly
+            if self.int_value >= 0:
+                rounded = str(int(lhs + rhs[:n]) + 1)
+            else:
+                rounded = str(int(lhs + rhs[:n]) - 1)
+        # Append the decimal point and additional zeros, if necessary.
+        if n > 0:
+            return FixedPoint(rounded[: len(lhs)] + "." + rounded[len(lhs) :].ljust(n, "0"))
+        else:
+            return FixedPoint(rounded + ".0")
+
     # type casting
     def __int__(self) -> int:
         """Cast to int"""
@@ -396,7 +435,7 @@ class FixedPoint:
         if self.special_value is not None:
             return self.special_value
         lhs = str(self.int_value)[:-18]  # remove right-most 18 digits for whole number
-        if len(lhs) == 0:  # float(input) was <0
+        if len(lhs) == 0 or lhs == "-":  # float(input) was <0
             sign = "-" if self.int_value < 0 else ""
             lhs = sign + "0"
             scale = len(str(self.int_value))

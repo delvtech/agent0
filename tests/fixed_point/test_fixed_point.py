@@ -362,3 +362,32 @@ class TestFixedPoint(unittest.TestCase):
         assert math.trunc(FixedPoint(6.0)) == FixedPoint(6.0)
         assert math.trunc(FixedPoint(-6.8)) == FixedPoint(-6.0)
         assert math.trunc(FixedPoint(6.8)) == FixedPoint(6.0)
+
+    def test_round(self):
+        r"""Test round method"""
+        # normal round up & down behavior
+        assert round(FixedPoint("3.6")) == FixedPoint("4.0")
+        assert round(FixedPoint("3.48927")) == FixedPoint("3.0")
+        assert round(FixedPoint("-3.6")) == FixedPoint("-4.0")
+        assert round(FixedPoint("-3.4")) == FixedPoint("-3.0")
+        assert round(FixedPoint("1.45")) == FixedPoint("1.0")
+        assert round(FixedPoint("1.75")) == FixedPoint("2.0")
+        # round half to even
+        assert round(FixedPoint("0.5")) == FixedPoint("0.0")
+        assert round(FixedPoint("1.5")) == FixedPoint("2.0")
+        assert round(FixedPoint("2.5")) == FixedPoint("2.0")
+        assert round(FixedPoint("-0.5")) == FixedPoint("0.0")
+        assert round(FixedPoint("-1.5")) == FixedPoint("-2.0")
+        # round with non-zero ndigits
+        assert round(FixedPoint("1.75"), ndigits=1) == FixedPoint("1.8")
+        assert round(FixedPoint("100.75"), ndigits=1) == FixedPoint("100.8")
+        assert round(FixedPoint("1.45"), ndigits=1) == FixedPoint("1.4")
+        assert round(FixedPoint("1.5"), ndigits=3) == FixedPoint("1.5")
+        assert round(FixedPoint("3.5"), ndigits=1) == FixedPoint("3.5")
+        assert round(FixedPoint("3.55"), ndigits=1) == FixedPoint("3.6")
+        assert round(FixedPoint("3.54"), ndigits=1) == FixedPoint("3.5")
+        assert round(FixedPoint("3.545"), ndigits=2) == FixedPoint("3.54")
+        assert round(FixedPoint("3.545"), ndigits=4) == FixedPoint("3.545")
+        assert round(FixedPoint("3.545"), ndigits=5) == FixedPoint("3.545")
+        assert round(FixedPoint("-3.5459857"), ndigits=5) == FixedPoint("-3.54599")
+        assert round(FixedPoint("-3.5459850"), ndigits=5) == FixedPoint("-3.54598")
