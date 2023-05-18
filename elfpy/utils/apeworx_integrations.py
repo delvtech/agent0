@@ -3,7 +3,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 from pathlib import Path
-from pathlib import Path
 
 import logging
 from collections import defaultdict, namedtuple
@@ -577,7 +576,7 @@ def select_abi(
             f"Could not find matching ABI for {method}"
             + (f" with missing arguments: {missing_args}" if missing_args else "")
         )
-    lstr = f"{selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
+    lstr = f" => {selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
     log_and_show(lstr)
     return selected_abi, args
 
@@ -668,7 +667,7 @@ def ape_trade(
             agent,
             hyperdrive_contract.getPoolInfo().__dict__,
         )
-        return None, None
+        raise exc
 
 
 def attempt_txn(
@@ -725,7 +724,7 @@ def attempt_txn(
         if not hasattr(latest, "base_fee"):
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
-        log_and_show(f"latest block ({getattr(latest, 'number')}) has base_fee of {base_fee}")
+        log_and_show(f"latest block ({fmt(getattr(latest, 'number'))}) has base_fee of {base_fee/1e9:,.3f}")
 
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * priority_fee_multiple * attempt
@@ -736,7 +735,11 @@ def attempt_txn(
         kwargs["gas_limit"] = 1_000_000
         # if you want a "STATIC" transaction type, uncomment the following line
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
-        log_and_show(f"txn attempt {attempt} of {mult} with {kwargs=}")
+        formatted_items = []
+        for k, v in kwargs.items():
+            value = fmt(v / 1e9) if "fee" in k else fmt(v)
+            formatted_items.append(f"{k}={value}")
+        log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
