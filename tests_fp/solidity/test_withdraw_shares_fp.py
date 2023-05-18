@@ -118,7 +118,7 @@ class TestWithdrawShares(unittest.TestCase):
 
         _, remove_lp_agent_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet, lp_shares)
         withdrawal_proceeds = remove_lp_agent_deltas.balance.amount
-        self.assertAlmostEqual(float(withdrawal_proceeds), float(expected_withdrawal_proceeds), places=7)
+        self.assertAlmostEqual(withdrawal_proceeds, expected_withdrawal_proceeds, places=7)
 
     def test_redeem_withdraw_shares_long_long(self):
         """Should receive the correct amount of withdrawal shares when there are multiple longs"""
@@ -173,4 +173,4 @@ class TestWithdrawShares(unittest.TestCase):
 
         _, remove_lp_agent_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet, lp_shares)
         withdrawal_proceeds = remove_lp_agent_deltas.balance.amount
-        self.assertAlmostEqual(float(withdrawal_proceeds), float(expected_withdrawal_proceeds), delta=100)
+        self.assertAlmostEqual(withdrawal_proceeds, expected_withdrawal_proceeds, delta=FixedPoint("100.0"))
