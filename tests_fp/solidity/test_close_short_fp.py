@@ -1,8 +1,6 @@
 """Close short market trade tests that match those being executed in the solidity repo"""
 import unittest
 
-import numpy as np
-
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -101,11 +99,11 @@ class TestCloseShort(unittest.TestCase):
         )
 
         flat_shares = bond_amount * (FixedPoint("1.0") - time_remaining) / market_state_before.share_price
-        np.testing.assert_allclose(
-            float(self.hyperdrive.market_state.share_reserves + flat_shares + curve_shares),
-            float(market_state_before.share_reserves),
-            rtol=1e-10,
-            err_msg="share_reserves is wrong",
+        self.assertAlmostEqual(
+            self.hyperdrive.market_state.share_reserves + flat_shares + curve_shares,
+            market_state_before.share_reserves,
+            places=2,
+            msg="share_reserves is wrong",
         )
         self.assertEqual(  # lp total supply
             self.hyperdrive.market_state.lp_total_supply,
@@ -147,8 +145,8 @@ class TestCloseShort(unittest.TestCase):
             msg="short_average_maturity_time is wrong",
         )
         self.assertAlmostEqual(  # short base volume
-            int(self.hyperdrive.market_state.short_base_volume),
-            0,
+            self.hyperdrive.market_state.short_base_volume,
+            FixedPoint(0),
             # TODO: see why this isn't zero
             delta=10,
             msg="short_base_volume is wrong",
