@@ -77,7 +77,9 @@ class FixedPoint:
             if other.special_value is not None:
                 return FixedPoint(other.special_value)
             return other
-        if isinstance(other, (int, float)):  # currently don't allow floats & ints
+        if isinstance(other, (int, float)):  # currently don't allow (most) floats & ints
+            if other == 0:  # 0 is unambiguous, so we will allow it
+                return FixedPoint(other)
             raise TypeError(f"unsupported operand type(s): {type(other)}")
         return NotImplemented
 
@@ -122,15 +124,7 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        if other.is_nan() or self.is_nan():
-            return FixedPoint("nan")
-        if other.is_inf():
-            if self.is_inf() and other.sign() == self.sign():
-                return FixedPoint("nan")
-            return other
-        if self.is_inf():
-            return self
-        return FixedPoint(FixedPointIntegerMath.sub(other.int_value, self.int_value), self.decimal_places, self.signed)
+        return other.__sub__(self)
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '*' syntax"""
@@ -175,9 +169,12 @@ class FixedPoint:
             FixedPointIntegerMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed
         )
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables reciprocal division to support other / FixedPoint"""
-        return self.__truediv__(other)
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return other.__truediv__(self)
 
     def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '//' syntax
@@ -186,6 +183,13 @@ class FixedPoint:
         So floordiv should return only whole numbers.
         """
         return (self.__truediv__(other)).__floor__()
+
+    def __rfloordiv__(self, other: int | FixedPoint) -> FixedPoint:
+        """Enables reciprocal floor division to support other /// FixedPoint"""
+        other = self._coerce_other(other)
+        if other is NotImplemented:
+            return NotImplemented
+        return other.__truediv__(self)
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         """Enables '**' syntax"""
