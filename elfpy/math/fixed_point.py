@@ -192,7 +192,7 @@ class FixedPoint:
         other = self._coerce_other(other)
         if other is NotImplemented:
             return NotImplemented
-        return other.__truediv__(self)
+        return other.__floordiv__(self)
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '**' syntax"""
