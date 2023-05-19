@@ -11,11 +11,14 @@ from elfpy.errors import errors
 from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
+# TODO: Remove duplicate code disable once float code is removed
 # pylint:disable=duplicate-code
 
 
 class TestCheckpoint(unittest.TestCase):
     """Test adding liquidity to hyperdrive"""
+
+    APPROX_EQ: FixedPoint = FixedPoint(1e-18)
 
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
@@ -87,7 +90,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertAlmostEqual(
             apr_before,
             apr_after,
-            places=8,
+            delta=self.APPROX_EQ,
         )
         checkpoint = self.hyperdrive.market_state.checkpoints[int(checkpoint_time)]
         # Ensure that the checkpoint contains the share price prior to the share price update.

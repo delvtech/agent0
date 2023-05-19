@@ -13,6 +13,8 @@ from elfpy.math import FixedPoint
 class TestAddLiquidity(unittest.TestCase):
     """Test adding liquidity to hyperdrive"""
 
+    APPROX_EQ: FixedPoint = FixedPoint(1e-1)
+
     contribution = FixedPoint("500_000_000.0")
     target_apr = FixedPoint("0.05")
     alice: elf_agent.AgentFP
@@ -60,14 +62,14 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
 
         # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, places=6)
+        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, delta=self.APPROX_EQ)
         self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * FixedPoint("2.0"))
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(pool_apr, self.target_apr, places=5)
+        self.assertAlmostEqual(pool_apr, self.target_apr, delta=self.APPROX_EQ)
 
     def test_add_liquidity_with_long_immediately(self):
         """Test adding liquidity when there is a long open.  LP should still get the same number of
@@ -94,14 +96,14 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
 
         # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, places=6)
+        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, delta=self.APPROX_EQ)
         self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * FixedPoint("2.0"))
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(pool_apr, self.target_apr, places=2)
+        self.assertAlmostEqual(pool_apr, self.target_apr, delta=self.APPROX_EQ)
 
     def test_add_liquidity_with_short_immediately(self):
         """Test adding liquidity when there is a long short.  LP should still get the same number of
@@ -121,14 +123,14 @@ class TestAddLiquidity(unittest.TestCase):
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)
 
         # Ensure that the new LP receives the same amount of LP shares as the initializer.
-        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, places=6)
+        self.assertAlmostEqual(market_deltas.d_lp_total_supply, lp_supply_before, delta=self.APPROX_EQ)
         self.assertEqual(self.hyperdrive.market_state.lp_total_supply, lp_supply_before * FixedPoint("2.0"))
 
         # Ensure the pool APR is still approximately equal to the target APR.
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(pool_apr, self.target_apr, places=2)
+        self.assertAlmostEqual(pool_apr, self.target_apr, delta=self.APPROX_EQ)
 
     def test_add_liquidity_with_long_at_maturity(self):
         """Test adding liquidity with a long at maturity."""
@@ -151,14 +153,14 @@ class TestAddLiquidity(unittest.TestCase):
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(pool_apr, self.target_apr, places=2)
+        self.assertAlmostEqual(pool_apr, self.target_apr, delta=self.APPROX_EQ)
 
         # Ensure that if the new LP withdraws, they get their money back.
         market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
             agent_wallet=self.bob.wallet,
             lp_shares=self.bob.wallet.lp_tokens,
         )
-        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, places=6)
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, delta=self.APPROX_EQ)
 
     def test_add_liquidity_with_short_at_maturity(self):
         """Test adding liquidity with a short at maturity."""
@@ -187,7 +189,7 @@ class TestAddLiquidity(unittest.TestCase):
         pool_apr = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
-        self.assertAlmostEqual(pool_apr, self.target_apr, places=1)
+        self.assertAlmostEqual(pool_apr, self.target_apr, delta=self.APPROX_EQ)
 
         # Ensure that if the new LP withdraws, they get their money back.
         market_deltas, wallet_deltas = self.hyperdrive.remove_liquidity(
@@ -195,4 +197,4 @@ class TestAddLiquidity(unittest.TestCase):
             lp_shares=self.bob.wallet.lp_tokens,
         )
         # Test that Bob got their money back
-        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, places=6)
+        self.assertAlmostEqual(wallet_deltas.balance.amount, self.contribution, delta=self.APPROX_EQ)

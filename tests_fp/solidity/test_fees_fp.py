@@ -11,6 +11,8 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
+# pylint: disable=too-many-instance-attributes
+# TODO: Remove duplicate code disable once float code is removed
 # pylint: disable=duplicate-code
 
 AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
@@ -19,7 +21,7 @@ AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 class TestFees(unittest.TestCase):
     """Test case for fees applied to trades"""
 
-    # pylint: disable=too-many-instance-attributes
+    APPROX_EQ: FixedPoint = FixedPoint(1e-18)
 
     contribution: FixedPoint
     target_apr: FixedPoint
@@ -187,9 +189,9 @@ def test_collect_fees_long(amount: int):
 
     # check that both gov fees and gov balance are 0 before opening a long
     gov_fees_before_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
-    test.assertEqual(int(gov_fees_before_open_long), 0)
+    test.assertEqual(gov_fees_before_open_long, FixedPoint(0))
     gov_balance_before_open_long = test.gary.wallet.balance.amount
-    test.assertEqual(int(gov_balance_before_open_long), 0)
+    test.assertEqual(gov_balance_before_open_long, FixedPoint(0))
 
     # open long
     test.hyperdrive.open_long(test.bob.wallet, test.trade_amount)
@@ -216,13 +218,13 @@ def test_collect_fees_long(amount: int):
     )
     # TODO: fix this check, don't set fees accrued to zero
     test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
-    test.assertEqual(int(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price), 0)
+    test.assertEqual(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, FixedPoint(0))
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
     test.assertGreater(gov_balance_after, gov_balance_before_open_long)
     # ensure that Governance Gary got the exaxt fees FixedPointexpecteFixedPointd
-    test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_long, delta=FixedPoint(1e-16) * test.trade_amount)
+    test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_long, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -234,9 +236,9 @@ def test_collect_fees_short(amount):
     gov_fees_before_open_short = (
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
     )
-    test.assertEqual(int(gov_fees_before_open_short), 0)
+    test.assertEqual(gov_fees_before_open_short, FixedPoint(0))
     gov_balance_before_open_short = test.gary.wallet.balance.amount
-    test.assertEqual(int(gov_balance_before_open_short), 0)
+    test.assertEqual(gov_balance_before_open_short, FixedPoint(0))
 
     # open short
     test.hyperdrive.open_short(test.bob.wallet, test.trade_amount)
@@ -267,13 +269,13 @@ def test_collect_fees_short(amount):
     # TODO: fix this check, don't set fees accrued to zero
     test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
     gov_fees_after_collection = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
-    test.assertEqual(int(gov_fees_after_collection), 0)
+    test.assertEqual(gov_fees_after_collection, FixedPoint(0))
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
     test.assertGreater(gov_balance_after, gov_balance_before_open_short)
     # ensure that Governance Gary got the exaxt fees expected
-    test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=FixedPoint(1e-16) * test.trade_amount)
+    test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -286,14 +288,10 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p5(amount):
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertAlmostEqual(
-        curve_fee, FixedPoint("0.1") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
-    test.assertAlmostEqual(
-        gov_curve_fee, FixedPoint("0.05") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
-    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=FixedPoint(1e-16))
-    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=FixedPoint(1e-16))
+    test.assertAlmostEqual(curve_fee, FixedPoint("0.1") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee, FixedPoint("0.05") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -309,10 +307,8 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p5(amount):
 
     test.assertEqual(curve_fee, FixedPoint(0))
     test.assertEqual(gov_curve_fee, FixedPoint(0))
-    test.assertAlmostEqual(flat_fee, FixedPoint("0.1") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount)
-    test.assertAlmostEqual(
-        gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
+    test.assertAlmostEqual(flat_fee, FixedPoint("0.1") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -348,10 +344,8 @@ def test_calc_fees_out_given_shares_in_at_maturity_gov_fee_0p6(amount):
 
     test.assertEqual(curve_fee, FixedPoint(0))
     test.assertEqual(gov_curve_fee, FixedPoint(0))
-    test.assertAlmostEqual(flat_fee, FixedPoint(0.1) * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount)
-    test.assertAlmostEqual(
-        gov_flat_fee, FixedPoint(0.06) * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
+    test.assertAlmostEqual(flat_fee, FixedPoint(0.1) * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0.06) * test.trade_amount, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -362,14 +356,8 @@ def test_calc_fees_out_given_bonds_in_at_initiation(amount):
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(
-        curve_fee + flat_fee, FixedPoint("0.01") * test.trade_amount, delta=FixedPoint(1e-17) * test.trade_amount
-    )
-    test.assertAlmostEqual(
-        gov_curve_fee + gov_flat_fee,
-        FixedPoint("0.005") * test.trade_amount,
-        delta=FixedPoint(1e-17) * test.trade_amount,
-    )
+    test.assertAlmostEqual(curve_fee + flat_fee, FixedPoint("0.01") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, FixedPoint("0.005") * test.trade_amount, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -381,14 +369,8 @@ def test_calc_fees_out_given_bonds_in_at_maturity(amount):
     advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(
-        curve_fee + flat_fee, test.trade_amount / FixedPoint("10.0"), delta=FixedPoint(1e-17) * test.trade_amount
-    )
-    test.assertAlmostEqual(
-        gov_curve_fee + gov_flat_fee,
-        FixedPoint("0.05") * test.trade_amount,
-        delta=FixedPoint(1e-17) * test.trade_amount,
-    )
+    test.assertAlmostEqual(curve_fee + flat_fee, test.trade_amount / FixedPoint("10.0"), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee + gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -399,14 +381,10 @@ def test_calc_fees_out_given_bonds_out_at_initiation(amount):
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(
-        curve_fee, FixedPoint("0.01") * test.trade_amount, delta=FixedPoint(1e-17) * test.trade_amount
-    )
-    test.assertAlmostEqual(
-        gov_curve_fee, FixedPoint("0.005") * test.trade_amount, delta=FixedPoint(1e-17) * test.trade_amount
-    )
-    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=FixedPoint(1e-16))
-    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=FixedPoint(1e-16))
+    test.assertAlmostEqual(curve_fee, FixedPoint("0.01") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee, FixedPoint("0.005") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
@@ -418,9 +396,7 @@ def test_calc_fees_out_given_bonds_out_at_maturity(amount):
     advance_time(test, FixedPoint("1.0"))  # hyperdrive into the future.. all the way to maturity
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, out_unit=types.TokenType.PT)
 
-    test.assertAlmostEqual(curve_fee, FixedPoint(0), delta=FixedPoint(1e-17))
-    test.assertAlmostEqual(gov_curve_fee, FixedPoint(0), delta=FixedPoint(1e-17))
-    test.assertAlmostEqual(flat_fee, FixedPoint("0.1") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount)
-    test.assertAlmostEqual(
-        gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
+    test.assertAlmostEqual(curve_fee, FixedPoint(0), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee, FixedPoint(0), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(flat_fee, FixedPoint("0.1") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint("0.05") * test.trade_amount, delta=test.APPROX_EQ)

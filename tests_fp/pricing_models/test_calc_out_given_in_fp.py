@@ -24,14 +24,10 @@ from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-lines
 
-# TODO: remove this after FixedPoint PRs are finished
-
-
 class TestCalcOutGivenIn(unittest.TestCase):
     """Unit tests for the calc_out_given_in function"""
 
-    # How many places after decimal must be the same for "AlmostEqual" to be True
-    ALMOST_PLACES = 8  # TODO: We need to get this to a higher precision
+    APPROX_EQ: FixedPoint = FixedPoint(1e-8)
 
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
@@ -1345,13 +1341,13 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 self.assertAlmostEqual(
                     trade_result.breakdown.without_fee_or_slippage,
                     expected_result.without_fee_or_slippage,
-                    places=self.ALMOST_PLACES,
+                    delta=self.APPROX_EQ,
                     msg=f"{model_type} test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 self.assertAlmostEqual(
                     trade_result.breakdown.without_fee,
                     expected_result.without_fee,
-                    places=self.ALMOST_PLACES,
+                    delta=self.APPROX_EQ,
                     msg=f"{model_type} test {test_number + 1} unexpected without_fee",
                 )
                 model_name = pricing_model.model_name()
@@ -1359,13 +1355,13 @@ class TestCalcOutGivenIn(unittest.TestCase):
                     self.assertAlmostEqual(
                         trade_result.breakdown.fee,
                         expected_result.fee,
-                        places=self.ALMOST_PLACES,
+                        delta=self.APPROX_EQ,
                         msg=f"{model_type} test {test_number + 1} unexpected fee",
                     )
                     self.assertAlmostEqual(
                         trade_result.breakdown.with_fee,
                         expected_result.with_fee,
-                        places=self.ALMOST_PLACES,
+                        delta=self.APPROX_EQ,
                         msg=f"{model_type} test {test_number + 1} unexpected with_fee",
                     )
                 else:

@@ -11,6 +11,7 @@ from elfpy.time.time import StretchedTimeFP
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
+# TODO: Remove duplicate code disable once float code is removed
 # pylint: disable=duplicate-code
 
 
@@ -23,6 +24,8 @@ class TestCloseShort(unittest.TestCase):
         - redeem at maturity, with zero interest, and with negative interest (skipped)
         - close halfway thru term, with zero, and negative interest (both skipped)
     """
+
+    APPROX_EQ: FixedPoint = FixedPoint(1e-2)
 
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
@@ -102,7 +105,7 @@ class TestCloseShort(unittest.TestCase):
         self.assertAlmostEqual(
             self.hyperdrive.market_state.share_reserves + flat_shares + curve_shares,
             market_state_before.share_reserves,
-            places=2,
+            delta=self.APPROX_EQ,
             msg="share_reserves is wrong",
         )
         self.assertEqual(  # lp total supply
@@ -147,8 +150,7 @@ class TestCloseShort(unittest.TestCase):
         self.assertAlmostEqual(  # short base volume
             self.hyperdrive.market_state.short_base_volume,
             FixedPoint(0),
-            # TODO: see why this isn't zero
-            delta=10,
+            delta=self.APPROX_EQ,
             msg="short_base_volume is wrong",
         )
         self.assertEqual(  # checkpoint short base volume

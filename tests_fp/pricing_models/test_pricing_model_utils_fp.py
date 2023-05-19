@@ -14,6 +14,8 @@ from elfpy.math import FixedPoint
 class BasePricingModelUtilsTest(unittest.TestCase):
     """Unit tests for price utilities"""
 
+    APPROX_EQ: FixedPoint = FixedPoint(1e-12)
+
     def run_calc_k_const_test(
         self, pricing_model: Union[yieldspace_pm.YieldspacePricingModelFP, hyperdrive_pm.HyperdrivePricingModelFP]
     ):
@@ -144,8 +146,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
                     share_price=test_case["market_state"].share_price,
                     init_share_price=test_case["market_state"].init_share_price,
                 )
-                # TODO: This should be passing with places=18
-                self.assertAlmostEqual(k, test_case["expected_result"], places=12)
+                self.assertAlmostEqual(k, test_case["expected_result"], delta=self.APPROX_EQ)
 
         output_utils.close_logging()
 

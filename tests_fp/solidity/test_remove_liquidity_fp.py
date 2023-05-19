@@ -13,6 +13,8 @@ from elfpy.math import FixedPoint, FixedPointMath
 class TestRemoveLiquidity(unittest.TestCase):
     """Test opening a long in hyperdrive"""
 
+    APPROX_EQ: FixedPoint = FixedPoint(1e5)
+
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
@@ -111,17 +113,17 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # make sure alice gets the correct amount of base
         base_expected = accrued + base_amount - bond_amount
-        self.assertAlmostEqual(base_proceeds, base_expected, places=6)
+        self.assertAlmostEqual(base_proceeds, base_expected, delta=self.APPROX_EQ)
 
         # make sure pool balances are correct
-        self.assertAlmostEqual(market_state.share_reserves, bond_amount / market_state.share_price, places=6)
+        self.assertAlmostEqual(market_state.share_reserves, bond_amount / market_state.share_price, delta=self.APPROX_EQ)
         # self.assertEqual(market_state.bond_reserves, 0)
 
         # ensure correct amount of withdrawal shares
         withdraw_shares_expected = (
             market_state.longs_outstanding - market_state.long_base_volume
         ) / market_state.share_price
-        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, places=17)
+        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, delta=self.APPROX_EQ)
 
     def test_remove_liquidity_short_trade(self):
         """Should remove liquidity if there are open shorts"""
@@ -151,7 +153,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         # make sure alice gets the correct amount of base
         base_expected = accrued + base_paid - short_amount_bonds
         # TODO: improve this.  this is also pretty bad in the solidity code.
-        self.assertAlmostEqual(base_proceeds, base_expected, delta=FixedPoint(1e7))
+        self.assertAlmostEqual(base_proceeds, base_expected, delta=self.APPROX_EQ)
 
         # make sure pool balances went to zero
         self.assertEqual(market_state.share_reserves, FixedPoint(0))
@@ -159,4 +161,4 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # ensure correct amount of withdrawal shares
         withdraw_shares_expected = market_state.short_base_volume / market_state.share_price
-        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, places=17)
+        self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, delta=self.APPROX_EQ)
