@@ -193,7 +193,7 @@ class FixedPoint:
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal pow to support other ** FixedPoint"""
         other = self._coerce_other(other)
-        return other ** self
+        return other**self
 
     def __mod__(self, other: FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax

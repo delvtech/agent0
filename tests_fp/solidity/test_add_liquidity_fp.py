@@ -180,7 +180,7 @@ class TestAddLiquidity(unittest.TestCase):
         )
 
         # Ensure that the agent lost money from their wallet
-        self.assertAlmostEqual(wallet_deltas.balance.amount, -self.contribution)
+        self.assertAlmostEqual(wallet_deltas.balance.amount, -self.contribution, delta=self.APPROX_EQ)
 
         # Ensure that the contribution was transferred to Hyperdrive.
         self.assertEqual(market_deltas.d_base_asset, -wallet_deltas.balance.amount)

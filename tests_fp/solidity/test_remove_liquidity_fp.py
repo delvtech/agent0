@@ -116,7 +116,9 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertAlmostEqual(base_proceeds, base_expected, delta=self.APPROX_EQ)
 
         # make sure pool balances are correct
-        self.assertAlmostEqual(market_state.share_reserves, bond_amount / market_state.share_price, delta=self.APPROX_EQ)
+        self.assertAlmostEqual(
+            market_state.share_reserves, bond_amount / market_state.share_price, delta=self.APPROX_EQ
+        )
         # self.assertEqual(market_state.bond_reserves, 0)
 
         # ensure correct amount of withdrawal shares

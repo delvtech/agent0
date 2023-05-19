@@ -24,6 +24,7 @@ from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-lines
 
+
 class TestCalcOutGivenIn(unittest.TestCase):
     """Unit tests for the calc_out_given_in function"""
 

@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-many-lines
 
+
 class TestCalcInGivenOut(unittest.TestCase):
     """Unit tests for the calc_in_given_out function"""
 

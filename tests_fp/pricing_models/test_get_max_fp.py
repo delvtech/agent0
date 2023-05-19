@@ -17,6 +17,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 from elfpy.math import FixedPoint
 
+
 @dataclass
 class TestCaseGetMax:
     """Dataclass for get_max_long test cases"""

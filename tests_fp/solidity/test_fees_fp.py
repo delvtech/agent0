@@ -218,7 +218,9 @@ def test_collect_fees_long(amount: int):
     )
     # TODO: fix this check, don't set fees accrued to zero
     test.hyperdrive.market_state.gov_fees_accrued = FixedPoint(0)
-    test.assertEqual(test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, FixedPoint(0))
+    test.assertEqual(
+        test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, FixedPoint(0)
+    )
 
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
