@@ -323,14 +323,10 @@ def test_calc_fees_out_given_shares_in_at_initiation_gov_fee_0p6(amount):
 
     curve_fee, flat_fee, gov_curve_fee, gov_flat_fee = get_all_the_fees(test, in_unit=types.TokenType.BASE)
 
-    test.assertAlmostEqual(
-        curve_fee, FixedPoint("0.1") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
-    test.assertAlmostEqual(
-        gov_curve_fee, FixedPoint("0.06") * test.trade_amount, delta=FixedPoint(1e-16) * test.trade_amount
-    )
-    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=FixedPoint(1e-16) * test.trade_amount)
-    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=FixedPoint(1e-16) * test.trade_amount)
+    test.assertAlmostEqual(curve_fee, FixedPoint("0.1") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_curve_fee, FixedPoint("0.06") * test.trade_amount, delta=test.APPROX_EQ)
+    test.assertAlmostEqual(flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
+    test.assertAlmostEqual(gov_flat_fee, FixedPoint(0), delta=test.APPROX_EQ)
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
