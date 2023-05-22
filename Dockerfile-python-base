@@ -1,6 +1,5 @@
 # ### Python Image ###
 FROM python:3.9.16-bullseye
-
 # set bash as default shell
 SHELL ["/bin/bash", "-c"]
 
