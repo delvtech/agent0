@@ -60,9 +60,13 @@ class FixedPoint:
                 remainder = remainder.replace("_", "")
                 is_negative = "-" in integer
                 if is_negative:
-                    value = int(integer) * 10**decimal_places - int(remainder) * 10 ** (decimal_places - len(remainder))
+                    value = int(integer) * 10**decimal_places - int(remainder) * 10 ** (
+                        decimal_places - len(remainder)
+                    )
                 else:
-                    value = int(integer) * 10**decimal_places + int(remainder) * 10 ** (decimal_places - len(remainder))
+                    value = int(integer) * 10**decimal_places + int(remainder) * 10 ** (
+                        decimal_places - len(remainder)
+                    )
         if isinstance(value, FixedPoint):
             self.special_value = value.special_value
             value = value.int_value
