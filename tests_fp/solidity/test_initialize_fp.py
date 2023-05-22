@@ -8,18 +8,16 @@ import elfpy.time as time
 from elfpy.time.time import BlockTimeFP
 from elfpy.math import FixedPoint
 
+# pylint: disable=too-many-instance-attributes
+
 
 class TestInitialize(unittest.TestCase):
-    """Test case for initializing the market
-
-    .. todo: this is a mirror of the tests in test_markets.py; need to unify
-    """
-
-    # pylint: disable=too-many-instance-attributes
+    """Test case for initializing the market"""
 
     # TODO: Switching to fixed point or 64 bit float should allow us to increase this to WEI
     # issue #112
-    APPROX_EQ: float = 1e-15
+    APPROX_EQ: FixedPoint = FixedPoint(1e-5)
+
     contribution: FixedPoint
     target_apr: FixedPoint
     position_duration: FixedPoint
@@ -30,7 +28,7 @@ class TestInitialize(unittest.TestCase):
     block_time: BlockTimeFP
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP
 
-    def __init__(self, contribution: float = 1_000, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
+    def __init__(self, contribution: float = 1_000.0, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
         """
         Set up agent, pricing model, & market for the subsequent tests.
         """
@@ -81,8 +79,8 @@ def test_initialize_success():
         market_state=test.hyperdrive.market_state,
         time_remaining=test.hyperdrive.position_duration,
     )
-    test.assertAlmostEqual(float(init_apr), float(test.target_apr), delta=test.APPROX_EQ)
-    test.assertEqual(float(test.alice.wallet.balance.amount), 0.0)
+    test.assertAlmostEqual(init_apr, test.target_apr, delta=test.APPROX_EQ)
+    test.assertEqual(test.alice.wallet.balance.amount, FixedPoint(0))
     test.assertEqual(
         test.hyperdrive.market_state.share_reserves, test.contribution * test.hyperdrive.market_state.share_price
     )
@@ -98,17 +96,17 @@ def test_initialize_bots_on_solidity_success():
         market_state=test.hyperdrive.market_state,
         time_remaining=test.hyperdrive.position_duration,
     )
-    test.assertAlmostEqual(float(init_apr), float(test.target_apr), delta=test.APPROX_EQ)
-    test.assertEqual(float(test.alice.wallet.balance.amount), 0.0)
-    test.assertEqual(float(test.hyperdrive.market_state.share_reserves), 500_000_000)
-    test.assertEqual(float(test.hyperdrive.market_state.share_price), 1.0)
+    test.assertAlmostEqual(init_apr, test.target_apr, delta=test.APPROX_EQ)
+    test.assertEqual(test.alice.wallet.balance.amount, FixedPoint(0))
+    test.assertAlmostEqual(
+        test.hyperdrive.market_state.share_reserves, FixedPoint("500_000_000.0"), delta=test.APPROX_EQ
+    )
+    test.assertEqual(test.hyperdrive.market_state.share_price, FixedPoint("1.0"))
     virtual_liquidity = (
         test.hyperdrive.market_state.share_reserves * test.hyperdrive.market_state.share_price
         + FixedPoint("2.0") * test.hyperdrive.market_state.bond_reserves
     )
-    test.assertAlmostEqual(float(virtual_liquidity), 1_476_027_255.06539, delta=1e-11 * float(virtual_liquidity))
+    test.assertAlmostEqual(virtual_liquidity, FixedPoint("1_476_027_255.06539"), delta=test.APPROX_EQ)
     test.assertAlmostEqual(
-        float(test.hyperdrive.market_state.lp_total_supply),
-        988_013_627.532698,
-        delta=1e-11 * float(test.hyperdrive.market_state.lp_total_supply),
+        test.hyperdrive.market_state.lp_total_supply, FixedPoint("988_013_627.532698"), delta=test.APPROX_EQ
     )

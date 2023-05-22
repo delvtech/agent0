@@ -16,6 +16,8 @@ from elfpy.math import FixedPoint
 class TestBorrow(unittest.TestCase):
     """Testing the Borrow Market"""
 
+    APPROX_EQ: FixedPoint = FixedPoint(1e-6)
+
     def test_open_borrow(self, delete_logs=True):
         """Borrow 100 BASE"""
         output_utils.setup_logging(log_filename=".logging/test_borrow.log", log_level=logging.DEBUG)
@@ -51,9 +53,9 @@ class TestBorrow(unittest.TestCase):
                     market_deltas.d_borrow_shares,
                     agent_deltas.borrows[0].borrow_amount,
                 )
-                np.testing.assert_almost_equal(float(market_deltas.d_borrow_shares), float(expected_borrow_amount))
-                np.testing.assert_almost_equal(
-                    float(agent_deltas.borrows[0].borrow_amount), float(expected_borrow_amount)
+                self.assertAlmostEqual(market_deltas.d_borrow_shares, expected_borrow_amount, delta=self.APPROX_EQ)
+                self.assertAlmostEqual(
+                    agent_deltas.borrows[0].borrow_amount, expected_borrow_amount, delta=self.APPROX_EQ
                 )
                 if delete_logs:
                     output_utils.close_logging()

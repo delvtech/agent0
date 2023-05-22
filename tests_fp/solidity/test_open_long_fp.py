@@ -9,6 +9,7 @@ import elfpy.time as time
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
+# TODO: Remove duplicate code disable once float code is removed
 # pylint: disable=duplicate-code
 
 

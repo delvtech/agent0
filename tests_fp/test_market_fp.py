@@ -19,7 +19,7 @@ class MarketTest(unittest.TestCase):
 
     # TODO: This approx should be much lower
     # issue #112
-    APPROX_EQ: float = 1e-6
+    APPROX_EQ: FixedPoint = FixedPoint(1e-6)
 
     def test_position_duration(self):
         """Test to make sure market init fails when normalizing_constant != days"""
@@ -206,20 +206,20 @@ class MarketTest(unittest.TestCase):
                 market_deltas, _ = market.initialize(wallet_address=0)
                 market.market_state.apply_delta(market_deltas)
                 self.assertAlmostEqual(
-                    float(market.market_state.borrow_amount),
-                    float(test_case["borrow_amount"]),
+                    market.market_state.borrow_amount,
+                    test_case["borrow_amount"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected borrow_amount",
                 )
                 self.assertAlmostEqual(
-                    float(market.market_state.borrow_shares),
-                    float(test_case["borrow_shares"]),
+                    market.market_state.borrow_shares,
+                    test_case["borrow_shares"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected borrow_shares",
                 )
                 self.assertAlmostEqual(
-                    float(market.market_state.borrow_outstanding),
-                    float(test_case["borrow_outstanding"]),
+                    market.market_state.borrow_outstanding,
+                    test_case["borrow_outstanding"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected collateral_amount",
                 )
@@ -239,20 +239,20 @@ class MarketTest(unittest.TestCase):
                     target_apr=test_case["target_apr"],
                 )
                 self.assertAlmostEqual(
-                    float(market.fixed_apr),
-                    float(test_case["target_apr"]),
+                    market.fixed_apr,
+                    test_case["target_apr"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected market fixed_apr",
                 )
                 self.assertAlmostEqual(
-                    float(market.market_state.share_reserves),
-                    float(test_case["expected_share_reserves"]),
+                    market.market_state.share_reserves,
+                    test_case["expected_share_reserves"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected share_reserves",
                 )
                 self.assertAlmostEqual(
-                    float(market.market_state.bond_reserves),
-                    float(test_case["expected_bond_reserves"]),
+                    market.market_state.bond_reserves,
+                    test_case["expected_bond_reserves"],
                     delta=self.APPROX_EQ,
                     msg=f"{test_number=}\nunexpected bond_reserves",
                 )

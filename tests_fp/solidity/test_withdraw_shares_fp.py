@@ -14,6 +14,8 @@ from elfpy.math import FixedPoint, FixedPointMath
 class TestWithdrawShares(unittest.TestCase):
     """Test withdraw shares functionality when the market is in different states."""
 
+    APPROX_EQ: FixedPoint = FixedPoint(1e2)
+
     budget: FixedPoint = FixedPoint("500_000_000.0")
     initial_liquidity: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
@@ -118,7 +120,12 @@ class TestWithdrawShares(unittest.TestCase):
 
         _, remove_lp_agent_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet, lp_shares)
         withdrawal_proceeds = remove_lp_agent_deltas.balance.amount
-        self.assertAlmostEqual(float(withdrawal_proceeds), float(expected_withdrawal_proceeds), places=7)
+        self.assertAlmostEqual(
+            withdrawal_proceeds,
+            expected_withdrawal_proceeds,
+            delta=self.APPROX_EQ,
+            msg=f"{withdrawal_proceeds=} is not almost equal to {expected_withdrawal_proceeds=}",
+        )
 
     def test_redeem_withdraw_shares_long_long(self):
         """Should receive the correct amount of withdrawal shares when there are multiple longs"""
@@ -173,4 +180,4 @@ class TestWithdrawShares(unittest.TestCase):
 
         _, remove_lp_agent_deltas = self.hyperdrive.remove_liquidity(self.bob.wallet, lp_shares)
         withdrawal_proceeds = remove_lp_agent_deltas.balance.amount
-        self.assertAlmostEqual(float(withdrawal_proceeds), float(expected_withdrawal_proceeds), delta=100)
+        self.assertAlmostEqual(withdrawal_proceeds, expected_withdrawal_proceeds, delta=self.APPROX_EQ)

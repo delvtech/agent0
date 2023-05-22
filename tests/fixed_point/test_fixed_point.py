@@ -5,6 +5,8 @@ import unittest
 import elfpy.errors.errors as errors
 from elfpy.math import FixedPoint
 
+# pylint: disable=too-many-public-methods
+
 
 class TestFixedPoint(unittest.TestCase):
     r"""Unit tests to verify that the fixed-point integer implementations are correct.
@@ -208,6 +210,10 @@ class TestFixedPoint(unittest.TestCase):
         assert int(FixedPoint(5)) / 5 == 1
         assert 5 / int(FixedPoint(5)) == 1
         assert float(FixedPoint(5)) / 5 == 1 * 10**-18
+        # scaling both numerator & denominator shouldn't change the outcome
+        assert FixedPoint(5) / FixedPoint(7) == FixedPoint(714285714285714285)
+        assert FixedPoint(50) / FixedPoint(70) == FixedPoint(714285714285714285)
+        assert FixedPoint(500) / FixedPoint(700) == FixedPoint(714285714285714285)
         # int / float
         assert int(FixedPoint(5) / FixedPoint(5.0)) == 1  # 5e-18 / 5e18 = (5/5) * 10 ** (-18+18) = 1
         # float / float
@@ -244,8 +250,15 @@ class TestFixedPoint(unittest.TestCase):
         with self.assertRaises(errors.DivisionByZero):
             _ = fixed_point_value / fixed_point_zero
 
+    def test_floor_divide(self):
+        r"""Test `//` sugar"""
+        assert FixedPoint("6.3") // FixedPoint("2.0") == FixedPoint("3.0")
+        assert FixedPoint("8.0") // FixedPoint("2.0") == FixedPoint("4.0")
+        assert FixedPoint("8.0") // FixedPoint("5.0") == FixedPoint("1.0")
+        assert FixedPoint("0.5") // FixedPoint("0.2") == FixedPoint("2.0")
+
     def test_power(self):
-        r"""Test `**` sugar for various type combos"""
+        r"""Test `**` sugar"""
         # power zero
         assert int(FixedPoint(5.0) ** FixedPoint(0)) == 1 * 10**18
         assert int(FixedPoint(5) ** FixedPoint(0)) == 1 * 10**18
@@ -320,12 +333,88 @@ class TestFixedPoint(unittest.TestCase):
         with self.assertRaises(errors.DivisionByZero):
             _ = fixed_point_value % fixed_point_zero
 
+    def test_divmod(self):
+        r"""Test `divmod` support"""
+        assert divmod(FixedPoint(5), FixedPoint(7)) == (FixedPoint(5) // FixedPoint(7), FixedPoint(5) % FixedPoint(7))
+        assert divmod(FixedPoint(5), FixedPoint(7)) == (FixedPoint(0), FixedPoint(5))
+        assert divmod(FixedPoint("6.3"), FixedPoint("2.0")) == (FixedPoint("3.0"), FixedPoint("0.3"))
+        assert divmod(FixedPoint("5.5"), FixedPoint("2.2")) == (FixedPoint("2.0"), FixedPoint("1.1"))
+        assert divmod(FixedPoint("-5.5"), FixedPoint("-2.2")) == (FixedPoint("2.0"), FixedPoint("-1.1"))
+        assert divmod(FixedPoint("5.5"), FixedPoint("-2.2")) == (FixedPoint("-3.0"), FixedPoint("-1.1"))
+
+    def test_divmod_fail(self):
+        r"""Test `divmod` failure mode"""
+        with self.assertRaises(errors.DivisionByZero):
+            _ = divmod(FixedPoint("1.0"), FixedPoint(0))
+
     def test_floor(self):
-        r"""Test floor operator"""
-        assert FixedPoint("3.6").floor() == FixedPoint("3.0")
-        assert FixedPoint("0.5").floor() == FixedPoint(0)
-        assert FixedPoint(3).floor() == FixedPoint(0)
-        assert FixedPoint(-6).floor() == FixedPoint("-1.0")
-        assert FixedPoint(-6.0).floor() == FixedPoint(-6.0)
-        assert FixedPoint(-6.8).floor() == FixedPoint(-7.0)
-        assert FixedPoint("-2.1").floor() == FixedPoint("-3.0")
+        r"""Test floor method"""
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-2.1").floor()
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
+        assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
+        assert math.floor(FixedPoint("3.6")) == FixedPoint("3.0")
+        assert math.floor(FixedPoint("0.5")) == FixedPoint(0)
+        assert math.floor(FixedPoint(3)) == FixedPoint(0)
+        assert math.floor(FixedPoint(-6)) == FixedPoint("-1.0")
+        assert math.floor(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.floor(FixedPoint(-6.8)) == FixedPoint(-7.0)
+
+    def test_ceil(self):
+        r"""Test ceil method"""
+        assert FixedPoint("3.0").ceil() == FixedPoint("3.0")
+        assert FixedPoint("3.000000000000001").ceil() == FixedPoint("4.0")
+        assert FixedPoint("3.1").ceil() == math.ceil(FixedPoint("3.7"))
+        assert math.ceil(FixedPoint("3.6")) == FixedPoint("4.0")
+        assert math.ceil(FixedPoint("0.5")) == FixedPoint("1.0")
+        assert math.ceil(FixedPoint("0.0000000003")) == FixedPoint("1.0")
+        assert math.ceil(FixedPoint("-0.0")) == FixedPoint(0)
+        assert math.ceil(FixedPoint("0.0")) == FixedPoint(0)
+        assert math.ceil(FixedPoint(3)) == FixedPoint(1.0)
+        assert math.ceil(FixedPoint(-6)) == FixedPoint(0)
+        assert math.ceil(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.ceil(FixedPoint(6.0)) == FixedPoint(6.0)
+        assert math.ceil(FixedPoint(-6.8)) == FixedPoint(-6.0)
+        assert math.ceil(FixedPoint(6.8)) == FixedPoint(7.0)
+
+    def test_trunc(self):
+        r"""Test trunc method"""
+        assert math.trunc(FixedPoint("3.6")) == FixedPoint("3.0")
+        assert math.trunc(FixedPoint("0.5")) == FixedPoint("0.0")
+        assert math.trunc(FixedPoint("0.0000000003")) == FixedPoint("0.0")
+        assert math.trunc(FixedPoint("-0.0")) == FixedPoint(0)
+        assert math.trunc(FixedPoint("0.0")) == FixedPoint(0)
+        assert math.trunc(FixedPoint(3)) == FixedPoint(0.0)
+        assert math.trunc(FixedPoint(-6)) == FixedPoint(0)
+        assert math.trunc(FixedPoint(-6.0)) == FixedPoint(-6.0)
+        assert math.trunc(FixedPoint(6.0)) == FixedPoint(6.0)
+        assert math.trunc(FixedPoint(-6.8)) == FixedPoint(-6.0)
+        assert math.trunc(FixedPoint(6.8)) == FixedPoint(6.0)
+
+    def test_round(self):
+        r"""Test round method"""
+        # normal round up & down behavior
+        assert round(FixedPoint("3.6")) == FixedPoint("4.0")
+        assert round(FixedPoint("3.48927")) == FixedPoint("3.0")
+        assert round(FixedPoint("-3.6")) == FixedPoint("-4.0")
+        assert round(FixedPoint("-3.4")) == FixedPoint("-3.0")
+        assert round(FixedPoint("1.45")) == FixedPoint("1.0")
+        assert round(FixedPoint("1.75")) == FixedPoint("2.0")
+        # round half to even
+        assert round(FixedPoint("0.5")) == FixedPoint("0.0")
+        assert round(FixedPoint("1.5")) == FixedPoint("2.0")
+        assert round(FixedPoint("2.5")) == FixedPoint("2.0")
+        assert round(FixedPoint("-0.5")) == FixedPoint("0.0")
+        assert round(FixedPoint("-1.5")) == FixedPoint("-2.0")
+        # round with non-zero ndigits
+        assert round(FixedPoint("1.75"), ndigits=1) == FixedPoint("1.8")
+        assert round(FixedPoint("100.75"), ndigits=1) == FixedPoint("100.8")
+        assert round(FixedPoint("1.45"), ndigits=1) == FixedPoint("1.4")
+        assert round(FixedPoint("1.5"), ndigits=3) == FixedPoint("1.5")
+        assert round(FixedPoint("3.5"), ndigits=1) == FixedPoint("3.5")
+        assert round(FixedPoint("3.55"), ndigits=1) == FixedPoint("3.6")
+        assert round(FixedPoint("3.54"), ndigits=1) == FixedPoint("3.5")
+        assert round(FixedPoint("3.545"), ndigits=2) == FixedPoint("3.54")
+        assert round(FixedPoint("3.545"), ndigits=4) == FixedPoint("3.545")
+        assert round(FixedPoint("3.545"), ndigits=5) == FixedPoint("3.545")
+        assert round(FixedPoint("-3.5459857"), ndigits=5) == FixedPoint("-3.54599")
+        assert round(FixedPoint("-3.5459850"), ndigits=5) == FixedPoint("-3.54598")

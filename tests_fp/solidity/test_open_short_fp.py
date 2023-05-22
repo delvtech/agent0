@@ -117,12 +117,12 @@ class TestOpenShort(unittest.TestCase):
         )
         self.assertEqual(  # long average maturity time
             self.hyperdrive.market_state.long_average_maturity_time,
-            FixedPoint(FixedPoint(0)),
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         )
         self.assertEqual(  # long base volume
             self.hyperdrive.market_state.long_base_volume,
-            FixedPoint(FixedPoint(0)),
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this

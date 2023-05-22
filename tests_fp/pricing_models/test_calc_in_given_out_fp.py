@@ -28,11 +28,11 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-many-lines
 
-# TODO: remove this after FixedPoint PRs are finished
-
 
 class TestCalcInGivenOut(unittest.TestCase):
     """Unit tests for the calc_in_given_out function"""
+
+    APPROX_EQ: FixedPoint = FixedPoint(1e-8)
 
     # TODO: Add tests for the full TradeResult object
     def test_calc_in_given_out_success(self):
@@ -74,28 +74,28 @@ class TestCalcInGivenOut(unittest.TestCase):
                     time_remaining=time_remaining,
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee_or_slippage),
-                    float(expected_result.without_fee_or_slippage),
-                    places=8,
+                    trade_result.breakdown.without_fee_or_slippage,
+                    expected_result.without_fee_or_slippage,
+                    delta=self.APPROX_EQ,
                     msg=f"test {test_number + 1} unexpected without_fee_or_slippage",
                 )
                 self.assertAlmostEqual(
-                    float(trade_result.breakdown.without_fee),
-                    float(expected_result.without_fee),
-                    places=8,
+                    trade_result.breakdown.without_fee,
+                    expected_result.without_fee,
+                    delta=self.APPROX_EQ,
                     msg=f"test {test_number + 1} unexpected without_fee",
                 )
                 if model_type in {"yieldspace", "hyperdrive"}:
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.fee),
-                        float(expected_result.fee),
-                        places=8,
+                        trade_result.breakdown.fee,
+                        expected_result.fee,
+                        delta=self.APPROX_EQ,
                         msg=f"test {test_number + 1} unexpected yieldspace fee",
                     )
                     self.assertAlmostEqual(
-                        float(trade_result.breakdown.with_fee),
-                        float(expected_result.with_fee),
-                        places=8,
+                        trade_result.breakdown.with_fee,
+                        expected_result.with_fee,
+                        delta=self.APPROX_EQ,
                         msg=f"test {test_number + 1} unexpected yieldspace with_fee",
                     )
                 else:

@@ -10,11 +10,14 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
+# TODO: Remove duplicate code disable once float code is removed
 # pylint: disable=duplicate-code
 
 
 class TestCloseLong(unittest.TestCase):
     """Test opening a long in hyperdrive"""
+
+    APPROX_EQ: FixedPoint = FixedPoint(1e2)
 
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
@@ -78,20 +81,18 @@ class TestCloseLong(unittest.TestCase):
             msg="agent gets more than what they put in: agent_bond_proceeds > agent_base_paid",
         )
         self.assertAlmostEqual(  # share reserves
-            int(self.hyperdrive.market_state.share_reserves),
-            int(market_state_before.share_reserves - agent_base_proceeds / market_state_before.share_price),
-            # TODO: see why this delta is not zero. Only accurate to 7 places...
-            delta=int(self.hyperdrive.market_state.share_reserves) * 10 ** (-7),
+            self.hyperdrive.market_state.share_reserves,
+            market_state_before.share_reserves - agent_base_proceeds / market_state_before.share_price,
+            delta=self.APPROX_EQ,
             msg=(
                 f"{self.hyperdrive.market_state.share_reserves=} should equal the time adjusted amount: "
                 f"{(market_state_before.share_reserves - agent_base_proceeds / market_state_before.share_price)=}."
             ),
         )
         self.assertAlmostEqual(  # bond reserves
-            int(self.hyperdrive.market_state.bond_reserves),
-            int(market_state_before.bond_reserves + time_remaining * bond_amount),
-            # TODO: see why this delta is not zero. Only accurate to 7 places...
-            delta=int(self.hyperdrive.market_state.bond_reserves) * 10 ** (-7),
+            self.hyperdrive.market_state.bond_reserves,
+            market_state_before.bond_reserves + time_remaining * bond_amount,
+            delta=self.APPROX_EQ,
             msg=(
                 f"{self.hyperdrive.market_state.bond_reserves=} should equal the "
                 f"time adjusted amount: {(market_state_before.bond_reserves + time_remaining * bond_amount)=}."
@@ -119,9 +120,9 @@ class TestCloseLong(unittest.TestCase):
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} should be 0.",
         )
         self.assertAlmostEqual(  # long base volume
-            int(self.hyperdrive.market_state.long_base_volume),
-            0,
-            delta=50,
+            self.hyperdrive.market_state.long_base_volume,
+            FixedPoint(0),
+            delta=self.APPROX_EQ,
             msg=f"{self.hyperdrive.market_state.long_base_volume=} should be 0.",
         )
         checkpoint_time = maturity_time - self.term_length
@@ -300,9 +301,9 @@ class TestCloseLong(unittest.TestCase):
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
         realized_apr = (base_proceeds - base_amount) / (base_amount * (FixedPoint("1.0") - time_delta))
         self.assertAlmostEqual(  # realized return
-            int(realized_apr),
-            int(self.target_apr),
-            delta=1e-6 * int(self.target_apr),
+            realized_apr,
+            self.target_apr,
+            delta=self.APPROX_EQ,
             msg=f"The realized {realized_apr=} should be equal to {self.target_apr=}",
         )
         # verify that the close long updates were correct
@@ -341,7 +342,7 @@ class TestCloseLong(unittest.TestCase):
             mint_time=FixedPoint(0),
         )
         base_proceeds = agent_deltas_close.balance.amount  # how much base agent gets as a result of the close
-        self.assertAlmostEqual(int(base_proceeds), int(agent_deltas_open.longs[0].balance), delta=10**10)
+        self.assertAlmostEqual(base_proceeds, agent_deltas_open.longs[0].balance, delta=self.APPROX_EQ)
         # verify that the close long updates were correct
         self.verify_close_long(
             example_agent=self.bob,
@@ -385,7 +386,7 @@ class TestCloseLong(unittest.TestCase):
         # self.assertAlmostEqual(
         #     base_proceeds,
         #     agent_deltas_open.longs[0].balance * 0.8,
-        #     delta=1e-18,
+        #     delta=self.APPROX_EQ,
         # )
         # verify that the close long updates were correct
         self.verify_close_long(
@@ -429,7 +430,7 @@ class TestCloseLong(unittest.TestCase):
         # self.assertAlmostEqual(
         #     base_proceeds,
         #     agent_deltas_open.longs[0].balance * 0.4 + agent_deltas_open.longs[0].balance * 0.4762,
-        #     delta=2e-4,
+        #     delta=self.APPROX_EQ,
         # )
         # verify that the close long updates were correct
         self.verify_close_long(

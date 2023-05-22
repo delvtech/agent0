@@ -8,11 +8,10 @@ import elfpy.pricing_models.base as base_pm
 from elfpy.math import FixedPoint
 
 
-# TODO: remove this after FixedPoint PRs are finished
-
-
 class TestSpotPriceCalculations(unittest.TestCase):
     """Test spot price calculation in base pricing model & price utils"""
+
+    APPROX_EQ: FixedPoint = FixedPoint(1e-16)
 
     def test_calc_spot_price_from_reserves(self):
         """Test base pricing model calculation
@@ -97,9 +96,9 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(spot_price),
-                float(test_case["expected_result"]),
-                places=8,
+                spot_price,
+                test_case["expected_result"],
+                delta=self.APPROX_EQ,
                 msg=f"{test_number=} failed, {spot_price=}, {test_case['expected_result']}",
             )
 
@@ -165,9 +164,9 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(spot_price),
-                float(test_case["expected_result"]),
-                places=8,
+                spot_price,
+                test_case["expected_result"],
+                delta=self.APPROX_EQ,
                 msg=f"{test_number=} failed, {spot_price=}, {test_case['expected_result']}",
             )
 
@@ -250,8 +249,8 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 time_remaining=test_case["time_remaining"],
             )
             self.assertAlmostEqual(
-                float(pm_spot_price),
-                float(util_spot_price),
-                places=8,
+                pm_spot_price,
+                util_spot_price,
+                delta=self.APPROX_EQ,
                 msg=f"{test_number=} failed, {pm_spot_price=}, {util_spot_price=}",
             )
