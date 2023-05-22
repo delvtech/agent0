@@ -11,3 +11,6 @@ nbsphinx>=0.8.12
 sphinx-rtd-theme>=1.1.1
 # urllib3 v2 requires OpenSSL v1.1.1+, but Vercel uses v1.0.2
 urllib3<2.0
+jinja2
+ipywidgets
+tqdm
