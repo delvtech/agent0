@@ -1,4 +1,4 @@
-# Install
+# Install -- overview
 
 Python 3.9 is required currently, to maintain compatibility with Google Colaboratory.
 
@@ -7,24 +7,31 @@ Set up your favorite python virtual environment. We use:
 - [pyenv](https://github.com/pyenv/pyenv#how-it-works) to manage python versions
 - [venv](https://docs.python.org/3/library/venv.html) standard library to manage virtual environments
 
-Then run:
+# Install -- steps
+Clone the repo into a <repo_location> of your choice.
+Next, follow the installation instructions provided by [pyenv](https://github.com/pyenv/pyenv#installation).
 
+After installation, we can use pyenv to install Python from within the repo.
 ```bash
+cd <repo_location>
 pyenv install 3.9
 pyenv local 3.9
 python -m venv .venv
 source .venv/bin/activate
 ```
-
-Once you're in your favored virtual environment, install the project dependencies:
+Once you're in your virtual environment, install the project dependencies:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
-
 If you intend to improve the documentation, then you must also install the packages in `requirements-dev.txt`.
+
+* `pyenv install 3.9` You should now see the correct version when you run `pyenv versions`.
+* `pyenv local 3.9` This command creates a `.python-version` file in your current directory. If you have pyenv active in your environment, this file will automatically activate this version for you.
+* `python -m venv .venv` This will create a `.venv` folder in your repo directory that stores the local python build & packages. After this command you should be able to type which python and see that it points to an executable inside `.venv/`.
+* `python -m pip install -e .` This installs elfpy locally such that the install updates automatically any time you change the source code. 
 
 ## Docker
 
