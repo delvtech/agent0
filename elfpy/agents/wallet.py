@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class Long:
     r"""An open long position.
 
-    Parameters
+    Arguments
     ----------
     balance : float
         The amount of bonds that the position is long.
@@ -33,11 +33,11 @@ class Long:
 class Short:
     r"""An open short position.
 
-    Parameters
+    Arguments
     ----------
     balance : float
         The amount of bonds that the position is short.
-    open_share_price: float
+    open_share_price : float
         The share price at the time the short was opened.
     """
 
@@ -49,7 +49,7 @@ class Short:
 class Borrow:
     r"""An open borrow position
 
-    Parameters
+    Arguments
     ----------
     borrow_token : TokenType
     .. todo: add explanation
@@ -57,7 +57,7 @@ class Borrow:
     .. todo: add explanation
     collateral_token : TokenType
     .. todo: add explanation
-    collateral_amount: float
+    collateral_amount : float
     .. todo: add explanation
     start_time : float
     .. todo: add explanation
@@ -74,7 +74,7 @@ class Borrow:
 class Wallet:
     r"""Stores what is in the agent's wallet
 
-    Parameters
+    Arguments
     ----------
     address : int
         The trader's address.
@@ -124,7 +124,7 @@ class Wallet:
     def update(self, wallet_deltas: Wallet) -> None:
         """Update the agent's wallet
 
-        Parameters
+        Arguments
         ----------
         wallet_deltas : Wallet
             The agent's wallet that tracks the amount of assets this agent holds
@@ -188,7 +188,7 @@ class Wallet:
     def _update_longs(self, longs: Iterable[tuple[float, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
-        Parameters
+        Arguments
         ----------
         shorts : Iterable[tuple[float, Short]]
             A list (or other Iterable type) of tuples that contain a Long object
@@ -217,7 +217,7 @@ class Wallet:
     def _update_shorts(self, shorts: Iterable[tuple[float, Short]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
-        Parameters
+        Arguments
         ----------
         shorts : Iterable[tuple[float, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
@@ -275,7 +275,7 @@ class Wallet:
 class LongFP:
     r"""An open long position.
 
-    Parameters
+    Arguments
     ----------
     balance : FixedPoint
         The amount of bonds that the position is long.
@@ -290,11 +290,11 @@ class LongFP:
 class ShortFP:
     r"""An open short position.
 
-    Parameters
+    Arguments
     ----------
     balance : FixedPoint
         The amount of bonds that the position is short.
-    open_share_price: FixedPoint
+    open_share_price : FixedPoint
         The share price at the time the short was opened.
     """
 
@@ -306,7 +306,7 @@ class ShortFP:
 class BorrowFP:
     r"""An open borrow position
 
-    Parameters
+    Arguments
     ----------
     borrow_token : TokenType
     .. todo: add explanation
@@ -314,7 +314,7 @@ class BorrowFP:
     .. todo: add explanation
     collateral_token : TokenType
     .. todo: add explanation
-    collateral_amount: FixedPoint
+    collateral_amount : FixedPoint
     .. todo: add explanation
     start_time : FixedPoint
     .. todo: add explanation
@@ -332,7 +332,7 @@ class BorrowFP:
 class WalletFP:
     r"""Stores what is in the agent's wallet
 
-    Parameters
+    Arguments
     ----------
     address : int
         The trader's address.
@@ -386,7 +386,7 @@ class WalletFP:
     def update(self, wallet_deltas: WalletFP) -> None:
         """Update the agent's wallet
 
-        Parameters
+        Arguments
         ----------
         wallet_deltas : Wallet
             The agent's wallet that tracks the amount of assets this agent holds
@@ -450,7 +450,7 @@ class WalletFP:
     def _update_longs(self, longs: Iterable[tuple[FixedPoint, LongFP]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
-        Parameters
+        Arguments
         ----------
         shorts : Iterable[tuple[FixedPoint, Short]]
             A list (or other Iterable type) of tuples that contain a Long object
@@ -479,7 +479,7 @@ class WalletFP:
     def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, ShortFP]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
-        Parameters
+        Arguments
         ----------
         shorts : Iterable[tuple[FixedPoint, Short]]
             A list (or other Iterable type) of tuples that contain a Short object
