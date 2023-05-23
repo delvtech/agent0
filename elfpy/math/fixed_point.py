@@ -448,6 +448,14 @@ class FixedPoint:
             return f"{self.__class__.__name__}({self.special_value})"
         return f"{self.__class__.__name__}({self.int_value})"
 
+    def __hash__(self) -> int:
+        r"""Returns a hash of self"""
+        # act like a float for non-finite
+        if not self.is_finite():
+            return hash(float(self))
+        # act like an integer otherwise
+        return hash(self.int_value)
+
     # additional arethmitic & helper functions
     def div_up(self, other: int | FixedPoint) -> FixedPoint:
         r"""Divide self by other, rounding up"""

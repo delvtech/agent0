@@ -418,3 +418,14 @@ class TestFixedPoint(unittest.TestCase):
         assert round(FixedPoint("3.545"), ndigits=5) == FixedPoint("3.545")
         assert round(FixedPoint("-3.5459857"), ndigits=5) == FixedPoint("-3.54599")
         assert round(FixedPoint("-3.5459850"), ndigits=5) == FixedPoint("-3.54598")
+
+    def test_hash(self):
+        """Test hash method"""
+        assert hash(FixedPoint(-1)) == -2
+        assert hash(FixedPoint(-2)) == hash(-2)
+        assert hash(FixedPoint(2)) == hash(2)
+        assert hash(FixedPoint("-1.0")) == hash(-1*10**18)
+        assert hash(FixedPoint("1.0")) == hash(1*10**18)
+        assert hash(FixedPoint("-2.5")) == hash(-2.5*10**18)
+        assert hash(FixedPoint("2.5")) == hash(2.5*10**18)
+        assert hash(FixedPoint("-200.537280")) == hash(-200.537280*10**18)
