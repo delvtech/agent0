@@ -25,7 +25,7 @@ COPY --from=migrations /usr/local/bin/ /usr/local/bin
 RUN ape compile
 
 # install elf-simulations
-RUN python -m pip install -e .
+RUN python -m pip install .
 
 # test
 RUN echo "[pytest]\
