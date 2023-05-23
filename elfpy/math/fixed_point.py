@@ -73,13 +73,37 @@ class FixedPoint:
 
     @staticmethod
     def _is_valid_number(float_string: str) -> bool:
-        """Regular expression pattern to determine if the string argument is valid for initializing FixedPoint
+        r"""Regular expression pattern to determine if the string argument is valid for initializing FixedPoint
 
         Valid inputs are:
         - an optional negative sign
         - one or more digits
         - an optional underscore for digit grouping
         - an optional decimal point followed by one or more digits
+
+        The regular expression used here, `^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$`, works as follows:
+
+        ^            : Start of the string
+
+        -?           : An optional negative sign
+
+        \d{1,3}      : Between one and three digit
+
+        (?:_?\d{3})* : Zero or more groups consisting of an optional underscore and three digits
+
+        (?:\.\d+)?   : An optional group consisting of a decimal point and one or more digits
+
+        $            : End of the string
+
+        Arguments
+        ---------
+        float_string : str
+            FixedPoint constructor argument that represents a valid number
+
+        Returns
+        -------
+        bool
+            True if the string represents a valid number
         """
         pattern = r"^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$"
         return bool(re.match(pattern, float_string))

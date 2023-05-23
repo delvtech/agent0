@@ -28,6 +28,9 @@ class TestFixedPoint(unittest.TestCase):
         r"""Test initialization for FixedPoint numbers"""
         # str == float
         assert FixedPoint("5") == FixedPoint("5.0")
+        assert FixedPoint("50_000.0") == FixedPoint("50000.0")
+        assert FixedPoint("50_000.0") == FixedPoint("50000.0")
+        assert FixedPoint("5_340_070.0") == FixedPoint("5340070.0")
         assert FixedPoint("-5") == FixedPoint(-5.0)
         assert FixedPoint("5.1") == FixedPoint(5.1)
         assert FixedPoint("5.01") == FixedPoint(5.01)
@@ -50,13 +53,21 @@ class TestFixedPoint(unittest.TestCase):
     def test_init_fail(self):
         r"""Test failure mode of FixedPoint initialization"""
         with self.assertRaises(ValueError):
-            _ = FixedPoint("inf.")
+            _ = FixedPoint("inf.")  # no decimal if inf/nan
         with self.assertRaises(ValueError):
-            _ = FixedPoint("abc")
+            _ = FixedPoint("abc")  # no letters besides (+/-)inf & nan
         with self.assertRaises(ValueError):
-            _ = FixedPoint("44.5a")
+            _ = FixedPoint("44.5a")  # no letters next to numbers
         with self.assertRaises(ValueError):
-            _ = FixedPoint("-nan")
+            _ = FixedPoint("4a4.5")  # no letters next to numbers
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("50_00.0")  # must have 3 digits before or between _
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("1_50_000.0")  # must have 3 digits before or between _
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("44.5_4")  # no _ on rhs of decimal
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("-nan")  # no - if nan
 
     def test_int_cast(self):
         r"""Test int casting"""
