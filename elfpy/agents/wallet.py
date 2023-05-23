@@ -1,5 +1,5 @@
 """Implements abstract classes that control user behavior"""
-from __future__ import annotations  # types will be strings by default in 3.11
+from __future__ import annotations
 
 import copy
 import logging
