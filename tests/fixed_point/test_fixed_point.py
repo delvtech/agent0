@@ -55,6 +55,8 @@ class TestFixedPoint(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = FixedPoint("inf.")  # no decimal if inf/nan
         with self.assertRaises(ValueError):
+            _ = FixedPoint("-nan")  # no - if nan
+        with self.assertRaises(ValueError):
             _ = FixedPoint("abc")  # no letters besides (+/-)inf & nan
         with self.assertRaises(ValueError):
             _ = FixedPoint("44.5a")  # no letters next to numbers
@@ -67,7 +69,9 @@ class TestFixedPoint(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = FixedPoint("44.5_4")  # no _ on rhs of decimal
         with self.assertRaises(ValueError):
-            _ = FixedPoint("-nan")  # no - if nan
+            _ = FixedPoint(".0")  # needs leading digit
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("1.")  # needs trailing digit if there is a decimal provided
 
     def test_int_cast(self):
         r"""Test int casting"""
