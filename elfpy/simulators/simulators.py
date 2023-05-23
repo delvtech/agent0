@@ -68,7 +68,7 @@ class SimulationState:
         so each item in this dict is appended to the attribute with a corresponding key.
         If no attribute exists for that key, a new list containing the value is assigned to the attribute
 
-        Parameters
+        Arguments
         ----------
         dictionary : dict
             items to be added
@@ -432,7 +432,7 @@ class Simulator:
         r"""Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
 
-        Parameters
+        Arguments
         ----------
         rng : Generator
             Random number generator, constructed using np.random.default_rng(seed)
@@ -477,7 +477,7 @@ class Simulator:
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
         a pandas dataframe.
 
-        Parameters
+        Arguments
         ----------
         agent_list : list[Agent]
             A list of instantiated Agent objects
@@ -490,7 +490,7 @@ class Simulator:
     def collect_and_execute_trades(self, liquidate: bool = False) -> None:
         r"""Get trades from the agent list, execute them, and update states
 
-        Parameters
+        Arguments
         ----------
         liquidate : bool
             If True, indicates if the current set of trades should be considered the final trades,
@@ -521,7 +521,7 @@ class Simulator:
     def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, types.Trade]]:
         r"""Collect trades from a set of provided agent IDs.
 
-        Parameters
+        Arguments
         ----------
         agent_ids: list[int]
             A list of agent IDs. These IDs must correspond to agents that are
@@ -549,7 +549,7 @@ class Simulator:
     def execute_trades(self, agent_actions: list[tuple[int, types.Trade]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
-        Parameters
+        Arguments
         ----------
         trades : list[tuple[int, list[Trade]]]
             A list of agent trades. These will be executed in order.
@@ -600,7 +600,7 @@ class Simulator:
                            # do_trade
                            # update simulation state trade variables
 
-        Parameters
+        Arguments
         ----------
         liquidate_on_end : bool
             if True, liquidate trades when the simulation is complete
@@ -744,7 +744,7 @@ class SimulationStateFP:
         so each item in this dict is appended to the attribute with a corresponding key.
         If no attribute exists for that key, a new list containing the value is assigned to the attribute
 
-        Parameters
+        Arguments
         ----------
         dictionary : dict
             items to be added
@@ -1083,7 +1083,7 @@ class SimulatorFP:
         r"""Assign the internal random number generator to a new instantiation
         This function is useful for forcing identical trade volume and directions across simulation runs
 
-        Parameters
+        Arguments
         ----------
         rng : Generator
             Random number generator, constructed using np.random.default_rng(seed)
@@ -1128,7 +1128,7 @@ class SimulatorFP:
         prepended to the simulation_state for each new agent so that the state can still easily be converted into
         a pandas dataframe.
 
-        Parameters
+        Arguments
         ----------
         agent_list : list[Agent]
             A list of instantiated Agent objects
@@ -1141,7 +1141,7 @@ class SimulatorFP:
     def collect_and_execute_trades(self, liquidate: bool = False) -> None:
         r"""Get trades from the agent list, execute them, and update states
 
-        Parameters
+        Arguments
         ----------
         liquidate : bool
             If True, indicates if the current set of trades should be considered the final trades,
@@ -1173,13 +1173,13 @@ class SimulatorFP:
     def collect_trades(self, agent_ids: list[int], liquidate: bool = False) -> list[tuple[int, types.Trade]]:
         r"""Collect trades from a set of provided agent IDs.
 
-        Parameters
+        Arguments
         ----------
-        agent_ids: list[int]
+        agent_ids : list[int]
             A list of agent IDs. These IDs must correspond to agents that are
             registered in the simulator.
 
-        liquidate: bool
+        liquidate : bool
             If true, have agents collect their liquidation trades. Otherwise, agents collect their normal trades.
 
         Returns
@@ -1201,7 +1201,7 @@ class SimulatorFP:
     def execute_trades(self, agent_actions: list[tuple[int, types.Trade]]) -> None:
         r"""Execute a list of trades associated with agents in the simulator.
 
-        Parameters
+        Arguments
         ----------
         trades : list[tuple[int, list[Trade]]]
             A list of agent trades. These will be executed in order.
@@ -1266,7 +1266,7 @@ class SimulatorFP:
                            # do_trade
                            # update simulation state trade variables
 
-        Parameters
+        Arguments
         ----------
         liquidate_on_end : bool
             if True, liquidate trades when the simulation is complete
