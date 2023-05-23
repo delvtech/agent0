@@ -10,7 +10,7 @@ def calc_apr_from_spot_price(price: float, time_remaining: time.StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
-    Parameters
+    Arguments
     ----------
     price : float
         Spot price of bonds in terms of base
@@ -38,7 +38,7 @@ def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.Stretche
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
-    Parameters
+    Arguments
     ----------
     price : FixedPoint
         Spot price of bonds in terms of base
@@ -67,7 +67,7 @@ def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.Stretche
 def calc_spot_price_from_apr(apr: float, time_remaining: time.StretchedTime) -> float:
     r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
 
-    Parameters
+    Arguments
     ----------
     apr : float
         Current fixed APR in decimal units (for example, 5% APR would be 0.05)
@@ -86,7 +86,7 @@ def calc_spot_price_from_apr(apr: float, time_remaining: time.StretchedTime) -> 
 def calc_spot_price_from_apr_fp(apr: FixedPoint, time_remaining: time.StretchedTimeFP) -> FixedPoint:
     r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
 
-    Parameters
+    Arguments
     ----------
     apr : FixedPoint
         Current fixed APR in decimal units (for example, 5% APR would be 0.05)
