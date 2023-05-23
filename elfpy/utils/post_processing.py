@@ -42,7 +42,7 @@ def aggregate_agent_and_market_states(combined_trades_df: pd.DataFrame) -> pd.Da
 def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
-    Parameters
+    Arguments
     ----------
     simulator : Simulator
         Simulator object that holds the simulation_state
@@ -63,7 +63,7 @@ def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
 def compute_derived_variables(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
-    Parameters
+    Arguments
     ----------
     simulation_state : SimulationState
         simulation_state, which is a member variable of the Simulator class
@@ -139,7 +139,7 @@ def add_pnl_columns(trades_df: pd.DataFrame) -> None:
 def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     r"""Aggregate trades dataframe by computing means
 
-    Parameters
+    Arguments
     ----------
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
@@ -175,7 +175,7 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
 def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
-    Parameters
+    Arguments
     ----------
     simulator : Simulator
         Simulator object that holds the simulation_state
@@ -253,7 +253,7 @@ def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFram
 def compute_derived_variables_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
-    Parameters
+    Argument
     ----------
     simulator : Simulator
         Simulator object that holds the simulation_state
