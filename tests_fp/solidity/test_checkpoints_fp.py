@@ -98,7 +98,7 @@ class TestCheckpoint(unittest.TestCase):
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
         # short haven't matured yet).
         self.assertEqual(
-            self.hyperdrive.market_state.longs_outstanding, long_wallet_deltas.longs[int(checkpoint_time)].balance
+            self.hyperdrive.market_state.longs_outstanding, long_wallet_deltas.longs[checkpoint_time].balance
         )
         self.assertEqual(self.hyperdrive.market_state.shorts_outstanding, short_amount)
 

@@ -204,7 +204,7 @@ def test_collect_fees_long(amount: int):
     # close long
     test.hyperdrive.close_long(
         agent_wallet=test.bob.wallet,
-        bond_amount=test.bob.wallet.longs[0].balance,
+        bond_amount=test.bob.wallet.longs[FixedPoint(0)].balance,
         mint_time=FixedPoint(0),
     )
 
@@ -253,7 +253,7 @@ def test_collect_fees_short(amount):
     # close short
     test.hyperdrive.close_short(
         agent_wallet=test.bob.wallet,
-        bond_amount=test.bob.wallet.shorts[0].balance,
+        bond_amount=test.bob.wallet.shorts[FixedPoint(0)].balance,
         mint_time=FixedPoint(0),
         open_share_price=FixedPoint("1.0"),
     )
