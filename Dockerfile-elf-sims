@@ -1,0 +1,28 @@
+### Migrations Image ###
+# pinned to a specific image chosen from https://github.com/delvtech/hyperdrive/pkgs/container/hyperdrive%2Fmigrations
+# v0.0.1 (2022-05-23)
+FROM ghcr.io/delvtech/hyperdrive/migrations:0.0.1 as migrations
+
+# ### Python Image ###
+# pinned to a specific image chosen from https://github.com/delvtech/elf-simulations/pkgs/container/elf-simulations%2Fpython-base
+# 2022-05-23
+FROM ghcr.io/delvtech/elf-simulations/python-base:nightly-c82cc07d2c3a781d27c7fe57a2b0e57591856f2b
+
+# set bash as default shell
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# copy everything in elf-simulations
+COPY . ./
+
+# copy hyperdrive contracts from migrations image
+COPY --from=migrations /src/ ./hyperdrive_solidity/
+# copy foundry over from migrations image
+COPY --from=migrations /usr/local/bin/ /usr/local/bin
+
+# compile contracts
+RUN ape compile
+
+# install elf-simulations
+RUN python -m pip install .
