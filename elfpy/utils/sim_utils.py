@@ -26,7 +26,7 @@ def get_simulator(
 
     The simulated market is initialized with an initial LP.
 
-    Parameters
+    Arguments
     ----------
     config : Config
         the simulator config
@@ -109,7 +109,7 @@ def get_initialized_hyperdrive_market(
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 
-    Parameters
+    Arguments
     ----------
     pricing_model : PricingModel
         instantiated pricing model
@@ -168,7 +168,7 @@ def get_initialized_hyperdrive_market(
 def get_policy(agent_type: str) -> Policy:
     """Returns an uninstantiated agent
 
-    Parameters
+    Arguments
     ----------
     agent_type : str
         The agent type must correspond to one of the files in elfpy.policies
@@ -190,7 +190,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: Optional[list[AgentFP]
 
     The simulated market is initialized with an initial LP.
 
-    Parameters
+    Arguments
     ----------
     config : Config
         the simulator config
@@ -274,7 +274,7 @@ def get_initialized_hyperdrive_market_fp(
 ) -> tuple[hyperdrive_market.MarketFP, wallet.WalletFP, hyperdrive_actions.MarketDeltasFP]:
     r"""Setup market
 
-    Parameters
+    Arguments
     ----------
     pricing_model : PricingModel
         instantiated pricing model
