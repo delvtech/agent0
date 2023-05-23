@@ -82,7 +82,7 @@ class PricingModel(ABC):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
 
-        Parameters
+        Arguments
         ----------
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
@@ -122,7 +122,7 @@ class PricingModel(ABC):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
-        Parameters
+        Arguments
         ----------
         target_apr : float
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
@@ -167,9 +167,9 @@ class PricingModel(ABC):
                   &= (\frac{\mu z}{y + s})^{\tau}
             \end{align}
 
-        Parameters
+        Arguments
         ----------
-        market_state: MarketState
+        market_state : MarketState
             The reserves and prices in the pool.
         time_remaining : StretchedTime
             The time remaining for the asset (uses time stretch).
@@ -195,9 +195,9 @@ class PricingModel(ABC):
         .. math::
             p = (\frac{\mu z}{y + s})^{\tau}
 
-        Parameters
+        Arguments
         ----------
-        market_state: MarketState
+        market_state : MarketState
             The reserves and share prices of the pool.
         time_remaining : StretchedTime
             The time remaining for the asset (incorporates time stretch).
@@ -222,7 +222,7 @@ class PricingModel(ABC):
     ) -> float:
         r"""Returns the apr given reserve amounts
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
@@ -247,7 +247,7 @@ class PricingModel(ABC):
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
             -c \cdot z
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
@@ -285,7 +285,7 @@ class PricingModel(ABC):
         .. math::
             \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool.
@@ -443,7 +443,7 @@ class PricingModelFP(ABC):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
 
-        Parameters
+        Arguments
         ----------
         target_apr : FixedPoint
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
@@ -484,7 +484,7 @@ class PricingModelFP(ABC):
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
 
-        Parameters
+        Arguments
         ----------
         target_apr : FixedPoint
             Target fixed APR in decimal units (for example, 5% APR would be 0.05)
@@ -531,9 +531,9 @@ class PricingModelFP(ABC):
                   &= (\frac{\mu z}{y + s})^{\tau}
             \end{align}
 
-        Parameters
+        Arguments
         ----------
-        market_state: MarketState
+        market_state : MarketState
             The reserves and prices in the pool.
         time_remaining : StretchedTime
             The time remaining for the asset (uses time stretch).
@@ -559,7 +559,7 @@ class PricingModelFP(ABC):
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
@@ -584,7 +584,7 @@ class PricingModelFP(ABC):
             \Delta z' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot (k-(y+c \cdot z)^{1-\tau(d)}))^{\frac{1}{1-\tau(d)}}
             -c \cdot z
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool
@@ -626,7 +626,7 @@ class PricingModelFP(ABC):
         .. math::
             \Delta y' = \mu^{-1} \cdot (\frac{\mu}{c} \cdot k)^{\frac{1}{1-\tau(d)}}-2y-c \cdot z
 
-        Parameters
+        Arguments
         ----------
         market_state : MarketState
             The reserves and share prices of the pool.

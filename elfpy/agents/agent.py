@@ -22,10 +22,6 @@ class Agent:
 
     Attributes
     ----------
-    market : elfpy.markets.Market
-        Market object that this Agent will be trading on.
-    rng : numpy.random._generator.Generator
-        Random number generator used for various simulation functions
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
     budget : float
@@ -57,7 +53,7 @@ class Agent:
 
         Specify action from the policy
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -77,7 +73,7 @@ class Agent:
 
         Typically would be called to determine how much to enter into a long position.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -102,7 +98,7 @@ class Agent:
     def get_max_short(self, market: hyperdrive_market.Market) -> float:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -171,7 +167,7 @@ class Agent:
             and care less about how much we have to spend.
             we spend what we have to spend, and get what we get.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -196,7 +192,7 @@ class Agent:
     def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades or liquidations (MarketActions)
@@ -264,7 +260,7 @@ class Agent:
     def log_final_report(self, market: hyperdrive_market.Market) -> None:
         """Logs a report of the agent's state
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent can execute trades (MarketActions)
@@ -315,22 +311,12 @@ class AgentFP:
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a
     date value is an inte with how many tokens they have for that date.
 
-    Attributes
+    Arguments
     ----------
-    market : elfpy.markets.Market
-        Market object that this Agent will be trading on.
-    rng : numpy.random._generator.Generator
-        Random number generator used for various simulation functions
     wallet_address : int
         Random ID used to identify this specific agent in the simulation
     budget : FixedPoint
         Amount of assets that this agent has available for spending in the simulation
-    last_update_spend : FixedPoint
-        Time relative to the market, in years, when this agent last made a trade. This is used to track PnL
-    product_of_time_and_base : FixedPoint
-        Helper attribute used to track how an agent spends their assets over time
-    wallet : elfpy.wallet.Wallet
-        Wallet object which tracks the agent's asset balances
     """
 
     def __init__(self, wallet_address: int, budget: FixedPoint):
@@ -354,7 +340,7 @@ class AgentFP:
 
         Specify action from the policy
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -374,7 +360,7 @@ class AgentFP:
 
         Typically would be called to determine how much to enter into a long position.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -399,7 +385,7 @@ class AgentFP:
     def get_max_short(self, market: hyperdrive_market.MarketFP) -> FixedPoint:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -468,7 +454,7 @@ class AgentFP:
             we use calcInGivenOut because we know how much we want to get,
             and care less about how much we have to spend.
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades (MarketActions)
@@ -493,7 +479,7 @@ class AgentFP:
     def get_liquidation_trades(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent will be executing trades or liquidations (MarketActions)
@@ -562,7 +548,7 @@ class AgentFP:
     def log_final_report(self, market: hyperdrive_market.MarketFP) -> None:
         """Logs a report of the agent's state
 
-        Parameters
+        Arguments
         ----------
         market : Market
             The market on which this agent can execute trades (MarketActions)

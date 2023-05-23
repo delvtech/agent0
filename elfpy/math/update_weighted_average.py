@@ -12,17 +12,17 @@ def update_weighted_average(
 ) -> float:
     """Updates a weighted average by adding or removing a weighted delta.
 
-    Parameters
+    Arguments
     ----------
-    average: float
+    average : float
         The current weighted average.
-    total_weight: float
+    total_weight : float
         The total aggregate weight of the average.
-    delta: float
+    delta : float
         New value to add.
-    delta_weight: float
+    delta_weight : float
         The weight of the new value.
-    is_adding: bool
+    is_adding : bool
         If the weight is added or removed to the total.
 
     Returns
@@ -46,17 +46,17 @@ def update_weighted_average_fp(
 ) -> FixedPoint:
     """Updates a weighted average by adding or removing a weighted delta.
 
-    Parameters
+    Arguments
     ----------
-    average: FixedPoint
+    average : FixedPoint
         The current weighted average.
-    total_weight: FixedPoint
+    total_weight : FixedPoint
         The total aggregate weight of the average.
-    delta: FixedPoint
+    delta : FixedPoint
         New value to add.
-    delta_weight: FixedPoint
+    delta_weight : FixedPoint
         The weight of the new value.
-    is_adding: bool
+    is_adding : bool
         If the weight is added or removed to the total.
 
     Returns

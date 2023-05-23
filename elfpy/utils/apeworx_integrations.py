@@ -59,9 +59,9 @@ class HyperdriveProject(ProjectManager):
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
     """Return the current market state from the smart contract.
 
-    Parameters
+    Arguments
     ----------
-    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
 
     Returns
@@ -114,22 +114,22 @@ OnChainTradeInfo = namedtuple(
 def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
     """Get all trades from hyperdrive contract.
 
-    Parameters
+    Arguments
     ----------
-    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
 
     Returns
     -------
     OnChainTradeInfo
         Named tuple containing the following fields:
-        - trades: pd.DataFrame
+        - trades : pd.DataFrame
             DataFrame containing all trades from the Hyperdrive contract.
-        - unique_maturities: list
+        - unique_maturities : list
             List of unique maturity timestamps across all assets.
-        - unique_ids: list
+        - unique_ids : list
             List of unique ids across all assets.
-        - unique_block_numbers_: list
+        - unique_block_numbers_ : list
             List of unique block numbers across all trades.
         - share_price_
             Map of share price to block number.
@@ -176,17 +176,17 @@ def get_wallet_from_onchain_trade_info(
 ) -> Wallet:
     """Construct wallet balances from on-chain trade info.
 
-    Parameters
+    Arguments
     ----------
-    address_: str
+    address_ : str
         Address of the wallet.
-    index: int
+    index : int
         Index of the wallet.
-    on_chain_trade_info: OnChainTradeInfo
+    on_chain_trade_info : OnChainTradeInfo
         On-chain trade info.
-    hyperdrive_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
-    base_contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
+    base_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the base currency (e.g. ERC20)
 
     Returns
@@ -235,9 +235,9 @@ def get_wallet_from_onchain_trade_info(
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
     """Get the max and priority fees from a block (type 2 transactions only).
 
-    Parameters
+    Arguments
     ----------
-    block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
+    block : `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
 
     Returns
@@ -263,7 +263,7 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
 def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     """Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
 
-    Parameters
+    Arguments
     ----------
     block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
@@ -473,7 +473,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
 def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
     """Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
 
-    Parameters
+    Arguments
     ----------
     address : str
         Address of the contract to instantiate.
@@ -496,7 +496,7 @@ def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
 def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
     """Get contract type from cache. Used for devnet, where Ape refuses to check the cache
 
-    Parameters
+    Arguments
     ----------
     address : str
         Address of the contract to instantiate.

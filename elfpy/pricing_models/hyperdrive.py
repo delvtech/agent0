@@ -93,7 +93,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         out : Quantity
             The quantity of tokens that the user wants to receive (the amount and the unit of the tokens).
@@ -239,7 +239,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         in_ : Quantity
             The quantity of tokens that the user wants to pay (the amount
@@ -334,9 +334,9 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
-        Parameters
+        Arguments
         ----------
-        lp_in: float
+        lp_in : float
             The amount of lp shares that are given back to the pool
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -436,7 +436,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         out : Quantity
             The quantity of tokens that the user wants to receive (the amount and the unit of the tokens).
@@ -582,7 +582,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         in_ : Quantity
             The quantity of tokens that the user wants to pay (the amount
@@ -677,7 +677,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         Calculates the amount of base shares and bonds released from burning a specified amount of
         LP shares from the pool.
 
-        Parameters
+        Arguments
         ----------
         lp_in: FixedPoint
             The amount of lp shares that are given back to the pool
