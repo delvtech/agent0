@@ -13,3 +13,4 @@ scipy
 tomli
 eth-ape
 python-dotenv
+typing_extensions==4.5.0
