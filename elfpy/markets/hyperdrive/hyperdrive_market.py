@@ -246,7 +246,7 @@ class Market(
     def check_action(self, agent_action: hyperdrive_actions.MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
-        Parameters
+        Arguments
         ----------
         action_type : MarketActionType
             See MarketActionType for all acceptable actions that can be performed on this market
@@ -570,11 +570,11 @@ class Market(
     def apply_checkpoint(self, checkpoint_time: float, share_price: float) -> float:
         r"""Creates a new checkpoint if necessary and closes matured positions.
 
-        Parameters
+        Arguments
         ----------
-        checkpoint_time: float
+        checkpoint_time : float
             The block time for the checkpoint to be created or cleared.
-        share_price: float
+        share_price : float
             The share price of the market at the checkpoint time.
 
         Returns
@@ -616,15 +616,15 @@ class Market(
     ) -> float:
         r"""Redeems withdrawal shares if enough margin has been freed to do so.
 
-        Parameters
+        Arguments
         ----------
-        agent_wallet: wallet.Wallet
+        agent_wallet : wallet.Wallet
             The agent's wallet.
-        shares: float
+        shares : float
             The withdrawal shares to redeem.
-        min_output: float
+        min_output : float
             The minimum amount of base the LP expects to receive.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
@@ -648,13 +648,13 @@ class Market(
         r"""Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
         has been freed to do so.
 
-        Parameters
+        Arguments
         ----------
-        shares: float
+        shares : float
             The withdrawal shares to redeem.
-        min_output: float
+        min_output : float
             The minimum amount of base the LP expects to receive.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
@@ -704,11 +704,11 @@ class Market(
     def _withdraw(self, shares: float, as_underlying: bool) -> float:
         r"""Calculates the amount of base to withdraw for a given amount of shares.
 
-        Parameters
+        Arguments
         ----------
-        shares: float
+        shares : float
             The withdrawal shares to redeem.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
@@ -730,13 +730,13 @@ class Market(
     ) -> hyperdrive_actions.MarketDeltas:
         r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
 
-        Parameters
+        Arguments
         ----------
-        freed_capital: float
+        freed_capital : float
             The amount of capital to add to the withdraw pool, must not be more than the max capital.
-        max_capital: float
+        max_capital : float
             The margin which the LP used to back the position which is being closed.
-        interest: float
+        interest : float
             The interest earned by this margin position, fixed interest for shorts and variable for longs.
 
         Returns
@@ -1322,11 +1322,11 @@ class MarketFP(
     def apply_checkpoint(self, checkpoint_time: FixedPoint, share_price: FixedPoint) -> FixedPoint:
         r"""Creates a new checkpoint if necessary and closes matured positions.
 
-        Parameters
+        Arguments
         ----------
-        checkpoint_time: FixedPoint
+        checkpoint_time : FixedPoint
             The block time for the checkpoint to be created or cleared.
-        share_price: FixedPoint
+        share_price : FixedPoint
             The share price of the market at the checkpoint time.
 
         Returns
@@ -1385,15 +1385,15 @@ class MarketFP(
     ) -> FixedPoint:
         r"""Redeems withdrawal shares if enough margin has been freed to do so.
 
-        Parameters
+        Arguments
         ----------
-        agent_wallet: wallet.Wallet
+        agent_wallet : wallet.Wallet
             The agent's wallet.
-        shares: FixedPoint
+        shares : FixedPoint
             The withdrawal shares to redeem.
-        min_output: FixedPoint
+        min_output : FixedPoint
             The minimum amount of base the LP expects to receive.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
@@ -1417,13 +1417,13 @@ class MarketFP(
         r"""Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
         has been freed to do so.
 
-        Parameters
+        Arguments
         ----------
-        shares: FixedPoint
+        shares : FixedPoint
             The withdrawal shares to redeem.
-        min_output: FixedPoint
+        min_output : FixedPoint
             The minimum amount of base the LP expects to receive.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
@@ -1467,11 +1467,11 @@ class MarketFP(
     def _withdraw(self, shares: FixedPoint, as_underlying: bool) -> FixedPoint:
         r"""Calculates the amount of base to withdraw for a given amount of shares.
 
-        Parameters
+        Arguments
         ----------
-        shares: FixedPoint
+        shares : FixedPoint
             The withdrawal shares to redeem.
-        as_underlying: bool
+        as_underlying : bool
             If true, the user is paid in underlying, if false the contract transfers in yield source
             directly. Note - for some paths one choice may be disabled or blocked.
 
