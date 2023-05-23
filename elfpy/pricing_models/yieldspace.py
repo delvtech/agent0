@@ -174,7 +174,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         out : Quantity
             The quantity of tokens that the agent wants to receive (the amount
@@ -384,7 +384,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         in_ : Quantity
             The quantity of tokens that the agent wants to pay (the amount
@@ -545,26 +545,26 @@ class YieldspacePricingModel(base_pm.PricingModel):
     ) -> Decimal:
         """Calculates the amount of bonds a agent must provide the pool to receive a specified amount of shares.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: Decimal
+            share_reserves : Decimal
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: Decimal
+            bond_reserves : Decimal
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: Decimal
+            lp_total_supply : Decimal
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_shares: Decimal
+            d_shares : Decimal
                 "dz"; Amount of shares agent wants to provide.
-            time_elapsed: Decimal
+            time_elapsed : Decimal
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: Decimal
+            share_price : Decimal
                 "c"; Conversion rate between base and shares.
-            init_share_price: Decimal
+            init_share_price : Decimal
                 "mu"; Interest normalization factor for shares.
 
         Returns
         -------
-            d_bonds: Decimal
+            d_bonds : Decimal
                 "dy"; Amount of bonds in required to get the d_shares out.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -589,26 +589,26 @@ class YieldspacePricingModel(base_pm.PricingModel):
     ) -> Decimal:
         """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: Decimal
+            share_reserves : Decimal
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: Decimal
+            bond_reserves : Decimal
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: Decimal
+            lp_total_supply : Decimal
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_shares: Decimal
+            d_shares : Decimal
                 "dz"; Amount of shares agent wants to provide.
-            time_elapsed: Decimal
+            time_elapsed : Decimal
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: Decimal
+            share_price : Decimal
                 "c"; Conversion rate between base and shares.
-            init_share_price: Decimal
+            init_share_price : Decimal
                 "mu"; Interest normalization factor for shares.
 
         Returns
         -------
-            d_bonds: Decimal
+            d_bonds : Decimal
                 "dy"; Amount of bonds for the input shares amount.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -633,21 +633,21 @@ class YieldspacePricingModel(base_pm.PricingModel):
     ) -> Decimal:
         """Calculates the amount of shares a agent must provide the pool to receive a specified amount of bonds.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: Decimal
+            share_reserves : Decimal
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: Decimal
+            bond_reserves : Decimal
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: Decimal
+            lp_total_supply : Decimal
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_bonds: Decimal
+            d_bonds : Decimal
                 "dy"; Amount of bonds agent wants to provide.
-            time_elapsed: Decimal
+            time_elapsed : Decimal
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: Decimal
+            share_price : Decimal
                 "c"; Conversion rate between base and shares.
-            init_share_price: Decimal
+            init_share_price : Decimal
                 "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
@@ -677,27 +677,27 @@ class YieldspacePricingModel(base_pm.PricingModel):
     ) -> Decimal:
         """Calculates the amount of shares a agent will receive from the pool by providing a specified amount of bonds.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: Decimal
+            share_reserves : Decimal
                 "z"; The amount of share reserves in the pool.
-            bond_reserves: Decimal
+            bond_reserves : Decimal
                 "y"; The amount of bond reserves in the pool.
-            lp_total_supply: Decimal
+            lp_total_supply : Decimal
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_bonds: Decimal
+            d_bonds : Decimal
                 "dy"; The amount of bonds the agent wants to provide.
-            time_elapsed: Decimal
+            time_elapsed : Decimal
                 "1 - tau"; Amount of time elapsed since term start.
                 Elsewhere, this is also depicted as (1 - tau), where tau is stretched_time.
-            share_price: Decimal
+            share_price : Decimal
                 "c"; Conversion rate between base and shares.
-            init_share_price: Decimal
+            init_share_price : Decimal
                 "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
         -------
-            delta_shares: Decimal
+            delta_shares : Decimal
                 "dz"; The change in shares that resulted from bonds coming in.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -724,25 +724,25 @@ class YieldspacePricingModel(base_pm.PricingModel):
         .. math::
             k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^{1 - \tau}
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: Decimal
+            share_reserves : Decimal
                 "z"; The amount of share reserves in the pool.
-            bond_reserves: Decimal
+            bond_reserves : Decimal
                 "y"; The amount of bond reserves in the pool.
-            lp_total_supply: Decimal
+            lp_total_supply : Decimal
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            time_elapsed: Decimal
+            time_elapsed : Decimal
                 "t"; Amount of time elapsed since term start.
                 This is also depicted as (1 - tau), where tau is stretched_time.
-            share_price: Decimal
+            share_price : Decimal
                 "c"; The conversion rate between base and shares.
-            init_share_price: Decimal
+            init_share_price : Decimal
                 "mu"; The interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
         -------
-            yieldspace_constant: Decimal
+            yieldspace_constant : Decimal
                 "k"; The yieldspace constant.
         """
         # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
@@ -757,9 +757,9 @@ class YieldspacePricingModel(base_pm.PricingModel):
         Calculates the amount of base shares and bonds released from burning a a specified amount of
         LP shares from the pool.
 
-        Parameters
+        Arguments
         ----------
-        lp_in: float
+        lp_in : float
             The amount of lp shares that are given back to the pool
         market_state : MarketState
             The state of the AMM's reserves and share prices.
@@ -939,7 +939,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         out : Quantity
             The quantity of tokens that the agent wants to receive (the amount
@@ -1141,7 +1141,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
 
            It can be approximated as :math:`s \approx y + cz`.
 
-        Parameters
+        Arguments
         ----------
         in_ : Quantity
             The quantity of tokens that the agent wants to pay (the amount
@@ -1293,26 +1293,26 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     ) -> FixedPoint:
         """Calculates the amount of bonds a agent must provide the pool to receive a specified amount of shares.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: FixedPoint
+            share_reserves : FixedPoint
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: FixedPoint
+            bond_reserves : FixedPoint
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: FixedPoint
+            lp_total_supply : FixedPoint
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_shares: FixedPoint
+            d_shares : FixedPoint
                 "dz"; Amount of shares agent wants to provide.
-            time_elapsed: FixedPoint
+            time_elapsed : FixedPoint
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: FixedPoint
+            share_price : FixedPoint
                 "c"; Conversion rate between base and shares.
-            init_share_price: FixedPoint
+            init_share_price : FixedPoint
                 "mu"; Interest normalization factor for shares.
 
         Returns
         -------
-            d_bonds: FixedPoint
+            d_bonds : FixedPoint
                 "dy"; Amount of bonds in required to get the d_shares out.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -1337,26 +1337,26 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     ) -> FixedPoint:
         """Calculates the amount of bonds a agent will receive from the pool by providing a specified amount of shares
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: FixedPoint
+            share_reserves : FixedPoint
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: FixedPoint
+            bond_reserves : FixedPoint
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: FixedPoint
+            lp_total_supply : FixedPoint
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_shares: FixedPoint
+            d_shares : FixedPoint
                 "dz"; Amount of shares agent wants to provide.
-            time_elapsed: FixedPoint
+            time_elapsed : FixedPoint
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: FixedPoint
+            share_price : FixedPoint
                 "c"; Conversion rate between base and shares.
-            init_share_price: FixedPoint
+            init_share_price : FixedPoint
                 "mu"; Interest normalization factor for shares.
 
         Returns
         -------
-            d_bonds: FixedPoint
+            d_bonds : FixedPoint
                 "dy"; Amount of bonds for the input shares amount.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -1381,26 +1381,26 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     ) -> FixedPoint:
         """Calculates the amount of shares a agent must provide the pool to receive a specified amount of bonds.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: FixedPoint
+            share_reserves : FixedPoint
                 "z"; Amount of share reserves in the pool.
-            bond_reserves: FixedPoint
+            bond_reserves : FixedPoint
                 "y"; Amount of bond reserves in the pool.
-            lp_total_supply: FixedPoint
+            lp_total_supply : FixedPoint
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_bonds: FixedPoint
+            d_bonds : FixedPoint
                 "dy"; Amount of bonds agent wants to provide.
-            time_elapsed: FixedPoint
+            time_elapsed : FixedPoint
                 "1 - tau"; Amount of time elapsed since term start.
-            share_price: FixedPoint
+            share_price : FixedPoint
                 "c"; Conversion rate between base and shares.
-            init_share_price: FixedPoint
+            init_share_price : FixedPoint
                 "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
         -------
-            delta_shares: FixedPoint
+            delta_shares : FixedPoint
                 "dz"; The amount of bonds the agent wants to provide.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -1430,27 +1430,27 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     ) -> FixedPoint:
         """Calculates the amount of shares a agent will receive from the pool by providing a specified amount of bonds.
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: FixedPoint
+            share_reserves : FixedPoint
                 "z"; The amount of share reserves in the pool.
-            bond_reserves: FixedPoint
+            bond_reserves : FixedPoint
                 "y"; The amount of bond reserves in the pool.
-            lp_total_supply: FixedPoint
+            lp_total_supply : FixedPoint
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            d_bonds: FixedPoint
+            d_bonds : FixedPoint
                 "dy"; The amount of bonds the agent wants to provide.
-            time_elapsed: FixedPoint
+            time_elapsed : FixedPoint
                 "1 - tau"; Amount of time elapsed since term start.
                 Elsewhere, this is also depicted as (1 - tau), where tau is stretched_time.
-            share_price: FixedPoint
+            share_price : FixedPoint
                 "c"; Conversion rate between base and shares.
-            init_share_price: FixedPoint
+            init_share_price : FixedPoint
                 "mu"; Interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
         -------
-            delta_shares: FixedPoint
+            delta_shares : FixedPoint
                 "dz"; The change in shares that resulted from bonds coming in.
         """
         # k = (c / mu) * (mu * z)**(1 - tau) + (y + s)**(1 - tau)
@@ -1477,25 +1477,25 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         .. math::
             k = \frac{c}{\mu} (\mu z)^{1 - \tau} + (y + s)^{1 - \tau}
 
-        Parameters
+        Arguments
         ----------
-            share_reserves: FixedPoint
+            share_reserves : FixedPoint
                 "z"; The amount of share reserves in the pool.
-            bond_reserves: FixedPoint
+            bond_reserves : FixedPoint
                 "y"; The amount of bond reserves in the pool.
-            lp_total_supply: FixedPoint
+            lp_total_supply : FixedPoint
                 "s"; An adjustment to the bond reserve that is equal to the total number of lp tokens issued
-            time_elapsed: FixedPoint
+            time_elapsed : FixedPoint
                 "t"; Amount of time elapsed since term start.
                 This is also depicted as (1 - tau), where tau is stretched_time.
-            share_price: FixedPoint
+            share_price : FixedPoint
                 "c"; The conversion rate between base and shares.
-            init_share_price: FixedPoint
+            init_share_price : FixedPoint
                 "mu"; The interest normalization factor for shares, aka the conversion rate at time=0.
 
         Returns
         -------
-            yieldspace_constant: FixedPoint
+            yieldspace_constant : FixedPoint
                 "k"; The yieldspace constant.
         """
         # k = (c / mu) * (mu * z)^(1 - tau) + (y + s)^(1 - tau)
@@ -1510,9 +1510,9 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         Calculates the amount of base shares and bonds released from burning a a specified amount of
         LP shares from the pool.
 
-        Parameters
+        Arguments
         ----------
-        lp_in: FixedPoint
+        lp_in : FixedPoint
             The amount of lp shares that are given back to the pool
         market_state : MarketStateFP
             The state of the AMM's reserves and share prices.
