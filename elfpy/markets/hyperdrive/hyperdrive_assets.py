@@ -20,11 +20,11 @@ def encode_asset_id(prefix: int, timestamp: int) -> int:
     Encode the asset ID by left-shifting the prefix by 248 bits,
     then bitwise-or-ing the result with the timestamp.
 
-    Argments
+    Arguments
     --------
-    prefix: int
+    prefix : int
         A one byte prefix that specifies the asset type.
-    timestamp: int
+    timestamp : int
         A timestamp associated with the asset.
 
     Returns
@@ -48,7 +48,7 @@ def decode_asset_id(asset_id: int) -> Tuple[int, int]:
 
     Arguments
     ---------
-    asset_id: int
+    asset_id : int
         Encoded ID from a transaction. It is a concatenation, [identifier: 8 bits][timestamp: 248 bits]
 
     Returns
