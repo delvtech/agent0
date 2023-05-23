@@ -830,13 +830,13 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         The amount of base paid by outstanding longs.
     short_base_volume: FixedPoint
         The amount of base paid to outstanding shorts.
-    checkpoints: defaultdict[int, Checkpoint]
+    checkpoints: defaultdict[FixedPoint, Checkpoint]
         Time delimited checkpoints
     checkpoint_duration: FixedPoint
         Time between checkpoints, defaults to 1 day
-    total_supply_longs: defaultdict[int, FixedPoint]
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint]
         Checkpointed total supply for longs stored as {checkpoint_time: bond_amount}
-    total_supply_shorts: defaultdict[int, FixedPoint]
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint]
         Checkpointed total supply for shorts stored as {checkpoint_time: bond_amount}
     total_supply_withdraw_shares: FixedPoint
         Total amount of withdraw shares outstanding
