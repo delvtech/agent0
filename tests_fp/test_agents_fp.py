@@ -149,7 +149,8 @@ class TestAgent(unittest.TestCase):
         example_wallet.update(example_deltas)
         assert id(example_wallet.longs[FixedPoint(0)]) != id(example_deltas.longs[FixedPoint(0)]), (
             f"{example_wallet.longs=} should not hold a reference to {example_deltas.longs=},"
-            f"but have the same ids: {id(example_wallet.longs[FixedPoint(0)])=}, {id(example_deltas.longs[FixedPoint(0)])=}."
+            f"but have the same ids: {id(example_wallet.longs[FixedPoint(0)])=}, "
+            f"{id(example_deltas.longs[FixedPoint(0)])=}."
         )
         assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(
             "15.0"

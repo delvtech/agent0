@@ -304,6 +304,11 @@ class Agent:
         )
 
 
+#####
+# FIXED POINT
+#####
+
+
 class AgentFP:
     r"""Agent class for conducting trades on the market
 
@@ -510,7 +515,7 @@ class AgentFP:
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
-                            mint_time=FixedPoint(mint_time),
+                            mint_time=mint_time,
                         ),
                     )
                 )
@@ -524,7 +529,7 @@ class AgentFP:
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
-                            mint_time=FixedPoint(mint_time),
+                            mint_time=mint_time,
                         ),
                     )
                 )

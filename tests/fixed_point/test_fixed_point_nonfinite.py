@@ -362,4 +362,3 @@ class TestFixedPointMathNonFinite(unittest.TestCase):
         assert FixedPointMath.exp(self.NAN).is_nan() is True
         assert FixedPointMath.exp(self.INF) == self.INF
         assert FixedPointMath.exp(self.NEG_INF) == self.NEG_INF
-    

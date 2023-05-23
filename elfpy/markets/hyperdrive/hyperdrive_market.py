@@ -872,11 +872,11 @@ class MarketStateFP(base_market.BaseMarketStateFP):
     short_average_maturity_time: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
-    checkpoints: defaultdict[int, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
+    checkpoints: defaultdict[FixedPoint, CheckpointFP] = field(default_factory=lambda: defaultdict(CheckpointFP))
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
     checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
-    total_supply_longs: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
-    total_supply_shorts: defaultdict[int, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
     total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
@@ -1077,7 +1077,7 @@ class MarketFP(
         elif agent_action.action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:  # buy PT to close short
             # TODO: python 3.10 includes TypeGuard which properly avoids issues when using Optional type
             mint_time = FixedPoint(agent_action.mint_time or 0)
-            open_share_price = agent_action.wallet.shorts[int(mint_time)].open_share_price
+            open_share_price = agent_action.wallet.shorts[mint_time].open_share_price
             market_deltas, agent_deltas = self.close_short(
                 agent_wallet=agent_action.wallet,
                 bond_amount=agent_action.trade_amount,  # in bonds: that's the thing you owe, and need to buy back
@@ -1221,12 +1221,12 @@ class MarketFP(
 
     def update_long_share_price(self, bond_proceeds: FixedPoint) -> None:
         """Upates the weighted average share price for longs at the latest checkpoint."""
-        long_share_price = self.market_state.checkpoints[int(self.latest_checkpoint_time)].long_share_price
-        total_supply = self.market_state.total_supply_longs[int(self.latest_checkpoint_time)]
+        long_share_price = self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price
+        total_supply = self.market_state.total_supply_longs[self.latest_checkpoint_time]
         updated_long_share_price = hyperdrive_actions.update_weighted_average_fp(
             long_share_price, total_supply, self.market_state.share_price, bond_proceeds, True
         )
-        self.market_state.checkpoints[int(self.latest_checkpoint_time)].long_share_price = updated_long_share_price
+        self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price = updated_long_share_price
 
     def close_long(
         self, agent_wallet: wallet.WalletFP, bond_amount: FixedPoint, mint_time: FixedPoint
@@ -1291,7 +1291,7 @@ class MarketFP(
     def checkpoint(self, checkpoint_time: FixedPoint) -> None:
         """allows anyone to mint a new checkpoint."""
         # if the checkpoint has already been set, return early.
-        if self.market_state.checkpoints[int(checkpoint_time)].share_price != FixedPoint(0):
+        if self.market_state.checkpoints[checkpoint_time].share_price != FixedPoint(0):
             return
         # if the checkpoint time isn't divisible by the checkpoint duration
         # or is in the future, it's an invalid checkpoint and we should
@@ -1311,7 +1311,7 @@ class MarketFP(
         else:
             _time = checkpoint_time
             while True:
-                closest_share_price = self.market_state.checkpoints[int(_time)].share_price
+                closest_share_price = self.market_state.checkpoints[_time].share_price
                 if _time == latest_checkpoint:
                     closest_share_price = self.market_state.share_price
                 if closest_share_price != FixedPoint(0):
@@ -1336,16 +1336,16 @@ class MarketFP(
         """
         # Return early if the checkpoint has already been updated.
         if (
-            self.market_state.checkpoints[int(checkpoint_time)].share_price != FixedPoint(0)
+            self.market_state.checkpoints[checkpoint_time].share_price != FixedPoint(0)
             or checkpoint_time > self.block_time.time
         ):
-            return self.market_state.checkpoints[int(checkpoint_time)].share_price
+            return self.market_state.checkpoints[checkpoint_time].share_price
         # Create the share price checkpoint.
-        self.market_state.checkpoints[int(checkpoint_time)].share_price = share_price
+        self.market_state.checkpoints[checkpoint_time].share_price = share_price
         mint_time = checkpoint_time - self.annualized_position_duration
         # Close out any matured long positions and pay out the long withdrawal pool for longs that
         # have matured.
-        matured_longs_amount = self.market_state.total_supply_longs[int(mint_time)]
+        matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > FixedPoint(0):
             market_deltas, _ = hyperdrive_actions.calc_close_long_fp(
                 wallet.WalletFP(0).address,
@@ -1360,9 +1360,9 @@ class MarketFP(
             self.market_state.apply_delta(market_deltas)
         # Close out any matured short positions and pay out the short withdrawal pool for shorts
         # that have matured.
-        matured_shorts_amount = self.market_state.total_supply_shorts[int(mint_time)]
+        matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > FixedPoint(0):
-            open_share_price = self.market_state.checkpoints[int(mint_time)].share_price
+            open_share_price = self.market_state.checkpoints[mint_time].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short_fp(
                 wallet.WalletFP(0).address,
                 matured_shorts_amount,
@@ -1374,7 +1374,7 @@ class MarketFP(
                 open_share_price,
             )
             self.market_state.apply_delta(market_deltas)
-        return self.market_state.checkpoints[int(mint_time)].share_price
+        return self.market_state.checkpoints[mint_time].share_price
 
     def redeem_withdraw_shares(
         self,

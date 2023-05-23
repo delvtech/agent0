@@ -424,8 +424,8 @@ class TestFixedPoint(unittest.TestCase):
         assert hash(FixedPoint(-1)) == -2
         assert hash(FixedPoint(-2)) == hash(-2)
         assert hash(FixedPoint(2)) == hash(2)
-        assert hash(FixedPoint("-1.0")) == hash(-1*10**18)
-        assert hash(FixedPoint("1.0")) == hash(1*10**18)
-        assert hash(FixedPoint("-2.5")) == hash(-2.5*10**18)
-        assert hash(FixedPoint("2.5")) == hash(2.5*10**18)
-        assert hash(FixedPoint("-200.537280")) == hash(-200.537280*10**18)
+        assert hash(FixedPoint("-1.0")) == hash(-1 * 10**18)
+        assert hash(FixedPoint("1.0")) == hash(1 * 10**18)
+        assert hash(FixedPoint("-2.5")) == hash(-2.5 * 10**18)
+        assert hash(FixedPoint("2.5")) == hash(2.5 * 10**18)
+        assert hash(FixedPoint("-200.537280")) == hash(-200.537280 * 10**18)

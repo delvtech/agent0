@@ -267,6 +267,7 @@ class Wallet:
             f"agent_{self.address}_total_shorts_no_mock",
         )
 
+
 ######
 # FIXED POINT
 ######

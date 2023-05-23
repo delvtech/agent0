@@ -130,11 +130,11 @@ class TestCloseShort(unittest.TestCase):
         )
         checkpoint_time = maturity_time - self.term_length
         self.assertEqual(  # checkpoint long base volume
-            self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].long_base_volume,
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
             FixedPoint(0),
             msg=(
                 f"The long base volume at {checkpoint_time=} should be zero, "
-                f"not {self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].long_base_volume=}."
+                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
             ),
         )
         self.assertEqual(  # shorts outstanding
@@ -154,7 +154,7 @@ class TestCloseShort(unittest.TestCase):
             msg="short_base_volume is wrong",
         )
         self.assertEqual(  # checkpoint short base volume
-            self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].short_base_volume,
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
             FixedPoint(0),
             msg="checkpoint short base volume is wrong",
         )

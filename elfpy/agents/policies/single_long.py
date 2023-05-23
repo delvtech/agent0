@@ -73,7 +73,7 @@ class SingleLongAgent(elf_agent.AgentFP):
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             wallet=self.wallet,
-                            mint_time=FixedPoint(mint_time),
+                            mint_time=mint_time,
                         ),
                     )
                 )

@@ -92,7 +92,7 @@ class TestCheckpoint(unittest.TestCase):
             apr_after,
             delta=self.APPROX_EQ,
         )
-        checkpoint = self.hyperdrive.market_state.checkpoints[int(checkpoint_time)]
+        checkpoint = self.hyperdrive.market_state.checkpoints[checkpoint_time]
         # Ensure that the checkpoint contains the share price prior to the share price update.
         self.assertEqual(share_price_before, checkpoint.share_price)
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
@@ -120,7 +120,7 @@ class TestCheckpoint(unittest.TestCase):
         )
         self.assertEqual(apr_after, apr_before)
         # Ensure that the checkpoint contains the latest share price.
-        checkpoint = self.hyperdrive.market_state.checkpoints[int(self.hyperdrive.latest_checkpoint_time)]
+        checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.latest_checkpoint_time]
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
     def test_checkpoint_in_the_past(self):
@@ -151,10 +151,10 @@ class TestCheckpoint(unittest.TestCase):
 
         # Ensure that the checkpoint contains the share price prior to the
         # share price update.
-        last_checkpoint = self.hyperdrive.market_state.checkpoints[int(self.hyperdrive.latest_checkpoint_time)]
+        last_checkpoint = self.hyperdrive.market_state.checkpoints[self.hyperdrive.latest_checkpoint_time]
         self.assertEqual(last_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the previous checkpoint contains the closest share price.
-        previous_checkpoint = self.hyperdrive.market_state.checkpoints[int(previous_checkpoint_time)]
+        previous_checkpoint = self.hyperdrive.market_state.checkpoints[previous_checkpoint_time]
         self.assertEqual(previous_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the long and short balance has gone to zero (all of the
         # matured positions have been closed).
