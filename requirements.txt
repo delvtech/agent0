@@ -13,9 +13,4 @@ pytest
 python-dotenv
 scipy
 tomli
-python-dotenv
-eth-ape
 typing_extensions==4.5.0
-ape-solidity
-ape-etherscan
-ape-foundry

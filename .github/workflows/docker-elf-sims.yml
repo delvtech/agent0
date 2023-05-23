@@ -1,17 +1,14 @@
-name: "Docker: Build and push python-base image"
+name: "Docker: Build and push elf-sims image"
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths:
-      - 'requirements.txt'
-      - 'requirements-dev.txt'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/python-base
+  IMAGE_NAME: ${{ github.repository }}/elf-sims
 
 jobs:
   build-and-push:
@@ -47,6 +44,6 @@ jobs:
       with:
         context: .
         push: true
-        file: ./Dockerfile_python_base
+        file: ./Dockerfile-elf-sims
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
