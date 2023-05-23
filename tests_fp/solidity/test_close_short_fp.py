@@ -206,7 +206,7 @@ class TestCloseShort(unittest.TestCase):
             _ = self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset,
-                mint_time=FixedPoint(list(self.bob.wallet.shorts.keys())[0] + 1),
+                mint_time=list(self.bob.wallet.shorts.keys())[0] + FixedPoint(1),
                 open_share_price=FixedPoint("1.0"),
             )
 

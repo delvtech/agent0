@@ -206,7 +206,7 @@ class TestCloseLong(unittest.TestCase):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset,
-                mint_time=FixedPoint(list(self.bob.wallet.longs.keys())[0] + 1),
+                mint_time=list(self.bob.wallet.longs.keys())[0] + FixedPoint(1),
             )
 
     def test_close_long_immediately_with_regular_amount(self):
