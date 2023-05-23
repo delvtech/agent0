@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - wakamex/docker_build_elf_sims
 
 env:
   REGISTRY: ghcr.io
