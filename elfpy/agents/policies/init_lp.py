@@ -1,8 +1,5 @@
-"""Initializer agent
-
-Special reserved user strategy that is used to initialize a market with a desired amount of share & bond reserves
-"""
-from typing import List
+"""Initializer agent is a special reserved strategy to initialize a market with a desired amount of share & bond reserves"""
+from __future__ import annotations
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -14,7 +11,7 @@ from elfpy.math import FixedPoint
 class InitializeLiquidityAgent(elf_agent.AgentFP):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.MarketFP) -> List[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """
         User strategy adds liquidity and then takes no additional actions
         """

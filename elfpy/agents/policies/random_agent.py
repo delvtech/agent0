@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from numpy.random._generator import Generator as numpyGenerator
+from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy
 import elfpy.agents.agent as elf_agent
@@ -16,7 +16,7 @@ class RandomAgent(elf_agent.AgentFP):
     """Random agent"""
 
     def __init__(
-        self, rng: numpyGenerator, trade_chance: float, wallet_address: int, budget: FixedPoint = FixedPoint("10_000.0")
+        self, rng: NumpyGenerator, trade_chance: float, wallet_address: int, budget: FixedPoint = FixedPoint("10_000.0")
     ) -> None:
         """Adds custom attributes"""
         self.trade_chance = trade_chance

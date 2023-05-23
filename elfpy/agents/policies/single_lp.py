@@ -1,4 +1,6 @@
 """User strategy that adds base liquidity and doesn't remove until liquidation"""
+from __future__ import annotations
+
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -14,7 +16,7 @@ class SingleLpAgent(elf_agent.AgentFP):
         self.amount_to_lp = FixedPoint("100.0")
         super().__init__(wallet_address, budget)
 
-    def action(self, _market: hyperdrive_market.MarketFP) -> "list[types.Trade]":
+    def action(self, _market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """
         implement user strategy
         LP if you can, but only do it once

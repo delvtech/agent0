@@ -1,8 +1,6 @@
 """User strategy that adds liquidity and then removes it when enough time has passed"""
 from __future__ import annotations
 
-from typing import List
-
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -28,7 +26,7 @@ class LpAndWithdrawAgent(elf_agent.AgentFP):
         LP if you can, but only do it once
         """
         # pylint disable=unused-argument
-        action_list: List[types.Trade] = []
+        action_list: list[types.Trade] = []
         has_lp = self.wallet.lp_tokens > FixedPoint(0)
         amount_in_base = self.wallet.balance.amount
         can_lp = amount_in_base >= self.amount_to_lp

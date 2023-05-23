@@ -1,5 +1,5 @@
 """User strategy that opens a long position and then closes it after a certain amount of time has passed"""
-from typing import List
+from __future__ import annotations
 
 import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -14,7 +14,7 @@ class SingleLongAgent(elf_agent.AgentFP):
     only has one long open at a time
     """
 
-    def action(self, market: hyperdrive_market.MarketFP) -> List[types.Trade]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Specify action"""
         longs = list(self.wallet.longs.values())
         has_opened_long = len(longs) > 0
