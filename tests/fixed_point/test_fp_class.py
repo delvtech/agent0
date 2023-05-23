@@ -5,8 +5,6 @@ import unittest
 import elfpy.errors.errors as errors
 from elfpy.math import FixedPoint
 
-# pylint: disable=too-many-public-methods
-
 
 class TestFixedPoint(unittest.TestCase):
     r"""Unit tests to verify that the FixedPoint class methods are correct."""
