@@ -31,7 +31,7 @@ def plot_market_lp_reserves(
 ) -> Figure:
     r"""Plot the simulator market LP reserves per day
 
-    Parameters
+    Arguments
     ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
@@ -61,7 +61,7 @@ def plot_market_spot_price(
 ) -> Figure:
     r"""Plot the simulator market APR per day
 
-    Parameters
+    Arguments
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
@@ -89,7 +89,7 @@ def plot_market_spot_price(
 def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exclude_first_day=True) -> Figure:
     r"""Plot the agent pnl
 
-    Parameters
+    Arguments
     ----------
     simulator : Simulator
         An instantiated simulator that has run trades with agents
@@ -119,7 +119,7 @@ def plot_agent_pnl(state_df: pd.DataFrame, exclude_first_agent: bool = True, exc
 def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
     r"""Plot the lp pnl
 
-    Parameters
+    Arguments
     ----------
     trades_agg : DataFrame
         Pandas dataframe containing the aggregated simulation_state keys as columns, as well as some computed columns
@@ -147,7 +147,7 @@ def plot_lp_pnl(trades_agg: pd.DataFrame, exclude_last_day=True) -> Figure:
 def plot_fixed_apr(state_df: pd.DataFrame, exclude_first_day: bool = True, exclude_last_day: bool = True) -> Figure:
     r"""Plot the simulator market APR per day
 
-    Parameters
+    Arguments
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
@@ -177,7 +177,7 @@ def plot_fixed_volume(
 ) -> Figure:
     r"""Plot the simulator market APR per day
 
-    Parameters
+    Arguments
     ----------
     trades_agg : DataFrame
         Pandas dataframe containing the aggregated simulation_state keys as columns, as well as some computed columns
@@ -209,7 +209,7 @@ def plot_longs_and_shorts(
 ) -> Figure:
     r"""Plot the total market longs & shorts over time
 
-    Parameters
+    Arguments
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
@@ -262,7 +262,7 @@ def plot_wallet_reserves(
 ) -> Figure:
     r"""Plot the wallet base asset and LP token quantities over time
 
-    Parameters
+    Arguments
     ----------
     state_df : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
@@ -310,7 +310,7 @@ def plot_wallet_reserves(
 def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tuple[Figure, list[Axes], GridSpec]:
     r"""Setup a figure with axes that have reasonable spacing
 
-    Parameters
+    Arguments
     ----------
     nrows : int
        number of rows in the figure
@@ -335,7 +335,7 @@ def get_gridspec_subplots(nrows: int = 1, ncols: int = 1, **kwargs: Any) -> tupl
 def clear_axis(axis: Axes, spines: str = "none") -> Axes:
     r"""Clear spines & tick labels from proplot axis object
 
-    Parameters
+    Arguments
     ----------
         axis : matplotlib axis object
            axis to be cleared
@@ -359,7 +359,7 @@ def clear_axis(axis: Axes, spines: str = "none") -> Axes:
 def clear_axes(axes: list[Axes], spines: str = "none") -> list:
     r"""Calls clear_axis iteratively for each axis in axes
 
-    Parameters
+    Arguments
     ----------
         axes : list of matplotlib axis objects
            axes to be cleared
@@ -462,7 +462,7 @@ def close_logging(delete_logs=True):
 def text_to_log_level(logging_text: str) -> int:
     r"""Converts logging level description to an integer
 
-    Parameters
+    Arguments
     ----------
     logging_text : str
         String description of the logging level; must be in ["debug", "info", "warning", "error", "critical"]
@@ -544,7 +544,7 @@ def number_to_string(value, precision=3, min_digits=0, debug=False):
 def log_and_show(string: str, *args) -> None:
     """Log to default logger and to stdout.
 
-    Parameters
+    Arguments
     ----------
     string : str
         String to log
