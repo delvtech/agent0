@@ -26,10 +26,3 @@ RUN ape compile
 
 # install elf-simulations
 RUN python -m pip install .
-
-# test
-RUN echo "[pytest]\
-    log_cli: true\
-    log_level: DEBUG" > pytest.ini \
-    python -m pytest . -r A --verbosity=2\
-    rm pytest.ini
