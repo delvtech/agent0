@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
+<<<<<<< HEAD
 class Agent:
     r"""Agent class for conducting trades on the market
 
@@ -304,6 +305,8 @@ class Agent:
 #####
 
 
+=======
+>>>>>>> 4f57c051 (removes fixedpoint)
 class AgentFP:
     r"""Agent class for conducting trades on the market
 
