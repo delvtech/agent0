@@ -83,17 +83,17 @@ class FixedPoint:
 
         The regular expression used here, `^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$`, works as follows:
 
-        ^            : Start of the string
+        `^` : Start of the string
 
-        -?           : An optional negative sign
+        `-?` : An optional negative sign
 
-        \d{1,3}      : Between one and three digit
+        `\d{1,3}` : Between one and three digit
 
-        (?:_?\d{3})* : Zero or more groups consisting of an optional underscore and three digits
+        `(?:_?\d{3})*` : Zero or more groups consisting of an optional underscore and three digits
 
-        (?:\.\d+)?   : An optional group consisting of a decimal point and one or more digits
+        `(?:\.\d+)?` : An optional group consisting of a decimal point and one or more digits
 
-        $            : End of the string
+        `$` : End of the string
 
         Arguments
         ---------
