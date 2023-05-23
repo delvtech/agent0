@@ -98,15 +98,15 @@ def calculate_lp_allocation_adjustment(
     Calculates an amount to adjust an lp allocation based off of either shorts or longs outstanding via:
         base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
 
-    Parameters
+    Arguments
     ----------
-    positions_outstanding: float
+    positions_outstanding : float
         Either shorts_outstanding or longs_outstanding
-    base_volume: float
+    base_volume : float
         Either the aggregrate short_base_volume or long_base_volume
-    average_time_remaining: float
+    average_time_remaining : float
         The normalized time remaining for either shorts or longs
-    share_price: float
+    share_price : float
         The current share price
 
     Returns
@@ -128,13 +128,13 @@ def calculate_short_adjustment(
 ) -> float:
     """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The state of the hyperdrive market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    market_time: float
+    market_time : float
         The current time in years.
 
     Returns
@@ -164,13 +164,13 @@ def calculate_long_adjustment(
 ) -> float:
     """Calculates an adjustment amount for lp shares based on the amount of longs outstanding
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The state of the hyperdrive market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the longs.
-    market_time: float
+    market_time : float
         The current time in years.
 
     Returns
@@ -209,17 +209,17 @@ def calc_lp_out_given_tokens_in(
     keep track of the long and short base volumes, amounts outstanding and average maturity
     times.
 
-    Parameters
+    Arguments
     ----------
-    base_in: float
+    base_in : float
         The amount of base provided to exchange for lp tokens.
-    rate: float
+    rate : float
         The fixed rate value of the bonds.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         Hyperdrive's market state.
-    market_time: float
+    market_time : float
         The current time in years.
-    position_duration: time.StretchedTime
+    position_duration : time.StretchedTime
         Position duration information of the bonds.
 
     Returns
@@ -258,13 +258,13 @@ def calculate_base_volume(base_amount: float, bond_amount: float, normalized_tim
                             =>
         base_volume = (base_amount - (1 - t) * bond_amount) / t
 
-    Parameters
+    Arguments
     ----------
-    base_amount: float
+    base_amount : float
         The amount of base provided for the trade.
-    bond_amount: float
+    bond_amount : float
         The amount of bonds used to close the position.
-    normalized_time_remaining: str
+    normalized_time_remaining : str
         The normailzed time remaining of the trade from 1 -> 0.
 
     Returns
@@ -284,24 +284,24 @@ def calc_checkpoint_deltas(
 ) -> tuple[float, defaultdict[float, float], float]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
 
-    Parameters
+    Arguments
     ----------
-    market: hyperdrive_market.Market
+    market : hyperdrive_market.Market
         Deltas are computed for this market.
-    checkpoint_time: float
+    checkpoint_time : float
         The checkpoint (mint) time to be used for updating.
-    bond_amount: float
+    bond_amount : float
         The amount of bonds used to close the position.
-    position: Literal["short", "long"]
+    position : Literal["short", "long"]
         Either "short" or "long", indicating what type of position is being closed.
 
     Returns
     -------
-    d_base_volume: float
+    d_base_volume : float
         The change in base volume for the given position.
-    d_checkpoints: defaultdict[float, float]
+    d_checkpoints : defaultdict[float, float]
         The change in checkpoint volume for the given checkpoint_time (key) and position (value).
-    lp_margin: float
+    lp_margin : float
         The amount of margin that LPs provided on the long position.
     """
     total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
@@ -340,13 +340,13 @@ def calc_open_short(
         total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
     This guarantees that bonds in the system are always fully backed by an equal amount of base.
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: float
+    bond_amount : float
         The amount of bonds the agent is shorting.
-    market: hyperdrive_market.Market
+    market : hyperdrive_market.Market
         The market the agent is opening a short on.
 
     Returns
@@ -450,17 +450,17 @@ def calc_close_short(
     that is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base))
     for more on short accounting, see the open short method
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: float
+    bond_amount : float
         The amount of bonds the agent is shorting.
-    market: hyperdrive_market.Market
+    market : hyperdrive_market.Market
         The market the agent is opening a short on.
-    mint_time: float
+    mint_time : float
         The time in years when the short was opened.
-    open_share_price: float
+    open_share_price : float
         The share price when the short was opened.
 
     Returns
@@ -585,11 +585,11 @@ def calc_open_long(
     from their long positions, so the only money they make on closing is from the long maturing and the fixed
     rate changing.
 
-    Parameters
+    Arguments
     ----------
-    wallet_address: int
+    wallet_address : int
         integer address for the agent's wallet
-    base_amount: float
+    base_amount : float
         amount in base that the agent wishes to trade
 
     Returns
@@ -661,17 +661,17 @@ def calc_close_long(
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: float
+    bond_amount : float
         The amount of bonds the agent is shorting.
-    market: hyperdrive_market.Market
+    market : hyperdrive_market.Market
         The market the agent is opening a short on.
-    mint_time: float
+    mint_time : float
         The time in years when the short was opened.
-    is_trade: bool
+    is_trade : bool
         If an agent is performing a trade.  If false, this means a checkpoint is applied in which
         case we do not want to update the pool reserves yet since the agent hasn't actually closed
         their position yet.
@@ -817,13 +817,13 @@ def calc_close_long(
 def calc_update_reserves(share_reserves: float, bond_reserves: float, share_reserves_delta) -> tuple[float, float]:
     """Calculates updates to the pool's liquidity and holds the pool's APR constant.
 
-    Parameters
+    Arguments
     ----------
-    share_reserves: float
+    share_reserves : float
         The current total shares in reserve
-    bond_reserves: float
+    bond_reserves : float
         The current total bonds in reserve
-    share_reserves_delta:
+    share_reserves_delta :
         The delta that should be applied to share reserves.
 
     Returns
@@ -852,15 +852,15 @@ def calc_short_interest(
     In the event that the interest is negative, we mark the interest
     to zero.
 
-    Parameters
+    Arguments
     ----------
-    bond_amount: float
+    bond_amount : float
         The amount of bonds underlying the closed short.
-    open_share_price: float
+    open_share_price : float
         The share price at the short's open.
-    close_share_price: float
+    close_share_price : float
         The share price at the short's close.
-    share_price: float
+    share_price : float
         the current share price.
 
     Returns
@@ -891,17 +891,17 @@ def calc_short_proceeds(
     interest is negative and outweighs the trading profits and margin released, the short's proceeds
     are marked to zero.
 
-    Parameters
+    Arguments
     ----------
-    bond_amount: float
+    bond_amount : float
         The amount of bonds underlying the closed short.
-    share_amount:
+    share_amount :
         The amount of shares that it costs to close the short.
-    open_share_price: float
+    open_share_price : float
         the share price at the short's open.
-    close_share_price: float
+    close_share_price : float
         the share price at the short's close.
-    share_price: float
+    share_price : float
         The current share price.
 
     Returns
@@ -923,11 +923,11 @@ def calc_add_liquidity(
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
-    Parameters
+    Arguments
     ----------
     wallet_address : int
         The wallet address for the agent.
-    base_in: float
+    base_in : float
         The amount of base the agent is providing.
     market : hyperdrive_market.Market
         The market the agent is providing liquidity for.
@@ -980,11 +980,11 @@ def calc_remove_liquidity(
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
-    Parameters
+    Arguments
     ----------
     wallet_address : int
         The wallet address for the agent.
-    lp_shares: float
+    lp_shares : float
         The amount of lp_shares the agent is redeeming.
     market : hyperdrive_market.Market
         The market the agent is removing liquidity from.
@@ -1086,15 +1086,15 @@ def calculate_lp_allocation_adjustment_fp(
     Calculates an amount to adjust an lp allocation based off of either shorts or longs outstanding via:
         base_adjustment = t * base_volume + (1 - t) * _positions_outstanding
 
-    Parameters
+    Arguments
     ----------
-    positions_outstanding: FixedPoint
+    positions_outstanding : FixedPoint
         Either shorts_outstanding or longs_outstanding
-    base_volume: FixedPoint
+    base_volume : FixedPoint
         Either the aggregrate short_base_volume or long_base_volume
-    average_time_remaining: FixedPoint
+    average_time_remaining : FixedPoint
         The normalized time remaining for either shorts or longs
-    share_price: FixedPoint
+    share_price : FixedPoint
         The current share price
 
     Returns
@@ -1118,13 +1118,13 @@ def calculate_short_adjustment_fp(
 ) -> FixedPoint:
     """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The state of the hyperdrive market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    market_time: FixedPoint
+    market_time : FixedPoint
         The current time in years.
 
     Returns
@@ -1155,13 +1155,13 @@ def calculate_long_adjustment_fp(
 ) -> FixedPoint:
     """Calculates an adjustment amount for lp shares based on the amount of longs outstanding
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The state of the hyperdrive market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the longs.
-    market_time: FixedPoint
+    market_time : FixedPoint
         The current time in years.
 
     Returns
@@ -1201,17 +1201,17 @@ def calc_lp_out_given_tokens_in_fp(
     keep track of the long and short base volumes, amounts outstanding and average maturity
     times.
 
-    Parameters
+    Arguments
     ----------
-    base_in: FixedPoint
+    base_in : FixedPoint
         The amount of base provided to exchange for lp tokens.
-    rate: FixedPoint
+    rate : FixedPoint
         The fixed rate value of the bonds.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         Hyperdrive's market state.
-    market_time: FixedPoint
+    market_time : FixedPoint
         The current time in years.
-    position_duration: time.StretchedTime
+    position_duration : time.StretchedTime
         Position duration information of the bonds.
 
     Returns
@@ -1254,13 +1254,13 @@ def calculate_base_volume_fp(
                             =>\\
         base_volume = \frac{base_amount - (1 - t) * bond_amount}{t}
 
-    Parameters
+    Arguments
     ----------
-    base_amount: FixedPoint
+    base_amount : FixedPoint
         The amount of base provided for the trade.
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds used to close the position.
-    normalized_time_remaining: str
+    normalized_time_remaining : str
         The normailzed time remaining of the trade from 1 -> 0.
 
     Returns
@@ -1283,24 +1283,24 @@ def calc_checkpoint_deltas_fp(
 ) -> tuple[FixedPoint, defaultdict[FixedPoint, FixedPoint], FixedPoint]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         Deltas are computed for this market.
-    checkpoint_time: FixedPoint
+    checkpoint_time : FixedPoint
         The checkpoint (mint) time to be used for updating.
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds used to close the position.
-    position: Literal["short", "long"]
+    position : Literal["short", "long"]
         Either "short" or "long", indicating what type of position is being closed.
 
     Returns
     -------
-    d_base_volume: FixedPoint
+    d_base_volume : FixedPoint
         The change in base volume for the given position.
-    d_checkpoints: defaultdict[FixedPoint, FixedPoint]
+    d_checkpoints : defaultdict[FixedPoint, FixedPoint]
         The change in checkpoint volume for the given checkpoint_time (key) and position (value).
-    lp_margin: FixedPoint
+    lp_margin : FixedPoint
         The amount of margin that LPs provided on the long position.
     """
     total_supply = "total_supply_shorts" if position == "short" else "total_supply_longs"
@@ -1345,21 +1345,21 @@ def calc_open_short_fp(
         - total margin (base, from proceeds + deposited) = face value of bonds shorted (# of bonds)
     This guarantees that bonds in the system are always fully backed by an equal amount of base.
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         Deltas are computed for this market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: Hyperdrive PricingModel
+    pricing_model : Hyperdrive PricingModel
         Instantiated pricing model for the hyperdrive market
-    block_time: FixedPoint
+    block_time : FixedPoint
         Global time (usually `market.BlockTime.time`).
-    latest_checkpoint_time: FixedPoint
+    latest_checkpoint_time : FixedPoint
         The most recent checkpoint time.
 
     Returns
@@ -1463,23 +1463,23 @@ def calc_close_short_fp(
     That is, d_base = trade_amount (# of bonds) + trade_result.user_result.d_base (a negative amount, in base).
     For more on short accounting, see the open short method.
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state: hyperdrive_market.MarketStateFP
+    market_state : hyperdrive_market.MarketStateFP
         Deltas are computed for this market.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: Hyperdrive PricingModel
+    pricing_model : Hyperdrive PricingModel
         Instantiated pricing model for the hyperdrive market
-    block_time: FixedPoint
+    block_time : FixedPoint
         Global time.
-    mint_time: FixedPoint
+    mint_time : FixedPoint
         The time in years when the short was opened.
-    open_share_price: FixedPoint
+    open_share_price : FixedPoint
         The share price when the short was opened.
 
     Returns
@@ -1618,21 +1618,21 @@ def calc_open_long_fp(
     from their long positions, so the only money they make on closing is from the long maturing and the fixed
     rate changing.
 
-    Parameters
+    Arguments
     ----------
-    wallet_address: int
+    wallet_address : int
         Integer address for the agent's wallet.
-    base_amount: FixedPoint
+    base_amount : FixedPoint
         Amount in base that the agent wishes to trade.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The current values for the market's state variables.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: Hyperdrive PricingModel
+    pricing_model : Hyperdrive PricingModel
         Instantiated pricing model for the hyperdrive market.
-    latest_checkpoint_time: FixedPoint
+    latest_checkpoint_time : FixedPoint
         The most recent checkpoint time.
-    spot_price: FixedPoint
+    spot_price : FixedPoint
         The spot price of the bonds.
 
     Returns
@@ -1706,23 +1706,23 @@ def calc_close_long_fp(
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
-    Parameters
+    Arguments
     ---------
-    wallet_address: int
+    wallet_address : int
         The address of the agent's wallet.
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds the agent is shorting.
-    market_state: hyperdrive_market.MarketStateFP
+    market_state : hyperdrive_market.MarketStateFP
         The current values for the market's state variables.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: Hyperdrive PricingModel
+    pricing_model : Hyperdrive PricingModel
         Instantiated pricing model for the hyperdrive market.
-    block_time: FixedPoint
+    block_time : FixedPoint
         Global time.
-    mint_time: FixedPoint
+    mint_time : FixedPoint
         The time in years when the short was opened.
-    is_trade: bool
+    is_trade : bool
         If an agent is performing a trade.  If false, this means a checkpoint is applied in which
         case we do not want to update the pool reserves yet since the agent hasn't actually closed
         their position yet.
@@ -1868,13 +1868,13 @@ def calc_update_reserves_fp(
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculates updates to the pool's liquidity and holds the pool's APR constant.
 
-    Parameters
+    Arguments
     ----------
-    share_reserves: FixedPoint
+    share_reserves : FixedPoint
         The current total shares in reserve
-    bond_reserves: FixedPoint
+    bond_reserves : FixedPoint
         The current total bonds in reserve
-    share_reserves_delta: FixedPoint
+    share_reserves_delta : FixedPoint
         The delta that should be applied to share reserves.
 
     Returns
@@ -1903,15 +1903,15 @@ def calc_short_interest_fp(
     In the event that the interest is negative, we mark the interest
     to zero.
 
-    Parameters
+    Arguments
     ----------
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds underlying the closed short.
-    open_share_price: FixedPoint
+    open_share_price : FixedPoint
         The share price at the short's open.
-    close_share_price: FixedPoint
+    close_share_price : FixedPoint
         The share price at the short's close.
-    share_price: FixedPoint
+    share_price : FixedPoint
         the current share price.
 
     Returns
@@ -1949,17 +1949,17 @@ def calc_short_proceeds_fp(
     interest is negative and outweighs the trading profits and margin released, the short's proceeds
     are marked to zero.
 
-    Parameters
+    Arguments
     ----------
-    bond_amount: FixedPoint
+    bond_amount : FixedPoint
         The amount of bonds underlying the closed short.
-    share_amount: FixedPoint
+    share_amount : FixedPoint
         The amount of shares that it costs to close the short.
-    open_share_price: FixedPoint
+    open_share_price : FixedPoint
         the share price at the short's open.
-    close_share_price: FixedPoint
+    close_share_price : FixedPoint
         the share price at the short's close.
-    share_price: FixedPoint
+    share_price : FixedPoint
         The current share price.
 
     Returns
@@ -1985,21 +1985,21 @@ def calc_add_liquidity_fp(
 ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
-    Parameters
+    Arguments
     ----------
-    wallet_address: int
+    wallet_address : int
         The wallet address for the agent.
-    base_in: FixedPoint
+    base_in : FixedPoint
         The amount of base the agent is providing.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The market's current state.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: HyperdrivePricingModel
+    pricing_model : HyperdrivePricingModel
         The pricing model for the market.
-    fixed_apr: FixedPoint
+    fixed_apr : FixedPoint
         The current fixed apr based off the spot price.
-    block_time: FixedPoint
+    block_time : FixedPoint
         The current block time in years.
 
     Returns
@@ -2053,17 +2053,17 @@ def calc_remove_liquidity_fp(
 ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
-    Parameters
+    Arguments
     ----------
-    wallet_address: int
+    wallet_address : int
         The wallet address for the agent.
-    lp_shares: FixedPoint
+    lp_shares : FixedPoint
         The amount of lp_shares the agent is redeeming.
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The market's current state.
-    position_duration: time.StretechedTime
+    position_duration : time.StretechedTime
         Used to get the average normalized time remaining for the shorts.
-    pricing_model: HyperdrivePricingModel
+    pricing_model : HyperdrivePricingModel
         The pricing model for the market.
 
     Returns
@@ -2115,15 +2115,15 @@ def calc_free_margin_fp(
 ) -> MarketDeltasFP:
     r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
 
-    Parameters
+    Arguments
     ----------
-    market_state: hyperdrive_market.MarketState
+    market_state : hyperdrive_market.MarketState
         The market's current state.
-    freed_capital: FixedPoint
+    freed_capital : FixedPoint
         The amount of capital to add to the withdraw pool, must not be more than the max capital.
-    max_capital: FixedPoint
+    max_capital : FixedPoint
         The margin which the LP used to back the position which is being closed.
-    interest: FixedPoint
+    interest : FixedPoint
         The interest earned by this margin position, fixed interest for shorts and variable for longs.
 
     Returns
