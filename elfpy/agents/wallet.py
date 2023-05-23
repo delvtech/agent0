@@ -488,9 +488,9 @@ class WalletFP:
         for mint_time, short in shorts:
             if short.balance != FixedPoint(0):
                 logging.debug(
-                    "agent #%g trade shorts, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    "agent #%g trade shorts, mint_time = %s\npre-trade amount = %s\ntrade delta = %s",
                     self.address,
-                    int(mint_time),
+                    mint_time,
                     self.shorts,
                     short,
                 )
