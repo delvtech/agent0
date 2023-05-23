@@ -222,7 +222,7 @@ class BorrowSimState:
 
     day: list[int] = field(default_factory=list)
     block: list[int] = field(default_factory=list)
-    borrows: list[dict[int, wallet.BorrowFP]] = field(default_factory=list)
+    borrows: list[dict[FixedPoint, wallet.BorrowFP]] = field(default_factory=list)
 
     def add_dict_entries(self, dictionary: dict) -> None:
         """Add dict entries to the sim state"""

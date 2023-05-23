@@ -325,6 +325,12 @@ class TestFixedPointNonFinite(unittest.TestCase):
         assert (self.NEG_INF % self.INF).is_nan() is True
         assert (self.NEG_INF % self.NEG_INF).is_nan() is True
 
+    def test_hash(self):
+        """Test the hash method"""
+        assert hash(self.INF) == hash(float("inf"))
+        assert hash(self.NEG_INF) == hash(float("-inf"))
+        assert hash(self.NAN) == hash(float("nan"))
+
 
 class TestFixedPointMathNonFinite(unittest.TestCase):
     """Unit tests to verify that the fixed-point math implementations are correct with non-finite inputs"""
@@ -336,7 +342,7 @@ class TestFixedPointMathNonFinite(unittest.TestCase):
     NAN = FixedPoint("nan")
 
     def test_minimum(self):
-        """Test minimum function"""
+        """Test minimum method"""
         assert FixedPointMath.minimum(self.NAN, self.NEG_ONE).is_nan() is True
         assert FixedPointMath.minimum(self.NAN, self.INF).is_nan() is True
         assert FixedPointMath.minimum(self.ONE, self.INF) == self.ONE
@@ -344,7 +350,7 @@ class TestFixedPointMathNonFinite(unittest.TestCase):
         assert FixedPointMath.minimum(self.INF, self.NEG_INF) == self.NEG_INF
 
     def test_maximum(self):
-        """Test maximum function"""
+        """Test maximum method"""
         assert FixedPointMath.maximum(self.NAN, self.NEG_ONE).is_nan() is True
         assert FixedPointMath.maximum(self.NAN, self.INF).is_nan() is True
         assert FixedPointMath.maximum(self.ONE, self.INF) == self.INF
@@ -352,7 +358,7 @@ class TestFixedPointMathNonFinite(unittest.TestCase):
         assert FixedPointMath.maximum(self.INF, self.NEG_INF) == self.INF
 
     def test_exp(self):
-        """Test exp function"""
+        """Test exp method"""
         assert FixedPointMath.exp(self.NAN).is_nan() is True
         assert FixedPointMath.exp(self.INF) == self.INF
         assert FixedPointMath.exp(self.NEG_INF) == self.NEG_INF

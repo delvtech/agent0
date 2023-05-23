@@ -317,7 +317,8 @@ class MarketTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketStateFP(
                 checkpoints=defaultdict(
-                    hyperdrive_market.CheckpointFP, {0: hyperdrive_market.CheckpointFP(share_price=FixedPoint(-1.0))}
+                    hyperdrive_market.CheckpointFP,
+                    {FixedPoint(0): hyperdrive_market.CheckpointFP(share_price=FixedPoint(-1.0))},
                 )
             )
             market_state.check_valid_market_state()
@@ -325,7 +326,7 @@ class MarketTest(unittest.TestCase):
             market_state = hyperdrive_market.MarketStateFP(
                 checkpoints=defaultdict(
                     hyperdrive_market.CheckpointFP,
-                    {0: hyperdrive_market.CheckpointFP(long_share_price=FixedPoint(-1.0))},
+                    {FixedPoint(0): hyperdrive_market.CheckpointFP(long_share_price=FixedPoint(-1.0))},
                 ),
             )
             market_state.check_valid_market_state()
@@ -333,7 +334,7 @@ class MarketTest(unittest.TestCase):
             market_state = hyperdrive_market.MarketStateFP(
                 checkpoints=defaultdict(
                     hyperdrive_market.CheckpointFP,
-                    {0: hyperdrive_market.CheckpointFP(long_base_volume=FixedPoint(-1.0))},
+                    {FixedPoint(0): hyperdrive_market.CheckpointFP(long_base_volume=FixedPoint(-1.0))},
                 ),
             )
             market_state.check_valid_market_state()
@@ -341,7 +342,7 @@ class MarketTest(unittest.TestCase):
             market_state = hyperdrive_market.MarketStateFP(
                 checkpoints=defaultdict(
                     hyperdrive_market.CheckpointFP,
-                    {0: hyperdrive_market.CheckpointFP(short_base_volume=FixedPoint(-1.0))},
+                    {FixedPoint(0): hyperdrive_market.CheckpointFP(short_base_volume=FixedPoint(-1.0))},
                 )
             )
             market_state.check_valid_market_state()
@@ -354,13 +355,14 @@ class MarketTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketStateFP(
                 total_supply_longs=defaultdict(
-                    FixedPoint, {0: FixedPoint(0.0), 1: FixedPoint(10.0), 2: FixedPoint(-1.0)}
+                    FixedPoint,
+                    {FixedPoint(0): FixedPoint(0), FixedPoint(1): FixedPoint(10.0), FixedPoint(2): FixedPoint(-1.0)},
                 )
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):
             market_state = hyperdrive_market.MarketStateFP(
-                total_supply_shorts=defaultdict(FixedPoint, {0: FixedPoint(-1.0)})
+                total_supply_shorts=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(-1.0)})
             )
             market_state.check_valid_market_state()
         with self.assertRaises(AssertionError):

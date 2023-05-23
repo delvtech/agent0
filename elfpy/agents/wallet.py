@@ -268,6 +268,9 @@ class Wallet:
         )
 
 
+######
+# FIXED POINT
+######
 @dataclass
 class LongFP:
     r"""An open long position.
@@ -337,10 +340,12 @@ class WalletFP:
         The base assets that held by the trader.
     lp_tokens : FixedPoint
         The LP tokens held by the trader.
-    longs : Dict[int, Long]
+    longs : Dict[FixedPoint, Long]
         The long positions held by the trader.
-    shorts : Dict[int, Short]
+    shorts : Dict[FixedPoint, Short]
         The short positions held by the trader.
+    borrows : Dict[FixedPoint, Borrow]
+        The borrow positions held by the trader.
     fees_paid : FixedPoint
         The fees paid by the wallet.
     """
@@ -360,12 +365,12 @@ class WalletFP:
     lp_tokens: FixedPoint = FixedPoint(0)
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: dict[int, LongFP] = field(default_factory=dict)
-    shorts: dict[int, ShortFP] = field(default_factory=dict)
+    longs: dict[FixedPoint, LongFP] = field(default_factory=dict)
+    shorts: dict[FixedPoint, ShortFP] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
-    borrows: dict[int, BorrowFP] = field(default_factory=dict)
+    borrows: dict[FixedPoint, BorrowFP] = field(default_factory=dict)
     fees_paid: FixedPoint = FixedPoint(0)
 
     def __getitem__(self, key: str) -> Any:
@@ -427,20 +432,20 @@ class WalletFP:
                 raise ValueError(f"wallet_key={key} is not allowed.")
             self.check_valid_wallet_state(self.__dict__)
 
-    def _update_borrows(self, borrows: Iterable[tuple[int, BorrowFP]]) -> None:
+    def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, BorrowFP]]) -> None:
         for mint_time, borrow_summary in borrows:
-            if FixedPoint(mint_time) != borrow_summary.start_time:
+            if mint_time != borrow_summary.start_time:
                 raise ValueError(
                     f"The borrow summary key, {mint_time=}, must equal the start time, {borrow_summary.start_time=}"
                 )
-            if int(borrow_summary.start_time) in self.borrows:  #  entry already exists for this mint_time, so add to it
-                self.borrows[int(borrow_summary.start_time)].borrow_amount += borrow_summary.borrow_amount
+            if borrow_summary.start_time in self.borrows:  #  entry already exists for this mint_time, so add to it
+                self.borrows[borrow_summary.start_time].borrow_amount += borrow_summary.borrow_amount
             else:
-                self.borrows.update({int(borrow_summary.start_time): borrow_summary})
-            if self.borrows[int(borrow_summary.start_time)].borrow_amount == FixedPoint(0):
+                self.borrows.update({borrow_summary.start_time: borrow_summary})
+            if self.borrows[borrow_summary.start_time].borrow_amount == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open borrows using `if self.borrows`
-                del self.borrows[int(borrow_summary.start_time)]
+                del self.borrows[borrow_summary.start_time]
 
     def _update_longs(self, longs: Iterable[tuple[FixedPoint, LongFP]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
@@ -463,11 +468,11 @@ class WalletFP:
                 if mint_time in self.longs:  #  entry already exists for this mint_time, so add to it
                     self.longs[mint_time].balance += long.balance
                 else:
-                    self.longs.update({int(mint_time): long})
-            if self.longs[int(mint_time)].balance == FixedPoint(0):
+                    self.longs.update({mint_time: long})
+            if self.longs[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open longs using `if wallet.longs`
-                del self.longs[int(mint_time)]
+                del self.longs[mint_time]
             if mint_time in self.longs and self.longs[mint_time].balance < FixedPoint(0):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
@@ -483,33 +488,33 @@ class WalletFP:
         for mint_time, short in shorts:
             if short.balance != FixedPoint(0):
                 logging.debug(
-                    "agent #%g trade shorts, mint_time = %g\npre-trade amount = %s\ntrade delta = %s",
+                    "agent #%g trade shorts, mint_time = %s\npre-trade amount = %s\ntrade delta = %s",
                     self.address,
-                    int(mint_time),
+                    mint_time,
                     self.shorts,
                     short,
                 )
-                if int(mint_time) in self.shorts:  #  entry already exists for this mint_time, so add to it
-                    self.shorts[int(mint_time)].balance += short.balance
-                    old_balance = self.shorts[int(mint_time)].balance
+                if mint_time in self.shorts:  #  entry already exists for this mint_time, so add to it
+                    self.shorts[mint_time].balance += short.balance
+                    old_balance = self.shorts[mint_time].balance
 
                     # if the balance is positive, we are opening a short, therefore do a weighted
                     # mean for the open share price.  this covers an edge case where two shorts are
                     # opened for the same account in the same block.  if the balance is negative, we
                     # don't want to update the open_short_price
                     if short.balance > FixedPoint(0):
-                        old_share_price = self.shorts[int(mint_time)].open_share_price
-                        self.shorts[int(mint_time)].open_share_price = (
+                        old_share_price = self.shorts[mint_time].open_share_price
+                        self.shorts[mint_time].open_share_price = (
                             short.open_share_price * short.balance + old_share_price * old_balance
                         ) / (short.balance + old_balance)
                 else:
-                    self.shorts.update({int(mint_time): short})
-            if self.shorts[int(mint_time)].balance == FixedPoint(0):
+                    self.shorts.update({mint_time: short})
+            if self.shorts[mint_time].balance == FixedPoint(0):
                 # Removing the empty borrows allows us to check existance
                 # of open shorts using `if wallet.shorts`
-                del self.shorts[int(mint_time)]
-            if int(mint_time) in self.shorts and self.shorts[int(mint_time)].balance < FixedPoint(0):
-                raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.shorts[int(mint_time)]}.")
+                del self.shorts[mint_time]
+            if mint_time in self.shorts and self.shorts[mint_time].balance < FixedPoint(0):
+                raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.shorts[mint_time]}.")
 
     def get_state_keys(self) -> tuple[str, ...]:
         """Get state keys for a wallet."""

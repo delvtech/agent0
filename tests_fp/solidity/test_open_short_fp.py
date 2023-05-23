@@ -166,7 +166,7 @@ class TestOpenShort(unittest.TestCase):
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-        unsigned_bond_amount = agent_deltas.shorts[int(self.hyperdrive.latest_checkpoint_time)].balance
+        unsigned_bond_amount = agent_deltas.shorts[self.hyperdrive.latest_checkpoint_time].balance
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,
@@ -185,7 +185,7 @@ class TestOpenShort(unittest.TestCase):
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
-        unsigned_bond_amount = agent_deltas.shorts[int(self.hyperdrive.latest_checkpoint_time)].balance
+        unsigned_bond_amount = agent_deltas.shorts[self.hyperdrive.latest_checkpoint_time].balance
         self.verify_open_short(
             user=self.bob,
             market_state_before=market_state_before,

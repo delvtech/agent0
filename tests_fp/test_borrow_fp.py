@@ -51,11 +51,11 @@ class TestBorrow(unittest.TestCase):
                     collateral_amount,
                     expected_borrow_amount,
                     market_deltas.d_borrow_shares,
-                    agent_deltas.borrows[0].borrow_amount,
+                    agent_deltas.borrows[FixedPoint(0)].borrow_amount,
                 )
                 self.assertAlmostEqual(market_deltas.d_borrow_shares, expected_borrow_amount, delta=self.APPROX_EQ)
                 self.assertAlmostEqual(
-                    agent_deltas.borrows[0].borrow_amount, expected_borrow_amount, delta=self.APPROX_EQ
+                    agent_deltas.borrows[FixedPoint(0)].borrow_amount, expected_borrow_amount, delta=self.APPROX_EQ
                 )
                 if delete_logs:
                     output_utils.close_logging()

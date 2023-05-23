@@ -95,7 +95,7 @@ def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market
                 position_duration=market.position_duration,
                 pricing_model=market.pricing_model,
                 block_time=market.block_time.time,
-                mint_time=FixedPoint(mint_time),
+                mint_time=mint_time,
                 is_trade=True,
             )[1].balance.amount
         else:
@@ -119,7 +119,7 @@ def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market
                 position_duration=market.position_duration,
                 pricing_model=market.pricing_model,
                 block_time=market.block_time.time,
-                mint_time=FixedPoint(mint_time),
+                mint_time=mint_time,
                 open_share_price=short.open_share_price,
             )[1].balance.amount
         shorts_value += balance

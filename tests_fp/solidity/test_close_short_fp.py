@@ -130,11 +130,11 @@ class TestCloseShort(unittest.TestCase):
         )
         checkpoint_time = maturity_time - self.term_length
         self.assertEqual(  # checkpoint long base volume
-            self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].long_base_volume,
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
             FixedPoint(0),
             msg=(
                 f"The long base volume at {checkpoint_time=} should be zero, "
-                f"not {self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].long_base_volume=}."
+                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
             ),
         )
         self.assertEqual(  # shorts outstanding
@@ -154,7 +154,7 @@ class TestCloseShort(unittest.TestCase):
             msg="short_base_volume is wrong",
         )
         self.assertEqual(  # checkpoint short base volume
-            self.hyperdrive.market_state.checkpoints[int(checkpoint_time)].short_base_volume,
+            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
             FixedPoint(0),
             msg="checkpoint short base volume is wrong",
         )
@@ -206,7 +206,7 @@ class TestCloseShort(unittest.TestCase):
             _ = self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset,
-                mint_time=FixedPoint(list(self.bob.wallet.shorts.keys())[0] + 1),
+                mint_time=list(self.bob.wallet.shorts.keys())[0] + FixedPoint(1),
                 open_share_price=FixedPoint("1.0"),
             )
 
@@ -223,7 +223,7 @@ class TestCloseShort(unittest.TestCase):
         self.hyperdrive.block_time.step()
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             mint_time=FixedPoint(0),
             open_share_price=FixedPoint("1.0"),
         )
@@ -232,7 +232,7 @@ class TestCloseShort(unittest.TestCase):
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
             agent_base_proceeds=agent_deltas_close.balance.amount,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
         )
 
@@ -249,7 +249,7 @@ class TestCloseShort(unittest.TestCase):
         self.hyperdrive.block_time.step()
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             mint_time=FixedPoint(0),
             open_share_price=FixedPoint("1.0"),
         )
@@ -258,7 +258,7 @@ class TestCloseShort(unittest.TestCase):
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
             agent_base_proceeds=agent_deltas_close.balance.amount,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
         )
 
@@ -281,7 +281,7 @@ class TestCloseShort(unittest.TestCase):
         # Bob closes his short at to maturity
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             mint_time=FixedPoint(0),
             open_share_price=FixedPoint("1.0"),
         )
@@ -292,7 +292,7 @@ class TestCloseShort(unittest.TestCase):
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
             agent_base_proceeds=agent_deltas_close.balance.amount,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
         )
 
@@ -317,7 +317,7 @@ class TestCloseShort(unittest.TestCase):
         # Bob closes his short at to maturity
         _, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             mint_time=FixedPoint(0),
             open_share_price=FixedPoint("1.0"),
         )
@@ -328,7 +328,7 @@ class TestCloseShort(unittest.TestCase):
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
             agent_base_proceeds=agent_deltas_close.balance.amount,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
         )
 
@@ -352,13 +352,13 @@ class TestCloseShort(unittest.TestCase):
         # Bob closes his short half way to maturity
         market_deltas_close, agent_deltas_close = self.hyperdrive.close_short(
             agent_wallet=self.bob.wallet,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             mint_time=FixedPoint(0),
             open_share_price=FixedPoint("1.0"),
         )
         self.assertEqual(  # market swaps the whole position at maturity
             market_deltas_close.d_base_asset,
-            agent_deltas_open.shorts[0].balance * FixedPoint("0.8"),
+            agent_deltas_open.shorts[FixedPoint(0)].balance * FixedPoint("0.8"),
         )
         # nothing received from closing due to negative interest
         self.assertEqual(agent_deltas_close.balance.amount, FixedPoint("0.0"))
@@ -367,6 +367,6 @@ class TestCloseShort(unittest.TestCase):
             market_state_before=market_state_before_close,
             agent_base_paid=trade_amount,
             agent_base_proceeds=agent_deltas_close.balance.amount,
-            bond_amount=agent_deltas_open.shorts[0].balance,
+            bond_amount=agent_deltas_open.shorts[FixedPoint(0)].balance,
             maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
         )
