@@ -202,7 +202,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
-        Parameters
+        Arguments
         ----------
         agent_action : MarketAction
             Checks if the agent_action.action_type is in the list of all available actions for this market
@@ -571,7 +571,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
     def check_action(self, agent_action: MarketActionFP) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
-        Parameters
+        Arguments
         ----------
         agent_action : MarketAction
             Checks if the agent_action.action_type is in the list of all available actions for this market
