@@ -68,14 +68,14 @@ class StretchedTime:
 def get_years_remaining(market_time: float, mint_time: float, position_duration_years: float) -> float:
     r"""Get the time remaining in years on a token
 
-    Parameters
+    Arguments
     ----------
-    market_time: float
+    market_time : float
         Time that has elapsed in the given market, in years
-    mint_time: float
+    mint_time : float
         Time at which the token in question was minted, relative to market_time,
         in yearss. Should be less than market_time.
-    position_duration_years: float
+    position_duration_years : float
         Total duration of the token's term, in years
 
     Returns
@@ -94,11 +94,11 @@ def get_years_remaining(market_time: float, mint_time: float, position_duration_
 def norm_days(days: float, normalizing_constant: float = 365) -> float:
     r"""Returns days normalized, with a default assumption of a year-long scale
 
-    Parameters
+    Arguments
     ----------
-    days: float
+    days : float
         Amount of days to normalize
-    normalizing_constant: float
+    normalizing_constant : float
         Amount of days to use as a normalization factor. Defaults to 365
 
     Returns
@@ -112,14 +112,14 @@ def norm_days(days: float, normalizing_constant: float = 365) -> float:
 def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     r"""Converts remaining pool length in days to normalized and stretched time
 
-    Parameters
+    Arguments
     ----------
-    days_remaining: float
+    days_remaining : float
         Time left until term maturity, in days
-    time_stretch: float
+    time_stretch : float
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to 1
-    normalizing_constant: float
+    normalizing_constant : float
         Amount of days to use as a normalization factor
         Defaults to 365
 
@@ -135,14 +135,14 @@ def days_to_time_remaining(days_remaining: float, time_stretch: float = 1, norma
 def time_to_days_remaining(time_remaining: float, time_stretch: float = 1, normalizing_constant: float = 365) -> float:
     r"""Converts normalized and stretched time remaining in pool to days
 
-    Parameters
+    Arguments
     ----------
-    time_remaining: float
+    time_remaining : float
         Time left until term maturity, in normalized and stretched time
-    time_stretch: float
+    time_stretch : float
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to 1
-    normalizing_constant: float
+    normalizing_constant : float
         Amount of days to use as a normalization factor. Defaults to 365
 
     Returns
@@ -291,14 +291,14 @@ def get_years_remaining_fp(
 ) -> FixedPoint:
     r"""Get the time remaining in years on a token
 
-    Parameters
+    Arguments
     ----------
-    market_time: FixedPoint
+    market_time : FixedPoint
         Time that has elapsed in the given market, in years.
-    mint_time: FixedPoint
+    mint_time : FixedPoint
         Time at which the token in question was minted, relative to market_time,
         in yearss. Should be less than market_time.
-    position_duration_years: FixedPoint
+    position_duration_years : FixedPoint
         Total duration of the token's term, in years
 
     Returns
@@ -321,14 +321,14 @@ def days_to_time_remaining_fp(
 ) -> FixedPoint:
     r"""Converts remaining pool length in days to normalized and stretched time
 
-    Parameters
+    Arguments
     ----------
-    days_remaining: FixedPoint
+    days_remaining : FixedPoint
         Time left until term maturity, in days.
-    time_stretch: FixedPoint
+    time_stretch : FixedPoint
         Amount of time units (in terms of a normalizing constant) to use for stretching time, for calculations
         Defaults to FixedPoint("1.0").
-    normalizing_constant: FixedPoint
+    normalizing_constant : FixedPoint
         Amount of days to use as a normalization factor.
         Defaults to FixedPoint("365.0")
 
