@@ -1,6 +1,7 @@
 """Fixed point datatype & arithmetic"""
 from __future__ import annotations
 
+import re
 import copy
 from typing import Union
 
@@ -23,10 +24,6 @@ class FixedPoint:
     However, we have expanded some operations due to the flexible application space of the Python simulations,
     for example by including non-finite representations.
     Whenever expanding beyond what is in the Solidity contracts, we follow the IEEE 754 floating point standard.
-
-    .. todo::
-        * add __round__, __ceil__, __floor__, __trunc__ so that it will be a proper numbers.Real type
-        https://docs.python.org/3/library/numbers.html#numbers.Real
     """
 
     int_value: int  # integer representation of self
@@ -45,16 +42,21 @@ class FixedPoint:
         self.special_value = None
         if isinstance(value, float):
             value = int(value * 10**decimal_places)  # int truncates to `decimal_places` precision
+        if isinstance(value, FixedPoint):
+            self.special_value = value.special_value
+            value = value.int_value
         if isinstance(value, str):
             # non-finite values are specified with strings
             if value.lower() in ("nan", "inf", "-inf"):
                 self.special_value = value.lower()
                 value = 0
-            else:
-                if "." not in value:
+            else:  # string must be a float or int representation
+                if not self._is_valid_number(value):
                     raise ValueError(
-                        "string argument must be a float string, e.g. '1.0', for the FixedPoint constructor"
+                        f"string argument {value=} must be a float string, e.g. '1.0', for the FixedPoint constructor"
                     )
+                if "." not in value:  # input is always assumed to be a float
+                    value += ".0"
                 integer, remainder = value.split(".")  # lhs = integer part, rhs = fractional part
                 # removes underscores; they won't affect `int` cast and will affect `len`
                 remainder = remainder.replace("_", "")
@@ -67,10 +69,20 @@ class FixedPoint:
                     value = int(integer) * 10**decimal_places + int(remainder) * 10 ** (
                         decimal_places - len(remainder)
                     )
-        if isinstance(value, FixedPoint):
-            self.special_value = value.special_value
-            value = value.int_value
         self.int_value = copy.copy(int(value))
+
+    @staticmethod
+    def _is_valid_number(float_string: str) -> bool:
+        """Regular expression pattern to determine if the string argument is valid for initializing FixedPoint
+
+        Valid inputs are:
+        - an optional negative sign
+        - one or more digits
+        - an optional underscore for digit grouping
+        - an optional decimal point followed by one or more digits
+        """
+        pattern = r"^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$"
+        return bool(re.match(pattern, float_string))
 
     def _coerce_other(self, other: FixedPoint | int | float) -> FixedPoint:
         r"""Cast inputs to the FixedPoint type if they come in as something else.

@@ -27,6 +27,8 @@ class TestFixedPoint(unittest.TestCase):
     def test_init(self):
         r"""Test initialization for FixedPoint numbers"""
         # str == float
+        assert FixedPoint("5") == FixedPoint("5.0")
+        assert FixedPoint("-5") == FixedPoint(-5.0)
         assert FixedPoint("5.1") == FixedPoint(5.1)
         assert FixedPoint("5.01") == FixedPoint(5.01)
         assert FixedPoint("5.000001") == FixedPoint(5.000001)
@@ -44,6 +46,17 @@ class TestFixedPoint(unittest.TestCase):
         assert int(FixedPoint(5)) == 5  # int input directly maps, cast does not rescale
         assert float(FixedPoint(5.0)) == 5.0  # scales up on init, then back down on cast to float
         assert int(FixedPoint(5)) == float(FixedPoint(5.0))
+
+    def test_init_fail(self):
+        r"""Test failure mode of FixedPoint initialization"""
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("inf.")
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("abc")
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("44.5a")
+        with self.assertRaises(ValueError):
+            _ = FixedPoint("-nan")
 
     def test_int_cast(self):
         r"""Test int casting"""
