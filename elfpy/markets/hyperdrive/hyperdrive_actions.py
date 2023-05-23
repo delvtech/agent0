@@ -68,7 +68,7 @@ class MarketDeltasFP(base_market.MarketDeltasFP):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketActionFP(base_market.MarketAction):
+class MarketActionFP(base_market.MarketActionFP):
     r"""Market action specification"""
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
