@@ -1,3 +1,4 @@
+"""Agent that tracks the vault apr"""
 # %%
 from __future__ import annotations
 
@@ -21,9 +22,9 @@ from elfpy.agents.agent import AgentFP
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
 
-# pylint: disable=line-too-long
-# pylint: disable=too-many-lines
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-locals
 # pylint: disable=invalid-name
 # pylint: disable=not-an-iterable
 # pylint: disable=unsubscriptable-object
@@ -57,7 +58,7 @@ def homogeneous_poisson(rng: NumpyGenerator, rate: float, tmax: int, bin_size: i
 
 def event_generator(rng, n_trials, rate, tmax, bin_size):
     """Generate samples from the poisson distribution"""
-    for i in range(n_trials):
+    for _ in range(n_trials):
         yield homogeneous_poisson(rng, rate, tmax, bin_size)
 
 
@@ -73,7 +74,10 @@ def vault_flip_probs(apr: float, min_apr: float = 0.0, max_apr: float = 1.0, num
     probability is 0.5 either way when apr is half way between max and min
     """
     aprs = np.linspace(min_apr, max_apr, num_flip_bins)
-    get_index = lambda value, array: (np.abs(array - value)).argmin()
+
+    def get_index(value, array):
+        return (np.abs(array - value)).argmin()
+
     apr_index = get_index(apr, aprs)  # return whatever value in aprs array that apr is closest to
     up_probs = np.linspace(1, 0, num_flip_bins)
     up_prob = up_probs[apr_index]
@@ -92,6 +96,7 @@ def poisson_vault_apr(
     upper_bound: float = 1.0,
     num_flip_bins: int = 100,
 ) -> list:
+    """Computes a variable APR from a poisson distribution"""
     # vault rate changes happen once every vault_jumps_per_year, on average
     num_bins = 365
     bin_size = 1
@@ -121,6 +126,7 @@ def poisson_vault_apr(
 
 # %%
 def DSR_historical(num_dates=90):
+    """Extracts the DSR from historical data"""
     dsr = pd.read_csv(
         "https://s3-sim-repo-0.s3.us-east-2.amazonaws.com/Data/HIST_DSR_D.csv", index_col=0, infer_datetime_format=True
     )
@@ -150,7 +156,7 @@ config.num_blocks_per_day = 1  # 7200 # Blocks in a given day (7200 means ~12 se
 config.curve_fee_multiple = 0  # 0.10 # fee multiple applied to the price slippage (1-p) collected on trades
 config.flat_fee_multiple = 0.000  # 5 bps
 
-trade_chance = 4 / (
+config.scratch["trade_chance"] = 4 / (
     config.num_trading_days * config.num_blocks_per_day
 )  # on a given block, an agent will trade with probability `trade_chance`
 
@@ -340,8 +346,9 @@ class RegularGuy(AgentFP):
                     ]
                 if action_list and (market.block_time.time * 365) % 36 <= 1:
                     print(
-                        f"t={market.block_time.time*365:.0f}: F:{market.fixed_apr:.3%} V:{market.market_state.variable_apr:.3%}"
-                        + f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
+                        f"t={market.block_time.time*365:.0f}: "
+                        f"F:{market.fixed_apr:.3%} V:{market.market_state.variable_apr:.3%} "
+                        f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
                     )
         return action_list
 
@@ -352,7 +359,7 @@ def get_example_agents(
     new_agents: float,
     existing_agents: float = 0,
     direction: str = None,
-    trade_chance: float = 1,
+    agent_trade_chance: float = 1,
 ) -> list[AgentFP]:
     """Instantiate a set of custom agents"""
     agents = []
@@ -360,19 +367,19 @@ def get_example_agents(
     existing_agents = int(existing_agents)
     print(f"Creating {new_agents} new agents from {existing_agents} existing agents to {existing_agents + new_agents}")
     for address in range(existing_agents, existing_agents + new_agents):
-        agent = RegularGuy(
+        example_agent = RegularGuy(
             rng=rng,
-            trade_chance=trade_chance,
+            trade_chance=agent_trade_chance,
             wallet_address=address,
             budget=budget,
         )
         if direction is not None:
             if direction == "short":
-                agent.trade_long = False
+                example_agent.trade_long = False
             if direction == "long":
-                agent.trade_short = False
-        agent.log_status_report()
-        agents += [agent]
+                example_agent.trade_short = False
+        example_agent.log_status_report()
+        agents += [example_agent]
     return agents
 
 
@@ -407,7 +414,7 @@ short_agents = get_example_agents(
     new_agents=num_agents / 2,
     existing_agents=1,
     direction="short",
-    trade_chance=trade_chance,
+    agent_trade_chance=config.scratch["trade_chance"],
 )
 long_agents = get_example_agents(
     rng=simulator.rng,
@@ -415,7 +422,7 @@ long_agents = get_example_agents(
     new_agents=num_agents / 2,
     existing_agents=1 + num_agents / 2,
     direction="long",
-    trade_chance=trade_chance,
+    agent_trade_chance=config.scratch["trade_chance"],
 )
 simulator.add_agents(short_agents + long_agents)
 # add a singular regular guy
@@ -480,33 +487,33 @@ def get_pnl_excluding_agent_0_with_day(trades_df: pd.DataFrame) -> pd.DataFrame:
     return trades_df[cols_to_return].groupby("day").mean()
 
 
-def nice_ticks(ax):
+def nice_ticks(tick_ax):
     """Make ticks nice"""
     xtick_step = max(1, config.num_trading_days // 10)  # divide by 10, but at least 1
-    xticks = [x for x in range(0 + xtick_step - 1, config.num_trading_days + 1, xtick_step)]
+    xticks = list(range(0 + xtick_step - 1, config.num_trading_days + 1, xtick_step))
     if xtick_step > 1:
         xticks = [0] + xticks
         xticklabels = ["1"] + [str(x + 1) for x in xticks[1:]]
     else:
         xticklabels = [str(x + 1) for x in xticks]
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xticklabels)
+    tick_ax.set_xticks(xticks)
+    tick_ax.set_xticklabels(xticklabels)
 
 
-def set_labels(ax, title, xlabel, ylabel):
+def set_labels(label_ax, title, xlabel, ylabel):
     """Set labels"""
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    label_ax.set_title(title)
+    label_ax.set_xlabel(xlabel)
+    label_ax.set_ylabel(ylabel)
 
 
 data_mock = get_pnl_excluding_agent_0_with_day(trades)
 data_no_mock = get_pnl_excluding_agent_0_no_mock_with_day(trades)
 
 # print specific agent info
-# n=12
-# print(trades.loc[:,['day','run_trade_number']+[col for col in trades if col.startswith(f"agent_{n}_")]])
-# print(trades.loc[:,[f"agent_{n}_total_longs",f"agent_{n}_total_shorts"]].max())
+# agent_num=12
+# print(trades.loc[:,['day','run_trade_number']+[col for col in trades if col.startswith(f"agent_{agent_num}_")]])
+# print(trades.loc[:,[f"agent_{agent_num}_total_longs",f"agent_{agent_num}_total_shorts"]].max())
 
 
 # %%
@@ -555,9 +562,9 @@ trader_pnl = trades.loc[
     ],
 ]
 all_traders = trader_pnl.sum(axis=1)
-n = trader_pnl.shape[1] // 2
-short_traders = trader_pnl.loc[:, trader_pnl.columns[:n]].sum(axis=1) * 2
-long_traders = trader_pnl.loc[:, trader_pnl.columns[n:]].sum(axis=1) * 2
+half_cols = trader_pnl.shape[1] // 2
+short_traders = trader_pnl.loc[:, trader_pnl.columns[:half_cols]].sum(axis=1) * 2
+long_traders = trader_pnl.loc[:, trader_pnl.columns[half_cols:]].sum(axis=1) * 2
 ax[4].step(x_data, all_traders)
 ax[4].step(x_data, short_traders, c="red")
 ax[4].step(x_data, long_traders, c="black")
@@ -567,31 +574,32 @@ ax[4].set_xlabel("Day")
 
 
 # %%
-def plot_pnl(pnl, ax, label, last_day):
+def plot_pnl(pnl, pnl_ax, label, last_day):
+    """plot the PNL"""
     # separate first half of agents, which are set to trade short
     # from second half of agents, which are set to trade long
     columns = pnl.columns.to_list()
     if len(columns) == 1:
-        ax.plot(pnl.iloc[1:, :], linestyle="-", linewidth=0.5, alpha=0.5)
-        ax.plot(pnl.iloc[1:, :], c="black", label=f"{label}, final_value={pnl.iloc[-1,0]:.5f}", linewidth=2)
+        pnl_ax.plot(pnl.iloc[1:, :], linestyle="-", linewidth=0.5, alpha=0.5)
+        pnl_ax.plot(pnl.iloc[1:, :], c="black", label=f"{label}, final_value={pnl.iloc[-1,0]:.5f}", linewidth=2)
     else:
-        n = int(len(columns) / 2)
-        short_pnl = pnl.loc[1:, columns[:n]].mean(axis=1)
-        long_pnl = pnl.loc[1:, columns[n:]].mean(axis=1)
-        ax.plot(pnl.loc[1:, columns[:n]], linestyle="-", linewidth=0.5, alpha=0.5, c="red")
-        ax.plot(pnl.loc[1:, columns[n:]], linestyle="-", linewidth=0.5, alpha=0.5, c="black")
-        ax.plot(short_pnl, c="red", label=f"Short {label}, final value={short_pnl.iloc[-1]:.5f}", linewidth=2)
-        ax.plot(long_pnl, c="black", label=f"Long {label}, final_value={long_pnl.iloc[-1]:.5f}", linewidth=2)
+        half = int(len(columns) / 2)
+        short_pnl = pnl.loc[1:, columns[:half]].mean(axis=1)
+        long_pnl = pnl.loc[1:, columns[half:]].mean(axis=1)
+        pnl_ax.plot(pnl.loc[1:, columns[:half]], linestyle="-", linewidth=0.5, alpha=0.5, c="red")
+        pnl_ax.plot(pnl.loc[1:, columns[half:]], linestyle="-", linewidth=0.5, alpha=0.5, c="black")
+        pnl_ax.plot(short_pnl, c="red", label=f"Short {label}, final value={short_pnl.iloc[-1]:.5f}", linewidth=2)
+        pnl_ax.plot(long_pnl, c="black", label=f"Long {label}, final_value={long_pnl.iloc[-1]:.5f}", linewidth=2)
     # grey area where day is last day
-    ax.set_ylabel("PNL in millions")
-    # ax.axvspan(last_day, len(short_pnl), color='grey', alpha=0.2, label="Last day")
-    ax.legend()
+    pnl_ax.set_ylabel("PNL in millions")
+    pnl_ax.axvspan(last_day, len(short_pnl), color="grey", alpha=0.2, label="Last day")
+    pnl_ax.legend()
 
 
 fig, ax = plt.subplots(1, 1, figsize=(6, 5), sharex=True, gridspec_kw={"wspace": 0.0, "hspace": 0.0})
 first_trade_that_is_on_last_day = min(trades.index[trades.day == max(trades.day)])
-plot_pnl(pnl=data_mock, label="Unrealized Market Value", ax=ax, last_day=first_trade_that_is_on_last_day)
-# plot_pnl(pnl=data_no_mock,label="Realized Market Value",ax=ax[1],last_day=first_trade_that_is_on_last_day)
+plot_pnl(data_mock, pnl_ax=ax, label="Unrealized Market Value", last_day=first_trade_that_is_on_last_day)
+# plot_pnl(data_no_mock, pnl_ax=ax[1], label="Realized Market Value", last_day=first_trade_that_is_on_last_day)
 
 ax.set_title("Trader PNL over time")
 
@@ -621,7 +629,7 @@ if len(trades_agg) > 1:  # if there were multiple trades
         label=f"mean = {trades_agg.loc[end_idx,'agent_0_pnl_no_mock_mean']:.3f}",
     )
     nice_ticks(ax[0])
-    set_labels(ax=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
+    set_labels(ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
 
     # second subplot
     ax[1].bar(
@@ -631,7 +639,7 @@ if len(trades_agg) > 1:  # if there were multiple trades
     )
     ax[1].legend(loc="best")
     nice_ticks(ax[1])
-    set_labels(ax=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
+    set_labels(ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
 
     # third subplot
     ax[2].bar(
@@ -641,6 +649,6 @@ if len(trades_agg) > 1:  # if there were multiple trades
     )
     ax[2].legend(loc="best")
     nice_ticks(ax[2])
-    set_labels(ax=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
+    set_labels(ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
 
 # %%

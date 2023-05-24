@@ -1,6 +1,6 @@
 """Testing for the ElfPy package modules"""
 from __future__ import annotations
-import builtins  # types are strings by default in 3.11
+import builtins
 
 import logging
 import unittest
@@ -118,9 +118,9 @@ class TestSimulator(unittest.TestCase):
         runs = pd.DataFrame(
             {
                 "run_number": [0] * num_runs,
-                "config": [simulators.Config()],
-                "agent_init": [[wallet.Wallet(address) for address in range(2)]],
-                "market_init": [hyperdrive_market.MarketState()],
+                "config": [simulators.ConfigFP()],
+                "agent_init": [[wallet.WalletFP(address) for address in range(2)]],
+                "market_init": [hyperdrive_market.MarketStateFP()],
                 "time_step": [0.001],
                 "position_duration": [90],
             }

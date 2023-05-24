@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 # TODO: clean up to avoid these
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-lines
 
 
 class MarketActionType(Enum):

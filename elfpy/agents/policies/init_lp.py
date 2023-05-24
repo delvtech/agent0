@@ -1,4 +1,4 @@
-"""Initializer agent is a special reserved strategy to initialize a market with a desired amount of share & bond reserves"""
+"""Initialize a market with a desired amount of share & bond reserves"""
 from __future__ import annotations
 
 import elfpy.agents.agent as elf_agent

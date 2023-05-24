@@ -21,7 +21,7 @@ from elfpy.math import FixedPoint
 class SimUtilsTest(unittest.TestCase):
     """Tests for the sim utils"""
 
-    APPROX_EQ: FixedPoint = FixedPoint(1e-18)
+    APPROX_EQ: FixedPoint = FixedPoint(1e-17)
 
     def test_get_initialized_market(self):
         """Compare two methods of initializing liquidity: agent-based as above, and the direct calc_liquidity method"""

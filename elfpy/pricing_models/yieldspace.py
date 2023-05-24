@@ -15,6 +15,9 @@ from elfpy.math import FixedPoint
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
+# TODO: clean up to avoid this
+# pylint: disable=too-many-arguments
+
 
 class YieldspacePricingModelFP(base_pm.PricingModelFP):
     """
