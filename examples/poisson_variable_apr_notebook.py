@@ -113,8 +113,7 @@ def poisson_vault_apr(
 fig, axs, gridspec = output_utils.get_gridspec_subplots(nrows=3, ncols=2, hspace=0.5, wspace=0.4)
 
 tmp_config = ConfigFP()
-num_trading_days: int = 365
-tmp_config.num_trading_days = FixedPoint(num_trading_days * 10**18)
+tmp_config.num_trading_days: int = 365
 
 n_trials = 1
 num_bins = 365  # days in a year
@@ -160,7 +159,7 @@ upper_bound = 100
 lower_bound = -100
 vault_apr = poisson_vault_apr(
     rng=tmp_config.rng,
-    num_trading_days=num_trading_days,
+    num_trading_days=tmp_config.num_trading_days,
     initial_apr=initial_apr,
     jump_size=jump_size,
     vault_jumps_per_year=num_jumps,
@@ -169,7 +168,7 @@ vault_apr = poisson_vault_apr(
     upper_bound=upper_bound,
     num_flip_bins=num_flip_bins,
 )
-axs[3].plot(np.arange(num_trading_days), vault_apr, c="k")
+axs[3].plot(np.arange(tmp_config.num_trading_days), vault_apr, c="k")
 axs[3].set_xlabel("time (days)")
 axs[3].set_ylabel("poisson process")
 axs[3].set_title("random unweighted")
@@ -181,7 +180,7 @@ lower_bound = 0.4  # use new values to demonstrate how bounds work with random w
 upper_bound = 0.6
 vault_apr = poisson_vault_apr(
     rng=tmp_config.rng,
-    num_trading_days=num_trading_days,
+    num_trading_days=tmp_config.num_trading_days,
     initial_apr=initial_apr,
     jump_size=jump_size,
     vault_jumps_per_year=num_jumps,
@@ -190,9 +189,9 @@ vault_apr = poisson_vault_apr(
     upper_bound=upper_bound,
     num_flip_bins=num_flip_bins,
 )
-axs[4].plot(np.arange(num_trading_days), vault_apr, c="k")
-axs[4].plot([0, num_trading_days - 1], [lower_bound, lower_bound], c="r", linewidth=0.5)
-axs[4].plot([0, num_trading_days - 1], [upper_bound, upper_bound], c="r", linewidth=0.5)
+axs[4].plot(np.arange(tmp_config.num_trading_days), vault_apr, c="k")
+axs[4].plot([0, tmp_config.num_trading_days - 1], [lower_bound, lower_bound], c="r", linewidth=0.5)
+axs[4].plot([0, tmp_config.num_trading_days - 1], [upper_bound, upper_bound], c="r", linewidth=0.5)
 axs[4].set_xlabel("time (days)")
 axs[4].set_ylabel("poisson process")
 axs[4].set_title(f"random weighted\n(avg {num_jumps} jumps)")
@@ -200,7 +199,7 @@ axs[4].set_ylim([lower_bound - 0.05, upper_bound + 0.05])
 
 vault_apr = poisson_vault_apr(
     rng=tmp_config.rng,
-    num_trading_days=num_trading_days,
+    num_trading_days=tmp_config.num_trading_days,
     initial_apr=initial_apr,
     jump_size=jump_size,
     vault_jumps_per_year=num_jumps * 10,
@@ -209,9 +208,9 @@ vault_apr = poisson_vault_apr(
     upper_bound=upper_bound,
     num_flip_bins=num_flip_bins,
 )
-axs[5].plot(np.arange(num_trading_days), vault_apr, c="k")
-axs[5].plot([0, num_trading_days - 1], [lower_bound, lower_bound], c="r", linewidth=0.5)
-axs[5].plot([0, num_trading_days - 1], [upper_bound, upper_bound], c="r", linewidth=0.5)
+axs[5].plot(np.arange(tmp_config.num_trading_days), vault_apr, c="k")
+axs[5].plot([0, tmp_config.num_trading_days - 1], [lower_bound, lower_bound], c="r", linewidth=0.5)
+axs[5].plot([0, tmp_config.num_trading_days - 1], [upper_bound, upper_bound], c="r", linewidth=0.5)
 axs[5].set_xlabel("time (days)")
 axs[5].set_ylabel("poisson process")
 axs[5].set_title(f"random weighted\n(avg {num_jumps * 10} jumps)")
