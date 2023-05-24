@@ -1,7 +1,7 @@
 """Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Tuple
 from pathlib import Path
 
 import logging
@@ -55,7 +55,7 @@ class HyperdriveProject(ProjectManager):
 
 
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
-    """Return the current market state from the smart contract.
+    r"""Return the current market state from the smart contract.
 
     Arguments
     ----------
@@ -110,7 +110,7 @@ OnChainTradeInfo = namedtuple(
 
 
 def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
-    """Get all trades from hyperdrive contract.
+    r"""Get all trades from hyperdrive contract.
 
     Arguments
     ----------
@@ -152,12 +152,10 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
 
     unique_block_numbers_ = trades["block_number"].unique()
 
-    # map share price to block number
-    share_price_ = {}
-    for block_number_ in unique_block_numbers_:
-        share_price_ |= {
-            block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
-        }
+    share_price_ = {
+        block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
+        for block_number_ in unique_block_numbers_
+    }
     for block_number_, price in share_price_.items():
         logging.debug(("block_number_={}, price={}", block_number_, price))
 
@@ -171,7 +169,7 @@ def get_wallet_from_onchain_trade_info(
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
 ) -> Wallet:
-    """Construct wallet balances from on-chain trade info.
+    r"""Construct wallet balances from on-chain trade info.
 
     Arguments
     ----------
@@ -234,21 +232,19 @@ def get_wallet_from_onchain_trade_info(
                 assert (
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
-                print(f"calculated weighted average open share price of {open_share_price}")
-                new_record = {mint_time: Short(balance=balance, open_share_price=open_share_price)}
-                wallet.shorts |= new_record
-                print(f"storing in wallet as {new_record=}")
+                logging.debug("calculated weighted average open share price of %s",open_share_price)
+                wallet.shorts.update({mint_time: Short(balance=balance, open_share_price=open_share_price)})
+                logging.debug("storing in wallet as %s",{mint_time: Short(balance=balance, open_share_price=open_share_price)})
             elif asset_type == "LONG":
-                new_record = {mint_time: Long(balance=balance)}
-                wallet.longs |= new_record
-                print(f"storing in wallet as {new_record=}")
+                wallet.longs.update({mint_time: Long(balance=balance)})
+                logging.debug("storing in wallet as %s",{mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
     return wallet
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
-    """Get the max and priority fees from a block (type 2 transactions only).
+    r"""Get the max and priority fees from a block (type 2 transactions only).
 
     Arguments
     ----------
@@ -276,7 +272,7 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
 
 
 def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
-    """Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
+    r"""Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
 
     Arguments
     ----------
@@ -305,7 +301,7 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
-    """Parse the transaction receipt to get the "transfer single" trade event
+    r"""Parse the transaction receipt to get the "transfer single" trade event
 
     Arguments
     ---------
@@ -334,7 +330,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
 
 def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
-    """Return everything returned by `getPoolInfo()` in the smart contracts.
+    r"""Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
     ---------
@@ -378,7 +374,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     """Get the change in an agent's wallet from a transaction receipt."""
     agent = tx_receipt.operator
     event_args = tx_receipt.event_arguments
-    event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
+    event_args.update({k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]})
     # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
@@ -486,8 +482,8 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     return agent_deltas
 
 
-def get_instance(address: str, provider: ProviderAPI, contract_type: Optional[ContractType] = None) -> ContractInstance:
-    """Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
+def get_instance(address: str, provider: ProviderAPI, contract_type: ContractType | None = None) -> ContractInstance:
+    r"""Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
 
     Arguments
     ----------
@@ -511,7 +507,7 @@ def get_instance(address: str, provider: ProviderAPI, contract_type: Optional[Co
 
 
 def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
-    """Get contract type from cache. Used for devnet, where Ape refuses to check the cache
+    r"""Get contract type from cache. Used for devnet, where Ape refuses to check the cache
 
     Arguments
     ----------
@@ -542,10 +538,9 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
 
 
 def select_abi(
-    method: Callable, params: Optional[dict] = None, args: Optional[Tuple] = None
+    method: Callable, params: dict | None = None, args: Tuple | None = None
 ) -> tuple[MethodABI, Tuple]:
-    """
-    Select the correct ABI for a method based on the provided parameters:
+    r"""Select the correct ABI for a method based on the provided parameters:
 
     * If `params` is provided, the ABI will be matched by keyword arguments
     * If `args` is provided, the ABI will be matched by the number of arguments.
@@ -573,7 +568,7 @@ def select_abi(
     """
     if args is None:
         args = ()
-    selected_abi: Optional[MethodABI] = None
+    selected_abi: MethodABI | None = None
     method_abis: list[MethodABI] = method.abis
     missing_args = set()
     for abi in method_abis:  # loop through all the ABIs
@@ -606,11 +601,10 @@ def ape_trade(
     hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
-    maturity_time: Optional[int] = None,
+    maturity_time: int | None = None,
     **kwargs: Any,
-) -> tuple[Optional[dict[str, Any]], Optional[ReceiptAPI]]:
-    """
-    Execute a trade on the Hyperdrive contract.
+) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
+    r"""Execute a trade on the Hyperdrive contract.
 
     Arguments
     ---------
@@ -689,8 +683,8 @@ def ape_trade(
 
 def attempt_txn(
     agent: AccountAPI, contract_txn: ContractTransaction | ContractTransactionHandler, *args, **kwargs
-) -> Optional[ReceiptAPI]:
-    """
+) -> ReceiptAPI | None:
+    r"""
     Execute a transaction using fallback logic for undiagnosed cases
     where a transaction fails due to gas price being too low.
 
@@ -759,7 +753,7 @@ def attempt_txn(
         log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
-        signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
+        signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)
         logging.debug(" => sending signed_txn %s", signed_txn)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
