@@ -2,10 +2,10 @@
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
-import numpy as np
 
 import elfpy.time as time
 import elfpy.utils.price as price_utils
+from elfpy.math import FixedPoint
 
 
 class BasePriceTest(unittest.TestCase):
@@ -19,85 +19,85 @@ class BasePriceTest(unittest.TestCase):
         test_cases = [
             # test 1: 0.95 price; 6mo remaining;
             {
-                "price": 0.95,
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.95"),
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.95) / 0.95 / 0.5
                 #     = 0.1052631579
-                "expected_result": 0.1052631579,  # just over 10% APR
+                "expected_result": FixedPoint("0.1052631579"),  # just over 10% APR
             },
             # test 2: 0.99 price; 6mo remaining;
             {
-                "price": 0.99,
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.99"),
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.99) / 0.99 / 0.5
                 #     = 0.0202020202
-                "expected_result": 0.0202020202,  # just over 2% APR
+                "expected_result": FixedPoint("0.0202020202"),  # just over 2% APR
             },
             # test 3: 1.00 price; 6mo remaining;
             {
-                "price": 1.00,  # 0% APR
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("1.00"),  # 0% APR
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 1) / 1 / 0.5
                 #     = 0
-                "expected_result": 0,  # 0% APR
+                "expected_result": FixedPoint("0.0"),  # 0% APR
             },
             # test 4: 0.95 price; 3mo remaining;
             {
-                "price": 0.95,
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.95"),
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.95) / 0.95 / 0.25
                 #     = 0.2105263158
-                "expected_result": 0.2105263158,  # just over 21% APR
+                "expected_result": FixedPoint("0.2105263158"),  # just over 21% APR
             },
             # test 5: 0.95 price; 12mo remaining;
             {
-                "price": 0.95,
-                "time_remaining": time.StretchedTime(
-                    days=365,  # 12 months = 1 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.95"),
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("365.0"),  # 12 months = 1 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.95) / 0.95 / 1
                 #     = 0.05263157895
-                "expected_result": 0.05263157895,  # just over 5% APR
+                "expected_result": FixedPoint("0.05263157895"),  # just over 5% APR
             },
             # test 6: 0.10 price; 3mo remaining;
             {
-                "price": 0.10,  # 0% APR
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.10"),  # 0% APR
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
-                "expected_result": 36,  # 3600% APR
+                "expected_result": FixedPoint("36.0"),  # 3600% APR
             },
             # test 7: ERROR CASE
             #   -0.50 (negative) price; 3mo remaining;
             #   the function asserts that price > 0, so this case should raise an AssertionError
             {
-                "price": -0.50,  # 0% APR
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("-0.50"),  # 0% APR
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
@@ -109,11 +109,11 @@ class BasePriceTest(unittest.TestCase):
             #   the function asserts that normalized_time_remaining > 0, so this case \
             #   should raise an AssertionError
             {
-                "price": 0.95,  # 0% APR
-                "time_remaining": time.StretchedTime(
-                    days=-91.25,  # -3 months = -0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("0.95"),  # 0% APR
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("-91.25"),  # -3 months = -0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 0.10) / 0.10 / 0.25
                 #     = 0
@@ -124,15 +124,15 @@ class BasePriceTest(unittest.TestCase):
             #   1.50 price (>1.00); 3mo remaining;
             #   the AMM math shouldn't let price be greater than 1
             {
-                "price": 1.50,  # 0% APR
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "price": FixedPoint("1.50"),  # 0% APR
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # APR = (1 - 1.50) / 1.50 / 0.25
                 #     = -1.333333333
-                "expected_result": -1.3333333333333333,  # strange result
+                "expected_result": FixedPoint("-1.3333333333333333"),  # strange result
             },
         ]
 
@@ -141,17 +141,17 @@ class BasePriceTest(unittest.TestCase):
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
-                    apr = price_utils.calc_apr_from_spot_price(
+                    apr = price_utils.calc_apr_from_spot_price_fp(
                         price=test_case["price"], time_remaining=test_case["time_remaining"]
                     )
 
             # If test was not supposed to fail, continue normal execution
             else:
-                apr = price_utils.calc_apr_from_spot_price(
+                apr = price_utils.calc_apr_from_spot_price_fp(
                     price=test_case["price"], time_remaining=test_case["time_remaining"]
                 )
 
-                np.testing.assert_almost_equal(apr, test_case["expected_result"], err_msg="unexpected apr")
+                self.assertAlmostEqual(apr, test_case["expected_result"], msg="unexpected apr")
 
     def run_calc_spot_price_from_apr_test(self):
         """Unit tests for the calc_spot_price_from_apr function"""
@@ -159,108 +159,107 @@ class BasePriceTest(unittest.TestCase):
         test_cases = [
             # test 1: 10% apr; 6mo remaining;
             {
-                "apr": 0.10,  # 10% apr
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.10"),  # 10% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0.10 * 0.5)
                 #     = 0.1052631579
-                "expected_result": 0.9523809524,  # just over 0.95
+                "expected_result": FixedPoint("0.9523809524"),  # just over 0.95
             },
             # test 2: 2% apr; 6mo remaining;
             {
-                "apr": 0.02,  # 2% apr
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.02"),  # 2% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0.02 * 0.5)
                 #     = 0.9900990099
-                "expected_result": 0.9900990099,  # just over 0.99
+                "expected_result": FixedPoint("0.9900990099"),  # just over 0.99
             },
             # test 3: 0% apr; 6mo remaining;
             {
-                "apr": 0,  # 0% apr
-                "time_remaining": time.StretchedTime(
-                    days=182.5,  # 6 months = 0.5 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.0"),  # 0% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("182.5"),  # 6 months = 0.5 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0 * 0.5)
                 #     = 1
-                "expected_result": 1,
+                "expected_result": FixedPoint("1.0"),
             },
             # test 4: 21% apr; 3mo remaining;
             {
-                "apr": 0.21,  # 21% apr
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.21"),  # 21% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0.21 * 0.25)
                 #     = 0.2105263158
-                "expected_result": 0.9501187648,  # just over 0.95
+                "expected_result": FixedPoint("0.9501187648"),  # just over 0.95
             },
             # test 5: 5% apr; 12mo remaining;
             {
-                "apr": 0.05,  # 5% apr
-                "time_remaining": time.StretchedTime(
-                    days=365,  # 12 months = 1 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.05"),  # 5% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("365.0"),  # 12 months = 1 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0.05 * 1)
                 #     = 0.05263157895
-                "expected_result": 0.9523809524,  # just over 0.95
+                "expected_result": FixedPoint("0.9523809524"),  # just over 0.95
             },
             # test 6: 3600% apr; 3mo remaining;
             {
-                "apr": 36,  # 3600% apr
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("36"),  # 3600% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 36 * 0.25)
                 #     = 0.1
-                "expected_result": 0.10,
+                "expected_result": FixedPoint("0.10"),
             },
             # test 7: 0% apr; 3mo remaining;
             {
-                "apr": 0,  # 0% apr
-                "time_remaining": time.StretchedTime(
-                    days=91.25,  # 3 months = 0.25 years
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("0.0"),  # 0% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("91.25"),  # 3 months = 0.25 years
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
                 # price = 1 / (1 + 0 * 0.25)
                 #     = 0
-                "expected_result": 1.00,
+                "expected_result": FixedPoint("1.0"),
             },
             # test 8: 5% apr; no time remaining;
             {
-                "apr": 5,  # 500% apr
-                "time_remaining": time.StretchedTime(
-                    days=0,
-                    time_stretch=1,
-                    normalizing_constant=365,
+                "apr": FixedPoint("5.0"),  # 500% apr
+                "time_remaining": time.StretchedTimeFP(
+                    days=FixedPoint("0.0"),
+                    time_stretch=FixedPoint("1.0"),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),  # 0 months = 0 years
                 # price = 1 / (1 + 5 * 0)
                 #     = 0
-                "expected_result": 1.00,
+                "expected_result": FixedPoint("1.0"),
             },
         ]
 
         for test_case in test_cases:
-            spot_price = price_utils.calc_spot_price_from_apr(
+            spot_price = price_utils.calc_spot_price_from_apr_fp(
                 apr=test_case["apr"], time_remaining=test_case["time_remaining"]
             )
-
-            np.testing.assert_almost_equal(spot_price, test_case["expected_result"], err_msg="unexpected apr")
+            self.assertAlmostEqual(spot_price, test_case["expected_result"], msg="unexpected apr")
 
 
 class TestPriceUtils(BasePriceTest):
