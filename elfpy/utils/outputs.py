@@ -1,5 +1,5 @@
 """Helper functions for delivering simulation outputs"""
-from __future__ import annotations  # types will be strings by default in 3.11
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import os
@@ -540,7 +540,6 @@ def number_to_string(value, precision=3, min_digits=0, debug=False):
     return f"{value:0.{precision - 1}e}"
 
 
-# Test logging
 def log_and_show(string: str, *args) -> None:
     """Log to default logger and to stdout.
 
