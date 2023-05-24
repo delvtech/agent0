@@ -470,17 +470,6 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
     return _sim_agents, _dev_accounts
 
-
-# for mint_time,long in agent.wallet.longs.items():
-#     print(mint_time, long)
-# for mint_time,short in agent.wallet.shorts.items():
-#     print(mint_time, short)
-
-# # find relevant trades
-# idx = on_chain_trade_info.trades.operator==agent.wallet.address
-# on_chain_trade_info.trades.loc[idx,:]
-
-
 def do_trade():
     """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
