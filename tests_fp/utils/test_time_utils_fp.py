@@ -2,7 +2,6 @@
 from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
-import numpy as np
 
 import elfpy.time as time
 from elfpy.math import FixedPoint

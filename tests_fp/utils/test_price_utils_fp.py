@@ -11,8 +11,9 @@ from elfpy.math import FixedPoint
 class BasePriceTest(unittest.TestCase):
     """Unit tests for price utilities"""
 
-    # ### Spot Price and APR ###
+    APPROX_EQ: FixedPoint = FixedPoint(1e-9)
 
+    ### Spot Price and APR ###
     def run_calc_apr_from_spot_price_test(self):
         """Unit tests for the calc_apr_from_spot_price function"""
 
@@ -151,7 +152,7 @@ class BasePriceTest(unittest.TestCase):
                     price=test_case["price"], time_remaining=test_case["time_remaining"]
                 )
 
-                self.assertAlmostEqual(apr, test_case["expected_result"], msg="unexpected apr")
+                self.assertAlmostEqual(apr, test_case["expected_result"], delta=self.APPROX_EQ, msg="unexpected apr")
 
     def run_calc_spot_price_from_apr_test(self):
         """Unit tests for the calc_spot_price_from_apr function"""
@@ -259,7 +260,7 @@ class BasePriceTest(unittest.TestCase):
             spot_price = price_utils.calc_spot_price_from_apr_fp(
                 apr=test_case["apr"], time_remaining=test_case["time_remaining"]
             )
-            self.assertAlmostEqual(spot_price, test_case["expected_result"], msg="unexpected apr")
+            self.assertAlmostEqual(spot_price, test_case["expected_result"], delta=self.APPROX_EQ, msg="unexpected apr")
 
 
 class TestPriceUtils(BasePriceTest):
