@@ -207,6 +207,8 @@ class TestFixedPoint(unittest.TestCase):
         assert hash(FixedPoint("-2.5")) == hash(-2.5 * 10**18)
         assert hash(FixedPoint("2.5")) == hash(2.5 * 10**18)
         assert hash(FixedPoint("-200.537280")) == hash(-200.537280 * 10**18)
+        # last test, use FixedPoint as the key in a dictionary
+        _ = {FixedPoint(1): "test_value"}  # if this works then the test passes
 
     def test_hash_nonfinite(self):
         """Test the hash method with nonfinite values"""

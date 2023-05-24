@@ -4,8 +4,6 @@ import unittest
 
 from elfpy.math import FixedPoint
 
-# pylint: disable=unneeded-not
-
 
 class TestFixedPointNonFinite(unittest.TestCase):
     r"""Unit tests to verify that the fixed-point non-finite implementations are correct.

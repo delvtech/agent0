@@ -5,6 +5,9 @@ import elfpy.errors.errors as errors
 from elfpy.math import FixedPoint
 
 
+# pylint: disable=unneeded-not
+
+
 class TestFixedPoint(unittest.TestCase):
     r"""Unit tests to verify that syntactic sugar for the FixedPoint class is correct.
 
@@ -30,6 +33,8 @@ class TestFixedPoint(unittest.TestCase):
     INF = FixedPoint("inf")
     NEG_INF = FixedPoint("-inf")
     NAN = FixedPoint("nan")
+    FLOAT_ONE = 1.0
+    INT_ONE = 1
 
     def test_add(self):
         r"""Test `+` sugar for various type combos"""
@@ -54,17 +59,18 @@ class TestFixedPoint(unittest.TestCase):
         """
         with self.assertRaises(OverflowError):
             _ = FixedPoint(2**256) + FixedPoint(1)
-        fixed_point_value = FixedPoint(1)
-        float_value = 1.0
-        int_value = 1
         with self.assertRaises(TypeError):
-            _ = fixed_point_value + float_value  # type: ignore
+            _ = self.ONE + self.FLOAT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = float_value + fixed_point_value  # type: ignore
+            _ = self.FLOAT_ONE + self.ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = fixed_point_value + int_value  # type: ignore
+            _ = self.ONE + self.INT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = int_value + fixed_point_value  # type: ignore
+            _ = self.INT_ONE + self.ONE  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = False + self.ONE  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = True + self.ONE  # type: ignore
 
     def test_add_nonfinite(self):
         """Test rules for non-finite addition"""
@@ -114,17 +120,18 @@ class TestFixedPoint(unittest.TestCase):
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
-        fixed_point_value = FixedPoint(1)
-        float_value = 1.0
-        int_value = 1
         with self.assertRaises(TypeError):
-            _ = fixed_point_value - float_value  # type: ignore
+            _ = self.ONE - self.FLOAT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = float_value - fixed_point_value  # type: ignore
+            _ = self.FLOAT_ONE - self.ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = fixed_point_value - int_value  # type: ignore
+            _ = self.ONE - self.INT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = int_value - fixed_point_value  # type: ignore
+            _ = self.INT_ONE - self.ONE  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = False - self.ONE  # type: ignore
+        with self.assertRaises(TypeError):
+            _ = True - self.ONE  # type: ignore
 
     def test_sub_nonfinite(self):
         """Test rules for non-finite subtraction"""
@@ -184,17 +191,14 @@ class TestFixedPoint(unittest.TestCase):
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
-        fixed_point_value = FixedPoint(1)
-        float_value = 1.0
-        int_value = 1
         with self.assertRaises(TypeError):
-            _ = fixed_point_value * float_value  # type: ignore
+            _ = self.ONE * self.FLOAT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = float_value * fixed_point_value  # type: ignore
+            _ = self.FLOAT_ONE * self.ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = fixed_point_value * int_value  # type: ignore
+            _ = self.ONE * self.INT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = int_value * fixed_point_value  # type: ignore
+            _ = self.INT_ONE * self.ONE  # type: ignore
 
     def test_multiply_nonfinite(self):
         """Test rules for non-finite multiplication"""
@@ -265,20 +269,16 @@ class TestFixedPoint(unittest.TestCase):
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
-        fixed_point_value = FixedPoint(1)
-        fixed_point_zero = FixedPoint(0)
-        float_value = 1.0
-        int_value = 1
         with self.assertRaises(TypeError):
-            _ = fixed_point_value / float_value  # type: ignore
+            _ = self.ONE / self.FLOAT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = float_value / fixed_point_value  # type: ignore
+            _ = self.FLOAT_ONE / self.ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = fixed_point_value / int_value  # type: ignore
+            _ = self.ONE / self.INT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = int_value / fixed_point_value  # type: ignore
+            _ = self.INT_ONE / self.ONE  # type: ignore
         with self.assertRaises(errors.DivisionByZero):
-            _ = fixed_point_value / fixed_point_zero
+            _ = self.ONE / self.ZERO
 
     def test_divide_nonfinite(self):
         """Test rules for non-finite division"""
@@ -417,20 +417,16 @@ class TestFixedPoint(unittest.TestCase):
 
         We are ignoring type errors -- we know they're bad, but we're looking for failure
         """
-        fixed_point_value = FixedPoint(1)
-        fixed_point_zero = FixedPoint(0)
-        float_value = 1.0
-        int_value = 1
         with self.assertRaises(TypeError):
-            _ = fixed_point_value % float_value  # type: ignore
+            _ = self.ONE % self.FLOAT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = float_value % fixed_point_value  # type: ignore
+            _ = self.FLOAT_ONE % self.ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = fixed_point_value % int_value  # type: ignore
+            _ = self.ONE % self.INT_ONE  # type: ignore
         with self.assertRaises(TypeError):
-            _ = int_value % fixed_point_value  # type: ignore
+            _ = self.INT_ONE % self.ONE  # type: ignore
         with self.assertRaises(errors.DivisionByZero):
-            _ = fixed_point_value % fixed_point_zero
+            _ = self.ONE % self.ZERO
 
     def test_modulo_nonfinite(self):
         """Test rules for non-finite modulo operation"""
