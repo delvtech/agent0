@@ -411,6 +411,7 @@ def create_agent(
             if config.scratch["devnet"]:
                 txn_receipt: ReceiptAPI = base_.mint(agent.contract.address, int(50_000 * 1e18), sender=deployer)
             else:
+                assert faucet is not None, "Faucet must be provided to mint base on testnet."
                 txn_receipt: ReceiptAPI = faucet.mint(base_.address, agent.wallet.address, int(50_000 * 1e18))
             txn_receipt.await_confirmations()
     log_and_show(
@@ -513,9 +514,9 @@ def log_and_show_block_info():
 def get_simulator(_config):
     """Get a python simulator"""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-    block_time = time.BlockTime()
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, _config)
-    return simulators.Simulator(_config, market, block_time)
+    block_time_ = time.BlockTime()
+    market_, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, _config)
+    return simulators.Simulator(_config, market_, block_time_)
 
 
 def deploy_hyperdrive() -> ContractInstance:
@@ -526,7 +527,6 @@ def deploy_hyperdrive() -> ContractInstance:
     initial_share_price = int(config.init_share_price * 1e18)
     checkpoint_duration = 86400  # seconds = 1 day
     checkpoints_per_term = 365
-    position_duration_seconds = checkpoint_duration * checkpoints_per_term
     time_stretch = int(1 / simulator.market.time_stretch_constant * 1e18)
     curve_fee = int(config.curve_fee_multiple * 1e18)
     flat_fee = int(config.flat_fee_multiple * 1e18)
@@ -554,7 +554,7 @@ if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
-    deployer = None
+    deployer = None # pylint: disable=invalid-name
     # Set up ape
     if config.scratch["devnet"]:  # if devnet setting is enabled
         simulator = get_simulator(config)  # Instantiate the sim market
