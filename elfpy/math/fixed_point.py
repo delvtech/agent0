@@ -114,6 +114,8 @@ class FixedPoint:
         .. note::
             Right now we do not support operating against int and float because those are logically confusing
         """
+        if isinstance(other, bool):
+            raise TypeError(f"unsupported operand type(s): {type(other)}")
         if isinstance(other, FixedPoint):
             if other.special_value is not None:
                 return FixedPoint(other.special_value)
@@ -139,7 +141,7 @@ class FixedPoint:
 
     def __radd__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal addition to support other + FixedPoint"""
-        return self.__add__(other)
+        return self + other  # commutative operation
 
     def __sub__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '-' syntax"""
@@ -158,8 +160,8 @@ class FixedPoint:
 
     def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal subtraction to support other - FixedPoint"""
-        other = self._coerce_other(other)
-        return other - self
+        other = self._coerce_other(other)  # convert to FixedPoint
+        return other - self  # now use normal subtraction
 
     def __mul__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '*' syntax
@@ -181,7 +183,7 @@ class FixedPoint:
 
     def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal multiplication to support other * FixedPoint"""
-        return self * other
+        return self * other  # commutative operation
 
     def __truediv__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '/' syntax.
@@ -205,8 +207,8 @@ class FixedPoint:
 
     def __rtruediv__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal division to support other / FixedPoint"""
-        other = self._coerce_other(other)
-        return other / self
+        other = self._coerce_other(other)  # convert to FixedPoint
+        return other / self  # then divide normally
 
     def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '//' syntax
@@ -218,8 +220,8 @@ class FixedPoint:
 
     def __rfloordiv__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal floor division to support other // FixedPoint"""
-        other = self._coerce_other(other)
-        return other // self
+        other = self._coerce_other(other)  # convert to FixedPoint
+        return other // self  # then normal divide
 
     def __pow__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables '**' syntax"""
@@ -233,8 +235,8 @@ class FixedPoint:
 
     def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal pow to support other ** FixedPoint"""
-        other = self._coerce_other(other)
-        return other**self
+        other = self._coerce_other(other)  # convert to FixedPoint
+        return other**self  # then normal pow
 
     def __mod__(self, other: FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax
