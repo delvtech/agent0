@@ -52,7 +52,8 @@ select = ["A", "D", "I", "N", "PL"]
 # We ignore the following rules:
 # D203 : 1 blank line required before class docstring (incompatible with D211: no blank lines before class docstring)
 # D213: multi-line-summary-second-line (incompatible with D212: multi-line summary should start at the first line)
-ignore = ["D203", "D213"]
+# D416: section-name-ends-in-colon (numpy style guide doesn't use colons after sections, i.e. Parameters)
+ignore = ["D203", "D213", "D416"]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "D", "I", "N", "PL"]

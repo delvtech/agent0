@@ -61,6 +61,8 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     ----------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+    **kwargs : `dict`
+        Keyword arguments to pass to the smart contract.
 
     Returns
     -------
@@ -177,7 +179,7 @@ def get_wallet_from_onchain_trade_info(
         Address of the wallet.
     index : int
         Index of the wallet.
-    on_chain_trade_info : OnChainTradeInfo
+    info : OnChainTradeInfo
         On-chain trade info.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
@@ -232,12 +234,14 @@ def get_wallet_from_onchain_trade_info(
                 assert (
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
-                logging.debug("calculated weighted average open share price of %s",open_share_price)
+                logging.debug("calculated weighted average open share price of %s", open_share_price)
                 wallet.shorts.update({mint_time: Short(balance=balance, open_share_price=open_share_price)})
-                logging.debug("storing in wallet as %s",{mint_time: Short(balance=balance, open_share_price=open_share_price)})
+                logging.debug(
+                    "storing in wallet as %s", {mint_time: Short(balance=balance, open_share_price=open_share_price)}
+                )
             elif asset_type == "LONG":
                 wallet.longs.update({mint_time: Long(balance=balance)})
-                logging.debug("storing in wallet as %s",{mint_time: Long(balance=balance)})
+                logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
     return wallet
@@ -257,7 +261,7 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
         Tuple containing the max and priority fees.
     """
     # Pick out only type 2 transactions (EIP-1559). They have a max fee and priority fee.
-    type2_transactions = [txn for txn in block.transactions if txn.type == 2]
+    type2_transactions = [txn for txn in block.transactions if txn.type == 2] # noqa: PLR2004
     if len(type2_transactions) <= 0:  # No type 2 transactions in block
         return [], []
 
@@ -491,6 +495,8 @@ def get_instance(address: str, provider: ProviderAPI, contract_type: ContractTyp
         Address of the contract to instantiate.
     provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         Ape Provider object represents a connection to a blockchain network.
+    contract_type : ` ape.api.contract.ContractType <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.contract.ContractType>`_
+        Contract type to instantiate. Default is None, in which case the contract type is inferred from the address.
 
     Example
     -------
@@ -537,9 +543,7 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
     return contract_type
 
 
-def select_abi(
-    method: Callable, params: dict | None = None, args: Tuple | None = None
-) -> tuple[MethodABI, Tuple]:
+def select_abi(method: Callable, params: dict | None = None, args: Tuple | None = None) -> tuple[MethodABI, Tuple]:
     r"""Select the correct ABI for a method based on the provided parameters:
 
     * If `params` is provided, the ABI will be matched by keyword arguments
@@ -619,6 +623,8 @@ def ape_trade(
         Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
     maturity_time : int, optional
         The maturity time of the trade. Only used for `CLOSE_LONG`, and `CLOSE_SHORT`.
+    kwargs : dict, optional
+        Additional keyword arguments to pass to the trade method.
 
     Returns
     -------
@@ -627,7 +633,6 @@ def ape_trade(
     tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
-
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
         "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
@@ -684,12 +689,11 @@ def ape_trade(
 def attempt_txn(
     agent: AccountAPI, contract_txn: ContractTransaction | ContractTransactionHandler, *args, **kwargs
 ) -> ReceiptAPI | None:
-    r"""
-    Execute a transaction using fallback logic for undiagnosed cases
-    where a transaction fails due to gas price being too low.
+    r"""Execute a transaction using fallback logic when a transaction fails due to gas price being too low.
 
-    - The first attempt uses the recommended base fee, and a fixed multiple of the recommended priority fee
-    - On subsequent attempts, the priority fee is increased by a multiple of the base fee
+    Max gas is 2x the last block base fee, increasing to 3x on the second attempt.
+    Priority fee is 1x the recommended priority fee, increasing to (1+priorirty_fee_multiple) on the second attempt.
+    Priority_fee_multiple defaults to 5, but can be overriden as a keyword argument.
 
     Arguments
     ---------
@@ -738,8 +742,8 @@ def attempt_txn(
         log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
 
         kwargs["max_priority_fee_per_gas"] = int(
-            agent.provider.priority_fee * priority_fee_multiple * attempt
-        )  # agent.provider.priority_fee * priority_fee_multiple + base_fee * (attempt - 1)
+            agent.provider.priority_fee * (1+ priority_fee_multiple * (attempt - 1))
+        )
         kwargs["max_fee_per_gas"] = int(base_fee * (1 + attempt)) + kwargs["max_priority_fee_per_gas"]
         kwargs["sender"] = agent.address
         kwargs["nonce"] = agent.provider.get_nonce(agent.address)
