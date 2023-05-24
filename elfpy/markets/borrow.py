@@ -1,10 +1,9 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
-from __future__ import annotations  # types will be strings by default in 3.11
+from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 import elfpy.markets.base as base_market
 import elfpy.agents.wallet as wallet
@@ -140,7 +139,7 @@ class PricingModelFP(base_pm.PricingModelFP):
         self,
         loan_to_value_ratio: dict[types.TokenType, FixedPoint],
         collateral: types.QuantityFP,
-        spot_price: Optional[FixedPoint] = None,
+        spot_price: FixedPoint | None = None,
     ):
         """Values collateral and returns how much the agent can borrow against it"""
         collateral_value_in_base = collateral.amount  # if collateral is BASE
@@ -264,7 +263,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         self,
         wallet_address: int,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
-        spot_price: Optional[FixedPoint] = None,
+        spot_price: FixedPoint | None = None,
     ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas

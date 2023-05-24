@@ -4,11 +4,8 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-import numpy as np
-
-import elfpy
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
