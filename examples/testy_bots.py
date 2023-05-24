@@ -33,10 +33,10 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-import elfpy.utils.sim_utils as sim_utils
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.utils import sim_utils
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
 
@@ -512,7 +512,7 @@ def log_and_show_block_info():
 
 
 def get_simulator(_config):
-    """Get a python simulator"""
+    """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time_ = time.BlockTime()
     market_, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, _config)

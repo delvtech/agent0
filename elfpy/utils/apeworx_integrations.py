@@ -1,29 +1,29 @@
-"""Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
+"""Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Tuple
-from pathlib import Path
 
 import logging
 from collections import defaultdict, namedtuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Tuple
 
-from ape import Contract
-from ape.types import AddressType, ContractType
-from ape.exceptions import TransactionError, TransactionNotFoundError
-from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
-from ape.contracts import ContractContainer
-from ape.managers.project import ProjectManager
-from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 import pandas as pd
+from ape import Contract
+from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
+from ape.contracts import ContractContainer
+from ape.contracts.base import ContractTransaction, ContractTransactionHandler
+from ape.exceptions import TransactionError, TransactionNotFoundError
+from ape.managers.project import ProjectManager
+from ape.types import AddressType, ContractType
 
 import elfpy
 from elfpy import types
+from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.agents.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -58,7 +58,7 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     r"""Return the current market state from the smart contract.
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
     **kwargs : `dict`
@@ -115,7 +115,7 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
     r"""Get all trades from hyperdrive contract.
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
 
@@ -174,7 +174,7 @@ def get_wallet_from_onchain_trade_info(
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
-    ----------
+    ---------
     address_ : str
         Address of the wallet.
     index : int
@@ -251,7 +251,7 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
     r"""Get the max and priority fees from a block (type 2 transactions only).
 
     Arguments
-    ----------
+    ---------
     block : `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
 
@@ -279,7 +279,7 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     r"""Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
 
     Arguments
-    ----------
+    ---------
     block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
 
@@ -305,7 +305,7 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
-    r"""Parse the transaction receipt to get the "transfer single" trade event
+    r"""Parse the transaction receipt to get the "transfer single" trade event.
 
     Arguments
     ---------
@@ -490,7 +490,7 @@ def get_instance(address: str, provider: ProviderAPI, contract_type: ContractTyp
     r"""Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
 
     Arguments
-    ----------
+    ---------
     address : str
         Address of the contract to instantiate.
     provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
@@ -513,10 +513,10 @@ def get_instance(address: str, provider: ProviderAPI, contract_type: ContractTyp
 
 
 def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
-    r"""Get contract type from cache. Used for devnet, where Ape refuses to check the cache
+    r"""Get contract type from cache. Used for devnet, where Ape refuses to check the cache.
 
     Arguments
-    ----------
+    ---------
     address : str
         Address of the contract to instantiate.
     provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
@@ -544,7 +544,7 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
 
 
 def select_abi(method: Callable, params: dict | None = None, args: Tuple | None = None) -> tuple[MethodABI, Tuple]:
-    r"""Select the correct ABI for a method based on the provided parameters:
+    r"""Select the correct ABI for a method based on the provided parameters.
 
     * If `params` is provided, the ABI will be matched by keyword arguments
     * If `args` is provided, the ABI will be matched by the number of arguments.
