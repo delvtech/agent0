@@ -19,7 +19,7 @@ from typing import Optional, Type, cast
 import ape
 import numpy as np
 from ape import accounts
-from ape.api import ProviderAPI, ReceiptAPI
+from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
@@ -33,6 +33,7 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
+import elfpy.utils.sim_utils as sim_utils
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
 from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
@@ -263,7 +264,7 @@ def get_argparser() -> argparse.ArgumentParser:
         type=float,
     )
 
-    parser.add_argument("--devnet", help="Run on devnet", action="store_true")
+    parser.add_argument("--devnet", help="Run on devnet", action="store_false")  # store_false because default is True
     return parser
 
 
@@ -359,8 +360,8 @@ def get_accounts() -> list[KeyfileAccount]:
 def create_agent(
     _bot: BotInfo,
     _dev_accounts: list[KeyfileAccount],
-    faucet: ContractInstance,
-    base: ContractInstance,
+    faucet: Optional[ContractInstance],
+    base_: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
 ):
     """Create an agent as defined in bot_info, assign its address, give it enough base.
@@ -373,7 +374,7 @@ def create_agent(
         The list of dev accounts.
     faucet : ContractInstance
         Contract for faucet that mints the testnet base token
-    base : ContractInstance
+    base_ : ContractInstance
         Contract for base token
     on_chain_trade_info : ape_utils.OnChainTradeInfo
         Information about on-chain trades.
@@ -402,21 +403,26 @@ def create_agent(
         )
     agent = _bot.policy(**params)  # instantiate the agent with its policy and params
     agent.contract = _dev_accounts[_bot.index]  # assign its onchain contract
-    if (need_to_mint := params["budget"] - base.balanceOf(agent.contract.address) / 1e18) > 0:
+    if config.scratch["devnet"]:
+        agent.contract.balance += int(1e18) # give it some eth
+    if (need_to_mint := params["budget"] - base_.balanceOf(agent.contract.address) / 1e18) > 0:
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
-            txn_receipt: ReceiptAPI = faucet.mint(base.address, agent.wallet.address, int(50_000 * 1e18))
+            if config.scratch["devnet"]:
+                txn_receipt: ReceiptAPI = base_.mint(agent.contract.address, int(50_000 * 1e18), sender=deployer)
+            else:
+                txn_receipt: ReceiptAPI = faucet.mint(base_.address, agent.wallet.address, int(50_000 * 1e18))
             txn_receipt.await_confirmations()
     log_and_show(
         f" agent_{agent.contract.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
-        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base.balanceOf(agent.contract.address)/1e18)}"
+        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_.balanceOf(agent.contract.address)/1e18)}"
     )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address_=agent.contract.address,
         index=_bot.index,
         info=on_chain_trade_info,
         hyperdrive_contract=hyperdrive,
-        base_contract=base,
+        base_contract=base_,
     )
     return agent
 
@@ -432,7 +438,9 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
         List of dev accounts.
     """
     _dev_accounts: list[KeyfileAccount] = get_accounts()
-    faucet = ape_utils.get_instance(FAUCET_ADDRESS, provider=provider)
+    faucet = None
+    if not config.scratch["devnet"]:
+        faucet = ape_utils.get_instance(FAUCET_ADDRESS, provider=provider)
 
     bot_num = 0
     for bot_name in config.scratch["bot_names"]:
@@ -456,7 +464,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
                 _bot=bot_info,
                 _dev_accounts=_dev_accounts,
                 faucet=faucet,
-                base=dai,
+                base_=base,
                 on_chain_trade_info=on_chain_trade_info,
             )
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
@@ -481,9 +489,11 @@ def do_trade():
     trade = trade_object.trade
     agent = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = int(trade.trade_amount * 1e18)
-    if dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
+    if (
+        base.allowance(agent.address, hyperdrive.address) < amount
+    ):  # allowance(address owner, address spender) → uint256
         args = hyperdrive.address, int(50_000 * 1e18)
-        ape_utils.attempt_txn(agent, dai.approve, *args)
+        ape_utils.attempt_txn(agent, base.approve, *args)
     params = {"trade_type": trade.action_type.name, "hyperdrive_contract": hyperdrive, "agent": agent, "amount": amount}
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
@@ -502,25 +512,82 @@ def log_and_show_block_info():
     if not hasattr(latest_block, "base_fee"):
         raise ValueError("latest block does not have base_fee")
     base_fee = getattr(latest_block, "base_fee") / 1e9
-    log_string = "Block number: {}, Block time: {}, Trades without crashing: {}, base_fee: {}"
-    log_variab = fmt(block_number), datetime.fromtimestamp(block_time), NO_CRASH, base_fee
-    log_and_show(log_string, *log_variab)
+    log_and_show(
+        "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
+        fmt(block_number),
+        datetime.fromtimestamp(block_time),
+        NO_CRASH,
+        base_fee,
+    )
+
+
+def get_simulator(_config):
+    """Get a python simulator"""
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    block_time = time.BlockTime()
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, _config)
+    return simulators.Simulator(_config, market, block_time)
+
+
+def deploy_hyperdrive() -> ContractInstance:
+    """Deploy Hyperdrive when operating on a fresh fork."""
+    assert isinstance(deployer, TestAccountAPI)
+    initial_supply = int(config.target_liquidity * 1e18)
+    initial_apr = int(config.target_fixed_apr * 1e18)
+    initial_share_price = int(config.init_share_price * 1e18)
+    checkpoint_duration = 86400  # seconds = 1 day
+    checkpoints_per_term = 365
+    position_duration_seconds = checkpoint_duration * checkpoints_per_term
+    time_stretch = int(1 / simulator.market.time_stretch_constant * 1e18)
+    curve_fee = int(config.curve_fee_multiple * 1e18)
+    flat_fee = int(config.flat_fee_multiple * 1e18)
+    gov_fee = 0
+    base.mint(int(initial_supply * 1e18), sender=deployer)  # minted to sender
+    # Deploy hyperdrive on the chain
+    hyperdrive_: ContractInstance = deployer.deploy(
+        project.get_contract("MockHyperdriveTestnet"),
+        base,
+        initial_apr,
+        initial_share_price,
+        checkpoints_per_term,
+        checkpoint_duration,
+        time_stretch,
+        (curve_fee, flat_fee, gov_fee),
+        deployer,
+    )
+    with ape.accounts.use_sender(deployer):
+        base.approve(hyperdrive_, initial_supply)
+        hyperdrive_.initialize(initial_supply, initial_apr, deployer, True)
+    return hyperdrive_
 
 
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
+    deployer = None
     # Set up ape
     if config.scratch["devnet"]:  # if devnet setting is enabled
+        simulator = get_simulator(config)  # Instantiate the sim market
         k, ps = "ethereum:local:foundry", {"fork_url": "http://localhost:8547", "port": 8549}
         provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
+        deployer = ape.accounts.test_accounts[0]
+        deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
         print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
     else:
         provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
     project = ape_utils.HyperdriveProject(Path.cwd())
-    dai: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
-    hyperdrive: ContractInstance = project.get_hyperdrive_contract()
+    base: ContractInstance
+    if config.scratch["devnet"]:
+        assert isinstance(deployer, TestAccountAPI)
+        base: ContractInstance = deployer.deploy(project.get_contract("ERC20Mintable"))
+        fixed_math: ContractInstance = deployer.deploy(project.get_contract("MockFixedPointMath"))
+    else:
+        base: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
+    if config.scratch["devnet"]:
+        hyperdrive: ContractInstance = deploy_hyperdrive()
+    else:
+        hyperdrive: ContractInstance = project.get_hyperdrive_contract()
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
 
     # read the hyperdrive config from the contract, and log (and print) it
@@ -558,7 +625,7 @@ if __name__ == "__main__":
                         do_trade()
                         NO_CRASH = set_days_without_crashing(NO_CRASH + 1)  # set and save to file
                     except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-                        log_and_show("Crashed unexpectedly: {}", exc)
+                        log_and_show("Crashed unexpectedly: %s", exc)
                         NO_CRASH = set_days_without_crashing(0)  # set and save to file
             last_executed_block = block_number
         sleep(1)

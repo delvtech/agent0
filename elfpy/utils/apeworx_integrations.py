@@ -486,7 +486,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     return agent_deltas
 
 
-def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
+def get_instance(address: str, provider: ProviderAPI, contract_type: Optional[ContractType] = None) -> ContractInstance:
     """Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
 
     Arguments
@@ -505,7 +505,8 @@ def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
     ContractInstance
         Contract instance at the specified address.
     """
-    contract_type = get_contract_type(address, provider=provider)
+    if contract_type is None:
+        contract_type = get_contract_type(address, provider=provider)
     return Contract(address=address, contract_type=contract_type)
 
 
