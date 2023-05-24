@@ -1,17 +1,13 @@
 # %%
 from __future__ import annotations
 
-import numpy as np
-from numpy.random._generator import Generator
-from scipy import special
-import matplotlib.pyplot as plt
-import pandas as pd
 import os
 
-from elfpy import WEI, PRECISION_THRESHOLD
-from elfpy.simulators import Config
-from elfpy.agents.agent import Agent
-from elfpy.utils import sim_utils
+import numpy as np
+from numpy.random._generator import Generator as NumpyGenerator
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy import special
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -19,12 +15,27 @@ import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
+from elfpy import WEI_FP, PRECISION_THRESHOLD_FP
+from elfpy.simulators import ConfigFP
+from elfpy.agents.agent import AgentFP
+from elfpy.utils import sim_utils
+from elfpy.math import FixedPoint
+
+# pylint: disable=line-too-long
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-arguments
+# pylint: disable=invalid-name
+# pylint: disable=not-an-iterable
+# pylint: disable=unsubscriptable-object
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
+
+
 # %% [markdown]
 # ### Setup experiment parameters
 
 
 # %%
-def homogeneous_poisson(rng: Generator, rate: float, tmax: int, bin_size: int = 1) -> np.ndarray:
+def homogeneous_poisson(rng: NumpyGenerator, rate: float, tmax: int, bin_size: int = 1) -> np.ndarray:
     """Generate samples from a homogeneous Poisson distribution
 
     Attributes
@@ -71,7 +82,7 @@ def vault_flip_probs(apr: float, min_apr: float = 0.0, max_apr: float = 1.0, num
 
 
 def poisson_vault_apr(
-    rng: Generator,
+    rng: NumpyGenerator,
     num_trading_days: int,
     initial_apr: float,
     jump_size: float,
@@ -124,7 +135,7 @@ def DSR_historical(num_dates=90):
     return dsr_new["DAI_SAV_RATE"].to_list()
 
 
-config = Config()
+config = ConfigFP()
 # config.init_lp = False
 config.random_seed = 123
 
@@ -146,22 +157,23 @@ trade_chance = 4 / (
 config.target_fixed_apr = 0.05  # 5 # target fixed APR of the initial market after the LP
 config.target_liquidity = 5_000_000  # target total liquidity of the initial market, before any trades
 
-vault_apr_init = 0.05  # Initial vault APR
-vault_apr_jump_size = 0.002  # Scale of the vault APR change (vault_apr (+/-)= jump_size)
-vault_jumps_per_year = 100  # 4 # The average number of jumps per year
-vault_apr_jump_direction = "random_weighted"  # The direction of a rate change. Can be 'up', 'down', or 'random'.
-vault_apr_lower_bound = 0.01  # minimum allowable vault apr
-vault_apr_upper_bound = 0.09  # maximum allowable vault apr
+config.scratch["vault_apr_init"] = 0.05  # Initial vault APR
+config.scratch["vault_apr_jump_size"] = 0.002  # Scale of the vault APR change (vault_apr (+/-)= jump_size)
+config.scratch["vault_jumps_per_year"] = 100  # 4 # The average number of jumps per year
+# The direction of a rate change. Can be 'up', 'down', or 'random'.
+config.scratch["vault_apr_jump_direction"] = "random_weighted"
+config.scratch["vault_apr_lower_bound"] = 0.01  # minimum allowable vault apr
+config.scratch["vault_apr_upper_bound"] = 0.09  # maximum allowable vault apr
 
 config.variable_apr = poisson_vault_apr(
     rng=config.rng,
     num_trading_days=config.num_trading_days,
-    initial_apr=vault_apr_init,
-    jump_size=vault_apr_jump_size,
-    vault_jumps_per_year=vault_jumps_per_year,
-    direction=vault_apr_jump_direction,
-    lower_bound=vault_apr_lower_bound,
-    upper_bound=vault_apr_upper_bound,
+    initial_apr=config.scratch["vault_apr_init"],
+    jump_size=config.scratch["vault_apr_jump_size"],
+    vault_jumps_per_year=config.scratch["vault_jumps_per_year"],
+    direction=config.scratch["vault_apr_jump_direction"],
+    lower_bound=config.scratch["vault_apr_lower_bound"],
+    upper_bound=config.scratch["vault_apr_upper_bound"],
 )
 
 # %% [markdown]
@@ -169,7 +181,7 @@ config.variable_apr = poisson_vault_apr(
 
 
 # %%
-def get_biggest_position(position_dict):
+def get_biggest_position(position_dict) -> FixedPoint | None:
     """Return the biggest trade in the position_dict"""
     biggest_position = None
     for mint_time, position in position_dict.items():
@@ -179,22 +191,28 @@ def get_biggest_position(position_dict):
     return biggest_position
 
 
-class RegularGuy(Agent):
+class RegularGuy(AgentFP):
     """
     Agent that tracks the vault APR, trading both long and short by default
     """
 
-    def __init__(self, rng: Generator, trade_chance: float, wallet_address: int, budget: int = 10_000) -> None:
+    def __init__(
+        self,
+        rng: NumpyGenerator,
+        trade_chance: float,
+        wallet_address: int,
+        budget: FixedPoint = FixedPoint("10_000.0"),
+    ) -> None:
         """Add custom stuff then call basic policy init"""
         self.trade_long = True  # default to allow easy overriding
         self.trade_short = True  # default to allow easy overriding
         self.trade_chance = trade_chance
         self.rng = rng
         self.last_think_time = None
-        self.threshold = self.rng.normal(loc=0, scale=0.005)
+        self.threshold = FixedPoint(self.rng.normal(loc=0, scale=0.005))
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.Market) -> list[hyperdrive_actions.MarketAction]:
+    def action(self, market: hyperdrive_market.MarketFP) -> list[hyperdrive_actions.MarketActionFP]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:
@@ -231,36 +249,39 @@ class RegularGuy(Agent):
                     available_actions = [hyperdrive_actions.MarketActionType.CLOSE_LONG]
                 elif self.trade_short is True:
                     available_actions += [hyperdrive_actions.MarketActionType.OPEN_SHORT]  # sell to open
-            if available_actions != []:  # continue only if there are available actions
+            if available_actions:  # continue only if there are available actions
                 action_type = self.rng.choice(
                     np.array(available_actions), size=1
                 ).item()  # choose one random trade type
-                PT_needed = (
-                    abs(
-                        market.pricing_model.calc_bond_reserves(
-                            target_apr=market.market_state.variable_apr,
-                            time_remaining=market.position_duration,
-                            market_state=market.market_state,
-                        )
-                        - market.market_state.bond_reserves
+                pt_needed = abs(
+                    market.pricing_model.calc_bond_reserves(
+                        target_apr=market.market_state.variable_apr,
+                        time_remaining=market.position_duration,
+                        market_state=market.market_state,
                     )
-                    / 2
+                    - market.market_state.bond_reserves
+                ) / FixedPoint("2.0")
+                amount_to_trade_base = (
+                    min(FixedPoint("100_000.0"), pt_needed * market.spot_price) if pt_needed > 0 else FixedPoint(0)
                 )
-                amount_to_trade_base = min(100_000, PT_needed * market.spot_price) if PT_needed > 0 else 0
                 if market.spot_price == 0:
-                    amount_to_trade_pt = np.Inf
+                    amount_to_trade_pt = FixedPoint("inf")
                 else:
                     amount_to_trade_pt = amount_to_trade_base / market.spot_price
                 if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
                     max_short = self.get_max_short(market)
-                    if max_short > WEI + PRECISION_THRESHOLD:  # if max_short is greater than the minimum eth amount
+                    # TODO: This is a hack until we fix get_max
+                    max_short = max_short / FixedPoint("100.0")
+                    if (
+                        max_short > WEI_FP + PRECISION_THRESHOLD_FP
+                    ):  # if max_short is greater than the minimum eth amount
                         trade_amount = np.maximum(
-                            WEI + PRECISION_THRESHOLD, np.minimum(max_short, amount_to_trade_pt)
+                            WEI_FP + PRECISION_THRESHOLD_FP, min(max_short, amount_to_trade_pt)
                         )  # WEI + PRECISION_THRESHOLD <= trade_amount <= max_short
                         action_list = [
                             types.Trade(
                                 market=types.MarketType.HYPERDRIVE,
-                                trade=hyperdrive_actions.MarketAction(
+                                trade=hyperdrive_actions.MarketActionFP(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
                                     wallet=self.wallet,
@@ -270,12 +291,14 @@ class RegularGuy(Agent):
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:
                     max_long = self.get_max_long(market)
-                    if max_long > WEI + PRECISION_THRESHOLD:  # if max_long is greater than the minimum eth amount
-                        trade_amount = np.maximum(WEI + PRECISION_THRESHOLD, np.minimum(max_long, amount_to_trade_base))
+                    # TODO: This is a hack until we fix get_max
+                    max_long = max_long / FixedPoint("100.0")
+                    if max_long > WEI_FP + PRECISION_THRESHOLD_FP:  # if max_long is greater than the minimum eth amount
+                        trade_amount = max(WEI_FP + PRECISION_THRESHOLD_FP, min(max_long, amount_to_trade_base))
                         action_list = [
                             types.Trade(
                                 market=types.MarketType.HYPERDRIVE,
-                                trade=hyperdrive_actions.MarketAction(
+                                trade=hyperdrive_actions.MarketActionFP(
                                     action_type=action_type,
                                     trade_amount=trade_amount,
                                     wallet=self.wallet,
@@ -285,13 +308,13 @@ class RegularGuy(Agent):
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
                     biggest_short = get_biggest_position(self.wallet.shorts)
-                    trade_amount = np.maximum(
-                        WEI + PRECISION_THRESHOLD, np.minimum(amount_to_trade_pt, biggest_short["balance"])
+                    trade_amount = max(
+                        WEI_FP + PRECISION_THRESHOLD_FP, min(amount_to_trade_pt, biggest_short["balance"])
                     )
                     action_list = [
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive_actions.MarketAction(
+                            trade=hyperdrive_actions.MarketActionFP(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
                                 wallet=self.wallet,
@@ -302,12 +325,12 @@ class RegularGuy(Agent):
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
                     biggest_long = get_biggest_position(self.wallet.longs)
                     trade_amount = np.maximum(
-                        WEI + PRECISION_THRESHOLD, np.minimum(amount_to_trade_pt, biggest_long["balance"])
+                        WEI_FP + PRECISION_THRESHOLD_FP, np.minimum(amount_to_trade_pt, biggest_long["balance"])
                     )
                     action_list = [
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
-                            trade=hyperdrive_actions.MarketAction(
+                            trade=hyperdrive_actions.MarketActionFP(
                                 action_type=action_type,
                                 trade_amount=trade_amount,
                                 wallet=self.wallet,
@@ -315,7 +338,7 @@ class RegularGuy(Agent):
                             ),
                         )
                     ]
-                if action_list != [] and (market.block_time.time * 365) % 36 <= 1:
+                if action_list and (market.block_time.time * 365) % 36 <= 1:
                     print(
                         f"t={market.block_time.time*365:.0f}: F:{market.fixed_apr:.3%} V:{market.market_state.variable_apr:.3%}"
                         + f"agent #{self.wallet.address:03.0f} is going to {action_type} of size {trade_amount}",
@@ -324,13 +347,13 @@ class RegularGuy(Agent):
 
 
 def get_example_agents(
-    rng: Generator,
-    budget: int,
+    rng: NumpyGenerator,
+    budget: FixedPoint,
     new_agents: float,
     existing_agents: float = 0,
     direction: str = None,
     trade_chance: float = 1,
-) -> "list[Agent]":
+) -> list[AgentFP]:
     """Instantiate a set of custom agents"""
     agents = []
     new_agents = int(new_agents)
@@ -367,7 +390,7 @@ output_utils.setup_logging(
     log_level=output_utils.text_to_log_level(config.log_level),
 )
 
-simulator = sim_utils.get_simulator(config)
+simulator = sim_utils.get_simulator_fp(config)
 simulator.collect_and_execute_trades()
 
 
@@ -376,7 +399,7 @@ simulator.collect_and_execute_trades()
 
 # %%
 num_agents = 100  # int specifying how many agents you want to simulate
-agent_budget = 9.65 * 1e6 / num_agents
+agent_budget = FixedPoint(9.65 * 1e6 / num_agents)
 # add a bunch of regular guys
 short_agents = get_example_agents(
     rng=simulator.rng,
@@ -412,15 +435,15 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables(simulator)
+trades = post_processing.compute_derived_variables_fp(simulator)
 for col in trades:
     if col.startswith("agent") and not col.endswith("lp_tokens"):
         divisor = 1e6  # 1 million divisor for everyone
-        trades[col] = trades[col] / divisor
+        trades[col] = trades[col] / divisor  # pylint: disable=unsupported-assignment-operation
 print(f"number of trades = {len(trades)}")
 cols = trades.columns.to_list()
 cols_to_display = ["day"] + [cols[10]] + cols[15:18] + ["share_reserves", "bond_reserves", "total_liquidity_usd"]
-display(trades[cols_to_display].head(5))
+print(trades[cols_to_display].head(5))
 
 # %%
 # aggregate data
@@ -439,7 +462,7 @@ trades_agg = trades.groupby(keep_columns).agg(
 )
 trades_agg.columns = ["_".join(col).strip() for col in trades_agg.columns.values]
 trades_agg = trades_agg.reset_index()
-display(trades_agg.head(5).style.hide_index())
+print(trades_agg.head(5).style.hide_index())
 
 
 # %%
@@ -458,6 +481,7 @@ def get_pnl_excluding_agent_0_with_day(trades_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def nice_ticks(ax):
+    """Make ticks nice"""
     xtick_step = max(1, config.num_trading_days // 10)  # divide by 10, but at least 1
     xticks = [x for x in range(0 + xtick_step - 1, config.num_trading_days + 1, xtick_step)]
     if xtick_step > 1:
@@ -470,6 +494,7 @@ def nice_ticks(ax):
 
 
 def set_labels(ax, title, xlabel, ylabel):
+    """Set labels"""
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -480,8 +505,8 @@ data_no_mock = get_pnl_excluding_agent_0_no_mock_with_day(trades)
 
 # print specific agent info
 # n=12
-# display(trades.loc[:,['day','run_trade_number']+[col for col in trades if col.startswith(f"agent_{n}_")]])
-# display(trades.loc[:,[f"agent_{n}_total_longs",f"agent_{n}_total_shorts"]].max())
+# print(trades.loc[:,['day','run_trade_number']+[col for col in trades if col.startswith(f"agent_{n}_")]])
+# print(trades.loc[:,[f"agent_{n}_total_longs",f"agent_{n}_total_shorts"]].max())
 
 
 # %%
@@ -578,43 +603,44 @@ nice_ticks(ax)
 plt.gca().set_xlabel("Day")
 
 # %%
-exclude_last_day = True
-exclude_first_day = True
-num_agents = 1
-start_idx = 0 if exclude_first_day is False else 1
-first_trade_that_is_on_last_day = min(trades_agg.index[trades_agg.day == max(trades_agg.day)])
-end_idx = len(trades_agg) - 2 if exclude_last_day is True else len(trades_agg) - 1
-data = trades_agg.loc[start_idx:end_idx, "agent_0_pnl_no_mock_mean"]
+if len(trades_agg) > 1:  # if there were multiple trades
+    exclude_last_day = True
+    exclude_first_day = True
+    num_agents = 1
+    start_idx = 0 if exclude_first_day is False else 1
+    first_trade_that_is_on_last_day = min(trades_agg.index[trades_agg.day == max(trades_agg.day)])
+    end_idx = len(trades_agg) - 2 if exclude_last_day is True else len(trades_agg) - 1
+    data = trades_agg.loc[start_idx:end_idx, "agent_0_pnl_no_mock_mean"]
 
-fig, ax = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
+    fig, ax = plt.subplots(3, 1, sharex=False, gridspec_kw={"wspace": 0.3, "hspace": 0.2}, figsize=(6, 15))
 
-# first subplot
-ax[0].plot(
-    trades_agg.loc[start_idx:end_idx, "day"],
-    data,
-    label=f"mean = {trades_agg.loc[end_idx,'agent_0_pnl_no_mock_mean']:.3f}",
-)
-nice_ticks(ax[0])
-set_labels(ax=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
+    # first subplot
+    ax[0].plot(
+        trades_agg.loc[start_idx:end_idx, "day"],
+        data,
+        label=f"mean = {trades_agg.loc[end_idx,'agent_0_pnl_no_mock_mean']:.3f}",
+    )
+    nice_ticks(ax[0])
+    set_labels(ax=ax[0], title="LP PNL Over Time", xlabel="Day", ylabel="PnL in millions")
 
-# second subplot
-ax[1].bar(
-    trades_agg.loc[start_idx:end_idx, "day"],
-    trades_agg.loc[start_idx:end_idx, "delta_base_abs_sum"] / 1000,
-    label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_sum'].mean():,.0f}",
-)
-ax[1].legend(loc="best")
-nice_ticks(ax[1])
-set_labels(ax=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
+    # second subplot
+    ax[1].bar(
+        trades_agg.loc[start_idx:end_idx, "day"],
+        trades_agg.loc[start_idx:end_idx, "delta_base_abs_sum"] / 1000,
+        label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_sum'].mean():,.0f}",
+    )
+    ax[1].legend(loc="best")
+    nice_ticks(ax[1])
+    set_labels(ax=ax[1], title="Market Volume", xlabel="Day", ylabel="Base in thousands")
 
-# third subplot
-ax[2].bar(
-    trades_agg.loc[start_idx:end_idx, "day"],
-    trades_agg.loc[start_idx:end_idx, "delta_base_abs_count"],
-    label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
-)
-ax[2].legend(loc="best")
-nice_ticks(ax[2])
-set_labels(ax=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
+    # third subplot
+    ax[2].bar(
+        trades_agg.loc[start_idx:end_idx, "day"],
+        trades_agg.loc[start_idx:end_idx, "delta_base_abs_count"],
+        label=f"mean = {trades_agg.loc[start_idx:end_idx,'delta_base_abs_count'].mean():,.1f}",
+    )
+    ax[2].legend(loc="best")
+    nice_ticks(ax[2])
+    set_labels(ax=ax[2], title="# of trades", xlabel="Day", ylabel="# of trades")
 
 # %%
