@@ -261,7 +261,7 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
         Tuple containing the max and priority fees.
     """
     # Pick out only type 2 transactions (EIP-1559). They have a max fee and priority fee.
-    type2_transactions = [txn for txn in block.transactions if txn.type == 2] # noqa: PLR2004
+    type2_transactions = [txn for txn in block.transactions if txn.type == 2]  # noqa: PLR2004
     if len(type2_transactions) <= 0:  # No type 2 transactions in block
         return [], []
 
@@ -742,7 +742,7 @@ def attempt_txn(
         log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
 
         kwargs["max_priority_fee_per_gas"] = int(
-            agent.provider.priority_fee * (1+ priority_fee_multiple * (attempt - 1))
+            agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
         )
         kwargs["max_fee_per_gas"] = int(base_fee * (1 + attempt)) + kwargs["max_priority_fee_per_gas"]
         kwargs["sender"] = agent.address

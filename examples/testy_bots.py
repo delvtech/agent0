@@ -404,7 +404,7 @@ def create_agent(
     agent = _bot.policy(**params)  # instantiate the agent with its policy and params
     agent.contract = _dev_accounts[_bot.index]  # assign its onchain contract
     if config.scratch["devnet"]:
-        agent.contract.balance += int(1e18) # give it some eth
+        agent.contract.balance += int(1e18)  # give it some eth
     if (need_to_mint := params["budget"] - base_.balanceOf(agent.contract.address) / 1e18) > 0:
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
@@ -470,6 +470,7 @@ def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
             )
             _sim_agents[f"agent_{agent.wallet.address}"] = agent
     return _sim_agents, _dev_accounts
+
 
 def do_trade():
     """Execute agent trades on hyperdrive solidity contract."""
@@ -554,7 +555,7 @@ if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
-    deployer = None # pylint: disable=invalid-name
+    deployer = None  # pylint: disable=invalid-name
     # Set up ape
     if config.scratch["devnet"]:  # if devnet setting is enabled
         simulator = get_simulator(config)  # Instantiate the sim market
