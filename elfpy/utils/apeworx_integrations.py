@@ -1,31 +1,29 @@
-"""Helper functions for integrating the sim repo with solidity contracts via Apeworx"""
+"""Helper functions for integrating the sim repo with solidity contracts via Apeworx."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
-from pathlib import Path
 
 import logging
-from dataclasses import dataclass
 from collections import defaultdict, namedtuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Tuple
 
-from ape import Contract
-from ape.types import AddressType, ContractType
-from ape.exceptions import TransactionError
-from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
-from ape.contracts import ContractContainer
-from ape.managers.project import ProjectManager
-from ape.contracts.base import ContractTransaction, ContractTransactionHandler
 import numpy as np
 import pandas as pd
+from ape import Contract
+from ape.api import BlockAPI, ProviderAPI, ReceiptAPI, TransactionAPI
+from ape.contracts import ContractContainer
+from ape.contracts.base import ContractTransaction, ContractTransactionHandler
+from ape.exceptions import TransactionError, TransactionNotFoundError
+from ape.managers.project import ProjectManager
+from ape.types import AddressType, ContractType
 
 import elfpy
 from elfpy import types
+from elfpy.agents.wallet import Long, Short, Wallet
 from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.types import freezable
-from elfpy.agents.wallet import Long, Short, Wallet
 
 if TYPE_CHECKING:
     from ape.api.accounts import AccountAPI
@@ -57,12 +55,14 @@ class HyperdriveProject(ProjectManager):
 
 
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
-    """Return the current market state from the smart contract.
+    r"""Return the current market state from the smart contract.
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+    **kwargs : `dict`
+        Keyword arguments to pass to the smart contract.
 
     Returns
     -------
@@ -112,10 +112,10 @@ OnChainTradeInfo = namedtuple(
 
 
 def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTradeInfo:
-    """Get all trades from hyperdrive contract.
+    r"""Get all trades from hyperdrive contract.
 
     Arguments
-    ----------
+    ---------
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
 
@@ -145,7 +145,6 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
     tuple_series = trades.apply(func=lambda x: hyperdrive_assets.decode_asset_id(int(x["id"])), axis=1)  # type: ignore
     trades["prefix"], trades["maturity_timestamp"] = zip(*tuple_series)  # split into two columns
     trades["trade_type"] = trades["prefix"].apply(lambda x: hyperdrive_assets.AssetIdPrefix(x).name)
-    trades["value"] = trades["value"]
 
     unique_maturities_ = trades["maturity_timestamp"].unique()
     unique_maturities_ = unique_maturities_[unique_maturities_ != 0]
@@ -155,12 +154,10 @@ def get_on_chain_trade_info(hyperdrive_contract: ContractInstance) -> OnChainTra
 
     unique_block_numbers_ = trades["block_number"].unique()
 
-    # map share price to block number
-    share_price_ = {}
-    for block_number_ in unique_block_numbers_:
-        share_price_ |= {
-            block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
-        }
+    share_price_ = {
+        block_number_: hyperdrive_contract.getPoolInfo(block_identifier=int(block_number_))["sharePrice"]
+        for block_number_ in unique_block_numbers_
+    }
     for block_number_, price in share_price_.items():
         logging.debug(("block_number_={}, price={}", block_number_, price))
 
@@ -174,15 +171,15 @@ def get_wallet_from_onchain_trade_info(
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
 ) -> Wallet:
-    """Construct wallet balances from on-chain trade info.
+    r"""Construct wallet balances from on-chain trade info.
 
     Arguments
-    ----------
+    ---------
     address_ : str
         Address of the wallet.
     index : int
         Index of the wallet.
-    on_chain_trade_info : OnChainTradeInfo
+    info : OnChainTradeInfo
         On-chain trade info.
     hyperdrive_contract : `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
         Contract pointing to the initialized Hyperdrive (or MockHyperdriveTestnet) smart contract.
@@ -198,45 +195,63 @@ def get_wallet_from_onchain_trade_info(
     wallet = Wallet(
         address=index, balance=types.Quantity(amount=base_contract.balanceOf(address_), unit=types.TokenType.BASE)
     )
-    for position_id in info.unique_ids:
+    for position_id in info.unique_ids:  # loop across all unique positions
         trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
             info.trades["id"] == position_id
         )
-        logging.debug("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
+        log_and_show("found %s trades for %s in position %s", sum(trades_in_position), address_[:8], position_id)
         balance = (
             info.trades.loc[(trades_in_position) & (info.trades["to"] == address_), "value"].sum()
             - info.trades.loc[(trades_in_position) & (info.trades["from"] == address_), "value"].sum()
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        assert (
-            abs(balance - hyperdrive_contract.balanceOf(position_id, address_)) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
-        ), (
-            f"events {balance=} and {hyperdrive_contract.balanceOf(position_id, address_)=} disagree"
-            f"by more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
-        )
+        mint_time = maturity - elfpy.SECONDS_IN_YEAR
+        log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
+
+        # verify our calculation against the onchain balance
+        on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
+        if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
+            raise ValueError(
+                f"events {balance=} and {on_chain_balance=} disagree by "
+                f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
+            )
+        log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
 
         # check if there's an outstanding balance
-        if balance != 0 or hyperdrive_contract.balanceOf(position_id, address_) != 0:
-            # loop across all the positions owned by this wallet
-            for specific_trade in trades_in_position.index[trades_in_position]:
-                if asset_type == "SHORT":
-                    open_share_price = info.share_price[info.trades.loc[specific_trade, "block_number"]]
-                    wallet.shorts |= {
-                        maturity - elfpy.SECONDS_IN_YEAR: Short(balance=balance, open_share_price=open_share_price)
-                    }
-                elif asset_type == "LONG":
-                    wallet.longs |= {maturity - elfpy.SECONDS_IN_YEAR: Long(balance=balance)}
-                elif asset_type == "LP":
-                    wallet.lp_tokens += balance
+        if balance != 0 or on_chain_balance != 0:
+            if asset_type == "SHORT":
+                # loop across all the positions owned by this wallet
+                sum_product_of_open_share_price_and_value, sum_value = 0, 0
+                for specific_trade in trades_in_position.index[trades_in_position]:
+                    value = info.trades.loc[specific_trade, "value"]
+                    value *= -1 if info.trades.loc[specific_trade, "from"] == address_ else 1
+                    sum_value += value
+                    sum_product_of_open_share_price_and_value += (
+                        value * info.share_price[info.trades.loc[specific_trade, "block_number"]]
+                    )
+                open_share_price = sum_product_of_open_share_price_and_value / sum_value
+                assert (
+                    abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
+                ), "weighted average open share price calculation is wrong"
+                logging.debug("calculated weighted average open share price of %s", open_share_price)
+                wallet.shorts.update({mint_time: Short(balance=balance, open_share_price=open_share_price)})
+                logging.debug(
+                    "storing in wallet as %s", {mint_time: Short(balance=balance, open_share_price=open_share_price)}
+                )
+            elif asset_type == "LONG":
+                wallet.longs.update({mint_time: Long(balance=balance)})
+                logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
+            elif asset_type == "LP":
+                wallet.lp_tokens += balance
     return wallet
 
 
 def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
-    """Get the max and priority fees from a block (type 2 transactions only).
+    r"""Get the max and priority fees from a block (type 2 transactions only).
 
     Arguments
-    ----------
+    ---------
     block : `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
 
@@ -246,9 +261,9 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
         Tuple containing the max and priority fees.
     """
     # Pick out only type 2 transactions (EIP-1559). They have a max fee and priority fee.
-    type2_transactions = [txn for txn in block.transactions if txn.type == 2]
-    if len(type2_transactions) <= 0:
-        raise ValueError("No type 2 transactions in block")
+    type2_transactions = [txn for txn in block.transactions if txn.type == 2]  # noqa: PLR2004
+    if len(type2_transactions) <= 0:  # No type 2 transactions in block
+        return [], []
 
     # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
     max_fees, priority_fees = zip(*[(txn.max_fee, txn.max_priority_fee) for txn in type2_transactions])
@@ -261,10 +276,10 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
 
 
 def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
-    """Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
+    r"""Get gas stats for a given block: maximum and average of max and priority fees (type 2 transactions only).
 
     Arguments
-    ----------
+    ---------
     block: `ape.eth2.BlockAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.BlockAPI>`_
         Block to get gas fees from.
 
@@ -275,6 +290,8 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     """
     # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
     max_fees, priority_fees = get_gas_fees(block)
+    if len(max_fees) <= 0:  # No type 2 transactions in block
+        return np.nan, np.nan, np.nan, np.nan
 
     # Calculate max and avg for max_fees
     _max_max_fee = max(max_fees)
@@ -288,7 +305,7 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
 
 
 def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
-    r"""Parse the transaction receipt to get the "transfer single" trade event
+    r"""Parse the transaction receipt to get the "transfer single" trade event.
 
     Arguments
     ---------
@@ -317,8 +334,7 @@ def get_transfer_single_event(tx_receipt: ReceiptAPI) -> ContractLog:
 
 
 def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance):
-    """
-    Return everything returned by `getPoolInfo()` in the smart contracts.
+    r"""Return everything returned by `getPoolInfo()` in the smart contracts.
 
     Arguments
     ---------
@@ -362,7 +378,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     """Get the change in an agent's wallet from a transaction receipt."""
     agent = tx_receipt.operator
     event_args = tx_receipt.event_arguments
-    event_args |= {k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]}
+    event_args.update({k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]})
     # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
@@ -470,15 +486,17 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     return agent_deltas
 
 
-def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
-    """Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
+def get_instance(address: str, provider: ProviderAPI, contract_type: ContractType | None = None) -> ContractInstance:
+    r"""Instantiate Contract at a specific address, explicitly using the cache (where Ape refuses to).
 
     Arguments
-    ----------
+    ---------
     address : str
         Address of the contract to instantiate.
     provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
         Ape Provider object represents a connection to a blockchain network.
+    contract_type : ` ape.api.contract.ContractType <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.contract.ContractType>`_
+        Contract type to instantiate. Default is None, in which case the contract type is inferred from the address.
 
     Example
     -------
@@ -489,15 +507,16 @@ def get_instance(address: str, provider: ProviderAPI) -> ContractInstance:
     ContractInstance
         Contract instance at the specified address.
     """
-    contract_type = get_contract_type(address, provider=provider)
+    if contract_type is None:
+        contract_type = get_contract_type(address, provider=provider)
     return Contract(address=address, contract_type=contract_type)
 
 
 def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
-    """Get contract type from cache. Used for devnet, where Ape refuses to check the cache
+    r"""Get contract type from cache. Used for devnet, where Ape refuses to check the cache.
 
     Arguments
-    ----------
+    ---------
     address : str
         Address of the contract to instantiate.
     provider : ` ape.api.providers.ProviderAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.providers.ProviderAPI>`_
@@ -524,11 +543,8 @@ def get_contract_type(address: str, provider: ProviderAPI) -> ContractType:
     return contract_type
 
 
-def select_abi(
-    method: Callable, params: Optional[dict] = None, args: Optional[Tuple] = None
-) -> tuple[MethodABI, Tuple]:
-    """
-    Select the correct ABI for a method based on the provided parameters:
+def select_abi(method: Callable, params: dict | None = None, args: Tuple | None = None) -> tuple[MethodABI, Tuple]:
+    r"""Select the correct ABI for a method based on the provided parameters.
 
     * If `params` is provided, the ABI will be matched by keyword arguments
     * If `args` is provided, the ABI will be matched by the number of arguments.
@@ -556,8 +572,9 @@ def select_abi(
     """
     if args is None:
         args = ()
-    selected_abi: Optional[MethodABI] = None
+    selected_abi: MethodABI | None = None
     method_abis: list[MethodABI] = method.abis
+    missing_args = set()
     for abi in method_abis:  # loop through all the ABIs
         if params is not None:  # we try to match on keywords!
             found_args = [inpt.name for inpt in abi.inputs if inpt.name in params]
@@ -565,23 +582,22 @@ def select_abi(
                 selected_abi = abi  # we found all the arguments by name!
                 args = tuple(params[arg] for arg in found_args)  # get the values for the arguments
                 break
+            else:
+                missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
         elif len(args) == len(abi.inputs):  # check if the number of arguments matches the number of inputs
             selected_abi = abi  # pick this ABI because it has the right number of arguments, hope for the best
             break
     if selected_abi is None:
-        raise ValueError(f"Could not find matching ABI for {method}")
-    lstr = f"{selected_abi.name}({', '.join(f'{inpt}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
+        raise ValueError(
+            f"Could not find matching ABI for {method}"
+            + (f" with missing arguments: {missing_args}" if missing_args else "")
+        )
+    lstr = f" => {selected_abi.name}({', '.join(f'{inpt.name}={arg}' for arg, inpt in zip(args, selected_abi.inputs))})"
     log_and_show(lstr)
     return selected_abi, args
 
 
-@freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class Info:
-    """Fancy tuple that lets us return item.method and item.prefix instead of item[0] and item[1]"""
-
-    method: Callable
-    prefix: hyperdrive_assets.AssetIdPrefix
+Info = namedtuple("Info", ["method", "prefix"])
 
 
 def ape_trade(
@@ -589,11 +605,10 @@ def ape_trade(
     hyperdrive_contract: ContractInstance,
     agent: AccountAPI,
     amount: int,
-    maturity_time: Optional[int] = None,
+    maturity_time: int | None = None,
     **kwargs: Any,
-) -> tuple[Optional[dict[str, Any]], Optional[ReceiptAPI]]:
-    """
-    Execute a trade on the Hyperdrive contract.
+) -> tuple[dict[str, Any] | None, ReceiptAPI | None]:
+    r"""Execute a trade on the Hyperdrive contract.
 
     Arguments
     ---------
@@ -608,6 +623,8 @@ def ape_trade(
         Unsigned int-256 representation of the trade amount (base if not LP, otherwise LP tokens)
     maturity_time : int, optional
         The maturity time of the trade. Only used for `CLOSE_LONG`, and `CLOSE_SHORT`.
+    kwargs : dict, optional
+        Additional keyword arguments to pass to the trade method.
 
     Returns
     -------
@@ -616,7 +633,6 @@ def ape_trade(
     tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The Ape transaction receipt.
     """
-
     # predefine which methods to call based on the trade type, and the corresponding asset ID prefix
     info = {
         "OPEN_LONG": Info(method=hyperdrive_contract.openLong, prefix=hyperdrive_assets.AssetIdPrefix.LONG),
@@ -627,7 +643,7 @@ def ape_trade(
         "REMOVE_LIQUIDITY": Info(method=hyperdrive_contract.removeLiquidity, prefix=hyperdrive_assets.AssetIdPrefix.LP),
     }
     if trade_type in {"CLOSE_LONG", "CLOSE_SHORT"}:  # get the specific asset we're closing
-        assert maturity_time, "Maturity time must be provided to close a long or short trade"
+        assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
 
@@ -645,7 +661,7 @@ def ape_trade(
         "_maxApr": int(100 * 1e18),
         "agent_contract": agent,
         "trade_amount": amount,
-        "maturation_time": maturity_time,
+        "_maturityTime": maturity_time,
     }
     # check the specified method for an ABI that we have all the parameters for
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
@@ -667,18 +683,17 @@ def ape_trade(
             agent,
             hyperdrive_contract.getPoolInfo().__dict__,
         )
-        return None, None
+        raise exc
 
 
 def attempt_txn(
     agent: AccountAPI, contract_txn: ContractTransaction | ContractTransactionHandler, *args, **kwargs
-) -> Optional[ReceiptAPI]:
-    """
-    Execute a transaction using fallback logic for undiagnosed cases
-    where a transaction fails due to gas price being too low.
+) -> ReceiptAPI | None:
+    r"""Execute a transaction using fallback logic when a transaction fails due to gas price being too low.
 
-    - The first attempt uses the recommended base fee, and a fixed multiple of the recommended priority fee
-    - On subsequent attempts, the priority fee is increased by a multiple of the base fee
+    Max gas is 2x the last block base fee, increasing to 3x on the second attempt.
+    Priority fee is 1x the recommended priority fee, increasing to (1+priorirty_fee_multiple) on the second attempt.
+    Priority_fee_multiple defaults to 5, but can be overriden as a keyword argument.
 
     Arguments
     ---------
@@ -707,34 +722,43 @@ def attempt_txn(
     each subsequent attempt multiples the max_fee by "mult"
     that is, the second attempt will have a max_fee of 2 * max_fee, the third will have a max_fee of 3 * max_fee, etc.
     """
+    # allow inconsistent return, since we throw an error if the transaction fails after all attempts
+    # pylint: disable=inconsistent-return-statements
+
     mult = kwargs.pop("mult") if hasattr(kwargs, "mult") else 2
     priority_fee_multiple = kwargs.pop("priority_fee_multiple") if hasattr(kwargs, "priority_fee_multiple") else 5
     if isinstance(contract_txn, ContractTransactionHandler):
         abi, args = select_abi(method=contract_txn, args=args)
         contract_txn = ContractTransaction(abi=abi, address=contract_txn.contract.address)
-    latest = agent.provider.get_block("latest")
-    if latest is None:
-        raise ValueError("latest block not found")
-    if not hasattr(latest, "base_fee"):
-        raise ValueError("latest block does not have base_fee")
-    base_fee = getattr(latest, "base_fee")
 
     # begin attempts, indexing attempt from 1 to mult (for the sake of easy calculation)
     for attempt in range(1, mult + 1):
-        kwargs["max_fee_per_gas"] = int(base_fee * attempt + agent.provider.priority_fee * priority_fee_multiple)
+        latest = agent.provider.get_block("latest")
+        if latest is None:
+            raise ValueError("latest block not found")
+        if not hasattr(latest, "base_fee"):
+            raise ValueError("latest block does not have base_fee")
+        base_fee = getattr(latest, "base_fee")
+        log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
+
         kwargs["max_priority_fee_per_gas"] = int(
-            agent.provider.priority_fee * priority_fee_multiple + base_fee * (attempt - 1)
+            agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
         )
+        kwargs["max_fee_per_gas"] = int(base_fee * (1 + attempt)) + kwargs["max_priority_fee_per_gas"]
         kwargs["sender"] = agent.address
         kwargs["nonce"] = agent.provider.get_nonce(agent.address)
         kwargs["gas_limit"] = 1_000_000
         # if you want a "STATIC" transaction type, uncomment the following line
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
-        log_and_show(f"txn attempt {attempt} of {mult} with {kwargs=}")
+        formatted_items = []
+        for k, v in kwargs.items():
+            value = fmt(v / 1e9) if "fee" in k else fmt(v)
+            formatted_items.append(f"{k}={value}")
+        log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
-        signed_txn: Optional[TransactionAPI] = agent.sign_transaction(prepped_txn)
-        log_and_show(f" => sending {signed_txn=}")
+        signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)
+        logging.debug(" => sending signed_txn %s", signed_txn)
         if signed_txn is None:
             raise ValueError("Failed to sign transaction")
         try:
@@ -742,8 +766,12 @@ def attempt_txn(
             tx_receipt.await_confirmations()
             return tx_receipt
         except TransactionError as exc:
-            if "replacement transaction underpriced" not in str(exc):
+            if "replacement transaction underpriced" not in str(exc) or not isinstance(exc, TransactionNotFoundError):
+                log_and_show(f"Txn failed in unexpected way on attempt {attempt} of {mult}: {exc}")
                 raise exc
-            log_and_show(f"Failed to send transaction: {exc}")
+            log_and_show(f"Txn failed in expected way: {exc}")
+            if attempt == mult:
+                log_and_show(" => max attempts reached, raising exception")
+                raise exc
+            log_and_show(f" => retrying with higher gas price: {attempt + 1} of {mult}")
             continue
-    return None

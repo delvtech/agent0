@@ -1,4 +1,5 @@
 """A demo for executing an arbitrary number of trades bots on testnet."""
+
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # stdlib
@@ -6,19 +7,20 @@ import argparse
 import json
 import logging
 import os
-from collections import defaultdict
+from collections import namedtuple
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from time import sleep
-from typing import Optional, cast
+from time import time as now
+from typing import Optional, Type, cast
 
 # external lib
 import ape
 import numpy as np
-from ape import Contract, accounts
-from ape.api import BlockAPI, ProviderAPI, ReceiptAPI
-from ape.contracts import ContractContainer, ContractInstance
-from ape.managers.project import ProjectManager
-from ape.types import AddressType
+from ape import accounts
+from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
+from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
@@ -31,15 +33,23 @@ import elfpy.agents.agent as agentlib
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.utils.apeworx_integrations as ape_utils
 import elfpy.utils.outputs as output_utils
-from elfpy.utils.outputs import number_to_string as fmt
-from elfpy.utils.outputs import log_and_show
 from elfpy import simulators, time, types
 from elfpy.agents.policies import random_agent
-from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_assets, hyperdrive_market
+from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
+from elfpy.utils import sim_utils
+from elfpy.utils.outputs import log_and_show
+from elfpy.utils.outputs import number_to_string as fmt
 
-load_dotenv()
+load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
 
 NO_CRASH = 0
+USE_ALCHEMY = False
+PROVIDER_STRING = "goerli:alchemy" if USE_ALCHEMY else "goerli:http://localhost:8547"
+
+FAUCET_ADDRESS = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
+DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
+
+examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
 
 
 class FixedFrida(agentlib.Agent):
@@ -208,7 +218,22 @@ class LongLouie(agentlib.Agent):
 
 
 def get_argparser() -> argparse.ArgumentParser:
-    """Define & parse arguments from stdin."""
+    """Define & parse arguments from stdin.
+
+    List of arguments:
+        log_filename : Optional output filename for logging. Default is "testnet_bots".
+        log_level : Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
+        max_bytes : Maximum log file output size, in bytes. Default is 1MB.
+        num_louie : Number of Long Louie agents to run. Default is 0.
+        num_frida : Number of Fixed Rate Frida agents to run. Default is 0.
+        num_random: Number of Random agents to run. Default is 0.
+        trade_chance : Chance for a bot to execute a trade. Default is 0.1.
+
+    Returns
+    -------
+    parser : argparse.ArgumentParser
+
+    """
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
         description="Execute bots on testnet",
@@ -216,17 +241,17 @@ def get_argparser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--log_filename", help="Optional output filename for logging", default="testnet_bots", type=str)
     parser.add_argument(
+        "--log_level",
+        help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".',
+        default="INFO",
+        type=str,
+    )
+    parser.add_argument(
         "--max_bytes",
         help=f"Maximum log file output size, in bytes. Default is {elfpy.DEFAULT_LOG_MAXBYTES} bytes."
         "More than 100 files will cause overwrites.",
         default=elfpy.DEFAULT_LOG_MAXBYTES,
         type=int,
-    )
-    parser.add_argument(
-        "--log_level",
-        help='Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default uses the config.',
-        default="INFO",
-        type=str,
     )
     parser.add_argument("--num_louie", help="Number of Louie agents (default=0)", default=0, type=int)
     parser.add_argument("--num_frida", help="Number of Frida agents (default=0)", default=0, type=int)
@@ -238,7 +263,49 @@ def get_argparser() -> argparse.ArgumentParser:
         default=0.1,
         type=float,
     )
+
+    parser.add_argument("--devnet", help="Run on devnet", action="store_false")  # store_false because default is True
     return parser
+
+
+@dataclass
+class BotInfo:
+    """Information about a bot.
+
+    Attributes
+    ----------
+    policy : Type[agentlib.Agent]
+        The agent's policy.
+    trade_chance : float
+        Percent chance that a agent gets to trade on a given block.
+    risk_threshold : Optional[float]
+        The risk threshold for the agent.
+    budget : Budget[mean, std, min, max]
+        The budget for the agent.
+    risk : Risk[mean, std, min, max]
+        The risk for the agent.
+    index : Optional[int]
+        The index of the agent in the list of ALL agents.
+    name : str
+        The name of the agent.
+    """
+
+    Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
+    Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
+
+    policy: Type[agentlib.Agent]
+    trade_chance: float = 0.1
+    risk_threshold: Optional[float] = None
+    budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
+    risk: Risk = Risk(mean=0.02, std=0.01, min=0.0, max=0.06)
+    index: Optional[int] = None
+    name: str = "botty mcbotface"
+
+    def __repr__(self) -> str:
+        """Return a string representation of the object."""
+        return f"{self.name} " + ",".join(
+            [f"{key}={value}" if value else "" for key, value in self.__dict__.items() if key not in ["name", "policy"]]
+        )
 
 
 def get_config() -> simulators.Config:
@@ -246,12 +313,12 @@ def get_config() -> simulators.Config:
     args = get_argparser().parse_args()
     _config = simulators.Config()
     _config.log_level = output_utils.text_to_log_level(args.log_level)
-    _config.log_filename = "testnet_bots"
-    if os.path.exists("random_seed.txt"):
-        with open("random_seed.txt", "r", encoding="utf-8") as file:
+    random_seed_file = f"random_seed{'_devnet' if args.devnet else ''}.txt"
+    if os.path.exists(random_seed_file):
+        with open(random_seed_file, "r", encoding="utf-8") as file:
             _config.random_seed = int(file.read()) + 1
     logging.info("Random seed=%s", _config.random_seed)
-    with open("random_seed.txt", "w", encoding="utf-8") as file:
+    with open(random_seed_file, "w", encoding="utf-8") as file:
         file.write(str(_config.random_seed))
     _config.title = "testnet bots"
     for key, value in args.__dict__.items():
@@ -259,32 +326,22 @@ def get_config() -> simulators.Config:
             _config[key] = value
         else:
             _config.scratch[key] = value
-    _config.scratch["louie_risk_threshold"] = 0.0
-    _config.scratch["louie_budget_mean"] = 5_000
-    _config.scratch["louie_budget_std"] = 2_000
-    _config.scratch["louie_budget_max"] = 10_000
-    _config.scratch["louie_budget_min"] = 1_000
-    _config.scratch["frida_budget_mean"] = 5_000
-    _config.scratch["frida_budget_std"] = 2_000
-    _config.scratch["frida_budget_max"] = 10_000
-    _config.scratch["frida_budget_min"] = 1_000
-    _config.scratch["frida_risk_min"] = 0.0
-    _config.scratch["frida_risk_max"] = 0.06
-    _config.scratch["frida_risk_mean"] = 0.02
-    _config.scratch["frida_risk_std"] = 0.01
-    _config.scratch["random_budget_mean"] = 5_000
-    _config.scratch["random_budget_std"] = 2_000
-    _config.scratch["random_budget_max"] = 10_000
-    _config.scratch["random_budget_min"] = 1_000
-    _config.scratch["bot_types"] = {"louie": LongLouie, "frida": FixedFrida, "random": random_agent.Policy}
+    _config.log_filename += "_devnet" if args.devnet else ""
+    trade_chance = _config.scratch["trade_chance"]
+    _config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=trade_chance)
+    _config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=trade_chance)
+    _config.scratch["random"] = BotInfo(policy=random_agent.Policy, trade_chance=trade_chance)
+    _config.scratch["bot_names"] = {"louie", "frida", "random"}
     _config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
+    _config.scratch["devnet"] = args.devnet
+    _config.scratch["crash_file"] = f"no_crash{'_devnet' if args.devnet else ''}.txt"
     _config.freeze()
     return _config
 
 
-def get_accounts(bot_types) -> list[KeyfileAccount]:
+def get_accounts() -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
-    num = sum(config.scratch[f"num_{bot}"] for bot in bot_types)
+    num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
     assert (mnemonic := os.environ["MNEMONIC"]), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
     for num, key in enumerate(keys):
@@ -300,110 +357,119 @@ def get_accounts(bot_types) -> list[KeyfileAccount]:
     return _dev_accounts
 
 
-def get_agents():  # sourcery skip: merge-dict-assign, use-fstring-for-concatenation
-    """Get python agents & corresponding solidity wallets."""
-    bot_types = config.scratch["bot_types"]
-    for _bot, _policy in bot_types.items():
-        log_string = f"{_bot:6s}: n={config.scratch['num_'+_bot]}  "
-        log_string += f"policy={(_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__):20s}"
-        log_and_show(log_string)
-    _dev_accounts = get_accounts(bot_types)
-    faucet = Contract("0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2")
-
-    _sim_agents = {}
-    for _bot, _policy in [item for item in bot_types.items() if config.scratch[f"num_{item[0]}"] > 0]:
-        for _ in range(config.scratch[f"num_{_bot}"]):
-            params = {}
-            agent_num = len(_sim_agents)
-            params["trade_chance"] = config.scratch["trade_chance"]
-            params["wallet_address"] = _dev_accounts[agent_num].address
-            params["budget"] = np.clip(
-                config.rng.normal(
-                    loc=config.scratch[f"{_bot}_budget_mean"], scale=config.scratch[f"{_bot}_budget_std"]
-                ),
-                config.scratch[f"{_bot}_budget_min"],
-                config.scratch[f"{_bot}_budget_max"],
-            )
-            if hasattr(config, f"{_bot}_risk_min"):
-                params["risk_threshold"] = np.clip(
-                    config.rng.normal(
-                        loc=config.scratch[f"{_bot}_risk_mean"], scale=config.scratch[f"{_bot}_risk_std"]
-                    ),
-                    config.scratch[f"{_bot}_risk_min"],
-                    config.scratch[f"{_bot}_risk_max"],
-                )
-            elif hasattr(config, f"{_bot}_risk_threshold"):
-                params["risk_threshold"] = config.scratch[f"{_bot}_risk_threshold"]
-            agent = _policy(rng=config.rng, **params)  # instantiate the agent
-            agent.contract = _dev_accounts[agent_num]  # assign its wallet
-            if (need_to_mint := params["budget"] - dai.balanceOf(agent.contract.address) / 1e18) > 0:
-                log_and_show(f" agent_{agent.wallet.address[:7]} needs to mint {fmt(need_to_mint)} Dai")
-                with ape.accounts.use_sender(agent.contract):
-                    txn_receipt: ReceiptAPI = faucet.mint(dai.address, agent.wallet.address, to_fixed_point(50_000))
-                    txn_receipt.await_confirmations()
-            log_string = f" agent_{agent.wallet.address[:7]} is a {_bot} with budget={fmt(params['budget'])}"
-            log_string += f" Eth={fmt(agent.contract.balance/1e18)}"
-            log_string += f" Dai={fmt(dai.balanceOf(agent.contract.address)/1e18)}"
-            log_and_show(log_string)
-            _sim_agents[f"agent_{agent.wallet.address}"] = agent
-    return _sim_agents, _dev_accounts
-
-
-def to_fixed_point(float_var, decimal_places=18):
-    """Convert floating point argument to fixed point with specified number of decimals."""
-    return int(float_var * 10**decimal_places)
-
-
-def to_floating_point(float_var, decimal_places=18):
-    """Convert fixed point argument to floating point with specified number of decimals."""
-    return float(float_var / 10**decimal_places)
-
-
-def get_market_state_from_contract(contract: ContractInstance):
-    """Return the current market state from the smart contract.
+def create_agent(
+    _bot: BotInfo,
+    _dev_accounts: list[KeyfileAccount],
+    faucet: Optional[ContractInstance],
+    base_: ContractInstance,
+    on_chain_trade_info: ape_utils.OnChainTradeInfo,
+):
+    """Create an agent as defined in bot_info, assign its address, give it enough base.
 
     Parameters
     ----------
-    contract: `ape.contracts.base.ContractInstance <https://docs.apeworx.io/ape/stable/methoddocs/contracts.html#ape.contracts.base.ContractInstance>`_
-        Contract pointing to the initialized MockHyperdriveTestnet smart contract.
+    _bot : BotInfo
+        The bot to create.
+    _dev_accounts : list[KeyfileAccount]
+        The list of dev accounts.
+    faucet : ContractInstance
+        Contract for faucet that mints the testnet base token
+    base_ : ContractInstance
+        Contract for base token
+    on_chain_trade_info : ape_utils.OnChainTradeInfo
+        Information about on-chain trades.
 
     Returns
     -------
-    hyperdrive_market.MarketState
+    agentlib.Agent
+        The agent.
     """
-    pool_state = contract.getPoolInfo().__dict__
-    asset_id = hyperdrive_assets.encode_asset_id(
-        hyperdrive_assets.AssetIdPrefix.WITHDRAWAL_SHARE, hyper_config["positionDuration"]
+    assert _bot.index is not None, "Bot must have an index."
+    assert isinstance(_bot.policy, type(agentlib.Agent)), "Bot must have a policy of type Agent."
+    params = {
+        "trade_chance": config.scratch["trade_chance"],
+        "budget": np.clip(
+            config.rng.normal(loc=_bot.budget.mean, scale=_bot.budget.std), _bot.budget.min, _bot.budget.max
+        ),
+        "wallet_address": _dev_accounts[_bot.index].address,
+    }
+    if _bot.name == "random":
+        params["rng"] = config.rng
+    if _bot.risk_threshold and _bot.name != "random":  # random agent doesn't use risk threshold
+        params["risk_threshold"] = _bot.risk_threshold  # if risk threshold is manually set, we use it
+    if _bot.name != "random":  # if risk threshold isn't manually set, we get a random one
+        params["risk_threshold"] = np.clip(
+            config.rng.normal(loc=_bot.risk.mean, scale=_bot.risk.std), _bot.risk.min, _bot.risk.max
+        )
+    agent = _bot.policy(**params)  # instantiate the agent with its policy and params
+    agent.contract = _dev_accounts[_bot.index]  # assign its onchain contract
+    if config.scratch["devnet"]:
+        agent.contract.balance += int(1e18)  # give it some eth
+    if (need_to_mint := params["budget"] - base_.balanceOf(agent.contract.address) / 1e18) > 0:
+        log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
+        with ape.accounts.use_sender(agent.contract):
+            if config.scratch["devnet"]:
+                txn_receipt: ReceiptAPI = base_.mint(agent.contract.address, int(50_000 * 1e18), sender=deployer)
+            else:
+                assert faucet is not None, "Faucet must be provided to mint base on testnet."
+                txn_receipt: ReceiptAPI = faucet.mint(base_.address, agent.wallet.address, int(50_000 * 1e18))
+            txn_receipt.await_confirmations()
+    log_and_show(
+        f" agent_{agent.contract.address[:8]} is a {_bot.name} with budget={fmt(params['budget'])}"
+        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_.balanceOf(agent.contract.address)/1e18)}"
     )
-    total_supply_withdraw_shares = hyperdrive.balanceOf(asset_id, dev_accounts[0].address)
+    agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
+        address_=agent.contract.address,
+        index=_bot.index,
+        info=on_chain_trade_info,
+        hyperdrive_contract=hyperdrive,
+        base_contract=base_,
+    )
+    return agent
 
-    return hyperdrive_market.MarketState(
-        lp_total_supply=to_floating_point(pool_state["lpTotalSupply"]),
-        share_reserves=to_floating_point(pool_state["shareReserves"]),
-        bond_reserves=to_floating_point(pool_state["bondReserves"]),
-        base_buffer=to_floating_point(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
-        # TODO: bond_buffer=0,
-        variable_apr=0.01,  # TODO: insert real value
-        share_price=to_floating_point(pool_state["sharePrice"]),
-        init_share_price=to_floating_point(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=to_floating_point(hyper_config["curveFee"]),
-        flat_fee_multiple=to_floating_point(hyper_config["flatFee"]),
-        governance_fee_multiple=to_floating_point(hyper_config["governanceFee"]),
-        longs_outstanding=to_floating_point(pool_state["longsOutstanding"]),
-        shorts_outstanding=to_floating_point(pool_state["shortsOutstanding"]),
-        long_average_maturity_time=to_floating_point(pool_state["longAverageMaturityTime"]),
-        short_average_maturity_time=to_floating_point(pool_state["shortAverageMaturityTime"]),
-        long_base_volume=to_floating_point(pool_state["longBaseVolume"]),
-        short_base_volume=to_floating_point(pool_state["shortBaseVolume"]),
-        # TODO: checkpoints=defaultdict
-        checkpoint_duration=hyper_config["checkpointDuration"],
-        total_supply_longs=defaultdict(float, {0: to_floating_point(pool_state["longsOutstanding"])}),
-        total_supply_shorts=defaultdict(float, {0: to_floating_point(pool_state["shortsOutstanding"])}),
-        total_supply_withdraw_shares=to_floating_point(total_supply_withdraw_shares),
-        withdraw_shares_ready_to_withdraw=to_floating_point(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=to_floating_point(pool_state["capital"]),
-        withdraw_interest=to_floating_point(pool_state["interest"]),
-    )
+
+def get_agents() -> tuple[dict[str, agentlib.Agent], list[KeyfileAccount]]:
+    """Get python agents & corresponding on-chain accounts.
+
+    Returns
+    -------
+    _sim_agents : dict[str, agentlib.Agent]
+        Dictionary of agents.
+    _dev_accounts : list[KeyfileAccount]
+        List of dev accounts.
+    """
+    _dev_accounts: list[KeyfileAccount] = get_accounts()
+    faucet = None
+    if not config.scratch["devnet"]:
+        faucet = ape_utils.get_instance(FAUCET_ADDRESS, provider=provider)
+
+    bot_num = 0
+    for bot_name in config.scratch["bot_names"]:
+        _policy = config.scratch[bot_name].policy
+        log_and_show(
+            f"{bot_name:6s}: n={config.scratch[f'num_{bot_name}']}  "
+            f"policy={_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__:20s}"
+        )
+        bot_num += config.scratch[f"num_{bot_name}"]
+    _sim_agents = {}
+    start_time_ = now()
+    on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(hyperdrive_contract=hyperdrive)
+    log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
+    for bot_name in [name for name in config.scratch["bot_names"] if config.scratch[f"num_{name}"] > 0]:
+        bot_info = config.scratch[bot_name]
+        bot_info.name = bot_name
+        for _ in range(config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
+            bot_info.index = len(_sim_agents)
+            logging.debug("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
+            agent = create_agent(
+                _bot=bot_info,
+                _dev_accounts=_dev_accounts,
+                faucet=faucet,
+                base_=base,
+                on_chain_trade_info=on_chain_trade_info,
+            )
+            _sim_agents[f"agent_{agent.wallet.address}"] = agent
+    return _sim_agents, _dev_accounts
 
 
 def do_trade():
@@ -413,70 +479,106 @@ def do_trade():
     # market_type = trade_obj.market
     trade = trade_object.trade
     agent = sim_agents[f"agent_{trade.wallet.address}"].contract
-    amount = to_fixed_point(trade.trade_amount)
-    sim_to_block_time = globals().get("sim_to_block_time", {})  # get if exists, else {}
-    if dai.allowance(agent.address, hyperdrive.address) < amount:  # allowance(address owner, address spender) → uint256
-        args = hyperdrive.address, to_fixed_point(50_000)
-        ape_utils.attempt_txn(agent, dai.approve, *args)
-    params = {"trade_type": trade.action_type.name, "hyperdrive": hyperdrive, "agent": agent, "amount": amount}
+    amount = int(trade.trade_amount * 1e18)
+    if (
+        base.allowance(agent.address, hyperdrive.address) < amount
+    ):  # allowance(address owner, address spender) → uint256
+        args = hyperdrive.address, int(50_000 * 1e18)
+        ape_utils.attempt_txn(agent, base.approve, *args)
+    params = {"trade_type": trade.action_type.name, "hyperdrive_contract": hyperdrive, "agent": agent, "amount": amount}
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(sim_to_block_time[trade.mint_time])
-    new_state, _ = ape_utils.ape_trade(**params)
-    if trade.action_type.name in ["OPEN_LONG", "OPEN_SHORT"] and new_state is not None:
-        sim_to_block_time[trade.mint_time] = new_state["maturity_timestamp_"]
+        params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
+    _, _ = ape_utils.ape_trade(**params)
 
 
 def set_days_without_crashing(no_crash: int):
     """Calculate the number of days without crashing."""
-    with open("no_crash.txt", "w", encoding="utf-8") as file:
+    with open(config.scratch["crash_file"], "w", encoding="utf-8") as file:
         file.write(f"{no_crash}")
     return no_crash
 
 
-def get_gas_fees(block: BlockAPI) -> tuple[Optional[float], Optional[float], Optional[float], Optional[float]]:
-    """Get the max and avg max and priority fees from a block."""
-    if type2 := [txn for txn in block.transactions if txn.type == 2]:  # noqa: PLR2004
-        max_fees, priority_fees = zip(*((txn.max_fee, txn.max_priority_fee) for txn in type2))
-        max_fees = [f / 1e9 for f in max_fees if f is not None]
-        priority_fees = [f / 1e9 for f in priority_fees if f is not None]
-        _max_max_fee, _avg_max_fee = max(max_fees), sum(max_fees) / len(max_fees)
-        _max_priority_fee, _avg_priority_fee = max(priority_fees), sum(priority_fees) / len(priority_fees)
-        return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
-    return None, None, None, None
+def log_and_show_block_info():
+    """Get and show the latest block number and gas fees."""
+    if not hasattr(latest_block, "base_fee"):
+        raise ValueError("latest block does not have base_fee")
+    base_fee = getattr(latest_block, "base_fee") / 1e9
+    log_and_show(
+        "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
+        fmt(block_number),
+        datetime.fromtimestamp(block_time),
+        NO_CRASH,
+        base_fee,
+    )
 
 
-class HyperdriveProject(ProjectManager):
-    """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
+def get_simulator(_config):
+    """Get a python simulator."""
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    block_time_ = time.BlockTime()
+    market_, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, _config)
+    return simulators.Simulator(_config, market_, block_time_)
 
-    hyperdrive: ContractContainer
-    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
 
-    def __init__(self, path: Path) -> None:
-        """Initialize the project, loading the Hyperdrive contract."""
-        super().__init__(path)
-        self.load_contracts()
-        try:
-            self.hyperdrive: ContractContainer = self.get_contract("Hyperdrive")
-        except AttributeError as err:
-            raise AttributeError("Hyperdrive contract not found") from err
-
-    def get_hyperdrive_contract(self) -> ContractInstance:
-        """Get the Hyperdrive contract instance."""
-        return self.hyperdrive.at(self.conversion_manager.convert(self.address, AddressType))
+def deploy_hyperdrive() -> ContractInstance:
+    """Deploy Hyperdrive when operating on a fresh fork."""
+    assert isinstance(deployer, TestAccountAPI)
+    initial_supply = int(config.target_liquidity * 1e18)
+    initial_apr = int(config.target_fixed_apr * 1e18)
+    initial_share_price = int(config.init_share_price * 1e18)
+    checkpoint_duration = 86400  # seconds = 1 day
+    checkpoints_per_term = 365
+    time_stretch = int(1 / simulator.market.time_stretch_constant * 1e18)
+    curve_fee = int(config.curve_fee_multiple * 1e18)
+    flat_fee = int(config.flat_fee_multiple * 1e18)
+    gov_fee = 0
+    base.mint(int(initial_supply * 1e18), sender=deployer)  # minted to sender
+    # Deploy hyperdrive on the chain
+    hyperdrive_: ContractInstance = deployer.deploy(
+        project.get_contract("MockHyperdriveTestnet"),
+        base,
+        initial_apr,
+        initial_share_price,
+        checkpoints_per_term,
+        checkpoint_duration,
+        time_stretch,
+        (curve_fee, flat_fee, gov_fee),
+        deployer,
+    )
+    with ape.accounts.use_sender(deployer):
+        base.approve(hyperdrive_, initial_supply)
+        hyperdrive_.initialize(initial_supply, initial_apr, deployer, True)
+    return hyperdrive_
 
 
 if __name__ == "__main__":
     config = get_config()  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
+    deployer = None  # pylint: disable=invalid-name
     # Set up ape
-    provider: ProviderAPI = ape.networks.parse_network_choice(  # pylint: disable=unnecessary-dunder-call
-        "ethereum:goerli:alchemy"
-    ).__enter__()
-    project = HyperdriveProject(Path.cwd())
-    dai: ContractInstance = Contract("0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844")  # sDai
+    if config.scratch["devnet"]:  # if devnet setting is enabled
+        simulator = get_simulator(config)  # Instantiate the sim market
+        k, ps = "ethereum:local:foundry", {"fork_url": "http://localhost:8547", "port": 8549}
+        provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
+        deployer = ape.accounts.test_accounts[0]
+        deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
+        print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
+    else:
+        provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
+    project = ape_utils.HyperdriveProject(Path.cwd())
+    base: ContractInstance
+    if config.scratch["devnet"]:
+        assert isinstance(deployer, TestAccountAPI)
+        base: ContractInstance = deployer.deploy(project.get_contract("ERC20Mintable"))
+        fixed_math: ContractInstance = deployer.deploy(project.get_contract("MockFixedPointMath"))
+    else:
+        base: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
+    if config.scratch["devnet"]:
+        hyperdrive: ContractInstance = deploy_hyperdrive()
+    else:
+        hyperdrive: ContractInstance = project.get_hyperdrive_contract()
     sim_agents, dev_accounts = get_agents()  # Set up agents and their dev accounts
-    hyperdrive: ContractInstance = project.get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
     hyper_config = hyperdrive.getPoolConfig().__dict__
@@ -493,12 +595,8 @@ if __name__ == "__main__":
         block_time = latest_block.timestamp
         start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
-            max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee = get_gas_fees(latest_block)
-            LOG_STRING = "Block number: {}, Block time: {}, Trades without crashing: {}"
-            LOG_STRING += ", Gas: max={},avg={}, Priority max={},avg={}"
-            log_vars = block_number, block_time, NO_CRASH, max_max_fee, avg_max_fee, max_priority_fee, avg_priority_fee
-            log_and_show(LOG_STRING, *log_vars)
-            market_state = get_market_state_from_contract(contract=hyperdrive)
+            log_and_show_block_info()
+            market_state = ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive)
             market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=config.scratch["pricing_model"],
                 market_state=market_state,
@@ -517,8 +615,7 @@ if __name__ == "__main__":
                         do_trade()
                         NO_CRASH = set_days_without_crashing(NO_CRASH + 1)  # set and save to file
                     except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
-                        LOG_STRING = "Crashed in Python simulation: {}"
-                        log_and_show(LOG_STRING, exc)
+                        log_and_show("Crashed unexpectedly: %s", exc)
                         NO_CRASH = set_days_without_crashing(0)  # set and save to file
             last_executed_block = block_number
         sleep(1)

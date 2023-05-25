@@ -2,7 +2,7 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
@@ -26,12 +26,10 @@ class Agent:
         Random ID used to identify this specific agent in the simulation
     budget : float
         Amount of assets that this agent has available for spending in the simulation
-    last_update_spend : float
-        Time relative to the market, in years, when this agent last made a trade. This is used to track PnL
-    product_of_time_and_base : float
-        Helper attribute used to track how an agent spends their assets over time
     wallet : elfpy.wallet.Wallet
         Wallet object which tracks the agent's asset balances
+    name : str
+        Name of the agent, used for logging and debugging purposes
     """
 
     def __init__(self, wallet_address: int, budget: float):
@@ -40,6 +38,7 @@ class Agent:
         self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
+        self.contract: Any = None  # assign on-chain address when deployed
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
         name = str(self.__class__)
