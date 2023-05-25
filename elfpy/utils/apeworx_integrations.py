@@ -79,34 +79,30 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
     return hyperdrive_market.MarketStateFP(
-        lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]).int_value,
-        share_reserves=FixedPoint(pool_state["shareReserves"]).int_value,
-        bond_reserves=FixedPoint(pool_state["bondReserves"]).int_value,
-        base_buffer=FixedPoint(pool_state["longsOutstanding"]).int_value,  # so do we not need any buffers now?
-        variable_apr=FixedPoint(0.01).int_value,  # TODO: insert real value
-        share_price=FixedPoint(pool_state["sharePrice"]).int_value,
-        init_share_price=FixedPoint(hyper_config["initialSharePrice"]).int_value,
-        curve_fee_multiple=FixedPoint(hyper_config["curveFee"]).int_value,
-        flat_fee_multiple=FixedPoint(hyper_config["flatFee"]).int_value,
-        governance_fee_multiple=FixedPoint(hyper_config["governanceFee"]).int_value,
-        longs_outstanding=FixedPoint(pool_state["longsOutstanding"]).int_value,
-        shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]).int_value,
-        long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]).int_value,
-        short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]).int_value,
-        long_base_volume=FixedPoint(pool_state["longBaseVolume"]).int_value,
-        short_base_volume=FixedPoint(pool_state["shortBaseVolume"]).int_value,
+        lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
+        share_reserves=FixedPoint(pool_state["shareReserves"]),
+        bond_reserves=FixedPoint(pool_state["bondReserves"]),
+        base_buffer=FixedPoint(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        variable_apr=FixedPoint(0.01),  # TODO: insert real value
+        share_price=FixedPoint(pool_state["sharePrice"]),
+        init_share_price=FixedPoint(hyper_config["initialSharePrice"]),
+        curve_fee_multiple=FixedPoint(hyper_config["curveFee"]),
+        flat_fee_multiple=FixedPoint(hyper_config["flatFee"]),
+        governance_fee_multiple=FixedPoint(hyper_config["governanceFee"]),
+        longs_outstanding=FixedPoint(pool_state["longsOutstanding"]),
+        shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]),
+        long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
+        long_base_volume=FixedPoint(pool_state["longBaseVolume"]),
+        short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
         # TODO: checkpoints=defaultdict
-        checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]).int_value,
-        total_supply_longs=defaultdict(
-            FixedPoint, {FixedPoint(0): FixedPoint(pool_state["longsOutstanding"]).int_value}
-        ),
-        total_supply_shorts=defaultdict(
-            FixedPoint, {FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"]).int_value}
-        ),
-        total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares).int_value,
-        withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]).int_value,
-        withdraw_capital=FixedPoint(pool_state["capital"]).int_value,
-        withdraw_interest=FixedPoint(pool_state["interest"]).int_value,
+        checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
+        total_supply_longs=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])}),
+        total_supply_shorts=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])}),
+        total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=FixedPoint(pool_state["capital"]),
+        withdraw_interest=FixedPoint(pool_state["interest"]),
     )
 
 
@@ -213,7 +209,6 @@ def get_wallet_from_onchain_trade_info(
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
-
         # verify our calculation against the onchain balance
         on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
         if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
@@ -222,7 +217,6 @@ def get_wallet_from_onchain_trade_info(
                 f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
             )
         log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
-
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -536,8 +530,7 @@ def select_abi(method: Callable, params: dict | None = None, args: Tuple | None 
                 selected_abi = abi  # we found all the arguments by name!
                 args = tuple(params[arg] for arg in found_args)  # get the values for the arguments
                 break
-            else:
-                missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
+            missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
         elif len(args) == len(abi.inputs):  # check if the number of arguments matches the number of inputs
             selected_abi = abi  # pick this ABI because it has the right number of arguments, hope for the best
             break
@@ -600,7 +593,6 @@ def ape_trade(
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
-
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
@@ -619,10 +611,8 @@ def ape_trade(
     }
     # check the specified method for an ABI that we have all the parameters for
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
-
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
-
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
         tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
         if tx_receipt is None:

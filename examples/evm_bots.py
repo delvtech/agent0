@@ -20,7 +20,7 @@ import ape
 import numpy as np
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
-from ape.contracts import ContractInstance
+from ape.contracts import ContractInstance, ContractContainer
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
@@ -114,11 +114,15 @@ class FixedFrida(elfpy_agent.AgentFP):
         has_opened_short = any((short_balance > 0 for short_balance in short_balances))
         # only open a short if the fixed rate is 0.02 or more lower than variable rate
         if (market.fixed_apr - market.market_state.variable_apr) < self.risk_threshold and not has_opened_short:
-            # maximum amount the agent can short given the market and the agent's wallet
-            trade_amount = self.get_max_short(market)
             # TODO: This is a hack until we fix get_max
             # issue # 440
-            trade_amount = trade_amount / FixedPoint("100.0")
+            # maximum amount the agent can short given the market and the agent's wallet
+            # trade_amount = self.get_max_short(market)
+            maximum_trade_amount_in_bonds = (
+                market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
+            )
+            # WEI <= trade_amount <= max_short
+            trade_amount = max(elfpy.WEI_FP, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
             if trade_amount > elfpy.WEI_FP:
                 action_list += [
                     types.Trade(
@@ -205,14 +209,15 @@ class LongLouie(elfpy_agent.AgentFP):
                 market.market_state.bond_reserves - total_bonds_to_match_variable_apr
             ) * market.spot_price
             # divide by 2 to adjust for changes in share reserves when the trade is executed
-            adjusted_bonds = new_bonds_to_match_variable_apr / 2
-            # get the maximum amount the agent can long given the market and the agent's wallet
-            max_trade_amount = self.get_max_long(market)
+            adjusted_bonds = new_bonds_to_match_variable_apr / FixedPoint("2.0")
             # TODO: This is a hack until we fix get_max
             # issue # 440
-            trade_amount = trade_amount / FixedPoint("100.0")
+            # get the maximum amount the agent can long given the market and the agent's wallet
+            # max_trade_amount = self.get_max_long(market)
+            maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
+            # WEI <= trade_amount <= max_short
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = min(max_trade_amount, adjusted_bonds)
+            trade_amount = max(elfpy.WEI_FP, min(adjusted_bonds, maximum_trade_amount_in_base))
             if trade_amount > elfpy.WEI_FP:
                 action_list += [
                     types.Trade(
@@ -348,7 +353,7 @@ def get_config(args) -> simulators.ConfigFP:
 def get_accounts(config: simulators.ConfigFP) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
     num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
-    assert (mnemonic := os.environ["MNEMONIC"]), "You must provide a mnemonic in .env to run this script."
+    assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
     for num, key in enumerate(keys):
         path = accounts.containers["accounts"].data_folder.joinpath(f"agent_{num}.json")
@@ -400,8 +405,7 @@ def create_agent(
         ),
         "wallet_address": dev_accounts[bot.index].address,
     }
-    if bot.name == "random":
-        params["rng"] = config.rng
+    params["rng"] = config.rng
     if bot.risk_threshold and bot.name != "random":  # random agent doesn't use risk threshold
         params["risk_threshold"] = bot.risk_threshold  # if risk threshold is manually set, we use it
     if bot.name != "random":  # if risk threshold isn't manually set, we get a random one
@@ -416,7 +420,9 @@ def create_agent(
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
             if config.scratch["devnet"]:
-                txn_receipt: ReceiptAPI = base_.mint(agent.contract.address, int(50_000 * 1e18), sender=deployer)
+                txn_receipt: ReceiptAPI = base_.mint(
+                    agent.contract.address, int(50_000 * 1e18), sender=account_deployer
+                )
             else:
                 assert faucet is not None, "Faucet must be provided to mint base on testnet."
                 txn_receipt: ReceiptAPI = faucet.mint(base_.address, agent.wallet.address, int(50_000 * 1e18))
@@ -479,20 +485,26 @@ def get_agents(config: simulators.ConfigFP) -> tuple[dict[str, elfpy_agent.Agent
     return _sim_agents
 
 
-def do_trade():
+def do_trade(market_trade: types.Trade, agents, hyperdrive_contract):
     """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
-    # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive, agent_address=contract)
+    # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive_contract, agent_address=contract)
     # market_type = trade_obj.market
-    trade = trade_object.trade
-    agent = sim_agents[f"agent_{trade.wallet.address}"].contract
-    amount = FixedPoint(trade.trade_amount, decimal_places=18).int_value
+    trade = market_trade.trade
+    agent_contract = agents[f"agent_{trade.wallet.address}"].contract
+    amount = trade.trade_amount.int_value
+    # If agent does not have enough base approved for this trade, then approve another 50k
     if (
-        base.allowance(agent.address, hyperdrive.address) < amount
+        base.allowance(agent_contract.address, hyperdrive_contract.address) < amount
     ):  # allowance(address owner, address spender) → uint256
-        args = hyperdrive.address, FixedPoint(50_000, decimal_places=18).int_value
-        ape_utils.attempt_txn(agent, base.approve, *args)
-    params = {"trade_type": trade.action_type.name, "hyperdrive_contract": hyperdrive, "agent": agent, "amount": amount}
+        txn_args = hyperdrive_contract.address, FixedPoint("50_000.0", decimal_places=18).int_value
+        ape_utils.attempt_txn(agent_contract, base.approve, *txn_args)
+    params = {
+        "trade_type": trade.action_type.name,
+        "hyperdrive_contract": hyperdrive_contract,
+        "agent": agent_contract,
+        "amount": amount,
+    }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
     _, _ = ape_utils.ape_trade(**params)
@@ -505,7 +517,7 @@ def set_days_without_crashing(no_crash: int, config: simulators.ConfigFP):
     return no_crash
 
 
-def log_and_show_block_info():
+def log_and_show_block_info(block_time: int):
     """Get and show the latest block number and gas fees."""
     if not hasattr(latest_block, "base_fee"):
         raise ValueError("latest block does not have base_fee")
@@ -523,19 +535,19 @@ def get_simulator(config: simulators.ConfigFP) -> simulators.SimulatorFP:
     """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
     block_time_ = time.BlockTimeFP()
-    market_, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
-    return simulators.SimulatorFP(config, market_, block_time_)
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
+    return simulators.SimulatorFP(config, market, block_time_)
 
 
-def deploy_hyperdrive(config: simulators.ConfigFP) -> ContractInstance:
+def deploy_hyperdrive(config: simulators.ConfigFP, deployer: TestAccountAPI) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork."""
     assert isinstance(deployer, TestAccountAPI)
     initial_supply = FixedPoint(config.target_liquidity, decimal_places=18)
     initial_apr = FixedPoint(config.target_fixed_apr, decimal_places=18)
     initial_share_price = FixedPoint(config.init_share_price, decimal_places=18)
-    checkpoint_duration = FixedPoint(86400)  # seconds = 1 day
-    checkpoints_per_term = FixedPoint(365)
-    time_stretch = FixedPoint(1 / simulator.market.time_stretch_constant, decimal_places=18)
+    checkpoint_duration = 86400  # seconds = 1 day # TODO: convert to FixedPoint after new spec is merged
+    checkpoints_per_term = 365  # TODO: convert to FixedPoint after new spec is merged
+    time_stretch = FixedPoint(FixedPoint("1.0") / simulator.market.time_stretch_constant, decimal_places=18)
     curve_fee = FixedPoint(config.curve_fee_multiple, decimal_places=18)
     flat_fee = FixedPoint(config.flat_fee_multiple, decimal_places=18)
     gov_fee = FixedPoint(0)
@@ -546,43 +558,46 @@ def deploy_hyperdrive(config: simulators.ConfigFP) -> ContractInstance:
         base,
         initial_apr.int_value,
         initial_share_price.int_value,
-        int(checkpoints_per_term),  # not in FixedPoint format
-        int(checkpoint_duration),  # not in FixedPoint format
+        checkpoints_per_term,  # not in FixedPoint format
+        checkpoint_duration,  # not in FixedPoint format
         time_stretch.int_value,
         (curve_fee.int_value, flat_fee.int_value, gov_fee.int_value),
         deployer,
     )
     with ape.accounts.use_sender(deployer):
-        base.approve(hyperdrive_instance, initial_supply)
+        base.approve(hyperdrive_instance, initial_supply.int_value)
         hyperdrive_instance.initialize(initial_supply.int_value, initial_apr.int_value, deployer, True)
     return hyperdrive_instance
 
 
 if __name__ == "__main__":
-    args = get_argparser().parse_args()
-    experiment_config = get_config(args)  # Instantiate the config using the command line arguments as overrides.
+    parsed_args = get_argparser().parse_args()
+    experiment_config = get_config(parsed_args)  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
-    deployer = None  # pylint: disable=invalid-name
+    account_deployer = None  # pylint: disable=invalid-name
     # Set up ape
     if experiment_config.scratch["devnet"]:  # if devnet setting is enabled
         simulator = get_simulator(experiment_config)  # Instantiate the sim market
-        k, ps = "ethereum:local:foundry", {}
-        provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
-        deployer = ape.accounts.test_accounts[0]
-        deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
+        ps = {"port": 8549}
+        provider: ProviderAPI = ape.networks.parse_network_choice(
+            "ethereum:local:foundry", provider_settings=ps
+        ).push_provider()
+        account_deployer = ape.accounts.test_accounts[0]
+        account_deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
         print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
     else:
         provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
     project = ape_utils.HyperdriveProject(Path.cwd())
     base: ContractInstance
     if experiment_config.scratch["devnet"]:
-        assert isinstance(deployer, TestAccountAPI)
-        base: ContractInstance = deployer.deploy(project.get_contract("ERC20Mintable"))
-        fixed_math: ContractInstance = deployer.deploy(project.get_contract("MockFixedPointMath"))
+        assert isinstance(account_deployer, TestAccountAPI)
+        project_container: ContractContainer = project.get_contract("ERC20Mintable")
+        base: ContractInstance = account_deployer.deploy(project_container)
+        fixed_math: ContractInstance = account_deployer.deploy(project.get_contract("MockFixedPointMath"))
     else:
         base: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
     if experiment_config.scratch["devnet"]:
-        hyperdrive: ContractInstance = deploy_hyperdrive(experiment_config)
+        hyperdrive: ContractInstance = deploy_hyperdrive(experiment_config, account_deployer)
     else:
         hyperdrive: ContractInstance = project.get_hyperdrive_contract()
     sim_agents = get_agents(experiment_config)  # Set up agents and their dev accounts
@@ -599,22 +614,24 @@ if __name__ == "__main__":
     while True:  # hyper drive forever into the sunset
         latest_block = ape.chain.blocks[-1]
         block_number = latest_block.number or 0
-        block_time = latest_block.timestamp
-        start_time = locals().get("start_time", block_time)  # get variable if it exists, otherwise set to block_time
+        block_timestamp = latest_block.timestamp
+        # get start_time if it exists, otherwise set to block_timestamp
+        start_timestamp = locals().get("start_timestamp", block_timestamp)
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
-            log_and_show_block_info()
+            log_and_show_block_info(block_timestamp)
             market_state = ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive)
-            elfpy_market: hyperdrive_market.Market = hyperdrive_market.MarketFP(
+            elfpy_market: hyperdrive_market.MarketFP = hyperdrive_market.MarketFP(
                 pricing_model=experiment_config.scratch["pricing_model"],
                 market_state=market_state,
                 position_duration=time.StretchedTimeFP(
-                    days=hyper_config["term_length"],
-                    time_stretch=hyper_config["timeStretch"],
-                    normalizing_constant=hyper_config["term_length"],
+                    days=FixedPoint(float(hyper_config["term_length"])),  # TODO: Fix this after FP refactor to use int
+                    time_stretch=FixedPoint(hyper_config["timeStretch"]),
+                    normalizing_constant=FixedPoint(float(hyper_config["term_length"])),
                 ),
+                # TODO: Change this to convert block_timestamp and start_timestamp to FP once we refactor FP
                 block_time=time.BlockTimeFP(
-                    _time=(block_time - start_time) / FixedPoint("365.0"),
-                    _block_number=block_number,
+                    _time=FixedPoint((block_timestamp - start_timestamp) / 365),
+                    _block_number=FixedPoint(block_number),
                     _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
                 ),
             )
@@ -623,7 +640,7 @@ if __name__ == "__main__":
                 for trade_object in trades:
                     try:
                         logging.debug(trade_object)
-                        do_trade()
+                        do_trade(trade_object, sim_agents, hyperdrive)
                         NO_CRASH = set_days_without_crashing(NO_CRASH + 1, experiment_config)  # set and save to file
                     except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
                         log_and_show("Crashed unexpectedly: %s", exc)

@@ -46,7 +46,7 @@ class Policy(elf_agent.Agent):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market) -> list[types.Trade]:
+    def open_short_with_random_amount(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
         initial_trade_amount = self.rng.normal(loc=self.budget * 0.1, scale=self.budget * 0.01)
         # TODO: re-enable this after fixing get_max_short (issue #440)
@@ -240,13 +240,19 @@ class RandomAgent(elf_agent.AgentFP):
 
     def open_short_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
-        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
-        max_short = self.get_max_short(market)
-        if max_short < elfpy.WEI_FP:  # no short is possible
-            return []
-        trade_amount = np.maximum(
-            elfpy.WEI, np.minimum(float(max_short), initial_trade_amount)
-        )  # WEI <= trade_amount <= max_short
+        initial_trade_amount = FixedPoint(
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        )
+        # TODO: This is a hack until we fix get_max
+        # issue # 440
+        # max_short = self.get_max_short(market)
+        # if max_short < elfpy.WEI_FP:  # no short is possible
+        #     return []
+        maximum_trade_amount_in_bonds = (
+            market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
+        )
+        # WEI <= trade_amount <= max_short
+        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_bonds))
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -261,13 +267,18 @@ class RandomAgent(elf_agent.AgentFP):
     def open_long_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
-        # get the maximum amount that can be traded, based on the budget & market reserve levels
-        max_long = self.get_max_long(market)
-        if max_long < elfpy.WEI_FP:  # no trade is possible
-            return []
-        # WEI <= trade_amount <= max_short
-        trade_amount: float = np.maximum(elfpy.WEI, np.minimum(float(max_long), initial_trade_amount))
+        initial_trade_amount = FixedPoint(
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        )
+        # TODO: This is a hack until we fix get_max
+        # issue # 440
+        # # get the maximum amount that can be traded, based on the budget & market reserve levels
+        # max_long = self.get_max_long(market)
+        # if max_long < elfpy.WEI_FP:  # no trade is possible
+        #     return []
+        maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
+        # # WEI <= trade_amount <= max_short
+        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_base))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -283,16 +294,18 @@ class RandomAgent(elf_agent.AgentFP):
     def add_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Add liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        initial_trade_amount = FixedPoint(
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        )
         # WEI <= trade_amount
-        trade_amount: float = np.maximum(elfpy.WEI, initial_trade_amount)
+        trade_amount: FixedPoint = max(elfpy.WEI_FP, initial_trade_amount)
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
                 trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
-                    trade_amount=FixedPoint(trade_amount),
+                    trade_amount=trade_amount,
                     wallet=self.wallet,
                 ),
             )
@@ -301,16 +314,18 @@ class RandomAgent(elf_agent.AgentFP):
     def remove_liquidity_with_random_amount(self) -> list[types.Trade]:
         """Remove liquidity with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
-        initial_trade_amount = self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        initial_trade_amount = FixedPoint(
+            self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
+        )
         # WEI <= trade_amount <= lp_tokens
-        trade_amount = np.maximum(elfpy.WEI, np.minimum(float(self.wallet.lp_tokens), initial_trade_amount))
+        trade_amount = max(elfpy.WEI_FP, min(self.wallet.lp_tokens, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
                 trade=hyperdrive_actions.MarketActionFP(
                     action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
-                    trade_amount=FixedPoint(trade_amount),
+                    trade_amount=trade_amount,
                     wallet=self.wallet,
                 ),
             )
