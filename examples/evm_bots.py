@@ -325,7 +325,7 @@ def get_config(args) -> simulators.ConfigFP:
     """Set _config values for the experiment."""
     config = simulators.ConfigFP()
     config.log_level = output_utils.text_to_log_level(args.log_level)
-    random_seed_file = f"random_seed{'_devnet' if args.devnet else ''}.txt"
+    random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:
             config.random_seed = int(file.read()) + 1
@@ -524,7 +524,7 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
 def set_days_without_crashing(no_crash: int, config: simulators.ConfigFP):
     """Calculate the number of days without crashing."""
     with open(config.scratch["crash_file"], "w", encoding="utf-8") as file:
-        file.write(f"{no_crash}")
+        file.write(f".logging/{no_crash}")
     return no_crash
 
 
