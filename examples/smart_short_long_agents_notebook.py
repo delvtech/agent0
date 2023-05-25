@@ -176,7 +176,8 @@ class FixedFrida(elf_agent.AgentFP):
             # maximum amount the agent can short given the market and the agent's wallet
             trade_amount = self.get_max_short(market)
             # TODO: This is a hack until we fix get_max
-            trade_amount = trade_amount / FixedPoint(100.0)
+            # issue # 440
+            trade_amount = trade_amount / FixedPoint("100.0")
             if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(
@@ -272,7 +273,8 @@ class LongLouie(elf_agent.AgentFP):
             # don't want to trade more than the agent has or more than the market can handle
             trade_amount = FixedPointMath.minimum(max_trade_amount, adjusted_bonds)
             # TODO: This is a hack until we fix get_max
-            trade_amount = trade_amount / FixedPoint(100.0)
+            # issue #440
+            trade_amount = trade_amount / FixedPoint("100.0")
             if trade_amount > WEI_FP:
                 action_list += [
                     types.Trade(
