@@ -243,7 +243,6 @@ def get_argparser() -> argparse.ArgumentParser:
     Returns
     -------
     parser : argparse.ArgumentParser
-
     """
     parser = argparse.ArgumentParser(
         prog="TestnetBots",
@@ -267,14 +266,12 @@ def get_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--num_louie", help="Number of Louie agents (default=0)", default=0, type=int)
     parser.add_argument("--num_frida", help="Number of Frida agents (default=0)", default=0, type=int)
     parser.add_argument("--num_random", help="Number of Random agents (default=4)", default=4, type=int)
-
     parser.add_argument(
         "--trade_chance",
         help="Percent chance that a agent gets to trade on a given block (default = 0.1, i.e. 10%)",
         default=0.1,
         type=float,
     )
-
     parser.add_argument("--devnet", help="Run on devnet", action="store_false")  # store_false because default is True
     return parser
 
@@ -318,9 +315,8 @@ class BotInfo:
         )
 
 
-def get_config() -> simulators.ConfigFP:
+def get_config(args) -> simulators.ConfigFP:
     """Set _config values for the experiment."""
-    args = get_argparser().parse_args()
     config = simulators.ConfigFP()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f"random_seed{'_devnet' if args.devnet else ''}.txt"
@@ -563,13 +559,14 @@ def deploy_hyperdrive(config: simulators.ConfigFP) -> ContractInstance:
 
 
 if __name__ == "__main__":
-    experiment_config = get_config()  # Instantiate the config using the command line arguments as overrides.
+    args = get_argparser().parse_args()
+    experiment_config = get_config(args)  # Instantiate the config using the command line arguments as overrides.
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
     deployer = None  # pylint: disable=invalid-name
     # Set up ape
     if experiment_config.scratch["devnet"]:  # if devnet setting is enabled
         simulator = get_simulator(experiment_config)  # Instantiate the sim market
-        k, ps = "ethereum:local:foundry", {"fork_url": "http://localhost:8547", "port": 8549}
+        k, ps = "ethereum:local:foundry", {}
         provider: ProviderAPI = ape.networks.parse_network_choice(k, provider_settings=ps).push_provider()
         deployer = ape.accounts.test_accounts[0]
         deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
