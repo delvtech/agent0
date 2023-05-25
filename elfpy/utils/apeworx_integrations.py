@@ -375,39 +375,26 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
-# TODO: remove commenets after verifying the accuracy of this function through more testing (issue #423)
 def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
+    # TODO: verify the accuracy of this function through more testing
+    # issue #423
     agent = tx_receipt.operator
     event_args = tx_receipt.event_arguments
     event_args.update({k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]})
-    # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
-    # dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
     mint_time = (
         (maturity_timestamp - elfpy.SECONDS_IN_YEAR * pool_info.term_length) - pool_info.start_time
     ) / elfpy.SECONDS_IN_YEAR
-    # token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=-types.QuantityFP(amount=d_base_reserves, unit=types.TokenType.BASE),
-        #     lp_tokens=lp_out,
-        # )
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=-types.QuantityFP(amount=trade["_contribution"], unit=types.TokenType.BASE),
             lp_tokens=trade["value"],  # trade output
         )
     elif trade_type == "removeLiquidity":
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=types.QuantityFP(amount=delta_base, unit=types.TokenType.BASE),
-        #     lp_tokens=-lp_shares,
-        #     withdraw_shares=withdraw_shares,
-        # )
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
@@ -415,40 +402,18 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
             withdraw_shares=trade["_shares"],  # positive, increasing
         )
     elif trade_type == "openLong":
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=types.QuantityFP(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        #     longs={market.latest_checkpoint_time: elf_wallet.LongFP(trade_result.user_result.d_bonds)},
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=types.QuantityFP(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
             longs={pool_info.block_time: elf_wallet.LongFP(trade["value"])},  # trade output, increasing
         )
     elif trade_type == "closeLong":
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=types.QuantityFP(amount=base_proceeds, unit=types.TokenType.BASE),
-        #     longs={mint_time: elf_wallet.LongFP(-bond_amount)},
-        #     fees_paid=fee,
-        # )
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             longs={mint_time: elf_wallet.LongFP(-trade["_bondAmount"])},  # negative, decreasing
         )
     elif trade_type == "openShort":
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=-types.QuantityFP(amount=trader_deposit, unit=types.TokenType.BASE),
-        #     shorts={
-        #         market.latest_checkpoint_time: elf_wallet.ShortFP(
-        #             balance=bond_amount, open_share_price=market.market_state.share_price
-        #         )
-        #     },
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=types.QuantityFP(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
@@ -460,21 +425,8 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
             },
         )
     else:
-        assert trade_type == "closeShort", f"Unknown trade type: {trade_type}"
-        # agent_deltas = elf_wallet.WalletFP(
-        #     address=wallet_address,
-        #     balance=types.QuantityFP(
-        #         amount=(market.market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base,
-        #         unit=types.TokenType.BASE,
-        #     ),  # see CLOSING SHORT LOGIC above
-        #     shorts={
-        #         mint_time: elf_wallet.ShortFP(
-        #             balance=-bond_amount,
-        #             open_share_price=0,
-        #         )
-        #     },
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
+        if trade_type != "closeShort":
+            raise ValueError(f"Unknown trade type: {trade_type}")
         agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
             balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),
