@@ -1,6 +1,7 @@
 """A demo for executing an arbitrary number of trades bots on testnet."""
-
 from __future__ import annotations  # types will be strings by default in 3.11
+
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 # stdlib
 import argparse
@@ -376,7 +377,7 @@ def create_agent(
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     config: simulators.ConfigFP,
-):
+):  # pylint: disable=too-many-arguments
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
     Parameters
@@ -446,7 +447,7 @@ def get_agents(
     config: simulators.ConfigFP,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> tuple[dict[str, elfpy_agent.AgentFP], list[KeyfileAccount]]:
+) -> dict[str, elfpy_agent.AgentFP]:
     """Get python agents & corresponding on-chain accounts.
 
     Returns
@@ -496,17 +497,16 @@ def get_agents(
 def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contract):
     """Execute agent trades on hyperdrive solidity contract."""
     # TODO: add market-state-dependent trading for smart bots
-    # market_state = get_simulation_market_state_from_contract(hyperdrive_contract=hyperdrive_contract, agent_address=contract)
+    # market_state = get_simulation_market_state_from_contract(
+    #     hyperdrive_contract=hyperdrive_contract, agent_address=contract
+    # )
     # market_type = trade_obj.market
     trade = market_trade.trade
     agent_contract = agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.int_value
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
-    while base_contract.allowance(agent_contract.address, hyperdrive_contract.address) < amount:
-        print(f"\n{base_contract.allowance(agent_contract.address, hyperdrive_contract.address)=}")
-        print(f"{amount=}\n")
-        print(f"{base_contract.allowance(agent_contract.address, hyperdrive_contract.address) < amount=}")
+    if base_contract.allowance(agent_contract.address, hyperdrive_contract.address) < amount:
         txn_args = hyperdrive_contract.address, FixedPoint("50_000.0", decimal_places=18).int_value
         ape_utils.attempt_txn(agent_contract, base_contract.approve, *txn_args)
         logging.info("Trade had insufficient allowance, approving an additional 50k base.")
