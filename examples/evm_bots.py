@@ -507,7 +507,7 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
     if base_contract.allowance(agent_contract.address, hyperdrive_contract.address) < amount:
-        txn_args = hyperdrive_contract.address, FixedPoint("50_000.0", decimal_places=18).int_value
+        txn_args = hyperdrive_contract.address, FixedPoint("50_000.0", decimal_places=18).scaled_value
         ape_utils.attempt_txn(agent_contract, base_contract.approve, *txn_args)
         logging.info("Trade had insufficient allowance, approving an additional 50k base.")
     params = {
@@ -564,22 +564,22 @@ def deploy_hyperdrive(
     curve_fee = FixedPoint(config.curve_fee_multiple, decimal_places=18)
     flat_fee = FixedPoint(config.flat_fee_multiple, decimal_places=18)
     gov_fee = FixedPoint(0)
-    base_contract.mint(initial_supply.int_value, sender=deployer)  # minted to sender
+    base_contract.mint(initial_supply.scaled_value, sender=deployer)  # minted to sender
     # Deploy hyperdrive on the chain
     hyperdrive: ContractInstance = deployer.deploy(
         project.get_contract("MockHyperdriveTestnet"),
         base_contract,
-        initial_apr.int_value,
-        initial_share_price.int_value,
+        initial_apr.scaled_value,
+        initial_share_price.scaled_value,
         checkpoints_per_term,  # not in FixedPoint format
         checkpoint_duration,  # not in FixedPoint format
-        time_stretch.int_value,
-        (curve_fee.int_value, flat_fee.int_value, gov_fee.int_value),
+        time_stretch.scaled_value,
+        (curve_fee.scaled_value, flat_fee.scaled_value, gov_fee.scaled_value),
         deployer,
     )
     with ape.accounts.use_sender(deployer):
-        base_contract.approve(hyperdrive, initial_supply.int_value)
-        hyperdrive.initialize(initial_supply.int_value, initial_apr.int_value, deployer, True)
+        base_contract.approve(hyperdrive, initial_supply.scaled_value)
+        hyperdrive.initialize(initial_supply.scaled_value, initial_apr.scaled_value, deployer, True)
     return hyperdrive
 
 

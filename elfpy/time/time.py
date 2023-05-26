@@ -10,11 +10,11 @@ class TimeUnit(Enum):
     r"""Time units, with their parts in a year
 
     FP values are stored as parts in a year as FixedPoint 18 decimal integers"""
-    SECONDS = FixedPoint(31_556_952 * 10**18)
-    MINUTES = FixedPoint(525_600 * 10**18)
-    HOURS = FixedPoint(8_760 * 10**18)
-    DAYS = FixedPoint(365 * 10**18)
-    YEARS = FixedPoint(1 * 10**18)
+    SECONDS = FixedPoint(31_556_952)
+    MINUTES = FixedPoint(525_600)
+    HOURS = FixedPoint(8_760)
+    DAYS = FixedPoint(365)
+    YEARS = FixedPoint(1)
 
 
 @dataclass

@@ -52,5 +52,5 @@ class FixedPointMath:
         if isinstance(x, FixedPoint):
             if not x.is_finite():
                 return x
-            return type(x)(FixedPointIntegerMath.exp(x.int_value))
+            return type(x)(FixedPointIntegerMath.exp(x.scaled_value))
         return type(x)(math.exp(x))

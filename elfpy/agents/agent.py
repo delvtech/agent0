@@ -116,7 +116,7 @@ class Agent:
         last_maybe_max_short = FixedPoint(0)
         bond_percent = FixedPoint("1.0")
         num_iters = 25
-        for step_size in [FixedPoint(f"{1 / (2 ** (x + 1)):.19f}") for x in range(num_iters)]:
+        for step_size in [FixedPoint(1 / (2 ** (x + 1))) for x in range(num_iters)]:
             # Compute the amount of base returned by selling the specified
             # amount of bonds.
             maybe_max_short = max_short * bond_percent

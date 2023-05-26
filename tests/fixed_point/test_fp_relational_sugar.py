@@ -14,7 +14,7 @@ class TestFixedPointNonFinite(unittest.TestCase):
     ONE = FixedPoint("1.0")
     NEG_ONE = FixedPoint("-1.0")
     ODD_FINITE = FixedPoint("9.0")
-    SMALL_FINITE = FixedPoint(999)
+    SMALL_FINITE = FixedPoint(scaled_value=999)
     INF = FixedPoint("inf")
     NEG_INF = FixedPoint("-inf")
     NAN = FixedPoint("nan")

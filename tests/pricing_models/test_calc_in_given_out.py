@@ -118,7 +118,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             # TODO: Works from 0 to 15, after that with[out]_fee goes 0 and then negative.
             # Need to fix after negative interest is supported (which removes lp_total_supply from in_given_out calcs)
             # Final range should be range(0, 19)
-            for range_val, trade_amount in enumerate([FixedPoint(f"{(1 * 10 ** (-x)):.19f}") for x in range(0, 16)]):
+            for range_val, trade_amount in enumerate([FixedPoint(1 * 10 ** (-x)) for x in range(0, 16)]):
                 logging.info(
                     "pricing_model=%s\nrange_val=%s; trade_amount=%s", pricing_model, range_val, float(trade_amount)
                 )
@@ -358,7 +358,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=AssertionError,
+                exception_type=(AssertionError, errors.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(  # test 11
                 # amount very high, can't make trade
