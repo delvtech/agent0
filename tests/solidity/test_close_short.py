@@ -76,8 +76,8 @@ class TestCloseShort(unittest.TestCase):
         # verify that the bond reserves were updated according to flat+curve
         # the adjustment should be equal to timeRemaining * bondAmount
         self.assertLess(  # user gets less than what they put in
-            int(agent_base_proceeds),
-            int(agent_base_paid),
+            agent_base_proceeds,
+            agent_base_paid,
             msg="agent gets more than what they put in: agent_base_proceeds > agent_base_paid",
         )
         time_remaining = FixedPoint("0.0")
