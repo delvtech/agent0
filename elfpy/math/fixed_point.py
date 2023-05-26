@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import re
 import copy
-from typing import Union, Any
+from typing import Union, Any, Literal
 
 import elfpy.errors.errors as errors
 from .fixed_point_integer_math import FixedPointIntegerMath
 
-OTHER_TYPES = Union[int, bool, float]
+OtherTypes = Union[int, bool, float]
+SpecialValues = Literal["nan", "inf", "-inf"]
 
 
 class FixedPoint:
@@ -28,11 +29,12 @@ class FixedPoint:
     Whenever expanding beyond what is in the Solidity contracts, we follow the IEEE 754 floating point standard.
     """
 
-    scaled_value: int  # integer representation of self
+    _scaled_value: int  # integer representation of self
+    _special_value: SpecialValues  # string representation of self
 
     def __init__(
         self,
-        value: OTHER_TYPES | str | FixedPoint | None = None,  # use default conversion
+        value: OtherTypes | str | FixedPoint | None = None,  # use default conversion
         scaled_value: int | None = None,  # assume integer is already converted
         decimal_places: int = 18,  # how many decimal places to store (must be 18)
         signed: bool = True,  # whether or not it is a signed FixedPoint (must be True)
@@ -112,7 +114,7 @@ class FixedPoint:
         raise ValueError("scaled_value is immutable")
 
     @property
-    def special_value(self) -> int:
+    def special_value(self) -> str:
         """Special value from FixedPoint format
 
         This work-around is required to make the internal representation immutable,
@@ -169,7 +171,7 @@ class FixedPoint:
         pattern = r"^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$"
         return bool(re.match(pattern, float_string))
 
-    def _coerce_other(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def _coerce_other(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Cast inputs to the FixedPoint type if they come in as something else.
 
         .. note::
@@ -189,7 +191,7 @@ class FixedPoint:
             raise TypeError(f"unsupported operand type(s): {type(other)}")
         raise TypeError(f"unsupported operand type(s): {type(other)}")
 
-    def __add__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __add__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '+' syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # anything + nan is nan
@@ -206,11 +208,11 @@ class FixedPoint:
             signed=self.signed,
         )
 
-    def __radd__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __radd__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal addition to support other + FixedPoint"""
         return self + other  # commutative operation
 
-    def __sub__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __sub__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '-' syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # anything - nan is nan
@@ -229,12 +231,12 @@ class FixedPoint:
             signed=self.signed,
         )
 
-    def __rsub__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rsub__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal subtraction to support other - FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other - self  # now use normal subtraction
 
-    def __mul__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __mul__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '*' syntax
 
         We use mul_down to match the majority of Hyperdrive solidity contract equations
@@ -254,11 +256,11 @@ class FixedPoint:
             signed=self.signed,
         )
 
-    def __rmul__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rmul__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal multiplication to support other * FixedPoint"""
         return self * other  # commutative operation
 
-    def __truediv__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __truediv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '/' syntax.
 
         We use div_down to match the majority of Hyperdrive solidity contract equations
@@ -280,12 +282,12 @@ class FixedPoint:
             signed=self.signed,
         )
 
-    def __rtruediv__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rtruediv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal division to support other / FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other / self  # then divide normally
 
-    def __floordiv__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __floordiv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '//' syntax
 
         While FixedPoint numbers are represented as integers, they act like floats.
@@ -293,12 +295,12 @@ class FixedPoint:
         """
         return (self.__truediv__(other)).__floor__()
 
-    def __rfloordiv__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rfloordiv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal floor division to support other // FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other // self  # then normal divide
 
-    def __pow__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __pow__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '**' syntax"""
         other = self._coerce_other(other)
         if self.is_finite() and other.is_finite():
@@ -310,12 +312,12 @@ class FixedPoint:
         # pow is tricky -- leaning on float operations under the hood for non-finite
         return FixedPoint(str(float(self) ** float(other)))
 
-    def __rpow__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rpow__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal pow to support other ** FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other**self  # then normal pow
 
-    def __mod__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __mod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax
 
         In Python, for ints and floats, this is computed as
@@ -338,12 +340,12 @@ class FixedPoint:
             return FixedPoint("0.0")
         return self - (other * (self / other).floor())
 
-    def __rmod__(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def __rmod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal modulo to allow other % FixedPoint"""
         other = self._coerce_other(other)
         return other % self
 
-    def __divmod__(self, other: OTHER_TYPES | FixedPoint) -> tuple[FixedPoint, FixedPoint]:
+    def __divmod__(self, other: OtherTypes | FixedPoint) -> tuple[FixedPoint, FixedPoint]:
         r"""Enables `divmod()` function"""
         return (self // other, self % other)
 
@@ -360,7 +362,7 @@ class FixedPoint:
         return FixedPoint(scaled_value=abs(self.scaled_value), decimal_places=self.decimal_places, signed=self.signed)
 
     # comparison methods
-    def __eq__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __eq__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `==` syntax"""
         other = self._coerce_other(other)
         if not self.is_finite() or not other.is_finite():
@@ -369,7 +371,7 @@ class FixedPoint:
             return self.special_value == other.special_value
         return self.scaled_value == other.scaled_value
 
-    def __ne__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __ne__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `!=` syntax"""
         other = self._coerce_other(other)
         if not self.is_finite() or not other.is_finite():
@@ -378,7 +380,7 @@ class FixedPoint:
             return self.special_value != other.special_value
         return self.scaled_value != other.scaled_value
 
-    def __lt__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __lt__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `<` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -392,7 +394,7 @@ class FixedPoint:
         # both are finite
         return self.scaled_value < other.scaled_value
 
-    def __le__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __le__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `<=` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -406,7 +408,7 @@ class FixedPoint:
         # both are finite
         return self.scaled_value <= other.scaled_value
 
-    def __gt__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __gt__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `>` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -420,7 +422,7 @@ class FixedPoint:
         # both are finite
         return self.scaled_value > other.scaled_value
 
-    def __ge__(self, other: OTHER_TYPES | FixedPoint) -> bool:
+    def __ge__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `>=` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -572,7 +574,7 @@ class FixedPoint:
         return hash((copy.deepcopy(self).scaled_value, self.__class__.__name__))
 
     # additional arethmitic & helper functions
-    def div_up(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def div_up(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Divide self by other, rounding up"""
         other = self._coerce_other(other)
         if other <= FixedPoint("0.0"):
@@ -583,7 +585,7 @@ class FixedPoint:
             signed=self.signed,
         )
 
-    def mul_up(self, other: OTHER_TYPES | FixedPoint) -> FixedPoint:
+    def mul_up(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Multiply self by other, rounding up"""
         other = self._coerce_other(other)
         if self == FixedPoint("0.0") or other == FixedPoint("0.0"):
