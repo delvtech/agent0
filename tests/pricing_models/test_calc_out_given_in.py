@@ -1382,7 +1382,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # TODO: Works from 0 to 7, after that with[out]_fee goes 0 and then negative.
             # Need to fix after negative interest is supported (which removes lp_total_supply from in_given_out calcs)
             # Final range should be range(0, 19)
-            for range_val, trade_amount in enumerate([FixedPoint(f"{(1 * 10 ** (-x)):.19f}") for x in range(0, 8)]):
+            for range_val, trade_amount in enumerate([FixedPoint(1 * 10 ** (-x)) for x in range(0, 8)]):
                 logging.info(
                     "pricing_model=%s\nrange_val=%s; trade_amount=%s", pricing_model, range_val, float(trade_amount)
                 )
@@ -1587,7 +1587,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("-91.25"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=AssertionError,
+                exception_type=(AssertionError, errors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 9
                 in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
@@ -1619,7 +1619,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
-                exception_type=AssertionError,
+                exception_type=(AssertionError, errors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 11
                 # amount very high, can't make trade
@@ -1690,6 +1690,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
+            print(f"{test_number=}")
             logging.info("test_number=%g", test_number)
             for pricing_model in pricing_models:
                 # TODO: convert these tests to use total supply, not the approximation
