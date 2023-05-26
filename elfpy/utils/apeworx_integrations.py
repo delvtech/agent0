@@ -18,9 +18,10 @@ from ape.managers.project import ProjectManager
 from ape.types import AddressType, ContractType
 
 import elfpy
+import elfpy.agents.wallet as elf_wallet
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
+import elfpy.markets.hyperdrive.hyperdrive_assets as hyperdrive_assets
 from elfpy import types
-from elfpy.agents.wallet import Long, Short, Wallet
-from elfpy.markets.hyperdrive import hyperdrive_assets, hyperdrive_market
 from elfpy.math import FixedPoint
 from elfpy.utils.outputs import log_and_show
 from elfpy.utils.outputs import number_to_string as fmt
@@ -54,7 +55,7 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.address, AddressType))
 
 
-def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketStateFP:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -77,32 +78,31 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     )
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
-    return hyperdrive_market.MarketState(
-        lp_total_supply=int(FixedPoint(pool_state["lpTotalSupply"])),
-        share_reserves=int(FixedPoint(pool_state["shareReserves"])),
-        bond_reserves=int(FixedPoint(pool_state["bondReserves"])),
-        base_buffer=int(FixedPoint(pool_state["longsOutstanding"])),  # so do we not need any buffers now?
-        # TODO: bond_buffer=0,
-        variable_apr=0.01,  # TODO: insert real value
-        share_price=int(FixedPoint(pool_state["sharePrice"])),
-        init_share_price=int(FixedPoint(hyper_config["initialSharePrice"])),
-        curve_fee_multiple=int(FixedPoint(hyper_config["curveFee"])),
-        flat_fee_multiple=int(FixedPoint(hyper_config["flatFee"])),
-        governance_fee_multiple=int(FixedPoint(hyper_config["governanceFee"])),
-        longs_outstanding=int(FixedPoint(pool_state["longsOutstanding"])),
-        shorts_outstanding=int(FixedPoint(pool_state["shortsOutstanding"])),
-        long_average_maturity_time=int(FixedPoint(pool_state["longAverageMaturityTime"])),
-        short_average_maturity_time=int(FixedPoint(pool_state["shortAverageMaturityTime"])),
-        long_base_volume=int(FixedPoint(pool_state["longBaseVolume"])),
-        short_base_volume=int(FixedPoint(pool_state["shortBaseVolume"])),
+    return hyperdrive_market.MarketStateFP(
+        lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
+        share_reserves=FixedPoint(pool_state["shareReserves"]),
+        bond_reserves=FixedPoint(pool_state["bondReserves"]),
+        base_buffer=FixedPoint(pool_state["longsOutstanding"]),  # so do we not need any buffers now?
+        variable_apr=FixedPoint(0.01),  # TODO: insert real value
+        share_price=FixedPoint(pool_state["sharePrice"]),
+        init_share_price=FixedPoint(hyper_config["initialSharePrice"]),
+        curve_fee_multiple=FixedPoint(hyper_config["curveFee"]),
+        flat_fee_multiple=FixedPoint(hyper_config["flatFee"]),
+        governance_fee_multiple=FixedPoint(hyper_config["governanceFee"]),
+        longs_outstanding=FixedPoint(pool_state["longsOutstanding"]),
+        shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]),
+        long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]),
+        short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
+        long_base_volume=FixedPoint(pool_state["longBaseVolume"]),
+        short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
         # TODO: checkpoints=defaultdict
-        checkpoint_duration=hyper_config["checkpointDuration"],
-        total_supply_longs=defaultdict(float, {0: int(FixedPoint(pool_state["longsOutstanding"]))}),
-        total_supply_shorts=defaultdict(float, {0: int(FixedPoint(pool_state["shortsOutstanding"]))}),
-        total_supply_withdraw_shares=int(FixedPoint(total_supply_withdraw_shares)),
-        withdraw_shares_ready_to_withdraw=int(FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"])),
-        withdraw_capital=int(FixedPoint(pool_state["capital"])),
-        withdraw_interest=int(FixedPoint(pool_state["interest"])),
+        checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
+        total_supply_longs=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["longsOutstanding"])}),
+        total_supply_shorts=defaultdict(FixedPoint, {FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])}),
+        total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
+        withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
+        withdraw_capital=FixedPoint(pool_state["capital"]),
+        withdraw_interest=FixedPoint(pool_state["interest"]),
     )
 
 
@@ -170,7 +170,7 @@ def get_wallet_from_onchain_trade_info(
     info: OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> Wallet:
+) -> elf_wallet.WalletFP:
     r"""Construct wallet balances from on-chain trade info.
 
     Arguments
@@ -192,8 +192,9 @@ def get_wallet_from_onchain_trade_info(
         Wallet with Short, Long, and LP positions.
     """
     # TODO: remove restriction forcing Wallet index to be an int (issue #415)
-    wallet = Wallet(
-        address=index, balance=types.Quantity(amount=base_contract.balanceOf(address_), unit=types.TokenType.BASE)
+    wallet = elf_wallet.WalletFP(
+        address=index,
+        balance=types.QuantityFP(amount=FixedPoint(base_contract.balanceOf(address_)), unit=types.TokenType.BASE),
     )
     for position_id in info.unique_ids:  # loop across all unique positions
         trades_in_position = ((info.trades["from"] == address_) | (info.trades["to"] == address_)) & (
@@ -208,7 +209,6 @@ def get_wallet_from_onchain_trade_info(
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
         mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
-
         # verify our calculation against the onchain balance
         on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
         if abs(balance - on_chain_balance) > elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI:
@@ -217,7 +217,6 @@ def get_wallet_from_onchain_trade_info(
                 f"more than {elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI} wei for {address_}"
             )
         log_and_show(f" => calculated balance = on_chain = {fmt(balance)}")
-
         # check if there's an outstanding balance
         if balance != 0 or on_chain_balance != 0:
             if asset_type == "SHORT":
@@ -235,13 +234,16 @@ def get_wallet_from_onchain_trade_info(
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
-                wallet.shorts.update({mint_time: Short(balance=balance, open_share_price=open_share_price)})
+                wallet.shorts.update(
+                    {mint_time: elf_wallet.ShortFP(balance=balance, open_share_price=open_share_price)}
+                )
                 logging.debug(
-                    "storing in wallet as %s", {mint_time: Short(balance=balance, open_share_price=open_share_price)}
+                    "storing in wallet as %s",
+                    {mint_time: elf_wallet.ShortFP(balance=balance, open_share_price=open_share_price)},
                 )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: Long(balance=balance)})
-                logging.debug("storing in wallet as %s", {mint_time: Long(balance=balance)})
+                wallet.longs.update({mint_time: elf_wallet.LongFP(balance=balance)})
+                logging.debug("storing in wallet as %s", {mint_time: elf_wallet.LongFP(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
     return wallet
@@ -264,14 +266,11 @@ def get_gas_fees(block: BlockAPI) -> tuple[list[float], list[float]]:
     type2_transactions = [txn for txn in block.transactions if txn.type == 2]  # noqa: PLR2004
     if len(type2_transactions) <= 0:  # No type 2 transactions in block
         return [], []
-
     # Pull out max_fee and priority_fee for each transaction, zipping them into two lists
     max_fees, priority_fees = zip(*[(txn.max_fee, txn.max_priority_fee) for txn in type2_transactions])
-
     # Exclude None values solely for typechecking, then convert from wei to gwei (1 gwei = 1e9 wei)
     max_fees = [max_fee / 1e9 for max_fee in max_fees if max_fee is not None]
     priority_fees = [priority_fee / 1e9 for priority_fee in priority_fees if priority_fee is not None]
-
     return max_fees, priority_fees
 
 
@@ -292,15 +291,12 @@ def get_gas_stats(block: BlockAPI) -> tuple[float, float, float, float]:
     max_fees, priority_fees = get_gas_fees(block)
     if len(max_fees) <= 0:  # No type 2 transactions in block
         return np.nan, np.nan, np.nan, np.nan
-
     # Calculate max and avg for max_fees
     _max_max_fee = max(max_fees)
     _avg_max_fee = sum(max_fees) / len(max_fees)
-
     # Calculate max and avg for priority_fees
     _max_priority_fee = max(priority_fees)
     _avg_priority_fee = sum(priority_fees) / len(priority_fees)
-
     return _max_max_fee, _avg_max_fee, _max_priority_fee, _avg_priority_fee
 
 
@@ -373,111 +369,63 @@ def get_pool_state(tx_receipt: ReceiptAPI, hyperdrive_contract: ContractInstance
 PoolInfo = namedtuple("PoolInfo", ["start_time", "block_time", "term_length", "market_state"])
 
 
-# TODO: remove commenets after verifying the accuracy of this function through more testing (issue #423)
 def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_info: PoolInfo):
     """Get the change in an agent's wallet from a transaction receipt."""
+    # TODO: verify the accuracy of this function through more testing
+    # issue #423
     agent = tx_receipt.operator
     event_args = tx_receipt.event_arguments
     event_args.update({k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]})
-    # txn_events = [e.dict() for e in tx_receipt.events if agent in [e.get("from"), e.get("to")]]
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
-    # dai_out = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["dst"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
     mint_time = (
         (maturity_timestamp - elfpy.SECONDS_IN_YEAR * pool_info.term_length) - pool_info.start_time
     ) / elfpy.SECONDS_IN_YEAR
-    # token_type = hyperdrive_assets.AssetIdPrefix(prefix)  # look up prefix in AssetIdPrefix
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
-        #     lp_tokens=lp_out,
-        # )
-        agent_deltas = Wallet(
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=-types.Quantity(amount=trade["_contribution"], unit=types.TokenType.BASE),
+            balance=-types.QuantityFP(amount=trade["_contribution"], unit=types.TokenType.BASE),
             lp_tokens=trade["value"],  # trade output
         )
     elif trade_type == "removeLiquidity":
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=types.Quantity(amount=delta_base, unit=types.TokenType.BASE),
-        #     lp_tokens=-lp_shares,
-        #     withdraw_shares=withdraw_shares,
-        # )
-        agent_deltas = Wallet(
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
+            balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
             lp_tokens=-trade["_shares"],  # negative, decreasing
             withdraw_shares=trade["_shares"],  # positive, increasing
         )
     elif trade_type == "openLong":
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        #     longs={market.latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
-        agent_deltas = Wallet(
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=types.Quantity(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
-            longs={pool_info.block_time: Long(trade["value"])},  # trade output, increasing
+            balance=types.QuantityFP(amount=-trade["_baseAmount"], unit=types.TokenType.BASE),  # negative, decreasing
+            longs={pool_info.block_time: elf_wallet.LongFP(trade["value"])},  # trade output, increasing
         )
     elif trade_type == "closeLong":
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
-        #     longs={mint_time: wallet.Long(-bond_amount)},
-        #     fees_paid=fee,
-        # )
-        agent_deltas = Wallet(
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
-            longs={mint_time: Long(-trade["_bondAmount"])},  # negative, decreasing
+            balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),  # trade output
+            longs={mint_time: elf_wallet.LongFP(-trade["_bondAmount"])},  # negative, decreasing
         )
     elif trade_type == "openShort":
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
-        #     shorts={
-        #         market.latest_checkpoint_time: wallet.Short(
-        #             balance=bond_amount, open_share_price=market.market_state.share_price
-        #         )
-        #     },
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
-        agent_deltas = Wallet(
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=types.Quantity(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
+            balance=types.QuantityFP(amount=-dai_in, unit=types.TokenType.BASE),  # negative, decreasing
             shorts={
-                pool_info.block_time: Short(
+                pool_info.block_time: elf_wallet.ShortFP(
                     balance=trade["value"],  # trade output
                     open_share_price=pool_info.market_state.share_price,
                 )
             },
         )
     else:
-        assert trade_type == "closeShort", f"Unknown trade type: {trade_type}"
-        # agent_deltas = wallet.Wallet(
-        #     address=wallet_address,
-        #     balance=types.Quantity(
-        #         amount=(market.market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base,
-        #         unit=types.TokenType.BASE,
-        #     ),  # see CLOSING SHORT LOGIC above
-        #     shorts={
-        #         mint_time: wallet.Short(
-        #             balance=-bond_amount,
-        #             open_share_price=0,
-        #         )
-        #     },
-        #     fees_paid=trade_result.breakdown.fee,
-        # )
-        agent_deltas = Wallet(
+        if trade_type != "closeShort":
+            raise ValueError(f"Unknown trade type: {trade_type}")
+        agent_deltas = elf_wallet.WalletFP(
             address=addresses.index(agent),
-            balance=types.Quantity(amount=trade["value"], unit=types.TokenType.BASE),
+            balance=types.QuantityFP(amount=trade["value"], unit=types.TokenType.BASE),
             shorts={
-                mint_time: Short(
+                mint_time: elf_wallet.ShortFP(
                     balance=-trade["_bondAmount"],  # negative, decreasing
                     open_share_price=0,
                 )
@@ -582,8 +530,7 @@ def select_abi(method: Callable, params: dict | None = None, args: Tuple | None 
                 selected_abi = abi  # we found all the arguments by name!
                 args = tuple(params[arg] for arg in found_args)  # get the values for the arguments
                 break
-            else:
-                missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
+            missing_args = {inpt.name for inpt in abi.inputs if inpt.name not in params}
         elif len(args) == len(abi.inputs):  # check if the number of arguments matches the number of inputs
             selected_abi = abi  # pick this ABI because it has the right number of arguments, hope for the best
             break
@@ -646,7 +593,6 @@ def ape_trade(
         assert maturity_time is not None, "Maturity time must be provided to close a long or short trade"
         trade_asset_id = hyperdrive_assets.encode_asset_id(info[trade_type].prefix, maturity_time)
         amount = np.clip(amount, 0, hyperdrive_contract.balanceOf(trade_asset_id, agent))
-
     # specify one big dict that holds the parameters for all six methods
     params = {
         "_asUnderlying": True,  # mockHyperdriveTestNet does not support as_underlying=False
@@ -665,10 +611,8 @@ def ape_trade(
     }
     # check the specified method for an ABI that we have all the parameters for
     selected_abi, args = select_abi(params=params, method=info[trade_type].method)
-
     # create a transaction with the selected ABI
     contract_txn: ContractTransaction = ContractTransaction(abi=selected_abi, address=hyperdrive_contract.address)
-
     try:  # attempt to execute the transaction, allowing for a specified number of retries (default is 1)
         tx_receipt = attempt_txn(agent, contract_txn, *args, **kwargs)
         if tx_receipt is None:
@@ -724,13 +668,11 @@ def attempt_txn(
     """
     # allow inconsistent return, since we throw an error if the transaction fails after all attempts
     # pylint: disable=inconsistent-return-statements
-
     mult = kwargs.pop("mult") if hasattr(kwargs, "mult") else 2
     priority_fee_multiple = kwargs.pop("priority_fee_multiple") if hasattr(kwargs, "priority_fee_multiple") else 5
     if isinstance(contract_txn, ContractTransactionHandler):
         abi, args = select_abi(method=contract_txn, args=args)
         contract_txn = ContractTransaction(abi=abi, address=contract_txn.contract.address)
-
     # begin attempts, indexing attempt from 1 to mult (for the sake of easy calculation)
     for attempt in range(1, mult + 1):
         latest = agent.provider.get_block("latest")
@@ -740,7 +682,6 @@ def attempt_txn(
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
         log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
-
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
         )
