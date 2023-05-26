@@ -221,7 +221,6 @@ def test_collect_fees_long(amount: int):
     test.assertEqual(
         test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price, FixedPoint(0)
     )
-
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
     test.assertGreater(gov_balance_after, gov_balance_before_open_long)
@@ -278,7 +277,7 @@ def test_collect_fees_short(amount):
     gov_balance_after = test.gary.wallet.balance.amount
     # ensure that Governance Gary's balance has increased
     test.assertGreater(gov_balance_after, gov_balance_before_open_short)
-    # ensure that Governance Gary got the exaxt fees expected
+    # ensure that Governance Gary got the exact fees expected
     test.assertAlmostEqual(gov_balance_after, gov_fees_after_close_short, delta=test.APPROX_EQ)
 
 
