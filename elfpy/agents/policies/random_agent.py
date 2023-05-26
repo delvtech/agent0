@@ -54,7 +54,7 @@ class RandomAgent(elf_agent.Agent):
         # TODO: This is a hack until we fix get_max
         # issue # 440
         # max_short = self.get_max_short(market)
-        # if max_short < elfpy.WEI_FP:  # no short is possible
+        # if max_short < elfpy.WEI:  # no short is possible
         #     return []
         maximum_trade_amount_in_bonds = (
             market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
@@ -82,7 +82,7 @@ class RandomAgent(elf_agent.Agent):
         # issue # 440
         # # get the maximum amount that can be traded, based on the budget & market reserve levels
         # max_long = self.get_max_long(market)
-        # if max_long < elfpy.WEI_FP:  # no trade is possible
+        # if max_long < elfpy.WEI:  # no trade is possible
         #     return []
         maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
         # # WEI <= trade_amount <= max_short

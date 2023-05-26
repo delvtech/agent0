@@ -83,7 +83,7 @@ class MarketAction(base_market.MarketAction):
     mint_time: FixedPoint | None = None
 
 
-def calculate_lp_allocation_adjustment_fp(
+def calculate_lp_allocation_adjustment(
     positions_outstanding: FixedPoint,
     base_volume: FixedPoint,
     average_time_remaining: FixedPoint,
@@ -148,7 +148,7 @@ def calculate_short_adjustment(
     normalized_time_remaining = (market_state.short_average_maturity_time - market_time) / (
         position_duration.normalizing_constant / FixedPoint("365.0")
     )
-    return calculate_lp_allocation_adjustment_fp(
+    return calculate_lp_allocation_adjustment(
         market_state.shorts_outstanding,
         market_state.short_base_volume,
         normalized_time_remaining,
@@ -185,7 +185,7 @@ def calculate_long_adjustment(
     normalized_time_remaining = (market_state.long_average_maturity_time - market_time) / (
         position_duration.normalizing_constant / FixedPoint("365.0")
     )
-    return calculate_lp_allocation_adjustment_fp(
+    return calculate_lp_allocation_adjustment(
         market_state.longs_outstanding,
         market_state.long_base_volume,
         normalized_time_remaining,
