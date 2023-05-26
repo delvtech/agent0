@@ -58,10 +58,10 @@ class TestFixedPointMath(unittest.TestCase):
         """Test exp function"""
         tolerance = 1e-18
         result = FixedPointMath.exp(FixedPoint("1.0"))
-        expected = FixedPoint(2718281828459045235)
+        expected = FixedPoint(scaled_value=2718281828459045235)
         assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
         result = FixedPointMath.exp(FixedPoint("-1.0"))
-        expected = FixedPoint(367879441171442321)
+        expected = FixedPoint(scaled_value=367879441171442321)
         assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
         result = FixedPointMath.exp(1)
         expected = int(math.exp(1))
