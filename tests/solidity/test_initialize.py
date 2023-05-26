@@ -28,12 +28,18 @@ class TestInitialize(unittest.TestCase):
     block_time: BlockTime
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
-    def __init__(self, contribution: float = 1_000.0, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
+    def __init__(
+        self,
+        contribution: FixedPoint = FixedPoint("1_000.0"),
+        target_apr: FixedPoint = FixedPoint("0.5"),
+        position_duration: int = 180,
+        **kwargs,
+    ):
         """
         Set up agent, pricing model, & market for the subsequent tests.
         """
-        self.contribution = FixedPoint(float(contribution))
-        self.target_apr = FixedPoint(float(target_apr))
+        self.contribution = contribution
+        self.target_apr = target_apr
         self.position_duration = FixedPoint(position_duration * 10**18)
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
@@ -91,7 +97,9 @@ def test_initialize_success():
 
 def test_initialize_bots_on_solidity_success():
     """Numerical test to ensure exact same outcome as Solidity, using params from bots_on_solidity.ipynb"""
-    test = TestInitialize(contribution=500_000_000, target_apr=0.05, position_duration=365)
+    test = TestInitialize(
+        contribution=FixedPoint("500_000_000.0"), target_apr=FixedPoint("0.05"), position_duration=365
+    )
     init_apr = test.pricing_model.calc_apr_from_reserves(
         market_state=test.hyperdrive.market_state,
         time_remaining=test.hyperdrive.position_duration,

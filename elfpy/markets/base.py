@@ -55,7 +55,7 @@ class MarketActionResult:
 class BaseMarketState:
     r"""The state of an AMM
 
-    Implements a class for all that that an AMM smart contract would hold or would have access to.
+    Implements a class for all that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
     """
 
