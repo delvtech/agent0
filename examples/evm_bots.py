@@ -334,6 +334,8 @@ def get_config(args) -> simulators.Config:
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:
             config.random_seed = int(file.read()) + 1
+    else:  # make parent directory if it doesn't exist
+        os.makedirs(os.path.dirname(random_seed_file), exist_ok=True)
     logging.info("Random seed=%s", config.random_seed)
     with open(random_seed_file, "w", encoding="utf-8") as file:
         file.write(str(config.random_seed))
