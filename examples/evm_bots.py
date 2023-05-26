@@ -631,12 +631,17 @@ if __name__ == "__main__":
         simulator = get_simulator(experiment_config)  # Instantiate the sim market
         deployer_account.balance += int(1e18)  # eth, for spending on gas, not erc20
         if experiment_config.scratch["base_address"]:  # use existing base token deployment
-            base_instance = ape_utils.get_instance(experiment_config.scratch["base_address"], provider=provider)
+            base_instance = ape_utils.get_instance(
+                address=experiment_config.scratch["base_address"],
+                contract_type=project.get_contract("ERC20Mintable").contract_type,
+                provider=provider)
         else:  # deploy a new base token
             base_instance: ContractInstance = deployer_account.deploy(project.get_contract("ERC20Mintable"))
         if experiment_config.scratch["hyperdrive_address"]:  # use existing hyperdrive deployment
             hyperdrive_instance: ContractInstance = ape_utils.get_instance(
-                experiment_config.scratch["hyperdrive_address"], provider=provider
+                address=experiment_config.scratch["hyperdrive_address"],
+                contract_type=project.get_contract("MockHyperdriveTestnet").contract_type,
+                provider=provider
             )
         else:  # deploy a new hyperdrive
             hyperdrive_instance: ContractInstance = deploy_hyperdrive(
