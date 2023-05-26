@@ -21,9 +21,9 @@ class TestInitialize(unittest.TestCase):
     contribution: FixedPoint
     target_apr: FixedPoint
     position_duration: FixedPoint
-    alice: elf_agent.AgentFP
-    bob: elf_agent.AgentFP
-    celine: elf_agent.AgentFP
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.MarketFP
     block_time: BlockTimeFP
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP
@@ -35,9 +35,9 @@ class TestInitialize(unittest.TestCase):
         self.contribution = FixedPoint(float(contribution))
         self.target_apr = FixedPoint(float(target_apr))
         self.position_duration = FixedPoint(position_duration * 10**18)
-        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.AgentFP(wallet_address=2, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = BlockTimeFP()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
         market_state = hyperdrive_market.MarketStateFP()

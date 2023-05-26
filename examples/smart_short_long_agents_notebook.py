@@ -107,7 +107,7 @@ fig_size = (5, 5)
 
 
 # %%
-class FixedFrida(elf_agent.AgentFP):
+class FixedFrida(elf_agent.Agent):
     """
     Agent that paints & opens fixed rate borrow positions
     """
@@ -194,7 +194,7 @@ class FixedFrida(elf_agent.AgentFP):
 
 
 # %%
-class LongLouie(elf_agent.AgentFP):
+class LongLouie(elf_agent.Agent):
     """
     Long-nosed agent that opens longs
     """
@@ -291,7 +291,7 @@ class LongLouie(elf_agent.AgentFP):
 
 
 # %%
-class LPAgent(elf_agent.AgentFP):
+class LPAgent(elf_agent.Agent):
     """Adds a large LP"""
 
     def action(self, market: hyperdrive_market.MarketFP):
@@ -315,7 +315,7 @@ class LPAgent(elf_agent.AgentFP):
 # %%
 def get_example_agents(
     rng: NumpyGenerator, experiment_config: simulators.ConfigFP, existing_agents: int = 0
-) -> list[elf_agent.AgentFP]:
+) -> list[elf_agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_fridas"]):

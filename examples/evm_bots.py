@@ -54,7 +54,7 @@ DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
 
 
-class FixedFrida(elfpy_agent.AgentFP):
+class FixedFrida(elfpy_agent.Agent):
     """Agent that paints & opens fixed rate borrow positions."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
@@ -139,7 +139,7 @@ class FixedFrida(elfpy_agent.AgentFP):
         return action_list
 
 
-class LongLouie(elfpy_agent.AgentFP):
+class LongLouie(elfpy_agent.Agent):
     """Long-nosed agent that opens longs."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
@@ -306,7 +306,7 @@ class BotInfo:
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[elfpy_agent.AgentFP]
+    policy: Type[elfpy_agent.Agent]
     trade_chance: float = 0.1
     risk_threshold: float | None = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
@@ -399,7 +399,7 @@ def create_agent(
         The agent.
     """
     assert bot.index is not None, "Bot must have an index."
-    assert isinstance(bot.policy, type(elfpy_agent.AgentFP)), "Bot must have a policy of type Agent."
+    assert isinstance(bot.policy, type(elfpy_agent.Agent)), "Bot must have a policy of type Agent."
     params = {
         "trade_chance": config.scratch["trade_chance"],
         "budget": FixedPoint(
@@ -447,7 +447,7 @@ def get_agents(
     config: simulators.ConfigFP,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> dict[str, elfpy_agent.AgentFP]:
+) -> dict[str, elfpy_agent.Agent]:
     """Get python agents & corresponding on-chain accounts.
 
     Returns

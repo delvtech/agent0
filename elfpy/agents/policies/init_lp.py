@@ -8,7 +8,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class InitializeLiquidityAgent(elf_agent.AgentFP):
+class InitializeLiquidityAgent(elf_agent.Agent):
     """Adds a large LP"""
 
     def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:

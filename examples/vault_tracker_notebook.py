@@ -18,7 +18,7 @@ import elfpy.utils.post_processing as post_processing
 
 from elfpy import WEI_FP, PRECISION_THRESHOLD_FP
 from elfpy.simulators import ConfigFP
-from elfpy.agents.agent import AgentFP
+from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
 
@@ -198,7 +198,7 @@ def get_biggest_position(position_dict) -> FixedPoint | None:
     return biggest_position
 
 
-class RegularGuy(AgentFP):
+class RegularGuy(Agent):
     """
     Agent that tracks the vault APR, trading both long and short by default
     """
@@ -361,7 +361,7 @@ def get_example_agents(
     existing_agents: float = 0,
     direction: str = None,
     agent_trade_chance: float = 1,
-) -> list[AgentFP]:
+) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     new_agents = int(new_agents)

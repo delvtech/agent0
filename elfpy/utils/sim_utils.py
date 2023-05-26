@@ -13,10 +13,10 @@ from elfpy.math import FixedPoint
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
     import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
-    from elfpy.agents.agent import AgentFP
+    from elfpy.agents.agent import Agent
 
 
-def get_simulator_fp(config: simulators.ConfigFP, agents: list[AgentFP] | None = None) -> simulators.SimulatorFP:
+def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = None) -> simulators.SimulatorFP:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.

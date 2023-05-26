@@ -8,7 +8,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class SingleShortAgent(elf_agent.AgentFP):
+class SingleShortAgent(elf_agent.Agent):
     """simple short thatonly has one long open at a time"""
 
     def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("100.0")):

@@ -74,7 +74,7 @@ from elfpy.math.fixed_point import FixedPoint
 
 
 # %%
-class BorrowingBeatrice(elf_agent.AgentFP):
+class BorrowingBeatrice(elf_agent.Agent):
     """
     Agent that paints & opens fixed rate borrow positions
     """

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class AgentFP:
+class Agent:
     r"""Agent class for conducting trades on the market
 
     Implements a class that controls agent behavior agent has a budget that is a dict, keyed with a

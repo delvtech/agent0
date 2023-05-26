@@ -8,7 +8,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class LpAndWithdrawAgent(elf_agent.AgentFP):
+class LpAndWithdrawAgent(elf_agent.Agent):
     """
     simple LP
     only has one LP open at a time

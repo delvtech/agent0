@@ -12,7 +12,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class RandomAgent(elf_agent.AgentFP):
+class RandomAgent(elf_agent.Agent):
     """Random agent"""
 
     def __init__(

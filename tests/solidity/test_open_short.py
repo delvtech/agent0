@@ -23,16 +23,16 @@ class TestOpenShort(unittest.TestCase):
     contribution: FixedPoint = FixedPoint("500_000_000.0")
     target_apr: FixedPoint = FixedPoint("0.05")
     term_length: FixedPoint = FixedPoint("365.0")
-    alice: elf_agent.AgentFP
-    bob: elf_agent.AgentFP
-    celine: elf_agent.AgentFP
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.MarketFP
     block_time: time.BlockTimeFP
 
     def setUp(self):
-        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
-        self.celine = elf_agent.AgentFP(wallet_address=2, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
+        self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
         market_state = hyperdrive_market.MarketStateFP()
@@ -52,7 +52,7 @@ class TestOpenShort(unittest.TestCase):
     # pylint: disable=too-many-arguments
     def verify_open_short(
         self,
-        user: elf_agent.AgentFP,
+        user: elf_agent.Agent,
         market_state_before: hyperdrive_market.MarketStateFP,
         base_amount: FixedPoint,  # max loss in base transferred from user to hyperdrive
         unsigned_bond_amount: FixedPoint,  # number of PTs shorted

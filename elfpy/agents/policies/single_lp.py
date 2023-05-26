@@ -8,7 +8,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class SingleLpAgent(elf_agent.AgentFP):
+class SingleLpAgent(elf_agent.Agent):
     """simple LP that only has one LP open at a time"""
 
     def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):

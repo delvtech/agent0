@@ -23,10 +23,10 @@ class TestFees(unittest.TestCase):
 
     contribution: FixedPoint
     target_apr: FixedPoint
-    alice: elf_agent.AgentFP
-    bob: elf_agent.AgentFP
-    celine: elf_agent.AgentFP
-    gary: elf_agent.AgentFP  # governance gary
+    alice: elf_agent.Agent
+    bob: elf_agent.Agent
+    celine: elf_agent.Agent
+    gary: elf_agent.Agent  # governance gary
     hyperdrive: hyperdrive_market.MarketFP
     block_time: time.BlockTimeFP
     term_length: FixedPoint
@@ -44,11 +44,11 @@ class TestFees(unittest.TestCase):
         self.contribution = FixedPoint("500_000_000.0")
         self.term_length = FixedPoint("365.0")
         self.trade_amount = FixedPoint("1.0")
-        self.alice = elf_agent.AgentFP(wallet_address=0, budget=self.contribution)
-        self.bob = elf_agent.AgentFP(wallet_address=1, budget=self.contribution)
+        self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
+        self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.bob.budget = FixedPoint(self.trade_amount)
         self.bob.wallet.balance = types.QuantityFP(amount=self.trade_amount, unit=types.TokenType.BASE)
-        self.gary = elf_agent.AgentFP(wallet_address=2, budget=FixedPoint(0))
+        self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
         self.block_time = time.BlockTimeFP()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
         market_state = hyperdrive_market.MarketStateFP(

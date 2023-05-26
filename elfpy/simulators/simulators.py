@@ -20,7 +20,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-    from elfpy.agents.agent import AgentFP
+    from elfpy.agents.agent import Agent
 
 
 def simulation_state_aggreagator(constructor):
@@ -412,7 +412,7 @@ class SimulatorFP:
         # NOTE: lint error false positives: This message may report object members that are created dynamically,
         # but exist at the time they are accessed.
         self.config.freeze()  # type: ignore
-        self.agents: dict[int, AgentFP] = {}
+        self.agents: dict[int, Agent] = {}
 
         # Simulation variables
         self.run_number = 0
@@ -468,7 +468,7 @@ class SimulatorFP:
         blocks_per_year = 365 * self.config.num_blocks_per_day
         return 1 / blocks_per_year
 
-    def add_agents(self, agent_list: list[AgentFP]) -> None:
+    def add_agents(self, agent_list: list[Agent]) -> None:
         r"""Append the agents and simulation_state member variables
 
         If trades have already happened (as indicated by self.trade_number), then empty wallet states are

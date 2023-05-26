@@ -8,7 +8,7 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 
-class SingleLongAgent(elf_agent.AgentFP):
+class SingleLongAgent(elf_agent.Agent):
     """
     simple long
     only has one long open at a time

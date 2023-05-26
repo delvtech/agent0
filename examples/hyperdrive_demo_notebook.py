@@ -60,7 +60,7 @@ from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from elfpy.agents.agent import AgentFP
+from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
 from elfpy.simulators import ConfigFP
 from elfpy.utils.outputs import get_gridspec_subplots
@@ -147,7 +147,7 @@ class RandomAgent(random_agent.RandomAgent):
 
 def get_example_agents(
     rng: NumpyGenerator, budget: int, new_agents: int, existing_agents: int = 0, direction: str | None = None
-) -> list[AgentFP]:
+) -> list[Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + new_agents):
