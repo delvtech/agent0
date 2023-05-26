@@ -34,14 +34,14 @@ class FixedPoint:
 
     def __init__(
         self,
-        value: OtherTypes | str | FixedPoint | None = None,  # use default conversion
+        unscaled_value: OtherTypes | str | FixedPoint | None = None,  # use default conversion
         scaled_value: int | None = None,  # assume integer is already converted
         decimal_places: int = 18,  # how many decimal places to store (must be 18)
         signed: bool = True,  # whether or not it is a signed FixedPoint (must be True)
     ):
         r"""Store fixed-point properties"""
-        if value is None and scaled_value is None:
-            value = 0
+        if unscaled_value is None and scaled_value is None:
+            unscaled_value = 0
         # TODO: support unsigned option
         if not signed:
             raise NotImplementedError("only signed FixedPoint ints are supported.")
@@ -54,33 +54,33 @@ class FixedPoint:
         super().__setattr__("_scaled_value", None)
         super().__setattr__("_special_value", None)
         # check bool first, and coerce it following `float` rules
-        if isinstance(value, bool):
-            value = int(value)
-        if value is None:
+        if isinstance(unscaled_value, bool):
+            unscaled_value = int(unscaled_value)
+        if unscaled_value is None:
             if not isinstance(scaled_value, int):
                 raise TypeError(f"{scaled_value=} must have type `int`")
             super().__setattr__("_scaled_value", scaled_value)
-        elif isinstance(value, float):
+        elif isinstance(unscaled_value, float):
             # int truncates to `decimal_places` precision
-            super().__setattr__("_scaled_value", int(value * 10**decimal_places))
-        elif isinstance(value, int):
-            super().__setattr__("_scaled_value", value * 10**decimal_places)
-        elif isinstance(value, FixedPoint):
-            super().__setattr__("_special_value", value.special_value)
-            super().__setattr__("_scaled_value", value.scaled_value)
-        elif isinstance(value, str):
+            super().__setattr__("_scaled_value", int(unscaled_value * 10**decimal_places))
+        elif isinstance(unscaled_value, int):
+            super().__setattr__("_scaled_value", unscaled_value * 10**decimal_places)
+        elif isinstance(unscaled_value, FixedPoint):
+            super().__setattr__("_special_value", unscaled_value.special_value)
+            super().__setattr__("_scaled_value", unscaled_value.scaled_value)
+        elif isinstance(unscaled_value, str):
             # non-finite values are specified with strings
-            if value.lower() in ("nan", "inf", "-inf"):
-                super().__setattr__("_special_value", value.lower())
+            if unscaled_value.lower() in ("nan", "inf", "-inf"):
+                super().__setattr__("_special_value", unscaled_value.lower())
                 super().__setattr__("_scaled_value", 0)
             else:  # string must be a float or int representation
-                if not self._is_valid_number(value):
+                if not self._is_valid_number(unscaled_value):
                     raise ValueError(
-                        f"string argument {value=} must be a float string, e.g. '1.0', for the FixedPoint constructor"
+                        f"string argument {unscaled_value=} must be a float string, e.g. '1.0', for the FixedPoint constructor"
                     )
-                if "." not in value:  # input is always assumed to be a float
-                    value += ".0"
-                integer, remainder = value.split(".")  # lhs = integer part, rhs = fractional part
+                if "." not in unscaled_value:  # input is always assumed to be a float
+                    unscaled_value += ".0"
+                integer, remainder = unscaled_value.split(".")  # lhs = integer part, rhs = fractional part
                 # removes underscores; they won't affect `int` cast and will affect `len`
                 remainder = remainder.replace("_", "")
                 is_negative = "-" in integer
@@ -95,7 +95,7 @@ class FixedPoint:
                         int(integer) * 10**decimal_places + int(remainder) * 10 ** (decimal_places - len(remainder)),
                     )
         else:
-            raise TypeError(f"{type(value)=} is not supported")
+            raise TypeError(f"{type(unscaled_value)=} is not supported")
 
     @property
     def scaled_value(self) -> int:
