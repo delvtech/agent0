@@ -123,7 +123,7 @@ class BorrowingBeatrice(elf_agent.Agent):
                     trade=borrow.MarketAction(
                         action_type=borrow.MarketActionType.OPEN_BORROW,
                         wallet=self.wallet,
-                        collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
+                        collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
                         spot_price=1,
                     ),
                 )
@@ -135,7 +135,7 @@ class BorrowingBeatrice(elf_agent.Agent):
                     trade=borrow.MarketAction(
                         action_type=borrow.MarketActionType.CLOSE_BORROW,
                         wallet=self.wallet,
-                        collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
+                        collateral=types.Quantity(amount=self.budget, unit=types.TokenType.BASE),
                         spot_price=1,  # usdc
                     ),
                 )

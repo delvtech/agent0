@@ -47,7 +47,7 @@ class TestFees(unittest.TestCase):
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.bob.budget = FixedPoint(self.trade_amount)
-        self.bob.wallet.balance = types.QuantityFP(amount=self.trade_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=self.trade_amount, unit=types.TokenType.BASE)
         self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
         self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
@@ -108,9 +108,7 @@ def get_all_the_fees(
 
     if in_unit is not None:
         breakdown = test.hyperdrive.pricing_model.calc_out_given_in(
-            in_=types.QuantityFP(
-                amount=test.trade_amount * time_remaining, unit=in_unit
-            ),  # scaled down unmatured amount
+            in_=types.Quantity(amount=test.trade_amount * time_remaining, unit=in_unit),  # scaled down unmatured amount
             market_state=test.hyperdrive.market_state,
             time_remaining=time.StretchedTime(
                 days=test.hyperdrive.position_duration.days,
@@ -120,7 +118,7 @@ def get_all_the_fees(
         ).breakdown
     elif out_unit is not None:
         breakdown = test.hyperdrive.pricing_model.calc_in_given_out(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=test.trade_amount * time_remaining, unit=out_unit
             ),  # scaled down unmatured amount
             market_state=test.hyperdrive.market_state,

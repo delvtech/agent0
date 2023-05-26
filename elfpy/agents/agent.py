@@ -34,7 +34,7 @@ class Agent:
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
         self.wallet: wallet.Wallet = wallet.Wallet(
-            address=wallet_address, balance=types.QuantityFP(amount=budget, unit=types.TokenType.BASE)
+            address=wallet_address, balance=types.Quantity(amount=budget, unit=types.TokenType.BASE)
         )
         # TODO: We need to fix this up -- probably just have the user specify a name on init
         # (i.e. attribute without default)
@@ -121,7 +121,7 @@ class Agent:
             # amount of bonds.
             maybe_max_short = max_short * bond_percent
             trade_result = market.pricing_model.calc_out_given_in(
-                in_=types.QuantityFP(amount=maybe_max_short, unit=types.TokenType.PT),
+                in_=types.Quantity(amount=maybe_max_short, unit=types.TokenType.PT),
                 market_state=market.market_state,
                 time_remaining=market.position_duration,
             )
@@ -139,7 +139,7 @@ class Agent:
         # do one more iteration at the last step size in case the bisection method was stuck
         # approaching a max_short value with slightly more base than an agent has.
         trade_result = market.pricing_model.calc_out_given_in(
-            in_=types.QuantityFP(amount=last_maybe_max_short, unit=types.TokenType.PT),
+            in_=types.Quantity(amount=last_maybe_max_short, unit=types.TokenType.PT),
             market_state=market.market_state,
             time_remaining=market.position_duration,
         )

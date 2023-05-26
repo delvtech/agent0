@@ -150,7 +150,7 @@ class TestOpenLong(unittest.TestCase):
         """Open a long & check that accounting is done correctly"""
         base_amount = FixedPoint("10.0")
         self.bob.budget = base_amount
-        self.bob.wallet.balance = types.QuantityFP(amount=base_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)
@@ -168,7 +168,7 @@ class TestOpenLong(unittest.TestCase):
         """Open a tiny long & check that accounting is done correctly"""
         base_amount = FixedPoint("0.01")
         self.bob.budget = base_amount
-        self.bob.wallet.balance = types.QuantityFP(amount=base_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, _ = self.hyperdrive.open_long(self.bob.wallet, base_amount)

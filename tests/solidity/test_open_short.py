@@ -162,7 +162,7 @@ class TestOpenShort(unittest.TestCase):
         """Open a short & check that accounting is done correctly"""
         bond_amount = FixedPoint("10.0")
         self.bob.budget = bond_amount
-        self.bob.wallet.balance = types.QuantityFP(amount=bond_amount, unit=types.TokenType.PT)
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)
@@ -181,7 +181,7 @@ class TestOpenShort(unittest.TestCase):
         """Open a tiny short & check that accounting is done correctly"""
         bond_amount = FixedPoint("0.01")
         self.bob.budget = bond_amount
-        self.bob.wallet.balance = types.QuantityFP(amount=bond_amount, unit=types.TokenType.PT)
+        self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
         apr_before = self.hyperdrive.fixed_apr
         market_deltas, agent_deltas = self.hyperdrive.open_short(self.bob.wallet, bond_amount)

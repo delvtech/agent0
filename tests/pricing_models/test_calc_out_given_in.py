@@ -69,7 +69,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -152,7 +152,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -205,7 +205,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("10_000.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("10_000.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -272,7 +272,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("80_000.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("80_000.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -341,7 +341,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             (
                 CalcOutGivenInSuccessTestCase(
                     # Base in of 200 is 100 shares at the current share price.
-                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -424,7 +424,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -507,7 +507,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -590,7 +590,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targeting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=FixedPoint("200.0"), unit=types.TokenType.BASE),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -703,7 +703,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Low slippage trade - in_ is 0.1% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -788,7 +788,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High fee percentage - 20%.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -841,7 +841,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Medium slippage trade - in_ is 10% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("10_000.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("10_000.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -910,7 +910,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # High slippage trade - in_ is 80% of share reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("80_000.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("80_000.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -979,7 +979,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Non-trivial initial share price and share price.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("100_000.0"),
@@ -1058,7 +1058,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # Very unbalanced reserves.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -1138,7 +1138,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A term of a quarter year.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -1223,7 +1223,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             # A time stretch targetting 10% APY.
             (
                 CalcOutGivenInSuccessTestCase(
-                    in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                     market_state=hyperdrive_market.MarketState(
                         share_reserves=FixedPoint("100_000.0"),
                         bond_reserves=FixedPoint("1_000_000.0"),
@@ -1388,7 +1388,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 )
 
                 # in is in base, out is in bonds
-                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.BASE)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
                 market_state = hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("1.0"),
                     bond_reserves=FixedPoint("20_000_000_000.0"),
@@ -1415,7 +1415,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 self.assertGreater(trade_result.breakdown.with_fee, FixedPoint(0))
 
                 # in is in bonds, out is in base
-                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.PT)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
                 market_state = hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("10_000_000_000.0"),
                     bond_reserves=FixedPoint("1.0"),
@@ -1447,7 +1447,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
         failure_test_cases = [
             CalcOutGivenInFailureTestCase(  # test 0
                 # amount negative
-                in_=types.QuantityFP(amount=FixedPoint("-1.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("-1.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1463,7 +1463,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(  # test 1
                 # amount 0
-                in_=types.QuantityFP(amount=FixedPoint("0.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("0.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1478,7 +1478,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 2
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     # share reserves negative
                     share_reserves=FixedPoint("-1.0"),
@@ -1494,7 +1494,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 3
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     # bond reserves negative
@@ -1510,7 +1510,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 4
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1526,7 +1526,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 5
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1542,7 +1542,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 6
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1558,7 +1558,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 7
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1574,7 +1574,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 8
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1590,7 +1590,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 9
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1606,7 +1606,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=(AssertionError, errors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 10
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1623,7 +1623,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(  # test 11
                 # amount very high, can't make trade
-                in_=types.QuantityFP(amount=FixedPoint("10_000_000.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("10_000_000.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1638,7 +1638,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=(ValueError, errors.DivisionByZero),
             ),
             CalcOutGivenInFailureTestCase(  # test 12
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1655,7 +1655,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
             ),
             CalcOutGivenInFailureTestCase(  # test 13
                 # amount < 1 wei
-                in_=types.QuantityFP(amount=FixedPoint(0.5e-18), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint(0.5e-18), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -1670,7 +1670,7 @@ class TestCalcOutGivenIn(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcOutGivenInFailureTestCase(  # test 14
-                in_=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                in_=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=FixedPoint("30_000_000_000.0"),

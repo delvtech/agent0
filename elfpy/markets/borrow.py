@@ -25,8 +25,8 @@ class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
 
     d_borrow_shares: FixedPoint = FixedPoint("0.0")  # borrow is always in DAI
-    d_collateral: types.QuantityFP = field(
-        default_factory=lambda: types.QuantityFP(amount=FixedPoint("0.0"), unit=types.TokenType.PT)
+    d_collateral: types.Quantity = field(
+        default_factory=lambda: types.Quantity(amount=FixedPoint("0.0"), unit=types.TokenType.PT)
     )
     d_borrow_outstanding: FixedPoint = FixedPoint("0.0")  # changes based on borrow_shares * borrow_share_price
     d_borrow_closed_interest: FixedPoint = FixedPoint("0.0")  # realized interest from closed borrows
@@ -128,7 +128,7 @@ class MarketAction(base_market.MarketAction):
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
     # amount to supply for the action
-    collateral: types.QuantityFP
+    collateral: types.Quantity
     spot_price: FixedPoint | None = None
 
 
@@ -138,7 +138,7 @@ class PricingModel(base_pm.PricingModel):
     def value_collateral(
         self,
         loan_to_value_ratio: dict[types.TokenType, FixedPoint],
-        collateral: types.QuantityFP,
+        collateral: types.Quantity,
         spot_price: FixedPoint | None = None,
     ):
         """Values collateral and returns how much the agent can borrow against it"""
@@ -262,7 +262,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def calc_open_borrow(
         self,
         wallet_address: int,
-        collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
+        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
@@ -279,7 +279,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         # collateral increases because it's being deposited
         market_deltas = MarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
-            d_collateral=types.QuantityFP(
+            d_collateral=types.Quantity(
                 unit=collateral.unit,
                 amount=collateral.amount,
             ),
@@ -302,7 +302,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def open_borrow(
         self,
         agent_wallet: wallet.Wallet,
-        collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
+        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
@@ -316,7 +316,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def calc_close_borrow(
         self,
         wallet_address: int,
-        collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
+        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
@@ -353,7 +353,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def close_borrow(
         self,
         agent_wallet: wallet.Wallet,
-        collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
+        collateral: types.Quantity,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
     ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Close a borrow as requested by the agent and return the market and agent deltas.

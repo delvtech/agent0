@@ -387,7 +387,7 @@ def calc_open_short(
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
     )
-    trade_quantity = types.QuantityFP(amount=bond_amount, unit=types.TokenType.PT)
+    trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     pricing_model.check_input_assertions(
         quantity=trade_quantity, market_state=market_state, time_remaining=time_remaining
     )
@@ -446,7 +446,7 @@ def calc_open_short(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=-types.QuantityFP(amount=trader_deposit, unit=types.TokenType.BASE),
+        balance=-types.Quantity(amount=trader_deposit, unit=types.TokenType.BASE),
         shorts={latest_checkpoint_time: wallet.Short(balance=bond_amount, open_share_price=market_state.share_price)},
         fees_paid=trade_result.breakdown.fee,
     )
@@ -512,7 +512,7 @@ def calc_close_short(
         normalizing_constant=position_duration.normalizing_constant,
     )
     # Perform the trade.
-    trade_quantity = types.QuantityFP(amount=bond_amount, unit=types.TokenType.PT)
+    trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     pricing_model.check_input_assertions(
         quantity=trade_quantity,
         market_state=market_state,
@@ -595,7 +595,7 @@ def calc_close_short(
 
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.QuantityFP(
+        balance=types.Quantity(
             amount=amount,
             unit=types.TokenType.BASE,
         ),  # see CLOSING SHORT LOGIC above
@@ -654,7 +654,7 @@ def calc_open_long(
             f"but {base_amount=} > {market_state.bond_reserves=}."
         )
     # Perform the trade.
-    trade_quantity = types.QuantityFP(amount=base_amount, unit=types.TokenType.BASE)
+    trade_quantity = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
     pricing_model.check_input_assertions(
         quantity=trade_quantity,
         market_state=market_state,
@@ -694,7 +694,7 @@ def calc_open_long(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.QuantityFP(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
+        balance=types.Quantity(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
         longs={latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
     )
@@ -752,7 +752,7 @@ def calc_close_long(
         normalizing_constant=position_duration.normalizing_constant,
     )
     # Perform the trade.
-    trade_quantity = types.QuantityFP(amount=bond_amount, unit=types.TokenType.PT)
+    trade_quantity = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
     pricing_model.check_input_assertions(
         quantity=trade_quantity,
         market_state=market_state,
@@ -864,7 +864,7 @@ def calc_close_long(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.QuantityFP(amount=base_proceeds, unit=types.TokenType.BASE),
+        balance=types.Quantity(amount=base_proceeds, unit=types.TokenType.BASE),
         longs={mint_time: wallet.Long(-bond_amount)},
         fees_paid=fee,
     )
@@ -1025,7 +1025,7 @@ def calc_add_liquidity(
         rate = fixed_apr
     # sanity check inputs
     pricing_model.check_input_assertions(
-        quantity=types.QuantityFP(
+        quantity=types.Quantity(
             amount=base_in, unit=types.TokenType.PT
         ),  # temporary Quantity object just for this check
         market_state=market_state,
@@ -1046,7 +1046,7 @@ def calc_add_liquidity(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=-types.QuantityFP(amount=d_base_reserves, unit=types.TokenType.BASE),
+        balance=-types.Quantity(amount=d_base_reserves, unit=types.TokenType.BASE),
         lp_tokens=lp_out,
     )
     return market_deltas, agent_deltas
@@ -1081,7 +1081,7 @@ def calc_remove_liquidity(
     """
     # sanity check inputs
     pricing_model.check_input_assertions(
-        quantity=types.QuantityFP(
+        quantity=types.Quantity(
             amount=lp_shares, unit=types.TokenType.LP_SHARE
         ),  # temporary Quantity object just for this check
         market_state=market_state,
@@ -1108,7 +1108,7 @@ def calc_remove_liquidity(
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
-        balance=types.QuantityFP(amount=delta_base, unit=types.TokenType.BASE),
+        balance=types.Quantity(amount=delta_base, unit=types.TokenType.BASE),
         lp_tokens=-lp_shares,
         withdraw_shares=withdraw_shares,
     )

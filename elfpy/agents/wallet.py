@@ -100,8 +100,8 @@ class Wallet:
     address: int
 
     # fungible
-    balance: types.QuantityFP = field(
-        default_factory=lambda: types.QuantityFP(amount=FixedPoint(0), unit=types.TokenType.BASE)
+    balance: types.Quantity = field(
+        default_factory=lambda: types.Quantity(amount=FixedPoint(0), unit=types.TokenType.BASE)
     )
     # TODO: Support multiple typed balances:
     #     balance: Dict[types.TokenType, types.Quantity] = field(default_factory=dict)

@@ -15,7 +15,7 @@ from elfpy.math import FixedPoint
 class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: types.QuantityFP
+    out: types.Quantity
     market_state: hyperdrive_market.MarketState
     days_remaining: FixedPoint
     time_stretch_apy: FixedPoint
@@ -47,7 +47,7 @@ class CalcInGivenOutSuccessByModelTestResult:
 class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
-    out: types.QuantityFP
+    out: types.Quantity
     market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
@@ -69,7 +69,7 @@ class CalcInGivenOutFailureByModelTestResult:
 class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
-    in_: types.QuantityFP
+    in_: types.Quantity
     market_state: hyperdrive_market.MarketState
     days_remaining: FixedPoint
     time_stretch_apy: FixedPoint
@@ -101,7 +101,7 @@ class CalcOutGivenInSuccessByModelTestResult:
 class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
-    in_: types.QuantityFP
+    in_: types.Quantity
     market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]

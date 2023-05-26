@@ -69,10 +69,10 @@ class TestCheckpoint(unittest.TestCase):
         long_amount = FixedPoint("10_000_000.0")
         short_amount = FixedPoint("50_000.0")
         self.bob.budget = long_amount
-        self.bob.wallet.balance = types.QuantityFP(amount=long_amount, unit=types.TokenType.BASE)
+        self.bob.wallet.balance = types.Quantity(amount=long_amount, unit=types.TokenType.BASE)
         _, long_wallet_deltas = self.hyperdrive.open_long(self.bob.wallet, long_amount)
         self.celine.budget = short_amount
-        self.celine.wallet.balance = types.QuantityFP(amount=short_amount, unit=types.TokenType.PT)
+        self.celine.wallet.balance = types.Quantity(amount=short_amount, unit=types.TokenType.PT)
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Update the share price. Since the long and short were opened in this checkpoint, the
         # checkpoint should be of the old checkpoint price.

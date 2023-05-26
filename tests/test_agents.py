@@ -127,7 +127,7 @@ class TestAgent(unittest.TestCase):
     def test_wallet_copy(self):
         """Test the wallet ability to deep copy itself"""
         example_wallet = wallet.Wallet(
-            address=0, balance=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
+            address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
         wallet_copy = example_wallet.copy()
         assert example_wallet is not wallet_copy  # not the same object
@@ -138,11 +138,11 @@ class TestAgent(unittest.TestCase):
     def test_wallet_update(self):
         """Test that the wallet updates correctly & does not use references to the deltas argument"""
         example_wallet = wallet.Wallet(
-            address=0, balance=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
+            address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
         example_deltas = wallet.Wallet(
             address=0,
-            balance=types.QuantityFP(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
+            balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): wallet.Long(FixedPoint("15.0"))},
             fees_paid=FixedPoint("0.001"),
         )
@@ -160,7 +160,7 @@ class TestAgent(unittest.TestCase):
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
         new_example_deltas = wallet.Wallet(
             address=0,
-            balance=types.QuantityFP(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
+            balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
             longs={FixedPoint(0): wallet.Long(FixedPoint("8.0"))},
             fees_paid=FixedPoint("0.0008"),
         )
@@ -210,7 +210,7 @@ class TestAgent(unittest.TestCase):
                 example_agent.budget = agent_budget
                 if hasattr(example_agent, "amount_to_trade"):
                     setattr(example_agent, "amount_to_trade", agent_budget)
-                example_agent.wallet.balance = types.QuantityFP(
+                example_agent.wallet.balance = types.Quantity(
                     amount=FixedPoint(str(agent_budget)), unit=types.TokenType.BASE
                 )
                 # For each agent policy, call their action() method

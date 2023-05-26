@@ -29,7 +29,7 @@ class TestBorrow(unittest.TestCase):
                 spot_price_range = np.arange(0.01, 1.01, 0.05)
             for spot_price in spot_price_range:
                 collateral_amount = FixedPoint(10**collateral_exponent)
-                collateral = types.QuantityFP(unit=collateral_token, amount=collateral_amount)
+                collateral = types.Quantity(unit=collateral_token, amount=collateral_amount)
                 loan_to_value_ratios = {
                     types.TokenType.BASE: FixedPoint(loan_to_value / 100),
                     types.TokenType.PT: FixedPoint(loan_to_value / 100),
@@ -65,7 +65,7 @@ class TestBorrow(unittest.TestCase):
 
         # TODO: add more test cases
         collateral_amount = FixedPoint("100.0")
-        collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=collateral_amount)
+        collateral = types.Quantity(unit=types.TokenType.BASE, amount=collateral_amount)
         loan_to_value = FixedPoint("1.0")
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
@@ -88,7 +88,7 @@ class TestBorrow(unittest.TestCase):
         )[0]
 
         expected_d_borrow_shares: FixedPoint = FixedPoint("-100.0")  # borrow is always in DAI
-        expected_d_collateral = types.QuantityFP(unit=types.TokenType.BASE, amount=FixedPoint("-100.0"))
+        expected_d_collateral = types.Quantity(unit=types.TokenType.BASE, amount=FixedPoint("-100.0"))
         expected_d_borrow_closed_interest: FixedPoint = FixedPoint(0)  # realized interest from closed borrows
 
         self.assertEqual(expected_d_borrow_shares, market_deltas.d_borrow_shares)

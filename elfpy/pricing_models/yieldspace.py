@@ -116,7 +116,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
 
     def calc_in_given_out(
         self,
-        out: types.QuantityFP,
+        out: types.Quantity,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
@@ -319,7 +319,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
     # consider more when thinking about the use of a time stretch parameter.
     def calc_out_given_in(
         self,
-        in_: types.QuantityFP,
+        in_: types.Quantity,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:

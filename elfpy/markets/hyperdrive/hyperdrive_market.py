@@ -389,7 +389,7 @@ class Market(
         )
         agent_deltas = wallet.Wallet(
             address=wallet_address,
-            balance=-types.QuantityFP(amount=contribution, unit=types.TokenType.BASE),
+            balance=-types.Quantity(amount=contribution, unit=types.TokenType.BASE),
             lp_tokens=lp_tokens,
         )
         self.update_market(market_deltas)

@@ -26,7 +26,7 @@ class PricingModel(ABC):
 
     def calc_in_given_out(
         self,
-        out: types.QuantityFP,
+        out: types.Quantity,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
@@ -35,7 +35,7 @@ class PricingModel(ABC):
 
     def calc_out_given_in(
         self,
-        in_: types.QuantityFP,
+        in_: types.Quantity,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
@@ -237,12 +237,12 @@ class PricingModel(ABC):
         if out_amount <= FixedPoint(0):
             return FixedPoint(0), FixedPoint(0)
         base = self.calc_in_given_out(
-            out=types.QuantityFP(amount=out_amount, unit=types.TokenType.PT),
+            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         bonds = self.calc_out_given_in(
-            in_=types.QuantityFP(amount=base, unit=types.TokenType.BASE),
+            in_=types.Quantity(amount=base, unit=types.TokenType.BASE),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -279,12 +279,12 @@ class PricingModel(ABC):
         if out_amount <= FixedPoint(0):
             return FixedPoint(0), FixedPoint(0)
         bonds = self.calc_in_given_out(
-            out=types.QuantityFP(amount=out_amount, unit=types.TokenType.PT),
+            out=types.Quantity(amount=out_amount, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
         base = self.calc_out_given_in(
-            in_=types.QuantityFP(amount=bonds, unit=types.TokenType.PT),
+            in_=types.Quantity(amount=bonds, unit=types.TokenType.PT),
             market_state=market_state,
             time_remaining=time_remaining,
         ).breakdown.with_fee
@@ -299,7 +299,7 @@ class PricingModel(ABC):
 
     def check_input_assertions(
         self,
-        quantity: types.QuantityFP,
+        quantity: types.Quantity,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTime,
     ):

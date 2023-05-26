@@ -217,7 +217,7 @@ class TestGetMax(unittest.TestCase):
 
                 # Simulate the trade and ensure the trade was safe.
                 trade_result = pricing_model.calc_out_given_in(
-                    in_=types.QuantityFP(amount=max_long, unit=types.TokenType.BASE),
+                    in_=types.Quantity(amount=max_long, unit=types.TokenType.BASE),
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )
@@ -237,7 +237,7 @@ class TestGetMax(unittest.TestCase):
 
                 # Simulate the trade.
                 trade_result = pricing_model.calc_out_given_in(
-                    in_=types.QuantityFP(amount=max_short, unit=types.TokenType.PT),
+                    in_=types.Quantity(amount=max_short, unit=types.TokenType.PT),
                     market_state=test_case.market_state,
                     time_remaining=test_case.time_remaining,
                 )

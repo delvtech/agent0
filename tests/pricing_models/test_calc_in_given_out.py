@@ -123,7 +123,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     "pricing_model=%s\nrange_val=%s; trade_amount=%s", pricing_model, range_val, float(trade_amount)
                 )
                 # out is in base, in is in bonds (TRADE TOKEN TYPE IS "BASE")
-                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.BASE)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.BASE)
                 market_state = hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("10_000_000_000.0"),
                     bond_reserves=FixedPoint("1.0"),
@@ -150,7 +150,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 )
                 self.assertGreater(trade_result.breakdown.with_fee, FixedPoint("0.0"))
                 # out is in bonds, in is in base (TRADE TOKEN TYPE IS "PT")
-                trade_quantity = types.QuantityFP(amount=trade_amount, unit=types.TokenType.PT)
+                trade_quantity = types.Quantity(amount=trade_amount, unit=types.TokenType.PT)
                 market_state = hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("1.0"),
                     bond_reserves=FixedPoint("10_000_000_000.0"),
@@ -186,7 +186,7 @@ class TestCalcInGivenOut(unittest.TestCase):
         failure_test_cases = [
             CalcInGivenOutFailureTestCase(  # test 0
                 # amount negative
-                out=types.QuantityFP(amount=FixedPoint("-1.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("-1.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -202,7 +202,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
             CalcInGivenOutFailureTestCase(  # test 1
                 # amount 0
-                out=types.QuantityFP(amount=FixedPoint("0.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("0.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -217,7 +217,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 2
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     # share reserves negative
                     share_reserves=FixedPoint(-1),
@@ -233,7 +233,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 3
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     # bond reserves negative
@@ -249,7 +249,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 4
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -265,7 +265,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 5
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -281,7 +281,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 6
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -297,7 +297,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 7
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -313,7 +313,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 8
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -329,7 +329,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 9
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -345,7 +345,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=(errors.DivisionByZero),
             ),
             CalcInGivenOutFailureTestCase(  # test 10
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -362,7 +362,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
             CalcInGivenOutFailureTestCase(  # test 11
                 # amount very high, can't make trade
-                out=types.QuantityFP(amount=FixedPoint("10_000_000.0"), unit=types.TokenType.BASE),
+                out=types.Quantity(amount=FixedPoint("10_000_000.0"), unit=types.TokenType.BASE),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -377,7 +377,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=(ValueError, decimal.InvalidOperation),
             ),
             CalcInGivenOutFailureTestCase(  # test 12
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -394,7 +394,7 @@ class TestCalcInGivenOut(unittest.TestCase):
             ),
             CalcInGivenOutFailureTestCase(  # test 13
                 # amount < 1 wei
-                out=types.QuantityFP(amount=FixedPoint(0.999e-18), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint(0.999e-18), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("100_000.0"),
                     bond_reserves=FixedPoint("1_000_000.0"),
@@ -409,7 +409,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 exception_type=AssertionError,
             ),
             CalcInGivenOutFailureTestCase(  # test 14
-                out=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
+                out=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.PT),
                 market_state=hyperdrive_market.MarketState(
                     # reserves waaaay unbalanced
                     share_reserves=FixedPoint("30_000_000_000.0"),
@@ -484,7 +484,7 @@ class TestCalcInGivenOut(unittest.TestCase):
 base_in_test_cases = [
     (  ## test one, basic starting point
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("100.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -531,7 +531,7 @@ base_in_test_cases = [
     ),  # end of test one
     (  ## test two, double the fee
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("100.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -578,7 +578,7 @@ base_in_test_cases = [
     ),  # end of test two
     (  ## test three, 10k out
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("10_000.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -625,7 +625,7 @@ base_in_test_cases = [
     ),  # end of test three
     (  ## test four, 80k out
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("80_000.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -673,7 +673,7 @@ base_in_test_cases = [
     ),  # end of test four
     (  ## test five, change share price
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -722,7 +722,7 @@ base_in_test_cases = [
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -771,7 +771,7 @@ base_in_test_cases = [
     ),  # end of test six
     (  ## test seven, halve the days remaining
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -819,7 +819,7 @@ base_in_test_cases = [
     ),  # end of test seven
     (  ## test eight, halve the APY
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -869,7 +869,7 @@ base_in_test_cases = [
 pt_in_test_cases = [
     (  ## test one, basic starting point
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("100.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -916,7 +916,7 @@ pt_in_test_cases = [
     ),  # end of test one
     (  ## test two, double the fee
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("100.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -963,7 +963,7 @@ pt_in_test_cases = [
     ),  # end of test two
     (  ## test three, 10k out
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("10_000.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1010,7 +1010,7 @@ pt_in_test_cases = [
     ),  # end of test three
     (  ## test four, 80k out
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("80_000.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1057,7 +1057,7 @@ pt_in_test_cases = [
     ),  # end of test four
     (  ## test five, change share price
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1106,7 +1106,7 @@ pt_in_test_cases = [
     ),  # end of test five
     (  ## test six, up bond reserves to 1,000,000
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1156,7 +1156,7 @@ pt_in_test_cases = [
     ),  # end of test six
     (  ## test seven, halve the days remaining
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1205,7 +1205,7 @@ pt_in_test_cases = [
     ),  # end of test seven
     (  ## test eight, halve the APY
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("200.0"), unit=types.TokenType.BASE
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
@@ -1255,7 +1255,7 @@ pt_in_test_cases = [
 pt_in_test_cases_hyperdrive_only = [
     (  # test nine, share reserves zero
         CalcInGivenOutSuccessTestCase(
-            out=types.QuantityFP(
+            out=types.Quantity(
                 amount=FixedPoint("100.0"), unit=types.TokenType.PT
             ),  # how many tokens you expect to get
             market_state=hyperdrive_market.MarketState(
