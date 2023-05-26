@@ -48,7 +48,7 @@ class TestLogging(unittest.TestCase):
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
             config.variable_apr = [0.05] * config.num_trading_days
-            simulator = sim_utils.get_simulator_fp(config)  # initialize
+            simulator = sim_utils.get_simulator(config)  # initialize
             simulator.run_simulation()  # run
             self.assertLogs(level=level)
             if handler_type == "file":

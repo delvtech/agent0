@@ -37,7 +37,7 @@ class TestSimulator(unittest.TestCase):
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
-        simulator = sim_utils.get_simulator_fp(config)
+        simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         output_utils.close_logging()
 
@@ -49,7 +49,7 @@ class TestSimulator(unittest.TestCase):
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
-        simulator = sim_utils.get_simulator_fp(config)
+        simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         output_utils.close_logging()
 
@@ -60,7 +60,7 @@ class TestSimulator(unittest.TestCase):
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
-        simulator = sim_utils.get_simulator_fp(config)
+        simulator = sim_utils.get_simulator(config)
         new_rng = np.random.default_rng(1234)
         simulator.set_rng(new_rng)
         assert simulator.rng == new_rng
@@ -80,7 +80,7 @@ class TestSimulator(unittest.TestCase):
         config.num_trading_days = 3
         config.num_blocks_per_day = 3
         config.variable_apr = [0.01] * config.num_trading_days
-        simulator = sim_utils.get_simulator_fp(config)
+        simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
         simulation_state_num_writes = []
         for key, value in simulator.simulation_state.__dict__.items():
@@ -192,7 +192,7 @@ class TestSimulator(unittest.TestCase):
         config.num_blocks_per_day = 4
         config.variable_apr = [0.01] * config.num_trading_days
         config.do_dataframe_states = True
-        simulator = sim_utils.get_simulator_fp(
+        simulator = sim_utils.get_simulator(
             config=config,
             agents=[
                 single_long.SingleLongAgent(wallet_address=address, budget=FixedPoint(1_000)) for address in range(1, 3)

@@ -384,7 +384,7 @@ def get_example_agents(
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # get an instantiated simulator object
-simulator = sim_utils.get_simulator_fp(config)
+simulator = sim_utils.get_simulator(config)
 
 # %% [markdown]
 # ### Run the simulation
@@ -404,7 +404,7 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables_fp(simulator)
+trades = post_processing.compute_derived_variables(simulator)
 
 # %% [markdown]
 # ### Plot simulation results

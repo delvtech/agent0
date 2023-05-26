@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
 
 
-def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = None) -> simulators.Simulator:
+def get_simulator(config: simulators.Config, agents: list[Agent] | None = None) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -39,7 +39,7 @@ def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = Non
     # config option for type of market
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTime()
-    market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
+    market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
@@ -97,7 +97,7 @@ def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = Non
     return simulator
 
 
-def get_initialized_hyperdrive_market_fp(
+def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: simulators.Config,

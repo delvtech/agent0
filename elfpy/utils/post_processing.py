@@ -72,7 +72,7 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     return trades_agg
 
 
-def get_simulation_state_df_fp(simulator: simulators.Simulator) -> pd.DataFrame:
+def get_simulation_state_df(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Arguments
@@ -150,7 +150,7 @@ def get_simulation_state_df_fp(simulator: simulators.Simulator) -> pd.DataFrame:
     return trades_df
 
 
-def compute_derived_variables_fp(simulator: simulators.Simulator) -> pd.DataFrame:
+def compute_derived_variables(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Argument
@@ -163,7 +163,7 @@ def compute_derived_variables_fp(simulator: simulators.Simulator) -> pd.DataFram
     trades : DataFrame
         Pandas dataframe containing the simulation_state keys as columns, as well as some computed columns
     """
-    trades_df = get_simulation_state_df_fp(simulator)
+    trades_df = get_simulation_state_df(simulator)
     # calculate changes in reserves, corresponding to latest trade
     trades_df["delta_shares"] = trades_df.share_reserves.diff()
     trades_df["delta_base"] = trades_df.share_reserves.diff() * trades_df.share_price
@@ -201,12 +201,12 @@ def compute_derived_variables_fp(simulator: simulators.Simulator) -> pd.DataFram
     trades_df["price_total_return_percent_annualized"] = scale * trades_df["price_total_return_percent"]
     trades_df["share_price_total_return_percent_annualized"] = scale * trades_df["share_price_total_return_percent"]
     # create explicit column that increments per trade
-    add_pnl_columns_fp(trades_df)
+    add_pnl_columns(trades_df)
     trades_df = trades_df.reset_index()
     return trades_df
 
 
-def add_pnl_columns_fp(trades_df: pd.DataFrame) -> None:
+def add_pnl_columns(trades_df: pd.DataFrame) -> None:
     """Adds Profit and Loss Column for every agent to the dataframe that is passed in"""
     num_agents = len([col for col in trades_df if str(col).startswith("agent") and str(col).endswith("base")])
     for agent_id in range(num_agents):

@@ -41,7 +41,7 @@ class SimUtilsTest(unittest.TestCase):
                         # construct the market via sim utils
                         block_time = time.BlockTime()
                         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-                        market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
+                        market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time, config)
                         # then construct it by hand
                         market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,

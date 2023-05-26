@@ -6,7 +6,7 @@ from elfpy.math import FixedPoint
 
 
 ### Spot Price and APR ###
-def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.StretchedTime):
+def calc_apr_from_spot_price(price: FixedPoint, time_remaining: time.StretchedTime):
     r"""
     Returns the APR (decimal) given the current (positive) base asset price and the remaining pool duration
 
@@ -36,7 +36,7 @@ def calc_apr_from_spot_price_fp(price: FixedPoint, time_remaining: time.Stretche
     return (FixedPoint("1.0") - price) / (price * annualized_time)  # r = ((1/p)-1)/t = (1-p)/(pt)
 
 
-def calc_spot_price_from_apr_fp(apr: FixedPoint, time_remaining: time.StretchedTime) -> FixedPoint:
+def calc_spot_price_from_apr(apr: FixedPoint, time_remaining: time.StretchedTime) -> FixedPoint:
     r"""Returns the current spot price based on the current APR (decimal) and the remaining pool duration
 
     Arguments

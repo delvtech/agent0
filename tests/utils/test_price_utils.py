@@ -142,13 +142,13 @@ class BasePriceTest(unittest.TestCase):
             if "is_error_case" in test_case and test_case["is_error_case"]:
                 # Check that test case throws the expected error
                 with self.assertRaises(test_case["expected_result"]):
-                    apr = price_utils.calc_apr_from_spot_price_fp(
+                    apr = price_utils.calc_apr_from_spot_price(
                         price=test_case["price"], time_remaining=test_case["time_remaining"]
                     )
 
             # If test was not supposed to fail, continue normal execution
             else:
-                apr = price_utils.calc_apr_from_spot_price_fp(
+                apr = price_utils.calc_apr_from_spot_price(
                     price=test_case["price"], time_remaining=test_case["time_remaining"]
                 )
 
@@ -257,7 +257,7 @@ class BasePriceTest(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            spot_price = price_utils.calc_spot_price_from_apr_fp(
+            spot_price = price_utils.calc_spot_price_from_apr(
                 apr=test_case["apr"], time_remaining=test_case["time_remaining"]
             )
             self.assertAlmostEqual(spot_price, test_case["expected_result"], delta=self.APPROX_EQ, msg="unexpected apr")

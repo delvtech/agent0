@@ -159,7 +159,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             },
         ]
         for test_number, test_case in enumerate(test_cases):
-            spot_price = price_utils.calc_spot_price_from_apr_fp(
+            spot_price = price_utils.calc_spot_price_from_apr(
                 apr=test_case["apr"],
                 time_remaining=test_case["time_remaining"],
             )
@@ -244,7 +244,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                 market_state=test_case["market_state"],
                 time_remaining=test_case["time_remaining"],
             )
-            util_spot_price = price_utils.calc_spot_price_from_apr_fp(
+            util_spot_price = price_utils.calc_spot_price_from_apr(
                 apr=pm_apr,
                 time_remaining=test_case["time_remaining"],
             )

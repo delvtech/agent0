@@ -34,7 +34,7 @@ class PostProcessingTests(unittest.TestCase):
             "agent_2_total_shorts_no_mock": [trade_balance] * num_trades,
         }
         test_df = pd.DataFrame.from_dict(wallet_values_in_base)
-        post_processing.add_pnl_columns_fp(test_df)
+        post_processing.add_pnl_columns(test_df)
         for trade_number in range(num_trades):
             for agent_id in [0, 1, 2]:
                 assert test_df[f"agent_{agent_id}_pnl"].iloc[trade_number] == trade_balance * 4

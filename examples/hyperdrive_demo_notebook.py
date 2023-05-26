@@ -217,7 +217,7 @@ config.freeze()  # type: ignore
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # get an instantiated simulator object
-simulator = sim_utils.get_simulator_fp(config)
+simulator = sim_utils.get_simulator(config)
 
 # %% [markdown]
 # ### Run the simulation
@@ -242,7 +242,7 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades: pd.DataFrame = post_processing.compute_derived_variables_fp(simulator)
+trades: pd.DataFrame = post_processing.compute_derived_variables(simulator)
 for col in list(trades):
     if col.startswith("agent"):  # type: ignore
         divisor = 1e6  # 1 million divisor for everyone

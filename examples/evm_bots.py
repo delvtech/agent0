@@ -546,7 +546,7 @@ def get_simulator(config: simulators.Config) -> simulators.Simulator:
     """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time_ = time.BlockTime()
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, config)
     return simulators.Simulator(config, market, block_time_)
 
 

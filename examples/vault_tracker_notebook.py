@@ -398,7 +398,7 @@ output_utils.setup_logging(
     log_level=output_utils.text_to_log_level(config.log_level),
 )
 
-simulator = sim_utils.get_simulator_fp(config)
+simulator = sim_utils.get_simulator(config)
 simulator.collect_and_execute_trades()
 
 
@@ -443,7 +443,7 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables_fp(simulator)
+trades = post_processing.compute_derived_variables(simulator)
 for col in trades:
     if col.startswith("agent") and not col.endswith("lp_tokens"):
         divisor = 1e6  # 1 million divisor for everyone

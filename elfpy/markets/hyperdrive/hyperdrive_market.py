@@ -228,7 +228,7 @@ class Market(
             raise OverflowError(f"Share reserves should be >= 0, not {self.market_state.share_reserves}")
         if self.market_state.share_price == FixedPoint(0):
             return FixedPoint("nan")
-        return price_utils.calc_apr_from_spot_price_fp(price=self.spot_price, time_remaining=self.position_duration)
+        return price_utils.calc_apr_from_spot_price(price=self.spot_price, time_remaining=self.position_duration)
 
     @property
     def spot_price(self) -> FixedPoint:

@@ -204,7 +204,7 @@ class PricingModel(ABC):
             market_state,
             time_remaining,
         )
-        return price_utils.calc_apr_from_spot_price_fp(spot_price, time_remaining)
+        return price_utils.calc_apr_from_spot_price(spot_price, time_remaining)
 
     def get_max_long(
         self,
