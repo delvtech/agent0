@@ -140,7 +140,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         )
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if out.unit == types.TokenType.BASE:
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=-flat_with_fee + curve.user_result.d_bonds,
             )
@@ -149,7 +149,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif out.unit == types.TokenType.PT:
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=-flat_with_fee + curve.user_result.d_base,
                 d_bonds=out.amount,
             )
@@ -287,7 +287,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         )
         # Compute the user's trade result including both the flat and the curve parts of the trade.
         if in_.unit == types.TokenType.BASE:
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=flat_with_fee + curve.user_result.d_bonds,
             )
@@ -296,7 +296,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_bonds=curve.market_result.d_bonds,
             )
         elif in_.unit == types.TokenType.PT:
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=flat_with_fee + curve.user_result.d_base,
                 d_bonds=-in_.amount,
             )

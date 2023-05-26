@@ -15,7 +15,7 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
 import elfpy.utils.outputs as output_utils
-from elfpy.agents.get_wallet_state import get_wallet_state_fp
+from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
@@ -258,7 +258,7 @@ class RunSimVariablesFP:
     # the simulation config
     config: ConfigFP
     # initial wallets for the agents
-    agent_init: list[wallet.WalletFP]
+    agent_init: list[wallet.Wallet]
     # initial market state for this simulation run
     market_init: hyperdrive_market.MarketState
     # minimum time discretization for time step in years
@@ -320,7 +320,7 @@ class TradeSimVariablesFP:
     # address of the agent that is executing the trade
     agent_address: int
     # deltas used to update the market state
-    agent_deltas: wallet.WalletFP
+    agent_deltas: wallet.Wallet
 
 
 @dataclass
@@ -704,7 +704,7 @@ class SimulatorFP:
         self.simulation_state.add_dict_entries({"config." + key: val for key, val in self.config.__dict__.items()})
         self.simulation_state.add_dict_entries(self.market.market_state.__dict__)
         for agent in self.agents.values():
-            self.simulation_state.add_dict_entries(get_wallet_state_fp(agent.wallet, self.market))
+            self.simulation_state.add_dict_entries(get_wallet_state(agent.wallet, self.market))
         # TODO: This is a HACK to prevent test_sim from failing on market shutdown
         # when the market closes, the share_reserves are 0 (or negative & close to 0) and several logging steps break
         if self.market.market_state.share_reserves > FixedPoint(0):  # there is money in the market

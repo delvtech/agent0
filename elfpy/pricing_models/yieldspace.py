@@ -240,7 +240,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=out.amount,
                 d_bonds=-with_fee,
             )
@@ -289,7 +289,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # indicates that the fees are working correctly.
             with_fee = without_fee + curve_fee + gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=-with_fee,
                 d_bonds=out.amount,
             )
@@ -440,7 +440,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=-in_.amount,
                 d_bonds=with_fee,
             )
@@ -489,7 +489,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
             # tokens received, which indicates that the fees are working correctly.
             with_fee = without_fee - curve_fee - gov_curve_fee
             # Create the agent and market trade results.
-            user_result = agent_trade_result.AgentTradeResultFP(
+            user_result = agent_trade_result.AgentTradeResult(
                 d_base=with_fee,
                 d_bonds=-in_.amount,
             )

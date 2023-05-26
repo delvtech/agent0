@@ -190,10 +190,10 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     def initialize(
         self,
         wallet_address: int,
-    ) -> tuple[MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Construct a borrow market."""
         market_deltas = MarketDeltas()
-        borrow_summary = wallet.BorrowFP(
+        borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=FixedPoint(0),
             borrow_shares=FixedPoint(0),
@@ -201,7 +201,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
             collateral_amount=FixedPoint(0),
             start_time=FixedPoint(0),
         )
-        agent_deltas = wallet.WalletFP(address=wallet_address, borrows={FixedPoint(0): borrow_summary})
+        agent_deltas = wallet.Wallet(address=wallet_address, borrows={FixedPoint(0): borrow_summary})
         return market_deltas, agent_deltas
 
     def check_action(self, agent_action: MarketAction) -> None:
@@ -219,7 +219,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.WalletFP, MarketDeltas]:
+    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.Wallet, MarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -264,7 +264,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         wallet_address: int,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
@@ -284,7 +284,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
                 amount=collateral.amount,
             ),
         )
-        borrow_summary = wallet.BorrowFP(
+        borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=borrow_amount_in_base,
             borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
@@ -293,7 +293,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
             start_time=self.block_time.time,
         )
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = wallet.WalletFP(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             borrows={self.block_time.time: borrow_summary},
         )
@@ -301,10 +301,10 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
 
     def open_borrow(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
         Agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
@@ -318,7 +318,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         wallet_address: int,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
@@ -335,7 +335,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
         market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
-        borrow_summary = wallet.BorrowFP(
+        borrow_summary = wallet.Borrow(
             borrow_token=types.TokenType.BASE,
             borrow_amount=-borrow_amount_in_base,
             borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price,
@@ -344,7 +344,7 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
             start_time=self.block_time.time,
         )
         # agent wallet is stored in token units (BASE or PT) so we pass back the deltas in those units
-        agent_deltas = wallet.WalletFP(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             borrows={self.block_time.time: borrow_summary},
         )
@@ -352,10 +352,10 @@ class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
 
     def close_borrow(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.Wallet]:
         """Close a borrow as requested by the agent and return the market and agent deltas.
         Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """

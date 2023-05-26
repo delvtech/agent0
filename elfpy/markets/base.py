@@ -35,7 +35,7 @@ class MarketAction(Generic[Action]):
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
-    wallet: wallet.WalletFP  # the agent's wallet
+    wallet: wallet.Wallet  # the agent's wallet
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
@@ -95,7 +95,7 @@ class Market(Generic[State, Deltas, PricingModel]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, Deltas]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.Wallet, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 

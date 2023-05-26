@@ -14,7 +14,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.agents.get_wallet_state import get_wallet_state_fp
+from elfpy.agents.get_wallet_state import get_wallet_state
 from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
 from elfpy.agents.policies.lp_and_withdraw import LpAndWithdrawAgent
 from elfpy.agents.policies.no_action import NoActionAgent
@@ -120,13 +120,13 @@ class TestAgent(unittest.TestCase):
     def test_wallet_state_matches_state_keys(self):
         """Tests that an agent wallet has the right keys"""
         for get_state_key, state_key in zip(
-            self.test_agent.wallet.get_state_keys(), get_wallet_state_fp(self.test_agent.wallet, self.market).keys()
+            self.test_agent.wallet.get_state_keys(), get_wallet_state(self.test_agent.wallet, self.market).keys()
         ):
             assert get_state_key == state_key, f"ERROR: {get_state_key=} did not equal {state_key=}"
 
     def test_wallet_copy(self):
         """Test the wallet ability to deep copy itself"""
-        example_wallet = wallet.WalletFP(
+        example_wallet = wallet.Wallet(
             address=0, balance=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
         wallet_copy = example_wallet.copy()
@@ -137,13 +137,13 @@ class TestAgent(unittest.TestCase):
 
     def test_wallet_update(self):
         """Test that the wallet updates correctly & does not use references to the deltas argument"""
-        example_wallet = wallet.WalletFP(
+        example_wallet = wallet.Wallet(
             address=0, balance=types.QuantityFP(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
         )
-        example_deltas = wallet.WalletFP(
+        example_deltas = wallet.Wallet(
             address=0,
             balance=types.QuantityFP(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
-            longs={FixedPoint(0): wallet.LongFP(FixedPoint("15.0"))},
+            longs={FixedPoint(0): wallet.Long(FixedPoint("15.0"))},
             fees_paid=FixedPoint("0.001"),
         )
         example_wallet.update(example_deltas)
@@ -158,10 +158,10 @@ class TestAgent(unittest.TestCase):
         assert example_wallet.balance.amount == FixedPoint(
             "90.0"
         ), f"{example_wallet.balance.amount=} should be 100-10=90."
-        new_example_deltas = wallet.WalletFP(
+        new_example_deltas = wallet.Wallet(
             address=0,
             balance=types.QuantityFP(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
-            longs={FixedPoint(0): wallet.LongFP(FixedPoint("8.0"))},
+            longs={FixedPoint(0): wallet.Long(FixedPoint("8.0"))},
             fees_paid=FixedPoint("0.0008"),
         )
         example_wallet.update(new_example_deltas)

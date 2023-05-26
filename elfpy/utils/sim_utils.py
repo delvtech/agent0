@@ -101,7 +101,7 @@ def get_initialized_hyperdrive_market_fp(
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: time.BlockTimeFP,
     config: simulators.ConfigFP,
-) -> tuple[hyperdrive_market.Market, wallet.WalletFP, hyperdrive_actions.MarketDeltas]:
+) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 
     Arguments

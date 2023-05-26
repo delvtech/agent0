@@ -254,7 +254,7 @@ class Market(
 
     def perform_action(
         self, action_details: tuple[int, hyperdrive_actions.MarketAction]
-    ) -> tuple[int, wallet.WalletFP, hyperdrive_actions.MarketDeltas]:
+    ) -> tuple[int, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
         r"""Execute a trade in the simulated market
 
         Checks which of 6 action types are being executed, and handles each case:
@@ -310,7 +310,7 @@ class Market(
             raise ValueError(f"{agent_action.mint_time=} must be provided when closing a short or long")
         # for each position, specify how to forumulate trade and then execute
         market_deltas = hyperdrive_actions.MarketDeltas()
-        agent_deltas = wallet.WalletFP(address=0)
+        agent_deltas = wallet.Wallet(address=0)
         if agent_action.action_type == hyperdrive_actions.MarketActionType.OPEN_LONG:  # buy to open long
             market_deltas, agent_deltas = self.open_long(
                 agent_wallet=agent_action.wallet,
@@ -367,7 +367,7 @@ class Market(
         wallet_address: int,
         contribution: FixedPoint,
         target_apr: FixedPoint,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Market Deltas so that an LP can initialize the market"""
         if self.market_state.share_reserves > FixedPoint(0) or self.market_state.bond_reserves > FixedPoint(0):
             raise AssertionError("The market appears to already be initialized.")
@@ -387,7 +387,7 @@ class Market(
         market_deltas = hyperdrive_actions.MarketDeltas(
             d_base_asset=contribution, d_bond_asset=bond_reserves, d_lp_total_supply=lp_tokens
         )
-        agent_deltas = wallet.WalletFP(
+        agent_deltas = wallet.Wallet(
             address=wallet_address,
             balance=-types.QuantityFP(amount=contribution, unit=types.TokenType.BASE),
             lp_tokens=lp_tokens,
@@ -398,10 +398,10 @@ class Market(
 
     def open_short(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         bond_amount: FixedPoint,
         max_deposit: FixedPoint = FixedPoint(2**32 * 10**18),
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculates the deltas from opening a short and then updates the agent wallet & market state"""
         # create/update the checkpoint
         _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
@@ -425,11 +425,11 @@ class Market(
 
     def close_short(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         open_share_price: FixedPoint,
         bond_amount: FixedPoint,
         mint_time: FixedPoint,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a short and then update the agent wallet & market state"""
         # create/update the checkpoint
         self.apply_checkpoint(mint_time, self.market_state.share_price)
@@ -451,9 +451,9 @@ class Market(
 
     def open_long(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         base_amount: FixedPoint,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from opening a long and then update the agent wallet & market state"""
         # create/update the checkpoint
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
@@ -484,8 +484,8 @@ class Market(
         self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price = updated_long_share_price
 
     def close_long(
-        self, agent_wallet: wallet.WalletFP, bond_amount: FixedPoint, mint_time: FixedPoint
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+        self, agent_wallet: wallet.Wallet, bond_amount: FixedPoint, mint_time: FixedPoint
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Calculate the deltas from closing a long and then update the agent wallet & market state"""
         # create/update the checkpoint
         _ = self.apply_checkpoint(mint_time, self.market_state.share_price)
@@ -507,9 +507,9 @@ class Market(
 
     def add_liquidity(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         bond_amount: FixedPoint,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is added"""
         _ = self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_add_liquidity(
@@ -527,9 +527,9 @@ class Market(
 
     def remove_liquidity(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         lp_shares: FixedPoint,
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         """Computes new deltas for bond & share reserves after liquidity is removed"""
         self.apply_checkpoint(self.latest_checkpoint_time, self.market_state.share_price)
         market_deltas, agent_deltas = hyperdrive_actions.calc_remove_liquidity(
@@ -603,7 +603,7 @@ class Market(
         matured_longs_amount = self.market_state.total_supply_longs[mint_time]
         if matured_longs_amount > FixedPoint(0):
             market_deltas, _ = hyperdrive_actions.calc_close_long(
-                wallet.WalletFP(0).address,
+                wallet.Wallet(0).address,
                 matured_longs_amount,
                 self.market_state,
                 self.position_duration,
@@ -619,7 +619,7 @@ class Market(
         if matured_shorts_amount > FixedPoint(0):
             open_share_price = self.market_state.checkpoints[mint_time].share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short(
-                wallet.WalletFP(0).address,
+                wallet.Wallet(0).address,
                 matured_shorts_amount,
                 self.market_state,
                 self.position_duration,
@@ -633,7 +633,7 @@ class Market(
 
     def redeem_withdraw_shares(
         self,
-        agent_wallet: wallet.WalletFP,
+        agent_wallet: wallet.Wallet,
         shares: FixedPoint,
         min_output: FixedPoint,
         as_underlying: bool,
@@ -668,7 +668,7 @@ class Market(
 
     def calc_redeem_withdraw_shares(
         self, shares: FixedPoint, min_output: FixedPoint, as_underlying: bool
-    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.WalletFP]:
+    ) -> tuple[hyperdrive_actions.MarketDeltas, wallet.Wallet]:
         r"""Calculates the market and wallet deltas for redeemable withdrawal shares, if enough margin
         has been freed to do so.
 
@@ -689,7 +689,7 @@ class Market(
         """
         market_deltas = hyperdrive_actions.MarketDeltas()
         # TODO don't use a wallet. issue #315
-        wallet_deltas = wallet.WalletFP(address=0)
+        wallet_deltas = wallet.Wallet(address=0)
         # We burn the shares from the user
         wallet_deltas.withdraw_shares -= shares
         # The user gets a refund on their margin equal to the face value of their withdraw shares

@@ -33,7 +33,7 @@ class Agent:
         if not isinstance(budget, FixedPoint):
             raise TypeError(f"{budget=} must be of type `FixedPoint`")
         self.budget: FixedPoint = budget
-        self.wallet: wallet.WalletFP = wallet.WalletFP(
+        self.wallet: wallet.Wallet = wallet.Wallet(
             address=wallet_address, balance=types.QuantityFP(amount=budget, unit=types.TokenType.BASE)
         )
         # TODO: We need to fix this up -- probably just have the user specify a name on init

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class LongFP:
+class Long:
     r"""An open long position.
 
     Arguments
@@ -30,7 +30,7 @@ class LongFP:
 
 
 @dataclass
-class ShortFP:
+class Short:
     r"""An open short position.
 
     Arguments
@@ -46,7 +46,7 @@ class ShortFP:
 
 
 @dataclass
-class BorrowFP:
+class Borrow:
     r"""An open borrow position
 
     Arguments
@@ -72,7 +72,7 @@ class BorrowFP:
 
 @types.freezable()
 @dataclass()
-class WalletFP:
+class Wallet:
     r"""Stores what is in the agent's wallet
 
     Arguments
@@ -108,12 +108,12 @@ class WalletFP:
     lp_tokens: FixedPoint = FixedPoint(0)
 
     # non-fungible (identified by key=mint_time, stored as dict)
-    longs: dict[FixedPoint, LongFP] = field(default_factory=dict)
-    shorts: dict[FixedPoint, ShortFP] = field(default_factory=dict)
+    longs: dict[FixedPoint, Long] = field(default_factory=dict)
+    shorts: dict[FixedPoint, Short] = field(default_factory=dict)
     withdraw_shares: FixedPoint = FixedPoint(0)
     # borrow and  collateral have token type, which is not represented here
     # this therefore assumes that only one token type can be used at any given mint time
-    borrows: dict[FixedPoint, BorrowFP] = field(default_factory=dict)
+    borrows: dict[FixedPoint, Borrow] = field(default_factory=dict)
     fees_paid: FixedPoint = FixedPoint(0)
 
     def __getitem__(self, key: str) -> Any:
@@ -122,11 +122,11 @@ class WalletFP:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def copy(self) -> WalletFP:
+    def copy(self) -> Wallet:
         """Returns a new copy of self"""
-        return WalletFP(**copy.deepcopy(self.__dict__))
+        return Wallet(**copy.deepcopy(self.__dict__))
 
-    def update(self, wallet_deltas: WalletFP) -> None:
+    def update(self, wallet_deltas: Wallet) -> None:
         """Update the agent's wallet
 
         Arguments
@@ -175,7 +175,7 @@ class WalletFP:
                 raise ValueError(f"wallet_key={key} is not allowed.")
             self.check_valid_wallet_state(self.__dict__)
 
-    def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, BorrowFP]]) -> None:
+    def _update_borrows(self, borrows: Iterable[tuple[FixedPoint, Borrow]]) -> None:
         for mint_time, borrow_summary in borrows:
             if mint_time != borrow_summary.start_time:
                 raise ValueError(
@@ -190,7 +190,7 @@ class WalletFP:
                 # of open borrows using `if self.borrows`
                 del self.borrows[borrow_summary.start_time]
 
-    def _update_longs(self, longs: Iterable[tuple[FixedPoint, LongFP]]) -> None:
+    def _update_longs(self, longs: Iterable[tuple[FixedPoint, Long]]) -> None:
         """Helper internal function that updates the data about Longs contained in the Agent's Wallet object
 
         Arguments
@@ -219,7 +219,7 @@ class WalletFP:
             if mint_time in self.longs and self.longs[mint_time].balance < FixedPoint(0):
                 raise AssertionError(f"ERROR: Wallet balance should be >= 0, not {self.longs[mint_time]}.")
 
-    def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, ShortFP]]) -> None:
+    def _update_shorts(self, shorts: Iterable[tuple[FixedPoint, Short]]) -> None:
         """Helper internal function that updates the data about Shortscontained in the Agent's Wallet object
 
         Arguments

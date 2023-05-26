@@ -60,6 +60,6 @@ class TradeResultFP:
     to the user and the market are computed.
     """
 
-    user_result: agent_trade_result.AgentTradeResultFP
+    user_result: agent_trade_result.AgentTradeResult
     market_result: market_action_result.MarketActionResultFP
     breakdown: TradeBreakdownFP

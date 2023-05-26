@@ -76,7 +76,7 @@ class MarketAction(base_market.MarketAction):
     # amount to supply for the action
     trade_amount: FixedPoint  # TODO: should this be a Quantity, not a float? Make sure, then delete fixme
     # the agent's wallet
-    wallet: wallet.WalletFP
+    wallet: wallet.Wallet
     # min amount to receive for the action
     min_amount_out: FixedPoint = FixedPoint(0)
     # mint time is set only for trades that act on existing positions (close long or close short)
@@ -339,7 +339,7 @@ def calc_open_short(
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     r"""Calculate the agent & market deltas for opening a short position.
 
     Shorts need their margin account to cover the worst case scenario (p=1).
@@ -444,10 +444,10 @@ def calc_open_short(
         short_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
         total_supply_shorts=defaultdict(FixedPoint, {latest_checkpoint_time: bond_amount}),
     )
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=-types.QuantityFP(amount=trader_deposit, unit=types.TokenType.BASE),
-        shorts={latest_checkpoint_time: wallet.ShortFP(balance=bond_amount, open_share_price=market_state.share_price)},
+        shorts={latest_checkpoint_time: wallet.Short(balance=bond_amount, open_share_price=market_state.share_price)},
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
@@ -462,7 +462,7 @@ def calc_close_short(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     """
     When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
     The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
@@ -593,14 +593,14 @@ def calc_close_short(
     amount = (market_state.share_price / open_share_price) * bond_amount + trade_result.user_result.d_base
     amount = amount if amount > FixedPoint(0) else FixedPoint(0)
 
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.QuantityFP(
             amount=amount,
             unit=types.TokenType.BASE,
         ),  # see CLOSING SHORT LOGIC above
         shorts={
-            mint_time: wallet.ShortFP(
+            mint_time: wallet.Short(
                 balance=-bond_amount,
                 open_share_price=FixedPoint(0),
             )
@@ -618,7 +618,7 @@ def calc_open_long(
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     """
     When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
@@ -692,10 +692,10 @@ def calc_open_long(
         long_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
         total_supply_longs=defaultdict(FixedPoint, {latest_checkpoint_time: trade_result.user_result.d_bonds}),
     )
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.QuantityFP(amount=trade_result.user_result.d_base, unit=types.TokenType.BASE),
-        longs={latest_checkpoint_time: wallet.LongFP(trade_result.user_result.d_bonds)},
+        longs={latest_checkpoint_time: wallet.Long(trade_result.user_result.d_bonds)},
         fees_paid=trade_result.breakdown.fee,
     )
     return market_deltas, agent_deltas
@@ -710,7 +710,7 @@ def calc_close_long(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
@@ -862,10 +862,10 @@ def calc_close_long(
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
     )
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.QuantityFP(amount=base_proceeds, unit=types.TokenType.BASE),
-        longs={mint_time: wallet.LongFP(-bond_amount)},
+        longs={mint_time: wallet.Long(-bond_amount)},
         fees_paid=fee,
     )
     return market_deltas, agent_deltas
@@ -990,7 +990,7 @@ def calc_add_liquidity(
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
     Arguments
@@ -1044,7 +1044,7 @@ def calc_add_liquidity(
         d_bond_asset=d_bond_reserves,
         d_lp_total_supply=lp_out,
     )
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=-types.QuantityFP(amount=d_base_reserves, unit=types.TokenType.BASE),
         lp_tokens=lp_out,
@@ -1058,7 +1058,7 @@ def calc_remove_liquidity(
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
-) -> tuple[MarketDeltas, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
     Arguments
@@ -1106,7 +1106,7 @@ def calc_remove_liquidity(
         d_lp_total_supply=-lp_shares,
         total_supply_withdraw_shares=withdraw_shares,
     )
-    agent_deltas = wallet.WalletFP(
+    agent_deltas = wallet.Wallet(
         address=wallet_address,
         balance=types.QuantityFP(amount=delta_base, unit=types.TokenType.BASE),
         lp_tokens=-lp_shares,
