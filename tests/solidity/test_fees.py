@@ -151,7 +151,7 @@ def test_did_we_get_fees():
 
     # capture fees right after the open long trade
     gov_fees_after_open_long = test.hyperdrive.market_state.gov_fees_accrued * test.hyperdrive.market_state.share_price
-    test.assertGreater(int(gov_fees_after_open_long), 0)
+    test.assertGreater(gov_fees_after_open_long, FixedPoint("0.0"))
 
 
 @pytest.mark.parametrize("amount", AMOUNT, ids=idfn)
