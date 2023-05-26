@@ -12,7 +12,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.time.time import StretchedTimeFP
+from elfpy.time.time import StretchedTime
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average
 
@@ -121,7 +121,7 @@ def calculate_lp_allocation_adjustment_fp(
 
 def calculate_short_adjustment(
     market_state: hyperdrive_market.MarketState,
-    position_duration: time.StretchedTimeFP,
+    position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
     """Calculates an adjustment amount for lp shares based on the amount of shorts outstanding
@@ -158,7 +158,7 @@ def calculate_short_adjustment(
 
 def calculate_long_adjustment(
     market_state: hyperdrive_market.MarketState,
-    position_duration: time.StretchedTimeFP,
+    position_duration: time.StretchedTime,
     market_time: FixedPoint,
 ) -> FixedPoint:
     """Calculates an adjustment amount for lp shares based on the amount of longs outstanding
@@ -198,7 +198,7 @@ def calc_lp_out_given_tokens_in(
     rate: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     market_time: FixedPoint,
-    position_duration: time.StretchedTimeFP,
+    position_duration: time.StretchedTime,
 ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
     r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -335,7 +335,7 @@ def calc_open_short(
     wallet_address: int,
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: time.StretchedTimeFP,
+    position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
@@ -377,12 +377,12 @@ def calc_open_short(
     """
     # get the checkpointed time remaining
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
-    years_remaining = time.get_years_remaining_fp(
+    years_remaining = time.get_years_remaining(
         market_time=block_time,
         mint_time=latest_checkpoint_time,
         position_duration_years=annualized_position_duration,
     )
-    time_remaining = time.StretchedTimeFP(
+    time_remaining = time.StretchedTime(
         days=years_remaining * FixedPoint("365.0"),
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
@@ -457,7 +457,7 @@ def calc_close_short(
     wallet_address: int,
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: time.StretchedTimeFP,
+    position_duration: time.StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
@@ -501,12 +501,12 @@ def calc_close_short(
             + f"{bond_amount=} must be < {(market_state.bond_reserves - market_state.bond_buffer)=}."
         )
     # Compute the time remaining given the mint time.
-    years_remaining = time.get_years_remaining_fp(
+    years_remaining = time.get_years_remaining(
         market_time=block_time,
         mint_time=mint_time,
         position_duration_years=position_duration.days / FixedPoint("365.0"),
     )  # all args in units of years
-    time_remaining = time.StretchedTimeFP(
+    time_remaining = time.StretchedTime(
         days=years_remaining * FixedPoint("365.0"),  # converting years to days
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
@@ -614,7 +614,7 @@ def calc_open_long(
     wallet_address: int,
     base_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: StretchedTimeFP,
+    position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
@@ -705,7 +705,7 @@ def calc_close_long(
     wallet_address: int,
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: StretchedTimeFP,
+    position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
@@ -741,12 +741,12 @@ def calc_close_long(
         Returns the deltas to update the market and the agent's wallet after opening a short.
     """
     # Compute the time remaining given the mint time.
-    years_remaining = time.get_years_remaining_fp(
+    years_remaining = time.get_years_remaining(
         market_time=block_time,
         mint_time=mint_time,
         position_duration_years=position_duration.days / FixedPoint("365.0"),
     )  # all args in units of years
-    time_remaining = time.StretchedTimeFP(
+    time_remaining = time.StretchedTime(
         days=years_remaining * FixedPoint("365.0"),  # converting years to days
         time_stretch=position_duration.time_stretch,
         normalizing_constant=position_duration.normalizing_constant,
@@ -986,7 +986,7 @@ def calc_add_liquidity(
     wallet_address: int,
     base_in: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: StretchedTimeFP,
+    position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
@@ -1056,7 +1056,7 @@ def calc_remove_liquidity(
     wallet_address: int,
     lp_shares: FixedPoint,
     market_state: hyperdrive_market.MarketState,
-    position_duration: StretchedTimeFP,
+    position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed.

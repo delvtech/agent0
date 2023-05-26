@@ -23,7 +23,7 @@ class TestCaseGetMax:
     """Dataclass for get_max_long test cases"""
 
     market_state: hyperdrive_market.MarketState
-    time_remaining: time.StretchedTimeFP
+    time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -55,7 +55,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -72,7 +72,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -89,7 +89,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -106,7 +106,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.27")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -123,7 +123,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -140,7 +140,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -157,7 +157,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.5"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -174,7 +174,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -191,7 +191,7 @@ class TestGetMax(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.0"),
                     time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.25")),
                     normalizing_constant=FixedPoint("365.0"),

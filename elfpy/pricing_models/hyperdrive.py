@@ -34,7 +34,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         self,
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -132,7 +132,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         curve = super().calc_in_given_out(
             out=types.QuantityFP(amount=out.amount * time_remaining.normalized_time, unit=out.unit),
             market_state=market_state,
-            time_remaining=time.StretchedTimeFP(  # time remaining is always fixed to the full term for flat+curve
+            time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for flat+curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,
@@ -182,7 +182,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         self,
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a specified amount of the
@@ -279,7 +279,7 @@ class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
         curve = super().calc_out_given_in(
             in_=types.QuantityFP(amount=in_.amount * time_remaining.normalized_time, unit=in_.unit),
             market_state=market_state,
-            time_remaining=time.StretchedTimeFP(  # time remaining is always fixed to the full term for the curve
+            time_remaining=time.StretchedTime(  # time remaining is always fixed to the full term for the curve
                 days=time_remaining.normalizing_constant,  # position duration is the normalizing constant
                 time_stretch=time_remaining.time_stretch,
                 normalizing_constant=time_remaining.normalizing_constant,

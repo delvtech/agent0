@@ -38,7 +38,7 @@ def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = Non
     # pricing model is hardcoded for now.  once we have support for more markets, we can add a
     # config option for type of market
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-    block_time = time.BlockTimeFP()
+    block_time = time.BlockTime()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
     simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
@@ -99,7 +99,7 @@ def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = Non
 
 def get_initialized_hyperdrive_market_fp(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
-    block_time: time.BlockTimeFP,
+    block_time: time.BlockTime,
     config: simulators.Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
@@ -134,7 +134,7 @@ def get_initialized_hyperdrive_market_fp(
     MarketDeltas
         market deltas for the initial LP
     """
-    position_duration = time.StretchedTimeFP(
+    position_duration = time.StretchedTime(
         days=FixedPoint(config.num_position_days * 10**18),
         time_stretch=pricing_model.calc_time_stretch(FixedPoint(config.target_fixed_apr)),
         normalizing_constant=FixedPoint(config.num_position_days * 10**18),

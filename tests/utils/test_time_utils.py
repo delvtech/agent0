@@ -53,11 +53,11 @@ class TestTimeUtils(unittest.TestCase):
         for test_case in test_cases:
             if test_case["is_error_case"]:
                 with self.assertRaises(test_case["expected_result"]):
-                    time_remaining = time.get_years_remaining_fp(
+                    time_remaining = time.get_years_remaining(
                         test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                     )
             else:
-                time_remaining = time.get_years_remaining_fp(
+                time_remaining = time.get_years_remaining(
                     test_case["market_time"], test_case["mint_time"], test_case["num_position_days"]
                 )
                 self.assertAlmostEqual(
@@ -95,7 +95,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            time_remaining = time.days_to_time_remaining_fp(
+            time_remaining = time.days_to_time_remaining(
                 test_case["days_remaining"], test_case["time_stretch"], test_case["normalizing_constant"]
             )
             self.assertAlmostEqual(

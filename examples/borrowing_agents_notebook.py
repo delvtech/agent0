@@ -201,9 +201,7 @@ market_state = borrow.MarketState(
     lending_rate=FixedPoint("0.01"),
     spread_ratio=FixedPoint("1.25"),
 )
-market = borrow.Market(
-    pricing_model=borrow.PricingModel(), market_state=market_state, block_time=elf_time.BlockTimeFP()
-)
+market = borrow.Market(pricing_model=borrow.PricingModel(), market_state=market_state, block_time=elf_time.BlockTime())
 
 agents = {
     0: BorrowingBeatrice(

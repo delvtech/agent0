@@ -197,8 +197,8 @@ class Market(
         self,
         pricing_model: hyperdrive_pm.HyperdrivePricingModel,
         market_state: MarketState,
-        position_duration: time.StretchedTimeFP,
-        block_time: time.BlockTimeFP,
+        position_duration: time.StretchedTime,
+        block_time: time.BlockTime,
     ):
         # market state variables
         assert (

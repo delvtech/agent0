@@ -49,7 +49,7 @@ class CalcInGivenOutFailureTestCase:
 
     out: types.QuantityFP
     market_state: hyperdrive_market.MarketState
-    time_remaining: time.StretchedTimeFP
+    time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
 
@@ -103,7 +103,7 @@ class CalcOutGivenInFailureTestCase:
 
     in_: types.QuantityFP
     market_state: hyperdrive_market.MarketState
-    time_remaining: time.StretchedTimeFP
+    time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
 

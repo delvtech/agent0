@@ -5,7 +5,7 @@ import elfpy.agents.agent as elf_agent
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
-from elfpy.time.time import BlockTimeFP
+from elfpy.time.time import BlockTime
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
@@ -25,7 +25,7 @@ class TestInitialize(unittest.TestCase):
     bob: elf_agent.Agent
     celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: BlockTimeFP
+    block_time: BlockTime
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
     def __init__(self, contribution: float = 1_000.0, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
@@ -38,14 +38,14 @@ class TestInitialize(unittest.TestCase):
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
-        self.block_time = BlockTimeFP()
+        self.block_time = BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,
-            position_duration=time.StretchedTimeFP(
+            position_duration=time.StretchedTime(
                 days=self.position_duration,
                 time_stretch=self.pricing_model.calc_time_stretch(self.target_apr),
                 normalizing_constant=self.position_duration,

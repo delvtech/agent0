@@ -55,7 +55,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 model_name = pricing_model.model_name()
                 model_type = pricing_model.model_type()
                 time_stretch = pricing_model.calc_time_stretch(test_case.time_stretch_apy)
-                time_remaining = time.StretchedTimeFP(
+                time_remaining = time.StretchedTime(
                     days=test_case.days_remaining, time_stretch=time_stretch, normalizing_constant=FixedPoint("365.0")
                 )
                 # TODO: convert these tests to use total supply, not the approximation
@@ -138,7 +138,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                 market_state.lp_total_supply = (
                     market_state.bond_reserves + market_state.share_price * market_state.share_reserves
                 )
-                time_remaining = time.StretchedTimeFP(
+                time_remaining = time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -160,7 +160,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # TODO: test with flat fees
                     flat_fee_multiple=FixedPoint("0.0"),
                 )
-                time_remaining = time.StretchedTimeFP(
+                time_remaining = time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=pricing_model.calc_time_stretch(FixedPoint("0.05")),
                     normalizing_constant=FixedPoint("365.0"),
@@ -195,7 +195,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -211,7 +211,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -227,7 +227,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -243,7 +243,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -259,7 +259,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("-1.0"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -275,7 +275,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # flat fee negative
                     flat_fee_multiple=FixedPoint("-1.0"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -291,7 +291,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("1.1"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -307,7 +307,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     # flat fee above 1
                     flat_fee_multiple=FixedPoint("1.1"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -323,7 +323,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining negative
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("-91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -339,7 +339,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining == 365, will get divide by zero error
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("365.0"), time_stretch=FixedPoint("1.0"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=(errors.DivisionByZero),
@@ -355,7 +355,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
                 # days remaining > 365
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("500.0"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -371,7 +371,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("92.5"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=(ValueError, decimal.InvalidOperation),
@@ -387,7 +387,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.1"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -403,7 +403,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,
@@ -419,7 +419,7 @@ class TestCalcInGivenOut(unittest.TestCase):
                     curve_fee_multiple=FixedPoint("0.01"),
                     flat_fee_multiple=FixedPoint("0.01"),
                 ),
-                time_remaining=time.StretchedTimeFP(
+                time_remaining=time.StretchedTime(
                     days=FixedPoint("91.25"), time_stretch=FixedPoint("1.1"), normalizing_constant=FixedPoint("365.0")
                 ),
                 exception_type=AssertionError,

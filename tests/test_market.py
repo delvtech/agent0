@@ -23,12 +23,12 @@ class MarketTest(unittest.TestCase):
 
     def test_position_duration(self):
         """Test to make sure market init fails when normalizing_constant != days"""
-        pd_good = time.StretchedTimeFP(
+        pd_good = time.StretchedTime(
             days=FixedPoint("365.0"),
             time_stretch=FixedPoint("1.0"),
             normalizing_constant=FixedPoint("365.0"),
         )
-        pd_nonorm = time.StretchedTimeFP(
+        pd_nonorm = time.StretchedTime(
             days=FixedPoint("365.0"),
             time_stretch=FixedPoint("1.0"),
             normalizing_constant=FixedPoint("36.0"),
@@ -37,14 +37,14 @@ class MarketTest(unittest.TestCase):
             _ = hyperdrive_market.Market(
                 pricing_model=pricing_model,
                 market_state=hyperdrive_market.MarketState(),
-                block_time=time.BlockTimeFP(),
+                block_time=time.BlockTime(),
                 position_duration=pd_good,
             )
             with self.assertRaises(AssertionError):
                 _ = hyperdrive_market.Market(
                     pricing_model=pricing_model,
                     market_state=hyperdrive_market.MarketState(),
-                    block_time=time.BlockTimeFP(),
+                    block_time=time.BlockTime(),
                     position_duration=pd_nonorm,
                 )
 
@@ -91,7 +91,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("5_000_000.0"),  # Targeting 5M liquidity
                 "target_apr": FixedPoint("0.05"),  # fixed rate APR you'd get from purchasing bonds; r = 0.05
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("182.5"),
                     time_stretch=FixedPoint("22.186877016851916"),
                     normalizing_constant=FixedPoint("182.5"),
@@ -108,7 +108,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("5_000_000.0"),  # Targeting 5M liquidity
                 "target_apr": FixedPoint("0.02"),  # fixed rate APR you'd get from purchasing bonds; r = 0.02
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("182.5"),
                     time_stretch=FixedPoint("55.467192542129794"),
                     normalizing_constant=FixedPoint("182.5"),
@@ -125,7 +125,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("5_000_000.0"),  # Targeting 5M liquidity
                 "target_apr": FixedPoint("0.08"),  # fixed rate APR you'd get from purchasing bonds; r = 0.08
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("182.5"),
                     time_stretch=FixedPoint("13.866798135532449"),
                     normalizing_constant=FixedPoint("182.5"),
@@ -142,7 +142,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("10_000_000.0"),  # targeting 10M liquidity
                 "target_apr": FixedPoint("0.03"),  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("91.25"),
                     time_stretch=FixedPoint("36.97812836141987"),
                     normalizing_constant=FixedPoint("91.25"),
@@ -159,7 +159,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("10_000_000.0"),  # Targeting 10M liquidity
                 "target_apr": FixedPoint("0.001"),  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("273.75"),
                     time_stretch=FixedPoint("1109.3438508425959"),
                     normalizing_constant=FixedPoint("273.75"),
@@ -176,7 +176,7 @@ class MarketTest(unittest.TestCase):
             {
                 "target_liquidity": FixedPoint("10_000_000.0"),  # Targeting 10M liquidity
                 "target_apr": FixedPoint("0.03"),  # fixed rate APR you'd get from purchasing bonds; r = 0.03
-                "position_duration": time.StretchedTimeFP(
+                "position_duration": time.StretchedTime(
                     days=FixedPoint("91.25"),
                     time_stretch=FixedPoint("36.97812836141987"),
                     normalizing_constant=FixedPoint("91.25"),
@@ -200,7 +200,7 @@ class MarketTest(unittest.TestCase):
             if isinstance(test_case["pricing_model"], borrow.PricingModel):
                 market = borrow.Market(
                     pricing_model=test_case["pricing_model"],
-                    block_time=time.BlockTimeFP(),
+                    block_time=time.BlockTime(),
                     market_state=borrow.MarketState(),
                 )
                 market_deltas, _ = market.initialize(wallet_address=0)
@@ -230,7 +230,7 @@ class MarketTest(unittest.TestCase):
                         init_share_price=test_case["init_share_price"],
                         share_price=test_case["share_price"],
                     ),
-                    block_time=time.BlockTimeFP(),
+                    block_time=time.BlockTime(),
                     pricing_model=test_case["pricing_model"],
                 )
                 _ = market.initialize(

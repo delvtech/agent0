@@ -28,7 +28,7 @@ class PricingModel(ABC):
         self,
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -37,7 +37,7 @@ class PricingModel(ABC):
         self,
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
@@ -47,7 +47,7 @@ class PricingModel(ABC):
         d_base: FixedPoint,
         rate: FixedPoint,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
         raise NotImplementedError
@@ -71,7 +71,7 @@ class PricingModel(ABC):
     def calc_initial_bond_reserves(
         self,
         target_apr: FixedPoint,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
         market_state: hyperdrive_market.MarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
@@ -112,7 +112,7 @@ class PricingModel(ABC):
     def calc_bond_reserves(
         self,
         target_apr: FixedPoint,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
         market_state: hyperdrive_market.MarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
@@ -154,7 +154,7 @@ class PricingModel(ABC):
     def calc_spot_price_from_reserves(
         self,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Calculates the spot price of base in terms of bonds.
         The spot price is defined as:
@@ -189,7 +189,7 @@ class PricingModel(ABC):
     def calc_apr_from_reserves(
         self,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
 
@@ -209,7 +209,7 @@ class PricingModel(ABC):
     def get_max_long(
         self,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
         Calculates the maximum long the market can support
@@ -251,7 +251,7 @@ class PricingModel(ABC):
     def get_max_short(
         self,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
         Calculates the maximum short the market can support using the bisection
@@ -301,7 +301,7 @@ class PricingModel(ABC):
         self,
         quantity: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ):
         """Applies a set of assertions to the input of a trading function."""
         assert quantity.amount >= elfpy.WEI_FP, f"expected quantity.amount >= {elfpy.WEI_FP}, not {quantity.amount}!"

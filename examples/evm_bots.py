@@ -545,7 +545,7 @@ def log_and_show_block_info(block_time: int):
 def get_simulator(config: simulators.Config) -> simulators.Simulator:
     """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-    block_time_ = time.BlockTimeFP()
+    block_time_ = time.BlockTime()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
     return simulators.Simulator(config, market, block_time_)
 
@@ -636,13 +636,13 @@ if __name__ == "__main__":
             elfpy_market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=experiment_config.scratch["pricing_model"],
                 market_state=market_state,
-                position_duration=time.StretchedTimeFP(
+                position_duration=time.StretchedTime(
                     days=FixedPoint(float(hyper_config["term_length"])),  # TODO: Fix this after FP refactor to use int
                     time_stretch=FixedPoint(hyper_config["timeStretch"]),
                     normalizing_constant=FixedPoint(float(hyper_config["term_length"])),
                 ),
                 # TODO: Change this to convert block_timestamp and start_timestamp to FP once we refactor FP
-                block_time=time.BlockTimeFP(
+                block_time=time.BlockTime(
                     _time=FixedPoint((block_timestamp - start_timestamp) / 365),
                     _block_number=FixedPoint(block_number),
                     _step_size=FixedPoint("1.0") / FixedPoint("365.0"),

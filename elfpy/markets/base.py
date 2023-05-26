@@ -84,7 +84,7 @@ class Market(Generic[State, Deltas, PricingModel]):
         self,
         pricing_model: PricingModel,
         market_state: State,
-        block_time: time.BlockTimeFP,
+        block_time: time.BlockTime,
     ):
         self.pricing_model = pricing_model
         self.market_state = market_state

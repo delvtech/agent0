@@ -76,7 +76,7 @@ class SimulationState:
     # minimum time discretization for a time step
     time_step_size: list[float] = field(default_factory=list)
     # time lapse between token mint and expiry in years
-    position_duration: list[time.StretchedTimeFP] = field(default_factory=list)
+    position_duration: list[time.StretchedTime] = field(default_factory=list)
     # variable apr on a given day
     current_variable_apr: list[float] = field(default_factory=list)
     # apr of the AMM pool
@@ -264,7 +264,7 @@ class RunSimVariables:
     # minimum time discretization for time step in years
     time_step: float
     # time lapse between token mint and expiry in years
-    position_duration: time.StretchedTimeFP
+    position_duration: time.StretchedTime
 
 
 @dataclass
@@ -400,7 +400,7 @@ class Simulator:
         self,
         config: Config,
         market: hyperdrive_market.Market,
-        block_time: time.BlockTimeFP,
+        block_time: time.BlockTime,
     ):
         # User specified variables
         self.config = config.copy()

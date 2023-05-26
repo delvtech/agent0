@@ -7,7 +7,7 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.time.time import StretchedTimeFP
+from elfpy.time.time import StretchedTime
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
@@ -32,7 +32,7 @@ class TestCloseShort(unittest.TestCase):
     bob: elf_agent.Agent
     celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTimeFP
+    block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -40,7 +40,7 @@ class TestCloseShort(unittest.TestCase):
         """
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
-        block_time = time.BlockTimeFP()
+        block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.0"),
@@ -49,7 +49,7 @@ class TestCloseShort(unittest.TestCase):
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
-            position_duration=time.StretchedTimeFP(
+            position_duration=time.StretchedTime(
                 days=self.term_length,
                 time_stretch=pricing_model.calc_time_stretch(self.target_apr),
                 normalizing_constant=self.term_length,
@@ -83,7 +83,7 @@ class TestCloseShort(unittest.TestCase):
         time_remaining = FixedPoint("0.0")
         if maturity_time > self.hyperdrive.block_time.time:
             time_remaining = maturity_time - self.hyperdrive.block_time.time
-        stretch_time = StretchedTimeFP(
+        stretch_time = StretchedTime(
             days=time_remaining * FixedPoint("365.0"),
             time_stretch=self.hyperdrive.time_stretch_constant,
             normalizing_constant=FixedPoint("365.0"),

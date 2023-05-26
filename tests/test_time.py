@@ -53,13 +53,13 @@ class TestTimeUtils(unittest.TestCase):
         for test_case in test_cases:
             if test_case["is_error_case"]:
                 with self.assertRaises(test_case["expected_result"]):
-                    time_remaining = time.get_years_remaining_fp(
+                    time_remaining = time.get_years_remaining(
                         test_case["market_time"],
                         test_case["mint_time"],
                         test_case["num_position_days"],
                     )
             else:
-                time_remaining = time.get_years_remaining_fp(
+                time_remaining = time.get_years_remaining(
                     test_case["market_time"],
                     test_case["mint_time"],
                     test_case["num_position_days"],
@@ -99,7 +99,7 @@ class TestTimeUtils(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            time_remaining = time.days_to_time_remaining_fp(
+            time_remaining = time.days_to_time_remaining(
                 test_case["days_remaining"],
                 test_case["time_stretch"],
                 test_case["normalizing_constant"],
@@ -114,16 +114,16 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_block_time_init(self):
         """Test default values for block time"""
-        test_time = time.BlockTimeFP()
+        test_time = time.BlockTime()
         self.assertEqual(test_time.time, FixedPoint(0))
         self.assertEqual(test_time.block_number, FixedPoint(0))
         self.assertEqual(test_time.step_size, FixedPoint("1.0") / FixedPoint("365.0"))
         with self.assertRaises(ValueError):
-            test_time = time.BlockTimeFP(unit=time.TimeUnit.SECONDS)
+            test_time = time.BlockTime(unit=time.TimeUnit.SECONDS)
 
     def test_block_time_setters(self):
         """Test attribute setters for block time"""
-        test_time = time.BlockTimeFP()
+        test_time = time.BlockTime()
         # time
         self.assertEqual(test_time.time, FixedPoint(0))
         test_time.set_time(FixedPoint("4.0"), unit=time.TimeUnit.YEARS)
@@ -151,7 +151,7 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_time_tick(self):
         """Test the BlockTime tick function"""
-        test_time = time.BlockTimeFP()
+        test_time = time.BlockTime()
         self.assertEqual(test_time.time, FixedPoint(0))
         test_time.tick(FixedPoint(5))
         self.assertEqual(test_time.time, FixedPoint(5))
@@ -160,7 +160,7 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_time_step(self):
         """Test the BlockTime step function"""
-        test_time = time.BlockTimeFP()
+        test_time = time.BlockTime()
         self.assertEqual(test_time.time, FixedPoint(0))
         test_time.step()
         self.assertEqual(test_time.time, FixedPoint("1.0") / FixedPoint("365.0"))
@@ -169,7 +169,7 @@ class TestTimeUtils(unittest.TestCase):
 
     def test_time_conversion(self):
         """Test the BlockTime unit conversion function"""
-        test_time = time.BlockTimeFP()
+        test_time = time.BlockTime()
         test_time.set_time(FixedPoint("1.0"), time.TimeUnit.YEARS)
         self.assertEqual(test_time.time_conversion(time.TimeUnit.SECONDS), FixedPoint("31_556_952.0"))
         self.assertEqual(test_time.time_conversion(time.TimeUnit.MINUTES), FixedPoint("525_600.0"))

@@ -39,7 +39,7 @@ class SimUtilsTest(unittest.TestCase):
                         config.num_position_days = num_position_days
                         config.target_fixed_apr = target_fixed_apr
                         # construct the market via sim utils
-                        block_time = time.BlockTimeFP()
+                        block_time = time.BlockTime()
                         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
                         market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
                         # then construct it by hand
@@ -54,7 +54,7 @@ class SimUtilsTest(unittest.TestCase):
                                 curve_fee_multiple=market.market_state.curve_fee_multiple,
                                 flat_fee_multiple=market.market_state.flat_fee_multiple,
                             ),
-                            block_time=time.BlockTimeFP(),
+                            block_time=time.BlockTime(),
                             position_duration=market.position_duration,
                         )
                         share_reserves = FixedPoint(target_liquidity) / market_direct.market_state.share_price

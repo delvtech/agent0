@@ -18,7 +18,7 @@ class TimeUnit(Enum):
 
 
 @dataclass
-class BlockTimeFP:
+class BlockTime:
     r"""State class for tracking block timestamps and global time
 
     .. todo::
@@ -113,7 +113,7 @@ class BlockTimeFP:
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class StretchedTimeFP:
+class StretchedTime:
     r"""Stores time in units of days, as well as normalized & stretched variants
 
     .. todo:: Improve this constructor so that StretchedTime can be constructed from years.
@@ -125,7 +125,7 @@ class StretchedTimeFP:
     @property
     def stretched_time(self) -> FixedPoint:
         r"""Returns days / normalizing_constant / time_stretch"""
-        return days_to_time_remaining_fp(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
+        return days_to_time_remaining(self.days, self.time_stretch, normalizing_constant=self.normalizing_constant)
 
     @property
     def normalized_time(self) -> FixedPoint:
@@ -138,7 +138,7 @@ class StretchedTimeFP:
         return self.days / FixedPoint("365.0")
 
 
-def get_years_remaining_fp(
+def get_years_remaining(
     market_time: FixedPoint, mint_time: FixedPoint, position_duration_years: FixedPoint
 ) -> FixedPoint:
     r"""Get the time remaining in years on a token
@@ -166,7 +166,7 @@ def get_years_remaining_fp(
     return time_remaining
 
 
-def days_to_time_remaining_fp(
+def days_to_time_remaining(
     days_remaining: FixedPoint,
     time_stretch: FixedPoint = FixedPoint("1.0"),
     normalizing_constant: FixedPoint = FixedPoint("365.0"),

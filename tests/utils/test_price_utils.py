@@ -21,7 +21,7 @@ class BasePriceTest(unittest.TestCase):
             # test 1: 0.95 price; 6mo remaining;
             {
                 "price": FixedPoint("0.95"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -33,7 +33,7 @@ class BasePriceTest(unittest.TestCase):
             # test 2: 0.99 price; 6mo remaining;
             {
                 "price": FixedPoint("0.99"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -45,7 +45,7 @@ class BasePriceTest(unittest.TestCase):
             # test 3: 1.00 price; 6mo remaining;
             {
                 "price": FixedPoint("1.00"),  # 0% APR
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -57,7 +57,7 @@ class BasePriceTest(unittest.TestCase):
             # test 4: 0.95 price; 3mo remaining;
             {
                 "price": FixedPoint("0.95"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -69,7 +69,7 @@ class BasePriceTest(unittest.TestCase):
             # test 5: 0.95 price; 12mo remaining;
             {
                 "price": FixedPoint("0.95"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("365.0"),  # 12 months = 1 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -81,7 +81,7 @@ class BasePriceTest(unittest.TestCase):
             # test 6: 0.10 price; 3mo remaining;
             {
                 "price": FixedPoint("0.10"),  # 0% APR
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -95,7 +95,7 @@ class BasePriceTest(unittest.TestCase):
             #   the function asserts that price > 0, so this case should raise an AssertionError
             {
                 "price": FixedPoint("-0.50"),  # 0% APR
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -111,7 +111,7 @@ class BasePriceTest(unittest.TestCase):
             #   should raise an AssertionError
             {
                 "price": FixedPoint("0.95"),  # 0% APR
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("-91.25"),  # -3 months = -0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -126,7 +126,7 @@ class BasePriceTest(unittest.TestCase):
             #   the AMM math shouldn't let price be greater than 1
             {
                 "price": FixedPoint("1.50"),  # 0% APR
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -161,7 +161,7 @@ class BasePriceTest(unittest.TestCase):
             # test 1: 10% apr; 6mo remaining;
             {
                 "apr": FixedPoint("0.10"),  # 10% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -173,7 +173,7 @@ class BasePriceTest(unittest.TestCase):
             # test 2: 2% apr; 6mo remaining;
             {
                 "apr": FixedPoint("0.02"),  # 2% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -185,7 +185,7 @@ class BasePriceTest(unittest.TestCase):
             # test 3: 0% apr; 6mo remaining;
             {
                 "apr": FixedPoint("0.0"),  # 0% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("182.5"),  # 6 months = 0.5 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -197,7 +197,7 @@ class BasePriceTest(unittest.TestCase):
             # test 4: 21% apr; 3mo remaining;
             {
                 "apr": FixedPoint("0.21"),  # 21% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -209,7 +209,7 @@ class BasePriceTest(unittest.TestCase):
             # test 5: 5% apr; 12mo remaining;
             {
                 "apr": FixedPoint("0.05"),  # 5% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("365.0"),  # 12 months = 1 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -221,7 +221,7 @@ class BasePriceTest(unittest.TestCase):
             # test 6: 3600% apr; 3mo remaining;
             {
                 "apr": FixedPoint("36"),  # 3600% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -233,7 +233,7 @@ class BasePriceTest(unittest.TestCase):
             # test 7: 0% apr; 3mo remaining;
             {
                 "apr": FixedPoint("0.0"),  # 0% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("91.25"),  # 3 months = 0.25 years
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -245,7 +245,7 @@ class BasePriceTest(unittest.TestCase):
             # test 8: 5% apr; no time remaining;
             {
                 "apr": FixedPoint("5.0"),  # 500% apr
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("0.0"),
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),

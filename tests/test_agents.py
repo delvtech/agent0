@@ -44,7 +44,7 @@ class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
     market_state: hyperdrive_market.MarketState
-    time_remaining: time.StretchedTimeFP
+    time_remaining: time.StretchedTime
 
     __test__ = False  # pytest: don't test this class
 
@@ -110,10 +110,10 @@ class TestAgent(unittest.TestCase):
         self.market = hyperdrive_market.Market(
             pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
             market_state=hyperdrive_market.MarketState(),
-            position_duration=time.StretchedTimeFP(
+            position_duration=time.StretchedTime(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")
             ),
-            block_time=time.BlockTimeFP(),
+            block_time=time.BlockTime(),
         )
         self.market.initialize(wallet_address=0, contribution=FixedPoint("1_000_000.0"), target_apr=FixedPoint("0.01"))
 

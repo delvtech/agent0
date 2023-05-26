@@ -29,7 +29,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("1.0"),  # c
                     init_share_price=FixedPoint("1.0"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -50,7 +50,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("2.0"),  # c
                     init_share_price=FixedPoint("1.5"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -71,7 +71,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("2.0"),  # c
                     init_share_price=FixedPoint("1.5"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("180.0"),
                     time_stretch=FixedPoint("0.7"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -108,7 +108,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 1: r = 0.05; d=90
             {
                 "apr": FixedPoint("0.05"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),  # not used
                     normalizing_constant=FixedPoint("365.0"),  # not used
@@ -121,7 +121,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 2: r = 0.025; d=90
             {
                 "apr": FixedPoint("0.025"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),  # not used
                     normalizing_constant=FixedPoint("90.0"),  # not used
@@ -134,7 +134,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 3: r = 0.025; d=180
             {
                 "apr": FixedPoint("0.025"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("180.0"),
                     time_stretch=FixedPoint("0.5"),  # not used
                     normalizing_constant=FixedPoint("270.0"),  # not used
@@ -147,7 +147,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             # test 3: r = 0.1; d=365
             {
                 "apr": FixedPoint("0.1"),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("365.0"),
                     time_stretch=FixedPoint("1.0"),  # not used
                     normalizing_constant=FixedPoint("365.0"),  # not used
@@ -189,7 +189,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("1.0"),  # c
                     init_share_price=FixedPoint("1.0"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -205,7 +205,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("2.0"),  # c
                     init_share_price=FixedPoint("1.5"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("90.0"),
                     time_stretch=FixedPoint("1.0"),
                     normalizing_constant=FixedPoint("365.0"),
@@ -221,7 +221,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
                     share_price=FixedPoint("2.0"),  # c
                     init_share_price=FixedPoint("1.5"),  # u
                 ),
-                "time_remaining": time.StretchedTimeFP(
+                "time_remaining": time.StretchedTime(
                     days=FixedPoint("180.0"),
                     time_stretch=FixedPoint("0.7"),
                     normalizing_constant=FixedPoint("365.0"),

@@ -28,7 +28,7 @@ class TestFees(unittest.TestCase):
     celine: elf_agent.Agent
     gary: elf_agent.Agent  # governance gary
     hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTimeFP
+    block_time: time.BlockTime
     term_length: FixedPoint
     trade_amount: FixedPoint
     pricing_model: hyperdrive_pm.HyperdrivePricingModel
@@ -49,7 +49,7 @@ class TestFees(unittest.TestCase):
         self.bob.budget = FixedPoint(self.trade_amount)
         self.bob.wallet.balance = types.QuantityFP(amount=self.trade_amount, unit=types.TokenType.BASE)
         self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
-        self.block_time = time.BlockTimeFP()
+        self.block_time = time.BlockTime()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.1"),  # 0.1e18, // curveFee
@@ -62,7 +62,7 @@ class TestFees(unittest.TestCase):
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,
-            position_duration=time.StretchedTimeFP(
+            position_duration=time.StretchedTime(
                 days=self.term_length,
                 time_stretch=self.pricing_model.calc_time_stretch(self.target_apr),
                 normalizing_constant=self.term_length,
@@ -95,12 +95,12 @@ def get_all_the_fees(
 ) -> Tuple[FixedPoint, FixedPoint, FixedPoint, FixedPoint]:
     """Get all the fees from the market state"""
     # calculate time remaining
-    years_remaining = time.get_years_remaining_fp(
+    years_remaining = time.get_years_remaining(
         market_time=test.hyperdrive.block_time.time,
         mint_time=FixedPoint(0),
         position_duration_years=test.hyperdrive.position_duration.days / FixedPoint("365.0"),
     )  # all args in units of years
-    time_remaining = time.StretchedTimeFP(
+    time_remaining = time.StretchedTime(
         days=years_remaining * FixedPoint("365.0"),  # converting years to days
         time_stretch=test.hyperdrive.position_duration.time_stretch,
         normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
@@ -112,7 +112,7 @@ def get_all_the_fees(
                 amount=test.trade_amount * time_remaining, unit=in_unit
             ),  # scaled down unmatured amount
             market_state=test.hyperdrive.market_state,
-            time_remaining=time.StretchedTimeFP(
+            time_remaining=time.StretchedTime(
                 days=test.hyperdrive.position_duration.days,
                 time_stretch=test.hyperdrive.position_duration.time_stretch,
                 normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,
@@ -124,7 +124,7 @@ def get_all_the_fees(
                 amount=test.trade_amount * time_remaining, unit=out_unit
             ),  # scaled down unmatured amount
             market_state=test.hyperdrive.market_state,
-            time_remaining=time.StretchedTimeFP(
+            time_remaining=time.StretchedTime(
                 days=test.hyperdrive.position_duration.days,
                 time_stretch=test.hyperdrive.position_duration.time_stretch,
                 normalizing_constant=test.hyperdrive.position_duration.normalizing_constant,

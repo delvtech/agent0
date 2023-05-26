@@ -43,7 +43,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         d_base: FixedPoint,
         rate: FixedPoint,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
 
@@ -118,7 +118,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         self,
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
@@ -321,7 +321,7 @@ class YieldspacePricingModel(base_pm.PricingModel):
         self,
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
-        time_remaining: time.StretchedTimeFP,
+        time_remaining: time.StretchedTime,
     ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
