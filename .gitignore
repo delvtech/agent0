@@ -58,6 +58,7 @@ docs/source/_autosummary
 docs/source/generated
 docs/source/autoapi
 docs/build
+docs/notebook_build
 docs/make_outputs.log
 
 # mypy
