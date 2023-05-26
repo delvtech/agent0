@@ -50,6 +50,7 @@ FAUCET_ADDRESS = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
 DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
+artifacts_dir = examples_dir.parent / "artifacts"
 
 
 class FixedFrida(elfpy_agent.Agent):
@@ -361,6 +362,15 @@ def get_config(args) -> simulators.Config:
         config.scratch["provider_settings"].update({"fork_url": args.fork_url})
     if args.fork_port:
         config.scratch["provider_settings"].update({"port": args.fork_port})
+    if args.devnet:
+        with open(artifacts_dir / "addresses.json", "r", encoding="utif-8") as f:
+            addresses = json.load(f)
+        if "baseToken" in addresses:
+            config.scratch["base_address"] = addresses["baseToken"]
+            log_and_show(f"found devnet base address: {config.scratch['base_address']}")
+        if "hyperdrive" in addresses:
+            config.scratch["hyperdrive_address"] = addresses["hyperdrive"]
+            log_and_show(f"found devnet hyperdrive address: {config.scratch['hyperdrive_address']}")
     config.freeze()
     return config
 
@@ -617,14 +627,22 @@ if __name__ == "__main__":
         deployer_account = ape.accounts.test_accounts[0]
         simulator = get_simulator(experiment_config)  # Instantiate the sim market
         deployer_account.balance += int(1e18)  # eth, for spending on gas, not erc20
-        base_instance: ContractInstance = deployer_account.deploy(project.get_contract("ERC20Mintable"))
-        fixed_math: ContractInstance = deployer_account.deploy(project.get_contract("MockFixedPointMath"))
-        hyperdrive_instance: ContractInstance = deploy_hyperdrive(experiment_config, account_deployer, base_instance)
+        if experiment_config.scratch["base_address"]:  # use existing base token deployment
+            base_instance = ape_utils.get_instance(experiment_config.scratch["base_address"], provider=provider)
+        else:  # deploy a new base token
+            base_instance: ContractInstance = deployer_account.deploy(project.get_contract("ERC20Mintable"))
+        if experiment_config.scratch["hyperdrive_address"]:  # use existing hyperdrive deployment
+            hyperdrive_instance: ContractInstance = ape_utils.get_instance(
+                experiment_config.scratch["hyperdrive_address"], provider=provider
+            )
+        else:  # deploy a new hyperdrive
+            hyperdrive_instance: ContractInstance = deploy_hyperdrive(experiment_config, account_deployer, base_instance)
     else:  # on testnet
-        base_instance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # use Goerli sDai
+        base_instance: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # use Goerli sDai
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # Set up agents and their dev accounts
     sim_agents = get_agents(experiment_config, hyperdrive_instance, base_instance)
+
     # read the hyperdrive config from the contract, and log (and print) it
     hyper_config = hyperdrive_instance.getPoolConfig().__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)
