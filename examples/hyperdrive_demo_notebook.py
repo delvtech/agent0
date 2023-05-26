@@ -117,8 +117,8 @@ class RandomAgent(random_agent.RandomAgent):
 
     def get_available_actions(
         self,
-        disallowed_actions: "list[hyperdrive_actions.MarketActionType] | None" = None,
-    ) -> "list[hyperdrive_actions.MarketActionType]":
+        disallowed_actions: list[hyperdrive_actions.MarketActionType] | None = None,
+    ) -> list[hyperdrive_actions.MarketActionType]:
         """Get all available actions, excluding those listed in disallowed_actions"""
         # override disallowed_actions
         disallowed_actions = []

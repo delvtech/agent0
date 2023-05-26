@@ -60,7 +60,7 @@ class RandomAgent(elf_agent.AgentFP):
             market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
         )
         # WEI <= trade_amount <= max_short
-        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_bonds))
+        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_bonds / FixedPoint("100.0")))
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -86,7 +86,7 @@ class RandomAgent(elf_agent.AgentFP):
         #     return []
         maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
         # # WEI <= trade_amount <= max_short
-        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_base))
+        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_base / FixedPoint("100.0")))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
