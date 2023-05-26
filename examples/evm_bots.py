@@ -614,7 +614,8 @@ if __name__ == "__main__":
     account_deployer = None  # pylint: disable=invalid-name
     # Set up ape
     provider: ProviderAPI = ape.networks.parse_network_choice(
-        network_choice=experiment_config.scratch["network_choice"], provider_settings=experiment_config.scratch["provider_settings"]
+        network_choice=experiment_config.scratch["network_choice"],
+        provider_settings=experiment_config.scratch["provider_settings"],
     ).push_provider()
     log_and_show(
         "connected to %s, latest block %s",
@@ -636,7 +637,9 @@ if __name__ == "__main__":
                 experiment_config.scratch["hyperdrive_address"], provider=provider
             )
         else:  # deploy a new hyperdrive
-            hyperdrive_instance: ContractInstance = deploy_hyperdrive(experiment_config, account_deployer, base_instance)
+            hyperdrive_instance: ContractInstance = deploy_hyperdrive(
+                experiment_config, account_deployer, base_instance
+            )
     else:  # on testnet
         base_instance: ContractInstance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # use Goerli sDai
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
