@@ -40,7 +40,7 @@ class TestInitialize(unittest.TestCase):
         """
         self.contribution = contribution
         self.target_apr = target_apr
-        self.position_duration = FixedPoint(position_duration * 10**18)
+        self.position_duration = FixedPoint(position_duration)
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
