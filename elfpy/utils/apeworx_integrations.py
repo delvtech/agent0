@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from ape.types import ContractLog
     from ethpm_types.abi import MethodABI
 
+# pylint: disable=too-many-locals
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
 
@@ -377,7 +378,7 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     # issue #423
     agent = tx_receipt.operator
     event_args = tx_receipt.event_arguments
-    event_args.update({k: v for k, v in tx_receipt.items() if k in ["block_number", "event_name"]})
+    event_args.update({key: value for key, value in tx_receipt.items() if key in ["block_number", "event_name"]})
     dai_events = [e.dict() for e in tx_receipt.events if agent in [e.get("src"), e.get("dst")]]
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
@@ -654,7 +655,10 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_, optional
+    tx_receipt :
+    `ape.api.transactions.ReceiptAPI
+    <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_,
+    optional
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
@@ -694,9 +698,9 @@ def attempt_txn(
         # if you want a "STATIC" transaction type, uncomment the following line
         # kwargs["gas_price"] = kwargs["max_fee_per_gas"]
         formatted_items = []
-        for k, v in kwargs.items():
-            value = fmt(v / 1e9) if "fee" in k else fmt(v)
-            formatted_items.append(f"{k}={value}")
+        for key, value in kwargs.items():
+            value = fmt(value / 1e9) if "fee" in key else fmt(value)
+            formatted_items.append(f"{key}={value}")
         log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
@@ -718,3 +722,4 @@ def attempt_txn(
                 raise exc
             log_and_show(f" => retrying with higher gas price: {attempt + 1} of {mult}")
             continue
+    raise TimeoutError("Failed to execute transaction")
