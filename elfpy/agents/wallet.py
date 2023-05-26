@@ -276,4 +276,4 @@ class Wallet:
         """Test that all wallet state variables are greater than zero"""
         if dictionary is None:
             dictionary = self.__dict__
-        elfpy.check_non_zero_fp(dictionary)
+        elfpy.check_non_zero(dictionary)

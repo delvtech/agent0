@@ -16,7 +16,7 @@ import elfpy.types as types
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
-from elfpy import WEI_FP, PRECISION_THRESHOLD_FP
+from elfpy import WEI, PRECISION_THRESHOLD
 from elfpy.simulators import Config
 from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
@@ -279,11 +279,9 @@ class RegularGuy(Agent):
                     max_short = self.get_max_short(market)
                     # TODO: This is a hack until we fix get_max
                     max_short = max_short / FixedPoint("100.0")
-                    if (
-                        max_short > WEI_FP + PRECISION_THRESHOLD_FP
-                    ):  # if max_short is greater than the minimum eth amount
+                    if max_short > WEI + PRECISION_THRESHOLD:  # if max_short is greater than the minimum eth amount
                         trade_amount = np.maximum(
-                            WEI_FP + PRECISION_THRESHOLD_FP, min(max_short, amount_to_trade_pt)
+                            WEI + PRECISION_THRESHOLD, min(max_short, amount_to_trade_pt)
                         )  # WEI + PRECISION_THRESHOLD <= trade_amount <= max_short
                         action_list = [
                             types.Trade(
@@ -300,8 +298,8 @@ class RegularGuy(Agent):
                     max_long = self.get_max_long(market)
                     # TODO: This is a hack until we fix get_max
                     max_long = max_long / FixedPoint("100.0")
-                    if max_long > WEI_FP + PRECISION_THRESHOLD_FP:  # if max_long is greater than the minimum eth amount
-                        trade_amount = max(WEI_FP + PRECISION_THRESHOLD_FP, min(max_long, amount_to_trade_base))
+                    if max_long > WEI + PRECISION_THRESHOLD:  # if max_long is greater than the minimum eth amount
+                        trade_amount = max(WEI + PRECISION_THRESHOLD, min(max_long, amount_to_trade_base))
                         action_list = [
                             types.Trade(
                                 market=types.MarketType.HYPERDRIVE,
@@ -315,9 +313,7 @@ class RegularGuy(Agent):
                         ]
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_SHORT:
                     biggest_short = get_biggest_position(self.wallet.shorts)
-                    trade_amount = max(
-                        WEI_FP + PRECISION_THRESHOLD_FP, min(amount_to_trade_pt, biggest_short["balance"])
-                    )
+                    trade_amount = max(WEI + PRECISION_THRESHOLD, min(amount_to_trade_pt, biggest_short["balance"]))
                     action_list = [
                         types.Trade(
                             market=types.MarketType.HYPERDRIVE,
@@ -332,7 +328,7 @@ class RegularGuy(Agent):
                 elif action_type == hyperdrive_actions.MarketActionType.CLOSE_LONG:
                     biggest_long = get_biggest_position(self.wallet.longs)
                     trade_amount = np.maximum(
-                        WEI_FP + PRECISION_THRESHOLD_FP, np.minimum(amount_to_trade_pt, biggest_long["balance"])
+                        WEI + PRECISION_THRESHOLD, np.minimum(amount_to_trade_pt, biggest_long["balance"])
                     )
                     action_list = [
                         types.Trade(

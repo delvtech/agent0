@@ -39,7 +39,7 @@ import elfpy.utils.sim_utils as sim_utils
 import elfpy.simulators as simulators
 import elfpy.types as types
 
-from elfpy import WEI_FP
+from elfpy import WEI
 from elfpy.math import FixedPoint, FixedPointMath
 
 # %% [markdown]
@@ -178,7 +178,7 @@ class FixedFrida(elf_agent.Agent):
             # TODO: This is a hack until we fix get_max
             # issue # 440
             trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI_FP:
+            if trade_amount > WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -275,7 +275,7 @@ class LongLouie(elf_agent.Agent):
             # TODO: This is a hack until we fix get_max
             # issue #440
             trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI_FP:
+            if trade_amount > WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,

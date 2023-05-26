@@ -60,7 +60,7 @@ class RandomAgent(elf_agent.Agent):
             market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
         )
         # WEI <= trade_amount <= max_short
-        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_bonds / FixedPoint("100.0")))
+        trade_amount = max(elfpy.WEI, min(initial_trade_amount, maximum_trade_amount_in_bonds / FixedPoint("100.0")))
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
@@ -86,7 +86,7 @@ class RandomAgent(elf_agent.Agent):
         #     return []
         maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
         # # WEI <= trade_amount <= max_short
-        trade_amount = max(elfpy.WEI_FP, min(initial_trade_amount, maximum_trade_amount_in_base / FixedPoint("100.0")))
+        trade_amount = max(elfpy.WEI, min(initial_trade_amount, maximum_trade_amount_in_base / FixedPoint("100.0")))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -106,7 +106,7 @@ class RandomAgent(elf_agent.Agent):
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount
-        trade_amount: FixedPoint = max(elfpy.WEI_FP, initial_trade_amount)
+        trade_amount: FixedPoint = max(elfpy.WEI, initial_trade_amount)
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(
@@ -126,7 +126,7 @@ class RandomAgent(elf_agent.Agent):
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
         )
         # WEI <= trade_amount <= lp_tokens
-        trade_amount = max(elfpy.WEI_FP, min(self.wallet.lp_tokens, initial_trade_amount))
+        trade_amount = max(elfpy.WEI, min(self.wallet.lp_tokens, initial_trade_amount))
         # return a trade using a specification that is parsable by the rest of the sim framework
         return [
             types.Trade(

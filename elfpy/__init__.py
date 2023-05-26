@@ -14,20 +14,20 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
-WEI_FP = FixedPoint(1)  # smallest denomination of ether
+WEI = FixedPoint(1)  # smallest denomination of ether
 
 # The maximum allowed difference between the base reserves and bond reserves.
 # This value was calculated using trial and error and is close to the maximum
 # difference between the reserves that will not result in a sign flip when a
 # small trade is put on.
-MAX_RESERVES_DIFFERENCE_FP = FixedPoint(2e10)
+MAX_RESERVES_DIFFERENCE = FixedPoint(2e10)
 
 # The maximum allowed precision error.
 # This value was selected based on one test not passing without it.
 # apply_delta() below checks if reserves are negative within the threshold,
 # and sets them to 0 if so.
 # TODO: we shouldn't have to adjsut this -- we need to reesolve rounding errors
-PRECISION_THRESHOLD_FP: FixedPoint = FixedPoint(1 * 10**10)  # 1e-8 * 1e18 = 1e10
+PRECISION_THRESHOLD: FixedPoint = FixedPoint(1 * 10**10)  # 1e-8 * 1e18 = 1e10
 
 # Logging defaults
 DEFAULT_LOG_LEVEL = logging.INFO
@@ -36,7 +36,7 @@ DEFAULT_LOG_DATETIME = "%y-%m-%d %H:%M:%S"
 DEFAULT_LOG_MAXBYTES = int(2e6)  # 2MB
 
 # Constant for time conversion
-SECONDS_IN_YEAR_FP = FixedPoint(float(365 * 24 * 60 * 60))  # 31_536_000
+SECONDS_IN_YEAR = FixedPoint(float(365 * 24 * 60 * 60))  # 31_536_000
 
 # Maximum balance mismatch between trade-level aggregation and balanceOf query in apeworx integration
 MAXIMUM_BALANCE_MISMATCH_IN_WEI = 2
@@ -185,7 +185,7 @@ rc_params.update({"savefig.facecolor": DARKGREY})
 mpl.rcParams.update(rc_params)
 
 
-def check_non_zero_fp(data: Any) -> None:
+def check_non_zero(data: Any) -> None:
     r"""Performs a general non-zero check on a dictionary or class that has a __dict__ attribute.
 
     Parameters
@@ -199,14 +199,14 @@ def check_non_zero_fp(data: Any) -> None:
     if isinstance(data, FixedPoint) and data < FixedPoint(0):
         raise AssertionError(f"{data=} >= 0")
     if hasattr(data, "__dict__"):  # can be converted to a dict
-        check_non_zero_fp(data.__dict__)
+        check_non_zero(data.__dict__)
     if isinstance(data, (dict, defaultdict)):
         for key, value in data.items():
             if isinstance(value, FixedPoint) and value < FixedPoint(0):
                 raise AssertionError(f"{key} attribute with {value=} must be >= 0")
             if isinstance(value, dict):
-                check_non_zero_fp(value)
+                check_non_zero(value)
             elif hasattr(value, "__dict__"):  # can be converted to a dict
-                check_non_zero_fp(value.__dict__)
+                check_non_zero(value.__dict__)
             else:
                 continue  # noop; frozen, etc

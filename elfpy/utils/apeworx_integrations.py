@@ -210,7 +210,7 @@ def get_wallet_from_onchain_trade_info(
         )
         asset_prefix, maturity = hyperdrive_assets.decode_asset_id(position_id)
         asset_type = hyperdrive_assets.AssetIdPrefix(asset_prefix).name
-        mint_time = maturity - elfpy.SECONDS_IN_YEAR_FP
+        mint_time = maturity - elfpy.SECONDS_IN_YEAR
         log_and_show(f" => {asset_type}({asset_prefix}) maturity={maturity} mint_time={mint_time}")
         # verify our calculation against the onchain balance
         on_chain_balance = hyperdrive_contract.balanceOf(position_id, address_)
@@ -381,8 +381,8 @@ def get_agent_deltas(tx_receipt: ReceiptAPI, trade, addresses, trade_type, pool_
     dai_in = sum(int(e["event_arguments"]["wad"]) for e in dai_events if e["event_arguments"]["src"] == agent) / 1e18
     _, maturity_timestamp = hyperdrive_assets.decode_asset_id(int(trade["id"]))
     mint_time = (
-        (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR_FP) * pool_info.term_length) - pool_info.start_time
-    ) / int(elfpy.SECONDS_IN_YEAR_FP)
+        (maturity_timestamp - int(elfpy.SECONDS_IN_YEAR) * pool_info.term_length) - pool_info.start_time
+    ) / int(elfpy.SECONDS_IN_YEAR)
     if trade_type == "addLiquidity":  # sourcery skip: lift-return-into-if, switch
         agent_deltas = elf_wallet.Wallet(
             address=addresses.index(agent),

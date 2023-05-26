@@ -123,8 +123,8 @@ class FixedFrida(elfpy_agent.Agent):
                 market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
             )
             # WEI <= trade_amount <= max_short
-            trade_amount = max(elfpy.WEI_FP, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
-            if trade_amount > elfpy.WEI_FP:
+            trade_amount = max(elfpy.WEI, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
+            if trade_amount > elfpy.WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -218,8 +218,8 @@ class LongLouie(elfpy_agent.Agent):
             maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
             # WEI <= trade_amount <= max_short
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = max(elfpy.WEI_FP, min(adjusted_bonds, maximum_trade_amount_in_base))
-            if trade_amount > elfpy.WEI_FP:
+            trade_amount = max(elfpy.WEI, min(adjusted_bonds, maximum_trade_amount_in_base))
+            if trade_amount > elfpy.WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
@@ -517,7 +517,7 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
         "amount": amount,
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR_FP)
+        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR)
     _, _ = ape_utils.ape_trade(**params)
 
 
