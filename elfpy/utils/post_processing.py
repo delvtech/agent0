@@ -72,7 +72,7 @@ def aggregate_trade_data(trades: pd.DataFrame) -> pd.DataFrame:
     return trades_agg
 
 
-def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
+def get_simulation_state_df_fp(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe
 
     Arguments
@@ -150,7 +150,7 @@ def get_simulation_state_df_fp(simulator: simulators.SimulatorFP) -> pd.DataFram
     return trades_df
 
 
-def compute_derived_variables_fp(simulator: simulators.SimulatorFP) -> pd.DataFrame:
+def compute_derived_variables_fp(simulator: simulators.Simulator) -> pd.DataFrame:
     r"""Converts the simulator output dictionary to a pandas dataframe and computes derived variables
 
     Argument

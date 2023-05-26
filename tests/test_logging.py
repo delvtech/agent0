@@ -43,7 +43,7 @@ class TestLogging(unittest.TestCase):
             logging.getLogger().handlers = [
                 handler,
             ]
-            config = simulators.ConfigFP()
+            config = simulators.Config()
             config.pricing_model_name = "Yieldspace"
             config.num_trading_days = 3
             config.num_blocks_per_day = 3
@@ -58,7 +58,7 @@ class TestLogging(unittest.TestCase):
         """Verfies that the config variables are successfully logged"""
         log_filename = ".logging/test_sim.log"
         output_utils.setup_logging(log_filename, log_level=logging.INFO)
-        config = simulators.ConfigFP()
+        config = simulators.Config()
         logging.info("%s", config)
         self.assertLogs(level=logging.INFO)
         output_utils.close_logging()

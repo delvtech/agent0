@@ -147,7 +147,7 @@ class BorrowingBeatrice(elf_agent.Agent):
 # ### Setup experiment parameters
 
 # %%
-config = simulators.ConfigFP()
+config = simulators.Config()
 
 # General config parameters
 config.title = "Spark smart agent demo"

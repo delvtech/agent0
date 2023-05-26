@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from elfpy.agents.agent import Agent
 
 
-def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = None) -> simulators.SimulatorFP:
+def get_simulator_fp(config: simulators.Config, agents: list[Agent] | None = None) -> simulators.Simulator:
     r"""Construct and initialize a simulator with sane defaults
 
     The simulated market is initialized with an initial LP.
@@ -40,7 +40,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTimeFP()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
-    simulator = simulators.SimulatorFP(config=config, market=market, block_time=block_time)
+    simulator = simulators.Simulator(config=config, market=market, block_time=block_time)
     # Instantiate and add the initial LP agent, if desired
     if config.init_lp:
         init_agent = InitializeLiquidityAgent(wallet_address=0, budget=FixedPoint(config.target_liquidity))
@@ -50,7 +50,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
     if config.do_dataframe_states:
         # update state with day & block = 0 for the initialization trades
         simulator.new_simulation_state.update(
-            run_vars=simulators.RunSimVariablesFP(
+            run_vars=simulators.RunSimVariables(
                 run_number=simulator.run_number,
                 config=config,
                 agent_init=[agent.wallet for agent in simulator.agents.values()],
@@ -58,13 +58,13 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
                 time_step=simulator.time_step,
                 position_duration=simulator.market.position_duration,
             ),
-            day_vars=simulators.DaySimVariablesFP(
+            day_vars=simulators.DaySimVariables(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 variable_apr=float(simulator.market.market_state.variable_apr),
                 share_price=float(simulator.market.market_state.share_price),
             ),
-            block_vars=simulators.BlockSimVariablesFP(
+            block_vars=simulators.BlockSimVariables(
                 run_number=simulator.run_number,
                 day=simulator.day,
                 block_number=simulator.block_number,
@@ -76,7 +76,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
         if config.init_lp:
             if config.do_dataframe_states:
                 simulator.new_simulation_state.update(
-                    trade_vars=simulators.TradeSimVariablesFP(
+                    trade_vars=simulators.TradeSimVariables(
                         run_number=simulator.run_number,
                         day=simulator.day,
                         block_number=simulator.block_number,
@@ -100,7 +100,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
 def get_initialized_hyperdrive_market_fp(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTimeFP,
-    config: simulators.ConfigFP,
+    config: simulators.Config,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 

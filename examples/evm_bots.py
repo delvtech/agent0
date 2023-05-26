@@ -321,9 +321,9 @@ class BotInfo:
         )
 
 
-def get_config(args) -> simulators.ConfigFP:
+def get_config(args) -> simulators.Config:
     """Set _config values for the experiment."""
-    config = simulators.ConfigFP()
+    config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
@@ -351,7 +351,7 @@ def get_config(args) -> simulators.ConfigFP:
     return config
 
 
-def get_accounts(config: simulators.ConfigFP) -> list[KeyfileAccount]:
+def get_accounts(config: simulators.Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
     num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
@@ -376,7 +376,7 @@ def create_agent(
     base_: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
-    config: simulators.ConfigFP,
+    config: simulators.Config,
 ):  # pylint: disable=too-many-arguments
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
@@ -444,7 +444,7 @@ def create_agent(
 
 
 def get_agents(
-    config: simulators.ConfigFP,
+    config: simulators.Config,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
 ) -> dict[str, elfpy_agent.Agent]:
@@ -521,7 +521,7 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
     _, _ = ape_utils.ape_trade(**params)
 
 
-def set_days_without_crashing(no_crash: int, config: simulators.ConfigFP):
+def set_days_without_crashing(no_crash: int, config: simulators.Config):
     """Calculate the number of days without crashing."""
     with open(config.scratch["crash_file"], "w", encoding="utf-8") as file:
         file.write(f".logging/{no_crash}")
@@ -542,16 +542,16 @@ def log_and_show_block_info(block_time: int):
     )
 
 
-def get_simulator(config: simulators.ConfigFP) -> simulators.SimulatorFP:
+def get_simulator(config: simulators.Config) -> simulators.Simulator:
     """Get a python simulator."""
     pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time_ = time.BlockTimeFP()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
-    return simulators.SimulatorFP(config, market, block_time_)
+    return simulators.Simulator(config, market, block_time_)
 
 
 def deploy_hyperdrive(
-    config: simulators.ConfigFP, deployer: TestAccountAPI, base_contract: ContractInstance
+    config: simulators.Config, deployer: TestAccountAPI, base_contract: ContractInstance
 ) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork."""
     assert isinstance(deployer, TestAccountAPI)

@@ -62,7 +62,7 @@ import pandas as pd
 
 from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
-from elfpy.simulators import ConfigFP
+from elfpy.simulators import Config
 from elfpy.utils.outputs import get_gridspec_subplots
 from elfpy.math import FixedPoint
 
@@ -75,7 +75,7 @@ import elfpy.agents.policies.random_agent as random_agent
 # ### Setup experiment parameters
 
 # %%
-config = ConfigFP()
+config = Config()
 
 config.title = "Hyperdrive demo"
 config.pricing_model_name = "Hyperdrive"  # can be yieldspace or hyperdrive

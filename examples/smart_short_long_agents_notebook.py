@@ -46,7 +46,7 @@ from elfpy.math import FixedPoint, FixedPointMath
 # ### Setup experiment parameters
 
 # %%
-config = simulators.ConfigFP()
+config = simulators.Config()
 
 # General config parameters
 config.title = "Hyperdrive smart agent demo"
@@ -314,7 +314,7 @@ class LPAgent(elf_agent.Agent):
 
 # %%
 def get_example_agents(
-    rng: NumpyGenerator, experiment_config: simulators.ConfigFP, existing_agents: int = 0
+    rng: NumpyGenerator, experiment_config: simulators.Config, existing_agents: int = 0
 ) -> list[elf_agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []

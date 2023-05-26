@@ -17,7 +17,7 @@ import elfpy.utils.outputs as output_utils
 import elfpy.utils.post_processing as post_processing
 
 from elfpy import WEI_FP, PRECISION_THRESHOLD_FP
-from elfpy.simulators import ConfigFP
+from elfpy.simulators import Config
 from elfpy.agents.agent import Agent
 from elfpy.utils import sim_utils
 from elfpy.math import FixedPoint
@@ -142,7 +142,7 @@ def DSR_historical(num_dates=90):
     return dsr_new["DAI_SAV_RATE"].to_list()
 
 
-config = ConfigFP()
+config = Config()
 # config.init_lp = False
 config.random_seed = 123
 

@@ -28,7 +28,7 @@ class SimUtilsTest(unittest.TestCase):
             for target_fixed_apr in (0.01, 0.03, 0.05, 0.10, 0.25, 0.5, 1.0, 1.1):
                 for num_position_days in [90, 365]:
                     for pricing_model_name in ["Hyperdrive"]:
-                        config = simulators.ConfigFP()
+                        config = simulators.Config()
                         config.pricing_model_name = pricing_model_name
                         config.target_liquidity = target_liquidity
                         config.curve_fee_multiple = 0.1

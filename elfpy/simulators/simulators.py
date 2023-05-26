@@ -49,7 +49,7 @@ def simulation_state_aggreagator(constructor):
 
 
 @dataclass
-class SimulationStateFP:
+class SimulationState:
     r"""Simulator state, updated after each trade
 
     MarketState, Agent, and Config attributes are added dynamically in Simulator.update_simulation_state()
@@ -117,7 +117,7 @@ class SimulationStateFP:
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class ConfigFP(types.FrozenClass):
+class Config(types.FrozenClass):
     """Data object for storing user simulation config parameters"""
 
     # lots of configs!
@@ -225,13 +225,13 @@ class ConfigFP(types.FrozenClass):
         # cls arg tells json how to handle numpy objects and nested dataclasses
         return json.dumps(self.__dict__, sort_keys=True, indent=2, cls=output_utils.CustomEncoder)
 
-    def copy(self) -> ConfigFP:
+    def copy(self) -> Config:
         """Returns a new copy of self"""
         if hasattr(self, "__dataclass_fields__"):
             # TODO: Not sure why lint is claiming that self has no "__dataclass_fields__" member
             # when we're in the conditional
             # pylint: disable=no-member
-            return ConfigFP(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
+            return Config(**{key: self[key] for key, value in self.__dataclass_fields__.items() if value.init})
         raise AttributeError("Config was not instantiated & cannot be copied")
 
     def check_variable_apr(self) -> None:
@@ -250,13 +250,13 @@ class ConfigFP(types.FrozenClass):
 
 
 @dataclass
-class RunSimVariablesFP:
+class RunSimVariables:
     """Simulation state variables that change by run"""
 
     # incremented each time run_simulation is called
     run_number: int
     # the simulation config
-    config: ConfigFP
+    config: Config
     # initial wallets for the agents
     agent_init: list[wallet.Wallet]
     # initial market state for this simulation run
@@ -268,7 +268,7 @@ class RunSimVariablesFP:
 
 
 @dataclass
-class DaySimVariablesFP:
+class DaySimVariables:
     """Simulation state variables that change by day"""
 
     # incremented each time run_simulation is called
@@ -282,7 +282,7 @@ class DaySimVariablesFP:
 
 
 @dataclass
-class BlockSimVariablesFP:
+class BlockSimVariables:
     """Simulation state variables that change by block"""
 
     # incremented each time run_simulation is called
@@ -296,7 +296,7 @@ class BlockSimVariablesFP:
 
 
 @dataclass
-class TradeSimVariablesFP:
+class TradeSimVariables:
     """Simulation state variables that change by trade"""
 
     # pylint: disable=too-many-instance-attributes
@@ -324,7 +324,7 @@ class TradeSimVariablesFP:
 
 
 @dataclass
-class NewSimulationStateFP:
+class NewSimulationState:
     r"""Simulator state that stores Market, Agent, and Config attributes
     The SimulationState has the following external attributes:
         run_updates: pd.DataFrame composed of RunSimVariables
@@ -335,17 +335,17 @@ class NewSimulationStateFP:
 
     def __post_init__(self) -> None:
         r"""Construct empty dataclasses with appropriate attributes for each state variable type"""
-        self._run_updates = simulation_state_aggreagator(RunSimVariablesFP)
-        self._day_updates = simulation_state_aggreagator(DaySimVariablesFP)
-        self._block_updates = simulation_state_aggreagator(BlockSimVariablesFP)
-        self._trade_updates = simulation_state_aggreagator(TradeSimVariablesFP)
+        self._run_updates = simulation_state_aggreagator(RunSimVariables)
+        self._day_updates = simulation_state_aggreagator(DaySimVariables)
+        self._block_updates = simulation_state_aggreagator(BlockSimVariables)
+        self._trade_updates = simulation_state_aggreagator(TradeSimVariables)
 
     def update(
         self,
-        run_vars: Optional[RunSimVariablesFP] = None,
-        day_vars: Optional[DaySimVariablesFP] = None,
-        block_vars: Optional[BlockSimVariablesFP] = None,
-        trade_vars: Optional[TradeSimVariablesFP] = None,
+        run_vars: Optional[RunSimVariables] = None,
+        day_vars: Optional[DaySimVariables] = None,
+        block_vars: Optional[BlockSimVariables] = None,
+        trade_vars: Optional[TradeSimVariables] = None,
     ) -> None:
         r"""Add a row to the state dataframes that contains the latest variables"""
         if run_vars is not None:
@@ -386,7 +386,7 @@ class NewSimulationStateFP:
         return self.trade_updates.merge(self.block_updates.merge(self.day_updates.merge(self.run_updates)))
 
 
-class SimulatorFP:
+class Simulator:
     r"""Stores environment variables & market simulation outputs for AMM experimentation
 
     Member variables include input settings, random variable ranges, and simulation outputs.
@@ -398,7 +398,7 @@ class SimulatorFP:
 
     def __init__(
         self,
-        config: ConfigFP,
+        config: Config,
         market: hyperdrive_market.Market,
         block_time: time.BlockTimeFP,
     ):
@@ -423,8 +423,8 @@ class SimulatorFP:
         self.time_between_blocks = seconds_in_a_day / self.config.num_blocks_per_day
         self.trade_number = 0
         if self.config.do_dataframe_states:
-            self.new_simulation_state = NewSimulationStateFP()
-        self.simulation_state = SimulationStateFP()
+            self.new_simulation_state = NewSimulationState()
+        self.simulation_state = SimulationState()
 
     def set_rng(self, rng: NumpyGenerator) -> None:
         r"""Assign the internal random number generator to a new instantiation
@@ -582,7 +582,7 @@ class SimulatorFP:
             self.update_simulation_state()
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
-                    trade_vars=TradeSimVariablesFP(
+                    trade_vars=TradeSimVariables(
                         self.run_number,
                         self.day,
                         self.block_number,
@@ -621,7 +621,7 @@ class SimulatorFP:
         last_block_in_sim = False
         if self.config.do_dataframe_states:
             self.new_simulation_state.update(
-                run_vars=RunSimVariablesFP(
+                run_vars=RunSimVariables(
                     run_number=self.run_number,
                     config=self.config,
                     agent_init=[agent.wallet for agent in self.agents.values()],
@@ -649,7 +649,7 @@ class SimulatorFP:
                 self.market.update_market(delta)
             if self.config.do_dataframe_states:
                 self.new_simulation_state.update(
-                    day_vars=DaySimVariablesFP(
+                    day_vars=DaySimVariables(
                         self.run_number,
                         self.day,
                         float(self.market.market_state.variable_apr),
@@ -664,7 +664,7 @@ class SimulatorFP:
                 liquidate = last_block_in_sim and liquidate_on_end
                 if self.config.do_dataframe_states:
                     self.new_simulation_state.update(
-                        block_vars=BlockSimVariablesFP(
+                        block_vars=BlockSimVariables(
                             self.run_number, self.day, self.block_number, float(self.block_time.time)
                         )
                     )

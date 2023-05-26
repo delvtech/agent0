@@ -11,13 +11,13 @@ class TestConfig(unittest.TestCase):
 
     def test_config_cant_add_new_attribs(self):
         """config object can't add new attributes after it's initialized"""
-        config = simulators.ConfigFP()
+        config = simulators.Config()
         with self.assertRaises(AttributeError):
             config.new_attrib = 1
 
     def test_config_cant_change_existing_attribs(self):
         """config object can change existing attributes, only if not frozen"""
-        config = simulators.ConfigFP()
+        config = simulators.Config()
         # change an existing attribute
         config.num_blocks_per_day = 2
         # freeze config
