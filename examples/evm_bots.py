@@ -604,9 +604,8 @@ if __name__ == "__main__":
     base_instance: ContractInstance = None
     if experiment_config.scratch["devnet"]:
         assert isinstance(account_deployer, TestAccountAPI)
-        project_container: ContractContainer = project.get_contract("ERC20Mintable")
+        base_instance = account_deployer.deploy(project.get_contract("ERC20Mintable"))
         fixed_math: ContractInstance = account_deployer.deploy(project.get_contract("MockFixedPointMath"))
-        base_instance = account_deployer.deploy(project_container)
     else:
         base_instance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
     hyperdrive_instance: ContractInstance = None
