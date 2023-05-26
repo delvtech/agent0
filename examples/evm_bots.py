@@ -20,9 +20,9 @@ from typing import Type, cast
 import ape
 import numpy as np
 from ape import accounts
-from ape.logging import logger as ape_logger
 from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
 from ape.contracts import ContractInstance
+from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
@@ -363,8 +363,8 @@ def get_config(args) -> simulators.Config:
     if args.fork_port:
         config.scratch["provider_settings"].update({"port": args.fork_port})
     if args.devnet:
-        with open(artifacts_dir / "addresses.json", "r", encoding="utif-8") as f:
-            addresses = json.load(f)
+        with open(artifacts_dir / "addresses.json", "r", encoding="utif-8") as file:
+            addresses = json.load(file)
         if "baseToken" in addresses:
             config.scratch["base_address"] = addresses["baseToken"]
             log_and_show(f"found devnet base address: {config.scratch['base_address']}")
