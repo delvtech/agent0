@@ -24,7 +24,9 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.minimum(-1.0, -3.0) == -3.0
         assert FixedPointMath.minimum(1.0, 3.0) == 1.0
         assert FixedPointMath.minimum(FixedPoint(1.0), FixedPoint(3.0)) == FixedPoint(1.0)
-        assert FixedPointMath.minimum(FixedPoint("3.0"), FixedPoint(int(3e18 - 1e-17))) == FixedPoint(int(3e18 - 1e-17))
+        assert FixedPointMath.minimum(FixedPoint("3.0"), FixedPoint(scaled_value=int(3e18 - 1e-17))) == FixedPoint(
+            scaled_value=int(3e18 - 1e-17)
+        )
 
     def test_minimum_nonfinite(self):
         """Test minimum method"""
@@ -42,7 +44,7 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.maximum(-1.0, -3.0) == -1.0
         assert FixedPointMath.maximum(1.0, 3.0) == 3.0
         assert FixedPointMath.maximum(FixedPoint(1.0), FixedPoint(3.0)) == FixedPoint(3.0)
-        assert FixedPointMath.maximum(FixedPoint("3.0"), FixedPoint(int(3e18 - 1e-17))) == FixedPoint(3.0)
+        assert FixedPointMath.maximum(FixedPoint("3.0"), FixedPoint(scaled_value=int(3e18 - 1e-17))) == FixedPoint(3.0)
 
     def test_maximum_nonfinite(self):
         """Test maximum method"""
