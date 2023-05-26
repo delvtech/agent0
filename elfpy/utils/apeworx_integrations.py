@@ -653,10 +653,7 @@ def attempt_txn(
 
     Returns
     -------
-    tx_receipt :
-    `ape.api.transactions.ReceiptAPI
-    <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_,
-    optional
+    tx_receipt : `ape.api.transactions.ReceiptAPI <https://docs.apeworx.io/ape/stable/methoddocs/api.html#ape.api.transactions.ReceiptAPI>`_
         The transaction receipt. Not returned if the transaction fails.
 
     Raises
