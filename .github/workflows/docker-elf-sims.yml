@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - wakamex/bot_better_config
 
 env:
   REGISTRY: ghcr.io
