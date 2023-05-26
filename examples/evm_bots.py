@@ -399,7 +399,7 @@ def create_agent(
         The agent.
     """
     assert bot.index is not None, "Bot must have an index."
-    assert isinstance(bot.policy, type(elfpy_agent.Agent)), "Bot must have a policy of type Agent."
+    assert isinstance(bot.policy, type(elfpy_agent.AgentFP)), "Bot must have a policy of type Agent."
     params = {
         "trade_chance": config.scratch["trade_chance"],
         "budget": FixedPoint(
@@ -517,7 +517,7 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
         "amount": amount,
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
+        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR_FP)
     _, _ = ape_utils.ape_trade(**params)
 
 

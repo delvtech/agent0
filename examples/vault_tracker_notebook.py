@@ -28,7 +28,7 @@ from elfpy.math import FixedPoint
 # pylint: disable=invalid-name
 # pylint: disable=not-an-iterable
 # pylint: disable=unsubscriptable-object
-# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportOptionalSubscript=false
 
 
 # %% [markdown]
