@@ -21,7 +21,7 @@ import ape
 import numpy as np
 from ape import accounts
 from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
-from ape.contracts import ContractInstance, ContractContainer
+from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
