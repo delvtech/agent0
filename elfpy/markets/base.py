@@ -23,11 +23,10 @@ class MarketActionType(Enum):
 
 
 # all subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
-# TODO: Pylint disables will go away when we finalize FP refactor
-Action = TypeVar("ActionFP", bound="MarketActionFP")  # pylint: disable=invalid-name
-Deltas = TypeVar("DeltasFP", bound="MarketDeltasFP")  # pylint: disable=invalid-name
-State = TypeVar("StateFP", bound="BaseMarketStateFP")  # pylint: disable=invalid-name
-PricingModel = TypeVar("PricingModelFP", bound="base_pm.PricingModelFP")  # pylint: disable=invalid-name
+Action = TypeVar("Action", bound="MarketAction")
+Deltas = TypeVar("Deltas", bound="MarketDeltas")
+State = TypeVar("State", bound="BaseMarketState")
+PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
