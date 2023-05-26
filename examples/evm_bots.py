@@ -20,6 +20,7 @@ from typing import Type, cast
 import ape
 import numpy as np
 from ape import accounts
+from ape.logging import logger as ape_logger
 from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
 from ape.contracts import ContractInstance
 from ape.utils import generate_dev_accounts
@@ -45,9 +46,6 @@ from elfpy.utils.outputs import number_to_string as fmt
 load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
 
 NO_CRASH = 0
-USE_ALCHEMY = False
-PROVIDER_STRING = "goerli:alchemy" if USE_ALCHEMY else "goerli:http://localhost:8547"
-
 FAUCET_ADDRESS = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
 DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 
@@ -278,7 +276,12 @@ def get_argparser() -> argparse.ArgumentParser:
         default=0.1,
         type=float,
     )
-    parser.add_argument("--devnet", help="Run on devnet", action="store_false")  # store_false because default is True
+
+    parser.add_argument("--alchemy", help="Use Alchemy as a provider", action="store_true")  # default is false
+
+    parser.add_argument("--devnet", help="Run on devnet", action="store_true")  # stroe_true because default is false
+    parser.add_argument("--fork_url", help="Override for url to fork from", default=None, type=str)
+    parser.add_argument("--fork_port", help="Override for port for fork to use", default=None, type=int)
     return parser
 
 
@@ -323,6 +326,7 @@ class BotInfo:
 
 def get_config(args) -> simulators.Config:
     """Set _config values for the experiment."""
+    ape_logger.set_level(logging.ERROR)
     config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
@@ -347,6 +351,16 @@ def get_config(args) -> simulators.Config:
     config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
     config.scratch["devnet"] = args.devnet
     config.scratch["crash_file"] = f"no_crash{'_devnet' if args.devnet else ''}.txt"
+
+    config.scratch["in_docker"] = os.path.exists("/.dockerenv")
+    config.scratch["network_choice"] = "ethereum:local:foundry"
+    if args.alchemy:
+        config.scratch["network_choice"] = "ethereum:goerli:alchemy"
+    config.scratch["provider_settings"] = {}
+    if args.fork_url:
+        config.scratch["provider_settings"].update({"fork_url": args.fork_url})
+    if args.fork_port:
+        config.scratch["provider_settings"].update({"port": args.fork_port})
     config.freeze()
     return config
 
@@ -589,30 +603,26 @@ if __name__ == "__main__":
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
     account_deployer = None  # pylint: disable=invalid-name
     # Set up ape
-    if experiment_config.scratch["devnet"]:  # if devnet setting is enabled
-        simulator = get_simulator(experiment_config)  # Instantiate the sim market
-        ps = {"port": 8549}
-        provider: ProviderAPI = ape.networks.parse_network_choice(
-            "ethereum:local:foundry", provider_settings=ps
-        ).push_provider()
-        account_deployer = ape.accounts.test_accounts[0]
-        account_deployer.balance += int(1e18)  # eth, for spending on gas, not erc20
-        print(f"connected to devnet fork, latest block {provider.get_block('latest').number:,.0f}")
-    else:
-        provider: ProviderAPI = ape.networks.parse_network_choice(f"ethereum:{PROVIDER_STRING}").push_provider()
+    provider: ProviderAPI = ape.networks.parse_network_choice(
+        network_choice=experiment_config.scratch["network_choice"], provider_settings=experiment_config.scratch["provider_settings"]
+    ).push_provider()
+    log_and_show(
+        "connected to %s, latest block %s",
+        "devnet" if experiment_config.scratch["devnet"] else experiment_config.scratch["network_choice"],
+        provider.get_block("latest").number,
+    )
     project = ape_utils.HyperdriveProject(Path.cwd())
-    base_instance: ContractInstance = None
-    if experiment_config.scratch["devnet"]:
-        assert isinstance(account_deployer, TestAccountAPI)
-        base_instance = account_deployer.deploy(project.get_contract("ERC20Mintable"))
-        fixed_math: ContractInstance = account_deployer.deploy(project.get_contract("MockFixedPointMath"))
-    else:
-        base_instance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # sDai
-    hyperdrive_instance: ContractInstance = None
-    if experiment_config.scratch["devnet"]:
-        hyperdrive_instance = deploy_hyperdrive(experiment_config, account_deployer, base_instance)
-    else:
-        hyperdrive_instance = project.get_hyperdrive_contract()
+    base: ContractInstance
+    if experiment_config.scratch["devnet"]:  # if devnet setting is enabled
+        deployer_account = ape.accounts.test_accounts[0]
+        simulator = get_simulator(experiment_config)  # Instantiate the sim market
+        deployer_account.balance += int(1e18)  # eth, for spending on gas, not erc20
+        base_instance: ContractInstance = deployer_account.deploy(project.get_contract("ERC20Mintable"))
+        fixed_math: ContractInstance = deployer_account.deploy(project.get_contract("MockFixedPointMath"))
+        hyperdrive_instance: ContractInstance = deploy_hyperdrive(experiment_config, account_deployer, base_instance)
+    else:  # on testnet
+        base_instance = ape_utils.get_instance(DAI_ADDRESS, provider=provider)  # use Goerli sDai
+        hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # Set up agents and their dev accounts
     sim_agents = get_agents(experiment_config, hyperdrive_instance, base_instance)
     # read the hyperdrive config from the contract, and log (and print) it

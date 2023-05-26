@@ -1,6 +1,7 @@
 astunparse
 black
-eth-ape
+# quiet cached keys warnings
+eth-ape @ git+https://github.com/wakamex/ape@v0.6.9.420
 ipython
 jupytext
 matplotlib

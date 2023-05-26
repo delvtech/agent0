@@ -682,7 +682,8 @@ def attempt_txn(
         if not hasattr(latest, "base_fee"):
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
-        log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
+        logging.debug("latest block %s has base_fee %s",fmt(getattr(latest, 'number')),fmt(base_fee/1e9,min_digits=3))
+
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
         )
@@ -696,7 +697,7 @@ def attempt_txn(
         for key, value in kwargs.items():
             value = fmt(value / 1e9) if "fee" in key else fmt(value)
             formatted_items.append(f"{key}={value}")
-        log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
+        logging.debug("txn attempt %s of %s with %s",attempt,mult,', '.join(formatted_items))
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)
