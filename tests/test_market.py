@@ -33,7 +33,7 @@ class MarketTest(unittest.TestCase):
             time_stretch=FixedPoint("1.0"),
             normalizing_constant=FixedPoint("36.0"),
         )
-        for pricing_model in [yieldspace_pm.YieldspacePricingModelFP(), hyperdrive_pm.HyperdrivePricingModelFP()]:
+        for pricing_model in [yieldspace_pm.YieldspacePricingModel(), hyperdrive_pm.HyperdrivePricingModel()]:
             _ = hyperdrive_market.Market(
                 pricing_model=pricing_model,
                 market_state=hyperdrive_market.MarketState(),
@@ -98,7 +98,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModelFP(),
+                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),  # target_liquidity / share_price
                 "expected_bond_reserves": FixedPoint("1_823_834.7868545868"),
             },
@@ -115,7 +115,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": yieldspace_pm.YieldspacePricingModelFP(),
+                "pricing_model": yieldspace_pm.YieldspacePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),  # target_liquidity / share_price
                 "expected_bond_reserves": FixedPoint("1_841_446.767658661"),
             },
@@ -132,7 +132,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.0"),  # original share price pool started; u = 1
                 "share_price": FixedPoint("1.0"),  # share price of the LP in the yield source; c = 1
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModelFP(),
+                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_806_633.2221533637"),
             },
@@ -149,7 +149,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("2.0"),  # original share price when pool started
                 "share_price": FixedPoint("2.0"),  # share price of the LP in the yield source
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModelFP(),
+                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_591_223.795848793"),
             },
@@ -166,7 +166,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("1.3"),  # original share price when pool started
                 "share_price": FixedPoint("1.3"),  # share price of the LP in the yield source
-                "pricing_model": hyperdrive_pm.HyperdrivePricingModelFP(),
+                "pricing_model": hyperdrive_pm.HyperdrivePricingModel(),
                 "expected_share_reserves": FixedPoint("7_692_307.692307692"),
                 "expected_bond_reserves": FixedPoint("6_486_058.016848019"),
             },
@@ -183,7 +183,7 @@ class MarketTest(unittest.TestCase):
                 ),
                 "init_share_price": FixedPoint("2.0"),  # original share price when pool started
                 "share_price": FixedPoint("2.0"),  # share price of the LP in the yield source
-                "pricing_model": yieldspace_pm.YieldspacePricingModelFP(),
+                "pricing_model": yieldspace_pm.YieldspacePricingModel(),
                 "expected_share_reserves": FixedPoint("5_000_000.0"),
                 "expected_bond_reserves": FixedPoint("1_591_223.795848793"),
             },

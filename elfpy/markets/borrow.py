@@ -132,7 +132,7 @@ class MarketAction(base_market.MarketAction):
     spot_price: FixedPoint | None = None
 
 
-class PricingModel(base_pm.PricingModelFP):
+class PricingModel(base_pm.PricingModel):
     """stores calculation functions use for the borrow market"""
 
     def value_collateral(

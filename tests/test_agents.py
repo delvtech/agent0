@@ -108,7 +108,7 @@ class TestAgent(unittest.TestCase):
         self.test_agent = TestPolicy(wallet_address=len(agent_policies))
         # Get a mock Market
         self.market = hyperdrive_market.Market(
-            pricing_model=hyperdrive_pm.HyperdrivePricingModelFP(),
+            pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
             market_state=hyperdrive_market.MarketState(),
             position_duration=time.StretchedTimeFP(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")

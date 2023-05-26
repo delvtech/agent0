@@ -31,7 +31,7 @@ class TestFees(unittest.TestCase):
     block_time: time.BlockTimeFP
     term_length: FixedPoint
     trade_amount: FixedPoint
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
     def __init__(self, target_apr: float, gov_fee: float, **kwargs):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -50,7 +50,7 @@ class TestFees(unittest.TestCase):
         self.bob.wallet.balance = types.QuantityFP(amount=self.trade_amount, unit=types.TokenType.BASE)
         self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
         self.block_time = time.BlockTimeFP()
-        self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.1"),  # 0.1e18, // curveFee
             flat_fee_multiple=FixedPoint("0.1"),  # 0.1e18, //flatFee

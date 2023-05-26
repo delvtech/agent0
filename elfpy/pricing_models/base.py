@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class PricingModelFP(ABC):
+class PricingModel(ABC):
     """Contains functions for calculating AMM variables
 
     Base class should not be instantiated on its own; it is assumed that a user will instantiate a child class
@@ -29,7 +29,7 @@ class PricingModelFP(ABC):
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 
@@ -38,7 +38,7 @@ class PricingModelFP(ABC):
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         """Calculate fees and asset quantity adjustments"""
         raise NotImplementedError
 

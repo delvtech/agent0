@@ -17,7 +17,7 @@ class BasePricingModelUtilsTest(unittest.TestCase):
     APPROX_EQ: FixedPoint = FixedPoint(1e-12)
 
     def run_calc_k_const_test(
-        self, pricing_model: Union[yieldspace_pm.YieldspacePricingModelFP, hyperdrive_pm.HyperdrivePricingModelFP]
+        self, pricing_model: Union[yieldspace_pm.YieldspacePricingModel, hyperdrive_pm.HyperdrivePricingModel]
     ):
         """Unit tests for calc_k_const function
         .. todo:: fix test to use new y+s expected value instead of 2y+cz
@@ -156,5 +156,5 @@ class TestPricingModelUtils(BasePricingModelUtilsTest):
 
     def test_calc_k_const(self):
         """Execute the test"""
-        self.run_calc_k_const_test(yieldspace_pm.YieldspacePricingModelFP())
-        self.run_calc_k_const_test(hyperdrive_pm.HyperdrivePricingModelFP())
+        self.run_calc_k_const_test(yieldspace_pm.YieldspacePricingModel())
+        self.run_calc_k_const_test(hyperdrive_pm.HyperdrivePricingModel())

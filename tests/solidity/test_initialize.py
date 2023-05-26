@@ -26,7 +26,7 @@ class TestInitialize(unittest.TestCase):
     celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
     block_time: BlockTimeFP
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel
 
     def __init__(self, contribution: float = 1_000.0, target_apr: float = 0.5, position_duration: int = 180, **kwargs):
         """
@@ -39,7 +39,7 @@ class TestInitialize(unittest.TestCase):
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = BlockTimeFP()
-        self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        self.pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,

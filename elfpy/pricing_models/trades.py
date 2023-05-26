@@ -9,7 +9,7 @@ from elfpy.math import FixedPoint
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class TradeBreakdownFP:
+class TradeBreakdown:
     r"""A granular breakdown of a trade.
 
     This includes information relating to fees and slippage.
@@ -51,7 +51,7 @@ class TradeBreakdownFP:
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class TradeResultFP:
+class TradeResult:
     r"""The result of performing a trade.
 
     This includes granular information about the trade details,
@@ -61,5 +61,5 @@ class TradeResultFP:
     """
 
     user_result: agent_trade_result.AgentTradeResult
-    market_result: market_action_result.MarketActionResultFP
-    breakdown: TradeBreakdownFP
+    market_result: market_action_result.MarketActionResult
+    breakdown: TradeBreakdown

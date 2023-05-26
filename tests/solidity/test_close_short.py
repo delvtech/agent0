@@ -41,7 +41,7 @@ class TestCloseShort(unittest.TestCase):
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         block_time = time.BlockTimeFP()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
@@ -88,7 +88,7 @@ class TestCloseShort(unittest.TestCase):
             time_stretch=self.hyperdrive.time_stretch_constant,
             normalizing_constant=FixedPoint("365.0"),
         )
-        model = yieldspace_pm.YieldspacePricingModelFP()
+        model = yieldspace_pm.YieldspacePricingModel()
         curve_shares = model.calc_shares_in_given_bonds_out(
             market_state_before.share_reserves,
             market_state_before.bond_reserves,

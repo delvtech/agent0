@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-arguments
 
 
-class YieldspacePricingModelFP(base_pm.PricingModelFP):
+class YieldspacePricingModel(base_pm.PricingModel):
     """
     YieldSpace Pricing Model
 
@@ -119,7 +119,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -244,7 +244,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 d_base=out.amount,
                 d_bonds=-with_fee,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=with_fee,
             )
@@ -293,7 +293,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 d_base=-with_fee,
                 d_bonds=out.amount,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=with_fee,
                 d_bonds=-out.amount,
             )
@@ -302,10 +302,10 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 # pylint: disable-next=line-too-long
                 f"pricing_models.calc_in_given_out: ERROR: expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
-        return trades.TradeResultFP(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=trades.TradeBreakdownFP(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=without_fee_or_slippage,
                 with_fee=with_fee,
                 without_fee=without_fee,
@@ -322,7 +322,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -444,7 +444,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 d_base=-in_.amount,
                 d_bonds=with_fee,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=-with_fee,
             )
@@ -493,7 +493,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 d_base=with_fee,
                 d_bonds=-in_.amount,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=-with_fee,
                 d_bonds=in_.amount,
             )
@@ -502,10 +502,10 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
                 f"pricing_models.calc_out_given_in: ERROR: expected in_.unit"
                 f" to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
-        return trades.TradeResultFP(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=trades.TradeBreakdownFP(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=without_fee_or_slippage,
                 with_fee=with_fee,
                 without_fee=without_fee,

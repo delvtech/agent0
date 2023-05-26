@@ -29,7 +29,7 @@ class TestAddLiquidity(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
 
-        pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_markets.MarketState()
 
         self.hyperdrive = hyperdrive_markets.Market(

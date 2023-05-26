@@ -336,7 +336,7 @@ def calc_open_short(
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
@@ -458,7 +458,7 @@ def calc_close_short(
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
@@ -615,7 +615,7 @@ def calc_open_long(
     base_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
@@ -706,7 +706,7 @@ def calc_close_long(
     bond_amount: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
@@ -987,7 +987,7 @@ def calc_add_liquidity(
     base_in: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
@@ -1057,7 +1057,7 @@ def calc_remove_liquidity(
     lp_shares: FixedPoint,
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
 ) -> tuple[MarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
@@ -1161,7 +1161,7 @@ def calc_free_margin(
     return withdraw_pool_deltas
 
 
-def check_output_assertions(trade_result: trades.TradeResultFP):
+def check_output_assertions(trade_result: trades.TradeResult):
     """Applies a set of assertions to a trade result."""
     assert isinstance(
         trade_result.breakdown.fee, FixedPoint

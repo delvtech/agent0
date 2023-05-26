@@ -32,7 +32,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
-        pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+        pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),

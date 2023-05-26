@@ -37,7 +37,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
     # Instantiate the market.
     # pricing model is hardcoded for now.  once we have support for more markets, we can add a
     # config option for type of market
-    pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time = time.BlockTimeFP()
     market, init_agent_deltas, market_deltas = get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
     simulator = simulators.SimulatorFP(config=config, market=market, block_time=block_time)
@@ -98,7 +98,7 @@ def get_simulator_fp(config: simulators.ConfigFP, agents: list[Agent] | None = N
 
 
 def get_initialized_hyperdrive_market_fp(
-    pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
+    pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTimeFP,
     config: simulators.ConfigFP,
 ) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:

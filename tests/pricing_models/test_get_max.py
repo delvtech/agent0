@@ -39,9 +39,9 @@ class TestGetMax(unittest.TestCase):
             bond_reserves >= bond_buffer
         """
         output_utils.setup_logging(log_filename="test_get_max")
-        pricing_models: list[base_pm.PricingModelFP] = [
-            hyperdrive_pm.HyperdrivePricingModelFP(),
-            yieldspace_pm.YieldspacePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            hyperdrive_pm.HyperdrivePricingModel(),
+            yieldspace_pm.YieldspacePricingModel(),
         ]
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(  # Test 0
@@ -252,8 +252,8 @@ class TestGetMax(unittest.TestCase):
 
     def _ensure_market_safety(
         self,
-        pricing_model: base_pm.PricingModelFP,
-        trade_result: trades.TradeResultFP,
+        pricing_model: base_pm.PricingModel,
+        trade_result: trades.TradeResult,
         test_case: TestCaseGetMax,
         is_long: bool,
     ) -> None:

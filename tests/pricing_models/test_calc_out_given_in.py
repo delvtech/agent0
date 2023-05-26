@@ -33,9 +33,9 @@ class TestCalcOutGivenIn(unittest.TestCase):
     # TODO: Add tests for the full TradeResult object.
     def test_calc_out_given_in_success(self):
         """Success tests for calc_out_given_in"""
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
 
         # Test cases where token_out = TokenType.PT indicating that bonds are being
@@ -1373,9 +1373,9 @@ class TestCalcOutGivenIn(unittest.TestCase):
         This test ensures that the pricing model can handle very extreme inputs
         such as extremely small inputs with extremely large reserves.
         """
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
 
         for pricing_model in pricing_models:
@@ -1438,9 +1438,9 @@ class TestCalcOutGivenIn(unittest.TestCase):
     def test_calc_out_given_in_failure(self):
         """Failure tests for calc_out_given_in"""
         output_utils.setup_logging("test_calc_out_given_in")
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
 
         # Failure test cases.

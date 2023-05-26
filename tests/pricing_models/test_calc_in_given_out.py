@@ -38,9 +38,9 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_success(self):
         """Success tests for calc_in_given_out"""
         output_utils.setup_logging("test_calc_in_given_out_failure")
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
         success_test_cases = base_in_test_cases + pt_in_test_cases + pt_in_test_cases_hyperdrive_only
         for (
@@ -110,9 +110,9 @@ class TestCalcInGivenOut(unittest.TestCase):
         .. todo:: This should be multiple tests for base & pt trade type
         """
         output_utils.setup_logging("test_calc_in_given_out")
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
         for pricing_model in pricing_models:
             # TODO: Works from 0 to 15, after that with[out]_fee goes 0 and then negative.
@@ -178,9 +178,9 @@ class TestCalcInGivenOut(unittest.TestCase):
     def test_calc_in_given_out_failure(self):
         """Failure tests for calc_in_given_out"""
         output_utils.setup_logging("test_calc_in_given_out_success")
-        pricing_models: list[base_pm.PricingModelFP] = [
-            yieldspace_pm.YieldspacePricingModelFP(),
-            hyperdrive_pm.HyperdrivePricingModelFP(),
+        pricing_models: list[base_pm.PricingModel] = [
+            yieldspace_pm.YieldspacePricingModel(),
+            hyperdrive_pm.HyperdrivePricingModel(),
         ]
         # Failure test cases.
         failure_test_cases = [

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
+class HyperdrivePricingModel(yieldspace_pm.YieldspacePricingModel):
     """
     Hyperdrive Pricing Model
 
@@ -35,7 +35,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         out: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a
         specified amount of the other asset given the current AMM reserves.
@@ -144,7 +144,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_base=out.amount,
                 d_bonds=-flat_with_fee + curve.user_result.d_bonds,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=-out.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -153,7 +153,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_base=-flat_with_fee + curve.user_result.d_base,
                 d_bonds=out.amount,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=flat_with_fee + curve.market_result.d_base,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -161,10 +161,10 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
             raise AssertionError(
                 f"ERROR: Expected out.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {out.unit}!"
             )
-        return trades.TradeResultFP(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=trades.TradeBreakdownFP(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=flat_without_fee + curve.breakdown.without_fee_or_slippage,
                 without_fee=flat_without_fee + curve.breakdown.without_fee,
                 with_fee=flat_with_fee + curve.breakdown.with_fee,
@@ -183,7 +183,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
         in_: types.QuantityFP,
         market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
-    ) -> trades.TradeResultFP:
+    ) -> trades.TradeResult:
         r"""
         Calculates the amount of an asset that must be provided to receive a specified amount of the
         other asset given the current AMM reserves.
@@ -291,7 +291,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_base=-in_.amount,
                 d_bonds=flat_with_fee + curve.user_result.d_bonds,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=in_.amount,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -300,7 +300,7 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 d_base=flat_with_fee + curve.user_result.d_base,
                 d_bonds=-in_.amount,
             )
-            market_result = market_action_result.MarketActionResultFP(
+            market_result = market_action_result.MarketActionResult(
                 d_base=-flat_with_fee + curve.market_result.d_base,
                 d_bonds=curve.market_result.d_bonds,
             )
@@ -309,10 +309,10 @@ class HyperdrivePricingModelFP(yieldspace_pm.YieldspacePricingModelFP):
                 "pricing_models.calc_out_given_in: ERROR: "
                 f"Expected in_.unit to be {types.TokenType.BASE} or {types.TokenType.PT}, not {in_.unit}!"
             )
-        return trades.TradeResultFP(
+        return trades.TradeResult(
             user_result=user_result,
             market_result=market_result,
-            breakdown=trades.TradeBreakdownFP(
+            breakdown=trades.TradeBreakdown(
                 without_fee_or_slippage=flat_without_fee + curve.breakdown.without_fee_or_slippage,
                 without_fee=flat_without_fee + curve.breakdown.without_fee,
                 with_fee=flat_with_fee + curve.breakdown.with_fee,

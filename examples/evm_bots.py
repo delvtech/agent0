@@ -344,7 +344,7 @@ def get_config(args) -> simulators.ConfigFP:
     config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=trade_chance)
     config.scratch["random"] = BotInfo(policy=random_agent.RandomAgent, trade_chance=trade_chance)
     config.scratch["bot_names"] = {"louie", "frida", "random"}
-    config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModelFP()
+    config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
     config.scratch["devnet"] = args.devnet
     config.scratch["crash_file"] = f"no_crash{'_devnet' if args.devnet else ''}.txt"
     config.freeze()
@@ -544,7 +544,7 @@ def log_and_show_block_info(block_time: int):
 
 def get_simulator(config: simulators.ConfigFP) -> simulators.SimulatorFP:
     """Get a python simulator."""
-    pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
     block_time_ = time.BlockTimeFP()
     market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
     return simulators.SimulatorFP(config, market, block_time_)
