@@ -126,7 +126,6 @@ class TestCheckpoint(unittest.TestCase):
     def test_checkpoint_in_the_past(self):
         """Test that checkpoints created in the past work as expected"""
         # Open a long and a short.
-        print(f"{self.hyperdrive.latest_checkpoint_time=}")
         long_amount = FixedPoint("10_000_000.0")
         self.hyperdrive.open_long(self.bob.wallet, long_amount)
         short_amount = FixedPoint("50_000.0")

@@ -75,7 +75,7 @@ class TestOpenShort(unittest.TestCase):
         # hyperdrive_base_amount
         #     = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
         # Bob received the short tokens
-        user_wallet_shorts_amount = FixedPoint(sum(int(short.balance) for short in user.wallet.shorts.values()))
+        user_wallet_shorts_amount = FixedPoint(sum(short.balance for short in user.wallet.shorts.values()))
         self.assertEqual(
             user_wallet_shorts_amount,
             unsigned_bond_amount,

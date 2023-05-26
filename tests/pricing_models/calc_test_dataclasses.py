@@ -10,8 +10,6 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.math import FixedPoint
 
-# TODO: remove this after FixedPoint PRs are finished
-
 
 @dataclass
 class CalcInGivenOutSuccessTestCase:

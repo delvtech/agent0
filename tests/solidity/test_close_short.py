@@ -11,8 +11,6 @@ from elfpy.time.time import StretchedTimeFP
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
-# TODO: Remove duplicate code disable once float code is removed
-# pylint: disable=duplicate-code
 
 
 class TestCloseShort(unittest.TestCase):
@@ -172,7 +170,7 @@ class TestCloseShort(unittest.TestCase):
             self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
                 bond_amount=FixedPoint(0),
-                mint_time=FixedPoint(list(self.bob.wallet.shorts.keys())[0]),
+                mint_time=list(self.bob.wallet.shorts.keys())[0],
                 open_share_price=FixedPoint("1.0"),
             )
 
@@ -189,7 +187,7 @@ class TestCloseShort(unittest.TestCase):
             self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
                 bond_amount=list(self.bob.wallet.shorts.values())[0].balance + FixedPoint("1.0"),
-                mint_time=FixedPoint(list(self.bob.wallet.shorts.keys())[0]),
+                mint_time=list(self.bob.wallet.shorts.keys())[0],
                 open_share_price=FixedPoint("1.0"),
             )
 
@@ -206,7 +204,7 @@ class TestCloseShort(unittest.TestCase):
             _ = self.hyperdrive.close_short(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset,
-                mint_time=list(self.bob.wallet.shorts.keys())[0] + FixedPoint(1),
+                mint_time=list(self.bob.wallet.shorts.keys())[0] + FixedPoint("1.0"),
                 open_share_price=FixedPoint("1.0"),
             )
 

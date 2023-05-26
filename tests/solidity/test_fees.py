@@ -12,8 +12,6 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-instance-attributes
-# TODO: Remove duplicate code disable once float code is removed
-# pylint: disable=duplicate-code
 
 AMOUNT = [10**i for i in range(1, 9)]  # trade amounts up to 100 million
 

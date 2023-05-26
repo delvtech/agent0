@@ -10,8 +10,6 @@ import elfpy.types as types
 from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
-# TODO: Remove duplicate code disable once float code is removed
-# pylint: disable=duplicate-code
 
 
 class TestCloseLong(unittest.TestCase):
@@ -174,7 +172,7 @@ class TestCloseLong(unittest.TestCase):
             self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
                 bond_amount=FixedPoint(0),
-                mint_time=FixedPoint(list(self.bob.wallet.longs.keys())[0]),
+                mint_time=list(self.bob.wallet.longs.keys())[0],
             )
 
     def test_close_long_failure_invalid_amount(self):
@@ -190,7 +188,7 @@ class TestCloseLong(unittest.TestCase):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset + FixedPoint(1),
-                mint_time=FixedPoint(list(self.bob.wallet.longs.keys())[0]),
+                mint_time=list(self.bob.wallet.longs.keys())[0],
             )
 
     def test_close_long_failure_invalid_timestamp(self):
@@ -206,7 +204,7 @@ class TestCloseLong(unittest.TestCase):
             _ = self.hyperdrive.close_long(
                 agent_wallet=self.bob.wallet,
                 bond_amount=market_deltas.d_bond_asset,
-                mint_time=list(self.bob.wallet.longs.keys())[0] + FixedPoint(1),
+                mint_time=list(self.bob.wallet.longs.keys())[0] + FixedPoint("1.0"),
             )
 
     def test_close_long_immediately_with_regular_amount(self):
