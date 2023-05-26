@@ -5,9 +5,10 @@ import builtins
 from dataclasses import dataclass
 from typing import Optional, Type
 
+import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.time as time
 import elfpy.types as types
-from elfpy.markets.hyperdrive.hyperdrive_market import MarketState
+from elfpy.math import FixedPoint
 
 
 @dataclass
@@ -15,19 +16,19 @@ class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.Quantity
-    market_state: MarketState
-    days_remaining: float
-    time_stretch_apy: float
+    market_state: hyperdrive_market.MarketState
+    days_remaining: FixedPoint
+    time_stretch_apy: FixedPoint
 
 
 @dataclass
 class CalcInGivenOutSuccessTestResult:
     """Dataclass for calc_in_given_out test results"""
 
-    without_fee_or_slippage: float
-    without_fee: float
-    fee: float
-    with_fee: float
+    without_fee_or_slippage: FixedPoint
+    without_fee: FixedPoint
+    fee: FixedPoint
+    with_fee: FixedPoint
 
 
 @dataclass
@@ -47,7 +48,7 @@ class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
@@ -69,19 +70,19 @@ class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
     in_: types.Quantity
-    market_state: MarketState
-    days_remaining: float
-    time_stretch_apy: float
+    market_state: hyperdrive_market.MarketState
+    days_remaining: FixedPoint
+    time_stretch_apy: FixedPoint
 
 
 @dataclass
 class CalcOutGivenInSuccessTestResult:
     """Dataclass for calc_out_given_in test results"""
 
-    without_fee_or_slippage: float
-    without_fee: float
-    fee: float
-    with_fee: float
+    without_fee_or_slippage: FixedPoint
+    without_fee: FixedPoint
+    fee: FixedPoint
+    with_fee: FixedPoint
 
 
 @dataclass
@@ -101,7 +102,7 @@ class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
     in_: types.Quantity
-    market_state: MarketState
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTime
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 

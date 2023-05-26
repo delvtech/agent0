@@ -6,16 +6,19 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.types as types
 import elfpy.time as time
+from elfpy.math import FixedPoint
 
 # pylint: disable=too-many-arguments
+# TODO: Remove duplicate code disable once float code is removed
+# pylint: disable=duplicate-code
 
 
 class TestOpenLong(unittest.TestCase):
     """Test opening a long in hyperdrive"""
 
-    contribution: float = 500_000_000
-    target_apr: float = 0.05
-    term_length: int = 365
+    contribution: FixedPoint = FixedPoint("500_000_000.0")
+    target_apr: FixedPoint = FixedPoint("0.05")
+    term_length: FixedPoint = FixedPoint("365.0")
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
@@ -42,24 +45,24 @@ class TestOpenLong(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
+        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def verify_open_long(
         self,
         user: elf_agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
-        contribution: float,
-        base_amount: float,
-        unsigned_bond_amount_out: float,
-        maturity_time: float,
-        apr_before: float,
+        contribution: FixedPoint,
+        base_amount: FixedPoint,
+        unsigned_bond_amount_out: FixedPoint,
+        maturity_time: FixedPoint,
+        apr_before: FixedPoint,
     ):
         """Open a long then make sure the market state is correct"""
         # verify the base transfers
         self.assertEqual(
             user.wallet.balance.amount,
-            0,
+            FixedPoint(0),
             msg=f"{user.wallet.balance.amount=} is not correct",
         )
         hyperdrive_base_amount = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
@@ -121,12 +124,12 @@ class TestOpenLong(unittest.TestCase):
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_average_maturity_time,
-            0,
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.short_average_maturity_time=} is not correct",
         )
         self.assertEqual(
             self.hyperdrive.market_state.short_base_volume,
-            0,
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.short_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this
@@ -135,7 +138,7 @@ class TestOpenLong(unittest.TestCase):
     def test_open_long_failure_zero_amount(self):
         """Purchasing bonds with zero base fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_long(self.bob.wallet, 0)
+            self.hyperdrive.open_long(self.bob.wallet, FixedPoint(0))
 
     def test_open_long_failure_extreme_amount(self):
         """Purchasing more bonds than exist fails"""
@@ -145,7 +148,7 @@ class TestOpenLong(unittest.TestCase):
 
     def test_open_long(self):
         """Open a long & check that accounting is done correctly"""
-        base_amount = 10
+        base_amount = FixedPoint("10.0")
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
@@ -157,13 +160,13 @@ class TestOpenLong(unittest.TestCase):
             contribution=self.contribution,
             base_amount=base_amount,
             unsigned_bond_amount_out=abs(market_deltas.d_bond_asset),
-            maturity_time=self.hyperdrive.position_duration.days / 365,
+            maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
             apr_before=apr_before,
         )
 
     def test_open_long_with_small_amount(self):
         """Open a tiny long & check that accounting is done correctly"""
-        base_amount = 0.01
+        base_amount = FixedPoint("0.01")
         self.bob.budget = base_amount
         self.bob.wallet.balance = types.Quantity(amount=base_amount, unit=types.TokenType.BASE)
         market_state_before = self.hyperdrive.market_state.copy()
@@ -175,6 +178,6 @@ class TestOpenLong(unittest.TestCase):
             contribution=self.contribution,
             base_amount=base_amount,
             unsigned_bond_amount_out=abs(market_deltas.d_bond_asset),
-            maturity_time=self.hyperdrive.position_duration.days / 365,
+            maturity_time=self.hyperdrive.position_duration.days / FixedPoint("365.0"),
             apr_before=apr_before,
         )

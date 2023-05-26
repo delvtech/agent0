@@ -14,19 +14,10 @@ if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 
 
-class Policy(elf_agent.Agent):
+class NoActionAgent(elf_agent.Agent):
     """Most basic policy setup, which implements a noop agent that performs no action"""
 
     def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
-        """Returns an empty list, indicating now action"""
-        # pylint disable=unused-argument
-        return []
-
-
-class NoActionAgent(elf_agent.AgentFP):
-    """Most basic policy setup, which implements a noop agent that performs no action"""
-
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
         """Returns an empty list, indicating now action"""
         # pylint disable=unused-argument
         return []

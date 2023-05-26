@@ -8,16 +8,20 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 from elfpy import types
 from elfpy.errors import errors
+from elfpy.math import FixedPoint
 
 # TODO: refactor solidity tests as a separate PR to consolidate setUps
+# TODO: Remove duplicate code disable once float code is removed
 # pylint:disable=duplicate-code
 
 
 class TestCheckpoint(unittest.TestCase):
     """Test adding liquidity to hyperdrive"""
 
-    contribution = 500_000_000
-    target_apr = 0.05
+    APPROX_EQ: FixedPoint = FixedPoint(1e-18)
+
+    contribution = FixedPoint("500_000_000.0")
+    target_apr = FixedPoint("0.05")
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
@@ -38,10 +42,12 @@ class TestCheckpoint(unittest.TestCase):
             market_state=market_state,
             block_time=self.block_time,
             position_duration=time.StretchedTime(
-                days=365, time_stretch=pricing_model.calc_time_stretch(self.target_apr), normalizing_constant=365
+                days=FixedPoint("365.0"),
+                time_stretch=pricing_model.calc_time_stretch(self.target_apr),
+                normalizing_constant=FixedPoint("365.0"),
             ),
         )
-        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
+        _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
 
     def test_checkpoint_failure_future_checkpoint(self):
@@ -52,14 +58,16 @@ class TestCheckpoint(unittest.TestCase):
     def test_checkpoint_failure_invalid_checkpoint(self):
         """Test that creating checkpoint not evenly divisible by the checkpoint duration fails"""
         with self.assertRaises(errors.InvalidCheckpointTime):
-            self.hyperdrive.checkpoint(self.block_time.time + self.hyperdrive.market_state.checkpoint_duration * 1.1)
+            self.hyperdrive.checkpoint(
+                self.block_time.time + self.hyperdrive.market_state.checkpoint_duration * FixedPoint("1.1")
+            )
 
     def test_checkpoint_preset_checkpoint(self):
         """Test that checkpoints don't change amm values and capture values at time of creation"""
         share_price_before = self.hyperdrive.market_state.share_price
         # open a long and a short
-        long_amount = 10_000_000
-        short_amount = 50_000
+        long_amount = FixedPoint("10_000_000.0")
+        short_amount = FixedPoint("50_000.0")
         self.bob.budget = long_amount
         self.bob.wallet.balance = types.Quantity(amount=long_amount, unit=types.TokenType.BASE)
         _, long_wallet_deltas = self.hyperdrive.open_long(self.bob.wallet, long_amount)
@@ -68,7 +76,7 @@ class TestCheckpoint(unittest.TestCase):
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Update the share price. Since the long and short were opened in this checkpoint, the
         # checkpoint should be of the old checkpoint price.
-        self.hyperdrive.market_state.share_price = 1.5
+        self.hyperdrive.market_state.share_price = FixedPoint("1.5")
         apr_before = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
         )
@@ -82,7 +90,7 @@ class TestCheckpoint(unittest.TestCase):
         self.assertAlmostEqual(
             apr_before,
             apr_after,
-            places=8,
+            delta=self.APPROX_EQ,
         )
         checkpoint = self.hyperdrive.market_state.checkpoints[checkpoint_time]
         # Ensure that the checkpoint contains the share price prior to the share price update.
@@ -100,7 +108,7 @@ class TestCheckpoint(unittest.TestCase):
         self.block_time.step()
         # Update the share price. Since the long and short were opened in this checkpoint, the
         # checkpoint should be of the old checkpoint price.
-        self.hyperdrive.market_state.share_price = 1.5
+        self.hyperdrive.market_state.share_price = FixedPoint("1.5")
         # Create a checkpoint.
         apr_before = self.hyperdrive.pricing_model.calc_apr_from_reserves(
             self.hyperdrive.market_state, self.hyperdrive.position_duration
@@ -118,17 +126,19 @@ class TestCheckpoint(unittest.TestCase):
     def test_checkpoint_in_the_past(self):
         """Test that checkpoints created in the past work as expected"""
         # Open a long and a short.
-        long_amount = 10_000_000
+        long_amount = FixedPoint("10_000_000.0")
         self.hyperdrive.open_long(self.bob.wallet, long_amount)
-        short_amount = 50_000
+        short_amount = FixedPoint("50_000.0")
         self.hyperdrive.open_short(self.celine.wallet, short_amount)
         # Advance a term by the position duration.
-        self.block_time.time += self.hyperdrive.position_duration.days / 365
-        # Create a checkpoint.
+        self.block_time.tick(self.hyperdrive.position_duration.days / FixedPoint("365.0"))
+        # Create a checkpoint
         self.hyperdrive.checkpoint(self.hyperdrive.latest_checkpoint_time)
+        # Create a checkpoint in the past
         previous_checkpoint_time = (
-            self.hyperdrive.latest_checkpoint_time - self.hyperdrive.market_state.checkpoint_duration
-        )
+            self.hyperdrive.latest_checkpoint_time * FixedPoint("365.0")
+            - self.hyperdrive.market_state.checkpoint_duration_days
+        ) / FixedPoint("365.0")
         self.hyperdrive.checkpoint(previous_checkpoint_time)
 
         # TODO: This should be either removed or uncommented when we decide
@@ -147,5 +157,5 @@ class TestCheckpoint(unittest.TestCase):
         self.assertEqual(previous_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the long and short balance has gone to zero (all of the
         # matured positions have been closed).
-        self.assertEqual(self.hyperdrive.market_state.longs_outstanding, 0)
-        self.assertEqual(self.hyperdrive.market_state.shorts_outstanding, 0)
+        self.assertEqual(int(self.hyperdrive.market_state.longs_outstanding), 0)
+        self.assertEqual(int(self.hyperdrive.market_state.shorts_outstanding), 0)

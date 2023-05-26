@@ -5,7 +5,6 @@ import copy
 import logging
 from dataclasses import dataclass
 import unittest
-from elfpy.pricing_models.yieldspace import YieldspacePricingModel
 
 import elfpy.pricing_models.trades as trades
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -13,8 +12,10 @@ import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
-from elfpy.pricing_models.base import PricingModel
-from elfpy.pricing_models.hyperdrive import HyperdrivePricingModel
+import elfpy.pricing_models.base as base_pm
+import elfpy.pricing_models.hyperdrive as hyperdrive_pm
+import elfpy.pricing_models.yieldspace as yieldspace_pm
+from elfpy.math import FixedPoint
 
 
 @dataclass
@@ -28,7 +29,7 @@ class TestCaseGetMax:
 
 
 class TestGetMax(unittest.TestCase):
-    """Tests get_max_short and get_max_long functions within the pricing model."""
+    """Tests get_max_short and get_max_long functions within the pricing model"""
 
     def test_get_max(self):
         """
@@ -38,141 +39,162 @@ class TestGetMax(unittest.TestCase):
             bond_reserves >= bond_buffer
         """
         output_utils.setup_logging(log_filename="test_get_max")
-        pricing_models: list[PricingModel] = [HyperdrivePricingModel(), YieldspacePricingModel()]
+        pricing_models: list[base_pm.PricingModel] = [
+            hyperdrive_pm.HyperdrivePricingModel(),
+            yieldspace_pm.YieldspacePricingModel(),
+        ]
         test_cases: list[TestCaseGetMax] = [
             TestCaseGetMax(  # Test 0
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 1
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=100_000,
-                    bond_buffer=100_000,
-                    init_share_price=1,
-                    share_price=1,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("100_000.0"),
+                    bond_buffer=FixedPoint("100_000.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 2
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=100_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("100_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 3
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=834_954,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1,
-                    share_price=1,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("834_954.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.0"),
+                    share_price=FixedPoint("1.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.27), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.27")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 4
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=500_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("500_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.5"),
+                    share_price=FixedPoint("2.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 5
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.5"),
+                    share_price=FixedPoint("2.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 6
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    curve_fee_multiple=0.5,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.5"),
+                    share_price=FixedPoint("2.0"),
+                    curve_fee_multiple=FixedPoint("0.5"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=365, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("365.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 7
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.5"),
+                    share_price=FixedPoint("2.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.05), normalizing_constant=365
+                    days=FixedPoint("91.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.05")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
             TestCaseGetMax(  # Test 8
                 market_state=hyperdrive_market.MarketState(
-                    share_reserves=1_000_000,
-                    bond_reserves=1_000_000,
-                    base_buffer=0,
-                    bond_buffer=0,
-                    init_share_price=1.5,
-                    share_price=2,
-                    curve_fee_multiple=0.1,
-                    flat_fee_multiple=0.1,
+                    share_reserves=FixedPoint("1_000_000.0"),
+                    bond_reserves=FixedPoint("1_000_000.0"),
+                    base_buffer=FixedPoint("0.0"),
+                    bond_buffer=FixedPoint("0.0"),
+                    init_share_price=FixedPoint("1.5"),
+                    share_price=FixedPoint("2.0"),
+                    curve_fee_multiple=FixedPoint("0.1"),
+                    flat_fee_multiple=FixedPoint("0.1"),
                 ),
                 time_remaining=time.StretchedTime(
-                    days=91, time_stretch=pricing_models[0].calc_time_stretch(0.25), normalizing_constant=365
+                    days=FixedPoint("91.0"),
+                    time_stretch=pricing_models[0].calc_time_stretch(FixedPoint("0.25")),
+                    normalizing_constant=FixedPoint("365.0"),
                 ),
             ),
         ]
@@ -191,7 +213,7 @@ class TestGetMax(unittest.TestCase):
                 )
 
                 # Ensure that the max long is valid.
-                self.assertGreaterEqual(max_long, 0.0)
+                self.assertGreaterEqual(max_long, FixedPoint("0.0"))
 
                 # Simulate the trade and ensure the trade was safe.
                 trade_result = pricing_model.calc_out_given_in(
@@ -211,7 +233,7 @@ class TestGetMax(unittest.TestCase):
                 )
 
                 # Ensure that the max short is valid.
-                self.assertGreaterEqual(max_short, 0.0)
+                self.assertGreaterEqual(max_short, FixedPoint("0.0"))
 
                 # Simulate the trade.
                 trade_result = pricing_model.calc_out_given_in(
@@ -230,7 +252,7 @@ class TestGetMax(unittest.TestCase):
 
     def _ensure_market_safety(
         self,
-        pricing_model: PricingModel,
+        pricing_model: base_pm.PricingModel,
         trade_result: trades.TradeResult,
         test_case: TestCaseGetMax,
         is_long: bool,
@@ -254,7 +276,7 @@ class TestGetMax(unittest.TestCase):
 
         # Ensure that the pool is in a valid state after the trade.
         apr = pricing_model.calc_apr_from_reserves(market_state=market_state, time_remaining=test_case.time_remaining)
-        self.assertGreaterEqual(apr, 0.0)
+        self.assertGreaterEqual(apr, FixedPoint("0.0"))
 
         self.assertGreaterEqual(
             market_state.share_price * market_state.share_reserves,

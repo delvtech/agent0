@@ -1,6 +1,6 @@
 """Testing for the ElfPy package modules"""
 from __future__ import annotations
-import builtins  # types are strings by default in 3.11
+import builtins
 
 import logging
 import unittest
@@ -11,11 +11,13 @@ from numpy.random import RandomState
 
 import elfpy.simulators.simulators as simulators
 import elfpy.agents.wallet as wallet
+import elfpy.agents.policies.single_long as single_long
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.utils.outputs as output_utils
 import elfpy.utils.sim_utils as sim_utils  # utilities for setting up a simulation
 import elfpy.types as types
+from elfpy.math import FixedPoint
 
 
 class TestSimulator(unittest.TestCase):
@@ -80,7 +82,11 @@ class TestSimulator(unittest.TestCase):
         config.variable_apr = [0.01] * config.num_trading_days
         simulator = sim_utils.get_simulator(config)
         simulator.run_simulation()
-        simulation_state_num_writes = np.array([len(value) for value in simulator.simulation_state.__dict__.values()])
+        simulation_state_num_writes = []
+        for key, value in simulator.simulation_state.__dict__.items():
+            if key not in ["frozen", "no_new_attribs"]:
+                simulation_state_num_writes.append(len(value))
+        simulation_state_num_writes = np.array(simulation_state_num_writes)
         goal_writes = simulation_state_num_writes[0]
         try:
             np.testing.assert_equal(simulation_state_num_writes, goal_writes)
@@ -148,7 +154,7 @@ class TestSimulator(unittest.TestCase):
                         market=types.MarketType.HYPERDRIVE,
                         trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
-                            trade_amount=10,
+                            trade_amount=FixedPoint(10),
                             wallet=wallet.Wallet(0),
                         ),
                     )
@@ -189,8 +195,7 @@ class TestSimulator(unittest.TestCase):
         simulator = sim_utils.get_simulator(
             config=config,
             agents=[
-                sim_utils.get_policy("single_long")(wallet_address=address, budget=1_000)  # type: ignore
-                for address in range(1, 3)
+                single_long.SingleLongAgent(wallet_address=address, budget=FixedPoint(1_000)) for address in range(1, 3)
             ],
         )
         simulator.run_simulation()
@@ -199,9 +204,3 @@ class TestSimulator(unittest.TestCase):
         # aggregated_states = post_processing.aggregate_agent_and_market_states(
         #     simulator.new_simulation_state.combined_dataframe
         # )
-
-
-if __name__ == "__main__":
-    test = TestSimulator()
-    test.test_new_simulation_state()
-    test.test_aggregate_agent_and_market_states()

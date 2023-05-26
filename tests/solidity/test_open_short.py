@@ -1,5 +1,4 @@
 """Test opening a short in hyperdrive"""
-import decimal
 import unittest
 
 import elfpy.agents.agent as elf_agent
@@ -7,6 +6,7 @@ import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
+from elfpy.math import FixedPoint
 
 
 class TestOpenShort(unittest.TestCase):
@@ -20,19 +20,20 @@ class TestOpenShort(unittest.TestCase):
             open a short of extreme size
     """
 
-    contribution: float = 500_000_000
-    target_apr: float = 0.05
-    term_length: int = 365
+    contribution: FixedPoint = FixedPoint("500_000_000.0")
+    target_apr: FixedPoint = FixedPoint("0.05")
+    term_length: FixedPoint = FixedPoint("365.0")
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTime = time.BlockTime()
+    block_time: time.BlockTime
 
     def setUp(self):
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
+        self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState()
         self.hyperdrive = hyperdrive_market.Market(
@@ -45,19 +46,20 @@ class TestOpenShort(unittest.TestCase):
                 normalizing_constant=self.term_length,
             ),
         )
-        _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, 0.05)
+        _, agent_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
         self.alice.wallet.update(agent_deltas)
 
+    # pylint: disable=too-many-arguments
     def verify_open_short(
         self,
         user: elf_agent.Agent,
         market_state_before: hyperdrive_market.MarketState,
-        base_amount: float,  # max loss in base transferred from user to hyperdrive
-        unsigned_bond_amount: float,  # number of PTs shorted
-        market_bond_delta: float,
-        maturity_time: int,  # maturity of the opened short
-        apr_before: float,
-    ):  # pylint: disable=too-many-arguments
+        base_amount: FixedPoint,  # max loss in base transferred from user to hyperdrive
+        unsigned_bond_amount: FixedPoint,  # number of PTs shorted
+        market_bond_delta: FixedPoint,
+        maturity_time: FixedPoint,  # maturity of the opened short
+        apr_before: FixedPoint,
+    ):
         """
         Verify that the market state is updated correctly after opening a short.
         Contains the following checks:
@@ -73,7 +75,7 @@ class TestOpenShort(unittest.TestCase):
         # hyperdrive_base_amount
         #     = self.hyperdrive.market_state.share_reserves * self.hyperdrive.market_state.share_price
         # Bob received the short tokens
-        user_wallet_shorts_amount = sum(short.balance for short in user.wallet.shorts.values())
+        user_wallet_shorts_amount = FixedPoint(sum(short.balance for short in user.wallet.shorts.values()))
         self.assertEqual(
             user_wallet_shorts_amount,
             unsigned_bond_amount,
@@ -115,12 +117,12 @@ class TestOpenShort(unittest.TestCase):
         )
         self.assertEqual(  # long average maturity time
             self.hyperdrive.market_state.long_average_maturity_time,
-            0,
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.long_average_maturity_time=} is not correct",
         )
         self.assertEqual(  # long base volume
             self.hyperdrive.market_state.long_base_volume,
-            0,
+            FixedPoint(0),
             msg=f"{self.hyperdrive.market_state.long_base_volume=} is not correct",
         )
         # TODO: once we add checkpointing we will need to switch to this
@@ -147,18 +149,18 @@ class TestOpenShort(unittest.TestCase):
     def test_open_short_failure_zero_amount(self):
         """shorting bonds with zero base fails"""
         with self.assertRaises(AssertionError):
-            self.hyperdrive.open_short(self.bob.wallet, 0)
+            self.hyperdrive.open_short(self.bob.wallet, FixedPoint(0))
 
     def test_open_short_failure_extreme_amount(self):
         """shorting more bonds than there is base in the market fails"""
         # The max amount of base does not equal the amount of bonds, it is the result of base_pm.get_max_long
-        bond_amount = self.hyperdrive.market_state.share_reserves * 2
-        with self.assertRaises(decimal.InvalidOperation):
+        bond_amount = self.hyperdrive.market_state.share_reserves * FixedPoint("2.0")
+        with self.assertRaises(ValueError):
             self.hyperdrive.open_short(self.bob.wallet, bond_amount)
 
     def test_open_short(self):
         """Open a short & check that accounting is done correctly"""
-        bond_amount = 10
+        bond_amount = FixedPoint("10.0")
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
@@ -171,13 +173,13 @@ class TestOpenShort(unittest.TestCase):
             base_amount=market_deltas.d_base_asset,
             unsigned_bond_amount=unsigned_bond_amount,
             market_bond_delta=market_deltas.d_bond_asset,
-            maturity_time=int(self.term_length / 365),
+            maturity_time=self.term_length / FixedPoint("365.0"),
             apr_before=apr_before,
         )
 
     def test_open_short_with_small_amount(self):
         """Open a tiny short & check that accounting is done correctly"""
-        bond_amount = 0.01
+        bond_amount = FixedPoint("0.01")
         self.bob.budget = bond_amount
         self.bob.wallet.balance = types.Quantity(amount=bond_amount, unit=types.TokenType.PT)
         market_state_before = self.hyperdrive.market_state.copy()
@@ -190,6 +192,6 @@ class TestOpenShort(unittest.TestCase):
             base_amount=market_deltas.d_base_asset,
             unsigned_bond_amount=unsigned_bond_amount,
             market_bond_delta=market_deltas.d_bond_asset,
-            maturity_time=int(self.term_length / 365),
+            maturity_time=self.term_length / FixedPoint("365.0"),
             apr_before=apr_before,
         )

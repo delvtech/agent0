@@ -3,7 +3,6 @@ from __future__ import annotations  # types are strings by default in 3.11
 
 import unittest
 from dataclasses import dataclass
-from importlib import import_module
 from os import path, walk
 
 import numpy as np
@@ -16,12 +15,20 @@ import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
 import elfpy.types as types
 from elfpy.agents.get_wallet_state import get_wallet_state
+from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
+from elfpy.agents.policies.lp_and_withdraw import LpAndWithdrawAgent
+from elfpy.agents.policies.no_action import NoActionAgent
+from elfpy.agents.policies.random_agent import RandomAgent
+from elfpy.agents.policies.single_long import SingleLongAgent
+from elfpy.agents.policies.single_lp import SingleLpAgent
+from elfpy.agents.policies.single_short import SingleShortAgent
+from elfpy.math import FixedPoint
 
 
 class TestPolicy(elf_agent.Agent):
     """This class was made for testing purposes. It does not implement the required self.action() method"""
 
-    def __init__(self, wallet_address, budget=1000):
+    def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint("1000.0")):
         """call basic policy init then add custom stuff"""
         super().__init__(wallet_address, budget)
         # TODO: mock up a wallet that has done trades
@@ -55,16 +62,47 @@ class TestAgent(unittest.TestCase):
         self.agent_list: list[elf_agent.Agent] = []
         for agent_id, policy_name in enumerate(agent_policies):
             if policy_name == "random_agent":
-                example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
+                example_agent = RandomAgent(
                     rng=np.random.default_rng(seed=1234),
                     trade_chance=1.0,
                     wallet_address=agent_id,
-                    budget=1_000,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "lp_and_withdraw":
+                example_agent = LpAndWithdrawAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "single_long":
+                example_agent = SingleLongAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "single_short":
+                example_agent = SingleShortAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "single_lp":
+                example_agent = SingleLpAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "init_lp":
+                example_agent = InitializeLiquidityAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
+                )
+            elif policy_name == "no_action":
+                example_agent = NoActionAgent(
+                    wallet_address=agent_id,
+                    budget=FixedPoint("1_000.0"),
                 )
             else:
-                example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
-                    wallet_address=agent_id, budget=1_000
-                )
+                raise ValueError(f"agent type {policy_name} not supported")
+                # example_agent = import_module(f"elfpy.agents.policies.{policy_name}").Policy(
+                #     wallet_address=agent_id, budget=1_000
+                # )
             self.agent_list.append(example_agent)
         # One more test agent that uses a test policy
         self.test_agent = TestPolicy(wallet_address=len(agent_policies))
@@ -72,10 +110,12 @@ class TestAgent(unittest.TestCase):
         self.market = hyperdrive_market.Market(
             pricing_model=hyperdrive_pm.HyperdrivePricingModel(),
             market_state=hyperdrive_market.MarketState(),
-            position_duration=time.StretchedTime(days=365, time_stretch=10, normalizing_constant=365),
+            position_duration=time.StretchedTime(
+                days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")
+            ),
             block_time=time.BlockTime(),
         )
-        self.market.initialize(wallet_address=0, contribution=1_000_000, target_apr=0.01)
+        self.market.initialize(wallet_address=0, contribution=FixedPoint("1_000_000.0"), target_apr=FixedPoint("0.01"))
 
     def test_wallet_state_matches_state_keys(self):
         """Tests that an agent wallet has the right keys"""
@@ -86,7 +126,9 @@ class TestAgent(unittest.TestCase):
 
     def test_wallet_copy(self):
         """Test the wallet ability to deep copy itself"""
-        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
+        example_wallet = wallet.Wallet(
+            address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
+        )
         wallet_copy = example_wallet.copy()
         assert example_wallet is not wallet_copy  # not the same object
         assert example_wallet == wallet_copy  # they have the same attribute values
@@ -95,34 +137,43 @@ class TestAgent(unittest.TestCase):
 
     def test_wallet_update(self):
         """Test that the wallet updates correctly & does not use references to the deltas argument"""
-        example_wallet = wallet.Wallet(address=0, balance=types.Quantity(amount=100, unit=types.TokenType.BASE))
+        example_wallet = wallet.Wallet(
+            address=0, balance=types.Quantity(amount=FixedPoint("100.0"), unit=types.TokenType.BASE)
+        )
         example_deltas = wallet.Wallet(
             address=0,
-            balance=types.Quantity(amount=-10, unit=types.TokenType.BASE),
-            longs={0: wallet.Long(15)},
-            fees_paid=0.001,
+            balance=types.Quantity(amount=FixedPoint("-10.0"), unit=types.TokenType.BASE),
+            longs={FixedPoint(0): wallet.Long(FixedPoint("15.0"))},
+            fees_paid=FixedPoint("0.001"),
         )
         example_wallet.update(example_deltas)
-        assert id(example_wallet.longs[0]) != id(example_deltas.longs[0]), (
+        assert id(example_wallet.longs[FixedPoint(0)]) != id(example_deltas.longs[FixedPoint(0)]), (
             f"{example_wallet.longs=} should not hold a reference to {example_deltas.longs=},"
-            f"but have the same ids: {id(example_wallet.longs[0])=}, {id(example_deltas.longs[0])=}."
+            f"but have the same ids: {id(example_wallet.longs[FixedPoint(0)])=}, "
+            f"{id(example_deltas.longs[FixedPoint(0)])=}."
         )
-        assert (
-            example_wallet.longs[0].balance == 15
-        ), f"{example_wallet.longs[0].balance=} should equal the delta amount, 15."
-        assert example_wallet.balance.amount == 90, f"{example_wallet.balance.amount=} should be 100-10=90."
+        assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(
+            "15.0"
+        ), f"{example_wallet.longs[FixedPoint(0)].balance=} should equal the delta amount, 15."
+        assert example_wallet.balance.amount == FixedPoint(
+            "90.0"
+        ), f"{example_wallet.balance.amount=} should be 100-10=90."
         new_example_deltas = wallet.Wallet(
             address=0,
-            balance=types.Quantity(amount=-5, unit=types.TokenType.BASE),
-            longs={0: wallet.Long(8)},
-            fees_paid=0.0008,
+            balance=types.Quantity(amount=FixedPoint("-5.0"), unit=types.TokenType.BASE),
+            longs={FixedPoint(0): wallet.Long(FixedPoint("8.0"))},
+            fees_paid=FixedPoint("0.0008"),
         )
         example_wallet.update(new_example_deltas)
-        assert example_wallet.longs[0].balance == 23, f"{example_wallet.longs[0].balance=} should equal 15+8=23."
-        assert example_wallet.balance.amount == 85, f"{example_wallet.balance.amount=} should be 100-10-5=85."
-        assert (
-            example_deltas.longs[0].balance == 15
-        ), f"{example_deltas.longs[0].balance=} should be unchanged and equal 15."
+        assert example_wallet.longs[FixedPoint(0)].balance == FixedPoint(
+            "23.0"
+        ), f"{example_wallet.longs[FixedPoint(0)].balance=} should equal 15+8=23."
+        assert example_wallet.balance.amount == FixedPoint(
+            "85.0"
+        ), f"{example_wallet.balance.amount=} should be 100-10-5=85."
+        assert example_deltas.longs[FixedPoint(0)].balance == FixedPoint(
+            "15.0"
+        ), f"{example_deltas.longs[FixedPoint(0)].balance=} should be unchanged and equal 15."
 
     # Test agent instantiation
     def test_no_action_failure(self):
@@ -134,7 +185,7 @@ class TestAgent(unittest.TestCase):
             # Purposefully incorrectly implemented
             ### pylint: disable=abstract-method
 
-            def __init__(self, wallet_address, budget=1000):
+            def __init__(self, wallet_address: int, budget: FixedPoint = FixedPoint(1000)):
                 """call basic policy init then add custom stuff"""
                 super().__init__(wallet_address, budget)
 
@@ -153,13 +204,15 @@ class TestAgent(unittest.TestCase):
         """
         # instantiate the market
         # Instantiate an agent for each policy, with a variety of budgets
-        budget_list = [10, 100, 1_000]
+        budget_list = [FixedPoint("10.0"), FixedPoint("100.0"), FixedPoint("1_000.0")]
         for agent_budget in budget_list:
             for example_agent in self.agent_list:
                 example_agent.budget = agent_budget
                 if hasattr(example_agent, "amount_to_trade"):
                     setattr(example_agent, "amount_to_trade", agent_budget)
-                example_agent.wallet.balance = types.Quantity(amount=agent_budget, unit=types.TokenType.BASE)
+                example_agent.wallet.balance = types.Quantity(
+                    amount=FixedPoint(str(agent_budget)), unit=types.TokenType.BASE
+                )
                 # For each agent policy, call their action() method
                 actions_list = example_agent.get_trades(self.market)
                 for market_action in actions_list:

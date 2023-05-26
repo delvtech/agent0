@@ -39,14 +39,14 @@ import elfpy.utils.sim_utils as sim_utils
 import elfpy.simulators as simulators
 import elfpy.types as types
 
-from elfpy import WEI_FP
+from elfpy import WEI
 from elfpy.math import FixedPoint, FixedPointMath
 
 # %% [markdown]
 # ### Setup experiment parameters
 
 # %%
-config = simulators.ConfigFP()
+config = simulators.Config()
 
 # General config parameters
 config.title = "Hyperdrive smart agent demo"
@@ -107,7 +107,7 @@ fig_size = (5, 5)
 
 
 # %%
-class FixedFrida(elf_agent.AgentFP):
+class FixedFrida(elf_agent.Agent):
     """
     Agent that paints & opens fixed rate borrow positions
     """
@@ -126,7 +126,7 @@ class FixedFrida(elf_agent.AgentFP):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy
 
         I'm an actor with a high risk threshold
@@ -159,7 +159,7 @@ class FixedFrida(elf_agent.AgentFP):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -178,11 +178,11 @@ class FixedFrida(elf_agent.AgentFP):
             # TODO: This is a hack until we fix get_max
             # issue # 440
             trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI_FP:
+            if trade_amount > WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -194,7 +194,7 @@ class FixedFrida(elf_agent.AgentFP):
 
 
 # %%
-class LongLouie(elf_agent.AgentFP):
+class LongLouie(elf_agent.Agent):
     """
     Long-nosed agent that opens longs
     """
@@ -213,7 +213,7 @@ class LongLouie(elf_agent.AgentFP):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Long Louie user strategy
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -243,7 +243,7 @@ class LongLouie(elf_agent.AgentFP):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -275,11 +275,11 @@ class LongLouie(elf_agent.AgentFP):
             # TODO: This is a hack until we fix get_max
             # issue #440
             trade_amount = trade_amount / FixedPoint("100.0")
-            if trade_amount > WEI_FP:
+            if trade_amount > WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -291,10 +291,10 @@ class LongLouie(elf_agent.AgentFP):
 
 
 # %%
-class LPAgent(elf_agent.AgentFP):
+class LPAgent(elf_agent.Agent):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.MarketFP):
+    def action(self, market: hyperdrive_market.Market):
         """implement user strategy"""
         if self.wallet.lp_tokens > 0:  # has already opened the lp
             action_list = []
@@ -302,7 +302,7 @@ class LPAgent(elf_agent.AgentFP):
             action_list = [
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketActionFP(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.budget,
                         wallet=self.wallet,
@@ -314,8 +314,8 @@ class LPAgent(elf_agent.AgentFP):
 
 # %%
 def get_example_agents(
-    rng: NumpyGenerator, experiment_config: simulators.ConfigFP, existing_agents: int = 0
-) -> list[elf_agent.AgentFP]:
+    rng: NumpyGenerator, experiment_config: simulators.Config, existing_agents: int = 0
+) -> list[elf_agent.Agent]:
     """Instantiate a set of custom agents"""
     agents = []
     for address in range(existing_agents, existing_agents + experiment_config.scratch["num_fridas"]):
@@ -384,7 +384,7 @@ def get_example_agents(
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # get an instantiated simulator object
-simulator = sim_utils.get_simulator_fp(config)
+simulator = sim_utils.get_simulator(config)
 
 # %% [markdown]
 # ### Run the simulation
@@ -404,7 +404,7 @@ simulator.run_simulation()
 
 # %%
 # convert simulation state to a pandas dataframe
-trades = post_processing.compute_derived_variables_fp(simulator)
+trades = post_processing.compute_derived_variables(simulator)
 
 # %% [markdown]
 # ### Plot simulation results

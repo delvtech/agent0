@@ -119,22 +119,11 @@ class TokenType(Enum):
 class Quantity:
     r"""An amount with a unit"""
 
-    amount: float
-    unit: TokenType
-
-    def __neg__(self):
-        return Quantity(amount=-self.amount, unit=self.unit)
-
-
-@dataclass
-class QuantityFP:
-    r"""An amount with a unit"""
-
     amount: FixedPoint
     unit: TokenType
 
     def __neg__(self):
-        return QuantityFP(amount=-self.amount, unit=self.unit)
+        return Quantity(amount=-self.amount, unit=self.unit)
 
 
 @dataclass

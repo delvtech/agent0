@@ -54,7 +54,7 @@ DAI_ADDRESS = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
 examples_dir = Path.cwd() if Path.cwd().name == "examples" else Path.cwd() / "examples"
 
 
-class FixedFrida(elfpy_agent.AgentFP):
+class FixedFrida(elfpy_agent.Agent):
     """Agent that paints & opens fixed rate borrow positions."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
@@ -71,7 +71,7 @@ class FixedFrida(elfpy_agent.AgentFP):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy.
 
         I'm an actor with a high risk threshold
@@ -103,7 +103,7 @@ class FixedFrida(elfpy_agent.AgentFP):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -123,12 +123,12 @@ class FixedFrida(elfpy_agent.AgentFP):
                 market.market_state.share_reserves * market.market_state.share_price / FixedPoint("2.0")
             )
             # WEI <= trade_amount <= max_short
-            trade_amount = max(elfpy.WEI_FP, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
-            if trade_amount > elfpy.WEI_FP:
+            trade_amount = max(elfpy.WEI, min(FixedPoint("0.0"), maximum_trade_amount_in_bonds))
+            if trade_amount > elfpy.WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -139,7 +139,7 @@ class FixedFrida(elfpy_agent.AgentFP):
         return action_list
 
 
-class LongLouie(elfpy_agent.AgentFP):
+class LongLouie(elfpy_agent.Agent):
     """Long-nosed agent that opens longs."""
 
     def __init__(  # pylint: disable=too-many-arguments # noqa: PLR0913
@@ -156,7 +156,7 @@ class LongLouie(elfpy_agent.AgentFP):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Long Louie user strategy.
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -185,7 +185,7 @@ class LongLouie(elfpy_agent.AgentFP):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -218,12 +218,12 @@ class LongLouie(elfpy_agent.AgentFP):
             maximum_trade_amount_in_base = market.market_state.bond_reserves * market.spot_price / FixedPoint("2.0")
             # WEI <= trade_amount <= max_short
             # don't want to trade more than the agent has or more than the market can handle
-            trade_amount = max(elfpy.WEI_FP, min(adjusted_bonds, maximum_trade_amount_in_base))
-            if trade_amount > elfpy.WEI_FP:
+            trade_amount = max(elfpy.WEI, min(adjusted_bonds, maximum_trade_amount_in_base))
+            if trade_amount > elfpy.WEI:
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -306,7 +306,7 @@ class BotInfo:
 
     Budget = namedtuple("Budget", ["mean", "std", "min", "max"])
     Risk = namedtuple("Risk", ["mean", "std", "min", "max"])
-    policy: Type[elfpy_agent.AgentFP]
+    policy: Type[elfpy_agent.Agent]
     trade_chance: float = 0.1
     risk_threshold: float | None = None
     budget: Budget = Budget(mean=5_000, std=2_000, min=1_000, max=10_000)
@@ -321,9 +321,9 @@ class BotInfo:
         )
 
 
-def get_config(args) -> simulators.ConfigFP:
+def get_config(args) -> simulators.Config:
     """Set _config values for the experiment."""
-    config = simulators.ConfigFP()
+    config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
@@ -344,14 +344,14 @@ def get_config(args) -> simulators.ConfigFP:
     config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=trade_chance)
     config.scratch["random"] = BotInfo(policy=random_agent.RandomAgent, trade_chance=trade_chance)
     config.scratch["bot_names"] = {"louie", "frida", "random"}
-    config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModelFP()
+    config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
     config.scratch["devnet"] = args.devnet
     config.scratch["crash_file"] = f"no_crash{'_devnet' if args.devnet else ''}.txt"
     config.freeze()
     return config
 
 
-def get_accounts(config: simulators.ConfigFP) -> list[KeyfileAccount]:
+def get_accounts(config: simulators.Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
     num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
@@ -376,7 +376,7 @@ def create_agent(
     base_: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
-    config: simulators.ConfigFP,
+    config: simulators.Config,
 ):  # pylint: disable=too-many-arguments
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
@@ -444,10 +444,10 @@ def create_agent(
 
 
 def get_agents(
-    config: simulators.ConfigFP,
+    config: simulators.Config,
     hyperdrive_contract: ContractInstance,
     base_contract: ContractInstance,
-) -> dict[str, elfpy_agent.AgentFP]:
+) -> dict[str, elfpy_agent.Agent]:
     """Get python agents & corresponding on-chain accounts.
 
     Returns
@@ -517,11 +517,11 @@ def do_trade(market_trade: types.Trade, agents, hyperdrive_contract, base_contra
         "amount": amount,
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
-        params["maturity_time"] = int(trade.mint_time) + elfpy.SECONDS_IN_YEAR
+        params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR)
     _, _ = ape_utils.ape_trade(**params)
 
 
-def set_days_without_crashing(no_crash: int, config: simulators.ConfigFP):
+def set_days_without_crashing(no_crash: int, config: simulators.Config):
     """Calculate the number of days without crashing."""
     with open(config.scratch["crash_file"], "w", encoding="utf-8") as file:
         file.write(f".logging/{no_crash}")
@@ -542,16 +542,16 @@ def log_and_show_block_info(block_time: int):
     )
 
 
-def get_simulator(config: simulators.ConfigFP) -> simulators.SimulatorFP:
+def get_simulator(config: simulators.Config) -> simulators.Simulator:
     """Get a python simulator."""
-    pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-    block_time_ = time.BlockTimeFP()
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time_, config)
-    return simulators.SimulatorFP(config, market, block_time_)
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    block_time_ = time.BlockTime()
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, config)
+    return simulators.Simulator(config, market, block_time_)
 
 
 def deploy_hyperdrive(
-    config: simulators.ConfigFP, deployer: TestAccountAPI, base_contract: ContractInstance
+    config: simulators.Config, deployer: TestAccountAPI, base_contract: ContractInstance
 ) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork."""
     assert isinstance(deployer, TestAccountAPI)
@@ -633,16 +633,16 @@ if __name__ == "__main__":
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
             log_and_show_block_info(block_timestamp)
             market_state = ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance)
-            elfpy_market: hyperdrive_market.MarketFP = hyperdrive_market.MarketFP(
+            elfpy_market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=experiment_config.scratch["pricing_model"],
                 market_state=market_state,
-                position_duration=time.StretchedTimeFP(
+                position_duration=time.StretchedTime(
                     days=FixedPoint(float(hyper_config["term_length"])),  # TODO: Fix this after FP refactor to use int
                     time_stretch=FixedPoint(hyper_config["timeStretch"]),
                     normalizing_constant=FixedPoint(float(hyper_config["term_length"])),
                 ),
                 # TODO: Change this to convert block_timestamp and start_timestamp to FP once we refactor FP
-                block_time=time.BlockTimeFP(
+                block_time=time.BlockTime(
                     _time=FixedPoint((block_timestamp - start_timestamp) / 365),
                     _block_number=FixedPoint(block_number),
                     _step_size=FixedPoint("1.0") / FixedPoint("365.0"),

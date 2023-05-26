@@ -1,5 +1,5 @@
 """Testing for ElfPy types"""
-from __future__ import annotations  # types are strings by default in 3.11
+from __future__ import annotations
 
 import unittest
 from dataclasses import dataclass
@@ -43,6 +43,7 @@ class FreezableClassFrozenNoNewAttribsByDefault(ClassWithOneAttribute):
 
 class TestFreezability(unittest.TestCase):
     """Test freezable wrapper functionality
+
     each test checks for the ability to change or add attributest, in 4 cases:
     1. not frozen
     2. frozen
@@ -133,65 +134,31 @@ class TestFreezability(unittest.TestCase):
         freezable_object = FreezableClass(existing_attrib=4)
         # cast to int, check that it is an int
         assert isinstance(
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                int
-            ).existing_attrib,
+            freezable_object.astype(int).existing_attrib,  # type: ignore
             int,
         )
         # cast to float, check that it is a float
         assert isinstance(
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                float
-            ).existing_attrib,
+            freezable_object.astype(float).existing_attrib,  #  type: ignore
             float,
         )
         # cast to str, check that it is a str
         assert isinstance(
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                str
-            ).existing_attrib,
+            freezable_object.astype(str).existing_attrib,  #  type: ignore
             str,
         )
         # cast to str, make sure value is correct
-        assert (
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                str
-            ).existing_attrib
-            == "4"
-        )
+        assert freezable_object.astype(str).existing_attrib == "4"  # type: ignore
         # get dtypes, confirm the key exists & that it is an int
-        assert (
-            "existing_attrib"
-            in freezable_object.dtypes.keys()  # pylint: disable=attribute-defined-outside-init # type: ignore
-        )
-        assert (
-            freezable_object.dtypes["existing_attrib"]  # pylint: disable=attribute-defined-outside-init # type: ignore
-            == int
-        )
+        assert "existing_attrib" in freezable_object.dtypes.keys()  #  type: ignore
+        assert freezable_object.dtypes["existing_attrib"] == int  #  type: ignore
         # cast to float, make sure dtypes updates
-        assert (
-            freezable_object.astype(float).dtypes[  # pylint: disable=attribute-defined-outside-init # type: ignore
-                "existing_attrib"
-            ]
-            == float
-        )
+        assert freezable_object.astype(float).dtypes["existing_attrib"] == float  #  type: ignore
         # cast to float, make sure value is correct
-        assert (
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                float
-            ).existing_attrib
-            == 4.0
-        )
+        assert freezable_object.astype(float).existing_attrib == 4.0  #  type: ignore
         # check that attrib gets updated with new type
-        assert (
-            freezable_object.astype(  # pylint: disable=attribute-defined-outside-init # type: ignore
-                float
-            ).__annotations__["existing_attrib"]
-            == float
-        )
+        assert freezable_object.astype(float).__annotations__["existing_attrib"] == float  #  type: ignore
         # ERROR case: changing type to something that is not compatible
-        freezable_object = FreezableClass(
-            existing_attrib="bleh"  # pylint: disable=attribute-defined-outside-init # type: ignore
-        )
+        freezable_object = FreezableClass(existing_attrib="bleh")  #  type: ignore
         with self.assertRaises(TypeError):
-            freezable_object.astype(int)  # pylint: disable=attribute-defined-outside-init # type: ignore
+            freezable_object.astype(int)  #  type: ignore
