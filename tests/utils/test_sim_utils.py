@@ -4,8 +4,6 @@ from __future__ import annotations  # types are strings by default in 3.11
 import logging
 import unittest
 
-import numpy as np
-
 import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
@@ -100,7 +98,7 @@ class SimUtilsTest(unittest.TestCase):
                             msg=(
                                 f"ERROR: {total_liquidity_direct=}"
                                 f"does not equal {total_liquidity_agent=} "
-                                f"off by {(np.abs(total_liquidity_direct - total_liquidity_agent))=}."
+                                f"off by {(abs(total_liquidity_direct - total_liquidity_agent))=}."
                             ),
                         )
                         self.assertAlmostEqual(
@@ -110,7 +108,7 @@ class SimUtilsTest(unittest.TestCase):
                             msg=(
                                 f"ERROR: {market_direct.fixed_apr=}"
                                 f" does not equal {market.fixed_apr=}"
-                                f"off by {(np.abs(market_direct.fixed_apr - market.fixed_apr))=}."
+                                f"off by {(abs(market_direct.fixed_apr - market.fixed_apr))=}."
                             ),
                         )
                         self.assertAlmostEqual(
@@ -120,7 +118,7 @@ class SimUtilsTest(unittest.TestCase):
                             msg=(
                                 f"ERROR: {target_liquidity=}"
                                 f"does not equal {total_liquidity_agent=} "
-                                f"off by {(np.abs(FixedPoint(target_liquidity) - total_liquidity_agent))=}."
+                                f"off by {(abs(FixedPoint(target_liquidity) - total_liquidity_agent))=}."
                             ),
                         )
                         self.assertAlmostEqual(
@@ -130,7 +128,7 @@ class SimUtilsTest(unittest.TestCase):
                             msg=(
                                 f"ERROR: {target_fixed_apr=}"
                                 f" does not equal {market.fixed_apr=}"
-                                f"off by {(np.abs(FixedPoint(target_fixed_apr) - market.fixed_apr))=}."
+                                f"off by {(abs(FixedPoint(target_fixed_apr) - market.fixed_apr))=}."
                             ),
                         )
         output_utils.close_logging()
