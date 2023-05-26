@@ -21,7 +21,7 @@ class TestRemoveLiquidity(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.MarketFP
+    hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTimeFP
 
     def setUp(self):
@@ -33,11 +33,11 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_market.MarketStateFP(
+        market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.0"),
             flat_fee_multiple=FixedPoint("0.0"),
         )
-        self.hyperdrive = hyperdrive_market.MarketFP(
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTimeFP(

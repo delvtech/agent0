@@ -20,7 +20,7 @@ class TestAddLiquidity(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_markets.MarketFP
+    hyperdrive: hyperdrive_markets.Market
     block_time: time.BlockTimeFP
 
     def setUp(self):
@@ -30,9 +30,9 @@ class TestAddLiquidity(unittest.TestCase):
         self.block_time = time.BlockTimeFP()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_markets.MarketStateFP()
+        market_state = hyperdrive_markets.MarketState()
 
-        self.hyperdrive = hyperdrive_markets.MarketFP(
+        self.hyperdrive = hyperdrive_markets.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -77,7 +77,7 @@ class TestAddLiquidity(unittest.TestCase):
         lp_supply_before = self.hyperdrive.market_state.lp_total_supply
 
         # Celine opens a long.
-        market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long_fp(
+        market_deltas, wallet_deltas = hyperdrive_actions.calc_open_long(
             wallet_address=self.celine.wallet.address,
             base_amount=FixedPoint("50_000_000.0"),
             market_state=self.hyperdrive.market_state,

@@ -120,7 +120,7 @@ class TestSimulator(unittest.TestCase):
                 "run_number": [0] * num_runs,
                 "config": [simulators.ConfigFP()],
                 "agent_init": [[wallet.WalletFP(address) for address in range(2)]],
-                "market_init": [hyperdrive_market.MarketStateFP()],
+                "market_init": [hyperdrive_market.MarketState()],
                 "time_step": [0.001],
                 "position_duration": [90],
             }
@@ -152,7 +152,7 @@ class TestSimulator(unittest.TestCase):
                 "trade_action": [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=FixedPoint(10),
                             wallet=wallet.WalletFP(0),

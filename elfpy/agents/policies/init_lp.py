@@ -11,7 +11,7 @@ from elfpy.math import FixedPoint
 class InitializeLiquidityAgent(elf_agent.Agent):
     """Adds a large LP"""
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """
         User strategy adds liquidity and then takes no additional actions
         """
@@ -20,7 +20,7 @@ class InitializeLiquidityAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=self.budget,
                     wallet=self.wallet,

@@ -24,7 +24,7 @@ class TestWithdrawShares(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.MarketFP
+    hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTimeFP
 
     def setUp(self):
@@ -36,8 +36,8 @@ class TestWithdrawShares(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.budget)
         self.block_time = time.BlockTimeFP()
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_market.MarketStateFP()
-        self.hyperdrive = hyperdrive_market.MarketFP(
+        market_state = hyperdrive_market.MarketState()
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             position_duration=time.StretchedTimeFP(

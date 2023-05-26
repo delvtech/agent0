@@ -71,7 +71,7 @@ class FixedFrida(elfpy_agent.Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Fixed Frida user strategy.
 
         I'm an actor with a high risk threshold
@@ -103,7 +103,7 @@ class FixedFrida(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -128,7 +128,7 @@ class FixedFrida(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -156,7 +156,7 @@ class LongLouie(elfpy_agent.Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a Long Louie user strategy.
 
         I'm not willing to open a long if it will cause the fixed-rate apr to go below the variable rate
@@ -185,7 +185,7 @@ class LongLouie(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -223,7 +223,7 @@ class LongLouie(elfpy_agent.Agent):
                 action_list += [
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                             trade_amount=trade_amount,
                             wallet=self.wallet,
@@ -633,7 +633,7 @@ if __name__ == "__main__":
         if block_number > locals().get("last_executed_block", 0):  # get variable if it exists, otherwise set to 0
             log_and_show_block_info(block_timestamp)
             market_state = ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance)
-            elfpy_market: hyperdrive_market.MarketFP = hyperdrive_market.MarketFP(
+            elfpy_market: hyperdrive_market.Market = hyperdrive_market.Market(
                 pricing_model=experiment_config.scratch["pricing_model"],
                 market_state=market_state,
                 position_duration=time.StretchedTimeFP(

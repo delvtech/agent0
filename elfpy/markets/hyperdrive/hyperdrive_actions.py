@@ -14,7 +14,7 @@ import elfpy.time as time
 import elfpy.types as types
 from elfpy.time.time import StretchedTimeFP
 from elfpy.math import FixedPoint, FixedPointMath
-from elfpy.math.update_weighted_average import update_weighted_average_fp
+from elfpy.math.update_weighted_average import update_weighted_average
 
 if TYPE_CHECKING:
     import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
@@ -42,7 +42,7 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltasFP(base_market.MarketDeltasFP):
+class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
     # pylint: disable=too-many-instance-attributes
     d_base_asset: FixedPoint = FixedPoint(0)
@@ -69,7 +69,7 @@ class MarketDeltasFP(base_market.MarketDeltasFP):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketActionFP(base_market.MarketActionFP):
+class MarketAction(base_market.MarketAction):
     r"""Market action specification"""
     # these two variables are required to be set by the strategy
     action_type: MarketActionType
@@ -119,8 +119,8 @@ def calculate_lp_allocation_adjustment_fp(
     return base_adjustment / share_price
 
 
-def calculate_short_adjustment_fp(
-    market_state: hyperdrive_market.MarketStateFP,
+def calculate_short_adjustment(
+    market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -156,8 +156,8 @@ def calculate_short_adjustment_fp(
     )
 
 
-def calculate_long_adjustment_fp(
-    market_state: hyperdrive_market.MarketStateFP,
+def calculate_long_adjustment(
+    market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
     market_time: FixedPoint,
 ) -> FixedPoint:
@@ -193,10 +193,10 @@ def calculate_long_adjustment_fp(
     )
 
 
-def calc_lp_out_given_tokens_in_fp(
+def calc_lp_out_given_tokens_in(
     base_in: FixedPoint,
     rate: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     market_time: FixedPoint,
     position_duration: time.StretchedTimeFP,
 ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
@@ -237,8 +237,8 @@ def calc_lp_out_given_tokens_in_fp(
         - market_state.share_price
     ) - market_state.bond_reserves
     if market_state.share_reserves > FixedPoint(0):  # normal case where we have some share reserves
-        short_adjustment = calculate_short_adjustment_fp(market_state, position_duration, market_time)
-        long_adjustment = calculate_long_adjustment_fp(market_state, position_duration, market_time)
+        short_adjustment = calculate_short_adjustment(market_state, position_duration, market_time)
+        long_adjustment = calculate_long_adjustment(market_state, position_duration, market_time)
         lp_out = (delta_shares * market_state.lp_total_supply) / (
             market_state.share_reserves + short_adjustment - long_adjustment
         )
@@ -247,7 +247,7 @@ def calc_lp_out_given_tokens_in_fp(
     return lp_out, base_in, delta_bond_reserves
 
 
-def calculate_base_volume_fp(
+def calculate_base_volume(
     base_amount: FixedPoint, bond_amount: FixedPoint, normalized_time_remaining: FixedPoint
 ) -> FixedPoint:
     r"""Calculates the base volume of an open trade.
@@ -283,8 +283,8 @@ def calculate_base_volume_fp(
     return (base_amount - (FixedPoint("1.0") - normalized_time_remaining) * bond_amount) / normalized_time_remaining
 
 
-def calc_checkpoint_deltas_fp(
-    market_state: hyperdrive_market.MarketStateFP,
+def calc_checkpoint_deltas(
+    market_state: hyperdrive_market.MarketState,
     checkpoint_time: FixedPoint,
     bond_amount: FixedPoint,
     position: Literal["short", "long"],
@@ -331,15 +331,15 @@ def calc_checkpoint_deltas_fp(
     return (d_base_volume, d_checkpoints, lp_margin)
 
 
-def calc_open_short_fp(
+def calc_open_short(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     r"""Calculate the agent & market deltas for opening a short position.
 
     Shorts need their margin account to cover the worst case scenario (p=1).
@@ -404,13 +404,13 @@ def calc_open_short_fp(
     bond_reserves_delta = trade_result.market_result.d_bonds
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
     open_share_price = market_state.checkpoints[latest_checkpoint_time].share_price
-    trader_deposit = calc_short_proceeds_fp(
+    trader_deposit = calc_short_proceeds(
         bond_amount, share_proceeds, open_share_price, market_state.share_price, market_state.share_price
     )
     # get gov fees accrued
     market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
     # update accouting for average maturity time, base volume and longs outstanding
-    short_average_maturity_time = update_weighted_average_fp(
+    short_average_maturity_time = update_weighted_average(
         average=market_state.short_average_maturity_time,
         total_weight=market_state.shorts_outstanding,
         delta=annualized_position_duration,
@@ -424,16 +424,16 @@ def calc_open_short_fp(
         else d_short_average_maturity_time
     )
     # calculate_base_volume needs a positive base, so we use the value from user_result
-    base_volume = calculate_base_volume_fp(trade_result.user_result.d_base, bond_amount, FixedPoint("1.0"))
+    base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, FixedPoint("1.0"))
     # Calculate what the updated bond reserves would be with constant apr
-    _, updated_bond_reserves = calc_update_reserves_fp(
+    _, updated_bond_reserves = calc_update_reserves(
         market_state.share_reserves + share_reserves_delta,
         market_state.bond_reserves + bond_reserves_delta,
         share_reserves_delta,
     )
     bond_reserves_delta += updated_bond_reserves - market_state.bond_reserves
     # return the market and wallet deltas
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=bond_reserves_delta,
         # TODO: remove the bond buffer
@@ -453,16 +453,16 @@ def calc_open_short_fp(
     return market_deltas, agent_deltas
 
 
-def calc_close_short_fp(
+def calc_close_short(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: time.StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     """
     When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
     The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
@@ -532,7 +532,7 @@ def calc_close_short_fp(
     check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
-    short_average_maturity_time = update_weighted_average_fp(
+    short_average_maturity_time = update_weighted_average(
         average=market_state.short_average_maturity_time,
         total_weight=market_state.shorts_outstanding,
         delta=annualized_position_duration,
@@ -541,7 +541,7 @@ def calc_close_short_fp(
     )
     d_short_average_maturity_time = short_average_maturity_time - market_state.short_average_maturity_time
     # Return the market and wallet deltas.
-    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas_fp(market_state, mint_time, bond_amount, "short")
+    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market_state, mint_time, bond_amount, "short")
     # TODO: remove this clamp when short withdrawal shares calculated
     # don't let short base volume go negative
     d_base_volume = FixedPointMath.maximum(d_base_volume, market_state.short_base_volume)
@@ -553,14 +553,14 @@ def calc_close_short_fp(
     margin_needs_to_be_freed = (
         market_state.total_supply_withdraw_shares > market_state.withdraw_shares_ready_to_withdraw
     )
-    withdraw_pool_deltas = MarketDeltasFP()
+    withdraw_pool_deltas = MarketDeltas()
     withdrawal_proceeds = share_payment
     if margin_needs_to_be_freed:
         proceeds_in_base = trade_result.user_result.d_base
         interest = FixedPoint(0)
         if proceeds_in_base >= lp_margin:
             interest = (proceeds_in_base - lp_margin) / market_state.share_price
-        withdraw_pool_deltas = calc_free_margin_fp(
+        withdraw_pool_deltas = calc_free_margin(
             market_state, withdrawal_proceeds - interest, lp_margin / open_share_price, interest
         )
         withdrawal_proceeds = withdraw_pool_deltas.withdraw_capital + withdraw_pool_deltas.withdraw_interest
@@ -569,12 +569,12 @@ def calc_close_short_fp(
     # the withdrawal pool from the pool's liquidity.
     share_reserves = market_state.share_reserves + share_reserves_delta
     bond_reserves = market_state.bond_reserves + bond_reserves_delta
-    adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves_fp(
+    adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves(
         share_reserves, bond_reserves, share_adjustment
     )
     share_reserves_delta = adjusted_share_reserves - market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market_state.bond_reserves
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=share_reserves_delta * market_state.share_price,
         d_bond_asset=bond_reserves_delta,
         d_bond_buffer=-bond_amount,
@@ -610,15 +610,15 @@ def calc_close_short_fp(
     return market_deltas, agent_deltas
 
 
-def calc_open_long_fp(
+def calc_open_long(
     wallet_address: int,
     base_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     """
     When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
@@ -671,7 +671,7 @@ def calc_open_long_fp(
     check_output_assertions(trade_result=trade_result)
     # Update accouting for average maturity time, base volume and longs outstanding
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
-    long_average_maturity_time = update_weighted_average_fp(
+    long_average_maturity_time = update_weighted_average(
         average=market_state.long_average_maturity_time,
         total_weight=market_state.longs_outstanding,
         delta=annualized_position_duration,
@@ -680,9 +680,9 @@ def calc_open_long_fp(
     )
     d_long_average_maturity_time = long_average_maturity_time - market_state.long_average_maturity_time
     # TODO: don't use 1 for time_remaining once we have checkpointing
-    base_volume = calculate_base_volume_fp(trade_result.market_result.d_base, base_amount, FixedPoint("1.0"))
+    base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, FixedPoint("1.0"))
     # Get the market and wallet deltas to return.
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=trade_result.user_result.d_bonds,
@@ -701,16 +701,16 @@ def calc_open_long_fp(
     return market_deltas, agent_deltas
 
 
-def calc_close_long_fp(
+def calc_close_long(
     wallet_address: int,
     bond_amount: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
@@ -780,7 +780,7 @@ def calc_close_long_fp(
     # Make sure the trade is valid
     # Update accouting for average maturity time, base volume and longs outstanding
     annualized_position_duration = position_duration.days / FixedPoint("365.0")
-    long_average_maturity_time = update_weighted_average_fp(
+    long_average_maturity_time = update_weighted_average(
         average=market_state.long_average_maturity_time,
         total_weight=market_state.longs_outstanding,
         delta=annualized_position_duration,
@@ -788,7 +788,7 @@ def calc_close_long_fp(
         is_adding=False,
     )
     d_long_average_maturity_time = long_average_maturity_time - market_state.long_average_maturity_time
-    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas_fp(market_state, mint_time, bond_amount, "long")
+    d_base_volume, d_checkpoints, lp_margin = calc_checkpoint_deltas(market_state, mint_time, bond_amount, "long")
     # get the share adjustment amount
     normalized_time_elapsed = (block_time - mint_time) / position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market_state.share_price
@@ -803,19 +803,19 @@ def calc_close_long_fp(
     margin_needs_to_be_freed = (
         market_state.total_supply_withdraw_shares > market_state.withdraw_shares_ready_to_withdraw
     )
-    withdraw_pool_deltas = MarketDeltasFP()
+    withdraw_pool_deltas = MarketDeltas()
     if margin_needs_to_be_freed:
         open_share_price = market_state.checkpoints[mint_time].long_share_price
         # The withdrawal pool has preferential access to the proceeds generated from closing longs.
         # The LP proceeds when longs are closed are equivalent to the proceeds of short positions.
-        withdrawal_proceeds = calc_short_proceeds_fp(
+        withdrawal_proceeds = calc_short_proceeds(
             bond_amount,
             share_proceeds,
             open_share_price,
             market_state.share_price,
             market_state.share_price,
         )
-        lp_interest = calc_short_interest_fp(
+        lp_interest = calc_short_interest(
             bond_amount,
             open_share_price,
             market_state.share_price,
@@ -827,7 +827,7 @@ def calc_close_long_fp(
         # Pay out the withdrawal pool with the freed margin. The withdrawal proceeds are split into
         # the margin pool and the interest pool. The proceeds that are distributed to the margin and
         # interest pools are removed from the pool's liquidity.
-        withdraw_pool_deltas = calc_free_margin_fp(
+        withdraw_pool_deltas = calc_free_margin(
             market_state,
             capital_freed,
             # TODO: make sure that the withdrawal shares are actually instantiated with the open
@@ -843,13 +843,13 @@ def calc_close_long_fp(
     # from the pool's liquidity.
     share_reserves = market_state.share_reserves + share_reserves_delta
     bond_reserves = market_state.bond_reserves + bond_reserves_delta
-    adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves_fp(
+    adjusted_share_reserves, adjusted_bond_reserves = calc_update_reserves(
         share_reserves, bond_reserves, share_adjustment
     )
     share_reserves_delta = adjusted_share_reserves - market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market_state.bond_reserves
     # Return the market and wallet deltas.
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=share_reserves_delta * market_state.share_price,
         d_bond_asset=bond_reserves_delta,
         d_base_buffer=-bond_amount,
@@ -871,7 +871,7 @@ def calc_close_long_fp(
     return market_deltas, agent_deltas
 
 
-def calc_update_reserves_fp(
+def calc_update_reserves(
     share_reserves: FixedPoint, bond_reserves: FixedPoint, share_reserves_delta: FixedPoint
 ) -> tuple[FixedPoint, FixedPoint]:
     """Calculates updates to the pool's liquidity and holds the pool's APR constant.
@@ -897,7 +897,7 @@ def calc_update_reserves_fp(
     return updated_share_reserves, updated_bond_reserves
 
 
-def calc_short_interest_fp(
+def calc_short_interest(
     bond_amount: FixedPoint, open_share_price: FixedPoint, close_share_price: FixedPoint, share_price: FixedPoint
 ) -> FixedPoint:
     """Calculates the interest in shares earned by a short position.
@@ -933,7 +933,7 @@ def calc_short_interest_fp(
     return share_interest
 
 
-def calc_short_proceeds_fp(
+def calc_short_proceeds(
     bond_amount: FixedPoint,
     share_amount: FixedPoint,
     open_share_price: FixedPoint,
@@ -982,15 +982,15 @@ def calc_short_proceeds_fp(
     return share_proceeds
 
 
-def calc_add_liquidity_fp(
+def calc_add_liquidity(
     wallet_address: int,
     base_in: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
     Arguments
@@ -1032,14 +1032,14 @@ def calc_add_liquidity_fp(
         time_remaining=position_duration,
     )
     # perform the trade
-    lp_out, d_base_reserves, d_bond_reserves = calc_lp_out_given_tokens_in_fp(
+    lp_out, d_base_reserves, d_bond_reserves = calc_lp_out_given_tokens_in(
         base_in=base_in,
         rate=rate,
         market_state=market_state,
         market_time=block_time,
         position_duration=position_duration,
     )
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=d_base_reserves,
         d_bond_asset=d_bond_reserves,
         d_lp_total_supply=lp_out,
@@ -1052,13 +1052,13 @@ def calc_add_liquidity_fp(
     return market_deltas, agent_deltas
 
 
-def calc_remove_liquidity_fp(
+def calc_remove_liquidity(
     wallet_address: int,
     lp_shares: FixedPoint,
-    market_state: hyperdrive_market.MarketStateFP,
+    market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTimeFP,
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
-) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+) -> tuple[MarketDeltas, wallet.WalletFP]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
     Arguments
@@ -1100,7 +1100,7 @@ def calc_remove_liquidity_fp(
     user_margin = user_margin * lp_shares / market_state.lp_total_supply
     withdraw_shares = user_margin / market_state.share_price
     # create and return the deltas
-    market_deltas = MarketDeltasFP(
+    market_deltas = MarketDeltas(
         d_base_asset=-delta_base,
         d_bond_asset=-delta_bonds,
         d_lp_total_supply=-lp_shares,
@@ -1115,12 +1115,12 @@ def calc_remove_liquidity_fp(
     return market_deltas, agent_deltas
 
 
-def calc_free_margin_fp(
-    market_state: hyperdrive_market.MarketStateFP,
+def calc_free_margin(
+    market_state: hyperdrive_market.MarketState,
     freed_capital: FixedPoint,
     max_capital: FixedPoint,
     interest: FixedPoint,
-) -> MarketDeltasFP:
+) -> MarketDeltas:
     r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
 
     Arguments
@@ -1142,7 +1142,7 @@ def calc_free_margin_fp(
     # If we don't have capital to free then simply return zero
     withdraw_share_supply = market_state.total_supply_withdraw_shares
     withdraw_shares_ready_to_withdraw = market_state.withdraw_shares_ready_to_withdraw
-    withdraw_pool_deltas = MarketDeltasFP()
+    withdraw_pool_deltas = MarketDeltas()
     if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
         return withdraw_pool_deltas
     # If we have more capital freed than needed we adjust down all values

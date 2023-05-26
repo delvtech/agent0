@@ -14,7 +14,7 @@ class SingleLongAgent(elf_agent.Agent):
     only has one long open at a time
     """
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Specify action"""
         longs = list(self.wallet.longs.values())
         has_opened_long = len(longs) > 0
@@ -26,7 +26,7 @@ class SingleLongAgent(elf_agent.Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=longs[-1].balance,
                             wallet=self.wallet,
@@ -39,7 +39,7 @@ class SingleLongAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketActionFP(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                         trade_amount=trade_amount,
                         wallet=self.wallet,

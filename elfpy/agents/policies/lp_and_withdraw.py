@@ -20,7 +20,7 @@ class LpAndWithdrawAgent(elf_agent.Agent):
         self.amount_to_lp = FixedPoint("100.0")
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """
         implement user strategy
         LP if you can, but only do it once
@@ -34,7 +34,7 @@ class LpAndWithdrawAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketActionFP(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                         trade_amount=self.amount_to_lp,
                         wallet=self.wallet,
@@ -47,7 +47,7 @@ class LpAndWithdrawAgent(elf_agent.Agent):
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                             trade_amount=self.wallet.lp_tokens,
                             wallet=self.wallet,

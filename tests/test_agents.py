@@ -43,7 +43,7 @@ class TestPolicy(elf_agent.Agent):
 class TestCaseGetMax:
     """Test case for get_max_long and get_max_short tests"""
 
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTimeFP
 
     __test__ = False  # pytest: don't test this class
@@ -107,9 +107,9 @@ class TestAgent(unittest.TestCase):
         # One more test agent that uses a test policy
         self.test_agent = TestPolicy(wallet_address=len(agent_policies))
         # Get a mock Market
-        self.market = hyperdrive_market.MarketFP(
+        self.market = hyperdrive_market.Market(
             pricing_model=hyperdrive_pm.HyperdrivePricingModelFP(),
-            market_state=hyperdrive_market.MarketStateFP(),
+            market_state=hyperdrive_market.MarketState(),
             position_duration=time.StretchedTimeFP(
                 days=FixedPoint("365.0"), time_stretch=FixedPoint("10.0"), normalizing_constant=FixedPoint("365.0")
             ),

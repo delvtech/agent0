@@ -24,7 +24,7 @@ class TestInitialize(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.MarketFP
+    hyperdrive: hyperdrive_market.Market
     block_time: BlockTimeFP
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP
 
@@ -40,8 +40,8 @@ class TestInitialize(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = BlockTimeFP()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_market.MarketStateFP()
-        self.hyperdrive = hyperdrive_market.MarketFP(
+        market_state = hyperdrive_market.MarketState()
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,

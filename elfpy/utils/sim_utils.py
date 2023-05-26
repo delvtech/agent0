@@ -101,7 +101,7 @@ def get_initialized_hyperdrive_market_fp(
     pricing_model: hyperdrive_pm.HyperdrivePricingModelFP,
     block_time: time.BlockTimeFP,
     config: simulators.ConfigFP,
-) -> tuple[hyperdrive_market.MarketFP, wallet.WalletFP, hyperdrive_actions.MarketDeltasFP]:
+) -> tuple[hyperdrive_market.Market, wallet.WalletFP, hyperdrive_actions.MarketDeltas]:
     r"""Setup market
 
     Arguments
@@ -139,10 +139,10 @@ def get_initialized_hyperdrive_market_fp(
         time_stretch=pricing_model.calc_time_stretch(FixedPoint(config.target_fixed_apr)),
         normalizing_constant=FixedPoint(config.num_position_days * 10**18),
     )
-    market = hyperdrive_market.MarketFP(
+    market = hyperdrive_market.Market(
         pricing_model=pricing_model,
         block_time=block_time,
-        market_state=hyperdrive_market.MarketStateFP(
+        market_state=hyperdrive_market.MarketState(
             init_share_price=FixedPoint(config.init_share_price),
             share_price=FixedPoint(config.init_share_price),
             variable_apr=FixedPoint(config.variable_apr[0]),

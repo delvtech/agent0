@@ -42,7 +42,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         r"""Computes the amount of LP tokens to be minted for a given amount of base asset
@@ -117,7 +117,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     def calc_in_given_out(
         self,
         out: types.QuantityFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
         r"""
@@ -320,7 +320,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
     def calc_out_given_in(
         self,
         in_: types.QuantityFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
         r"""
@@ -737,7 +737,7 @@ class YieldspacePricingModelFP(base_pm.PricingModelFP):
         ) ** time_elapsed
 
     def calc_tokens_out_given_lp_in(
-        self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketStateFP
+        self, lp_in: FixedPoint, market_state: hyperdrive_market.MarketState
     ) -> tuple[FixedPoint, FixedPoint]:
         """
         Calculates the amount of base shares and bonds released from burning a a specified amount of

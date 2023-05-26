@@ -46,7 +46,7 @@ class RandomAgent(elf_agent.Agent):
         # downselect from all actions to only include allowed actions
         return [action for action in all_available_actions if action not in disallowed_actions]
 
-    def open_short_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def open_short_with_random_amount(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Open a short with a random allowable amount"""
         initial_trade_amount = FixedPoint(
             self.rng.normal(loc=float(self.budget) * 0.1, scale=float(self.budget) * 0.01)
@@ -64,7 +64,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                     trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
@@ -72,7 +72,7 @@ class RandomAgent(elf_agent.Agent):
             )
         ]
 
-    def open_long_with_random_amount(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def open_long_with_random_amount(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Open a long with a random allowable amount"""
         # take a guess at the trade amount, which should be about 10% of the agent’s budget
         initial_trade_amount = FixedPoint(
@@ -91,7 +91,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.OPEN_LONG,
                     trade_amount=FixedPoint(trade_amount),
                     wallet=self.wallet,
@@ -111,7 +111,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.ADD_LIQUIDITY,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -131,7 +131,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -147,7 +147,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -164,7 +164,7 @@ class RandomAgent(elf_agent.Agent):
         return [
             types.Trade(
                 market=types.MarketType.HYPERDRIVE,
-                trade=hyperdrive_actions.MarketActionFP(
+                trade=hyperdrive_actions.MarketAction(
                     action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                     trade_amount=trade_amount,
                     wallet=self.wallet,
@@ -173,7 +173,7 @@ class RandomAgent(elf_agent.Agent):
             )
         ]
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Implement a random user strategy
 
         The agent performs one of four possible trades:

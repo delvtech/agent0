@@ -24,15 +24,15 @@ class MarketActionType(Enum):
 
 # all subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
 # TODO: Pylint disables will go away when we finalize FP refactor
-ActionFP = TypeVar("ActionFP", bound="MarketActionFP")  # pylint: disable=invalid-name
-DeltasFP = TypeVar("DeltasFP", bound="MarketDeltasFP")  # pylint: disable=invalid-name
-StateFP = TypeVar("StateFP", bound="BaseMarketStateFP")  # pylint: disable=invalid-name
-PricingModelFP = TypeVar("PricingModelFP", bound="base_pm.PricingModelFP")  # pylint: disable=invalid-name
+Action = TypeVar("ActionFP", bound="MarketActionFP")  # pylint: disable=invalid-name
+Deltas = TypeVar("DeltasFP", bound="MarketDeltasFP")  # pylint: disable=invalid-name
+State = TypeVar("StateFP", bound="BaseMarketStateFP")  # pylint: disable=invalid-name
+PricingModel = TypeVar("PricingModelFP", bound="base_pm.PricingModelFP")  # pylint: disable=invalid-name
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketActionFP(Generic[ActionFP]):
+class MarketAction(Generic[Action]):
     r"""Market action specification"""
 
     action_type: Enum  # these two variables are required to be set by the strategy
@@ -41,39 +41,39 @@ class MarketActionFP(Generic[ActionFP]):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltasFP:
+class MarketDeltas:
     r"""Specifies changes to values in the market"""
 
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketActionResultFP:
+class MarketActionResult:
     r"""The result to a market of performing a trade"""
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class BaseMarketStateFP:
+class BaseMarketState:
     r"""The state of an AMM
 
     Implements a class for all that that an AMM smart contract would hold or would have access to.
     For example, reserve numbers are local state variables of the AMM.
     """
 
-    def apply_delta(self, delta: MarketDeltasFP) -> None:
+    def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         raise NotImplementedError
 
-    def copy(self) -> BaseMarketStateFP:
+    def copy(self) -> BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
 
-    def check_valid_market_state(self, dictionary: dict | defaultdict) -> BaseMarketStateFP:
+    def check_valid_market_state(self, dictionary: dict | defaultdict) -> BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
 
 
-class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
+class Market(Generic[State, Deltas, PricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -83,8 +83,8 @@ class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
 
     def __init__(
         self,
-        pricing_model: PricingModelFP,
-        market_state: StateFP,
+        pricing_model: PricingModel,
+        market_state: State,
         block_time: time.BlockTimeFP,
     ):
         self.pricing_model = pricing_model
@@ -96,11 +96,11 @@ class MarketFP(Generic[StateFP, DeltasFP, PricingModelFP]):
         """Gets the most recent checkpoint time."""
         raise NotImplementedError
 
-    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, DeltasFP]:
+    def perform_action(self, action_details: tuple[int, Enum]) -> tuple[int, wallet.WalletFP, Deltas]:
         """Performs an action in the market without updating it."""
         raise NotImplementedError
 
-    def update_market(self, market_deltas: DeltasFP) -> None:
+    def update_market(self, market_deltas: Deltas) -> None:
         """Increments member variables to reflect current market conditions."""
         self.market_state.apply_delta(market_deltas)
         self.market_state.check_valid_market_state(self.market_state.__dict__)

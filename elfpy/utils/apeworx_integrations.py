@@ -58,7 +58,7 @@ class HyperdriveProject(ProjectManager):
         return self.hyperdrive_container.at(self.conversion_manager.convert(self.address, AddressType))
 
 
-def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketStateFP:
+def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
     r"""Return the current market state from the smart contract.
 
     Arguments
@@ -81,7 +81,7 @@ def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwar
     )
     total_supply_withdraw_shares = hyperdrive_contract.balanceOf(asset_id, hyperdrive_contract.address)
 
-    return hyperdrive_market.MarketStateFP(
+    return hyperdrive_market.MarketState(
         lp_total_supply=FixedPoint(pool_state["lpTotalSupply"]),
         share_reserves=FixedPoint(pool_state["shareReserves"]),
         bond_reserves=FixedPoint(pool_state["bondReserves"]),

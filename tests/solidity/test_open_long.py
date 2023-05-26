@@ -22,7 +22,7 @@ class TestOpenLong(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_market.MarketFP
+    hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTimeFP
 
     def setUp(self):
@@ -34,8 +34,8 @@ class TestOpenLong(unittest.TestCase):
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
         self.block_time = time.BlockTimeFP()
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_market.MarketStateFP()
-        self.hyperdrive = hyperdrive_market.MarketFP(
+        market_state = hyperdrive_market.MarketState()
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,
@@ -51,7 +51,7 @@ class TestOpenLong(unittest.TestCase):
     def verify_open_long(
         self,
         user: elf_agent.Agent,
-        market_state_before: hyperdrive_market.MarketStateFP,
+        market_state_before: hyperdrive_market.MarketState,
         contribution: FixedPoint,
         base_amount: FixedPoint,
         unsigned_bond_amount_out: FixedPoint,

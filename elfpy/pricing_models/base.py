@@ -27,7 +27,7 @@ class PricingModelFP(ABC):
     def calc_in_given_out(
         self,
         out: types.QuantityFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
         """Calculate fees and asset quantity adjustments"""
@@ -36,7 +36,7 @@ class PricingModelFP(ABC):
     def calc_out_given_in(
         self,
         in_: types.QuantityFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> trades.TradeResultFP:
         """Calculate fees and asset quantity adjustments"""
@@ -46,7 +46,7 @@ class PricingModelFP(ABC):
         self,
         d_base: FixedPoint,
         rate: FixedPoint,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Computes the amount of LP tokens to be minted for a given amount of base asset"""
@@ -55,7 +55,7 @@ class PricingModelFP(ABC):
     def calc_tokens_out_given_lp_in(
         self,
         lp_in: FixedPoint,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
     ) -> tuple[FixedPoint, FixedPoint, FixedPoint]:
         """Calculate how many tokens should be returned for a given lp addition"""
         raise NotImplementedError
@@ -72,7 +72,7 @@ class PricingModelFP(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTimeFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR for an initialized market
@@ -113,7 +113,7 @@ class PricingModelFP(ABC):
         self,
         target_apr: FixedPoint,
         time_remaining: time.StretchedTimeFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
     ) -> FixedPoint:
         """Returns the assumed bond (i.e. token asset) reserve amounts given
         the share (i.e. base asset) reserves and APR
@@ -153,7 +153,7 @@ class PricingModelFP(ABC):
 
     def calc_spot_price_from_reserves(
         self,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> FixedPoint:
         r"""Calculates the spot price of base in terms of bonds.
@@ -188,7 +188,7 @@ class PricingModelFP(ABC):
 
     def calc_apr_from_reserves(
         self,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> FixedPoint:
         r"""Returns the apr given reserve amounts
@@ -208,7 +208,7 @@ class PricingModelFP(ABC):
 
     def get_max_long(
         self,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -250,7 +250,7 @@ class PricingModelFP(ABC):
 
     def get_max_short(
         self,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ) -> tuple[FixedPoint, FixedPoint]:
         r"""
@@ -300,7 +300,7 @@ class PricingModelFP(ABC):
     def check_input_assertions(
         self,
         quantity: types.QuantityFP,
-        market_state: hyperdrive_market.MarketStateFP,
+        market_state: hyperdrive_market.MarketState,
         time_remaining: time.StretchedTimeFP,
     ):
         """Applies a set of assertions to the input of a trading function."""

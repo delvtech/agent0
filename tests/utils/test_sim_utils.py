@@ -43,9 +43,9 @@ class SimUtilsTest(unittest.TestCase):
                         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
                         market, _, _ = sim_utils.get_initialized_hyperdrive_market_fp(pricing_model, block_time, config)
                         # then construct it by hand
-                        market_direct = hyperdrive_market.MarketFP(
+                        market_direct = hyperdrive_market.Market(
                             pricing_model=market.pricing_model,
-                            market_state=hyperdrive_market.MarketStateFP(
+                            market_state=hyperdrive_market.MarketState(
                                 base_buffer=market.market_state.base_buffer,
                                 bond_buffer=market.market_state.bond_buffer,
                                 variable_apr=market.market_state.variable_apr,
@@ -65,7 +65,7 @@ class SimUtilsTest(unittest.TestCase):
                             ** (FixedPoint("1.0") / market_direct.position_duration.stretched_time)
                             - market_direct.market_state.share_price
                         )
-                        market_deltas = hyperdrive_actions.MarketDeltasFP(
+                        market_deltas = hyperdrive_actions.MarketDeltas(
                             d_base_asset=FixedPoint(target_liquidity),
                             d_bond_asset=bond_reserves,
                             d_lp_total_supply=market_direct.market_state.share_price * share_reserves + bond_reserves,

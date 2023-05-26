@@ -16,7 +16,7 @@ class CalcInGivenOutSuccessTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.QuantityFP
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
     days_remaining: FixedPoint
     time_stretch_apy: FixedPoint
 
@@ -48,7 +48,7 @@ class CalcInGivenOutFailureTestCase:
     """Dataclass for calc_in_given_out test cases"""
 
     out: types.QuantityFP
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTimeFP
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 
@@ -70,7 +70,7 @@ class CalcOutGivenInSuccessTestCase:
     """Dataclass for calc_out_given_in success test cases"""
 
     in_: types.QuantityFP
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
     days_remaining: FixedPoint
     time_stretch_apy: FixedPoint
 
@@ -102,7 +102,7 @@ class CalcOutGivenInFailureTestCase:
     """Dataclass for calc_out_given_in failure test cases"""
 
     in_: types.QuantityFP
-    market_state: hyperdrive_market.MarketStateFP
+    market_state: hyperdrive_market.MarketState
     time_remaining: time.StretchedTimeFP
     exception_type: Type[builtins.BaseException] | tuple[Type[builtins.BaseException], Type[builtins.BaseException]]
 

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class NoActionAgent(elf_agent.Agent):
     """Most basic policy setup, which implements a noop agent that performs no action"""
 
-    def action(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Returns an empty list, indicating now action"""
         # pylint disable=unused-argument
         return []

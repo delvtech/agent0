@@ -93,7 +93,7 @@ class BorrowingBeatrice(elf_agent.Agent):
         self.rng = rng
         super().__init__(wallet_address, budget)
 
-    def action(self, market: borrow.MarketFP) -> list[types.Trade]:
+    def action(self, market: borrow.Market) -> list[types.Trade]:
         """Implement a Borrowing Beatrice user strategy
 
         I take out loans when the interest rate is below a threshold
@@ -120,7 +120,7 @@ class BorrowingBeatrice(elf_agent.Agent):
             action_list = [
                 types.Trade(
                     market=types.MarketType.BORROW,
-                    trade=borrow.MarketActionFP(
+                    trade=borrow.MarketAction(
                         action_type=borrow.MarketActionType.OPEN_BORROW,
                         wallet=self.wallet,
                         collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
@@ -132,7 +132,7 @@ class BorrowingBeatrice(elf_agent.Agent):
             action_list = [
                 types.Trade(
                     market=types.MarketType.BORROW,
-                    trade=borrow.MarketActionFP(
+                    trade=borrow.MarketAction(
                         action_type=borrow.MarketActionType.CLOSE_BORROW,
                         wallet=self.wallet,
                         collateral=types.QuantityFP(amount=self.budget, unit=types.TokenType.BASE),
@@ -190,7 +190,7 @@ fig_size = (5, 5)
 output_utils.setup_logging(log_filename=config.log_filename, log_level=config.log_level)
 
 # %%
-market_state = borrow.MarketStateFP(
+market_state = borrow.MarketState(
     loan_to_value_ratio={types.TokenType.BASE: FixedPoint("0.97")},
     borrow_shares=FixedPoint(0),
     collateral={types.TokenType.BASE: FixedPoint(0)},
@@ -201,8 +201,8 @@ market_state = borrow.MarketStateFP(
     lending_rate=FixedPoint("0.01"),
     spread_ratio=FixedPoint("1.25"),
 )
-market = borrow.MarketFP(
-    pricing_model=borrow.PricingModelFP(), market_state=market_state, block_time=elf_time.BlockTimeFP()
+market = borrow.Market(
+    pricing_model=borrow.PricingModel(), market_state=market_state, block_time=elf_time.BlockTimeFP()
 )
 
 agents = {

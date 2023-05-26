@@ -34,10 +34,10 @@ class TestBorrow(unittest.TestCase):
                     types.TokenType.BASE: FixedPoint(loan_to_value / 100),
                     types.TokenType.PT: FixedPoint(loan_to_value / 100),
                 }
-                borrow = borrow_market.MarketFP(
-                    pricing_model=borrow_market.PricingModelFP(),
+                borrow = borrow_market.Market(
+                    pricing_model=borrow_market.PricingModel(),
                     block_time=time.BlockTimeFP(),
-                    market_state=borrow_market.MarketStateFP(loan_to_value_ratio=loan_to_value_ratios),
+                    market_state=borrow_market.MarketState(loan_to_value_ratio=loan_to_value_ratios),
                 )
                 market_deltas, agent_deltas = borrow.calc_open_borrow(
                     wallet_address=1,
@@ -69,10 +69,10 @@ class TestBorrow(unittest.TestCase):
         loan_to_value = FixedPoint("1.0")
 
         # borrow is always in DAI, this allows tracking the increasing value of loans over time
-        borrow = borrow_market.MarketFP(
-            pricing_model=borrow_market.PricingModelFP(),
+        borrow = borrow_market.Market(
+            pricing_model=borrow_market.PricingModel(),
             block_time=time.BlockTimeFP(),
-            market_state=borrow_market.MarketStateFP(
+            market_state=borrow_market.MarketState(
                 loan_to_value_ratio={types.TokenType.BASE: loan_to_value},
                 borrow_shares=FixedPoint("100.0"),
                 collateral={},

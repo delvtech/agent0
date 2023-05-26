@@ -2,7 +2,7 @@
 from elfpy.math import FixedPoint
 
 
-def update_weighted_average_fp(
+def update_weighted_average(
     average: FixedPoint,
     total_weight: FixedPoint,
     delta: FixedPoint,

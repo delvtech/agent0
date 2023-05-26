@@ -260,7 +260,7 @@ class RunSimVariablesFP:
     # initial wallets for the agents
     agent_init: list[wallet.WalletFP]
     # initial market state for this simulation run
-    market_init: hyperdrive_market.MarketStateFP
+    market_init: hyperdrive_market.MarketState
     # minimum time discretization for time step in years
     time_step: float
     # time lapse between token mint and expiry in years
@@ -316,7 +316,7 @@ class TradeSimVariablesFP:
     # trade being executed
     trade_action: types.Trade
     # deltas used to update the market state
-    market_deltas: hyperdrive_actions.MarketDeltasFP
+    market_deltas: hyperdrive_actions.MarketDeltas
     # address of the agent that is executing the trade
     agent_address: int
     # deltas used to update the market state
@@ -399,7 +399,7 @@ class SimulatorFP:
     def __init__(
         self,
         config: ConfigFP,
-        market: hyperdrive_market.MarketFP,
+        market: hyperdrive_market.Market,
         block_time: time.BlockTimeFP,
     ):
         # User specified variables
@@ -639,7 +639,7 @@ class SimulatorFP:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive_actions.MarketDeltasFP(
+                delta = hyperdrive_actions.MarketDeltas(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
                         / FixedPoint("365.0")  # convert annual yield to daily

@@ -16,7 +16,7 @@ class SingleShortAgent(elf_agent.Agent):
         self.amount_to_trade = budget
         super().__init__(wallet_address, budget)
 
-    def action(self, market: hyperdrive_market.MarketFP) -> List[types.Trade]:
+    def action(self, market: hyperdrive_market.Market) -> List[types.Trade]:
         """Implement user strategy: short if you can, only once."""
         action_list = []
         shorts = list(self.wallet.shorts.values())
@@ -26,7 +26,7 @@ class SingleShortAgent(elf_agent.Agent):
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketActionFP(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.OPEN_SHORT,
                         trade_amount=self.amount_to_trade,
                         wallet=self.wallet,

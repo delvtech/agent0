@@ -25,7 +25,7 @@ class TestCheckpoint(unittest.TestCase):
     alice: elf_agent.Agent
     bob: elf_agent.Agent
     celine: elf_agent.Agent
-    hyperdrive: hyperdrive_markets.MarketFP
+    hyperdrive: hyperdrive_markets.Market
     block_time: time.BlockTimeFP
 
     def setUp(self):
@@ -35,9 +35,9 @@ class TestCheckpoint(unittest.TestCase):
         self.block_time = time.BlockTimeFP()
 
         pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_markets.MarketStateFP()
+        market_state = hyperdrive_markets.MarketState()
 
-        self.hyperdrive = hyperdrive_markets.MarketFP(
+        self.hyperdrive = hyperdrive_markets.Market(
             pricing_model=pricing_model,
             market_state=market_state,
             block_time=self.block_time,

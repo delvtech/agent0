@@ -6,7 +6,7 @@ from elfpy.markets.hyperdrive import hyperdrive_actions, hyperdrive_market
 from elfpy.math import FixedPoint
 
 
-def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market.MarketFP) -> dict[str, FixedPoint]:
+def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market.Market) -> dict[str, FixedPoint]:
     r"""The wallet's current state of public variables
 
     .. todo:: This will go away once we finish refactoring the state
@@ -26,7 +26,7 @@ def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market
     longs_value_no_mock = FixedPoint(0)
     for mint_time, long in agent_wallet.longs.items():
         if long.balance > FixedPoint(0) and share_reserves:
-            balance = hyperdrive_actions.calc_close_long_fp(
+            balance = hyperdrive_actions.calc_close_long(
                 wallet_address=agent_wallet.address,
                 bond_amount=long.balance,
                 market_state=market.market_state,
@@ -50,7 +50,7 @@ def get_wallet_state_fp(agent_wallet: wallet.WalletFP, market: hyperdrive_market
             and share_reserves > FixedPoint(0)
             and market.market_state.bond_reserves - market.market_state.bond_buffer > short.balance
         ):
-            balance = hyperdrive_actions.calc_close_short_fp(
+            balance = hyperdrive_actions.calc_close_short(
                 wallet_address=agent_wallet.address,
                 bond_amount=short.balance,
                 market_state=market.market_state,

@@ -44,7 +44,7 @@ class Agent:
         else:  # agent was built in the namespace (e.g. a jupyter notebook)
             self.name = name.rsplit(".", maxsplit=1)[-1].split("'")[0]
 
-    def action(self, market: base_market.MarketFP) -> list[types.Trade]:
+    def action(self, market: base_market.Market) -> list[types.Trade]:
         r"""Abstract method meant to be implemented by the specific policy
 
         Specify action from the policy
@@ -64,7 +64,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate below the APR when opening the long
     # issue #213
-    def get_max_long(self, market: hyperdrive_market.MarketFP) -> FixedPoint:
+    def get_max_long(self, market: hyperdrive_market.Market) -> FixedPoint:
         """Gets an approximation of the maximum amount of base the agent can use
 
         Typically would be called to determine how much to enter into a long position.
@@ -91,7 +91,7 @@ class Agent:
     # TODO: this function should optionally accept a target apr.  the short should not slip the
     # market fixed rate above the APR when opening the short
     # issue #213
-    def get_max_short(self, market: hyperdrive_market.MarketFP) -> FixedPoint:
+    def get_max_short(self, market: hyperdrive_market.Market) -> FixedPoint:
         """Gets an approximation of the maximum amount of bonds the agent can short.
 
         Arguments
@@ -150,7 +150,7 @@ class Agent:
             last_maybe_max_short = max_short * bond_percent
         return last_maybe_max_short
 
-    def get_trades(self, market: base_market.MarketFP) -> list[types.Trade]:
+    def get_trades(self, market: base_market.Market) -> list[types.Trade]:
         """Helper function for computing a agent trade
 
         direction is chosen based on this logic:
@@ -185,7 +185,7 @@ class Agent:
         # issue #57
         return actions
 
-    def get_liquidation_trades(self, market: hyperdrive_market.MarketFP) -> list[types.Trade]:
+    def get_liquidation_trades(self, market: hyperdrive_market.Market) -> list[types.Trade]:
         """Get final trades for liquidating positions
 
         Arguments
@@ -206,7 +206,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_LONG,
                             trade_amount=long.balance,
                             wallet=self.wallet,
@@ -220,7 +220,7 @@ class Agent:
                 action_list.append(
                     types.Trade(
                         market=types.MarketType.HYPERDRIVE,
-                        trade=hyperdrive_actions.MarketActionFP(
+                        trade=hyperdrive_actions.MarketAction(
                             action_type=hyperdrive_actions.MarketActionType.CLOSE_SHORT,
                             trade_amount=short.balance,
                             wallet=self.wallet,
@@ -235,7 +235,7 @@ class Agent:
             action_list.append(
                 types.Trade(
                     market=types.MarketType.HYPERDRIVE,
-                    trade=hyperdrive_actions.MarketActionFP(
+                    trade=hyperdrive_actions.MarketAction(
                         action_type=hyperdrive_actions.MarketActionType.REMOVE_LIQUIDITY,
                         trade_amount=self.wallet.lp_tokens,
                         wallet=self.wallet,
@@ -254,7 +254,7 @@ class Agent:
             float(self.wallet.fees_paid) or 0,
         )
 
-    def log_final_report(self, market: hyperdrive_market.MarketFP) -> None:
+    def log_final_report(self, market: hyperdrive_market.Market) -> None:
         """Logs a report of the agent's state
 
         Arguments

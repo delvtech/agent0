@@ -27,7 +27,7 @@ class TestFees(unittest.TestCase):
     bob: elf_agent.Agent
     celine: elf_agent.Agent
     gary: elf_agent.Agent  # governance gary
-    hyperdrive: hyperdrive_market.MarketFP
+    hyperdrive: hyperdrive_market.Market
     block_time: time.BlockTimeFP
     term_length: FixedPoint
     trade_amount: FixedPoint
@@ -51,14 +51,14 @@ class TestFees(unittest.TestCase):
         self.gary = elf_agent.Agent(wallet_address=2, budget=FixedPoint(0))
         self.block_time = time.BlockTimeFP()
         self.pricing_model = hyperdrive_pm.HyperdrivePricingModelFP()
-        market_state = hyperdrive_market.MarketStateFP(
+        market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.1"),  # 0.1e18, // curveFee
             flat_fee_multiple=FixedPoint("0.1"),  # 0.1e18, //flatFee
             governance_fee_multiple=FixedPoint(gov_fee),  # 0.5e18, //govFee
         )
         super().__init__()
 
-        self.hyperdrive = hyperdrive_market.MarketFP(
+        self.hyperdrive = hyperdrive_market.Market(
             pricing_model=self.pricing_model,
             market_state=market_state,
             block_time=self.block_time,

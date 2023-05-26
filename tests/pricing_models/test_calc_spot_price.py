@@ -23,7 +23,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("500000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("1.0"),  # c
@@ -44,7 +44,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -65,7 +65,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("300000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -183,7 +183,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   1 share price; 1 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("500000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("1.0"),  # c
@@ -199,7 +199,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   90d elapsed; time_stretch=1; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("500000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c
@@ -215,7 +215,7 @@ class TestSpotPriceCalculations(unittest.TestCase):
             #   2 share price; 1.5 init_share_price
             #   180d elapsed; time_stretch=0.7; norm=365
             {
-                "market_state": hyperdrive_market.MarketStateFP(
+                "market_state": hyperdrive_market.MarketState(
                     share_reserves=FixedPoint("250000.0"),  # z
                     bond_reserves=FixedPoint("300000.0"),  # y
                     share_price=FixedPoint("2.0"),  # c

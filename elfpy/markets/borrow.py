@@ -21,7 +21,7 @@ class MarketActionType(Enum):
 
 @types.freezable(frozen=True, no_new_attribs=True)
 @dataclass
-class MarketDeltasFP(base_market.MarketDeltasFP):
+class MarketDeltas(base_market.MarketDeltas):
     r"""Specifies changes to values in the market"""
 
     d_borrow_shares: FixedPoint = FixedPoint("0.0")  # borrow is always in DAI
@@ -35,7 +35,7 @@ class MarketDeltasFP(base_market.MarketDeltasFP):
 
 @types.freezable(frozen=False, no_new_attribs=False)
 @dataclass
-class MarketStateFP(base_market.BaseMarketStateFP):
+class MarketState(base_market.BaseMarketState):
     r"""The state of an AMM
 
     Implements a class for all that an AMM smart contract would hold or would have access to
@@ -96,7 +96,7 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         """The amount of deposited asset in the market"""
         return {key: value * self.collateral_spot_price[key] for key, value in self.collateral.items()}
 
-    def apply_delta(self, delta: MarketDeltasFP) -> None:
+    def apply_delta(self, delta: MarketDeltas) -> None:
         r"""Applies a delta to the market state."""
         self.borrow_shares += delta.d_borrow_shares
         collateral_unit = delta.d_collateral.unit
@@ -105,9 +105,9 @@ class MarketStateFP(base_market.BaseMarketStateFP):
         else:  # key exists
             self.collateral[collateral_unit] += delta.d_collateral.amount
 
-    def copy(self) -> MarketStateFP:
+    def copy(self) -> MarketState:
         """Returns a new copy of self"""
-        return MarketStateFP(**self.__dict__)
+        return MarketState(**self.__dict__)
 
     def check_valid_market_state(self, dictionary: dict) -> None:
         """Test that all market state variables are greater than zero"""
@@ -122,7 +122,7 @@ class MarketStateFP(base_market.BaseMarketStateFP):
 
 @types.freezable(frozen=False, no_new_attribs=True)
 @dataclass
-class MarketActionFP(base_market.MarketActionFP):
+class MarketAction(base_market.MarketAction):
     r"""Market action specification"""
 
     # these two variables are required to be set by the strategy
@@ -132,7 +132,7 @@ class MarketActionFP(base_market.MarketActionFP):
     spot_price: FixedPoint | None = None
 
 
-class PricingModelFP(base_pm.PricingModelFP):
+class PricingModel(base_pm.PricingModelFP):
     """stores calculation functions use for the borrow market"""
 
     def value_collateral(
@@ -149,7 +149,7 @@ class PricingModelFP(base_pm.PricingModelFP):
         return collateral_value_in_base, borrow_amount_in_base
 
 
-class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelFP]):
+class Market(base_market.Market[MarketState, MarketDeltas, PricingModel]):
     r"""Market state simulator
 
     Holds state variables for market simulation and executes trades.
@@ -190,9 +190,9 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
     def initialize(
         self,
         wallet_address: int,
-    ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.WalletFP]:
         """Construct a borrow market."""
-        market_deltas = MarketDeltasFP()
+        market_deltas = MarketDeltas()
         borrow_summary = wallet.BorrowFP(
             borrow_token=types.TokenType.BASE,
             borrow_amount=FixedPoint(0),
@@ -204,7 +204,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         agent_deltas = wallet.WalletFP(address=wallet_address, borrows={FixedPoint(0): borrow_summary})
         return market_deltas, agent_deltas
 
-    def check_action(self, agent_action: MarketActionFP) -> None:
+    def check_action(self, agent_action: MarketAction) -> None:
         r"""Ensure that the agent action is an allowed action for this market
 
         Arguments
@@ -219,7 +219,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         if agent_action.action_type not in self.available_actions:
             raise ValueError(f"ERROR: agent_action.action_type must be in {self.available_actions=}")
 
-    def perform_action(self, action_details: tuple[int, MarketActionFP]) -> tuple[int, wallet.WalletFP, MarketDeltasFP]:
+    def perform_action(self, action_details: tuple[int, MarketAction]) -> tuple[int, wallet.WalletFP, MarketDeltas]:
         r"""
         Execute a trade in the Borrow Market
 
@@ -235,7 +235,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         # TODO: add use of the Quantity type to enforce units while making it clear what units are being used
         # issue 216
         self.check_action(agent_action)
-        market_deltas = MarketDeltasFP()
+        market_deltas = MarketDeltas()
         # for each position, specify how to formulate trade and then execute
         # current assumption is that the user will borrow the maximum LTV against the collateral they are offering
         if agent_action.action_type == MarketActionType.OPEN_BORROW:  # open a borrow position
@@ -264,7 +264,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         wallet_address: int,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.WalletFP]:
         """
         execute a borrow as requested by the agent, return the market and agent deltas
         agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them
@@ -277,7 +277,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         # market reserves are stored in shares, so we need to convert the amount to shares
         # borrow shares increase because they're being lent out
         # collateral increases because it's being deposited
-        market_deltas = MarketDeltasFP(
+        market_deltas = MarketDeltas(
             d_borrow_shares=borrow_amount_in_base / self.market_state.borrow_share_price,
             d_collateral=types.QuantityFP(
                 unit=collateral.unit,
@@ -304,7 +304,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         agent_wallet: wallet.WalletFP,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.WalletFP]:
         """Execute a borrow as requested by the agent and return the market and agent deltas.
         Agents decides what COLLATERAL to put IN then we calculate how much BASE OUT to give them.
         """
@@ -318,7 +318,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         wallet_address: int,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.WalletFP]:
         """
         close a borrow as requested by the agent, return the market and agent deltas
         agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it)
@@ -332,7 +332,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         # borrow shares increases because it's being repaid
         # collateral decreases because it's being sent back to the agent
         # TODO: why don't we decrease collateral amount?
-        market_deltas = MarketDeltasFP(
+        market_deltas = MarketDeltas(
             d_borrow_shares=-borrow_amount_in_base / self.market_state.borrow_share_price, d_collateral=-collateral
         )
         borrow_summary = wallet.BorrowFP(
@@ -355,7 +355,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
         agent_wallet: wallet.WalletFP,
         collateral: types.QuantityFP,  # in amount of collateral type (BASE or PT)
         spot_price: FixedPoint | None = None,
-    ) -> tuple[MarketDeltasFP, wallet.WalletFP]:
+    ) -> tuple[MarketDeltas, wallet.WalletFP]:
         """Close a borrow as requested by the agent and return the market and agent deltas.
         Agent asks for COLLATERAL OUT and we tell them how much BASE to put IN (then check if they have it).
         """
@@ -370,7 +370,7 @@ class MarketFP(base_market.MarketFP[MarketStateFP, MarketDeltasFP, PricingModelF
             price_multiplier = self.market_state.borrow_share_price
         else:  # Apply return to starting price (no compounding)
             price_multiplier = self.market_state.init_borrow_share_price
-        delta = MarketDeltasFP(
+        delta = MarketDeltas(
             d_borrow_share_price=(
                 self.borrow_rate
                 / FixedPoint("365.0")
