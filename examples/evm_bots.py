@@ -363,7 +363,7 @@ def get_config(args) -> simulators.Config:
     if args.fork_port:
         config.scratch["provider_settings"].update({"port": args.fork_port})
     if args.devnet:
-        with open(artifacts_dir / "addresses.json", "r", encoding="utif-8") as file:
+        with open(artifacts_dir / "addresses.json", "r", encoding="utf-8") as file:
             addresses = json.load(file)
         if "baseToken" in addresses:
             config.scratch["base_address"] = addresses["baseToken"]
