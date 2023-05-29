@@ -20,8 +20,9 @@ from typing import Type, cast
 import ape
 import numpy as np
 from ape import accounts
-from ape.api import ProviderAPI, ReceiptAPI, TestAccountAPI
+from ape.api import ProviderAPI, ReceiptAPI
 from ape.contracts import ContractInstance
+from ape.logging import logger as ape_logger
 from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
@@ -267,7 +268,11 @@ def get_argparser() -> argparse.ArgumentParser:
         default=0.1,
         type=float,
     )
-    parser.add_argument("--devnet", help="Run on devnet", action="store_false")  # store_false because default is True
+    parser.add_argument("--alchemy", help="Use Alchemy as a provider", action="store_true")  # default is false
+
+    parser.add_argument("--devnet", help="Run on devnet", action="store_true")  # stroe_true because default is false
+    parser.add_argument("--fork_url", help="Override for url to fork from", default=None, type=str)
+    parser.add_argument("--fork_port", help="Override for port for fork to use", default=None, type=int)
     return parser
 
 
@@ -314,12 +319,15 @@ def get_config() -> simulators.Config:
     """Set _config values for the experiment."""
     load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
     args = get_argparser().parse_args()
+    ape_logger.set_level(logging.ERROR)
     config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
     random_seed_file = f".logging/random_seed{'_devnet' if args.devnet else ''}.txt"
     if os.path.exists(random_seed_file):
         with open(random_seed_file, "r", encoding="utf-8") as file:
             config.random_seed = int(file.read()) + 1
+    else:  # make parent directory if it doesn't exist
+        os.makedirs(os.path.dirname(random_seed_file), exist_ok=True)
     logging.info("Random seed=%s", config.random_seed)
     with open(random_seed_file, "w", encoding="utf-8") as file:
         file.write(str(config.random_seed))
@@ -332,13 +340,38 @@ def get_config() -> simulators.Config:
     config.log_filename += "_devnet" if args.devnet else ""
 
     # Custom parameters for this experiment
+    # invariants
     config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=config.scratch["trade_chance"])
     config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=config.scratch["trade_chance"])
     config.scratch["random"] = BotInfo(policy=random_agent.RandomAgent, trade_chance=config.scratch["trade_chance"])
     config.scratch["bot_names"] = {"louie", "frida", "random"}
     config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
+    # inputs
     config.scratch["devnet"] = args.devnet
     config.scratch["crash_file"] = f".logging/no_crash_streak{'_devnet' if args.devnet else ''}.txt"
+    config.scratch["in_docker"] = os.path.exists("/.dockerenv")
+    config.scratch["network_choice"] = "ethereum:local:foundry"
+    if args.alchemy:
+        config.scratch["network_choice"] = "ethereum:goerli:alchemy"
+    config.scratch["provider_settings"] = {}
+    if args.fork_url:
+        config.scratch["provider_settings"].update({"fork_url": args.fork_url})
+    if args.fork_port:
+        config.scratch["provider_settings"].update({"port": args.fork_port})
+    if args.devnet:
+        with open(
+            (Path.cwd() if Path.cwd().name == "examples" else Path.cwd()) / "artifacts" / "addresses.json",
+            "r",
+            encoding="utf-8",
+        ) as file:
+            addresses = json.load(file)
+        if "baseToken" in addresses:
+            config.scratch["base_address"] = addresses["baseToken"]
+            log_and_show(f"found devnet base address: {config.scratch['base_address']}")
+        if "hyperdrive" in addresses:
+            config.scratch["hyperdrive_address"] = addresses["hyperdrive"]
+            log_and_show(f"found devnet hyperdrive address: {config.scratch['hyperdrive_address']}")
+
     config.scratch["faucet_address"] = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
     config.scratch["no_crash_streak"] = 0
     config.scratch["last_executed_block"] = 0
@@ -552,48 +585,46 @@ def log_and_show_block_info(experiment_config):
     )
 
 
-def get_simulator(config: simulators.Config) -> simulators.Simulator:
-    """Get a python simulator."""
-    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
-    block_time_ = time.BlockTime()
-    market, _, _ = sim_utils.get_initialized_hyperdrive_market(pricing_model, block_time_, config)
-    return simulators.Simulator(config, market, block_time_)
+def get_simulator(experiment_config: simulators.Config) -> simulators.Simulator:
+    """Instantiate and return an initialized elfpy Simulator object."""
+    market, _, _ = sim_utils.get_initialized_hyperdrive_market(
+        pricing_model=experiment_config.scratch["pricing_model"], block_time=time.BlockTime(), config=experiment_config
+    )
+    return simulators.Simulator(experiment_config, market, time.BlockTime())
 
 
-def deploy_hyperdrive(
-    experiment_config: simulators.Config,
-    deployer: TestAccountAPI,
-    base_contract: ContractInstance,
-    project: ape_utils.HyperdriveProject,
-) -> ContractInstance:
+def deploy_hyperdrive(experiment_config: simulators.Config) -> ContractInstance:
     """Deploy Hyperdrive when operating on a fresh fork."""
-    assert isinstance(deployer, TestAccountAPI)
     initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
     initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
-    initial_share_price = FixedPoint(experiment_config.init_share_price, decimal_places=18)
-    checkpoint_duration = FixedPoint(unscaled_value=86400)
-    checkpoints_per_term = FixedPoint(unscaled_value=365)
     simulator = get_simulator(experiment_config)  # Instantiate the sim market
-    time_stretch = FixedPoint(FixedPoint("1.0") / simulator.market.time_stretch_constant, decimal_places=18)
-    curve_fee = FixedPoint(experiment_config.curve_fee_multiple, decimal_places=18)
-    flat_fee = FixedPoint(experiment_config.flat_fee_multiple, decimal_places=18)
-    gov_fee = FixedPoint(0)
-    base_contract.mint(initial_supply.scaled_value, sender=deployer)  # minted to sender
-    # Deploy hyperdrive on the chain
-    hyperdrive: ContractInstance = deployer.deploy(
-        project.get_contract("MockHyperdriveTestnet"),
-        base_contract,
-        initial_apr.scaled_value,
-        initial_share_price.scaled_value,
-        checkpoints_per_term,
-        checkpoint_duration,
-        time_stretch.scaled_value,
-        (curve_fee.scaled_value, flat_fee.scaled_value, gov_fee.scaled_value),
-        deployer,
+    experiment_config.scratch["base_instance"].mint(
+        initial_supply.scaled_value,
+        sender=experiment_config.scratch["deployer_account"],  # minted amount goes to sender
     )
-    with ape.accounts.use_sender(deployer):
-        base_contract.approve(hyperdrive, initial_supply.scaled_value)
-        hyperdrive.initialize(initial_supply.scaled_value, initial_apr.scaled_value, deployer, True)
+    hyperdrive: ContractInstance = experiment_config.scratch["deployer_account"].deploy(
+        experiment_config.scratch["project"].get_contract("MockHyperdriveTestnet"),
+        experiment_config.scratch["base_instance"],
+        initial_apr.scaled_value,
+        experiment_config.init_share_price * 1e18,
+        365,  # checkpoints per term
+        86400,  # checkpoint duration in seconds (1 day)
+        (1 / simulator.market.time_stretch_constant) * 1e18,  # time stretch in solidity format (inverted)
+        (
+            experiment_config.curve_fee_multiple * 1e18,
+            experiment_config.flat_fee_multiple * 1e18,
+            experiment_config.gov_fee * 1e18,
+        ),
+        experiment_config.scratch["deployer_account"],
+    )
+    with ape.accounts.use_sender(experiment_config.scratch["deployer_account"]):
+        experiment_config.scratch["base_instance"].approve(hyperdrive, initial_supply.scaled_value)
+        hyperdrive.initialize(
+            initial_supply.scaled_value,
+            initial_apr.scaled_value,
+            experiment_config.scratch["deployer_account"],
+            True,
+        )
     return hyperdrive
 
 
@@ -613,41 +644,43 @@ def set_up_ape(experiment_config) -> simulators.Config:
     """
     # sourcery skip: inline-variable, move-assign
     experiment_config.scratch["deployer_account"] = None
-    use_alchemy = False
-    provider_string = "goerli:alchemy" if use_alchemy else "goerli:http://localhost:8547"
+    experiment_config.scratch["provider"]: ProviderAPI = ape.networks.parse_network_choice(
+        network_choice=experiment_config.scratch["network_choice"],
+        provider_settings=experiment_config.scratch["provider_settings"],
+    ).push_provider()
+    log_and_show(
+        "connected to %s, latest block %s",
+        "devnet" if experiment_config.scratch["devnet"] else experiment_config.scratch["network_choice"],
+        experiment_config.scratch["provider"].get_block("latest").number,
+    )
+    project = ape_utils.HyperdriveProject(Path.cwd())
 
     if experiment_config.scratch["devnet"]:  # if devnet setting is enabled
-        experiment_config.scratch["provider"]: ProviderAPI = ape.networks.parse_network_choice(
-            "ethereum:local:foundry", provider_settings={"port": 8549}
-        ).push_provider()
         experiment_config.scratch["deployer_account"] = ape.accounts.test_accounts[0]
         experiment_config.scratch["deployer_account"].balance += int(1e18)  # eth, for spending on gas, not erc20
-        print(
-            f"connected to devnet fork, latest block "
-            f"{experiment_config.scratch['provider'].get_block('latest').number:,.0f}"
-        )
-    else:
-        experiment_config.scratch["provider"]: ProviderAPI = ape.networks.parse_network_choice(
-            f"ethereum:{provider_string}"
-        ).push_provider()
-    project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(Path.cwd())
-    if experiment_config.scratch["devnet"]:
-        assert isinstance(experiment_config.scratch["deployer_account"], TestAccountAPI)
-        experiment_config.scratch["base_instance"]: ContractInstance = experiment_config.scratch[
-            "deployer_account"
-        ].deploy(project.get_contract("ERC20Mintable"))
-    else:  # not on devnet, means we're on goerli, so we use the goerli sDai address
+        if experiment_config.scratch["base_address"]:  # use existing base token deployment
+            experiment_config.scratch["base_instance"] = ape_utils.get_instance(
+                address=experiment_config.scratch["base_address"],
+                contract_type=project.get_contract("ERC20Mintable").contract_type,
+                provider=experiment_config.scratch["provider"],
+            )
+        else:  # deploy a new base token
+            experiment_config.scratch["base_instance"]: ContractInstance = experiment_config.scratch[
+                "deployer_account"
+            ].deploy(project.get_contract("ERC20Mintable"))
+        if experiment_config.scratch["hyperdrive_address"]:  # use existing hyperdrive deployment
+            experiment_config.scratch["hyperdrive_instance"]: ContractInstance = ape_utils.get_instance(
+                address=experiment_config.scratch["hyperdrive_address"],
+                contract_type=project.get_contract("MockHyperdriveTestnet").contract_type,
+                provider=experiment_config.scratch["provider"],
+            )
+        else:  # deploy a new hyperdrive
+            experiment_config.scratch["hyperdrive_instance"]: ContractInstance = deploy_hyperdrive(experiment_config)
+    else:  # not on devnet, means we're on goerli, so we use known goerli addresses
         experiment_config.scratch["base_instance"]: ContractInstance = ape_utils.get_instance(
-            "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844", provider=experiment_config.scratch["provider"]
+            experiment_config.scratch["0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"],
+            provider=experiment_config.scratch["provider"],
         )
-    if experiment_config.scratch["devnet"]:
-        experiment_config.scratch["hyperdrive_instance"]: ContractInstance = deploy_hyperdrive(
-            experiment_config,
-            experiment_config.scratch["deployer_account"],
-            experiment_config.scratch["base_instance"],
-            project,
-        )
-    else:  # not on devnet, means we're on goerli, so we use the goerli hyperdrive address
         experiment_config.scratch["hyperdrive_instance"]: ContractInstance = project.get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
