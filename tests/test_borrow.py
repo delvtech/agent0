@@ -24,10 +24,12 @@ class TestBorrow(unittest.TestCase):
         for loan_to_value, collateral_exponent, collateral_token in itertools.product(
             range(1, 100, 5), range(0, 8, 2), [types.TokenType.BASE, types.TokenType.PT]
         ):
-            spot_price_range = [1]
             if collateral_token == types.TokenType.PT:
                 spot_price_range = np.arange(0.01, 1.01, 0.05)
+            else:
+                spot_price_range = np.array([1.0])
             for spot_price in spot_price_range:
+                spot_price = spot_price.item()  # convert from Numpy type to Python type
                 collateral_amount = FixedPoint(10**collateral_exponent)
                 collateral = types.Quantity(unit=collateral_token, amount=collateral_amount)
                 loan_to_value_ratios = {
