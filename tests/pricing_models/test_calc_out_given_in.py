@@ -1690,7 +1690,6 @@ class TestCalcOutGivenIn(unittest.TestCase):
         # Verify that the pricing model raises the expected exception type for
         # each test case.
         for test_number, test_case in enumerate(failure_test_cases):
-            print(f"{test_number=}")
             logging.info("test_number=%g", test_number)
             for pricing_model in pricing_models:
                 # TODO: convert these tests to use total supply, not the approximation

@@ -327,7 +327,7 @@ def get_example_agents(
                     loc=experiment_config.scratch["frida_risk_mean"], scale=experiment_config.scratch["frida_risk_std"]
                 ),
             ),
-        ).item()
+        ).item()  # convert to Python type
         budget = FixedPoint(
             np.maximum(
                 experiment_config.scratch["frida_budget_min"],
