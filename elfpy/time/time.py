@@ -9,7 +9,8 @@ from elfpy.math import FixedPoint, FixedPointMath
 class TimeUnit(Enum):
     r"""Time units, with their parts in a year
 
-    FP values are stored as parts in a year as FixedPoint 18 decimal integers"""
+    FP values are stored as parts in a year as FixedPoint with 18 decimal integers
+    """
     SECONDS = FixedPoint(31_556_952)
     MINUTES = FixedPoint(525_600)
     HOURS = FixedPoint(8_760)
