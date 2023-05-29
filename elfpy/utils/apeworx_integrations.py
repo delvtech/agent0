@@ -39,13 +39,14 @@ if TYPE_CHECKING:
 class HyperdriveProject(ProjectManager):
     """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
-    hyperdrive_container: ContractContainer
-    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
+    hyperdrive_address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2" # goerli deployment from April 2023
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, hyperdrive_address: str = None) -> None:
         """Initialize the project, loading the Hyperdrive contract."""
         if path.name == "examples":  # if in examples folder, move up a level
             path = path.parent
+        if hyperdrive_address is not None:
+            self.hyperdrive_address = hyperdrive_address
         super().__init__(path)
         self.load_contracts()
         try:
@@ -55,7 +56,7 @@ class HyperdriveProject(ProjectManager):
 
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
-        return self.hyperdrive_container.at(self.conversion_manager.convert(self.address, AddressType))
+        return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
 
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
