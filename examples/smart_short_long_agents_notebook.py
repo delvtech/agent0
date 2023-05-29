@@ -327,7 +327,7 @@ def get_example_agents(
                     loc=experiment_config.scratch["frida_risk_mean"], scale=experiment_config.scratch["frida_risk_std"]
                 ),
             ),
-        )
+        ).item()
         budget = FixedPoint(
             np.maximum(
                 experiment_config.scratch["frida_budget_min"],
@@ -338,7 +338,7 @@ def get_example_agents(
                         scale=experiment_config.scratch["frida_budget_std"],
                     ),
                 ),
-            )
+            ).item()  # convert to Python type
         )
         agent = FixedFrida(
             rng=rng,
@@ -362,7 +362,7 @@ def get_example_agents(
                         scale=experiment_config.scratch["louie_budget_std"],
                     ),
                 ),
-            )
+            ).item()  # convert to Python type
         )
         agent = LongLouie(
             rng=rng,
@@ -399,6 +399,8 @@ trading_agents = get_example_agents(
 simulator.add_agents(trading_agents)
 print(f"Simulator has {len(simulator.agents)} agents")
 
+
+# %%
 # run the simulation
 simulator.run_simulation()
 
