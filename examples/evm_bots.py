@@ -338,7 +338,7 @@ def get_config() -> simulators.Config:
         else:
             config.scratch[key] = value
     config.log_filename += "_devnet" if args.devnet else ""
-    
+
     # Custom parameters for this experiment
     # invariants
     config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
@@ -378,7 +378,7 @@ def set_up_devnet_addresses(config):
     os.makedirs(os.path.dirname(config.scratch["address_file"]), exist_ok=True)
     config.scratch["addresses"] = {}
     if Path.exists(config.scratch["address_file"]):
-        with open(config.scratch["address_file"],"r",encoding="utf-8",) as file:
+        with open(config.scratch["address_file"], "r", encoding="utf-8") as file:
             config.scratch["addresses"] = json.load(file)
     if "baseToken" in config.scratch["addresses"]:
         config.scratch["base_address"] = config.scratch["addresses"]["baseToken"]
@@ -548,13 +548,12 @@ def do_trade(market_trade: types.Trade, experiment_config):
     # market_type = trade_obj.market
     trade = market_trade.trade
     agent_contract = experiment_config.scratch["sim_agents"][f"agent_{trade.wallet.address}"].contract
-    amount = trade.trade_amount.scaled_value
+    amount = trade.trade_amount.scaled_value  # ape works with ints
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
     if (
         experiment_config.scratch["base_instance"].allowance(
-            agent_contract.address,
-            experiment_config.scratch["hyperdrive_instance"].address
+            agent_contract.address, experiment_config.scratch["hyperdrive_instance"].address
         )
         < amount
     ):
@@ -572,6 +571,12 @@ def do_trade(market_trade: types.Trade, experiment_config):
     }
     if trade.action_type.name in ["CLOSE_LONG", "CLOSE_SHORT"]:
         params["maturity_time"] = int(trade.mint_time + elfpy.SECONDS_IN_YEAR)
+    log_and_show(
+        f" agent_{agent_contract.address[:8]} has"
+        f" Eth={fmt(agent_contract.balance/1e18)}"
+        f" Base={fmt(experiment_config.scratch['base_instance'].balanceOf(agent_contract.address)/1e18)}"
+    )
+
     _, _ = ape_utils.ape_trade(**params)
 
 
@@ -622,7 +627,9 @@ def deploy_hyperdrive(experiment_config: simulators.Config) -> ContractInstance:
         FixedPoint(experiment_config.init_share_price).scaled_value,
         365,  # checkpoints per term
         86400,  # checkpoint duration in seconds (1 day)
-        (FixedPoint("1.0") / (simulator.market.time_stretch_constant)).scaled_value,  # time stretch in solidity format (inverted)
+        (
+            FixedPoint("1.0") / (simulator.market.time_stretch_constant)
+        ).scaled_value,  # time stretch in solidity format (inverted)
         (
             FixedPoint(experiment_config.curve_fee_multiple).scaled_value,
             FixedPoint(experiment_config.flat_fee_multiple).scaled_value,
@@ -669,7 +676,7 @@ def set_up_ape(experiment_config) -> simulators.Config:
     experiment_config.scratch["project"]: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
         hyperdrive_address=experiment_config.scratch["goerli_hyperdrive_address"],  # ignored on devnet
-        )
+    )
 
     if experiment_config.scratch["devnet"]:  # we're on devnet
         experiment_config.scratch["deployer_account"] = ape.accounts.test_accounts[0]
@@ -693,7 +700,9 @@ def set_up_ape(experiment_config) -> simulators.Config:
             )
         else:  # deploy a new hyperdrive
             experiment_config.scratch["hyperdrive_instance"]: ContractInstance = deploy_hyperdrive(experiment_config)
-            experiment_config.scratch["addresses"]["hyperdrive"] = experiment_config.scratch["hyperdrive_instance"].address
+            experiment_config.scratch["addresses"]["hyperdrive"] = experiment_config.scratch[
+                "hyperdrive_instance"
+            ].address
         with open(experiment_config.scratch["address_file"], "w", encoding="utf-8") as file:
             json.dump(experiment_config.scratch["addresses"], file)
     else:  # not on devnet, means we're on goerli, so we use known goerli addresses
@@ -701,7 +710,9 @@ def set_up_ape(experiment_config) -> simulators.Config:
             experiment_config.scratch[experiment_config.scratch["goerli_sdai_address"]],
             provider=experiment_config.scratch["provider"],
         )
-        experiment_config.scratch["hyperdrive_instance"]: ContractInstance = experiment_config.scratch["project"].get_hyperdrive_contract()
+        experiment_config.scratch["hyperdrive_instance"]: ContractInstance = experiment_config.scratch[
+            "project"
+        ].get_hyperdrive_contract()
 
     # read the hyperdrive config from the contract, and log (and print) it
     experiment_config.scratch["hyperdrive_config"]: dict = (
@@ -729,6 +740,7 @@ def do_policy(policy, elfpy_market, experiment_config):
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
             set_days_without_crashing(experiment_config, 0)  # set and save to file
+            raise exc
 
 
 def create_elfpy_market(experiment_config):
