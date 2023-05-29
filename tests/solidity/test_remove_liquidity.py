@@ -22,7 +22,6 @@ class TestRemoveLiquidity(unittest.TestCase):
     bob: elf_agent.Agent
     celine: elf_agent.Agent
     hyperdrive: hyperdrive_market.Market
-    block_time: time.BlockTime
 
     def setUp(self):
         """Set up agent, pricing model, & market for the subsequent tests.
@@ -31,7 +30,6 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.alice = elf_agent.Agent(wallet_address=0, budget=self.contribution)
         self.bob = elf_agent.Agent(wallet_address=1, budget=self.contribution)
         self.celine = elf_agent.Agent(wallet_address=2, budget=self.contribution)
-        self.block_time = time.BlockTime()
         pricing_model = hyperdrive_pm.HyperdrivePricingModel()
         market_state = hyperdrive_market.MarketState(
             curve_fee_multiple=FixedPoint("0.0"),
@@ -45,7 +43,7 @@ class TestRemoveLiquidity(unittest.TestCase):
                 time_stretch=pricing_model.calc_time_stretch(self.target_apr),
                 normalizing_constant=self.term_length,
             ),
-            block_time=self.block_time,
+            block_time=time.BlockTime(),
         )
         _, wallet_deltas = self.hyperdrive.initialize(self.alice.wallet.address, self.contribution, self.target_apr)
         self.alice.wallet.update(wallet_deltas)
@@ -65,7 +63,7 @@ class TestRemoveLiquidity(unittest.TestCase):
 
         # advance time and let interest accrue
         time_delta = FixedPoint("1.0")
-        self.block_time.set_time(time_delta, unit=time.TimeUnit.YEARS)
+        self.hyperdrive.block_time.set_time(time_delta, unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
@@ -91,7 +89,7 @@ class TestRemoveLiquidity(unittest.TestCase):
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
-        self.block_time.set_time(FixedPoint("1.0"), unit=time.TimeUnit.YEARS)
+        self.hyperdrive.block_time.set_time(FixedPoint("1.0"), unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
@@ -128,11 +126,12 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, delta=self.APPROX_EQ)
 
     def test_remove_liquidity_short_trade(self):
-        """Should remove liquidity if there are open shorts"""
+        """Remove liquidity if there are open shorts."""
+
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
-        self.block_time.set_time(FixedPoint("0.05"), unit=time.TimeUnit.YEARS)
+        self.hyperdrive.block_time.set_time(FixedPoint("0.05"), unit=time.TimeUnit.YEARS)
 
         # compund interest = p * e ^(rate * time)
         # we advance by one year, and the rate is .05 / year
@@ -143,10 +142,14 @@ class TestRemoveLiquidity(unittest.TestCase):
         short_amount_bonds = FixedPoint("50_000_000.0")
         _, wallet_deltas = self.hyperdrive.open_short(self.bob.wallet, short_amount_bonds)
         base_paid = abs(wallet_deltas.balance.amount)
+        self.assertAlmostEqual(base_paid, FixedPoint(scaled_value=2519919637210444767879702), delta=self.APPROX_EQ)
 
         # alice removes all liquidity
         _, remove_wallet_deltas = self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens)
         base_proceeds = remove_wallet_deltas.balance.amount
+        self.assertAlmostEqual(
+            base_proceeds, FixedPoint(scaled_value=453771483440107986796265268), delta=self.APPROX_EQ
+        )
 
         # make sure all alice's lp tokens were burned
         self.assertEqual(self.alice.wallet.lp_tokens, FixedPoint(0))

@@ -76,7 +76,8 @@ class FixedPoint:
             else:  # string must be a float or int representation
                 if not self._is_valid_number(unscaled_value):
                     raise ValueError(
-                        f"string argument {unscaled_value=} must be a float string, e.g. '1.0', for the FixedPoint constructor"
+                        f"string argument {unscaled_value=} must be a float string"
+                        ", e.g. '1.0', for the FixedPoint constructor"
                     )
                 if "." not in unscaled_value:  # input is always assumed to be a float
                     unscaled_value += ".0"

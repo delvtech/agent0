@@ -245,7 +245,7 @@ class Market(
         .. todo:: This should work with the same math as in solidity, but for some reason does not.
         The version below is set up to match the float version, but might be wrong?
         """
-        block_time_days = int(self.block_time.time) * 365
+        block_time_days = self.block_time.time * 365
         latest_checkpoint_days = FixedPoint(
             block_time_days - block_time_days % int(self.market_state.checkpoint_duration_days)
         )
