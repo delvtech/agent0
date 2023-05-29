@@ -405,7 +405,11 @@ def calc_open_short(
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
     open_share_price = market_state.checkpoints[latest_checkpoint_time].share_price
     trader_deposit = calc_short_proceeds(
-        bond_amount, share_proceeds, open_share_price, market_state.share_price, market_state.share_price
+        bond_amount=bond_amount,
+        share_amount=share_proceeds,
+        open_share_price=open_share_price,
+        close_share_price=market_state.share_price,
+        share_price=market_state.share_price,
     )
     # get gov fees accrued
     market_state.gov_fees_accrued += trade_result.breakdown.gov_fee
@@ -427,9 +431,9 @@ def calc_open_short(
     base_volume = calculate_base_volume(trade_result.user_result.d_base, bond_amount, FixedPoint("1.0"))
     # Calculate what the updated bond reserves would be with constant apr
     _, updated_bond_reserves = calc_update_reserves(
-        market_state.share_reserves + share_reserves_delta,
-        market_state.bond_reserves + bond_reserves_delta,
-        share_reserves_delta,
+        share_reserves=market_state.share_reserves + share_reserves_delta,
+        bond_reserves=market_state.bond_reserves + bond_reserves_delta,
+        share_reserves_delta=share_reserves_delta,
     )
     bond_reserves_delta += updated_bond_reserves - market_state.bond_reserves
     # return the market and wallet deltas
