@@ -563,7 +563,7 @@ class FixedPoint:
         r"""Cast to str"""
         if self.special_value is not None:
             return self.special_value
-        integer = str(self.scaled_value)[:-18]  # remove right-most 18 digits for whole number
+        integer = str(self.scaled_value)[: -self.decimal_places]  # remove right-most digits for whole number
         if len(integer) == 0 or integer == "-":  # float(input) was <0
             sign = "-" if self.scaled_value < 0 else ""
             integer = sign + "0"
@@ -573,7 +573,7 @@ class FixedPoint:
             num_left_zeros = self.decimal_places - scale
             remainder = "0" * num_left_zeros + str(abs(self.scaled_value))
         else:  # float(input) was >=0
-            remainder = str(self.scaled_value)[len(integer) :]  # should be 18 left
+            remainder = str(self.scaled_value)[len(integer) :]  # should be `self.decimal_places` left
         # remove trailing zeros
         if len(remainder.rstrip("0")) == 0:  # all zeros
             remainder = "0"
