@@ -197,7 +197,7 @@ class RandomAgent(elf_agent.Agent):
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions()
         # randomly choose one of the possible actions
-        action_type = self.rng.choice(available_actions)
+        action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
             return self.open_short_with_random_amount(market)
