@@ -62,8 +62,10 @@ class TestFixedPoint(unittest.TestCase):
             _ = FixedPoint(".0")  # needs leading digit
         with self.assertRaises(ValueError):
             _ = FixedPoint("1.")  # needs trailing digit if there is a decimal provided
+        with self.assertRaises(ValueError):
+            _ = FixedPoint(unscaled_value=3.0, scaled_value=3 * 10**18)  # Can't both be set
 
-    # FIXME: def test_immutable_attribs(self):
+    # TODO: def test_immutable_attribs(self):
 
     def test_int_cast(self):
         r"""Test int casting"""
@@ -116,6 +118,21 @@ class TestFixedPoint(unittest.TestCase):
         assert str(FixedPoint(-0)) == "0.0"
         assert str(FixedPoint(5.0)) == "5.0"
         assert str(FixedPoint(1.5)) == "1.5"
+        assert str(FixedPoint(True)) == "1.0"
+        assert str(FixedPoint(False)) == "0.0"
+
+    def test_repr(self):
+        """Test the repr method"""
+        # pylint: disable=unnecessary-dunder-call
+        assert self.INF.__repr__() == 'FixedPoint("inf")'
+        assert self.NEG_INF.__repr__() == 'FixedPoint("-inf")'
+        assert self.NAN.__repr__() == 'FixedPoint("nan")'
+        assert FixedPoint(1).__repr__() == 'FixedPoint("1.0")'
+        assert FixedPoint("-1.0").__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(-1.0).__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(-1).__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(True).__repr__() == 'FixedPoint("1.0")'
+        assert FixedPoint(False).__repr__() == 'FixedPoint("0.0")'
 
     def test_divmod(self):
         r"""Test `divmod` support"""
@@ -226,14 +243,3 @@ class TestFixedPoint(unittest.TestCase):
         assert hash(self.INF) == hash((float("inf"), "FixedPoint"))
         assert hash(self.NEG_INF) == hash((float("-inf"), "FixedPoint"))
         assert hash(self.NAN) == hash((float("nan"), "FixedPoint"))
-
-    def test_repr(self):
-        """Test the repr method"""
-        # pylint: disable=unnecessary-dunder-call
-        assert self.INF.__repr__() == 'FixedPoint("inf")'
-        assert self.NEG_INF.__repr__() == 'FixedPoint("-inf")'
-        assert self.NAN.__repr__() == 'FixedPoint("nan")'
-        assert FixedPoint(1).__repr__() == 'FixedPoint("1.0")'
-        assert FixedPoint("-1.0").__repr__() == 'FixedPoint("-1.0")'
-        assert FixedPoint(-1.0).__repr__() == 'FixedPoint("-1.0")'
-        assert FixedPoint(-1).__repr__() == 'FixedPoint("-1.0")'
