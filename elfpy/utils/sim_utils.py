@@ -135,9 +135,9 @@ def get_initialized_hyperdrive_market(
         market deltas for the initial LP
     """
     position_duration = time.StretchedTime(
-        days=FixedPoint(config.num_position_days * 10**18),
+        days=FixedPoint(config.num_position_days),
         time_stretch=pricing_model.calc_time_stretch(FixedPoint(config.target_fixed_apr)),
-        normalizing_constant=FixedPoint(config.num_position_days * 10**18),
+        normalizing_constant=FixedPoint(config.num_position_days),
     )
     market = hyperdrive_market.Market(
         pricing_model=pricing_model,

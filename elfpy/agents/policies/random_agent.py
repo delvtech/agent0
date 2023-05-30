@@ -1,7 +1,6 @@
 """User strategy that opens or closes a random position with a random allowed amount"""
 from __future__ import annotations
 
-import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
 import elfpy
@@ -142,7 +141,7 @@ class RandomAgent(elf_agent.Agent):
     def close_random_short(self) -> list[types.Trade]:
         """Fully close the short balance for a random mint time"""
         # choose a random short time to close
-        short_time = FixedPoint(self.rng.choice([int(mint_time) for mint_time in self.wallet.shorts]).item())
+        short_time: FixedPoint = list(self.wallet.shorts)[self.rng.integers(len(self.wallet.shorts))]
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
         return [
             types.Trade(
@@ -159,7 +158,7 @@ class RandomAgent(elf_agent.Agent):
     def close_random_long(self) -> list[types.Trade]:
         """Fully close the long balance for a random mint time"""
         # choose a random long time to close
-        long_time = FixedPoint(self.rng.choice([int(mint_time) for mint_time in self.wallet.longs]).item())
+        long_time: FixedPoint = list(self.wallet.longs)[self.rng.integers(len(self.wallet.longs))]
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
         return [
             types.Trade(
@@ -198,7 +197,7 @@ class RandomAgent(elf_agent.Agent):
         # user can always open a trade, and can close a trade if one is open
         available_actions = self.get_available_actions()
         # randomly choose one of the possible actions
-        action_type = self.rng.choice(np.array(available_actions), size=1).item()
+        action_type = available_actions[self.rng.integers(len(available_actions))]
         # trade amount is also randomly chosen to be close to 10% of the agent's budget
         if action_type == hyperdrive_actions.MarketActionType.OPEN_SHORT:
             return self.open_short_with_random_amount(market)

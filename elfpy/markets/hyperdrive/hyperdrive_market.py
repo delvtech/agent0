@@ -240,16 +240,13 @@ class Market(
 
     @property
     def latest_checkpoint_time(self) -> FixedPoint:
-        """Gets the most recent checkpoint time.
-
-        .. todo:: This should work with the same math as in solidity, but for some reason does not.
-        The version below is set up to match the float version, but might be wrong?
-        """
-        block_time_days = int(self.block_time.time) * 365
-        latest_checkpoint_days = FixedPoint(
-            block_time_days - block_time_days % int(self.market_state.checkpoint_duration_days)
-        )
-        latest_checkpoint = FixedPoint(latest_checkpoint_days) / FixedPoint("365.0")
+        """Gets the most recent checkpoint time"""
+        # scale up to days
+        block_time_days = self.block_time.time * FixedPoint("365.0")
+        # compute checkpoint
+        latest_checkpoint_days = block_time_days - (block_time_days % self.market_state.checkpoint_duration_days)
+        # scale back down
+        latest_checkpoint = latest_checkpoint_days / FixedPoint("365.0")
         return latest_checkpoint
 
     def perform_action(

@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import re
 import copy
-from typing import Union
+from typing import Union, Any, Literal
 
 import elfpy.errors.errors as errors
 from .fixed_point_integer_math import FixedPointIntegerMath
+
+OtherTypes = Union[int, bool, float]
+SpecialValues = Literal["nan", "inf", "-inf"]
 
 
 class FixedPoint:
@@ -26,10 +29,22 @@ class FixedPoint:
     Whenever expanding beyond what is in the Solidity contracts, we follow the IEEE 754 floating point standard.
     """
 
-    int_value: int  # integer representation of self
+    _scaled_value: int  # integer representation of self
+    _special_value: SpecialValues  # string representation of self
 
-    def __init__(self, value: Union[FixedPoint, float, int, str] = 0, decimal_places: int = 18, signed: bool = True):
+    def __init__(
+        self,
+        unscaled_value: OtherTypes | str | FixedPoint | None = None,  # use default conversion
+        scaled_value: int | None = None,  # assume integer is already converted
+        decimal_places: int = 18,  # how many decimal places to store (must be 18)
+        signed: bool = True,  # whether or not it is a signed FixedPoint (must be True)
+    ):
         r"""Store fixed-point properties"""
+        # cover argument edge cases
+        if unscaled_value is None and scaled_value is None:
+            unscaled_value = 0
+        if unscaled_value is not None and scaled_value is not None:
+            raise ValueError(f"one of {scaled_value=} and {unscaled_value=} must be None")
         # TODO: support unsigned option
         if not signed:
             raise NotImplementedError("only signed FixedPoint ints are supported.")
@@ -38,38 +53,111 @@ class FixedPoint:
         if decimal_places != 18:
             raise NotImplementedError("only 18 decimal precision FixedPoint ints are supported.")
         self.decimal_places = decimal_places
-        # parse input and set up class properties
-        self.special_value = None
-        if isinstance(value, float):
-            value = int(value * 10**decimal_places)  # int truncates to `decimal_places` precision
-        if isinstance(value, FixedPoint):
-            self.special_value = value.special_value
-            value = value.int_value
-        if isinstance(value, str):
-            # non-finite values are specified with strings
-            if value.lower() in ("nan", "inf", "-inf"):
-                self.special_value = value.lower()
-                value = 0
-            else:  # string must be a float or int representation
-                if not self._is_valid_number(value):
-                    raise ValueError(
-                        f"string argument {value=} must be a float string, e.g. '1.0', for the FixedPoint constructor"
-                    )
-                if "." not in value:  # input is always assumed to be a float
-                    value += ".0"
-                integer, remainder = value.split(".")  # lhs = integer part, rhs = fractional part
-                # removes underscores; they won't affect `int` cast and will affect `len`
-                remainder = remainder.replace("_", "")
-                is_negative = "-" in integer
-                if is_negative:
-                    value = int(integer) * 10**decimal_places - int(remainder) * 10 ** (
-                        decimal_places - len(remainder)
-                    )
-                else:
-                    value = int(integer) * 10**decimal_places + int(remainder) * 10 ** (
-                        decimal_places - len(remainder)
-                    )
-        self.int_value = copy.copy(int(value))
+        # set defaults, one of these will get overwritten
+        super().__setattr__("_scaled_value", None)
+        super().__setattr__("_special_value", None)
+        # check bool first, and coerce it following `int` rules
+        if isinstance(unscaled_value, bool):
+            unscaled_value = int(unscaled_value)
+        # associate each type option to a setter function
+        unscaled_type_setters = {
+            float: self._set_float,
+            int: self._set_int,
+            str: self._set_str,
+            FixedPoint: self._set_fixedpoint,
+        }
+        if unscaled_value is None:  # assume scaled_value is not None from above
+            if not isinstance(scaled_value, int):
+                raise TypeError(f"{scaled_value=} must have type `int`")
+            super().__setattr__("_scaled_value", scaled_value)
+        else:  # assume scaled_value is None from above
+            if type(unscaled_value) in unscaled_type_setters:
+                setter_func = unscaled_type_setters[type(unscaled_value)]
+                setter_func(unscaled_value)
+            else:
+                raise TypeError(f"{type(unscaled_value)=} is not supported")
+
+    def _set_float(self, unscaled_value: float) -> None:
+        """Reformat input argument from float to FixedPoint"""
+        # use int cast to truncate to `decimal_places` precision
+        super().__setattr__("_scaled_value", int(unscaled_value * 10**self.decimal_places))
+
+    def _set_int(self, unscaled_value: int) -> None:
+        """Reformat input argument from int to FixedPoint"""
+        super().__setattr__("_scaled_value", unscaled_value * 10**self.decimal_places)
+
+    def _set_fixedpoint(self, unscaled_value: FixedPoint) -> None:
+        """Assign input from FixedPoint to FixedPoint (identity)"""
+        super().__setattr__("_scaled_value", unscaled_value.scaled_value)
+        super().__setattr__("_special_value", unscaled_value.special_value)
+
+    def _set_str(self, unscaled_value: str) -> None:
+        """Assign input argument from str to FixedPoint"""
+        # non-finite values are specified with strings
+        if unscaled_value.lower() in ("nan", "inf", "-inf"):  # assumed scaled_value is None from above
+            super().__setattr__("_special_value", unscaled_value.lower())
+            super().__setattr__("_scaled_value", 0)
+        else:
+            if not self._is_valid_number(unscaled_value):
+                raise ValueError(
+                    f"string argument {unscaled_value=} must be a float string, "
+                    "e.g. '1.0', for the FixedPoint constructor"
+                )
+            if "." not in unscaled_value:  # input is always assumed to be a float
+                unscaled_value += ".0"
+            integer, remainder = unscaled_value.split(".")
+            # removes underscores; they won't affect `int` cast and will affect `len`
+            remainder = remainder.replace("_", "")
+            is_negative = "-" in integer
+            if is_negative:
+                super().__setattr__(
+                    "_scaled_value",
+                    int(integer) * 10**self.decimal_places
+                    - int(remainder) * 10 ** (self.decimal_places - len(remainder)),
+                )
+            else:
+                super().__setattr__(
+                    "_scaled_value",
+                    int(integer) * 10**self.decimal_places
+                    + int(remainder) * 10 ** (self.decimal_places - len(remainder)),
+                )
+
+    @property
+    def scaled_value(self) -> int:
+        """Scaled value from FixedPoint format
+
+        This work-around is required to make the internal representation immutable,
+        which then stops dictionary keys from being changed unexpectedly
+        """
+        # we had to set _scaled_value to super() in __init__ to get around immutability
+        # pylint: disable=no-member
+        return self._scaled_value
+
+    @scaled_value.setter
+    def scaled_value(self, value: Any) -> None:
+        """Not allowed to set the scaled value"""
+        raise ValueError("scaled_value is immutable")
+
+    @property
+    def special_value(self) -> str:
+        """Special value from FixedPoint format
+
+        This work-around is required to make the internal representation immutable,
+        which then stops dictionary keys from being changed unexpectedly
+        """
+        # we had to set _scaled_value to super() in __init__ to get around immutability
+        # pylint: disable=no-member
+        return self._special_value
+
+    @special_value.setter
+    def special_value(self, value: Any) -> None:
+        raise ValueError("special_value is immutable")
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        """Set attribute, while denying _scaled_value"""
+        if key[0] == "_":  # immutable attributes start with _
+            raise ValueError(f"{key} is an immutable attribute")
+        super().__setattr__(key, value)
 
     @staticmethod
     def _is_valid_number(float_string: str) -> bool:
@@ -108,25 +196,27 @@ class FixedPoint:
         pattern = r"^-?\d{1,3}(?:_?\d{3})*(?:\.\d+)?$"
         return bool(re.match(pattern, float_string))
 
-    def _coerce_other(self, other: FixedPoint | int | float) -> FixedPoint:
+    def _coerce_other(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Cast inputs to the FixedPoint type if they come in as something else.
 
         .. note::
             Right now we do not support operating against int and float because those are logically confusing
         """
         if isinstance(other, bool):
-            raise TypeError(f"unsupported operand type(s): {type(other)}")
+            return FixedPoint(float(other))
         if isinstance(other, FixedPoint):
             if other.special_value is not None:
                 return FixedPoint(other.special_value)
             return other
-        if isinstance(other, (int, float)):  # currently don't allow (most) floats & ints
-            if other == 0:  # 0 is unambiguous, so we will allow it
+        if isinstance(other, int):
+            return FixedPoint(other)
+        if isinstance(other, float):  # currently don't allow (most) floats
+            if other == 0.0:  # 0 is unambiguous, so we will allow it
                 return FixedPoint(other)
             raise TypeError(f"unsupported operand type(s): {type(other)}")
         raise TypeError(f"unsupported operand type(s): {type(other)}")
 
-    def __add__(self, other: int | FixedPoint) -> FixedPoint:
+    def __add__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '+' syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # anything + nan is nan
@@ -137,13 +227,17 @@ class FixedPoint:
             return self  # doesn't matter if other is inf or not because if other is inf, then signs match
         if other.is_inf():  # self is not inf
             return other
-        return FixedPoint(FixedPointIntegerMath.add(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            scaled_value=FixedPointIntegerMath.add(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
+        )
 
-    def __radd__(self, other: int | FixedPoint) -> FixedPoint:
+    def __radd__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal addition to support other + FixedPoint"""
         return self + other  # commutative operation
 
-    def __sub__(self, other: int | FixedPoint) -> FixedPoint:
+    def __sub__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '-' syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # anything - nan is nan
@@ -156,14 +250,18 @@ class FixedPoint:
             return self
         if other.is_inf():  # self is not inf, so return sign flipped other
             return FixedPoint("-inf") if other.sign() == FixedPoint("1.0") else FixedPoint("inf")
-        return FixedPoint(FixedPointIntegerMath.sub(self.int_value, other.int_value), self.decimal_places, self.signed)
+        return FixedPoint(
+            scaled_value=FixedPointIntegerMath.sub(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
+        )
 
-    def __rsub__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rsub__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal subtraction to support other - FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other - self  # now use normal subtraction
 
-    def __mul__(self, other: int | FixedPoint) -> FixedPoint:
+    def __mul__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '*' syntax
 
         We use mul_down to match the majority of Hyperdrive solidity contract equations
@@ -178,14 +276,16 @@ class FixedPoint:
         if self.is_inf() or other.is_inf():  # anything * inf is inf, follow normal mul rules for sign
             return FixedPoint("inf" if self.sign() == other.sign() else "-inf")
         return FixedPoint(
-            FixedPointIntegerMath.mul_down(self.int_value, other.int_value), self.decimal_places, self.signed
+            scaled_value=FixedPointIntegerMath.mul_down(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
         )
 
-    def __rmul__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rmul__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal multiplication to support other * FixedPoint"""
         return self * other  # commutative operation
 
-    def __truediv__(self, other: int | FixedPoint) -> FixedPoint:
+    def __truediv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '/' syntax.
 
         We use div_down to match the majority of Hyperdrive solidity contract equations
@@ -202,15 +302,17 @@ class FixedPoint:
         if other.is_inf():  # self is finite
             return FixedPoint(0)  # finite / (+/-) inf is zero
         return FixedPoint(
-            FixedPointIntegerMath.div_down(self.int_value, other.int_value), self.decimal_places, self.signed
+            scaled_value=FixedPointIntegerMath.div_down(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
         )
 
-    def __rtruediv__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rtruediv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal division to support other / FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other / self  # then divide normally
 
-    def __floordiv__(self, other: int | FixedPoint) -> FixedPoint:
+    def __floordiv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '//' syntax
 
         While FixedPoint numbers are represented as integers, they act like floats.
@@ -218,27 +320,29 @@ class FixedPoint:
         """
         return (self.__truediv__(other)).__floor__()
 
-    def __rfloordiv__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rfloordiv__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal floor division to support other // FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other // self  # then normal divide
 
-    def __pow__(self, other: int | FixedPoint) -> FixedPoint:
+    def __pow__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables '**' syntax"""
         other = self._coerce_other(other)
         if self.is_finite() and other.is_finite():
             return FixedPoint(
-                FixedPointIntegerMath.pow(self.int_value, other.int_value), self.decimal_places, self.signed
+                scaled_value=FixedPointIntegerMath.pow(self.scaled_value, other.scaled_value),
+                decimal_places=self.decimal_places,
+                signed=self.signed,
             )
         # pow is tricky -- leaning on float operations under the hood for non-finite
         return FixedPoint(str(float(self) ** float(other)))
 
-    def __rpow__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rpow__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal pow to support other ** FixedPoint"""
         other = self._coerce_other(other)  # convert to FixedPoint
         return other**self  # then normal pow
 
-    def __mod__(self, other: FixedPoint) -> FixedPoint:
+    def __mod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables `%` syntax
 
         In Python, for ints and floats, this is computed as
@@ -261,10 +365,14 @@ class FixedPoint:
             return FixedPoint("0.0")
         return self - (other * (self / other).floor())
 
-    def __rmod__(self, other: int | FixedPoint) -> FixedPoint:
+    def __rmod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Enables reciprocal modulo to allow other % FixedPoint"""
         other = self._coerce_other(other)
         return other % self
+
+    def __divmod__(self, other: OtherTypes | FixedPoint) -> tuple[FixedPoint, FixedPoint]:
+        r"""Enables `divmod()` function"""
+        return (self // other, self % other)
 
     def __neg__(self) -> FixedPoint:
         r"""Enables flipping value sign"""
@@ -276,32 +384,28 @@ class FixedPoint:
         r"""Enables 'abs()' function"""
         if self.is_nan():
             return self
-        return FixedPoint(abs(self.int_value), self.decimal_places, self.signed)
-
-    def __divmod__(self, other: FixedPoint) -> tuple[FixedPoint, FixedPoint]:
-        r"""Enables `divmod()` function"""
-        return (self // other, self % other)
+        return FixedPoint(scaled_value=abs(self.scaled_value), decimal_places=self.decimal_places, signed=self.signed)
 
     # comparison methods
-    def __eq__(self, other: FixedPoint) -> bool:
+    def __eq__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `==` syntax"""
         other = self._coerce_other(other)
         if not self.is_finite() or not other.is_finite():
             if self.is_nan() or other.is_nan():
                 return False
             return self.special_value == other.special_value
-        return self.int_value == other.int_value
+        return self.scaled_value == other.scaled_value
 
-    def __ne__(self, other: FixedPoint) -> bool:
+    def __ne__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `!=` syntax"""
         other = self._coerce_other(other)
         if not self.is_finite() or not other.is_finite():
             if self.is_nan() or other.is_nan():
                 return True
             return self.special_value != other.special_value
-        return self.int_value != other.int_value
+        return self.scaled_value != other.scaled_value
 
-    def __lt__(self, other: FixedPoint) -> bool:
+    def __lt__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `<` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -313,9 +417,9 @@ class FixedPoint:
         if other.is_inf():  # self is finite
             return other.sign() > FixedPoint(0)
         # both are finite
-        return self.int_value < other.int_value
+        return self.scaled_value < other.scaled_value
 
-    def __le__(self, other: FixedPoint) -> bool:
+    def __le__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `<=` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -327,9 +431,9 @@ class FixedPoint:
         if other.is_inf():  # self is finite
             return other.sign() > FixedPoint(0)
         # both are finite
-        return self.int_value <= other.int_value
+        return self.scaled_value <= other.scaled_value
 
-    def __gt__(self, other: FixedPoint) -> bool:
+    def __gt__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `>` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -341,9 +445,9 @@ class FixedPoint:
         if other.is_inf():  # self is finite
             return other.sign() < FixedPoint(0)
         # both are finite
-        return self.int_value > other.int_value
+        return self.scaled_value > other.scaled_value
 
-    def __ge__(self, other: FixedPoint) -> bool:
+    def __ge__(self, other: OtherTypes | FixedPoint) -> bool:
         r"""Enables `>=` syntax"""
         other = self._coerce_other(other)
         if self.is_nan() or other.is_nan():  # nan can't be compared
@@ -355,7 +459,7 @@ class FixedPoint:
         if other.is_inf():  # self is finite
             return other.sign() < FixedPoint(0)
         # both are finite
-        return self.int_value >= other.int_value
+        return self.scaled_value >= other.scaled_value
 
     def __trunc__(self) -> FixedPoint:
         r"""Return x with the fractional part removed, leaving the integer part.
@@ -376,7 +480,7 @@ class FixedPoint:
             return self
         integer, remainder = str(self).split(".")
         # if the number is negative & there is a remainder
-        if self.int_value < 0 < len(remainder.rstrip("0")):
+        if self.scaled_value < 0 < len(remainder.rstrip("0")):
             return FixedPoint(str(int(integer) - 1) + ".0")  # round down to -inf
         return FixedPoint(integer + ".0")
 
@@ -390,9 +494,9 @@ class FixedPoint:
         integer, remainder = str(self).split(".")
         # if there is a remainder
         if len(remainder.rstrip("0")) > 0:
-            if 0 > self.int_value:  # the number is negative
+            if 0 > self.scaled_value:  # the number is negative
                 return FixedPoint(integer + ".0")  # truncating decimal rounds towards zero
-            if 0 < self.int_value:  # the number is positive
+            if 0 < self.scaled_value:  # the number is positive
                 return FixedPoint(str(int(integer) + 1) + ".0")  # increase integer component by one
         return FixedPoint(integer + ".0")  # the number has no remainder
 
@@ -427,7 +531,7 @@ class FixedPoint:
         else:
             # Round up by adding one to the integer obtained by truncating at the nth place
             # Take care to handle negative numbers correctly
-            if self.int_value >= 0:
+            if self.scaled_value >= 0:
                 rounded = str(int(integer + remainder[:ndigits]) + 1)
             else:
                 rounded = str(int(integer + remainder[:ndigits]) - 1)
@@ -441,13 +545,13 @@ class FixedPoint:
         r"""Cast to int"""
         if self.special_value is not None:
             raise ValueError(f"cannot convert FixedPoint {self.special_value} to integer")
-        return self.int_value
+        return int(self.scaled_value // 10**self.decimal_places)
 
     def __float__(self) -> float:
         r"""Cast to float"""
         if self.special_value is not None:
             return float(self.special_value)
-        return float(self.int_value) / 10**self.decimal_places
+        return float(self.scaled_value) / 10**self.decimal_places
 
     def __bool__(self) -> bool:
         r"""Cast to bool"""
@@ -459,17 +563,17 @@ class FixedPoint:
         r"""Cast to str"""
         if self.special_value is not None:
             return self.special_value
-        integer = str(self.int_value)[:-18]  # remove right-most 18 digits for whole number
+        integer = str(self.scaled_value)[: -self.decimal_places]  # remove right-most digits for whole number
         if len(integer) == 0 or integer == "-":  # float(input) was <0
-            sign = "-" if self.int_value < 0 else ""
+            sign = "-" if self.scaled_value < 0 else ""
             integer = sign + "0"
-            scale = len(str(self.int_value))
-            if self.int_value < 0:
+            scale = len(str(self.scaled_value))
+            if self.scaled_value < 0:
                 scale -= 1  # ignore negative sign
             num_left_zeros = self.decimal_places - scale
-            remainder = "0" * num_left_zeros + str(abs(self.int_value))
+            remainder = "0" * num_left_zeros + str(abs(self.scaled_value))
         else:  # float(input) was >=0
-            remainder = str(self.int_value)[len(integer) :]  # should be 18 left
+            remainder = str(self.scaled_value)[len(integer) :]  # should be `self.decimal_places` left
         # remove trailing zeros
         if len(remainder.rstrip("0")) == 0:  # all zeros
             remainder = "0"
@@ -480,37 +584,41 @@ class FixedPoint:
     def __repr__(self) -> str:
         r"""Returns executable string representation
 
-        For example: "FixedPoint(1234)"
+        For example: "FixedPoint("1234.0")"
         """
         if self.special_value is not None:
-            return f"{self.__class__.__name__}({self.special_value})"
-        return f"{self.__class__.__name__}({self.int_value})"
+            return f'{self.__class__.__name__}("{self.special_value}")'
+        return f'{self.__class__.__name__}("{str(self)}")'
 
     def __hash__(self) -> int:
         r"""Returns a hash of self"""
         # act like a float for non-finite
         if not self.is_finite():
-            return hash(float(self))
+            return hash((float(copy.deepcopy(self)), self.__class__.__name__))
         # act like an integer otherwise
-        return hash(self.int_value)
+        return hash((copy.deepcopy(self).scaled_value, self.__class__.__name__))
 
     # additional arethmitic & helper functions
-    def div_up(self, other: int | FixedPoint) -> FixedPoint:
+    def div_up(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Divide self by other, rounding up"""
         other = self._coerce_other(other)
         if other <= FixedPoint("0.0"):
             raise errors.DivisionByZero
         return FixedPoint(
-            FixedPointIntegerMath.div_up(self.int_value, other.int_value), self.decimal_places, self.signed
+            scaled_value=FixedPointIntegerMath.div_up(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
         )
 
-    def mul_up(self, other: int | FixedPoint) -> FixedPoint:
+    def mul_up(self, other: OtherTypes | FixedPoint) -> FixedPoint:
         r"""Multiply self by other, rounding up"""
         other = self._coerce_other(other)
         if self == FixedPoint("0.0") or other == FixedPoint("0.0"):
             return FixedPoint("0.0")
         return FixedPoint(
-            FixedPointIntegerMath.mul_up(self.int_value, other.int_value), self.decimal_places, self.signed
+            scaled_value=FixedPointIntegerMath.mul_up(self.scaled_value, other.scaled_value),
+            decimal_places=self.decimal_places,
+            signed=self.signed,
         )
 
     def is_nan(self) -> bool:
@@ -529,7 +637,7 @@ class FixedPoint:
         r"""Return True if self is zero, and False is self is non-zero or non-finite"""
         if not self.is_finite():
             return False
-        return self.int_value == 0
+        return self.scaled_value == 0
 
     def is_finite(self) -> bool:
         r"""Return True if self is finite, that is not inf, -inf, or nan"""

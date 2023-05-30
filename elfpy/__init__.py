@@ -14,7 +14,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 # This is the minimum allowed value to be passed into calculations to avoid
 # problems with sign flips that occur when the floating point range is exceeded.
-WEI = FixedPoint(1)  # smallest denomination of ether
+WEI = FixedPoint(scaled_value=1)  # smallest denomination of ether
 
 # The maximum allowed difference between the base reserves and bond reserves.
 # This value was calculated using trial and error and is close to the maximum

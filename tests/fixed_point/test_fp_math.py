@@ -24,7 +24,9 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.minimum(-1.0, -3.0) == -3.0
         assert FixedPointMath.minimum(1.0, 3.0) == 1.0
         assert FixedPointMath.minimum(FixedPoint(1.0), FixedPoint(3.0)) == FixedPoint(1.0)
-        assert FixedPointMath.minimum(FixedPoint("3.0"), FixedPoint(int(3e18 - 1e-17))) == FixedPoint(int(3e18 - 1e-17))
+        assert FixedPointMath.minimum(FixedPoint("3.0"), FixedPoint(scaled_value=int(3e18 - 1e-17))) == FixedPoint(
+            scaled_value=int(3e18 - 1e-17)
+        )
 
     def test_minimum_nonfinite(self):
         """Test minimum method"""
@@ -42,7 +44,7 @@ class TestFixedPointMath(unittest.TestCase):
         assert FixedPointMath.maximum(-1.0, -3.0) == -1.0
         assert FixedPointMath.maximum(1.0, 3.0) == 3.0
         assert FixedPointMath.maximum(FixedPoint(1.0), FixedPoint(3.0)) == FixedPoint(3.0)
-        assert FixedPointMath.maximum(FixedPoint("3.0"), FixedPoint(int(3e18 - 1e-17))) == FixedPoint(3.0)
+        assert FixedPointMath.maximum(FixedPoint("3.0"), FixedPoint(scaled_value=int(3e18 - 1e-17))) == FixedPoint(3.0)
 
     def test_maximum_nonfinite(self):
         """Test maximum method"""
@@ -56,10 +58,10 @@ class TestFixedPointMath(unittest.TestCase):
         """Test exp function"""
         tolerance = 1e-18
         result = FixedPointMath.exp(FixedPoint("1.0"))
-        expected = FixedPoint(2718281828459045235)
+        expected = FixedPoint(scaled_value=2718281828459045235)
         assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
         result = FixedPointMath.exp(FixedPoint("-1.0"))
-        expected = FixedPoint(367879441171442321)
+        expected = FixedPoint(scaled_value=367879441171442321)
         assert math.isclose(result, expected, rel_tol=tolerance), f"exp(x):\n  {result=},\n{expected=}"
         result = FixedPointMath.exp(1)
         expected = int(math.exp(1))

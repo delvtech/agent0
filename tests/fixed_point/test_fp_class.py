@@ -26,18 +26,19 @@ class TestFixedPoint(unittest.TestCase):
         assert FixedPoint("5.000001") == FixedPoint(5.000001)
         assert FixedPoint("5.000001000") == FixedPoint(5.000001)
         # int == float
-        assert FixedPoint(5) == FixedPoint(5e-18)
-        assert FixedPoint(50) == FixedPoint(5e-17)
+        assert FixedPoint(5) == FixedPoint(5.0)
         # float == int
-        assert FixedPoint(5.0) == FixedPoint(5 * 10**18)
-        assert FixedPoint(5.3) == FixedPoint(53 * 10**17)
-        # NOTE: floats are scaled on construction, ints are not; floats also introduce noise
-        assert math.isclose(FixedPoint(1e18), FixedPoint(1 * 10**36), abs_tol=1e-18)
-        # NOTE: This is true because, in Python,
-        # ints and whole floats are equivalent; i.e. 5 == 5.0.
+        assert FixedPoint(5.0) == FixedPoint(5)
         assert int(FixedPoint(5)) == 5  # int input directly maps, cast does not rescale
         assert float(FixedPoint(5.0)) == 5.0  # scales up on init, then back down on cast to float
         assert int(FixedPoint(5)) == float(FixedPoint(5.0))
+        # bool
+        assert FixedPoint(True) == FixedPoint(1.0)
+        assert FixedPoint(False) == FixedPoint(0.0)
+        # internal representation
+        assert FixedPoint("5_340_070.0").scaled_value == 5340070000000000000000000
+        assert FixedPoint(scaled_value=5) == FixedPoint(5e-18)
+        assert FixedPoint(scaled_value=50) == FixedPoint(5e-17)
 
     def test_init_fail(self):
         r"""Test failure mode of FixedPoint initialization"""
@@ -61,12 +62,19 @@ class TestFixedPoint(unittest.TestCase):
             _ = FixedPoint(".0")  # needs leading digit
         with self.assertRaises(ValueError):
             _ = FixedPoint("1.")  # needs trailing digit if there is a decimal provided
+        with self.assertRaises(ValueError):
+            _ = FixedPoint(unscaled_value=3.0, scaled_value=3 * 10**18)  # Can't both be set
+
+    # TODO: def test_immutable_attribs(self):
 
     def test_int_cast(self):
         r"""Test int casting"""
         assert int(FixedPoint(1)) == 1  # int intput directly maps
-        assert int(FixedPoint(1.0)) == 1000000000000000000  # float input is rescaled by 1e18
-        assert int(FixedPoint("2.0")) == 2 * 10**18  # 2 * 10**18 is int, and is equal to int(2e18)
+        assert int(FixedPoint("2.0")) == 2  # float input directly maps
+        assert int(FixedPoint("2.9")) == 2
+        assert int(FixedPoint("0.9")) == 0
+        assert int(FixedPoint(scaled_value=1)) == 0  # scaled value gets unmapped by decimal_places
+        assert int(FixedPoint(scaled_value=1000000000000000000)) == 1
 
     def test_float_cast(self):
         r"""Test float casting"""
@@ -78,15 +86,15 @@ class TestFixedPoint(unittest.TestCase):
         assert float(FixedPoint("010.050")) == 10.05
         assert float(FixedPoint("-2.1")) == -2.1
         assert float(FixedPoint("-2.159178")) == -2.159178
-        assert float(FixedPoint(5)) == 0.000000000000000005
-        assert float(FixedPoint(50)) == 0.00000000000000005
-        assert float(FixedPoint(500)) == 0.0000000000000005
-        assert float(FixedPoint(1)) == 1e-18  # cast FP(small int) back to float should be tiny
-        assert float(FixedPoint(1e18)) == 1e18  # even if float is large, casting back stays large
-        assert float(FixedPoint(3 * 10**18)) == 3.0  # int in does not get scaled
         assert float(FixedPoint(3.8 * 10**18)) == 3.8e18  # float in gets scaled
         assert float(FixedPoint(4.0)) == 4.0  # cast FP(float) back to float should be equivalent
         assert float(FixedPoint(1.5)) == 1.5
+        assert float(FixedPoint(scaled_value=5)) == 0.000000000000000005
+        assert float(FixedPoint(scaled_value=50)) == 0.00000000000000005
+        assert float(FixedPoint(scaled_value=500)) == 0.0000000000000005
+        assert float(FixedPoint(scaled_value=1)) == 1e-18  # cast FP(small int) back to float should be tiny
+        assert float(FixedPoint(scaled_value=1 * 10**36)) == 1e18  # even if float is large, casting back stays large
+        assert float(FixedPoint(scaled_value=3 * 10**18)) == 3.0
 
     def test_str_cast(self):
         r"""Test str casting"""
@@ -101,15 +109,30 @@ class TestFixedPoint(unittest.TestCase):
         assert str(FixedPoint("-2457.159178")) == "-2457.159178"
         assert str(FixedPoint("2_457.159178")) == "2457.159178"
         assert str(FixedPoint("24_570.0159178")) == "24570.0159178"
-        assert str(FixedPoint(5)) == "0.000000000000000005"
-        assert str(FixedPoint(50)) == "0.00000000000000005"
-        assert str(FixedPoint(500)) == "0.0000000000000005"
-        assert str(FixedPoint(-223423423)) == "-0.000000000223423423"
-        assert str(FixedPoint(-223423423000000000000000000)) == "-223423423.0"
+        assert str(FixedPoint(scaled_value=5)) == "0.000000000000000005"
+        assert str(FixedPoint(scaled_value=50)) == "0.00000000000000005"
+        assert str(FixedPoint(scaled_value=500)) == "0.0000000000000005"
+        assert str(FixedPoint(scaled_value=-223423423)) == "-0.000000000223423423"
+        assert str(FixedPoint(scaled_value=-223423423000000000000000000)) == "-223423423.0"
+        assert str(FixedPoint(scaled_value=3 * 10**18)) == "3.0"
         assert str(FixedPoint(-0)) == "0.0"
-        assert str(FixedPoint(3 * 10**18)) == "3.0"
         assert str(FixedPoint(5.0)) == "5.0"
         assert str(FixedPoint(1.5)) == "1.5"
+        assert str(FixedPoint(True)) == "1.0"
+        assert str(FixedPoint(False)) == "0.0"
+
+    def test_repr(self):
+        """Test the repr method"""
+        # pylint: disable=unnecessary-dunder-call
+        assert self.INF.__repr__() == 'FixedPoint("inf")'
+        assert self.NEG_INF.__repr__() == 'FixedPoint("-inf")'
+        assert self.NAN.__repr__() == 'FixedPoint("nan")'
+        assert FixedPoint(1).__repr__() == 'FixedPoint("1.0")'
+        assert FixedPoint("-1.0").__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(-1.0).__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(-1).__repr__() == 'FixedPoint("-1.0")'
+        assert FixedPoint(True).__repr__() == 'FixedPoint("1.0")'
+        assert FixedPoint(False).__repr__() == 'FixedPoint("0.0")'
 
     def test_divmod(self):
         r"""Test `divmod` support"""
@@ -132,10 +155,10 @@ class TestFixedPoint(unittest.TestCase):
         assert math.floor(FixedPoint("-2.1")) == FixedPoint("-3.0")
         assert math.floor(FixedPoint("3.6")) == FixedPoint("3.0")
         assert math.floor(FixedPoint("0.5")) == FixedPoint(0)
-        assert math.floor(FixedPoint(3)) == FixedPoint(0)
-        assert math.floor(FixedPoint(-6)) == FixedPoint("-1.0")
-        assert math.floor(FixedPoint(-6.0)) == FixedPoint(-6.0)
-        assert math.floor(FixedPoint(-6.8)) == FixedPoint(-7.0)
+        assert math.floor(FixedPoint(-6.3)) == FixedPoint(-7.0)
+        assert math.floor(FixedPoint(-6.9)) == FixedPoint(-7.0)
+        assert math.floor(FixedPoint(scaled_value=3)) == FixedPoint(0)
+        assert math.floor(FixedPoint(scaled_value=-6)) == FixedPoint(-1)
 
     def test_ceil(self):
         r"""Test ceil method"""
@@ -147,12 +170,12 @@ class TestFixedPoint(unittest.TestCase):
         assert math.ceil(FixedPoint("0.0000000003")) == FixedPoint("1.0")
         assert math.ceil(FixedPoint("-0.0")) == FixedPoint(0)
         assert math.ceil(FixedPoint("0.0")) == FixedPoint(0)
-        assert math.ceil(FixedPoint(3)) == FixedPoint(1.0)
-        assert math.ceil(FixedPoint(-6)) == FixedPoint(0)
         assert math.ceil(FixedPoint(-6.0)) == FixedPoint(-6.0)
         assert math.ceil(FixedPoint(6.0)) == FixedPoint(6.0)
         assert math.ceil(FixedPoint(-6.8)) == FixedPoint(-6.0)
         assert math.ceil(FixedPoint(6.8)) == FixedPoint(7.0)
+        assert math.ceil(FixedPoint(scaled_value=3)) == FixedPoint(1.0)
+        assert math.ceil(FixedPoint(scaled_value=-6)) == FixedPoint(0)
 
     def test_trunc(self):
         r"""Test trunc method"""
@@ -161,12 +184,12 @@ class TestFixedPoint(unittest.TestCase):
         assert math.trunc(FixedPoint("0.0000000003")) == FixedPoint("0.0")
         assert math.trunc(FixedPoint("-0.0")) == FixedPoint(0)
         assert math.trunc(FixedPoint("0.0")) == FixedPoint(0)
-        assert math.trunc(FixedPoint(3)) == FixedPoint(0.0)
-        assert math.trunc(FixedPoint(-6)) == FixedPoint(0)
         assert math.trunc(FixedPoint(-6.0)) == FixedPoint(-6.0)
         assert math.trunc(FixedPoint(6.0)) == FixedPoint(6.0)
         assert math.trunc(FixedPoint(-6.8)) == FixedPoint(-6.0)
         assert math.trunc(FixedPoint(6.8)) == FixedPoint(6.0)
+        assert math.trunc(FixedPoint(scaled_value=3)) == FixedPoint(0.0)
+        assert math.trunc(FixedPoint(scaled_value=-6)) == FixedPoint(0)
 
     def test_round(self):
         r"""Test round method"""
@@ -199,19 +222,24 @@ class TestFixedPoint(unittest.TestCase):
 
     def test_hash(self):
         """Test hash method"""
-        assert hash(FixedPoint(-1)) == -2
-        assert hash(FixedPoint(-2)) == hash(-2)
-        assert hash(FixedPoint(2)) == hash(2)
-        assert hash(FixedPoint("-1.0")) == hash(-1 * 10**18)
-        assert hash(FixedPoint("1.0")) == hash(1 * 10**18)
-        assert hash(FixedPoint("-2.5")) == hash(-2.5 * 10**18)
-        assert hash(FixedPoint("2.5")) == hash(2.5 * 10**18)
-        assert hash(FixedPoint("-200.537280")) == hash(-200.537280 * 10**18)
+        assert hash(FixedPoint(-2)) == hash((-2 * 10**18, "FixedPoint"))
+        assert hash(FixedPoint(2)) == hash((2 * 10**18, "FixedPoint"))
+        assert hash(FixedPoint("-1.0")) == hash((-1.0e18, "FixedPoint"))
+        assert hash(FixedPoint("1.0")) == hash((1e18, "FixedPoint"))
+        assert hash(FixedPoint("-2.5")) == hash((-2.5 * 10**18, "FixedPoint"))
+        assert hash(FixedPoint("2.5")) == hash((2.5 * 10**18, "FixedPoint"))
+        assert hash(FixedPoint("-200.537280")) == hash((-200.537280 * 10**18, "FixedPoint"))
         # last test, use FixedPoint as the key in a dictionary
         _ = {FixedPoint(1): "test_value"}  # if this works then the test passes
+        assert {FixedPoint("-2"): "value"} == {FixedPoint(-2): "value"}
+        assert {FixedPoint("-2"): "value"} != {FixedPoint(-2): "other_value"}
+        assert {FixedPoint("2"): "value"} != {2: "value"}
+        my_dict = {FixedPoint(1): "value"}
+        my_dict[FixedPoint("1.0")] = "other_value"
+        assert my_dict == {FixedPoint("1.0"): "other_value"}
 
     def test_hash_nonfinite(self):
         """Test the hash method with nonfinite values"""
-        assert hash(self.INF) == hash(float("inf"))
-        assert hash(self.NEG_INF) == hash(float("-inf"))
-        assert hash(self.NAN) == hash(float("nan"))
+        assert hash(self.INF) == hash((float("inf"), "FixedPoint"))
+        assert hash(self.NEG_INF) == hash((float("-inf"), "FixedPoint"))
+        assert hash(self.NAN) == hash((float("nan"), "FixedPoint"))
