@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-import copy
 from typing import Union, Any, Literal
 
 import elfpy.errors.errors as errors
@@ -592,9 +591,9 @@ class FixedPoint:
         r"""Returns a hash of self"""
         # act like a float for non-finite
         if not self.is_finite():
-            return hash((float(copy.deepcopy(self)), self.__class__.__name__))
+            return hash((float(self), self.__class__.__name__))
         # act like an integer otherwise
-        return hash((copy.deepcopy(self).scaled_value, self.__class__.__name__))
+        return hash((self.scaled_value, self.__class__.__name__))
 
     # additional arethmitic & helper functions
     def div_up(self, other: OtherTypes | FixedPoint) -> FixedPoint:
