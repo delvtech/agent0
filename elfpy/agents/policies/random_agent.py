@@ -141,7 +141,7 @@ class RandomAgent(elf_agent.Agent):
     def close_random_short(self) -> list[types.Trade]:
         """Fully close the short balance for a random mint time"""
         # choose a random short time to close
-        short_time: FixedPoint = self.rng.choice(list(self.wallet.shorts))  # choose from list of keys # type: ignore
+        short_time: FixedPoint = list(self.wallet.shorts)[self.rng.integers(len(self.wallet.shorts))]
         trade_amount = self.wallet.shorts[short_time].balance  # close the full trade
         return [
             types.Trade(
@@ -158,7 +158,7 @@ class RandomAgent(elf_agent.Agent):
     def close_random_long(self) -> list[types.Trade]:
         """Fully close the long balance for a random mint time"""
         # choose a random long time to close
-        long_time: FixedPoint = self.rng.choice(list(self.wallet.longs))  # choose from list of keys # type: ignore
+        long_time: FixedPoint = list(self.wallet.longs)[self.rng.integers(len(self.wallet.longs))]
         trade_amount = self.wallet.longs[long_time].balance  # close the full trade
         return [
             types.Trade(
