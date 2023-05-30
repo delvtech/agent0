@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class HyperdriveProject(ProjectManager):
     """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
-    hyperdrive_address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2" # goerli deployment from April 2023
+    hyperdrive_address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"  # goerli deployment from April 2023
 
     def __init__(self, path: Path, hyperdrive_address: str = None) -> None:
         """Initialize the project, loading the Hyperdrive contract."""
@@ -238,10 +238,14 @@ def get_wallet_from_onchain_trade_info(
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
-                wallet.shorts.update({mint_time: elf_wallet.Short(
-                    balance=FixedPoint(scaled_value=balance),
-                    open_share_price=open_share_price,
-                )})
+                wallet.shorts.update(
+                    {
+                        mint_time: elf_wallet.Short(
+                            balance=FixedPoint(scaled_value=balance),
+                            open_share_price=open_share_price,
+                        )
+                    }
+                )
                 logging.debug(
                     "storing in wallet as %s",
                     {mint_time: elf_wallet.Short(balance=balance, open_share_price=open_share_price)},
