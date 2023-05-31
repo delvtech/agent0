@@ -73,7 +73,7 @@ def python_agents() -> PythonAgents:
 
 
 @pytest.fixture(scope="function")
-def solidity_agents():
+def solidity_agents(deployer: TestAccountAPI):
     """Returns solidity agents initialized with some ETH"""
     budget: FixedPoint = FixedPoint("50_000_000.0")
 
@@ -106,7 +106,7 @@ def deployer() -> TestAccountAPI:
 
 
 @pytest.fixture(scope="function")
-def base_erc20(deployer: TestAccountAPI) -> ContractInstance:
+def base_erc20(project: ProjectManager, deployer: TestAccountAPI) -> ContractInstance:
     """Deploys the base erc20 contract"""
     # deploy base token contract
     base_erc20 = deployer.deploy(project.ERC20Mintable)  # type: ignore
@@ -114,7 +114,7 @@ def base_erc20(deployer: TestAccountAPI) -> ContractInstance:
 
 
 @pytest.fixture(scope="function")
-def fixed_math_contract(deployer: TestAccountAPI) -> ContractInstance:
+def fixed_math_contract(project: ProjectManager, deployer: TestAccountAPI) -> ContractInstance:
     """Deploys the base erc20 contract"""
     # deploy fixed math contract
     fixed_math = deployer.deploy(project.MockFixedPointMath)  # type: ignore
@@ -122,37 +122,48 @@ def fixed_math_contract(deployer: TestAccountAPI) -> ContractInstance:
 
 
 @dataclass
-class MarketConfig:
+class HyperdriveConfig:
     """Configuration variables to setup hyperdrive fixtures."""
 
     initial_apr: int = 50000000000000000
     share_price: int = 1000000000000000000
     checkpoint_duration_seconds: int = 86400
+    checkpoints: int = 182
     time_stretch: int = 22186877016851913475
     curve_fee: int = 0
     flat_fee: int = 0
     gov_fee: int = 0
-    position_duration_seconds = int(365 / 2 * 24 * 60 * 60)  # 1/2 year
+    position_duration_seconds: int = checkpoint_duration_seconds * checkpoints
     target_liquidity = 1 * 10**6 * 10**18  # 1M
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_config() -> MarketConfig:
+def hyperdrive_config() -> HyperdriveConfig:
     """Returns a hyperdrive configuration dataclass with default values.  This fixture should be
     overridden as needed in test classes."""
-    return MarketConfig()
+    return HyperdriveConfig()
 
 
 @pytest.fixture(scope="function")
 def hyperdrive_contract(
-    hyperdrive_config: MarketConfig, deployer: TestAccountAPI, base_erc20: ContractInstance
+    project: ProjectManager, hyperdrive_config: HyperdriveConfig, deployer: TestAccountAPI, base_erc20: ContractInstance
 ) -> ContractInstance:
     """Deploys the base erc20 contract"""
 
     hc = hyperdrive_config  # pylint: disable=invalid-name
 
+    print(f"{project.MockHyperdriveDataProviderTestnet=}")
+    print(f"{base_erc20=}")
+    print(f"{hc.initial_apr=}")
+    print(f"{hc.share_price=}")
+    print(f"{hc.position_duration_seconds=}")
+    print(f"{hc.checkpoint_duration_seconds=}")
+    print(f"{hc.time_stretch=}")
+    print(f"{hc.gov_fee=}")
+    print(f"{hc.flat_fee=}")
+    print(f"{hc.curve_fee=}")
     hyperdrive_data_provider_contract = deployer.deploy(
-        hc.project.MockHyperdriveDataProviderTestnet,  # type: ignore
+        project.MockHyperdriveDataProviderTestnet,  # type: ignore
         base_erc20,
         hc.initial_apr,
         hc.share_price,
@@ -164,7 +175,7 @@ def hyperdrive_contract(
     )
 
     hyperdrive_contract = deployer.deploy(
-        hc.project.MockHyperdriveTestnet,  # type: ignore
+        project.MockHyperdriveTestnet,  # type: ignore
         hyperdrive_data_provider_contract,
         base_erc20,
         hc.initial_apr,
@@ -180,7 +191,16 @@ def hyperdrive_contract(
 
 
 @pytest.fixture(scope="function")
-def hyperdrive_sim(hyperdrive_config: MarketConfig) -> hyperdrive_market.MarketFP:
+def hyperdrive_data_contract(project: ProjectManager, hyperdrive_contract: ContractInstance) -> ContractInstance:
+    """Gets the data provider interface for the hyperdrive contract"""
+    hyperdrive_data_contract: ContractInstance = project.MockHyperdriveDataProviderTestnet.at(
+        hyperdrive_contract.address
+    )  # type: ignore
+    return hyperdrive_data_contract
+
+
+@pytest.fixture(scope="function")
+def hyperdrive_sim(hyperdrive_config: HyperdriveConfig) -> hyperdrive_market.MarketFP:
     """Returns an elfpy hyperdrive Market."""
     position_duration_days = FixedPoint(float(hyperdrive_config.position_duration_seconds)) / FixedPoint(
         float(24 * 60 * 60)
@@ -204,20 +224,31 @@ class Contracts:
     "Contracts Type"
 
     def __init__(
-        self, base_erc20: ContractInstance, hyperdrive_contract: ContractInstance, fixed_math_contract: ContractInstance
+        self,
+        base_erc20: ContractInstance,
+        hyperdrive_contract: ContractInstance,
+        hyperdrive_data_contract: ContractInstance,
+        fixed_math_contract: ContractInstance,
     ):
         self.base_erc20 = base_erc20
         self.hyperdrive_contract = hyperdrive_contract
+        self.hyperdrive_data_contract = hyperdrive_data_contract
         self.fixed_math_contract = fixed_math_contract
 
 
 @pytest.fixture(scope="function")
 def contracts(
-    base_erc20: ContractInstance, hyperdrive_contract: ContractInstance, fixed_math_contract: ContractInstance
+    base_erc20: ContractInstance,
+    hyperdrive_contract: ContractInstance,
+    hyperdrive_data_contract: ContractInstance,
+    fixed_math_contract: ContractInstance,
 ):
     """Returns a Contracts object."""
     return Contracts(
-        base_erc20=base_erc20, hyperdrive_contract=hyperdrive_contract, fixed_math_contract=fixed_math_contract
+        base_erc20=base_erc20,
+        hyperdrive_contract=hyperdrive_contract,
+        hyperdrive_data_contract=hyperdrive_data_contract,
+        fixed_math_contract=fixed_math_contract,
     )
 
 
@@ -226,7 +257,7 @@ class HyperdriveFixture:
 
     def __init__(
         self,
-        config: MarketConfig,
+        config: HyperdriveConfig,
         project: ProjectManager,
         provider: ProviderAPI,
         deployer: TestAccountAPI,
@@ -247,7 +278,7 @@ class HyperdriveFixture:
 
 @pytest.fixture(scope="function")
 def hyperdrive_fixture(
-    config: MarketConfig,
+    hyperdrive_config: HyperdriveConfig,
     project: ProjectManager,
     provider: ProviderAPI,
     agents: Agents,
@@ -258,7 +289,7 @@ def hyperdrive_fixture(
     """Adds the fixture dictionary"""
 
     fixture: HyperdriveFixture = HyperdriveFixture(
-        config, project, provider, deployer, agents, contracts, hyperdrive_sim
+        hyperdrive_config, project, provider, deployer, agents, contracts, hyperdrive_sim
     )
     return fixture
 
