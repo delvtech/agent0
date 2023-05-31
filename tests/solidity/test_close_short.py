@@ -2,6 +2,7 @@
 import unittest
 
 import elfpy.agents.agent as elf_agent
+from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.yieldspace as yieldspace_pm
@@ -128,11 +129,11 @@ class TestCloseShort(unittest.TestCase):
         )
         checkpoint_time = maturity_time - self.term_length
         self.assertEqual(  # checkpoint long base volume
-            self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume,
+            self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).long_base_volume,
             FixedPoint(0),
             msg=(
                 f"The long base volume at {checkpoint_time=} should be zero, "
-                f"not {self.hyperdrive.market_state.checkpoints[checkpoint_time].long_base_volume=}."
+                f"not {self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).long_base_volume=}."
             ),
         )
         self.assertEqual(  # shorts outstanding
@@ -152,7 +153,7 @@ class TestCloseShort(unittest.TestCase):
             msg="short_base_volume is wrong",
         )
         self.assertEqual(  # checkpoint short base volume
-            self.hyperdrive.market_state.checkpoints[checkpoint_time].short_base_volume,
+            self.hyperdrive.market_state.checkpoints.get(checkpoint_time, Checkpoint()).short_base_volume,
             FixedPoint(0),
             msg="checkpoint short base volume is wrong",
         )

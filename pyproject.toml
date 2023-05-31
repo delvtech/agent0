@@ -78,4 +78,5 @@ exclude = [
     ".venv",
     "docs",
     "hyperdrive_solidity/.venv",
+    "hyperdrive_solidity",
 ]

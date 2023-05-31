@@ -1,7 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
@@ -67,7 +66,7 @@ class BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
 
-    def check_valid_market_state(self, dictionary: dict | defaultdict) -> BaseMarketState:
+    def check_valid_market_state(self, dictionary: dict | None = None) -> BaseMarketState:
         """Returns a new copy of self"""
         raise NotImplementedError
 
