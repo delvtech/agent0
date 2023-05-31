@@ -2,7 +2,6 @@
 from __future__ import annotations  # types will be strings by default in 3.11
 
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
-
 # stdlib
 import argparse
 import json
@@ -315,10 +314,20 @@ class BotInfo:
         )
 
 
-def get_config() -> simulators.Config:
-    """Set _config values for the experiment."""
+def get_config(args: argparse.Namespace) -> simulators.Config:
+    """Instantiate a config object with elf-simulation parameters.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The parsed arguments from stdin.
+
+    Returns
+    -------
+    config : simulators.Config
+        The config object.
+    """
     load_dotenv(dotenv_path=f"{Path.cwd() if Path.cwd().name != 'examples' else Path.cwd().parent}/.env")
-    args = get_argparser().parse_args()
     ape_logger.set_level(logging.ERROR)
     config = simulators.Config()
     config.log_level = output_utils.text_to_log_level(args.log_level)
@@ -340,61 +349,88 @@ def get_config() -> simulators.Config:
     config.log_filename += "_devnet" if args.devnet else ""
 
     # Custom parameters for this experiment
-    # invariants
     config.scratch["project_dir"] = Path.cwd().parent if Path.cwd().name == "examples" else Path.cwd()
     config.scratch["louie"] = BotInfo(risk_threshold=0.0, policy=LongLouie, trade_chance=config.scratch["trade_chance"])
     config.scratch["frida"] = BotInfo(policy=FixedFrida, trade_chance=config.scratch["trade_chance"])
     config.scratch["random"] = BotInfo(policy=random_agent.RandomAgent, trade_chance=config.scratch["trade_chance"])
     config.scratch["bot_names"] = {"louie", "frida", "random"}
-    config.scratch["pricing_model"] = hyperdrive_pm.HyperdrivePricingModel()
-    # inputs
-    config.scratch["devnet"] = args.devnet
-    config.scratch["crash_file"] = f".logging/no_crash_streak{'_devnet' if args.devnet else ''}.txt"
-    config.scratch["in_docker"] = os.path.exists("/.dockerenv")
-    config.scratch["network_choice"] = "ethereum:local:foundry"
-    if args.alchemy:
-        config.scratch["network_choice"] = "ethereum:goerli:alchemy"
-    config.scratch["provider_settings"] = {}
-    if args.fork_url:
-        config.scratch["provider_settings"].update({"fork_url": args.fork_url})
-    if args.fork_port:
-        config.scratch["provider_settings"].update({"port": args.fork_port})
-    if args.devnet:
-        set_up_devnet_addresses(config)
-    config.scratch["goerli_faucet_address"] = "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2"
-    config.scratch["goerli_sdai_address"] = "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844"
-    config.scratch["goerli_hyperdrive_address"] = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
-    config.scratch["no_crash_streak"] = 0
-    config.scratch["last_executed_block"] = 0
 
     config.freeze()
     return config
 
 
-def set_up_devnet_addresses(config):
-    """Set up devnet addresses."""
-    config.scratch["address_file"] = config.scratch["project_dir"] / "artifacts" / "addresses.json"
+def set_up_experiment(
+    experiment_config: simulators.Config, args: argparse.Namespace
+) -> tuple[elfpy.pricing_models.base.PricingModel, str, str, dict[str, str], dict]:
+    """Declare and assign experiment variables.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The config object.
+    args : argparse.Namespace
+        The parsed arguments from stdin.
+
+    Returns
+    -------
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model.
+    crash_file : str
+        The path to the crash file.
+    network_choice : str
+        Network to connect to, e.g. "ethereum:local:alchemy".
+    provider_settings : dict[str, str]
+        Settings passed to the Ape provider when instantiating it.
+    addresses : dict
+        Dict of deployed addresses.
+    """
+    pricing_model = hyperdrive_pm.HyperdrivePricingModel()
+    # inputs
+    crash_file = f".logging/no_crash_streak{'_devnet' if args.devnet else ''}.txt"
+    network_choice = "ethereum:local:" + ("alchemy" if args.alchemy else "foundry")
+    provider_settings = {
+        "fork_url": args.fork_url or "https://localhost:8545",
+        "port": args.fork_port or 8545,
+    }
+    # hard-code goerli addresses
+    addresses = {
+        "goerli_faucet": "0xe2bE5BfdDbA49A86e27f3Dd95710B528D43272C2",
+        "goerli_sdai": "0x11fe4b6ae13d2a6055c8d9cf65c55bac32b5d844",
+        "goerli_hyperdrive": "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2",
+    }
+
+    # dynamically load devnet addresses from address file
+    address_file = None
+    if args.devnet:
+        addresses, address_file = get_devnet_addresses(experiment_config, addresses)
+    return pricing_model, crash_file, network_choice, provider_settings, addresses, address_file
+
+
+def get_devnet_addresses(experiment_config: simulators.Config, addresses: dict[str, str]) -> tuple[dict[str, str], str]:
+    """Get devnet addresses from address file."""
+    address_file = experiment_config.scratch["project_dir"] / "artifacts" / "addresses.json"
     # make parent folder if it doesn't exist
-    os.makedirs(os.path.dirname(config.scratch["address_file"]), exist_ok=True)
-    config.scratch["addresses"] = {}
-    if Path.exists(config.scratch["address_file"]):
-        with open(config.scratch["address_file"], "r", encoding="utf-8") as file:
-            config.scratch["addresses"] = json.load(file)
-    if "baseToken" in config.scratch["addresses"]:
-        config.scratch["base_address"] = config.scratch["addresses"]["baseToken"]
-        log_and_show(f"found devnet base address: {config.scratch['base_address']}")
+    os.makedirs(os.path.dirname(address_file), exist_ok=True)
+    address_file_data = {}
+    if Path.exists(address_file):
+        with open(address_file, "r", encoding="utf-8") as file:
+            address_file_data = json.load(file)
+    if "baseToken" in address_file_data:
+        addresses["baseToken"] = address_file_data["baseToken"]
+        log_and_show(f"found devnet base address: {addresses['baseToken']}")
     else:
-        config.scratch["base_address"] = None
-    if "hyperdrive" in config.scratch["addresses"]:
-        config.scratch["hyperdrive_address"] = config.scratch["addresses"]["hyperdrive"]
-        log_and_show(f"found devnet hyperdrive address: {config.scratch['hyperdrive_address']}")
+        addresses["baseToken"] = None
+    if "hyperdrive" in address_file_data:
+        addresses["hyperdrive"] = address_file_data["hyperdrive"]
+        log_and_show(f"found devnet hyperdrive address: {addresses['hyperdrive']}")
     else:
-        config.scratch["hyperdrive_address"] = None
+        addresses["hyperdrive"] = None
+    return addresses, address_file
 
 
-def get_accounts(config: simulators.Config) -> list[KeyfileAccount]:
+def get_accounts(experiment_config: simulators.Config) -> list[KeyfileAccount]:
     """Generate dev accounts and turn on auto-sign."""
-    num = sum(config.scratch[f"num_{bot}"] for bot in config.scratch["bot_names"])
+    num = sum(experiment_config.scratch[f"num_{bot}"] for bot in experiment_config.scratch["bot_names"])
     assert (mnemonic := " ".join(["wolf"] * 24)), "You must provide a mnemonic in .env to run this script."
     keys = generate_dev_accounts(mnemonic=mnemonic, number_of_accounts=num)
     for num, key in enumerate(keys):
@@ -414,11 +450,13 @@ def create_agent(
     bot: BotInfo,
     dev_accounts: list[KeyfileAccount],
     faucet: ContractInstance | None,
-    base_: ContractInstance,
+    base_instance: ContractInstance,
     on_chain_trade_info: ape_utils.OnChainTradeInfo,
     hyperdrive_contract: ContractInstance,
     experiment_config: simulators.Config,
-):  # pylint: disable=too-many-arguments
+    args: dict,
+    deployer_account: KeyfileAccount,
+) -> elfpy.agents.agent.Agent:
     """Create an agent as defined in bot_info, assign its address, give it enough base.
 
     Parameters
@@ -429,7 +467,7 @@ def create_agent(
         The list of dev accounts.
     faucet : ContractInstance
         Contract for faucet that mints the testnet base token
-    base_ : ContractInstance
+    base_instance : ContractInstance
         Contract for base token
     on_chain_trade_info : ape_utils.OnChainTradeInfo
         Information about on-chain trades.
@@ -437,20 +475,25 @@ def create_agent(
         Contract for hyperdrive
     experiment_config : simulators.Config
         The experiment config.
+    args : dict
+        The command line arguments.
+    deployer_account : KeyfileAccount
+        The deployer account.
 
     Returns
     -------
-    Agent
-        The agent.
+    agent : elfpy.agents.agent.Agent
+        The agent object used in elf-simulations.
     """
+    # pylint: disable=too-many-arguments
     assert bot.index is not None, "Bot must have an index."
     assert isinstance(bot.policy, type(elfpy_agent.Agent)), "Bot must have a policy of type Agent."
     params = {
         "trade_chance": experiment_config.scratch["trade_chance"],
         "budget": FixedPoint(
-            np.clip(
+            str(np.clip(
                 experiment_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std), bot.budget.min, bot.budget.max
-            )
+            ))
         ),
         "wallet_address": dev_accounts[bot.index].address,
     }
@@ -463,59 +506,83 @@ def create_agent(
         )
     agent = bot.policy(**params)  # instantiate the agent with its policy and params
     agent.contract = dev_accounts[bot.index]  # assign its onchain contract
-    if experiment_config.scratch["devnet"]:
+    if args.devnet:
         agent.contract.balance += int(1e18)  # give it some eth
-    if (need_to_mint := (params["budget"].scaled_value - base_.balanceOf(agent.contract.address)) / 1e18) > 0:
+    if (need_to_mint := (params["budget"].scaled_value - base_instance.balanceOf(agent.contract.address)) / 1e18) > 0:
         log_and_show(f" agent_{agent.contract.address[:8]} needs to mint {fmt(need_to_mint)} Base")
         with ape.accounts.use_sender(agent.contract):
-            if experiment_config.scratch["devnet"]:
-                txn_receipt: ReceiptAPI = base_.mint(
-                    agent.contract.address, int(50_000 * 1e18), sender=experiment_config.scratch["deployer_account"]
+            if args.devnet:
+                txn_receipt: ReceiptAPI = base_instance.mint(
+                    agent.contract.address, int(50_000 * 1e18), sender=deployer_account
                 )
             else:
                 assert faucet is not None, "Faucet must be provided to mint base on testnet."
-                txn_receipt: ReceiptAPI = faucet.mint(base_.address, agent.wallet.address, int(50_000 * 1e18))
+                txn_receipt: ReceiptAPI = faucet.mint(base_instance.address, agent.wallet.address, int(50_000 * 1e18))
             txn_receipt.await_confirmations()
     log_and_show(
         f" agent_{agent.contract.address[:8]} is a {bot.name} with budget={fmt(params['budget'])}"
-        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_.balanceOf(agent.contract.address)/1e18)}"
+        f" Eth={fmt(agent.contract.balance/1e18)} Base={fmt(base_instance.balanceOf(agent.contract.address)/1e18)}"
     )
     agent.wallet = ape_utils.get_wallet_from_onchain_trade_info(
         address_=agent.contract.address,
         index=bot.index,
         info=on_chain_trade_info,
         hyperdrive_contract=hyperdrive_contract,
-        base_contract=base_,
+        base_contract=base_instance,
     )
     return agent
 
 
-def set_up_agents(experiment_config: simulators.Config):
+def set_up_agents(
+    experiment_config: simulators.Config,
+    args: argparse.Namespace,
+    provider: ProviderAPI,
+    hyperdrive_instance: ContractInstance,
+    base_instance: ContractInstance,
+    addresses: dict[str, str],
+    deployer_account: KeyfileAccount,
+) -> dict[str, elfpy.agents.agent.Agent]:
     """Set up python agents & corresponding on-chain accounts.
 
     Parameters
     ----------
     experiment_config : simulators.Config
         The experiment config.
+    args : dict
+        The command line arguments.
+    provider : ape.api.ProviderAPI
+        The Ape object that connects to the Ethereum network.
+    hyperdrive_instance : ContractInstance
+        The hyperdrive contract instance.
+    base_instance : ContractInstance
+        The base token contract instance.
+    addresses : dict[str, str]
+        Addresses of deployed contracts.
+    deployer_account : KeyfileAccount
+        The deployer account.
+
+    Returns
+    -------
+    sim_agents : dict[str, elfpy.agents.agent.Agent]
+        Dict of agents used in the simulation.
     """
+    # pylint: disable=too-many-arguments, too-many-locals
     dev_accounts: list[KeyfileAccount] = get_accounts(experiment_config)
     faucet = None
-    if not experiment_config.scratch["devnet"]:
-        faucet = ape_utils.get_instance(
-            experiment_config.scratch["goerli_faucet_address"], provider=experiment_config.scratch["provider"]
-        )
+    if not args.devnet:
+        faucet = ape_utils.get_instance(addresses["goerli_faucet"], provider=provider)
     bot_num = 0
     for bot_name in experiment_config.scratch["bot_names"]:
-        _policy = experiment_config.scratch[bot_name].policy
+        policy = experiment_config.scratch[bot_name].policy
         log_and_show(
             f"{bot_name:6s}: n={experiment_config.scratch[f'num_{bot_name}']}  "
-            f"policy={_policy.__name__ if _policy.__module__ == '__main__' else _policy.__module__:20s}"
+            f"policy={policy.__name__ if policy.__module__ == '__main__' else policy.__module__:20s}"
         )
         bot_num += experiment_config.scratch[f"num_{bot_name}"]
-    _sim_agents = {}
+    sim_agents = {}
     start_time_ = now()
     on_chain_trade_info: ape_utils.OnChainTradeInfo = ape_utils.get_on_chain_trade_info(
-        hyperdrive_contract=experiment_config.scratch["hyperdrive_instance"]
+        hyperdrive_contract=hyperdrive_instance
     )
     log_and_show(f"Getting on-chain trade info took {fmt(now() - start_time_)} seconds")
     for bot_name in [
@@ -524,48 +591,62 @@ def set_up_agents(experiment_config: simulators.Config):
         bot_info = experiment_config.scratch[bot_name]
         bot_info.name = bot_name
         for _ in range(experiment_config.scratch[f"num_{bot_name}"]):  # loop across number of bots of this type
-            bot_info.index = len(_sim_agents)
+            bot_info.index = len(sim_agents)
             logging.debug("Creating %s agent %s/%s: %s", bot_name, bot_info.index + 1, bot_num, bot_info)
             agent = create_agent(
                 bot=bot_info,
                 dev_accounts=dev_accounts,
                 faucet=faucet,
-                base_=experiment_config.scratch["base_instance"],
+                base_instance=base_instance,
                 on_chain_trade_info=on_chain_trade_info,
-                hyperdrive_contract=experiment_config.scratch["hyperdrive_instance"],
+                hyperdrive_contract=hyperdrive_instance,
                 experiment_config=experiment_config,
+                args=args,
+                deployer_account=deployer_account,
             )
-            _sim_agents[f"agent_{agent.wallet.address}"] = agent
-    experiment_config.scratch["sim_agents"] = _sim_agents
+            sim_agents[f"agent_{agent.wallet.address}"] = agent
+    return sim_agents
 
 
-def do_trade(market_trade: types.Trade, experiment_config):
-    """Execute agent trades on hyperdrive solidity contract."""
+def do_trade(
+    market_trade: types.Trade,
+    sim_agents: dict[str, elfpy.agents.agent.Agent],
+    hyperdrive_instance: ContractInstance,
+    base_instance: ContractInstance,
+):
+    """Execute agent trades on hyperdrive solidity contract.
+
+    Parameters
+    ----------
+    market_trade : types.Trade
+        The trade to execute.
+    sim_agents : dict[str, elfpy.agents.agent.Agent]
+        Dict of agents used in the simulation.
+    hyperdrive_instance : ContractInstance
+        The hyperdrive contract instance.
+    base_instance : ContractInstance
+        The base token contract instance.
+    """
     # TODO: add market-state-dependent trading for smart bots
     # market_state = get_simulation_market_state_from_contract(
     #     hyperdrive_contract=hyperdrive_contract, agent_address=contract
     # )
     # market_type = trade_obj.market
     trade = market_trade.trade
-    agent_contract = experiment_config.scratch["sim_agents"][f"agent_{trade.wallet.address}"].contract
+    agent_contract = sim_agents[f"agent_{trade.wallet.address}"].contract
     amount = trade.trade_amount.scaled_value  # ape works with ints
     # If agent does not have enough base approved for this trade, then approve another 50k
     # allowance(address owner, address spender) → uint256
-    if (
-        experiment_config.scratch["base_instance"].allowance(
-            agent_contract.address, experiment_config.scratch["hyperdrive_instance"].address
-        )
-        < amount
-    ):
+    if base_instance.allowance(agent_contract.address, hyperdrive_instance.address) < amount:
         txn_args = (
-            experiment_config.scratch["hyperdrive_instance"].address,
+            hyperdrive_instance.address,
             FixedPoint("50_000.0", decimal_places=18).scaled_value,
         )
-        ape_utils.attempt_txn(agent_contract, experiment_config.scratch["base_instance"].approve, *txn_args)
+        ape_utils.attempt_txn(agent_contract, base_instance.approve, *txn_args)
         logging.info("Trade had insufficient allowance, approving an additional 50k base.")
     params = {
         "trade_type": trade.action_type.name,
-        "hyperdrive_contract": experiment_config.scratch["hyperdrive_instance"],
+        "hyperdrive_contract": hyperdrive_instance,
         "agent": agent_contract,
         "amount": amount,
     }
@@ -574,55 +655,97 @@ def do_trade(market_trade: types.Trade, experiment_config):
     log_and_show(
         f" agent_{agent_contract.address[:8]} has"
         f" Eth={fmt(agent_contract.balance/1e18)}"
-        f" Base={fmt(experiment_config.scratch['base_instance'].balanceOf(agent_contract.address)/1e18)}"
+        f" Base={fmt(base_instance.balanceOf(agent_contract.address)/1e18)}"
     )
 
-    _, _ = ape_utils.ape_trade(**params)
+    # execute the trade using key-word arguments
+    ape_utils.ape_trade(**params)
 
 
-def set_days_without_crashing(experiment_config: simulators.Config, reset: bool = False):
+def set_days_without_crashing(current_streak, crash_file, reset: bool = False):
     """Calculate the number of days without crashing."""
-    streak = 0 if reset is True else experiment_config.scratch["no_crash_streak"] + 1
-    with open(experiment_config.scratch["crash_file"], "w", encoding="utf-8") as file:
+    streak = 0 if reset is True else current_streak + 1
+    with open(crash_file, "w", encoding="utf-8") as file:
         file.write(f"{streak}")
-    experiment_config.scratch["no_crash_streak"] = streak
+    return streak
 
 
-def log_and_show_block_info(experiment_config):
-    """Get and show the latest block number and gas fees."""
-    block = experiment_config.scratch["provider"].get_block(experiment_config.scratch["block_number"])
+def log_and_show_block_info(
+    provider: ape.api.ProjectAPI, no_crash_streak: int, block_number: int, block_timestamp: int
+):
+    """Get and show the latest block number and gas fees.
+
+    Parameters
+    ----------
+    provider : ape.api.ProviderAPI
+        The Ape object that connects to the Ethereum blockchain.
+    no_crash_streak : int
+        The number of trades without crashing.
+    block_number : int
+        The number of the latest block.
+    block_timestamp : int
+        The timestamp of the latest block.
+    """
+    block = provider.get_block(block_number)
     if not hasattr(block, "base_fee"):
         raise ValueError("latest block does not have base_fee")
     base_fee = getattr(block, "base_fee") / 1e9
     log_and_show(
         "Block number: %s, Block time: %s, Trades without crashing: %s, base_fee: %s",
-        fmt(experiment_config.scratch["block_number"]),
-        datetime.fromtimestamp(experiment_config.scratch["block_timestamp"]),
-        experiment_config.scratch["no_crash_streak"],
+        fmt(block_number),
+        datetime.fromtimestamp(block_timestamp),
+        no_crash_streak,
         base_fee,
     )
 
 
-def get_simulator(experiment_config: simulators.Config) -> simulators.Simulator:
+def get_simulator(
+    experiment_config: simulators.Config, pricing_model: elfpy.pricing_models.base.PricingModel
+) -> simulators.Simulator:
     """Instantiate and return an initialized elfpy Simulator object."""
     market, _, _ = sim_utils.get_initialized_hyperdrive_market(
-        pricing_model=experiment_config.scratch["pricing_model"], block_time=time.BlockTime(), config=experiment_config
+        pricing_model=pricing_model, block_time=time.BlockTime(), config=experiment_config
     )
     return simulators.Simulator(experiment_config, market, time.BlockTime())
 
 
-def deploy_hyperdrive(experiment_config: simulators.Config) -> ContractInstance:
-    """Deploy Hyperdrive when operating on a fresh fork."""
+def deploy_hyperdrive(
+    experiment_config: simulators.Config,
+    base_instance: ContractInstance,
+    deployer_account: KeyfileAccount,
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    project: ape_utils.HyperdriveProject,
+) -> ContractInstance:
+    """Deploy Hyperdrive when operating on a fresh fork.
+
+    Parameters
+    ----------
+    experiment_config : simulators.Config
+        The experiment configuration object.
+    base_instance : ContractInstance
+        The base token contract instance.
+    deployer_account : Account
+        The account used to deploy smart contracts.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model.
+    project : ape_utils.HyperdriveProject
+        The Ape project that contains a Hyperdrive contract.
+
+    Returns
+    -------
+    hyperdrive : ContractInstance
+        The deployed Hyperdrive contract instance.
+    """
     initial_supply = FixedPoint(experiment_config.target_liquidity, decimal_places=18)
     initial_apr = FixedPoint(experiment_config.target_fixed_apr, decimal_places=18)
-    simulator = get_simulator(experiment_config)  # Instantiate the sim market
-    experiment_config.scratch["base_instance"].mint(
+    simulator = get_simulator(experiment_config, pricing_model)  # Instantiate the sim market
+    base_instance.mint(
         initial_supply.scaled_value,
-        sender=experiment_config.scratch["deployer_account"],  # minted amount goes to sender
+        sender=deployer_account,  # minted amount goes to sender
     )
-    hyperdrive: ContractInstance = experiment_config.scratch["deployer_account"].deploy(
-        experiment_config.scratch["project"].get_contract("MockHyperdriveTestnet"),
-        experiment_config.scratch["base_instance"],
+    hyperdrive: ContractInstance = deployer_account.deploy(
+        project.get_contract("MockHyperdriveTestnet"),
+        base_instance,
         initial_apr.scaled_value,
         FixedPoint(experiment_config.init_share_price).scaled_value,
         365,  # checkpoints per term
@@ -635,131 +758,232 @@ def deploy_hyperdrive(experiment_config: simulators.Config) -> ContractInstance:
             FixedPoint(experiment_config.flat_fee_multiple).scaled_value,
             FixedPoint(experiment_config.governance_fee_multiple).scaled_value,
         ),
-        experiment_config.scratch["deployer_account"],
+        deployer_account,
     )
-    with ape.accounts.use_sender(experiment_config.scratch["deployer_account"]):
-        experiment_config.scratch["base_instance"].approve(hyperdrive, initial_supply.scaled_value)
+    with ape.accounts.use_sender(deployer_account):
+        base_instance.approve(hyperdrive, initial_supply.scaled_value)
         hyperdrive.initialize(
             initial_supply.scaled_value,
             initial_apr.scaled_value,
-            experiment_config.scratch["deployer_account"],
+            deployer_account,
             True,
         )
     return hyperdrive
 
 
-def set_up_ape(experiment_config) -> simulators.Config:
+def set_up_devnet(
+    addresses, project, provider, experiment_config, pricing_model, address_file
+) -> tuple[ContractInstance, ContractInstance, dict[str, str]]:
+    """Load deployed devnet addresses or deploy new contracts.
+
+    Parameters
+    ----------
+    addresses : dict
+        The addresses of the deployed contracts.
+    project : ape_utils.HyperdriveProject
+        The Ape project that contains a Hyperdrive contract.
+    provider : ape.api.ProviderAPI
+        The Ape object that connects to the Ethereum blockchain.
+    experiment_config : simulators.Config
+        The experiment configuration object.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model.
+    address_file : str
+        The path to the file containing the addresses of the deployed contracts.
+
+    Returns
+    -------
+    addresses : dict
+        The addresses of the deployed contracts.
+    """
+    # pylint: disable=too-many-arguments
+    deployer_account = ape.accounts.test_accounts[0]
+    deployer_account.balance += int(1e18)  # eth, for spending on gas, not erc20
+    if addresses["baseToken"]:  # use existing base token deployment
+        base_instance = ape_utils.get_instance(
+            address=addresses["baseToken"],
+            contract_type=project.get_contract("ERC20Mintable").contract_type,
+            provider=provider,
+        )
+    else:  # deploy a new base token
+        base_instance: ContractInstance = deployer_account.deploy(project.get_contract("ERC20Mintable"))
+        addresses["baseToken"] = base_instance.address
+    if addresses["hyperdrive"]:  # use existing hyperdrive deployment
+        hyperdrive_instance: ContractInstance = ape_utils.get_instance(
+            address=addresses["hyperdrive"],
+            contract_type=project.get_contract("MockHyperdriveTestnet").contract_type,
+            provider=provider,
+        )
+    else:  # deploy a new hyperdrive
+        hyperdrive_instance: ContractInstance = deploy_hyperdrive(
+            experiment_config, base_instance, deployer_account, pricing_model, project
+        )
+        addresses["hyperdrive"] = hyperdrive_instance.address
+    with open(address_file, "w", encoding="utf-8") as file:
+        json.dump(addresses, file)
+    return base_instance, hyperdrive_instance, addresses, deployer_account
+
+
+def get_hyperdrive_config(hyperdrive_instance) -> dict:
+    """Get the hyperdrive config from a deployed hyperdrive contract.
+
+    Parameters
+    ----------
+    hyperdrive_instance : ContractInstance
+        The deployed hyperdrive contract instance.
+
+    Returns
+    -------
+    hyperdrive_config : dict
+        The hyperdrive config.
+    """
+    hyperdrive_config: dict = hyperdrive_instance.getPoolConfig().__dict__
+    hyperdrive_config["timeStretch"] = 1 / (hyperdrive_config["timeStretch"] / 1e18)
+    log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
+    for key, value in hyperdrive_config.items():
+        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
+        log_and_show(f" {key}: {fmt(value/divisor)}")
+    hyperdrive_config["term_length"] = 365  # days
+    return hyperdrive_config
+
+
+def set_up_ape(
+    experiment_config: simulators.Config,
+    args: argparse.Namespace,
+    provider_settings: dict,
+    addresses: dict,
+    network_choice: str,
+    address_file: str,
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+) -> tuple[ProviderAPI, ContractInstance, ContractInstance, dict, KeyfileAccount]:
     r"""Set up ape.
 
     Parameters
     ----------
     experiment_config : simulators.Config
-        The experiment configuration, which stores default elfpy simulator variables as well as custom variables.
+        The experiment configuration, a list of variables that define the elf-simulations run.
+    args : argparse.Namespace
+        The command line arguments.
+    provider_settings : dict
+        Custom parameters passed to the provider.
+    addresses : dict
+        The addresses of the deployed contracts.
+    network_choice : str
+        The network to connect to.
+    address_file : str
+        The path to the file containing the addresses of the deployed contracts.
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The elf-simulations pricing model to use.
 
     Returns
     -------
-    simulators.Config
-        The experiment configuration, augmented with: `base_instance`, `hyperdrive_instance`, `hyperdrive_config`,
-        and `provider`.
+    provider : ProviderAPI
+        The Ape object that represents your connection to the Ethereum network.
+    base_instance : ContractInstance
+        The deployed base token instance.
+    hyperdrive_instance : ContractInstance
+        The deployed Hyperdrive instance.
+    hyperdrive_config : dict
+        The configuration of the deployed Hyperdrive instance
+    deployer_account : KeyfileAccount
+        The account used to deploy the contracts.
     """
+    # pylint: disable=too-many-arguments
     # sourcery skip: inline-variable, move-assign
-    experiment_config.scratch["deployer_account"] = None
-    experiment_config.scratch["provider"]: ProviderAPI = ape.networks.parse_network_choice(
-        network_choice=experiment_config.scratch["network_choice"],
-        provider_settings=experiment_config.scratch["provider_settings"],
+    deployer_account = None
+    provider: ProviderAPI = ape.networks.parse_network_choice(
+        network_choice=network_choice,
+        provider_settings=provider_settings,
     ).push_provider()
     log_and_show(
         "connected to %s, latest block %s",
-        "devnet" if experiment_config.scratch["devnet"] else experiment_config.scratch["network_choice"],
-        experiment_config.scratch["provider"].get_block("latest").number,
+        "devnet" if args.devnet else network_choice,
+        provider.get_block("latest").number,
     )
-    experiment_config.scratch["project"]: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
+    project: ape_utils.HyperdriveProject = ape_utils.HyperdriveProject(
         path=Path.cwd(),
-        hyperdrive_address=experiment_config.scratch["goerli_hyperdrive_address"],  # ignored on devnet
+        hyperdrive_address=addresses["goerli_hyperdrive"],  # ignored on devnet
     )
-
-    if experiment_config.scratch["devnet"]:  # we're on devnet
-        experiment_config.scratch["deployer_account"] = ape.accounts.test_accounts[0]
-        experiment_config.scratch["deployer_account"].balance += int(1e18)  # eth, for spending on gas, not erc20
-        if experiment_config.scratch["base_address"]:  # use existing base token deployment
-            experiment_config.scratch["base_instance"] = ape_utils.get_instance(
-                address=experiment_config.scratch["base_address"],
-                contract_type=experiment_config.scratch["project"].get_contract("ERC20Mintable").contract_type,
-                provider=experiment_config.scratch["provider"],
-            )
-        else:  # deploy a new base token
-            experiment_config.scratch["base_instance"]: ContractInstance = experiment_config.scratch[
-                "deployer_account"
-            ].deploy(experiment_config.scratch["project"].get_contract("ERC20Mintable"))
-            experiment_config.scratch["addresses"]["baseToken"] = experiment_config.scratch["base_instance"].address
-        if experiment_config.scratch["hyperdrive_address"]:  # use existing hyperdrive deployment
-            experiment_config.scratch["hyperdrive_instance"]: ContractInstance = ape_utils.get_instance(
-                address=experiment_config.scratch["hyperdrive_address"],
-                contract_type=experiment_config.scratch["project"].get_contract("MockHyperdriveTestnet").contract_type,
-                provider=experiment_config.scratch["provider"],
-            )
-        else:  # deploy a new hyperdrive
-            experiment_config.scratch["hyperdrive_instance"]: ContractInstance = deploy_hyperdrive(experiment_config)
-            experiment_config.scratch["addresses"]["hyperdrive"] = experiment_config.scratch[
-                "hyperdrive_instance"
-            ].address
-        with open(experiment_config.scratch["address_file"], "w", encoding="utf-8") as file:
-            json.dump(experiment_config.scratch["addresses"], file)
-    else:  # not on devnet, means we're on goerli, so we use known goerli addresses
-        experiment_config.scratch["base_instance"]: ContractInstance = ape_utils.get_instance(
-            experiment_config.scratch[experiment_config.scratch["goerli_sdai_address"]],
-            provider=experiment_config.scratch["provider"],
+    if args.devnet:  # we're on devnet
+        base_instance, hyperdrive_instance, addresses, deployer_account = set_up_devnet(
+            addresses, project, provider, experiment_config, pricing_model, address_file
         )
-        experiment_config.scratch["hyperdrive_instance"]: ContractInstance = experiment_config.scratch[
-            "project"
-        ].get_hyperdrive_contract()
-
+    else:  # not on devnet, means we're on goerli, so we use known goerli addresses
+        base_instance: ContractInstance = ape_utils.get_instance(
+            experiment_config.scratch[experiment_config.scratch["goerli_sdai_address"]],
+            provider=provider,
+        )
+        hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # read the hyperdrive config from the contract, and log (and print) it
-    experiment_config.scratch["hyperdrive_config"]: dict = (
-        experiment_config.scratch["hyperdrive_instance"].getPoolConfig().__dict__
-    )
-    experiment_config.scratch["hyperdrive_config"]["timeStretch"] = 1 / (
-        experiment_config.scratch["hyperdrive_config"]["timeStretch"] / 1e18
-    )
-    log_and_show(f"Hyperdrive config deployed at {experiment_config.scratch['hyperdrive_instance'].address}:")
-    for key, value in experiment_config.scratch["hyperdrive_config"].items():
-        divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        log_and_show(f" {key}: {fmt(value/divisor)}")
-    experiment_config.scratch["hyperdrive_config"]["term_length"] = 365  # days
-    return experiment_config
+    hyperdrive_config = get_hyperdrive_config(hyperdrive_instance)
+    return provider, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
 
 
-def do_policy(policy, elfpy_market, experiment_config):
+def do_policy(
+    policy: elfpy.agents.policy.Policy,
+    elfpy_market: elfpy.markets.base.Market,
+    no_crash_streak: int,
+    crash_file: str,
+    sim_agents: dict[str, elfpy.agents.agent.Agent],
+    hyperdrive_instance: ContractInstance,
+    base_instance: ContractInstance,
+):  # pylint: disable=too-many-arguments
     """Execute an agent's policy."""
     trades: list[types.Trade] = policy.get_trades(market=elfpy_market)
     for trade_object in trades:
         try:
             logging.debug(trade_object)
-            do_trade(trade_object, experiment_config)
-            set_days_without_crashing(experiment_config)  # set and save to file
+            do_trade(trade_object, sim_agents, hyperdrive_instance, base_instance)
+            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file)  # set and save to file
         except Exception as exc:  # we want to catch all exceptions (pylint: disable=broad-exception-caught)
             log_and_show("Crashed unexpectedly: %s", exc)
-            set_days_without_crashing(experiment_config, 0)  # set and save to file
+            no_crash_streak = set_days_without_crashing(no_crash_streak, crash_file, reset=True)  # set and save to file
             raise exc
+    return no_crash_streak
 
 
-def create_elfpy_market(experiment_config):
-    """Create an elfpy market."""
+def create_elfpy_market(
+    pricing_model: elfpy.pricing_models.base.PricingModel,
+    hyperdrive_instance: ContractInstance,
+    hyperdrive_config: dict,
+    block_number: int,
+    block_timestamp: int,
+    start_timestamp: int,
+) -> hyperdrive_market.Market:
+    """Create an elfpy market.
+
+    Parameters
+    ----------
+    pricing_model : elfpy.pricing_models.base.PricingModel
+        The pricing model to use.
+    hyperdrive_instance : ContractInstance
+        The deployed Hyperdrive instance.
+    hyperdrive_config : dict
+        The configuration of the deployed Hyperdrive instance
+    block_number : int
+        The block number of the latest block.
+    block_timestamp : int
+        The timestamp of the latest block.
+    start_timestamp : int
+        The timestamp for when we started the simulation.
+
+    Returns
+    -------
+    hyperdrive_market.Market
+        The elfpy market.
+    """
+    # pylint: disable=too-many-arguments
     return hyperdrive_market.Market(
-        pricing_model=experiment_config.scratch["pricing_model"],
-        market_state=ape_utils.get_market_state_from_contract(
-            hyperdrive_contract=experiment_config.scratch["hyperdrive_instance"]
-        ),
+        pricing_model=pricing_model,
+        market_state=ape_utils.get_market_state_from_contract(hyperdrive_contract=hyperdrive_instance),
         position_duration=time.StretchedTime(
-            days=FixedPoint(experiment_config.scratch["hyperdrive_config"]["term_length"]),
-            time_stretch=FixedPoint(experiment_config.scratch["hyperdrive_config"]["timeStretch"]),
-            normalizing_constant=FixedPoint(experiment_config.scratch["hyperdrive_config"]["term_length"]),
+            days=FixedPoint(hyperdrive_config["term_length"]),
+            time_stretch=FixedPoint(hyperdrive_config["timeStretch"]),
+            normalizing_constant=FixedPoint(hyperdrive_config["term_length"]),
         ),
         block_time=time.BlockTime(
-            _time=FixedPoint(
-                (experiment_config.scratch["start_timestamp"] - experiment_config.scratch["start_timestamp"]) / 365
-            ),
-            _block_number=FixedPoint(experiment_config.scratch["block_number"]),
+            _time=FixedPoint((block_timestamp - start_timestamp) / 365),
+            _block_number=FixedPoint(block_number),
             _step_size=FixedPoint("1.0") / FixedPoint("365.0"),
         ),
     )
@@ -767,21 +991,37 @@ def create_elfpy_market(experiment_config):
 
 def main():
     """Run the simulation."""
-    experiment_config = get_config()
+    # pylint: disable=too-many-locals
+    args = get_argparser().parse_args()
+    experiment_config = get_config(args)
+    pricing_model, crash_file, network_choice, provider_settings, addresses, address_file = set_up_experiment(
+        experiment_config, args
+    )
+    no_crash_streak = 0
+    last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
-    experiment_config = set_up_ape(experiment_config=experiment_config)
-    set_up_agents(experiment_config=experiment_config)
+    provider, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
+        experiment_config, args, provider_settings, addresses, network_choice, address_file, pricing_model
+    )
+    sim_agents: dict[str, elfpy.agents.agent.Agent] = set_up_agents(
+        experiment_config, args, provider, hyperdrive_instance, base_instance, addresses, deployer_account
+    )
 
-    experiment_config.scratch["start_timestamp"] = ape.chain.blocks[-1].timestamp
+    start_timestamp = ape.chain.blocks[-1].timestamp
     while True:  # hyper drive forever into the sunset
-        experiment_config.scratch["block_number"] = ape.chain.blocks[-1].number
-        experiment_config.scratch["block_timestamp"] = ape.chain.blocks[-1].timestamp
-        if experiment_config.scratch["block_number"] > experiment_config.scratch["last_executed_block"]:
-            log_and_show_block_info(experiment_config)
-            elfpy_market = create_elfpy_market(experiment_config)
-            for policy in experiment_config.scratch["sim_agents"].values():
-                do_policy(policy, elfpy_market, experiment_config)
-            experiment_config.scratch["last_executed_block"] = experiment_config.scratch["block_number"]
+        latest_block = ape.chain.blocks[-1]
+        block_number = latest_block.number
+        block_timestamp = latest_block.timestamp
+        if block_number > last_executed_block:
+            log_and_show_block_info(provider, no_crash_streak, block_number, block_timestamp)
+            elfpy_market = create_elfpy_market(
+                pricing_model, hyperdrive_instance, hyperdrive_config, block_number, block_timestamp, start_timestamp
+            )
+            for policy in sim_agents.values():
+                no_crash_streak = do_policy(
+                    policy, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
+                )
+            last_executed_block = block_number
         sleep(1)
 
 
