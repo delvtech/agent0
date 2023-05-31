@@ -77,7 +77,7 @@ pkg_meta = _get_project_meta()
 project = str(pkg_meta["name"])
 author = ", ".join([person["name"] for person in pkg_meta["authors"]])
 organization = "Delv"
-copyright = f" {datetime.date.today().year}, {organization}"
+copyright = f" {datetime.date.today().year}, {organization}" # pylint: disable=redefined-builtin
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
