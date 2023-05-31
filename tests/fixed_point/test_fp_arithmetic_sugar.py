@@ -454,6 +454,11 @@ class TestFixedPoint(unittest.TestCase):
         # float % int
         assert float(FixedPoint(5.0) % FixedPoint(2)) == 1.0
         assert float(FixedPoint(9.0) % FixedPoint(3)) == 0.0
+        # float % 1
+        assert float(FixedPoint(3.2) % FixedPoint(1)) == 0.2
+        assert float(FixedPoint(0.4) % FixedPoint(1)) == 0.4
+        assert float(FixedPoint(-1.2) % FixedPoint(1)) == 0.8
+        assert float(FixedPoint(1) % FixedPoint(1)) == 0
         # str % str
         assert float(FixedPoint("37.0") % FixedPoint("1.0")) == 0.0
         assert float(FixedPoint("5.0") % FixedPoint("2.0")) == 1.0

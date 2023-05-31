@@ -361,8 +361,6 @@ class FixedPoint:
             return FixedPoint("nan")
         if other.is_inf():
             return self
-        if other == FixedPoint("1.0"):  # everything divides evenly into 1
-            return FixedPoint("0.0")
         return self - (other * (self / other).floor())
 
     def __rmod__(self, other: OtherTypes | FixedPoint) -> FixedPoint:
