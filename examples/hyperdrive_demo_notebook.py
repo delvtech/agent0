@@ -237,7 +237,9 @@ long_agents = get_example_agents(
 simulator.add_agents(short_agents + long_agents)
 print(f"Simulator has {len(simulator.agents)} agents")
 
+# %%
 # run the simulation
+
 simulator.run_simulation()
 
 # %%
