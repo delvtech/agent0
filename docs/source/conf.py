@@ -167,5 +167,3 @@ html_title = f"{project} v{release} documentation"
 language = "en"
 today_fmt = "%B %d, %Y"
 todo_include_todos = False
-
-# 
