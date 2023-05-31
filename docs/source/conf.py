@@ -20,8 +20,14 @@ sys.path.insert(0, elfpy_root)
 
 # -- Auto notebook index creation --------------------------------------------
 
-files = os.listdir('examples/_static')
+static_indir = 'examples/_static'
 rst_outdir = 'examples/notebook/'
+
+if os.path.exists(static_indir):
+    files = os.listdir('examples/_static')
+else:
+    files = []
+
 if not os.path.exists(rst_outdir):
     os.makedirs(rst_outdir)
 
