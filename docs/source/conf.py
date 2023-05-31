@@ -18,6 +18,51 @@ sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, elfpy_root)
 
 
+# -- Auto notebook index creation --------------------------------------------
+
+static_indir = "examples/_static"
+rst_outdir = "examples/notebook/"
+
+if os.path.exists(static_indir):
+    files = os.listdir("examples/_static")
+else:
+    files = []
+
+if not os.path.exists(rst_outdir):
+    os.makedirs(rst_outdir)
+
+# Static page text, needs title at front and path at end
+middle_text = """
+=================================================
+
+.. raw:: html
+    :file: """
+
+# Create an rst file per notebook output
+for f in files:
+    raw_name = f.split(".")[0]
+    title_name = raw_name.replace("_", " ").title()
+
+    with open(rst_outdir + raw_name + ".rst", "w", encoding="UTF-8") as file:
+        file.write(title_name + middle_text + "../_static/" + f + "\n")
+
+text = """Examples
+=================================================
+
+.. toctree::
+   :titlesonly:
+
+"""
+
+# Create outer index.rst for examples
+for f in files:
+    raw_name = f.split(".")[0]
+    text += "   /" + rst_outdir + raw_name + "\n"
+
+with open("examples/index.rst", "w", encoding="UTF-8") as file:
+    file.write(text)
+
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 def _get_project_meta():
@@ -30,7 +75,7 @@ pkg_meta = _get_project_meta()
 project = str(pkg_meta["name"])
 author = ", ".join([person["name"] for person in pkg_meta["authors"]])
 organization = "Delv"
-copyright = f" {datetime.date.today().year}, {organization}"
+copyright = f" {datetime.date.today().year}, {organization}"  # pylint: disable=redefined-builtin
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

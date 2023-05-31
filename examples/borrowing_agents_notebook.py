@@ -25,10 +25,6 @@ from __future__ import annotations
 # pylint: disable=redefined-outer-name
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false
 
-
-# %% [markdown]
-# <a href="https://colab.research.google.com/github/delvtech/elf-simulations/blob/main/examples/notebooks/borrowing_beatrice.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
 # %% [markdown]
 # ## Hyperdrive Borrow market simulation
 # We use the following setup:

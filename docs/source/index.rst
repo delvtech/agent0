@@ -9,6 +9,11 @@ Welcome to elfpy's documentation!
    installation
 
 .. toctree::
+   :caption: Examples
+
+   /examples/index
+
+.. toctree::
    :titlesonly:
    :caption: API
 

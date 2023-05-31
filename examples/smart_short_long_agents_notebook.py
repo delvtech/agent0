@@ -13,19 +13,6 @@ from __future__ import annotations
 # ### Install repo requirements & import packages
 
 # %%
-# test: skip-cell
-try:  # install dependencies only if running on google colab
-    # check if running in Google Colaboratory
-    eval("import google.colab")  # pylint: disable=eval-used
-    import os
-
-    os.system(
-        "!pip install git+https://github.com/delvtech/elf-simulations.git@4536bb486b7ce857840996448dbb479adb1c5c14"
-    )
-except:  # pylint: disable=bare-except
-    print("running locally & trusting that you have the dependencies installed")
-
-# %%
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 import matplotlib.ticker as ticker
