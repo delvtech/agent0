@@ -40,6 +40,7 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
+<<<<<<< Updated upstream
 exclude = ["hyperdrive_solidity", "docs", ".venv"]
 
 [tool.ruff]
@@ -76,3 +77,10 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9.
 target-version = "py39"
+=======
+exclude = [
+    "hyperdrive_solidity",
+    "hyperdrive_solidity/.venv",
+    ".venv",
+]
+>>>>>>> Stashed changes
