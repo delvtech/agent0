@@ -1,11 +1,16 @@
-# Must run script from repo base dir, otherwise will exit
-outdir=docs/notebook_build/
-cd docs/ || exit 1;
-mkdir -p notebook_build
-# Clean up notebook_build direcotry
-rm notebook_build/*
-cd ../examples || exit 1;
+#!/bin/sh
 
+# Paths set to be relative to the location of this script
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
+outdir=$parent_path/../docs/source/examples/_static/
+indir=$parent_path/../examples/
+
+mkdir -p $outdir
+# Clean up notebook_build direcotry
+rm $outdir/*
+
+cd $indir
 fail=0
 failed_files=()
 # Only do this for files ending in _notebook.py
@@ -20,7 +25,7 @@ do
     # jupytext outputs final html file to stdout, but we don't need it
     # since jupyter has already made the file, so send to /dev/null
     jupytext --to ipynb --pipe-fmt ipynb -o '-' --check \
-        "jupyter nbconvert --to html --execute --stdin --output ../$outdir/$outfn.html" $f > /dev/null;
+        "jupyter nbconvert --to html --execute --stdin --output $outdir/$outfn.html" $f > /dev/null;
     
     # Check output of jupytext, if it fails, keep running but store the fail flag for later
     if [[ $? -ne 0 ]]; then
