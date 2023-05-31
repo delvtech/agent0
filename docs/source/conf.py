@@ -43,7 +43,7 @@ for f in files:
     raw_name = f.split(".")[0]
     title_name = raw_name.replace("_", " ").title()
 
-    with open(rst_outdir+raw_name+".rst", "w", encoding="UTF-8") as file:
+    with open(rst_outdir + raw_name + ".rst", "w", encoding="UTF-8") as file:
         file.write(title_name + middle_text + "../_static/" + f + "\n")
 
 text = """Examples
