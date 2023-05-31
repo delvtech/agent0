@@ -40,7 +40,6 @@ line-length = "120"
 extend-exclude = "\\.ipynb"
 
 [tool.pyright]
-<<<<<<< Updated upstream
 exclude = ["hyperdrive_solidity", "docs", ".venv"]
 
 [tool.ruff]
@@ -60,8 +59,6 @@ ignore = ["D203", "D213", "D416"]
 fixable = ["A", "D", "I", "N", "PL"]
 unfixable = []
 
-exclude = ["hyperdrive_solidity", "docs", ".venv"]
-
 # override pow in fixed_point, and allow literal comparison in tests
 per-file-ignores = { "elfpy/utils/math/fixed_point.py" = [
     "A003",
@@ -77,10 +74,8 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 # Assume Python 3.9.
 target-version = "py39"
-=======
 exclude = [
-    "hyperdrive_solidity",
-    "hyperdrive_solidity/.venv",
     ".venv",
+    "docs",
+    "hyperdrive_solidity/.venv",
 ]
->>>>>>> Stashed changes
