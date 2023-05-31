@@ -95,7 +95,9 @@ class TestCheckpoint(unittest.TestCase):
         )
 
         # get default zero value if no checkpoint exists.
-        checkpoint = self.hyperdrive.market_state.checkpoints.get(checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint())
+        checkpoint = self.hyperdrive.market_state.checkpoints.get(
+            checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
+        )
         # Ensure that the checkpoint contains the share price prior to the share price update.
         self.assertEqual(share_price_before, checkpoint.share_price)
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
