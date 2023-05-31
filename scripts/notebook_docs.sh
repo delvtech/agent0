@@ -3,7 +3,7 @@
 # Paths set to be relative to the location of this script
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
-outdir=$parent_path/../docs/notebook_build/
+outdir=$parent_path/../docs/source/examples/_static/
 indir=$parent_path/../examples/
 
 mkdir -p $outdir
