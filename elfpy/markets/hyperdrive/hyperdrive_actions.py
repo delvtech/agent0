@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
+from elfpy.markets.hyperdrive.hyperdrive_market import Checkpoint
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
@@ -319,12 +320,13 @@ def calc_checkpoint_deltas(
     # closed before maturity, we add the amount of longs being closed since the total supply is
     # decreased when burning the long tokens.
     checkpoint_amount = market_state[total_supply][checkpoint_time]
+
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == FixedPoint(0):
         return (FixedPoint(0), defaultdict(FixedPoint, {checkpoint_time: FixedPoint(0)}), FixedPoint(0))
-    proportional_base_volume = (
-        market_state.checkpoints[checkpoint_time].long_base_volume * bond_amount / checkpoint_amount
-    )
+    # get default zero value if no checkpoint exists.
+    checkpoint = market_state.checkpoints.get(checkpoint_time, Checkpoint())
+    proportional_base_volume = checkpoint.long_base_volume * bond_amount / checkpoint_amount
     d_base_volume = -proportional_base_volume
     d_checkpoints = defaultdict(FixedPoint, {checkpoint_time: d_base_volume})
     lp_margin = bond_amount - proportional_base_volume
@@ -403,7 +405,10 @@ def calc_open_short(
     share_reserves_delta = trade_result.market_result.d_base / market_state.share_price
     bond_reserves_delta = trade_result.market_result.d_bonds
     share_proceeds += abs(share_reserves_delta)  # delta is negative from p.o.v of market, positive for shorter
-    open_share_price = market_state.checkpoints[latest_checkpoint_time].share_price
+
+    # get default zero value if no checkpoint exists.
+    checkpoint = market_state.checkpoints.get(latest_checkpoint_time, Checkpoint())
+    open_share_price = checkpoint.share_price
     trader_deposit = calc_short_proceeds(
         bond_amount=bond_amount,
         share_amount=share_proceeds,
@@ -797,9 +802,9 @@ def calc_close_long(
     normalized_time_elapsed = (block_time - mint_time) / position_duration.years
     share_proceeds = bond_amount * normalized_time_elapsed / market_state.share_price
     maturity_time = mint_time + position_duration.years
-    close_share_price = (
-        market_state.share_price if block_time < maturity_time else market_state.checkpoints[mint_time].share_price
-    )
+    # get default zero value if no checkpoint exists.
+    checkpoint = market_state.checkpoints.get(mint_time, Checkpoint())
+    close_share_price = market_state.share_price if block_time < maturity_time else checkpoint.share_price
     if market_state.init_share_price > close_share_price:
         share_proceeds *= close_share_price / market_state.init_share_price
     # the amount of liquidity that needs to be removed
@@ -809,7 +814,7 @@ def calc_close_long(
     )
     withdraw_pool_deltas = MarketDeltas()
     if margin_needs_to_be_freed:
-        open_share_price = market_state.checkpoints[mint_time].long_share_price
+        open_share_price = checkpoint.long_share_price
         # The withdrawal pool has preferential access to the proceeds generated from closing longs.
         # The LP proceeds when longs are closed are equivalent to the proceeds of short positions.
         withdrawal_proceeds = calc_short_proceeds(

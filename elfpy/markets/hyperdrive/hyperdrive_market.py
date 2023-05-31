@@ -1,4 +1,4 @@
-"""Market simulators store state information when interfacing AMM pricing models with users."""
+"DefaultDict" "Market simulators store state information when interfacing AMM pricing models with users." ""
 from __future__ import annotations
 
 import copy
@@ -39,6 +39,10 @@ class Checkpoint:
     long_share_price: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
+
+
+# all values zeroed
+DEFAULT_CHECKPOINT = Checkpoint()
 
 
 @types.freezable(frozen=False, no_new_attribs=False)
@@ -127,11 +131,11 @@ class MarketState(base_market.BaseMarketState):
     short_average_maturity_time: FixedPoint = FixedPoint(0)
     long_base_volume: FixedPoint = FixedPoint(0)
     short_base_volume: FixedPoint = FixedPoint(0)
-    checkpoints: defaultdict[FixedPoint, Checkpoint] = field(default_factory=lambda: defaultdict(Checkpoint))
+    checkpoints: dict[FixedPoint, Checkpoint] = field(default_factory=lambda: {})
     checkpoint_duration: FixedPoint = FixedPoint("1.0").div_up(FixedPoint("365.0"))
     checkpoint_duration_days: FixedPoint = FixedPoint("1.0")
-    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
-    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=lambda: {})
+    total_supply_shorts: dict[FixedPoint, FixedPoint] = field(default_factory=lambda: {})
     total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
@@ -160,9 +164,9 @@ class MarketState(base_market.BaseMarketState):
         self.withdraw_interest += delta.withdraw_interest
         # checkpointing
         for mint_time, delta_checkpoint in delta.long_checkpoints.items():
-            self.checkpoints[mint_time].long_base_volume += delta_checkpoint
+            self.checkpoints.get(mint_time, Checkpoint()).long_base_volume += delta_checkpoint
         for mint_time, delta_checkpoint in delta.short_checkpoints.items():
-            self.checkpoints[mint_time].short_base_volume += delta_checkpoint
+            self.checkpoints.get(mint_time, Checkpoint()).short_base_volume += delta_checkpoint
         for mint_time, delta_supply in delta.total_supply_longs.items():
             self.total_supply_longs[mint_time] += delta_supply
         for mint_time, delta_supply in delta.total_supply_shorts.items():
@@ -473,7 +477,9 @@ class Market(
 
     def update_long_share_price(self, bond_proceeds: FixedPoint) -> None:
         """Upates the weighted average share price for longs at the latest checkpoint."""
-        long_share_price = self.market_state.checkpoints[self.latest_checkpoint_time].long_share_price
+        # get default zero value if no checkpoint exists.
+        checkpoint = self.market_state.checkpoints.get(self.latest_checkpoint_time, Checkpoint)
+        long_share_price = checkpoint.long_share_price
         total_supply = self.market_state.total_supply_longs[self.latest_checkpoint_time]
         updated_long_share_price = hyperdrive_actions.update_weighted_average(
             long_share_price, total_supply, self.market_state.share_price, bond_proceeds, True
@@ -542,8 +548,10 @@ class Market(
 
     def checkpoint(self, checkpoint_time: FixedPoint) -> None:
         """allows anyone to mint a new checkpoint."""
+        # get default zero value if no checkpoint exists.
+        checkpoint = self.market_state.checkpoints.get(checkpoint_time, Checkpoint())
         # if the checkpoint has already been set, return early.
-        if self.market_state.checkpoints[checkpoint_time].share_price != FixedPoint(0):
+        if checkpoint.share_price != FixedPoint(0):
             return
         # if the checkpoint time isn't divisible by the checkpoint duration
         # or is in the future, it's an invalid checkpoint and we should
@@ -563,7 +571,8 @@ class Market(
         else:
             _time = checkpoint_time
             while True:
-                closest_share_price = self.market_state.checkpoints[_time].share_price
+                checkpoint = self.market_state.checkpoints.get(_time, Checkpoint())
+                closest_share_price = checkpoint.share_price
                 if _time == latest_checkpoint:
                     closest_share_price = self.market_state.share_price
                 if closest_share_price != FixedPoint(0):
@@ -586,12 +595,11 @@ class Market(
         FixedPoint
             The share price for the checkpoint after mature positions have been closed.
         """
+        # get default zero value if no checkpoint exists.
+        checkpoint = self.market_state.checkpoints.get(checkpoint_time, Checkpoint())
         # Return early if the checkpoint has already been updated.
-        if (
-            self.market_state.checkpoints[checkpoint_time].share_price != FixedPoint(0)
-            or checkpoint_time > self.block_time.time
-        ):
-            return self.market_state.checkpoints[checkpoint_time].share_price
+        if checkpoint.share_price != FixedPoint(0) or checkpoint_time > self.block_time.time:
+            return checkpoint.share_price
         # Create the share price checkpoint.
         self.market_state.checkpoints[checkpoint_time].share_price = share_price
         mint_time = checkpoint_time - self.annualized_position_duration
@@ -614,7 +622,8 @@ class Market(
         # that have matured.
         matured_shorts_amount = self.market_state.total_supply_shorts[mint_time]
         if matured_shorts_amount > FixedPoint(0):
-            open_share_price = self.market_state.checkpoints[mint_time].share_price
+            checkpoint = self.market_state.checkpoints.get(mint_time, Checkpoint())
+            open_share_price = checkpoint.share_price
             market_deltas, _ = hyperdrive_actions.calc_close_short(
                 wallet.Wallet(0).address,
                 matured_shorts_amount,
@@ -626,7 +635,7 @@ class Market(
                 open_share_price,
             )
             self.market_state.apply_delta(market_deltas)
-        return self.market_state.checkpoints[mint_time].share_price
+        return checkpoint.share_price
 
     def redeem_withdraw_shares(
         self,
