@@ -109,15 +109,18 @@ class MarketState(base_market.BaseMarketState):
         """Returns a new copy of self"""
         return MarketState(**self.__dict__)
 
-    def check_valid_market_state(self, dictionary: dict) -> None:
+    def check_valid_market_state(self, dictionary: dict | None = None) -> None:
         """Test that all market state variables are greater than zero"""
-        for key, value in dictionary.items():
-            if isinstance(value, FixedPoint):
-                assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
-            elif isinstance(value, dict):
-                self.check_valid_market_state(value)
-            else:
-                pass  # noop; frozen, etc
+        if dictionary is None:
+            self.check_valid_market_state(self.__dict__)
+        else:
+            for key, value in dictionary.items():
+                if isinstance(value, FixedPoint):
+                    assert value >= FixedPoint(0), f"{key} attribute with {value=} must be >= 0."
+                elif isinstance(value, dict):
+                    self.check_valid_market_state(value)
+                else:
+                    pass  # noop; frozen, etc
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

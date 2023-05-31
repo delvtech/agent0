@@ -1,14 +1,13 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
 
-from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 import elfpy.agents.wallet as wallet
 import elfpy.markets.base as base_market
-from elfpy.markets.hyperdrive.hyperdrive_market import Checkpoint
+from elfpy.markets.hyperdrive.checkpoint import Checkpoint
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.pricing_models.trades as trades
 import elfpy.time as time
@@ -62,10 +61,10 @@ class MarketDeltas(base_market.MarketDeltas):
     withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
     withdraw_capital: FixedPoint = FixedPoint(0)
     withdraw_interest: FixedPoint = FixedPoint(0)
-    long_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
-    short_checkpoints: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
-    total_supply_longs: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
-    total_supply_shorts: defaultdict[FixedPoint, FixedPoint] = field(default_factory=lambda: defaultdict(FixedPoint))
+    long_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
+    short_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
+    total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
+    total_supply_shorts: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -289,7 +288,7 @@ def calc_checkpoint_deltas(
     checkpoint_time: FixedPoint,
     bond_amount: FixedPoint,
     position: Literal["short", "long"],
-) -> tuple[FixedPoint, defaultdict[FixedPoint, FixedPoint], FixedPoint]:
+) -> tuple[FixedPoint, dict[FixedPoint, FixedPoint], FixedPoint]:
     """Compute deltas to close any outstanding positions at the checkpoint_time
 
     Arguments
@@ -307,7 +306,7 @@ def calc_checkpoint_deltas(
     -------
     d_base_volume : FixedPoint
         The change in base volume for the given position.
-    d_checkpoints : defaultdict[FixedPoint, FixedPoint]
+    d_checkpoints : dict[FixedPoint, FixedPoint]
         The change in checkpoint volume for the given checkpoint_time (key) and position (value).
     lp_margin : FixedPoint
         The amount of margin that LPs provided on the long position.
@@ -323,12 +322,12 @@ def calc_checkpoint_deltas(
 
     # If the checkpoint has nothing stored, then do not update
     if checkpoint_amount == FixedPoint(0):
-        return (FixedPoint(0), defaultdict(FixedPoint, {checkpoint_time: FixedPoint(0)}), FixedPoint(0))
+        return (FixedPoint(0), {checkpoint_time: FixedPoint(0)}, FixedPoint(0))
     # get default zero value if no checkpoint exists.
     checkpoint = market_state.checkpoints.get(checkpoint_time, Checkpoint())
     proportional_base_volume = checkpoint.long_base_volume * bond_amount / checkpoint_amount
     d_base_volume = -proportional_base_volume
-    d_checkpoints = defaultdict(FixedPoint, {checkpoint_time: d_base_volume})
+    d_checkpoints = {checkpoint_time: d_base_volume}
     lp_margin = bond_amount - proportional_base_volume
     return (d_base_volume, d_checkpoints, lp_margin)
 
@@ -450,8 +449,8 @@ def calc_open_short(
         short_base_volume=base_volume,
         shorts_outstanding=bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
-        short_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
-        total_supply_shorts=defaultdict(FixedPoint, {latest_checkpoint_time: bond_amount}),
+        short_checkpoints={latest_checkpoint_time: base_volume},
+        total_supply_shorts={latest_checkpoint_time: bond_amount},
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -591,7 +590,7 @@ def calc_close_short(
         shorts_outstanding=-bond_amount,
         short_average_maturity_time=d_short_average_maturity_time,
         short_checkpoints=d_checkpoints,
-        total_supply_shorts=defaultdict(FixedPoint, {mint_time: -bond_amount}),
+        total_supply_shorts={mint_time: -bond_amount},
         withdraw_capital=withdraw_pool_deltas.withdraw_capital,
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,
@@ -698,8 +697,8 @@ def calc_open_long(
         long_base_volume=base_volume,
         longs_outstanding=trade_result.user_result.d_bonds,
         long_average_maturity_time=d_long_average_maturity_time,
-        long_checkpoints=defaultdict(FixedPoint, {latest_checkpoint_time: base_volume}),
-        total_supply_longs=defaultdict(FixedPoint, {latest_checkpoint_time: trade_result.user_result.d_bonds}),
+        long_checkpoints={latest_checkpoint_time: base_volume},
+        total_supply_longs={latest_checkpoint_time: trade_result.user_result.d_bonds},
     )
     agent_deltas = wallet.Wallet(
         address=wallet_address,
@@ -866,7 +865,7 @@ def calc_close_long(
         longs_outstanding=-bond_amount,
         long_average_maturity_time=d_long_average_maturity_time,
         long_checkpoints=d_checkpoints,
-        total_supply_longs=defaultdict(FixedPoint, {mint_time: -bond_amount}),
+        total_supply_longs={mint_time: -bond_amount},
         withdraw_capital=withdraw_pool_deltas.withdraw_capital,
         withdraw_interest=withdraw_pool_deltas.withdraw_interest,
         withdraw_shares_ready_to_withdraw=withdraw_pool_deltas.withdraw_shares_ready_to_withdraw,

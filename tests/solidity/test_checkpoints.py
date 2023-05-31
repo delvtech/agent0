@@ -3,6 +3,7 @@
 import unittest
 
 import elfpy.agents.agent as elf_agent
+import elfpy.markets.hyperdrive.checkpoint
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_markets
 import elfpy.pricing_models.hyperdrive as hyperdrive_pm
 import elfpy.time as time
@@ -94,7 +95,7 @@ class TestCheckpoint(unittest.TestCase):
         )
 
         # get default zero value if no checkpoint exists.
-        checkpoint = self.hyperdrive.market_state.checkpoints.get(checkpoint_time, hyperdrive_markets.Checkpoint())
+        checkpoint = self.hyperdrive.market_state.checkpoints.get(checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint())
         # Ensure that the checkpoint contains the share price prior to the share price update.
         self.assertEqual(share_price_before, checkpoint.share_price)
         # Ensure that the long and short balance wasn't effected by the checkpoint (the long and
@@ -124,7 +125,7 @@ class TestCheckpoint(unittest.TestCase):
         # Ensure that the checkpoint contains the latest share price.
         # get default zero value if no checkpoint exists.
         checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            self.hyperdrive.latest_checkpoint_time, hyperdrive_markets.Checkpoint()
+            self.hyperdrive.latest_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
         )
         self.assertEqual(checkpoint.share_price, self.hyperdrive.market_state.share_price)
 
@@ -158,12 +159,12 @@ class TestCheckpoint(unittest.TestCase):
         # share price update.
         # get default zero value if no checkpoint exists.
         last_checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            self.hyperdrive.latest_checkpoint_time, hyperdrive_markets.Checkpoint()
+            self.hyperdrive.latest_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
         )
         self.assertEqual(last_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the previous checkpoint contains the closest share price.
         previous_checkpoint = self.hyperdrive.market_state.checkpoints.get(
-            previous_checkpoint_time, hyperdrive_markets.Checkpoint()
+            previous_checkpoint_time, elfpy.markets.hyperdrive.checkpoint.Checkpoint()
         )
         self.assertEqual(previous_checkpoint.share_price, self.hyperdrive.market_state.share_price)
         # Ensure that the long and short balance has gone to zero (all of the
