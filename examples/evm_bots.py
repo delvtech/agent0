@@ -491,9 +491,13 @@ def create_agent(
     params = {
         "trade_chance": experiment_config.scratch["trade_chance"],
         "budget": FixedPoint(
-            str(np.clip(
-                experiment_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std), bot.budget.min, bot.budget.max
-            ))
+            str(
+                np.clip(
+                    experiment_config.rng.normal(loc=bot.budget.mean, scale=bot.budget.std),
+                    bot.budget.min,
+                    bot.budget.max,
+                )
+            )
         ),
         "wallet_address": dev_accounts[bot.index].address,
     }
@@ -916,7 +920,9 @@ def set_up_ape(
         hyperdrive_instance: ContractInstance = project.get_hyperdrive_contract()
     # read the hyperdrive config from the contract, and log (and print) it
     hyperdrive_config = get_hyperdrive_config(hyperdrive_instance)
-    return provider, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
+    # becomes provider.get_auto_mine() with this PR: https://github.com/ApeWorX/ape-foundry/pull/51
+    automine = provider._make_request("anvil_getAutomine", parameters={})  # pylint: disable=protected-access
+    return provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account
 
 
 def do_policy(
@@ -1000,7 +1006,7 @@ def main():
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
-    provider, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
+    provider, automine, base_instance, hyperdrive_instance, hyperdrive_config, deployer_account = set_up_ape(
         experiment_config, args, provider_settings, addresses, network_choice, address_file, pricing_model
     )
     sim_agents: dict[str, elfpy.agents.agent.Agent] = set_up_agents(
@@ -1022,7 +1028,10 @@ def main():
                     policy, elfpy_market, no_crash_streak, crash_file, sim_agents, hyperdrive_instance, base_instance
                 )
             last_executed_block = block_number
-        sleep(1)
+        if args.devnet and automine:  # anvil automatically mines after you send a transaction. or manually.
+            ape.chain.mine()
+        else:  # either on goerli or on devnet with automine disabled (which means time-based mining is enabled)
+            sleep(1)
 
 
 if __name__ == "__main__":
