@@ -1,7 +1,6 @@
 """Market simulators store state information when interfacing AMM pricing models with users."""
 from __future__ import annotations
-
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
@@ -13,6 +12,7 @@ import elfpy.time as time
 import elfpy.types as types
 
 from elfpy.markets.hyperdrive.checkpoint import Checkpoint
+from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint, FixedPointMath
 from elfpy.math.update_weighted_average import update_weighted_average
 from elfpy.time.time import StretchedTime
@@ -39,33 +39,6 @@ class MarketActionType(Enum):
 
     CLOSE_LONG = "close_long"
     CLOSE_SHORT = "close_short"
-
-
-@types.freezable(frozen=True, no_new_attribs=True)
-@dataclass
-class MarketDeltas(base_market.MarketDeltas):
-    r"""Specifies changes to values in the market"""
-    # pylint: disable=too-many-instance-attributes
-    d_base_asset: FixedPoint = FixedPoint(0)
-    d_bond_asset: FixedPoint = FixedPoint(0)
-    d_base_buffer: FixedPoint = FixedPoint(0)
-    d_bond_buffer: FixedPoint = FixedPoint(0)
-    d_lp_total_supply: FixedPoint = FixedPoint(0)
-    d_share_price: FixedPoint = FixedPoint(0)
-    longs_outstanding: FixedPoint = FixedPoint(0)
-    shorts_outstanding: FixedPoint = FixedPoint(0)
-    long_average_maturity_time: FixedPoint = FixedPoint(0)
-    short_average_maturity_time: FixedPoint = FixedPoint(0)
-    long_base_volume: FixedPoint = FixedPoint(0)
-    short_base_volume: FixedPoint = FixedPoint(0)
-    total_supply_withdraw_shares: FixedPoint = FixedPoint(0)
-    withdraw_shares_ready_to_withdraw: FixedPoint = FixedPoint(0)
-    withdraw_capital: FixedPoint = FixedPoint(0)
-    withdraw_interest: FixedPoint = FixedPoint(0)
-    long_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
-    short_checkpoints: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
-    total_supply_longs: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
-    total_supply_shorts: dict[FixedPoint, FixedPoint] = field(default_factory=dict)
 
 
 @types.freezable(frozen=False, no_new_attribs=True)
@@ -341,7 +314,7 @@ def calc_open_short(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: FixedPoint,
     latest_checkpoint_time: FixedPoint,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     r"""Calculate the agent & market deltas for opening a short position.
 
     Shorts need their margin account to cover the worst case scenario (p=1).
@@ -442,7 +415,7 @@ def calc_open_short(
     )
     bond_reserves_delta += updated_bond_reserves - market_state.bond_reserves
     # return the market and wallet deltas
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=bond_reserves_delta,
         # TODO: remove the bond buffer
@@ -471,7 +444,7 @@ def calc_close_short(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     open_share_price: FixedPoint,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     """
     When closing a short, the number of bonds being closed out, at face value, give us the total margin returned.
     The worst case scenario of the short is reduced by that amount, so they no longer need margin for it.
@@ -562,7 +535,7 @@ def calc_close_short(
     margin_needs_to_be_freed = (
         market_state.total_supply_withdraw_shares > market_state.withdraw_shares_ready_to_withdraw
     )
-    withdraw_pool_deltas = MarketDeltas()
+    withdraw_pool_deltas = HyperdriveMarketDeltas()
     withdrawal_proceeds = share_payment
     if margin_needs_to_be_freed:
         proceeds_in_base = trade_result.user_result.d_base
@@ -583,7 +556,7 @@ def calc_close_short(
     )
     share_reserves_delta = adjusted_share_reserves - market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market_state.bond_reserves
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=share_reserves_delta * market_state.share_price,
         d_bond_asset=bond_reserves_delta,
         d_bond_buffer=-bond_amount,
@@ -627,7 +600,7 @@ def calc_open_long(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     latest_checkpoint_time: FixedPoint,
     spot_price: FixedPoint,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     """
     When a trader opens a long, they put up base and are given long tokens. As time passes, an amount of the longs
     proportional to the time that has passed are considered to be “mature” and can be redeemed one-to-one.
@@ -691,7 +664,7 @@ def calc_open_long(
     # TODO: don't use 1 for time_remaining once we have checkpointing
     base_volume = calculate_base_volume(trade_result.market_result.d_base, base_amount, FixedPoint("1.0"))
     # Get the market and wallet deltas to return.
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=trade_result.market_result.d_base,
         d_bond_asset=trade_result.market_result.d_bonds,
         d_base_buffer=trade_result.user_result.d_bonds,
@@ -719,7 +692,7 @@ def calc_close_long(
     block_time: FixedPoint,
     mint_time: FixedPoint,
     is_trade: bool = True,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     """Calculations for closing a long position.
     This function takes the trade spec & turn it into trade details.
 
@@ -812,7 +785,7 @@ def calc_close_long(
     margin_needs_to_be_freed = (
         market_state.total_supply_withdraw_shares > market_state.withdraw_shares_ready_to_withdraw
     )
-    withdraw_pool_deltas = MarketDeltas()
+    withdraw_pool_deltas = HyperdriveMarketDeltas()
     if margin_needs_to_be_freed:
         open_share_price = checkpoint.long_share_price
         # The withdrawal pool has preferential access to the proceeds generated from closing longs.
@@ -858,7 +831,7 @@ def calc_close_long(
     share_reserves_delta = adjusted_share_reserves - market_state.share_reserves
     bond_reserves_delta = adjusted_bond_reserves - market_state.bond_reserves
     # Return the market and wallet deltas.
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=share_reserves_delta * market_state.share_price,
         d_bond_asset=bond_reserves_delta,
         d_base_buffer=-bond_amount,
@@ -999,7 +972,7 @@ def calc_add_liquidity(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     fixed_apr: FixedPoint,
     block_time: FixedPoint,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is added.
 
     Arguments
@@ -1048,7 +1021,7 @@ def calc_add_liquidity(
         market_time=block_time,
         position_duration=position_duration,
     )
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=d_base_reserves,
         d_bond_asset=d_bond_reserves,
         d_lp_total_supply=lp_out,
@@ -1067,7 +1040,7 @@ def calc_remove_liquidity(
     market_state: hyperdrive_market.MarketState,
     position_duration: StretchedTime,
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
-) -> tuple[MarketDeltas, wallet.Wallet]:
+) -> tuple[HyperdriveMarketDeltas, wallet.Wallet]:
     """Computes new deltas for bond & share reserves after liquidity is removed.
 
     Arguments
@@ -1109,7 +1082,7 @@ def calc_remove_liquidity(
     user_margin = user_margin * lp_shares / market_state.lp_total_supply
     withdraw_shares = user_margin / market_state.share_price
     # create and return the deltas
-    market_deltas = MarketDeltas(
+    market_deltas = HyperdriveMarketDeltas(
         d_base_asset=-delta_base,
         d_bond_asset=-delta_bonds,
         d_lp_total_supply=-lp_shares,
@@ -1129,7 +1102,7 @@ def calc_free_margin(
     freed_capital: FixedPoint,
     max_capital: FixedPoint,
     interest: FixedPoint,
-) -> MarketDeltas:
+) -> HyperdriveMarketDeltas:
     r"""Moves capital into the withdraw pool and marks shares ready for withdraw.
 
     Arguments
@@ -1151,7 +1124,7 @@ def calc_free_margin(
     # If we don't have capital to free then simply return zero
     withdraw_share_supply = market_state.total_supply_withdraw_shares
     withdraw_shares_ready_to_withdraw = market_state.withdraw_shares_ready_to_withdraw
-    withdraw_pool_deltas = MarketDeltas()
+    withdraw_pool_deltas = HyperdriveMarketDeltas()
     if withdraw_share_supply <= withdraw_shares_ready_to_withdraw:
         return withdraw_pool_deltas
     # If we have more capital freed than needed we adjust down all values

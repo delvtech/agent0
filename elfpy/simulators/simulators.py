@@ -1,16 +1,16 @@
 """Simulator class wraps the pricing models and markets for experiment tracking and execution"""
 from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.random._generator import Generator as NumpyGenerator
 
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.time as time
 import elfpy.types as types
+
 from elfpy.agents.get_wallet_state import get_wallet_state
+from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
 from elfpy.simulators.config import Config
 from elfpy.simulators.simulation_state import (
@@ -280,7 +280,7 @@ class Simulator:
                     price_multiplier = self.market.market_state.share_price
                 else:  # Apply return to starting price (no compounding)
                     price_multiplier = self.market.market_state.init_share_price
-                delta = hyperdrive_actions.MarketDeltas(
+                delta = HyperdriveMarketDeltas(
                     d_share_price=(
                         self.market.market_state.variable_apr  # current day's apy
                         / FixedPoint("365.0")  # convert annual yield to daily

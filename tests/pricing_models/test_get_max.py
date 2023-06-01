@@ -1,6 +1,5 @@
 """Testing for the get_max_long function of the pricing models"""
 from __future__ import annotations
-
 import copy
 import logging
 from dataclasses import dataclass
@@ -8,13 +7,14 @@ import unittest
 
 import elfpy.markets.trades as trades
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
-import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
 import elfpy.types as types
 import elfpy.time as time
 import elfpy.utils.outputs as output_utils
 import elfpy.markets.base_pricing_model as base_pm
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.markets.hyperdrive.yieldspace_pricing_model as yieldspace_pm
+
+from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
 
 
@@ -261,13 +261,13 @@ class TestGetMax(unittest.TestCase):
 
         # Simulate the trade.
         if is_long:
-            delta = hyperdrive_actions.MarketDeltas(
+            delta = HyperdriveMarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
                 d_bond_asset=trade_result.market_result.d_bonds,
                 d_base_buffer=trade_result.breakdown.with_fee,
             )
         else:  # is a short
-            delta = hyperdrive_actions.MarketDeltas(
+            delta = HyperdriveMarketDeltas(
                 d_base_asset=trade_result.market_result.d_base,
                 d_bond_asset=trade_result.market_result.d_bonds,
                 d_bond_buffer=-trade_result.user_result.d_bonds,

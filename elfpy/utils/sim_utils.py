@@ -1,13 +1,14 @@
 """Implements helper functions for setting up a simulation"""
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
-from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
 
 import elfpy.markets.hyperdrive.hyperdrive_market as hyperdrive_market
 import elfpy.markets.hyperdrive.hyperdrive_pricing_model as hyperdrive_pm
 import elfpy.simulators as simulators
 import elfpy.time as time
+
+from elfpy.agents.policies.init_lp import InitializeLiquidityAgent
+from elfpy.markets.hyperdrive.hyperdrive_market_deltas import HyperdriveMarketDeltas
 from elfpy.math import FixedPoint
 from elfpy.simulators import Config
 from elfpy.simulators.simulation_state import (
@@ -19,7 +20,6 @@ from elfpy.simulators.simulation_state import (
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
-    import elfpy.markets.hyperdrive.hyperdrive_actions as hyperdrive_actions
     from elfpy.agents.agent import Agent
 
 
@@ -108,7 +108,7 @@ def get_initialized_hyperdrive_market(
     pricing_model: hyperdrive_pm.HyperdrivePricingModel,
     block_time: time.BlockTime,
     config: Config,
-) -> tuple[hyperdrive_market.Market, wallet.Wallet, hyperdrive_actions.MarketDeltas]:
+) -> tuple[hyperdrive_market.Market, wallet.Wallet, HyperdriveMarketDeltas]:
     r"""Setup market
 
     Arguments
