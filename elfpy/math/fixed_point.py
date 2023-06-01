@@ -594,7 +594,7 @@ class FixedPoint:
             return hash((float(self), self.__class__.__name__))
         # act like an integer otherwise
         return hash((self.scaled_value, self.__class__.__name__))
-    
+
     # Since fixedpoint objects are immutable, simply return a shallow copy here for performance
     def __deepcopy__(self, memo) -> FixedPoint:
         memo[id(self)] = self
