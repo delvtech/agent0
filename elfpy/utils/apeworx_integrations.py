@@ -76,6 +76,8 @@ def get_market_state_from_contract(
     hyperdrive_market.MarketState
     """
     pool_state = hyperdrive_contract.getPoolInfo(**kwargs).__dict__
+    for key, value in pool_state.items():
+        log_and_show(f"{key}: {value}")
     hyper_config = hyperdrive_contract.getPoolConfig(**kwargs).__dict__
     hyper_config["timeStretch"] = 1 / (hyper_config["timeStretch"] / 1e18)  # convert to elf-sims format
     hyper_config["term_length"] = hyper_config["positionDuration"] / (60 * 60 * 24)  # in days
@@ -92,14 +94,13 @@ def get_market_state_from_contract(
         variable_apr=FixedPoint(0.01),  # TODO: insert real value
         share_price=FixedPoint(pool_state["sharePrice"]),
         init_share_price=FixedPoint(hyper_config["initialSharePrice"]),
-        curve_fee_multiple=FixedPoint(hyper_config["curveFee"]),
-        flat_fee_multiple=FixedPoint(hyper_config["flatFee"]),
-        governance_fee_multiple=FixedPoint(hyper_config["governanceFee"]),
+        curve_fee_multiple=FixedPoint(hyper_config["fees"]["curve"]),
+        flat_fee_multiple=FixedPoint(hyper_config["fees"]["flat"]),
+        governance_fee_multiple=FixedPoint(hyper_config["fees"]["governance"]),
         longs_outstanding=FixedPoint(pool_state["longsOutstanding"]),
         shorts_outstanding=FixedPoint(pool_state["shortsOutstanding"]),
         long_average_maturity_time=FixedPoint(pool_state["longAverageMaturityTime"]),
         short_average_maturity_time=FixedPoint(pool_state["shortAverageMaturityTime"]),
-        long_base_volume=FixedPoint(pool_state["longBaseVolume"]),
         short_base_volume=FixedPoint(pool_state["shortBaseVolume"]),
         # TODO: checkpoints=dict
         checkpoint_duration=FixedPoint(hyper_config["checkpointDuration"]),
@@ -107,8 +108,7 @@ def get_market_state_from_contract(
         total_supply_shorts={FixedPoint(0): FixedPoint(pool_state["shortsOutstanding"])},
         total_supply_withdraw_shares=FixedPoint(total_supply_withdraw_shares),
         withdraw_shares_ready_to_withdraw=FixedPoint(pool_state["withdrawalSharesReadyToWithdraw"]),
-        withdraw_capital=FixedPoint(pool_state["capital"]),
-        withdraw_interest=FixedPoint(pool_state["interest"]),
+        withdraw_capital=FixedPoint(pool_state["proceeds"]),
     )
 
 
