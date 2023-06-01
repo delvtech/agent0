@@ -39,13 +39,14 @@ if TYPE_CHECKING:
 class HyperdriveProject(ProjectManager):
     """Hyperdrive project class, to provide static typing for the Hyperdrive contract."""
 
-    hyperdrive_container: ContractContainer
-    address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"
+    hyperdrive_address: str = "0xB311B825171AF5A60d69aAD590B857B1E5ed23a2"  # goerli deployment from April 2023
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, hyperdrive_address: str = None) -> None:
         """Initialize the project, loading the Hyperdrive contract."""
         if path.name == "examples":  # if in examples folder, move up a level
             path = path.parent
+        if hyperdrive_address is not None:
+            self.hyperdrive_address = hyperdrive_address
         super().__init__(path)
         self.load_contracts()
         try:
@@ -55,7 +56,7 @@ class HyperdriveProject(ProjectManager):
 
     def get_hyperdrive_contract(self) -> ContractInstance:
         """Get the Hyperdrive contract instance."""
-        return self.hyperdrive_container.at(self.conversion_manager.convert(self.address, AddressType))
+        return self.hyperdrive_container.at(self.conversion_manager.convert(self.hyperdrive_address, AddressType))
 
 
 def get_market_state_from_contract(hyperdrive_contract: ContractInstance, **kwargs) -> hyperdrive_market.MarketState:
@@ -237,13 +238,20 @@ def get_wallet_from_onchain_trade_info(
                     abs(balance - sum_value) <= elfpy.MAXIMUM_BALANCE_MISMATCH_IN_WEI
                 ), "weighted average open share price calculation is wrong"
                 logging.debug("calculated weighted average open share price of %s", open_share_price)
-                wallet.shorts.update({mint_time: elf_wallet.Short(balance=balance, open_share_price=open_share_price)})
+                wallet.shorts.update(
+                    {
+                        mint_time: elf_wallet.Short(
+                            balance=FixedPoint(scaled_value=balance),
+                            open_share_price=open_share_price,
+                        )
+                    }
+                )
                 logging.debug(
                     "storing in wallet as %s",
                     {mint_time: elf_wallet.Short(balance=balance, open_share_price=open_share_price)},
                 )
             elif asset_type == "LONG":
-                wallet.longs.update({mint_time: elf_wallet.Long(balance=balance)})
+                wallet.longs.update({mint_time: elf_wallet.Long(balance=FixedPoint(scaled_value=balance))})
                 logging.debug("storing in wallet as %s", {mint_time: elf_wallet.Long(balance=balance)})
             elif asset_type == "LP":
                 wallet.lp_tokens += balance
@@ -682,7 +690,9 @@ def attempt_txn(
         if not hasattr(latest, "base_fee"):
             raise ValueError("latest block does not have base_fee")
         base_fee = getattr(latest, "base_fee")
-        log_and_show(f"latest block {fmt(getattr(latest, 'number'))} has base_fee {base_fee/1e9:,.3f}")
+        logging.debug(
+            "latest block %s has base_fee %s", fmt(getattr(latest, "number")), fmt(base_fee / 1e9, min_digits=3)
+        )
         kwargs["max_priority_fee_per_gas"] = int(
             agent.provider.priority_fee * (1 + priority_fee_multiple * (attempt - 1))
         )
@@ -696,7 +706,7 @@ def attempt_txn(
         for key, value in kwargs.items():
             value = fmt(value / 1e9) if "fee" in key else fmt(value)
             formatted_items.append(f"{key}={value}")
-        log_and_show(f"txn attempt {attempt} of {mult} with {', '.join(formatted_items)}")
+        logging.debug("txn attempt %s of %s with %s", attempt, mult, ", ".join(formatted_items))
         serial_txn: TransactionAPI = contract_txn.serialize_transaction(*args, **kwargs)
         prepped_txn: TransactionAPI = agent.prepare_transaction(serial_txn)
         signed_txn: TransactionAPI | None = agent.sign_transaction(prepped_txn)

@@ -175,7 +175,7 @@ class Agent:
         list[Trade]
             List of Trade type objects that represent the trades to be made by this agent
         """
-        actions = self.action(market)  # get the action list from the policy
+        actions: list[types.Trade] = self.action(market)  # get the action list from the policy
         for action in actions:  # edit each action in place
             if action.market == types.MarketType.HYPERDRIVE and action.trade.mint_time is None:
                 action.trade.mint_time = market.latest_checkpoint_time

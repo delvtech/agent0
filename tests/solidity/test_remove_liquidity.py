@@ -126,7 +126,8 @@ class TestRemoveLiquidity(unittest.TestCase):
         self.assertAlmostEqual(self.alice.wallet.withdraw_shares, withdraw_shares_expected, delta=self.APPROX_EQ)
 
     def test_remove_liquidity_short_trade(self):
-        """Should remove liquidity if there are open shorts"""
+        """Remove liquidity if there are open shorts."""
+
         market_state = self.hyperdrive.market_state
 
         # advance time and let interest accrue
@@ -141,10 +142,14 @@ class TestRemoveLiquidity(unittest.TestCase):
         short_amount_bonds = FixedPoint("50_000_000.0")
         _, wallet_deltas = self.hyperdrive.open_short(self.bob.wallet, short_amount_bonds)
         base_paid = abs(wallet_deltas.balance.amount)
+        self.assertAlmostEqual(base_paid, FixedPoint(scaled_value=2519919637210444767879702), delta=self.APPROX_EQ)
 
         # alice removes all liquidity
         _, remove_wallet_deltas = self.hyperdrive.remove_liquidity(self.alice.wallet, self.alice.wallet.lp_tokens)
         base_proceeds = remove_wallet_deltas.balance.amount
+        self.assertAlmostEqual(
+            base_proceeds, FixedPoint(scaled_value=453771483440107986796265268), delta=self.APPROX_EQ
+        )
 
         # make sure all alice's lp tokens were burned
         self.assertEqual(self.alice.wallet.lp_tokens, FixedPoint(0))
