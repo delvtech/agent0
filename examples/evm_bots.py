@@ -26,6 +26,8 @@ from ape.utils import generate_dev_accounts
 from ape_accounts.accounts import KeyfileAccount
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
+import tqdm
+from tqdm import trange
 
 # elfpy core repo
 import elfpy

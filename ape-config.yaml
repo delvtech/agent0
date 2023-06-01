@@ -19,6 +19,7 @@ solidity:
     - "openzeppelin-contracts/contracts=OpenZeppelin/4.9.0"
     - "@aave=Aave/1.17.2"
     - "forge-std=../../lib/forge-std/src"
+    - "solmate=../../lib/solmate/src"
 
 ethereum:
   default_network: local
