@@ -10,7 +10,7 @@ from elfpy.math import FixedPoint
 
 if TYPE_CHECKING:
     import elfpy.agents.wallet as wallet
-    import elfpy.markets.base.base_pricing_model as base_pm
+    from elfpy.markets.base.base_pricing_model import BasePricingModel
     import elfpy.time as time
 
 
@@ -22,10 +22,10 @@ class MarketActionType(Enum):
 
 
 # all subclasses of Market need to pass subclasses of MarketAction, MarketState and MarketDeltas
-Action = TypeVar("Action", bound="MarketAction")
-Deltas = TypeVar("Deltas", bound="MarketDeltas")
+Action = TypeVar("Action", bound="BaseMarketAction")
+Deltas = TypeVar("Deltas", bound="BaseMarketDeltas")
 State = TypeVar("State", bound="BaseMarketState")
-PricingModel = TypeVar("PricingModel", bound="base_pm.PricingModel")
+PricingModel = TypeVar("PricingModel", bound="BasePricingModel")
 
 
 @types.freezable(frozen=False, no_new_attribs=True)

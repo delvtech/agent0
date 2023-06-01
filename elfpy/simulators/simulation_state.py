@@ -80,9 +80,9 @@ class SimulationState:
 def simulation_state_aggreagator(constructor):
     """Returns a dataclass that aggregates simulation state attributes"""
     # Wrap the type from the constructor in a list, but keep the name
-    attribs = [
+    attribs = (
         (key, "list[" + str(val) + "]", field(default_factory=list)) for key, val in constructor.__annotations__.items()
-    ]
+    )
 
     # Make a new dataclass that has helper functions for appending to the list
     def update(obj, dictionary):
@@ -92,8 +92,8 @@ def simulation_state_aggreagator(constructor):
     # The lambda is used because of the self variable -- TODO: can possibly remove?
     # pylint: disable=unnecessary-lambda
     aggregator = make_dataclass(
-        constructor.__name__ + "Aggregator",
-        attribs,
+        cls_name=constructor.__name__ + "Aggregator",
+        fields=attribs,
         namespace={
             "update_item": lambda self, key, value: getattr(self, key).append(value),
             "update": lambda self, dict_like: update(self, dict_like),
