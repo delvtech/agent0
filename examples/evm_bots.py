@@ -29,6 +29,8 @@ from ape_accounts.accounts import KeyfileAccount
 from dotenv import load_dotenv
 from eth_account import Account as EthAccount
 from numpy.random._generator import Generator as NumpyGenerator
+import tqdm
+from tqdm import trange
 
 import tqdm
 from tqdm import trange
@@ -230,6 +232,22 @@ class LongLouie(elfpy_agent.Agent):
 
 
 def get_env_args() -> dict:
+    """Define & parse arguments from stdin.
+
+    List of arguments:
+        log_filename : Optional output filename for logging. Default is "testnet_bots".
+        log_level : Logging level, should be in ["DEBUG", "INFO", "WARNING"]. Default is "INFO".
+        max_bytes : Maximum log file output size, in bytes. Default is 1MB.
+        num_louie : Number of Long Louie agents to run. Default is 0.
+        num_frida : Number of Fixed Rate Frida agents to run. Default is 0.
+        num_random: Number of Random agents to run. Default is 0.
+        trade_chance : Chance for a bot to execute a trade. Default is 0.1.
+
+    Returns
+    -------
+    parser : dict
+    """
+
     args = {
         # Env passed in is a string "true"
         "devnet" : (os.environ.get("BOT_DEVNET", "true") == "true"),
@@ -246,7 +264,6 @@ def get_env_args() -> dict:
         "artifacts_url": os.environ.get("BOT_ARTIFACTS_URL", "http://artifacts:80")
     }
     return args
-
 
 @dataclass
 class BotInfo:
@@ -780,7 +797,7 @@ def set_up_devnet(
     if addresses["hyperdrive"]:  # use existing hyperdrive deployment
         hyperdrive_instance: ContractInstance = ape_utils.get_instance(
             address=addresses["hyperdrive"],
-            contract_type=project.get_contract("MockHyperdriveTestnet").contract_type,
+            contract_type=project.get_contract("IHyperdrive").contract_type,
             provider=provider,
         )
     else:  # deploy a new hyperdrive
@@ -809,8 +826,9 @@ def get_hyperdrive_config(hyperdrive_instance) -> dict:
     log_and_show(f"Hyperdrive config deployed at {hyperdrive_instance.address}:")
     for key, value in hyperdrive_config.items():
         divisor = 1 if key in ["positionDuration", "checkpointDuration", "timeStretch"] else 1e18
-        log_and_show(f" {key}: {fmt(value/divisor)}")
-    hyperdrive_config["term_length"] = 365  # days
+        formatted_value = fmt(value / divisor) if isinstance(value, (int, float)) else value
+        log_and_show(f" {key}: {formatted_value}")
+    hyperdrive_config["term_length"] = hyperdrive_config["positionDuration"] / 60 / 60 / 24  # in days
     return hyperdrive_config
 
 
@@ -966,7 +984,6 @@ def main():
     pricing_model, crash_file, network_choice, provider_settings, addresses = set_up_experiment(
         experiment_config, args
     )
-
     no_crash_streak = 0
     last_executed_block = 0
     output_utils.setup_logging(log_filename=experiment_config.log_filename, log_level=experiment_config.log_level)
